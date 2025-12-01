@@ -1,6 +1,6 @@
 {
   "name": "@monorepo-example/website",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "devDependencies": {
     "vitepress": "2.0.0-alpha.15"
   },

@@ -14,9 +14,9 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: "指南", link: "/" },
-          { text: "前端", link: "/web/home" },
-          { text: "桌面端", link: "/desktop/home" },
-          { text: "后端", link: "/backend/i18n" },
+          { text: "前端", link: "/web/home", activeMatch: "^/web/" },
+          { text: "桌面端", link: "/desktop/home", activeMatch: "^/desktop/" },
+          { text: "后端", link: "/backend/i18n", activeMatch: "^/backend/" },
         ],
         sidebar: {
           "/backend/": [
