@@ -17,6 +17,7 @@ const ignores = [
   "**/.venv/**",
   "*.log",
   "*.md",
+  "**/.vitepress/cache/**",
 ]
 
 /**

@@ -145,7 +145,12 @@ Changesets 会读取所有未发布的 .changeset 文件
 
 ## i18n
 
-使用 `WebStrom` 可使用 `Easy I18n` 插件 vscode 可使用 `i18n Ally`
+使用 `WebStrom` 可使用 `easy-i18n` 插件
 
 - 以下为配置示例
   ![easy-i18n.png](docs/images/easy-i18n.png)
+
+使用 `vscode` 可安装 `i18n-ally` 插件
+
+- 以下为配置示例
+  ![i18n-ally.png](docs/images/i18n-ally.png)

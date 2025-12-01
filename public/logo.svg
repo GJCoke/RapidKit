@@ -1,0 +1,125 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="90" fill="#0a192f" />
+
+  <g opacity="0.07" stroke="#5a7aa5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+
+    <g transform="translate(60,140) scale(0.6)">
+      <circle r="8" stroke-width="0.5"/>
+      <g stroke-width="0.8">
+        <line x1="0" y1="-8" x2="0" y2="-11"/>
+        <line x1="4" y1="-7" x2="5.5" y2="-10"/>
+        <line x1="7" y1="-4" x2="10" y2="-5.5"/>
+        <line x1="8" y1="0" x2="11" y2="0"/>
+        <line x1="7" y1="4" x2="10" y2="5.5"/>
+        <line x1="4" y1="7" x2="5.5" y2="10"/>
+        <line x1="0" y1="8" x2="0" y2="11"/>
+        <line x1="-4" y1="7" x2="-5.5" y2="10"/>
+        <line x1="-7" y1="4" x2="-10" y2="5.5"/>
+        <line x1="-8" y1="0" x2="-11" y2="0"/>
+        <line x1="-7" y1="-4" x2="-10" y2="-5.5"/>
+        <line x1="-4" y1="-7" x2="-5.5" y2="-10"/>
+      </g>
+    </g>
+
+    <g transform="translate(140,60) scale(0.55)">
+      <circle r="8" stroke-width="0.5"/>
+      <g stroke-width="0.8">
+        <line x1="0" y1="-8" x2="0" y2="-11"/>
+        <line x1="4" y1="-7" x2="5.5" y2="-10"/>
+        <line x1="7" y1="-4" x2="10" y2="-5.5"/>
+        <line x1="8" y1="0" x2="11" y2="0"/>
+        <line x1="7" y1="4" x2="10" y2="5.5"/>
+        <line x1="4" y1="7" x2="5.5" y2="10"/>
+        <line x1="0" y1="8" x2="0" y2="11"/>
+        <line x1="-4" y1="7" x2="-5.5" y2="10"/>
+        <line x1="-7" y1="4" x2="-10" y2="5.5"/>
+        <line x1="-8" y1="0" x2="-11" y2="0"/>
+        <line x1="-7" y1="-4" x2="-10" y2="-5.5"/>
+        <line x1="-4" y1="-7" x2="-5.5" y2="-10"/>
+      </g>
+    </g>
+
+    <!-- 2. 电路板走线（抽象 PCB 风格） -->
+    <g stroke-width="0.7">
+      <path d="M55,90 L65,90 L65,110 L80,110" fill="none"/>
+      <circle cx="55" cy="90" r="1.2"/>
+      <path d="M145,100 L135,100 L135,85 L120,85" fill="none"/>
+      <circle cx="145" cy="100" r="1.2"/>
+      <path d="M100,150 L100,140 L115,140" fill="none"/>
+      <circle cx="100" cy="150" r="1.2"/>
+    </g>
+
+    <g stroke-width="0.3" opacity="0.8">
+      <line x1="85" y1="45" x2="115" y2="45"/>
+      <line x1="84" y1="47" x2="116" y2="47"/>
+      <line x1="83" y1="49" x2="117" y2="49"/>
+
+      <line x1="85" y1="155" x2="115" y2="155"/>
+      <line x1="84" y1="153" x2="116" y2="153"/>
+      <line x1="83" y1="151" x2="117" y2="151"/>
+    </g>
+
+    <g fill="#5a7aa5" opacity="0.05">
+      <circle cx="50" cy="55" r="0.6"/>
+      <circle cx="53" cy="55" r="0.6"/>
+      <circle cx="50" cy="58" r="0.6"/>
+      <circle cx="53" cy="58" r="0.6"/>
+      <circle cx="147" cy="142" r="0.6"/>
+      <circle cx="150" cy="142" r="0.6"/>
+      <circle cx="147" cy="145" r="0.6"/>
+      <circle cx="150" cy="145" r="0.6"/>
+    </g>
+
+    <g stroke-width="0.5">
+      <line x1="100" y1="20" x2="100" y2="25"/>
+      <line x1="120" y1="28" x2="117" y2="32"/>
+      <line x1="80" y1="28" x2="83" y2="32"/>
+      <line x1="100" y1="180" x2="100" y2="175"/>
+      <line x1="120" y1="172" x2="117" y2="168"/>
+      <line x1="80" y1="172" x2="83" y2="168"/>
+    </g>
+
+  </g>
+
+  <g opacity="0.10">
+    <polygon points="100,30 160,65 160,135 100,170 40,135 40,65" fill="none" stroke="#00d4ff" stroke-width="0.7"/>
+    <polygon points="100,45 140,75 140,125 100,155 60,125 60,75" fill="none" stroke="#00ffaa" stroke-width="0.5"/>
+  </g>
+
+  <path d="M100 40L70 100H90L60 160L140 100H110L130 60Z" fill="url(#ai-gradient)">
+    <animate attributeName="opacity" values="0.8;1;0.8" dur="2.8s" repeatCount="indefinite"/>
+  </path>
+
+  <circle cx="100" cy="100" r="35" stroke="url(#pulse-gradient)" stroke-width="1.5" fill="none" opacity="0.6">
+    <animate attributeName="r" values="35;75" dur="3s" repeatCount="indefinite" />
+    <animate attributeName="opacity" values="0.6;0" dur="3s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="100" cy="100" r="35" stroke="url(#pulse-gradient)" stroke-width="1.5" fill="none" opacity="0.6">
+    <animate attributeName="r" values="35;75" dur="3s" begin="1.5s" repeatCount="indefinite" />
+    <animate attributeName="opacity" values="0.6;0" dur="3s" begin="1.5s" repeatCount="indefinite" />
+  </circle>
+
+  <g opacity="0.4">
+    <circle cx="65" cy="80" r="1.5" fill="#00d4ff">
+      <animate attributeName="opacity" values="0.2;1;0.2" dur="4s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="135" cy="120" r="1.5" fill="#00ffaa">
+      <animate attributeName="opacity" values="0.2;1;0.2" dur="4.5s" repeatCount="indefinite" begin="0.5s"/>
+    </circle>
+    <circle cx="85" cy="145" r="1.2" fill="#6affff">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="5s" repeatCount="indefinite" begin="1s"/>
+    </circle>
+  </g>
+
+  <defs>
+    <linearGradient id="ai-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d4ff" />
+      <stop offset="50%" stop-color="#00ffaa" />
+      <stop offset="100%" stop-color="#b967ff" />
+    </linearGradient>
+    <radialGradient id="pulse-gradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#00ffaa" stop-opacity="0.6" />
+    </radialGradient>
+  </defs>
+</svg>
