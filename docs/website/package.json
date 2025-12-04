@@ -1,14 +1,15 @@
 {
   "name": "@monorepo-example/website",
-  "version": "1.0.0",
-  "devDependencies": {
-    "vitepress": "2.0.0-alpha.15"
-  },
+  "version": "1.0.1",
   "scripts": {
     "lint:format": "prettier --write \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
     "lint:lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "2.0.0-alpha.15",
+    "vitepress-plugin-tabs": "^0.7.3"
   }
 }

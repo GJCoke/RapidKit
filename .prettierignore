@@ -4,6 +4,7 @@ public
 node_modules
 pnpm-lock.yaml
 release
-apps/web/src/typings/components.d.ts
-apps/web/src/router/elegant/*
+apps/frontend/src/typings/components.d.ts
+apps/frontend/src/router/elegant/*
 **/*/.vitepress/cache/*
+apps/frontend/src/typings/schema.d.ts

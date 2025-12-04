@@ -4,20 +4,22 @@ services:
     restart: always
     image: app_image
     env_file:
-      - .env
+      - ./apps/backend/.env
 
     build:
-      context: .
+      context: ./apps/backend
       dockerfile: dev.Dockerfile
 
     volumes:
-      - ./:/src
+      - ./apps/backend:/app
 
     ports:
       - "16000:8006"
 
     depends_on:  # Make sure that app postgresql starts first by depending on it.
       - app_postgresql
+      - app_redis
+      - app_minio
 
   app_postgresql:
     container_name: app_postgresql
@@ -25,7 +27,7 @@ services:
     hostname: app_postgresql
     image: bitnami/postgresql
     env_file:
-      - .env
+      - ./apps/backend/.env
     volumes:
       - app_postgresql_data:/var/lib/postgresql
 
@@ -39,7 +41,7 @@ services:
     container_name: app_redis
 
     env_file:
-      - .env
+      - ./apps/backend/.env
 
     volumes:
       - app_redis_data:/var/lib/redis
@@ -53,11 +55,11 @@ services:
 
   app_minio:  # minio config.
     image: minio/minio:latest
-#    restart: always
+    #    restart: always
     container_name: app_minio
 
     env_file:
-      - .env
+      - ./apps/backend/.env
 
     volumes:
       - app_minio_data:/data

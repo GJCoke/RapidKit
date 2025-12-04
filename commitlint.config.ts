@@ -37,7 +37,7 @@ const Configuration: UserConfig = {
     scopes: [
       "root",
       "backend",
-      "web",
+      "frontend",
       "desktop",
       "website",
       "internal",

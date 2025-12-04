@@ -49,7 +49,7 @@ export default defineConfig(
   // 前端配置 Vue3
   {
     ignores, // 忽略目录
-    files: ["apps/web/**/*.{ts,js,tsx,jsx,vue}", "packages/components/**/*.{ts,js,tsx,jsx,vue}"], // 应用范围
+    files: ["apps/frontend/**/*.{ts,js,tsx,jsx,vue}", "packages/components/**/*.{ts,js,tsx,jsx,vue}"], // 应用范围
     extends: [...eslintPluginVue.configs["flat/recommended"], eslintConfigPrettier], // 继承规则
     languageOptions: {
       parser: vueParser,

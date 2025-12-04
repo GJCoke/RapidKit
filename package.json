@@ -14,9 +14,10 @@
     "commit": "git-cz",
     "prepare": "husky",
     "precommit": "lint-staged",
-    "dev:web": "turbo build --filter !@monorepo-example/web && turbo watch dev --filter @monorepo-example/web",
+    "dev:frontend": "turbo build --filter !@monorepo-example/frontend && turbo watch dev --filter @monorepo-example/frontend",
     "dev:desktop": "turbo build --filter !@monorepo-example/desktop && turbo watch dev --filter @monorepo-example/desktop",
-    "dev:backend": "turbo dev --filter @monorepo-example/backend"
+    "dev:backend": "turbo dev --filter @monorepo-example/backend",
+    "dev:website": "turbo dev --filter @monorepo-example/website"
   },
   "config": {
     "commitizen": {
@@ -53,6 +54,7 @@
     "globals": "^16.5.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
+    "openapi-typescript": "^7.10.1",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "turbo": "^2.6.1",

@@ -1,6 +1,10 @@
 import DefaultTheme from "vitepress/theme"
+import { enhanceAppWithTabs } from 'vitepress-plugin-tabs/client'
 import "./styles/index.css"
 
 export default {
-    ...DefaultTheme
+    extends: DefaultTheme,
+    enhanceApp({ app }) {
+        enhanceAppWithTabs(app)
+    }
 } 

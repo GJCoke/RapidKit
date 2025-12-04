@@ -99,7 +99,7 @@ tsconfig.json 的继承规则
 - exclude 也继承 → ["node_modules"]
 
 运行指定项目
-pnpm --filter apps/web dev
+pnpm --filter apps/frontend dev
 
 ## Changeset
 
@@ -154,3 +154,11 @@ Changesets 会读取所有未发布的 .changeset 文件
 
 - 以下为配置示例
   ![i18n-ally.png](docs/images/i18n-ally.png)
+
+## openapi-typescript
+
+可通过 `openapi-typescript` 来生成 基于 openapi 规范的 typescript 类型文件
+
+```bash
+npx openapi-typescript http://localhost:16000/openapi.json -o apps/frontend/src/typings/schema.d.ts
+```

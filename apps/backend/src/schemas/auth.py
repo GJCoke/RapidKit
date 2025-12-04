@@ -68,6 +68,7 @@ class UserSchema(BaseModel):
     email: EmailStr
     username: str
     roles: list[str] = []
+    buttons: list[str] = []
 
 
 class UserInfoResponse(UserSchema, ResponseSchema):

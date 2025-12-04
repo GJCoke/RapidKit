@@ -10,10 +10,10 @@ hero:
   actions:
     - theme: brand
       text: 开始
-      link: /markdown-examples
+      link: /guide/started/installation
     - theme: alt
       text: 介绍
-      link: /api-examples
+      link: /guide/
     - theme: alt
       text: 在 GitHub 上查看
       link: https://github.com/GJCoke/monorepo-example
