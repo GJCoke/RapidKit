@@ -10,7 +10,7 @@ hero:
   actions:
     - theme: brand
       text: 开始
-      link: /guide/started/installation
+      link: /guide/quickstart
     - theme: alt
       text: 介绍
       link: /guide/

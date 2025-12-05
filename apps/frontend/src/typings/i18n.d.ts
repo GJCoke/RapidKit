@@ -43,9 +43,15 @@ declare namespace I18nKeys {
     | "yesOrNo.no"
     | "yesOrNo.yes"
 
-  type datatable = "itemCount"
+  type datatable =
+    | "itemCount"
 
-  type dropdown = "closeAll" | "closeCurrent" | "closeLeft" | "closeOther" | "closeRight"
+  type dropdown =
+    | "closeAll"
+    | "closeCurrent"
+    | "closeLeft"
+    | "closeOther"
+    | "closeRight"
 
   type form =
     | "code.invalid"
@@ -220,7 +226,13 @@ declare namespace I18nKeys {
     | "manage.user.userStatus"
     | "manage.user.username"
 
-  type request = "logout" | "logoutMsg" | "logoutWithModal" | "logoutWithModalMsg" | "refreshToken" | "tokenExpired"
+  type request =
+    | "logout"
+    | "logoutMsg"
+    | "logoutWithModal"
+    | "logoutWithModalMsg"
+    | "refreshToken"
+    | "tokenExpired"
 
   type route =
     | "403"
@@ -235,7 +247,12 @@ declare namespace I18nKeys {
     | "manage_user"
     | "manage_user-detail"
 
-  type system = "title" | "updateCancel" | "updateConfirm" | "updateContent" | "updateTitle"
+  type system =
+    | "title"
+    | "updateCancel"
+    | "updateConfirm"
+    | "updateContent"
+    | "updateTitle"
 
   type theme =
     | "appearance.colourWeakness"
@@ -340,6 +357,7 @@ declare namespace I18nKeys {
     | "tabs.layout"
     | "tabs.preset"
     | "themeDrawerTitle"
+
 }
 type I18nFullKey =
   | `common.${I18nKeys.common}`
