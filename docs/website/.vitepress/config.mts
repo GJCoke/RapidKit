@@ -70,8 +70,8 @@ export default defineConfig({
             {
               text: "更新日志",
               items: [
-                { text: "Changesets 配置与使用", link: "/guide/changeset" },
-                { text: "更新日志模板", link: "/guide/changelog" },
+                { text: "Changesets 是什么", link: "/guide/changeset" },
+                { text: "Changesets 使用", link: "/guide/changelog" },
               ]
             },
             {
