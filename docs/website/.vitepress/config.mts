@@ -25,6 +25,7 @@ export default defineConfig({
           { text: "桌面端", link: "/desktop/", activeMatch: "^/desktop/" },
           { text: "后端", link: "/backend/i18n", activeMatch: "^/backend/" },
           { text: "教程", link: "/tutorial/", activeMatch: "^/tutorial/" },
+          { text: "更新日志", link: "/changelog/backend-CHANGELOG", activeMatch: "^/changelog/" },
         ],
         sidebar: {
           "/guide/": [
@@ -67,9 +68,10 @@ export default defineConfig({
               ]
             },
             {
-              text: "变更日志",
+              text: "更新日志",
               items: [
                 { text: "Changesets 配置与使用", link: "/guide/changeset" },
+                { text: "更新日志模板", link: "/guide/changelog" },
               ]
             },
             {
@@ -101,6 +103,45 @@ export default defineConfig({
             }
           ],
           "/backend/": [
+            {
+              text: "项目概述",
+              items: [
+                { text: "项目介绍", link: "/backend/", },
+                { text: "快速开始", link: "/backend/quickstart" },
+              ]
+            },
+            {
+              text: "项目结构与架构设计",
+              items: [
+                { text: "目录结构概览", link: "/backend/overview" },
+                { text: "架构设计", link: "/backend/design" },
+              ]
+            },
+            {
+              text: "核心模块说明",
+              items: [
+                { text: "数据库与依赖注入", link: "/modules/database" },
+                { text: "WebSocket 服务", link: "/modules/websocket" },
+                { text: "异步任务调度（Celery）", link: "/modules/celery" },
+                { text: "用户认证与授权", link: "/modules/auth" },
+                { text: "工具链与代码质量", link: "/modules/toolchain" },
+              ]
+            },
+            {
+              text: "开发规范",
+              items: [
+                { text: "代码风格与格式化", link: "/guide/code-style" },
+                { text: "静态检查工具使用", link: "/guide/static-check" },
+              ]
+            },
+            {
+              text: "测试与部署",
+              items: [
+                { text: "单元测试与覆盖率", link: "/guide/testing" },
+                { text: "CI/CD 工作流", link: "/guide/ci" },
+                { text: "部署指南", link: "/guide/deployment" },
+              ]
+            },
             {
               text: "Python",
               items: [
@@ -138,6 +179,28 @@ export default defineConfig({
               ],
             },
           ],
+          "/changelog/": [
+            {
+              text: "Apps",
+              items: [
+                { text: "Backend", link: "/changelog/backend-CHANGELOG" },
+                { text: "Frontend", link: "/changelog/frontend-CHANGELOG" },
+                { text: "Desktop", link: "/changelog/desktop-CHANGELOG" },
+                { text: "Website", link: "/changelog/website-CHANGELOG" },
+              ],
+            },
+            {
+              text: "Packages",
+              items: [
+                { text: "Axios", link: "/changelog/axios-CHANGELOG" },
+                { text: "Alova", link: "/changelog/alova-CHANGELOG" },
+                { text: "Builder", link: "/changelog/builder-CHANGELOG" },
+                { text: "Color", link: "/changelog/color-CHANGELOG" },
+                { text: "Utils", link: "/changelog/utils-CHANGELOG" },
+                { text: "Hooks", link: "/changelog/hooks-CHANGELOG" },
+              ],
+            },
+          ],
         },
       },
     },
@@ -151,6 +214,8 @@ export default defineConfig({
           { text: "Frontend", link: "/en/frontend/home" },
           { text: "Desktop", link: "/en/desktop/home" },
           { text: "Backend", link: "/en/backend/i18n" },
+          { text: "Tutorial", link: "/en/tutorial/", activeMatch: "^/tutorial/" },
+          { text: "Changelog", link: "/changelog/backend-CHANGELOG", activeMatch: "^/changelog/" },
         ],
         sidebar: {
           "/en/backend/": [
