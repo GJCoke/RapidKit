@@ -1,5 +1,5 @@
 {
   "*.{ts,tsx,js,jsx,vue,md}": ["prettier --write", "eslint --flag unstable_native_nodejs_ts_config --fix"],
   "*.{js,ts,mjs,cjs,json,jsx,tsx,css,less,scss,vue,html,md,py}": ["pnpm lint:spellcheck"],
-  "*.{py}": ["pnpm -F @monorepo-example/backend lint:format", "pnpm -F @monorepo-example/backend lint:lint"]
+  "*.py": ["pnpm -F @monorepo-example/backend lint:format", "pnpm -F @monorepo-example/backend lint:lint"]
 }

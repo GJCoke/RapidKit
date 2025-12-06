@@ -162,3 +162,8 @@ Changesets 会读取所有未发布的 .changeset 文件
 ```bash
 npx openapi-typescript http://localhost:16000/openapi.json -o apps/frontend/src/typings/schema.d.ts
 ```
+
+TODO:
+
+- [] 重构 i18n 生成类型插件
+- [] 在根目录添加 uv 并且 修改 .lintstagedrc.json 中的 .py 格式
