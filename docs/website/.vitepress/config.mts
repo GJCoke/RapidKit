@@ -23,8 +23,8 @@ export default defineConfig({
           { text: "指引", link: "/guide/", activeMatch: "^/guide/" },
           { text: "前端", link: "/frontend/", activeMatch: "^/frontend/" },
           { text: "桌面端", link: "/desktop/", activeMatch: "^/desktop/" },
-          { text: "后端", link: "/backend/i18n", activeMatch: "^/backend/" },
-          { text: "教程", link: "/tutorial/", activeMatch: "^/tutorial/" },
+          { text: "后端", link: "/backend/", activeMatch: "^/backend/" },
+          { text: "教程", link: "/tutorial/podman-source", activeMatch: "^/tutorial/" },
           { text: "更新日志", link: "/changelog/backend-CHANGELOG", activeMatch: "^/changelog/" },
         ],
         sidebar: {
@@ -128,6 +128,12 @@ export default defineConfig({
               ]
             },
             {
+              text: "ORM 模型",
+              items: [
+                { text: "模型定义", link: "/backend/pydantic-models" },
+              ],
+            },
+            {
               text: "开发规范",
               items: [
                 { text: "代码风格与格式化", link: "/guide/code-style" },
@@ -141,19 +147,6 @@ export default defineConfig({
                 { text: "CI/CD 工作流", link: "/guide/ci" },
                 { text: "部署指南", link: "/guide/deployment" },
               ]
-            },
-            {
-              text: "Python",
-              items: [
-                { text: "国际化", link: "/backend/i18n" },
-                { text: "Getting Started", link: "/backend/examples" },
-                { text: "Podman 更新国内源", link: "/backend/docker" },
-                { text: "后端概览", link: "/backend/overview" },
-                { text: "目录结构", link: "/backend/project-structure" },
-                { text: "OpenAPI Schema", link: "/backend/openapi" },
-                { text: "模型定义", link: "/backend/pydantic-models" },
-                { text: "代码检查", link: "/backend/quality" },
-              ],
             },
           ],
           "/desktop/": [
@@ -178,6 +171,21 @@ export default defineConfig({
                 { text: "常见问题", link: "/tutorial/troubleshooting" },
               ],
             },
+          ],
+          "/tutorial/": [
+            {
+              text: "容器工具",
+              items: [
+                { text: "Podman 国内源", link: "/tutorial/podman-source" }
+              ]
+            },
+            {
+              text: "包管理",
+              items: [
+                { text: "uv 管理工具", link: "/tutorial/uv" },
+                { text: "pnpm 管理工具", link: "/tutorial/pnpm" }
+              ]
+            }
           ],
           "/changelog/": [
             {

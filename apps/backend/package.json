@@ -2,10 +2,9 @@
   "name": "@monorepo-example/backend",
   "version": "1.0.1",
   "scripts": {
-    "lint:format": "./scripts/monorepo/ruff.sh",
-    "lint:lint": "./scripts/monorepo/mypy.sh",
-    "dev": "./scripts/monorepo/run.sh",
-    "postinstall": "./scripts/monorepo/install.sh"
+    "lint:format": "uv run ruff check --fix src && uv run ruff format src",
+    "lint:lint": "uv run mypy src",
+    "dev": "uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 16000"
   },
   "engines": {
     "python": ">=3.12.0",
