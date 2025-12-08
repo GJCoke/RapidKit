@@ -1,0 +1,49 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FastAPI Debug",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "src.main:app",
+        "--reload",
+        "--host", "127.0.0.1",
+        "--port", "16000"
+      ],
+      "cwd": "${workspaceFolder}/apps/backend",
+      "jinja": true,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/apps/backend"
+      }
+    },
+    {
+      "name": "Run Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "Vue Debugger",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:9527",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "TS Debugger",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "tsx",
+      "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"],
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ]
+}

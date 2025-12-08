@@ -122,7 +122,7 @@ export default defineConfig({
               items: [
                 { text: "数据库与依赖注入", link: "/modules/database" },
                 { text: "WebSocket 服务", link: "/modules/websocket" },
-                { text: "异步任务调度（Celery）", link: "/modules/celery" },
+                { text: "异步任务调度 (Celery)", link: "/modules/celery" },
                 { text: "用户认证与授权", link: "/modules/auth" },
                 { text: "工具链与代码质量", link: "/modules/toolchain" },
               ]
@@ -160,18 +160,6 @@ export default defineConfig({
               ],
             },
           ],
-          "/desktop/": [
-            {
-              text: "Python",
-              items: [
-                { text: "快速开始", link: "/tutorial/setup" },
-                { text: "创建接口", link: "/tutorial/create-api" },
-                { text: "创建页面", link: "/tutorial/create-page" },
-                { text: "新增 i18n", link: "/tutorial/add-i18n" },
-                { text: "常见问题", link: "/tutorial/troubleshooting" },
-              ],
-            },
-          ],
           "/tutorial/": [
             {
               text: "容器工具",
@@ -184,6 +172,13 @@ export default defineConfig({
               items: [
                 { text: "uv 管理工具", link: "/tutorial/uv" },
                 { text: "pnpm 管理工具", link: "/tutorial/pnpm" }
+              ]
+            },
+            {
+              text: "VSCode",
+              items: [
+                { text: "推荐插件", link: "/tutorial/vscode-extensions" },
+                { text: "隐藏目录", link: "/tutorial/hide-folder"}
               ]
             }
           ],

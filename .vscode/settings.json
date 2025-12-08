@@ -1,0 +1,26 @@
+{
+  "i18n-ally.displayLanguage": "zh-CN",
+  "i18n-ally.enabledParsers": ["json"],
+  "i18n-ally.enabledFrameworks": ["vue"],
+  "i18n-ally.editor.preferEditor": true,
+  "i18n-ally.namespace": true,
+  "i18n-ally.keystyle": "nested",
+  "i18n-ally.localesPaths": [
+    "apps/frontend/src/locales/langs"
+  ],
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "eslint.format.enable": false,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/.ruff_cache": true,
+    "**/__pycache__": true,
+    "**/.mypy_cache": true,
+    "**/.turbo": true,
+    "**/.idea": true,
+  }
+}
