@@ -7,11 +7,13 @@
   import ButtonTab from "./button-tab.vue"
   import SliderTab from "./slider-tab.vue"
   import SvgClose from "./svg-close.vue"
-  import style from "./index.module.css"
+  import styleModule from "./index.module.css"
 
   defineOptions({
     name: "PageTab",
   })
+
+  const style = styleModule
 
   const props = withDefaults(defineProps<PageTabProps>(), {
     mode: "chrome",

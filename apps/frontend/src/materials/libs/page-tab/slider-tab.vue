@@ -1,12 +1,14 @@
 <script setup lang="ts">
   import type { PageTabProps } from "../../types"
-  import style from "./index.module.css"
+  import styleModule from "./index.module.css"
 
   defineOptions({
     name: "SliderTab",
   })
 
   defineProps<PageTabProps>()
+
+  const style = styleModule
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type SlotFn = (props?: Record<string, unknown>) => any

@@ -2,11 +2,13 @@
   import { computed } from "vue"
   import type { AdminLayoutProps } from "../../types"
   import { LAYOUT_MAX_Z_INDEX, LAYOUT_SCROLL_EL_ID, createLayoutCssVars } from "./shared"
-  import style from "./index.module.css"
+  import styleModule from "./index.module.css"
 
   defineOptions({
     name: "AdminLayout",
   })
+
+  const style = styleModule
 
   const props = withDefaults(defineProps<AdminLayoutProps>(), {
     mode: "vertical",
