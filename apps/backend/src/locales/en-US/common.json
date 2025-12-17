@@ -1,0 +1,10 @@
+{
+    "greeting": "Hello, world!",
+    "farewell": "Goodbye!",
+    "wv": {
+        "test": "test",
+        "cc": {
+            "hello": "hello, {name}!"
+        }
+    }
+}

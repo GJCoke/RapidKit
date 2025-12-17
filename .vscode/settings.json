@@ -5,9 +5,7 @@
   "i18n-ally.editor.preferEditor": true,
   "i18n-ally.namespace": true,
   "i18n-ally.keystyle": "nested",
-  "i18n-ally.localesPaths": [
-    "apps/frontend/src/locales/langs"
-  ],
+  "i18n-ally.localesPaths": ["apps/frontend/src/locales/langs"],
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "eslint.format.enable": false,

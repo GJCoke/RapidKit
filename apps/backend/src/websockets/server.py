@@ -95,7 +95,6 @@ class AsyncServer(SocketIOAsyncServer):
         self,
         event: str,
         data: Any | None = None,
-        *,
         to: str | None = None,
         room: str | None = None,
         skip_sid: str | list[str] | None = None,
@@ -136,7 +135,6 @@ class AsyncServer(SocketIOAsyncServer):
     async def send(
         self,
         data: Any,
-        *,
         to: str | None = None,
         room: str | None = None,
         skip_sid: str | list[str] | None = None,
@@ -173,7 +171,7 @@ class AsyncServer(SocketIOAsyncServer):
             serializer=serializer,
         )
 
-    async def _trigger_event(self, event: str, namespace: str, *args: Any) -> Awaitable[None] | None:
+    async def _trigger_event(self, event: str, namespace: str, *args: Any) -> Awaitable[object] | object:
         """
         Trigger an application-level event handler.
 

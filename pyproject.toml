@@ -9,8 +9,8 @@ dependencies = ["monorepo-example-backend"]
 [dependency-groups]
 dev = [
     "ruff==0.14.5",
-    "mypy==1.18.2",
     "coverage==7.12.0",
+    "ty>=0.0.2",
 ]
 
 [tool.uv.sources]
@@ -21,39 +21,14 @@ members = [
     "apps/backend"
 ]
 
-[tool.mypy]
-plugins = [
-    "pydantic.mypy"
+[tool.ty.src]
+exclude = [
+    "**/alembic/",
+    "**/tests/"
 ]
 
-# Do not check imported modules, only check the current module.
-follow_imports = "silent"
-
-# Ignore missing type information when importing modules.
-ignore_missing_imports = true
-
-# Enable warnings for redundant type casting.
-warn_redundant_casts = true
-
-# Check for function definitions without type annotations.
-check_untyped_defs = true
-
-# Prevent implicit re-exporting.
-no_implicit_reexport = true
-
-# Do not allow the definition of functions without type annotations.
-disallow_untyped_defs = true
-
-
-[tool.pydantic-mypy]
-# Prevent the inclusion of extra fields during the initialization of the Pydantic model.
-init_forbid_extra = true
-
-# Ensure that the field types of the model are correctly type-checked during initialization.
-init_typed = true
-
-# Warning for the case of missing dynamic aliases.
-warn_required_dynamic_aliases = true
+[tool.ty.rules]
+invalid-method-override = "ignore"
 
 [tool.ruff]
 line-length = 120
@@ -68,7 +43,7 @@ select = [
     "I001",
 ]
 ignore = []
-per-file-ignores = {}
+per-file-ignores = { }
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 # Directories or files that do not need to be checked.

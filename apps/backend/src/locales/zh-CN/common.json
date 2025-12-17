@@ -1,0 +1,10 @@
+{
+    "greeting": "你好，世界",
+    "farewell": "再见！",
+    "wv": {
+        "test": "测试",
+        "cc": {
+            "hello": "你好，{name}！"
+        }
+    }
+}

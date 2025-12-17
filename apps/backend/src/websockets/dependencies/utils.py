@@ -14,9 +14,9 @@ from src.websockets.params import Depends
 
 FastAPIDepends: Any
 try:
-    from fastapi.params import Depends as FastAPIDepends  # type: ignore
+    from fastapi.params import Depends as FastAPIDepends
 except ImportError:
-    FastAPIDepends = None
+    FastAPIDepends = None  # type: ignore
 
 
 def convert_to_depends(obj: Any) -> Depends | None:
