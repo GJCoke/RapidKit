@@ -22,6 +22,7 @@ from starlette.exceptions import HTTPException
 from src.api.v1 import v1_router
 from src.core.config import app_configs, settings
 from src.core.lifecycle import lifespan
+from src.middlewares.i18n import I18nMiddleware
 from src.schemas.response import Response as SchemaResponse
 from src.schemas.response import ServerErrorResponse, ValidationErrorResponse
 from src.utils.utils import format_validation_errors
@@ -31,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(**app_configs, lifespan=lifespan)
 app.mount("/socket.io", socket_app)
-
 app.add_middleware(
     CORSMiddleware,  # type: ignore
     allow_origins=settings.CORS_ORIGINS,
@@ -40,6 +40,7 @@ app.add_middleware(
     allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
     allow_headers=settings.CORS_HEADERS,
 )
+app.add_middleware(I18nMiddleware)  # type:ignore
 
 
 def get_client_addr(client: Address | None) -> str:

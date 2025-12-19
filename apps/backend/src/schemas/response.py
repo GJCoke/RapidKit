@@ -5,7 +5,6 @@ Author : Coke
 Date   : 2025-03-12
 """
 
-import time
 from datetime import datetime
 from typing import Any, Generic, TypeVar
 from uuid import UUID
@@ -13,6 +12,7 @@ from uuid import UUID
 from fastapi import status
 from pydantic import ConfigDict, Field, field_serializer
 
+from src.locales.i18n import t
 from src.schemas import BaseModel
 from src.utils.date import convert_datetime_to_gmt
 
@@ -63,10 +63,9 @@ class Response(BaseResponse, Generic[T]):
             pass
     """
 
-    code: int = Field(status.HTTP_200_OK, description="status code.")
-    message: str = Field("Successful.")
-    ts: int = Field(int(time.time()), description="current server time.")
-    data: T | None = Field(None, description="response data.")
+    code: int = Field(status.HTTP_200_OK, description=t("common.response.statusCode"))
+    message: str = Field(t("common.response.success"))
+    data: T | None = Field(None, description=t("common.response.data"))
 
     def __init__(
         self,
@@ -79,7 +78,6 @@ class Response(BaseResponse, Generic[T]):
         payload = {k: v for k, v in dict(code=code, message=message, data=data).items() if v is not None}
         payload = {**payload, **kwargs}
         super().__init__(**payload)
-        self.ts = int(time.time())
 
 
 class PaginatedResponse(BaseResponse, Generic[T]):
@@ -94,7 +92,6 @@ class PaginatedResponse(BaseResponse, Generic[T]):
         {
           "code": 200,
           "message": "Successful.",
-          "ts": 1741789270,
           "data": {
             "page": 1,
             "pageSize": 20,
@@ -104,17 +101,17 @@ class PaginatedResponse(BaseResponse, Generic[T]):
         }
     """
 
-    page: int = Field(..., description="page number.")
-    page_size: int = Field(..., description="number of items per page.")
-    total: int = Field(..., description="total number of items.")
-    records: list[T] = Field(..., description="records.")
+    page: int = Field(..., description=t("common.response.pageNumber"))
+    page_size: int = Field(..., description=t("common.response.pageSize"))
+    total: int = Field(..., description=t("common.response.total"))
+    records: list[T] = Field(..., description=t("common.response.records"))
 
 
 class BadRequestResponse(Response):
     """Unified Bad request response."""
 
     code: int = status.HTTP_400_BAD_REQUEST
-    message: str = "Bad Request."
+    message: str = t("common.error.badRequest")
     data: None = None
 
 
@@ -122,7 +119,7 @@ class AuthenticationError(Response):
     """Authentication error response."""
 
     code: int = status.HTTP_401_UNAUTHORIZED
-    message: str = "Invalid credentials."
+    message: str = t("common.error.unauthorized")
     data: None = None
 
 
@@ -130,7 +127,7 @@ class PermissionResponse(Response):
     """Unified permission response."""
 
     code: int = status.HTTP_403_FORBIDDEN
-    message: str = "Permission denied."
+    message: str = t("common.error.permissionDenied")
     data: None = None
 
 
@@ -138,7 +135,7 @@ class NotFoundResponse(Response):
     """Unified not found response."""
 
     code: int = status.HTTP_404_NOT_FOUND
-    message: str = "Not found."
+    message: str = t("common.error.notFound")
     data: None = None
 
 
@@ -146,32 +143,32 @@ class ValidationErrorResponse(Response):
     """Unified unprocessable entity response."""
 
     code: int = status.HTTP_422_UNPROCESSABLE_ENTITY
-    message: str = "Validation error."
-    data: str = "Validation error details."
+    message: str = t("common.error.invalidParameter")
+    data: str = t("common.error.invalidParameterDetails")
 
 
 class ServerErrorResponse(Response):
     """Unified server error response."""
 
     code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
-    message: str = "Internal Server Error."
-    data: str = "Internal Server Error details."
+    message: str = t("common.error.internalServer")
+    data: str = t("common.error.internalServerDetails")
 
 
 class SocketErrorResponse(Response):
     """Unified websocket server error response."""
 
     code: int = status.WS_1011_INTERNAL_ERROR
-    message: str = "Internal Server Error."
+    message: str = t("common.error.internalServer")
     event: str
-    data: str = "Internal Server Error details."
+    data: str = t("common.error.internalServerDetails")
 
 
 RESPONSES = {
-    400: {"description": "Bad Request.", "model": BadRequestResponse},
-    401: {"description": "Unauthorized.", "model": AuthenticationError},
-    403: {"description": "Permission denied.", "model": PermissionResponse},
-    404: {"description": "Not found.", "model": NotFoundResponse},
-    422: {"description": "Unprocessable Entity.", "model": ValidationErrorResponse},
-    500: {"description": "Internal Server Error.", "model": ServerErrorResponse},
+    400: {"description": t("common.error.badRequest"), "model": BadRequestResponse},
+    401: {"description": t("common.error.unauthorized"), "model": AuthenticationError},
+    403: {"description": t("common.error.permissionDenied"), "model": PermissionResponse},
+    404: {"description": t("common.error.notFound"), "model": NotFoundResponse},
+    422: {"description": t("common.error.invalidParameter"), "model": ValidationErrorResponse},
+    500: {"description": t("common.error.internalServer"), "model": ServerErrorResponse},
 }

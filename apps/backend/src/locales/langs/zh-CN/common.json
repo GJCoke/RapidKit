@@ -1,0 +1,23 @@
+{
+  "error": {
+    "internalServer": "服务器内部错误。",
+    "internalServerDetails": "服务器内部错误详情。",
+    "badRequest": "错误的请求。",
+    "unauthorized": "未授权。",
+    "permissionDenied": "没有权限。",
+    "notFound": "未找到资源。",
+    "resourceAlreadyExists": "资源已存在。",
+    "invalidParameter": "参数不合法。",
+    "invalidParameterDetails": "参数校验错误详情。",
+    "invalidParameterMessage": "参数“{param}”是必填项，且不能为空。"
+  },
+  "response": {
+    "success": "请求成功。",
+    "statusCode": "状态码。",
+    "data": "响应数据。",
+    "pageNumber": "页码。",
+    "pageSize": "每页数量。",
+    "total": "总记录数。",
+    "records": "记录列表。"
+  }
+}

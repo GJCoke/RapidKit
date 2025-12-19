@@ -141,6 +141,9 @@ class Config(BaseSettings):
     # Logging level
     LOG_LEVEL: str = "INFO"
 
+    # I18n settings
+    DEFAULT_LANGUAGE: str = "en-US"
+
 
 settings = Config()  # type: ignore
 

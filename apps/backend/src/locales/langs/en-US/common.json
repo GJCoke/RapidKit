@@ -1,0 +1,23 @@
+{
+  "error": {
+    "internalServer": "Http server error.",
+    "internalServerDetails": "Internal Server Error details.",
+    "badRequest": "Bad request.",
+    "unauthorized": "Unauthorized.",
+    "permissionDenied": "Permission denied.",
+    "notFound": "Not found.",
+    "resourceAlreadyExists": "Resource already exists.",
+    "invalidParameter": "Invalid parameter.",
+    "invalidParameterDetails": "Validation error details.",
+    "invalidParameterMessage": "Parameter '{param}' is required and cannot be empty."
+  },
+  "response": {
+    "success": "Successful.",
+    "statusCode": "Status code.",
+    "data": "Response data.",
+    "pageNumber": "Page number.",
+    "pageSize": "Page size.",
+    "total": "Total records.",
+    "records": "Records."
+  }
+}

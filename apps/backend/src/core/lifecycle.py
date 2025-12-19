@@ -5,6 +5,7 @@ Author : Coke
 Date   : 2025-03-17
 """
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
@@ -17,6 +18,7 @@ from src.core.config import settings
 from src.core.database import AsyncSessionLocal, RedisManager
 from src.core.route import BaseRoute
 from src.crud.router import RouterCRUD
+from src.locales.watch import watch_locale_files
 from src.models.router import InterfaceRouter
 from src.schemas.router import FastAPIRouterCreate
 
@@ -31,6 +33,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app: FastAPI application.
     """
 
+    watch_task = None
+    if settings.ENVIRONMENT.is_dev:
+        watch_task = asyncio.create_task(watch_locale_files())
+
     RedisManager.connect()
     RedisManager.connect(redis_url=str(settings.CELERY_REDIS_URL), pool_name="celery")
 
@@ -39,6 +45,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await store_router_in_db(app.routes)
 
     yield
+
+    watch_task and watch_task.cancel()
 
     await RedisManager.clear()
 
