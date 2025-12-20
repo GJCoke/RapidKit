@@ -28,7 +28,6 @@ class I18n:
 
         Args:
             key: The localization key to look up.
-            default: The default value to return if the key is not found.
             **kwargs: Additional keyword arguments for formatting the string.
 
         Returns:
