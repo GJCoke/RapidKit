@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-languages = {"en-US", "zh-CN"}
+languages = {"zh-CN", "en-US"}
 
 I18nKey = Literal[
     "common.error.badRequest",
