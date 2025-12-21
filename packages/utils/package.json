@@ -8,8 +8,8 @@
   "scripts": {
     "lint:format": "prettier --write \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
     "lint:lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
-    "dev": "ts-node ../builder/cli.ts --dev",
-    "build": "ts-node ../builder/cli.ts",
+    "dev": "tsx ../builder/cli.ts --dev",
+    "build": "tsx ../builder/cli.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
