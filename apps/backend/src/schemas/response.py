@@ -142,7 +142,7 @@ class NotFoundResponse(Response):
 class ValidationErrorResponse(Response):
     """Unified unprocessable entity response."""
 
-    code: int = status.HTTP_422_UNPROCESSABLE_ENTITY
+    code: int = status.HTTP_422_UNPROCESSABLE_CONTENT
     message: str = t("common.error.invalidParameter")
     data: str = t("common.error.invalidParameterDetails")
 
