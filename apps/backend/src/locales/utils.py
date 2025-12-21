@@ -142,10 +142,9 @@ def write_py_file(path: str | Path, content: str) -> None:
 
 
 def resolve_language(
-    accept_language: str,
+    accept_language: str | None,
     supported_languages: set[str],
-    default: str = "en-US",
-) -> str:
+) -> str | None:
     """
     Resolves the most appropriate language based on the client's accept-language header and
      the server's supported languages.
@@ -154,8 +153,6 @@ def resolve_language(
         accept_language: A string representing the client's preferred languages, as specified in
          the 'Accept-Language' HTTP header.
         supported_languages: A set of strings, each representing a language code that the server supports.
-        default: A string representing the default language to return if no acceptable match is found.
-         Defaults to "en-US".
 
     Returns:
         A string representing the most suitable language code from the server's supported languages,
@@ -165,7 +162,7 @@ def resolve_language(
     supported = set(supported_languages)
 
     if not accept_language:
-        return default
+        return None
 
     candidates: list[tuple[str, float]] = []
 
@@ -196,5 +193,3 @@ def resolve_language(
         for s in supported:
             if s.startswith(base):
                 return s
-
-    return default

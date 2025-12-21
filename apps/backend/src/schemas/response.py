@@ -12,7 +12,6 @@ from uuid import UUID
 from fastapi import status
 from pydantic import ConfigDict, Field, field_serializer
 
-from src.locales.i18n import t
 from src.schemas import BaseModel
 from src.utils.date import convert_datetime_to_gmt
 
@@ -63,9 +62,9 @@ class Response(BaseResponse, Generic[T]):
             pass
     """
 
-    code: int = Field(status.HTTP_200_OK, description=t("common.response.statusCode"))
-    message: str = Field(t("common.response.success"))
-    data: T | None = Field(None, description=t("common.response.data"))
+    code: int = Field(status.HTTP_200_OK, description="Status code.")
+    message: str = Field("Successful.")
+    data: T | None = Field(None, description="Response data.")
 
     def __init__(
         self,
@@ -101,17 +100,17 @@ class PaginatedResponse(BaseResponse, Generic[T]):
         }
     """
 
-    page: int = Field(..., description=t("common.response.pageNumber"))
-    page_size: int = Field(..., description=t("common.response.pageSize"))
-    total: int = Field(..., description=t("common.response.total"))
-    records: list[T] = Field(..., description=t("common.response.records"))
+    page: int = Field(..., description="Page number.")
+    page_size: int = Field(..., description="Number of items per page.")
+    total: int = Field(..., description="Total number of items.")
+    records: list[T] = Field(..., description="Records.")
 
 
 class BadRequestResponse(Response):
     """Unified Bad request response."""
 
     code: int = status.HTTP_400_BAD_REQUEST
-    message: str = t("common.error.badRequest")
+    message: str = "Bad Request."
     data: None = None
 
 
@@ -119,7 +118,7 @@ class AuthenticationError(Response):
     """Authentication error response."""
 
     code: int = status.HTTP_401_UNAUTHORIZED
-    message: str = t("common.error.unauthorized")
+    message: str = "Invalid credentials."
     data: None = None
 
 
@@ -127,7 +126,7 @@ class PermissionResponse(Response):
     """Unified permission response."""
 
     code: int = status.HTTP_403_FORBIDDEN
-    message: str = t("common.error.permissionDenied")
+    message: str = "Permission denied."
     data: None = None
 
 
@@ -135,7 +134,7 @@ class NotFoundResponse(Response):
     """Unified not found response."""
 
     code: int = status.HTTP_404_NOT_FOUND
-    message: str = t("common.error.notFound")
+    message: str = "Not found."
     data: None = None
 
 
@@ -143,32 +142,32 @@ class ValidationErrorResponse(Response):
     """Unified unprocessable entity response."""
 
     code: int = status.HTTP_422_UNPROCESSABLE_CONTENT
-    message: str = t("common.error.invalidParameter")
-    data: str = t("common.error.invalidParameterDetails")
+    message: str = "Validation error."
+    data: str = "Validation error details."
 
 
 class ServerErrorResponse(Response):
     """Unified server error response."""
 
     code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
-    message: str = t("common.error.internalServer")
-    data: str = t("common.error.internalServerDetails")
+    message: str = "Internal Server Error."
+    data: str = "Internal Server Error details."
 
 
 class SocketErrorResponse(Response):
     """Unified websocket server error response."""
 
     code: int = status.WS_1011_INTERNAL_ERROR
-    message: str = t("common.error.internalServer")
+    message: str = "Internal Server Error."
     event: str
-    data: str = t("common.error.internalServerDetails")
+    data: str = "Internal Server Error details."
 
 
 RESPONSES = {
-    400: {"description": t("common.error.badRequest"), "model": BadRequestResponse},
-    401: {"description": t("common.error.unauthorized"), "model": AuthenticationError},
-    403: {"description": t("common.error.permissionDenied"), "model": PermissionResponse},
-    404: {"description": t("common.error.notFound"), "model": NotFoundResponse},
-    422: {"description": t("common.error.invalidParameter"), "model": ValidationErrorResponse},
-    500: {"description": t("common.error.internalServer"), "model": ServerErrorResponse},
+    400: {"description": "Bad Request.", "model": BadRequestResponse},
+    401: {"description": "Unauthorized.", "model": AuthenticationError},
+    403: {"description": "Permission denied.", "model": PermissionResponse},
+    404: {"description": "Not found.", "model": NotFoundResponse},
+    422: {"description": "Unprocessable Entity.", "model": ValidationErrorResponse},
+    500: {"description": "Internal Server Error.", "model": ServerErrorResponse},
 }

@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from src.core.context import current_language
+from starlette_context.errors import ContextDoesNotExistError
+
+from src.core.config import settings
+from src.core.context import ctx
 from src.locales.types import I18nKey
 from src.locales.utils import load_and_flatten_locales
 
@@ -22,6 +25,29 @@ class I18n:
         locale_path = Path(__file__).parent.joinpath("langs")
         self.locales: dict[str, dict[str, str]] = load_and_flatten_locales(locale_path)
 
+    @property
+    def current_language(self) -> str:
+        """
+        Gets the current language setting from the context.
+
+        Returns:
+            The current language code as a string.
+        """
+        try:
+            return ctx.language
+        except (AttributeError, LookupError, ContextDoesNotExistError):
+            return settings.DEFAULT_LANGUAGE
+
+    @current_language.setter
+    def current_language(self, language: str) -> None:
+        """
+        Sets the current language in the context.
+
+        Args:
+            language: The language code to set as current.
+        """
+        ctx.language = language
+
     def t(self, key: I18nKey, **kwargs) -> str:
         """
         Fetches and formats a localized string based on the current language setting.
@@ -33,8 +59,7 @@ class I18n:
         Returns:
             The formatted localized string or the default value if the key is not found.
         """
-        lang = current_language.get()
-        data = self.locales.get(lang, {})
+        data = self.locales.get(self.current_language, {})
         return data.get(key, key).format(**kwargs)
 
 

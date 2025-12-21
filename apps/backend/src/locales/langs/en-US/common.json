@@ -1,5 +1,6 @@
 {
-  "error": {
+  "response": {
+    "success": "Successful.",
     "internalServer": "Http server error.",
     "internalServerDetails": "Internal Server Error details.",
     "badRequest": "Bad request.",
@@ -10,14 +11,5 @@
     "invalidParameter": "Invalid parameter.",
     "invalidParameterDetails": "Validation error details.",
     "invalidParameterMessage": "Parameter '{param}' is required and cannot be empty."
-  },
-  "response": {
-    "success": "Successful.",
-    "statusCode": "Status code.",
-    "data": "Response data.",
-    "pageNumber": "Page number.",
-    "pageSize": "Page size.",
-    "total": "Total records.",
-    "records": "Records."
   }
 }

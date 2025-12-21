@@ -7,8 +7,6 @@ Author : Coke
 Date   : 2025-03-13
 """
 
-from typing import Any
-
 from fastapi import status
 from fastapi.exceptions import HTTPException
 
@@ -22,7 +20,7 @@ class BaseHTTPException(HTTPException):
         self,
         *,
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail: Any = "Http server error.",
+        detail: str = "common.response.internalServer",
         headers: dict[str, str] | None = None,
     ):
         """
@@ -30,7 +28,7 @@ class BaseHTTPException(HTTPException):
 
         Args:
             status_code (int): The HTTP status code (default 500).
-            detail (Any): The detail message for the exception (default "http server error.").
+            detail (str): The detail message for the exception (default "http server error.").
             headers (dict[str, str] | None): Custom headers to be included in the response (optional).
         """
         super().__init__(status_code, detail, headers)
@@ -39,7 +37,12 @@ class BaseHTTPException(HTTPException):
 class BadRequestException(BaseHTTPException):
     """Exception for bad request (400 error)."""
 
-    def __init__(self, *, status_code: int = status.HTTP_400_BAD_REQUEST, detail: str = "bad request."):
+    def __init__(
+        self,
+        *,
+        status_code: int = status.HTTP_400_BAD_REQUEST,
+        detail: str = "common.response.badRequest",
+    ):
         """
         Initializes the BadRequestException.
 
@@ -53,7 +56,12 @@ class BadRequestException(BaseHTTPException):
 class UnauthorizedException(BaseHTTPException):
     """Exception for unauthorized (401 error)."""
 
-    def __init__(self, *, status_code: int = status.HTTP_401_UNAUTHORIZED, detail: str = "unauthorized."):
+    def __init__(
+        self,
+        *,
+        status_code: int = status.HTTP_401_UNAUTHORIZED,
+        detail: str = "common.response.unauthorized",
+    ):
         """
         Initializes the UnauthorizedException.
 
@@ -67,7 +75,12 @@ class UnauthorizedException(BaseHTTPException):
 class PermissionDeniedException(BaseHTTPException):
     """Exception for permission denial (403 error)."""
 
-    def __init__(self, *, status_code: int = status.HTTP_403_FORBIDDEN, detail: str = "permission denied."):
+    def __init__(
+        self,
+        *,
+        status_code: int = status.HTTP_403_FORBIDDEN,
+        detail: str = "common.response.permissionDenied",
+    ):
         """
         Initializes the PermissionDeniedException.
 
@@ -81,7 +94,12 @@ class PermissionDeniedException(BaseHTTPException):
 class NotFoundException(BaseHTTPException):
     """Exception for resource not found (404 error)."""
 
-    def __init__(self, *, status_code: int = status.HTTP_404_NOT_FOUND, detail: str = "not found."):
+    def __init__(
+        self,
+        *,
+        status_code: int = status.HTTP_404_NOT_FOUND,
+        detail: str = "common.response.notFound",
+    ):
         """
         Initializes the NotFoundException.
 
@@ -95,7 +113,12 @@ class NotFoundException(BaseHTTPException):
 class ExistsException(BaseHTTPException):
     """Exception for resource already exists (409 error)."""
 
-    def __init__(self, *, status_code: int = status.HTTP_409_CONFLICT, detail: str = "resource already exists."):
+    def __init__(
+        self,
+        *,
+        status_code: int = status.HTTP_409_CONFLICT,
+        detail: str = "common.response.resourceAlreadyExists",
+    ):
         """
         Initializes the ExistsException.
 

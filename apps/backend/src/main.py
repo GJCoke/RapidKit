@@ -9,20 +9,19 @@ Date   : 2025-03-10
 """
 
 import logging
-import time
-from typing import Awaitable, Callable
 
-from fastapi import FastAPI, Request, Response, status
-from fastapi.exceptions import RequestValidationError
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from starlette.datastructures import Address
-from starlette.exceptions import HTTPException
+from starlette_context.middleware import ContextMiddleware
 
 from src.api.v1 import v1_router
 from src.core.config import app_configs, settings
 from src.core.lifecycle import lifespan
+from src.locales.i18n import t
 from src.middlewares.i18n import I18nMiddleware
+from src.middlewares.logger import LoggerMiddleware
 from src.schemas.response import Response as SchemaResponse
 from src.schemas.response import ServerErrorResponse, ValidationErrorResponse
 from src.utils.utils import format_validation_errors
@@ -40,48 +39,11 @@ app.add_middleware(
     allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
     allow_headers=settings.CORS_HEADERS,
 )
-app.add_middleware(I18nMiddleware)  # type:ignore
+app.add_middleware(I18nMiddleware)  # type: ignore
 
+app.add_middleware(ContextMiddleware)  # type: ignore
 
-def get_client_addr(client: Address | None) -> str:
-    """
-    Get the client address.
-    Args:
-        client(Address | None): Starlette client address.
-    """
-    if not client:
-        return ""
-    return "%s:%d" % client
-
-
-@app.middleware("http")
-async def http_middleware(request: Request, callback: Callable[[Request], Awaitable[Response]]) -> Response:
-    """
-    Middleware function that measures the time taken to process a request
-    and logs the request method, URL path, response status, and duration.
-
-    Args:
-        request (Request): The incoming HTTP request.
-        callback (Callable[[Request], Awaitable[Response]]): The callback func to process the request and response.
-
-    Returns:
-        Response: The HTTP response returned to the client after processing.
-    """
-    before = time.time()
-    response = await callback(request)
-
-    duration = round((time.time() - before) * 1000)
-    logger.info(
-        '%s - "%s %s HTTP/%s" %d %dms',
-        get_client_addr(request.client),
-        request.method,
-        request.url.path,
-        request.scope.get("http_version"),
-        response.status_code,
-        duration,
-    )
-
-    return response
+app.add_middleware(LoggerMiddleware)  # type: ignore
 
 
 @app.exception_handler(Exception)
@@ -133,8 +95,8 @@ async def handle_http_exception(request: Request, exc: HTTPException) -> JSONRes
     )
 
     return JSONResponse(
-        status_code=exc.status_code,
-        content=SchemaResponse(code=exc.status_code, message=str(exc.detail)).serializable_dict(),
+        status_code=status.HTTP_200_OK,
+        content=SchemaResponse(code=exc.status_code, message=t(str(exc.detail))).serializable_dict(),  # type: ignore
     )
 
 
