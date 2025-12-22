@@ -16,6 +16,15 @@ class BaseRequest(BaseModel):
     """基础请求模型。"""
 
 
+class UserAgent(BaseModel):
+    """统一用户代理请求。"""
+
+    user_agent: str = Field(..., description="用户代理字符串。")
+    device: str = Field(..., description="设备信息字符串。")
+    os: str = Field(..., description="操作系统信息字符串。")
+    browser: str = Field(..., description="浏览器信息字符串。")
+
+
 class PaginatedRequest(BaseRequest):
     """统一分页请求。"""
 

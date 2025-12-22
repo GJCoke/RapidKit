@@ -9,9 +9,6 @@ class TypedContextProtocol(Protocol):
     """
 
     ip: str
-    country: str | None
-    region: str | None
-    city: str | None
 
     user_agent: str
     os: str | None

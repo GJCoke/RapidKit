@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * Get Public Key
-         * @description Obtain the public key for RSA encryption of password.
+         * @description 得到用于 RSA 加密密码的公开密钥。
          */
         get: operations["get_public_key_api_v1_auth_keys_public_get"];
         put?: never;
@@ -35,10 +35,9 @@ export interface paths {
         put?: never;
         /**
          * Login
-         * @description User login endpoint.
+         * @description 用户登录端点。
          *
-         *     This endpoint validates the user's credentials, decrypts the password,
-         *     checks it against the database, and returns access and refresh tokens upon success.
+         *     该端点验证用户的凭证，解密密码，需验证数据库，并在成功时返回访问令牌和刷新令牌。
          */
         post: operations["login_api_v1_auth_login_post"];
         delete?: never;
@@ -58,7 +57,7 @@ export interface paths {
         put?: never;
         /**
          * Logout
-         * @description Log out the current user.
+         * @description 登出当前用户。
          */
         post: operations["logout_api_v1_auth_logout_post"];
         delete?: never;
@@ -78,7 +77,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Token
-         * @description Refresh the user's access token using their refresh token.
+         * @description 使用刷新令牌刷新用户的访问令牌。
          */
         post: operations["refresh_token_api_v1_auth_token_refresh_post"];
         delete?: never;
@@ -96,10 +95,9 @@ export interface paths {
         };
         /**
          * Get User Info
-         * @description Retrieve the current authenticated user's information.
+         * @description 检索当前的用户信息。
          *
-         *     This endpoint returns detailed information of the user after validating the token
-         *     and fetching the full record from the database.
+         *     该端点在验证令牌和从数据库检索了完整记录后需出有详细信息。
          */
         get: operations["get_user_info_api_v1_auth_user_info_get"];
         put?: never;
@@ -119,7 +117,7 @@ export interface paths {
         };
         /**
          * Get Router
-         * @description This endpoint retrieves all routes from the database and returns them in the response.
+         * @description 该端点从数据库检索所有路由并在响应中返回。
          */
         get: operations["get_router_api_v1_router_backend_get"];
         put?: never;
@@ -139,18 +137,18 @@ export interface paths {
         };
         /**
          * Get Roles
-         * @description Get a paginated list of roles.
+         * @description 获取分页的角色列表。
          */
         get: operations["get_roles_api_v1_roles_get"];
         put?: never;
         /**
          * Create Role
-         * @description Create a new role.
+         * @description 创建一个新角色。
          */
         post: operations["create_role_api_v1_roles_post"];
         /**
          * Batch Delete Role
-         * @description Delete multiple roles by a list of IDs.
+         * @description 根据 ID 列表删除多个角色。
          */
         delete: operations["batch_delete_role_api_v1_roles_delete"];
         options?: never;
@@ -167,7 +165,7 @@ export interface paths {
         };
         /**
          * Get My Roles
-         * @description Get roles assigned to the current user.
+         * @description 获取分配给当前用户的角色。
          */
         get: operations["get_my_roles_api_v1_roles_mine_get"];
         put?: never;
@@ -187,7 +185,7 @@ export interface paths {
         };
         /**
          * Get All Roles
-         * @description Get a full list of roles without pagination.
+         * @description 获取不带分页的完整角色列表。
          */
         get: operations["get_all_roles_api_v1_roles_all_get"];
         put?: never;
@@ -208,13 +206,13 @@ export interface paths {
         get?: never;
         /**
          * Update Role
-         * @description Update a role by ID.
+         * @description 根据 ID 更新角色。
          */
         put: operations["update_role_api_v1_roles__role_id__put"];
         post?: never;
         /**
          * Delete Role
-         * @description Delete a single role by ID.
+         * @description 根据 ID 删除单个角色。
          */
         delete: operations["delete_role_api_v1_roles__role_id__delete"];
         options?: never;
@@ -228,7 +226,7 @@ export interface components {
     schemas: {
         /**
          * AuthenticationError
-         * @description Authentication error response.
+         * @description 认证错误响应。
          */
         AuthenticationError: {
             /**
@@ -238,7 +236,7 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Unauthorized.
+             * @default Invalid credentials.
              */
             message: string;
             /** Data */
@@ -246,7 +244,7 @@ export interface components {
         };
         /**
          * BadRequestResponse
-         * @description Unified Bad request response.
+         * @description 统一错误请求响应。
          */
         BadRequestResponse: {
             /**
@@ -256,7 +254,7 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Bad request.
+             * @default Bad Request.
              */
             message: string;
             /** Data */
@@ -264,7 +262,7 @@ export interface components {
         };
         /**
          * FastAPIRouterResponse
-         * @description Interface router response schema.
+         * @description 接口路由响应数据结构。
          */
         FastAPIRouterResponse: {
             /**
@@ -292,13 +290,13 @@ export interface components {
             methods: string[];
             /**
              * Code
-             * @description Role interface permission code.
+             * @description 角色接口权限编码。
              */
             readonly code: string;
         };
         /**
          * LoginRequest
-         * @description Login schemas request.
+         * @description 登录请求数据结构。
          */
         LoginRequest: {
             /** Username */
@@ -308,7 +306,7 @@ export interface components {
         };
         /**
          * NotFoundResponse
-         * @description Unified not found response.
+         * @description 统一未找到响应。
          */
         NotFoundResponse: {
             /**
@@ -328,28 +326,28 @@ export interface components {
         PaginatedResponse_RoleResponse_: {
             /**
              * Page
-             * @description Page number.
+             * @description 页码。
              */
             page: number;
             /**
              * Pagesize
-             * @description Page size.
+             * @description 每页条数。
              */
             pageSize: number;
             /**
              * Total
-             * @description Total records.
+             * @description 总条数。
              */
             total: number;
             /**
              * Records
-             * @description Records.
+             * @description 记录列表。
              */
             records: components["schemas"]["RoleResponse"][];
         };
         /**
          * PermissionResponse
-         * @description Unified permission response.
+         * @description 统一权限响应。
          */
         PermissionResponse: {
             /**
@@ -369,7 +367,7 @@ export interface components {
         Response_PaginatedResponse_RoleResponse__: {
             /**
              * Code
-             * @description Status code.
+             * @description 状态码。
              * @default 200
              */
             code: number;
@@ -378,14 +376,14 @@ export interface components {
              * @default Successful.
              */
             message: string;
-            /** @description Response data. */
+            /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_RoleResponse_"] | null;
         };
         /** Response[RoleResponse] */
         Response_RoleResponse_: {
             /**
              * Code
-             * @description Status code.
+             * @description 状态码。
              * @default 200
              */
             code: number;
@@ -394,14 +392,14 @@ export interface components {
              * @default Successful.
              */
             message: string;
-            /** @description Response data. */
+            /** @description 响应数据。 */
             data?: components["schemas"]["RoleResponse"] | null;
         };
         /** Response[TokenResponse] */
         Response_TokenResponse_: {
             /**
              * Code
-             * @description Status code.
+             * @description 状态码。
              * @default 200
              */
             code: number;
@@ -410,14 +408,14 @@ export interface components {
              * @default Successful.
              */
             message: string;
-            /** @description Response data. */
+            /** @description 响应数据。 */
             data?: components["schemas"]["TokenResponse"] | null;
         };
         /** Response[UserInfoResponse] */
         Response_UserInfoResponse_: {
             /**
              * Code
-             * @description Status code.
+             * @description 状态码。
              * @default 200
              */
             code: number;
@@ -426,14 +424,14 @@ export interface components {
              * @default Successful.
              */
             message: string;
-            /** @description Response data. */
+            /** @description 响应数据。 */
             data?: components["schemas"]["UserInfoResponse"] | null;
         };
         /** Response[bool] */
         Response_bool_: {
             /**
              * Code
-             * @description Status code.
+             * @description 状态码。
              * @default 200
              */
             code: number;
@@ -444,7 +442,7 @@ export interface components {
             message: string;
             /**
              * Data
-             * @description Response data.
+             * @description 响应数据。
              */
             data?: boolean | null;
         };
@@ -452,7 +450,7 @@ export interface components {
         Response_list_FastAPIRouterResponse__: {
             /**
              * Code
-             * @description Status code.
+             * @description 状态码。
              * @default 200
              */
             code: number;
@@ -463,7 +461,7 @@ export interface components {
             message: string;
             /**
              * Data
-             * @description Response data.
+             * @description 响应数据。
              */
             data?: components["schemas"]["FastAPIRouterResponse"][] | null;
         };
@@ -471,7 +469,7 @@ export interface components {
         Response_list_RoleResponse__: {
             /**
              * Code
-             * @description Status code.
+             * @description 状态码。
              * @default 200
              */
             code: number;
@@ -482,7 +480,7 @@ export interface components {
             message: string;
             /**
              * Data
-             * @description Response data.
+             * @description 响应数据。
              */
             data?: components["schemas"]["RoleResponse"][] | null;
         };
@@ -490,7 +488,7 @@ export interface components {
         Response_str_: {
             /**
              * Code
-             * @description Status code.
+             * @description 状态码。
              * @default 200
              */
             code: number;
@@ -501,24 +499,24 @@ export interface components {
             message: string;
             /**
              * Data
-             * @description Response data.
+             * @description 响应数据。
              */
             data?: string | null;
         };
         /**
          * RoleBatchBody
-         * @description Queries batch role schema.
+         * @description 批量角色操作数据结构。
          */
         RoleBatchBody: {
             /**
              * Ids
-             * @description list of item ids.
+             * @description 项 id 列表。
              */
             ids: string[];
         };
         /**
          * RoleCreate
-         * @description Create role schema.
+         * @description 创建角色数据结构。
          */
         RoleCreate: {
             /** Name */
@@ -550,7 +548,7 @@ export interface components {
         };
         /**
          * RoleResponse
-         * @description Role response schema.
+         * @description 角色响应数据结构。
          */
         RoleResponse: {
             /**
@@ -597,7 +595,7 @@ export interface components {
         };
         /**
          * RoleUpdate
-         * @description Update role schema.
+         * @description 更新角色数据结构。
          */
         RoleUpdate: {
             /** Name */
@@ -629,7 +627,7 @@ export interface components {
         };
         /**
          * ServerErrorResponse
-         * @description Unified server error response.
+         * @description 统一服务器错误响应。
          */
         ServerErrorResponse: {
             /**
@@ -639,7 +637,7 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Http server error.
+             * @default Internal Server Error.
              */
             message: string;
             /**
@@ -650,7 +648,7 @@ export interface components {
         };
         /**
          * TokenResponse
-         * @description Token response.
+         * @description 令牌响应。
          */
         TokenResponse: {
             /** Accesstoken */
@@ -660,7 +658,7 @@ export interface components {
         };
         /**
          * UserInfoResponse
-         * @description User info schemas response.
+         * @description 用户信息响应数据结构。
          */
         UserInfoResponse: {
             /**
@@ -700,7 +698,7 @@ export interface components {
         };
         /**
          * ValidationErrorResponse
-         * @description Unified unprocessable entity response.
+         * @description 统一参数校验失败响应。
          */
         ValidationErrorResponse: {
             /**
@@ -710,7 +708,7 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Invalid parameter.
+             * @default Validation error.
              */
             message: string;
             /**
@@ -746,7 +744,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_str_"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -782,7 +780,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -791,7 +789,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -824,7 +822,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_TokenResponse_"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -860,7 +858,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -869,7 +867,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -898,7 +896,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_bool_"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -934,7 +932,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -943,7 +941,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -974,7 +972,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_TokenResponse_"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1010,7 +1008,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1019,7 +1017,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1048,7 +1046,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_UserInfoResponse_"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1084,7 +1082,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1093,7 +1091,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1122,7 +1120,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_list_FastAPIRouterResponse__"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1158,7 +1156,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1167,7 +1165,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1181,9 +1179,9 @@ export interface operations {
     get_roles_api_v1_roles_get: {
         parameters: {
             query: {
-                /** @description current page number. */
+                /** @description 当前页码。 */
                 page: number;
-                /** @description number of items per page. */
+                /** @description 每页条数。 */
                 pageSize: number;
                 keyword?: string;
                 status?: boolean | null;
@@ -1203,7 +1201,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_PaginatedResponse_RoleResponse__"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1239,7 +1237,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1248,7 +1246,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1281,7 +1279,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_RoleResponse_"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1317,7 +1315,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1326,7 +1324,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1359,7 +1357,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_bool_"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1395,7 +1393,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1404,7 +1402,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1433,7 +1431,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_list_RoleResponse__"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1469,7 +1467,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1478,7 +1476,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1510,7 +1508,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_list_RoleResponse__"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1546,7 +1544,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1555,7 +1553,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1590,7 +1588,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_RoleResponse_"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1626,7 +1624,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1635,7 +1633,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1666,7 +1664,7 @@ export interface operations {
                     "application/json": components["schemas"]["Response_bool_"];
                 };
             };
-            /** @description Bad request. */
+            /** @description Bad Request. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1702,7 +1700,7 @@ export interface operations {
                     "application/json": components["schemas"]["NotFoundResponse"];
                 };
             };
-            /** @description Invalid parameter. */
+            /** @description Unprocessable Entity. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1711,7 +1709,7 @@ export interface operations {
                     "application/json": components["schemas"]["ValidationErrorResponse"];
                 };
             };
-            /** @description Http server error. */
+            /** @description Internal Server Error. */
             500: {
                 headers: {
                     [name: string]: unknown;

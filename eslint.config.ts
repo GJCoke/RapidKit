@@ -18,6 +18,7 @@ const ignores = [
   "*.log",
   "*.md",
   "**/.vitepress/cache/**",
+  "apps/frontend/src/router/elegant/imports.ts",
 ]
 
 /**

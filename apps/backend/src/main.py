@@ -21,6 +21,7 @@ from src.core.lifecycle import lifespan
 from src.locales.i18n import t
 from src.middlewares.i18n import I18nMiddleware
 from src.middlewares.logger import LoggerMiddleware
+from src.middlewares.state import StateMiddleware
 from src.schemas.response import Response as SchemaResponse
 from src.schemas.response import ServerErrorResponse, ValidationErrorResponse
 from src.utils.utils import format_validation_errors
@@ -38,6 +39,7 @@ app.add_middleware(
     allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
     allow_headers=settings.CORS_HEADERS,
 )
+app.add_middleware(StateMiddleware)  # type: ignore
 app.add_middleware(I18nMiddleware)  # type: ignore
 app.add_middleware(ContextMiddleware)  # type: ignore
 app.add_middleware(LoggerMiddleware)  # type: ignore

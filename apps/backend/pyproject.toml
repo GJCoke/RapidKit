@@ -41,6 +41,7 @@ dependencies = [
     "babel>=2.17.0",
     "watchfiles>=1.1.1",
     "starlette-context>=0.4.0",
+    "user-agents>=2.2.0",
 ]
 
 [dependency-groups]

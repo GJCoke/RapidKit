@@ -138,15 +138,13 @@ def resolve_language(
 ) -> str | None:
     """
     基于客户端的 accept-language 标头和服务器支持的语言
-    解决最不算特的语言。
 
     Args:
-        accept_language: 一个表示客户端优先语言的字符串，其中
-         作为 'Accept-Language' HTTP 标头指定。
+        accept_language: 一个表示客户端优先语言的字符串，其中作为 'Accept-Language' HTTP 标头指定。
         supported_languages: 一个普普通通遍历，每个数串表示了一个服务器支持的语言代码。
 
     Returns:
-        一个表示服务器支持的语言代码中最合需的一个语言
+        一个表示服务器支持的语言代码中最合适的一个语言
          代码，如果找不到匹配则返回无。
     """
 

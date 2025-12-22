@@ -35,17 +35,6 @@ line-length = 120
 target-version = "py312"
 indent-width = 4
 
-[tool.ruff.lint]
-select = [
-    "F",
-    "E",
-    "W",
-    "I001",
-]
-ignore = []
-per-file-ignores = { }
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-
 # Directories or files that do not need to be checked.
 exclude = [
     ".bzr",
@@ -75,7 +64,20 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
+    "apps/backend/src/locales/types.py",
+    "apps/backend/alembic"
 ]
+
+[tool.ruff.lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "I001",
+]
+ignore = []
+per-file-ignores = { }
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
