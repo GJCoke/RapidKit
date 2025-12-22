@@ -13,46 +13,46 @@ version = "0.1.0"
 dependencies = [
     # Server
     "fastapi>=0.115.11,<1.0",
-    "uvicorn==0.38.0",
-    "greenlet==3.2.4",
+    "uvicorn>=0.38.0,<1.0",
+    "greenlet>=3.2.4,<4.0",
     # In FastAPI, if you want to use Form or File to receive form data or file uploads, you must install the python-multipart dependency.
-    "python-multipart==0.0.20",
+    "python-multipart>=0.0.20,<0.1",
     # Encryption Algorithm
-    "authlib==1.6.5",
-    "bcrypt==5.0.0",
-    "cryptography==46.0.3",
+    "authlib>=1.6.5,<2.0",
+    "bcrypt>=5.0.0,<6.0",
+    "cryptography>=46.0.3,<47.0",
     # Python Type
-    "pydantic-settings==2.12.0",
-    "pydantic[email]==2.12.4",
-    "sqlmodel==0.0.27",
+    "pydantic-settings>=2.12.0,<3.0",
+    "pydantic[email]>=2.12.4,<3.0",
+    "sqlmodel>=0.0.27,<0.1",
     # Socket
-    "python-socketio==5.14.3",
-    "websocket-client==1.9.0",
+    "python-socketio>=5.14.3,<6.0",
+    "websocket-client>=1.9.0,<2.0",
     # Database
-    "redis==7.1.0",
+    "redis>=7.1.0,<8.0",
     # In theory, psycopg alone is sufficient to handle both synchronous and asynchronous connections.
     # However, asyncpg typically offers better performance in asynchronous scenarios.
-    "asyncpg==0.30.0",
-    "psycopg[binary,pool]==3.2.12",
-    "alembic==1.17.2",
-    "minio==7.2.18",
+    "asyncpg>=0.30.0,<1.0",
+    "psycopg[binary,pool]>=3.2.12,<4.0",
+    "alembic>=1.17.2,<2.0",
+    "minio>=7.2.18,<8.0",
     # Celery
-    "celery==5.5.3",
-    "babel>=2.17.0",
-    "watchfiles>=1.1.1",
-    "starlette-context>=0.4.0",
-    "user-agents>=2.2.0",
+    "celery>=5.5.3,<6.0",
+    "babel>=2.17.0,<3.0",
+    "watchfiles>=1.1.1,<2.0",
+    "starlette-context>=0.4.0,<1.0",
+    "user-agents>=2.2.0,<3.0",
 ]
 
 [dependency-groups]
 dev = [
-    "ruff==0.14.5",
-    "pytest==9.0.1",
-    "pytest-asyncio==1.3.0",
-    "coverage==7.12.0",
-    "aiosqlite==0.21.0",
-    "httpx==0.28.1",
-    "asgi-lifespan==2.1.0",
+    "ruff>=0.14.5,<1.0",
+    "pytest>=9.0.1,<10.0",
+    "pytest-asyncio>=1.3.0,<2.0",
+    "coverage>=7.12.0,<8.0",
+    "aiosqlite>=0.21.0,<1.0",
+    "httpx>=0.28.1,<1.0",
+    "asgi-lifespan>=2.1.0,<3.0",
     "ty>=0.0.2",
 ]
 

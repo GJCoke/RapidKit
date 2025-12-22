@@ -10,9 +10,10 @@ FastAPI 入口。
 import logging
 
 from fastapi import FastAPI, Request, status
-from fastapi.exceptions import HTTPException, RequestValidationError
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException
 from starlette_context.middleware import ContextMiddleware
 
 from src.api.v1 import v1_router
