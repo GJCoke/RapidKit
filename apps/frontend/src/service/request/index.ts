@@ -26,7 +26,8 @@ export const request = createFlatRequest(
     },
     async onRequest(config) {
       const Authorization = getAuthorization()
-      Object.assign(config.headers, { Authorization })
+      const language = localStg.get("lang") || "zh-CN"
+      Object.assign(config.headers, { Authorization, "Accept-Language": language })
 
       return config
     },

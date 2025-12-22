@@ -142,7 +142,7 @@ class Config(BaseSettings):
     LOG_LEVEL: str = "INFO"
 
     # I18n settings
-    DEFAULT_LANGUAGE: str = "en-US"
+    DEFAULT_LANGUAGE: str = "zh-CN"
 
 
 settings = Config()  # type: ignore
