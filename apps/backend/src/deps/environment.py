@@ -9,13 +9,12 @@ from src.core.exceptions import NotFoundException
 
 def check_debug() -> None:
     """
-    Checks if the current environment is in debug mode.
+    检查当前环境是否为调试模式。
 
-    This function checks the `ENVIRONMENT.is_debug` setting and raises a
-    `NotFoundException` if the environment is not in debug mode.
+    检查 ENVIRONMENT.is_debug 配置，若不是调试模式则抛出 NotFoundException。
 
     Raises:
-        NotFoundException: If the current environment is not in debug mode.
+        NotFoundException: 当前环境不是调试模式时抛出。
     """
     if not settings.ENVIRONMENT.is_debug:
         raise NotFoundException()

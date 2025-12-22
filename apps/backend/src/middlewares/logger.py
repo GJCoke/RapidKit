@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 def get_client_addr(client: Address | None) -> str:
     """
-    Get the client address.
+    获取客户端地址。
     Args:
-        client(Address | None): Starlette client address.
+        client: Starlette 客户端地址。
     """
     if not client:
         return ""
@@ -26,22 +26,22 @@ def get_client_addr(client: Address | None) -> str:
 
 
 class LoggerMiddleware(BaseHTTPMiddleware):
-    """logger middleware"""
+    """日志中间件"""
 
     async def dispatch(self, request: Request, callback: Callable[[Request], Awaitable[Response]]) -> Response:
-        """Middleware dispatch method that logs HTTP request details and response metrics.
+        """中间件分发方法，记录 HTTP 请求详情和响应指标。
 
-        This async method intercepts requests, measures execution time, and logs
-        comprehensive information about the request and response.
+        这个异步方法拦截请求，测量执行时间，并记录关于请求和响应的
+        完整信息。
 
         Args:
-            request (Request): The incoming HTTP request object containing method,
-                URL, client information, and other request metadata.
-            callback (Callable[[Request], Awaitable[Response]]): An async callable
-                that processes the request and returns a Response object.
+            request: 包含方法、URL、客户端信息和其他请求元数据的
+                传入 HTTP 请求对象。
+            callback: 处理请求并
+                返回 Response 对象的异步可调用对象。
 
         Returns:
-            Response: The HTTP response object returned by the callback function.
+            Response: 回调函数返回的 HTTP 响应对象。
         """
         before = time.time()
         response = await callback(request)

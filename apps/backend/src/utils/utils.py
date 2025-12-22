@@ -9,14 +9,13 @@ from pydantic import ValidationError
 
 def format_validation_errors(e: ValidationError | ValidationException) -> str:
     """
-    Format Pydantic or FastAPI validation errors into a human-readable string.
+    将 Pydantic 或 FastAPI 校验错误格式化为可读字符串。
 
     Args:
-        e (Union[ValidationError, ValidationException]): The exception instance containing validation errors.
+        e: 包含校验错误的异常实例。
 
     Returns:
-        str: A semicolon-separated string describing all validation errors,
-             with each error showing its location and message.
+        以分号分隔的错误描述字符串，每条包含错误位置和信息。
     """
     errors = []
     for item in e.errors():

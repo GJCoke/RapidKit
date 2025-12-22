@@ -34,14 +34,14 @@ logger = logging.getLogger(__name__)
 
 
 class AccessSecret(SecretStr):
-    """Custom secret type for Access Token."""
+    """访问令牌专用密钥类型。"""
 
     def __str__(self) -> str:
         return "AccessSecret(**********)"
 
 
 class RefreshSecret(SecretStr):
-    """Custom secret type for Refresh Token."""
+    """刷新令牌专用密钥类型。"""
 
     def __str__(self) -> str:
         return "RefreshSecret(**********)"
@@ -54,16 +54,16 @@ def create_token(
     alg: str,
 ) -> str:
     """
-    Create a JWT access token.
+    创建 JWT 访问令牌。
 
     Args:
-        user (UserAccessJWT): The user information to encode in the token.
-        expires_delta (timedelta): Token expiration duration. Defaults to configured ACCESS_TOKEN_EXP.
-        key (AccessSecret | RefreshSecret): Secret key used to sign the JWT. Defaults to ACCESS_TOKEN_KEY from settings.
-        alg (str): Secret algorithm used to sign the JWT. Defaults to 'RS256'.
+        user: 要编码到令牌中的用户信息。
+        expires_delta: 令牌过期时长。
+        key: 用于签名 JWT 的密钥。
+        alg: 签名算法。
 
     Returns:
-        str: The generated JWT as a string.
+        生成的 JWT 字符串。
     """
     header = dict(alg=alg, typ="JWT")
     payload = user.serializable_dict()
@@ -82,17 +82,17 @@ def decode_token(token: str, key: RefreshSecret) -> UserRefreshJWT: ...
 
 def decode_token(token: str, key: AccessSecret | RefreshSecret) -> UserAccessJWT | UserRefreshJWT:
     """
-    Decode and verify a JWT access token, and return the corresponding user info.
+    解码并校验 JWT 令牌，返回对应的用户信息。
 
     Args:
-        token (str): The JWT token string to decode.
-        key (AccessSecret | RefreshSecret): Secret key used to verify the token signature.
+        token: 待解码的 JWT 字符串。
+        key: 用于校验签名的密钥。
 
     Returns:
-        UserAccessJWT: The user information extracted from the token.
+        解码后的用户信息。
 
     Raises:
-        UnauthorizedException: If the token is invalid or decoding fails.
+        UnauthorizedException: 令牌无效或解码失败时抛出。
     """
     try:
         payload = jwt.decode(token, key=key.get_secret_value())
@@ -106,13 +106,13 @@ def decode_token(token: str, key: AccessSecret | RefreshSecret) -> UserAccessJWT
 
 def hash_password(password: str) -> bytes:
     """
-    Hash the given plaintext password using bcrypt.
+    使用 bcrypt 对明文密码进行哈希。
 
     Args:
-        password (str): The plaintext password to be hashed.
+        password: 明文密码。
 
     Returns:
-        bytes: The hashed password with salt applied.
+        加盐哈希后的密码。
     """
     bytes_password = bytes(password, "utf-8")
     salt = bcrypt.gensalt()
@@ -121,14 +121,14 @@ def hash_password(password: str) -> bytes:
 
 def check_password(password: str, hashed_password: bytes) -> bool:
     """
-    Verify a plaintext password against the hashed password.
+    校验明文密码与哈希密码是否匹配。
 
     Args:
-        password (str): The plaintext password to verify.
-        hashed_password (bytes): The previously hashed password.
+        password: 明文密码。
+        hashed_password: 已哈希的密码。
 
     Returns:
-        bool: True if the password matches the hash, False otherwise.
+        匹配返回 True，否则返回 False。
     """
     bytes_password = bytes(password, "utf-8")
     return bcrypt.checkpw(bytes_password, hashed_password)
@@ -136,10 +136,10 @@ def check_password(password: str, hashed_password: bytes) -> bool:
 
 def generate_rsa_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
     """
-    Generate an RSA private and public key pair.
+    生成一对 RSA 私钥和公钥。
 
     Returns:
-        tuple[RSAPrivateKey, RSAPublicKey]: A tuple containing the generated RSA private key and public key.
+        (私钥, 公钥) 元组。
     """
     private_key = generate_private_key(public_exponent=65537, key_size=2048)
     public_key = private_key.public_key()
@@ -149,13 +149,13 @@ def generate_rsa_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
 
 def serialize_key(key: RSAPrivateKey | RSAPublicKey) -> bytes:
     """
-    Serialize an RSA key (private or public) to PEM format.
+    将 RSA 密钥（私钥或公钥）序列化为 PEM 格式。
 
     Args:
-        key (RSAPrivateKey | RSAPublicKey): The RSA key to serialize.
+        key: 待序列化的 RSA 密钥。
 
     Returns:
-        bytes: The PEM-encoded bytes of the key.
+        PEM 编码的字节串。
     """
     if isinstance(key, RSAPrivateKey):
         return key.private_bytes(
@@ -172,41 +172,41 @@ def serialize_key(key: RSAPrivateKey | RSAPublicKey) -> bytes:
 
 def load_public_pem(pem: str) -> PublicKeyTypes:
     """
-    Load a public key from a PEM-encoded string.
+    从 PEM 字符串加载公钥。
 
     Args:
-        pem (str): The PEM-formatted public key string.
+        pem: PEM 格式的公钥字符串。
 
     Returns:
-        PublicKeyTypes: The loaded public key object.
+        加载后的公钥对象。
     """
     return load_pem_public_key(pem.encode("utf-8"))
 
 
 def load_private_key(pem: str, password: bytes | None = None) -> PrivateKeyTypes:
     """
-    Load an RSA private key from a PEM-formatted string.
+    从 PEM 字符串加载 RSA 私钥。
 
     Args:
-        pem (str): PEM-encoded private key string.
-        password (bytes, optional): Password if the PEM is encrypted. Defaults to None.
+        pem: PEM 编码的私钥字符串。
+        password: 若 PEM 加密则需提供密码。
 
     Returns:
-        PrivateKeyTypes: The loaded RSA private key object.
+        加载后的 RSA 私钥对象。
     """
     return load_pem_private_key(pem.encode("utf-8"), password=password)
 
 
 def encrypt_message(public_key: RSAPublicKey, message: str) -> str:
     """
-    Encrypt a message using an RSA public key.
+    使用 RSA 公钥加密消息。
 
     Args:
-        public_key (RSAPublicKey): The RSA public key used for encryption.
-        message (str): The plain text message to encrypt.
+        public_key: 用于加密的 RSA 公钥。
+        message: 明文消息。
 
     Returns:
-        str: The base64-encoded encrypted message.
+        base64 编码的加密消息。
     """
     encrypted_message = public_key.encrypt(
         message.encode("utf-8"),
@@ -218,14 +218,14 @@ def encrypt_message(public_key: RSAPublicKey, message: str) -> str:
 
 def decrypt_message(private_key: RSAPrivateKey, encrypted_message: str) -> str:
     """
-    Decrypt an encrypted message using an RSA private key.
+    使用 RSA 私钥解密消息。
 
     Args:
-        private_key (RSAPrivateKey): The RSA private key used for decryption.
-        encrypted_message (str): The base64-encoded encrypted message.
+        private_key: 用于解密的 RSA 私钥。
+        encrypted_message: base64 编码的加密消息。
 
     Returns:
-        str: The decrypted plain text message.
+        解密后的明文消息。
     """
     decrypted_message = private_key.decrypt(
         base64.b64decode(encrypted_message),

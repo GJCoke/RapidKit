@@ -28,9 +28,10 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """
-    FastAPI lifecycle.
+    FastAPI 生命周期管理。
+
     Args:
-        app: FastAPI application.
+        app: FastAPI 应用实例。
     """
 
     watch_task = None
@@ -55,13 +56,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 async def store_router_in_db(routes: list[StarletteRoute | BaseRoute]) -> None:
     """
-    Store the provided routes in the database after filtering and validating them.
+    过滤和校验后将路由信息存储到数据库。
 
-    This function processes a list of route objects, validates them, and stores them
-    in the database. Only routes that are instances of BaseRoute and are included.
+    该函数处理路由对象列表，校验并存储到数据库，仅包含 BaseRoute 类型且需要包含在 schema 中的路由。
 
     Args:
-        routes (list): A list of route objects (either StarletteRoute or BaseRoute).
+        routes: 路由对象列表（StarletteRoute 或 BaseRoute）。
     """
 
     # if not settings.ENVIRONMENT.is_deployed:
@@ -108,19 +108,17 @@ def diff_api_routes(
     app_routes: list[FastAPIRouterCreate],
 ) -> tuple[list[FastAPIRouterCreate], list[UUID], list[dict[str, Any]]]:
     """
-    Compare two API route lists and return three lists: added routes, removed route IDs, and modified routes.
+    对比数据库和应用中的 API 路由，返回新增、删除和修改的路由列表。
 
     Args:
-        db_routes (list[InterfaceRouter]): A list of routes stored in the database.
-        app_routes (list[InterfaceRouter]): A list of routes in the current application.
+        db_routes: 数据库中存储的路由列表。
+        app_routes: 当前应用中的路由列表。
 
     Returns:
-        tuple: A tuple containing three elements:
-            - added_routes (list[InterfaceRouter]): Routes present in the application but not in the database.
-            - removed_routes (list[UUID]): Route IDs present in the database but not in the application.
-            - modified_routes (list[dict[str, Any]]): Routes that exist in both the database and application
-               but have differences.
-               Each dictionary contains the modified attributes (e.g., methods, description, name) and the route's ID.
+        tuple: 包含三个元素的元组：
+            - added_routes: 应用中有但数据库中没有的路由。
+            - removed_routes: 数据库中有但应用中没有的路由 ID。
+            - modified_routes: 数据库和应用中都存在但有差异的路由（包含变更字段及路由 ID）。
     """
     old_router = {item.path: item for item in db_routes}
     new_router = {item.path: item for item in app_routes}

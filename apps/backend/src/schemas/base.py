@@ -1,7 +1,7 @@
 """
-Base model schemas.
+基础模型数据结构。
 
-This module defines the base model schemas used in the application.
+本模块定义了应用中使用的基础模型数据结构。
 
 Author : Coke
 Date   : 2025-03-24
@@ -14,7 +14,7 @@ from pydantic.main import IncEx
 
 
 class BaseModel(_BaseModel):
-    """Base schemas."""
+    """基础数据结构。"""
 
     model_config = ConfigDict(
         alias_generator=AliasGenerator(alias=to_camel),  # Use camel case for field names and aliases.
@@ -31,12 +31,11 @@ class BaseModel(_BaseModel):
         exclude_none: bool = False,
     ) -> dict:
         """
-        Convert the object into a JSON-serializable format and use aliases.
+        将对象转换为可 JSON 序列化的字典，并使用别名。
 
-        This method ensures that the model can be easily converted to a dictionary
-        that is compatible with JSON serialization, using field aliases if specified.
+        该方法确保模型可方便地转换为兼容 JSON 的字典格式，支持字段别名。
 
-        Examples:
+        示例：
             class MyModel(BaseModel):
                 page_size: int
 
@@ -45,25 +44,15 @@ class BaseModel(_BaseModel):
             >> {"pageSize": 1}
 
         Args:
-            include (IncEx | None): Whitelist of fields to include in the output.
-                Can be a set of field names, dictionary of {field: True}, or None to include all.
-
-            exclude (IncEx | None): Blacklist of fields to exclude from the output.
-                Same format as `include`. Takes precedence over `include`.
-
-            by_alias (bool): If True, uses field aliases in the output dictionary.
-                If False, uses the original field names.
-
-            exclude_unset (bool): If True, excludes fields that weren't explicitly set,
-                including fields with default values that weren't modified.
-
-            exclude_defaults (bool): If True, excludes fields that are equal to their
-                default values (even if they were explicitly set).
-
-            exclude_none (bool): If True, excludes fields that have None values.
+            include: 输出包含的字段白名单。
+            exclude: 输出排除的字段黑名单，优先生效。
+            by_alias: 是否使用字段别名。
+            exclude_unset: 是否排除未显式设置的字段。
+            exclude_defaults: 是否排除等于默认值的字段。
+            exclude_none: 是否排除值为 None 的字段。
 
         Returns:
-            dict: A JSON-serializable dictionary representation of the model.
+            dict: 可 JSON 序列化的模型字典。
         """
 
         return self.model_dump(

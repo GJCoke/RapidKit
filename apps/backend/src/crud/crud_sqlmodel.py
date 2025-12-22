@@ -30,19 +30,19 @@ _PydanticBaseModel = TypeVar("_PydanticBaseModel", bound=PydanticBaseModel)
 
 class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
     """
-    Base class for SQL CRUD operations using SQLAlchemy.
+    基于 SQLAlchemy 的 SQLModel 通用 CRUD 操作基类。
 
-    This class provides generic CRUD operations for SQLModel models.
+    提供 SQLModel 模型的通用增删改查操作。
     """
 
     def __init__(self, model: type[SQLModel], *, session: AsyncSession | None = None, auto_commit: bool = True) -> None:
         """
-        Initialize the BaseSQLModelCRUD with a SQLModel.
+        初始化 BaseSQLModelCRUD。
 
         Args:
-            model (type[SQLModel]): The SQLModel class for the CRUD operations.
-            session (AsyncSession | None): The SQLAlchemy session used for the CRUD operations.
-            auto_commit (bool): Whether to automatically commit the changes.
+            model: CRUD 操作对应的 SQLModel 类。
+            session: 用于 CRUD 操作的 SQLAlchemy 会话。
+            auto_commit: 是否自动提交更改。
         """
 
         self._model = model
@@ -52,10 +52,10 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
     @property
     def model(self) -> type[SQLModel]:
         """
-        Get the current model class.
+        获取当前 CRUD 操作的模型类。
 
         Returns:
-            type[SQLModel]: The model class being used in the CRUD operations.
+            type[SQLModel]: 当前使用的模型类。
         """
 
         return self._model
@@ -63,13 +63,13 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
     @property
     def session(self) -> AsyncSession:
         """
-        Get Global session.
+        获取全局会话。
 
         Returns:
-            AsyncSession: SQLAlchemy async session.
+            AsyncSession: SQLAlchemy 异步会话。
 
         Raises:
-            RuntimeError: If the session is not initialized.
+            RuntimeError: 会话未初始化时抛出。
         """
         if self._session is None:
             raise RuntimeError("Session is not initialized.")
@@ -77,12 +77,10 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
 
     async def commit(self, auto_commit: bool = True) -> None:
         """
-        Commit the current transaction to the database.
+        提交当前事务。
 
         Args:
-            auto_commit (bool): If True, automatically commit the transaction.
-                If False, you need to commit manually after calling this method.
-                Defaults to True.
+            auto_commit: 是否自动提交事务，默认 True。
         """
         auto_commit = auto_commit or self.auto_commit
         if auto_commit:
@@ -125,20 +123,19 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         nullable: bool = True,
         session: AsyncSession | None = None,
     ) -> SQLModel | None:
-        """Retrieve a single record from the database by its primary key.
+        """
+        根据主键查询单条记录。
 
         Args:
-            _id (UUID): The primary key of the record to be retrieved.
-            nullable (bool): If True, allows returning None when the record is not found.
-                             If False, raises an exception when the record is not found.
-                             Default is True.
-            session (AsyncSession): SQLAlchemy async session.
+            _id: 要查询的主键。
+            nullable: True 时未找到返回 None，False 时未找到抛出异常。
+            session: SQLAlchemy 异步会话。
 
         Returns:
-            SQLModel: The retrieved record as an instance of the model if found, otherwise None.
+            SQLModel: 查询到的模型实例，未找到时返回 None。
 
         Raises:
-            NotFoundException: If nullable is False and the record is not found in the database.
+            NotFoundException: nullable 为 False 且未找到时抛出。
         """
         session = session or self.session
         statement = select(self.model).filter(col(self.model.id) == _id)
@@ -179,17 +176,16 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         serializer: type[_PydanticBaseModel] | None = None,
     ) -> list[SQLModel] | list[_PydanticBaseModel]:
         """
-        Retrieve multiple records from the database by a list of primary keys.
+        根据主键列表批量查询记录。
 
         Args:
-            ids (list[UUID]): List of primary keys to retrieve.
-            order_by (ColumnElement[Any] | None): Optional column element to order the results.
-            session (AsyncSession | None): SQLAlchemy async session.
-            serializer (type[_PydanticBaseModel]): Optional Pydantic model class used to
-             serialize ORM records into validated output.
+            ids: 要查询的主键列表。
+            order_by: 可选排序字段。
+            session: SQLAlchemy 异步会话。
+            serializer: 可选的 Pydantic 模型类用于序列化。
 
         Returns:
-            list[SQLModel]: A list of retrieved records, or an empty list if none are found.
+            list[SQLModel]: 查询到的记录列表，未找到返回空列表。
         """
         if not ids:
             raise InvalidParameterError(param="ids")
@@ -231,17 +227,16 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         serializer: type[_PydanticBaseModel] | None = None,
     ) -> list[SQLModel] | list[_PydanticBaseModel]:
         """
-        Retrieve all records from the database, with optional filters.
+        查询所有记录，可选过滤条件。
 
         Args:
-            args (list[ColumnElement[Any]]): Optional list of filters to apply to the query.
-            order_by (ColumnElement[Any] | None): Optional column element to order the results.
-            session (AsyncSession): SQLAlchemy async session.
-            serializer (type[_PydanticBaseModel]): Optional Pydantic model class used to
-             serialize ORM records into validated output.
+            args: 可选的过滤条件。
+            order_by: 可选排序字段。
+            session: SQLAlchemy 异步会话。
+            serializer: 可选的 Pydantic 模型类用于序列化。
 
         Returns:
-            list[SQLModel]: A list of all records matching the filters.
+            list[SQLModel]: 匹配条件的所有记录。
 
         Examples:
             from sqlmodel import col
@@ -264,14 +259,14 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         session: AsyncSession | None = None,
     ) -> int:
         """
-        Retrieve the count of records in the database, with optional filters.
+        查询记录数量，可选过滤条件。
 
         Args:
-            args (list[ColumnExpressionArgument[bool]]): Optional list of filters to apply to the query.
-            session (AsyncSession | None): SQLAlchemy async session.
+            args: 可选的过滤条件。
+            session: SQLAlchemy 异步会话。
 
         Returns:
-            int: The total number of records matching the filters.
+            int: 匹配条件的记录总数。
         """
         session = session or self.session
         statement = select(func.count()).select_from(self.model).filter(*args)
@@ -311,19 +306,18 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         serializer: type[_PydanticBaseModel] | None = None,
     ) -> PaginatedResponse[SQLModel] | PaginatedResponse[_PydanticBaseModel]:
         """
-        Retrieve a paginated list of records from the database with optional filters and ordering.
+        分页查询记录，可选过滤和排序。
 
         Args:
-            args (list[ColumnExpressionArgument[bool]]): Optional list of filters to apply to the query.
-            page (int): The page number to retrieve.
-            size (int): The number of records per page.
-            order_by (ColumnElement[Any] | None): Optional column element to order the results.
-            session (AsyncSession | None): SQLAlchemy async session.
-            serializer (type[_PydanticBaseModel]): Optional Pydantic model class used to
-             serialize ORM records into validated output.
+            args: 可选的过滤条件。
+            page: 页码。
+            size: 每页数量。
+            order_by: 可选排序字段。
+            session: SQLAlchemy 异步会话。
+            serializer: 可选的 Pydantic 模型类用于序列化。
 
         Returns:
-            PaginatedResponse[SQLModel]: A paginated response containing the records and metadata.
+            PaginatedResponse[SQLModel]: 包含记录和元数据的分页响应。
         """
         session = session or self.session
         statement = select(self.model).filter(*args).offset((page - 1) * size).limit(size)
@@ -354,21 +348,20 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         auto_commit: bool = False,
     ) -> SQLModel:
         """
-        Create a new record in the database.
+        创建新记录。
 
         Args:
-            create_in (UpdateSchemaType | SQLModel | dict[str, Any]): Data to create the new record.
-                Can be a Pydantic schema, SQLModel instance, or raw dictionary.
-            validate (bool): Whether to validate input data before creation. Defaults to True.
-            session (AsyncSession | None): SQLAlchemy async session for database operations.
-            auto_commit(bool): Whether to automatically commit the changes. Defaults to False.
+            create_in: 新建数据，可为 schema、模型或字典。
+            validate: 是否在创建前校验数据，默认 True。
+            session: SQLAlchemy 异步会话。
+            auto_commit: 是否自动提交更改，默认 False。
 
         Returns:
-            SQLModel: The newly created model instance.
+            SQLModel: 新创建的模型实例。
 
         Raises:
-            ExistsException: If a record with conflicting unique constraints already exists.
-            TypeError: If validation fails and validate=True.
+            ExistsException: 存在唯一约束冲突时抛出。
+            TypeError: 校验失败且 validate=True 时抛出。
         """
         session = session or self.session
         if not validate:
@@ -399,23 +392,15 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         auto_commit: bool = False,
     ) -> None:
         """
-        Asynchronously create multiple records in the database.
-
-        This method accepts a list of data (either as Pydantic schemas or SQLModel instances) and creates
-        corresponding records in the database. The records will be validated using the model's schema
-        before being added to the session.
+        批量创建记录。
 
         Args:
-            creates_in (Sequence[CreateSchema | SQLModel | dict]): A list of data used to create the new records.
-                Each item can be a Pydantic schema or an SQLModel instance, and it will be validated
-                before insertion.
-            session (AsyncSession | None): An optional SQLAlchemy `AsyncSession` instance used to
-                manage database transactions. If not provided, the method will use the default session.
-            auto_commit(bool): Whether to automatically commit the changes. Defaults to False.
+            creates_in: 用于创建新记录的数据列表。
+            session: 可选 SQLAlchemy 异步会话。
+            auto_commit: 是否自动提交更改，默认 False。
 
         Raises:
-            ExistsException: If a record with conflicting unique constraints (e.g., duplicate entries)
-                already exists in the database, the operation will raise an `ExistsException`.
+            ExistsException: 存在唯一约束冲突时抛出。
         """
         if not creates_in:
             raise InvalidParameterError(param="creates_in")
@@ -441,21 +426,19 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         auto_commit: bool = False,
     ) -> SQLModel:
         """
-        Update an existing model instance with new data.
+        更新指定模型实例。
 
         Args:
-            current_model (SQLModel): The existing model instance to update.
-            update_in (UpdateSchemaType | SQLModel | dict[str, Any]): Update data. Can be schema, model, or dict.
-                Only set fields will be updated.
-            session (AsyncSession | None): SQLAlchemy async session.
-            auto_commit(bool): Whether to automatically commit the changes. Defaults to False.
+            current_model: 需要更新的模型实例。
+            update_in: 更新数据，可为 schema、模型或字典，仅更新已设置的字段。
+            session: SQLAlchemy 异步会话。
+            auto_commit: 是否自动提交更改，默认 False。
 
         Returns:
-            SQLModel: The updated model instance.
+            SQLModel: 更新后的模型实例。
 
         Note:
-            Uses partial update - only fields explicitly set in update_in will be modified.
-            None values will be treated as explicit updates unless filtered upstream.
+            仅更新 update_in 中显式设置的字段。
         """
         session = session or self.session
         if not isinstance(update_in, dict):
@@ -477,19 +460,19 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         auto_commit: bool = False,
     ) -> SQLModel:
         """
-        Update a record by its primary key.
+        根据主键更新记录。
 
         Args:
-            _id (UUID): Primary key of the record to update.
-            update_in (UpdateSchema | dict[str, Any]): Update data.
-            session (AsyncSession | None): SQLAlchemy async session.
-            auto_commit(bool): Whether to automatically commit the changes. Defaults to False.
+            _id: 要更新的主键。
+            update_in: 更新数据。
+            session: SQLAlchemy 异步会话。
+            auto_commit: 是否自动提交更改，默认 False。
 
         Returns:
-            SQLModel: The updated model instance.
+            SQLModel: 更新后的模型实例。
 
         Raises:
-            NotFoundException: If no record exists with the specified ID.
+            NotFoundException: 未找到指定 ID 的记录时抛出。
         """
         session = session or self.session
         response = await self.get(_id, nullable=False, session=session)
@@ -503,16 +486,16 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         auto_commit: bool = False,
     ) -> None:
         """
-        Update a record by its primary key.
+        批量根据主键更新记录。
 
         Args:
-            updates_in (list[dict[str, Any]]): Update data.
-            session (AsyncSession | None): SQLAlchemy async session.
-            auto_commit(bool): Whether to automatically commit the changes. Defaults to False.
+            updates_in: 更新数据列表。
+            session: SQLAlchemy 异步会话。
+            auto_commit: 是否自动提交更改，默认 False。
 
         Raises:
-            InvalidParameterError: If any item is missing an 'id'.
-            NotFoundException: If no record exists with the specified ID.
+            InvalidParameterError: 缺少 id 字段时抛出。
+            NotFoundException: 未找到指定 ID 的记录时抛出。
         """
         if not updates_in:
             raise InvalidParameterError(param="updates_in")
@@ -537,18 +520,18 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
 
     async def delete(self, _id: UUID, /, *, session: AsyncSession | None = None, auto_commit: bool = False) -> SQLModel:
         """
-        Delete a record from the database by its primary key.
+        根据主键删除记录。
 
         Args:
-            _id (UUID): The primary key of the record to delete.
-            session (AsyncSession | None): SQLAlchemy session.
-            auto_commit(bool): Whether to automatically commit the changes. Defaults to False.
+            _id: 要删除的主键。
+            session: SQLAlchemy 会话。
+            auto_commit: 是否自动提交更改，默认 False。
 
         Returns:
-            SQLModel: The deleted record.
+            SQLModel: 被删除的记录。
 
         Raises:
-            NotFoundException: If the record with the specified primary key does not exist.
+            NotFoundException: 未找到指定主键的记录时抛出。
         """
         session = session or self.session
         response = await self.get(_id, nullable=False, session=session)
@@ -565,14 +548,12 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         auto_commit: bool = True,
     ) -> None:
         """
-        Asynchronously delete multiple records from the database by their primary keys.
-
-        This method will delete all records in the database that match the provided list of primary keys (`ids`).
+        批量根据主键删除记录。
 
         Args:
-            ids (list[UUID]): A list of primary keys (UUIDs) of the records to delete.
-            session (AsyncSession | None): An optional SQLAlchemy `AsyncSession`
-            auto_commit(bool): Whether to automatically commit the changes. Defaults to False.
+            ids: 要删除的主键列表。
+            session: 可选 SQLAlchemy 异步会话。
+            auto_commit: 是否自动提交更改，默认 True。
         """
         if not ids:
             raise InvalidParameterError(param="ids")

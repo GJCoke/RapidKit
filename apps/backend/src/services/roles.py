@@ -11,14 +11,14 @@ from src.models import Role
 
 def filter_role(status: bool | None, keyword: str) -> list[ColumnElement[bool]]:
     """
-    Generate SQLAlchemy filter conditions for querying roles.
+    生成用于查询角色的 SQLAlchemy 过滤条件。
 
     Args:
-        status (bool | None): Role status to filter by. If None, this filter is ignored.
-        keyword (str): Keyword to search in role name or code.
+        status: 角色状态过滤条件，为 None 时忽略。
+        keyword: 用于角色名称或编码的模糊搜索关键字。
 
     Returns:
-        list[ColumnElement[bool]]: A list of SQLAlchemy filter expressions.
+        SQLAlchemy 过滤表达式列表。
     """
     filter = []
 

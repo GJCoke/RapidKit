@@ -19,20 +19,44 @@ online_users_structure = "online_users"
 
 
 class RedisUser(BaseModel):
+    """
+    Redis 用户模型。
+    """
+
     id: str
     name: str
 
 
 class User(BaseModel):
+    """
+    用户模型。
+    """
+
     name: str
 
 
 class AccessToken(BaseModel):
+    """
+    访问令牌模型。
+    """
+
     access_token: str
 
 
 @socket.event
 async def connect(sid: SID, auth: AccessToken, db_user: AuthCrudDep, redis: RedisDep) -> Literal[False] | None:
+    """
+    处理 websocket 连接事件。
+
+    Args:
+        sid: 会话ID。
+        auth: 访问令牌对象。
+        db_user: 用户数据库依赖。
+        redis: Redis 依赖。
+
+    Returns:
+        None 或 False，表示连接是否成功。
+    """
     token = auth.access_token
     if not token:
         return False
@@ -59,6 +83,13 @@ async def connect(sid: SID, auth: AccessToken, db_user: AuthCrudDep, redis: Redi
 
 @socket.event
 async def disconnect(sid: SID, redis: RedisDep) -> None:
+    """
+    处理 websocket 断开连接事件。
+
+    Args:
+        sid: 会话ID。
+        redis: Redis 依赖。
+    """
     user = await redis.get_mapping(sid_user_structure.format(sid=sid))
     user_info = RedisUser.model_validate(user)
     await redis.delete(sid_user_structure.format(sid=sid))

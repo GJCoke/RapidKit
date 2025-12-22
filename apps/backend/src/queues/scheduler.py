@@ -25,11 +25,11 @@ logger = get_logger("celery.queues.scheduler")
 
 
 class ScheduleEntry(_ScheduleEntry):
-    """Custom Scheduler."""
+    """自定义调度条目。"""
 
 
 class Scheduler(_Scheduler):
-    """Custom Scheduler."""
+    """自定义调度器。"""
 
     Entry = ScheduleEntry
     _store: dict[str, ScheduleEntry] = {}
@@ -67,14 +67,12 @@ class Scheduler(_Scheduler):
 
     def _database_schedule(self) -> dict[str, ScheduleEntry]:
         """
-        Retrieves and merges Celery beat schedule from the database and configuration.
+        获取并合并数据库与配置中的 Celery beat 调度任务。
 
-        If the database schedule is an asynchronous coroutine, it is awaited
-        appropriately. The resulting schedule is merged with the statically configured
-        beat_schedule from the application config, where config tasks override database tasks.
+        若数据库调度为异步协程，则自动等待。合并结果以配置中的 beat_schedule 为主，配置任务会覆盖数据库任务。
 
         Returns:
-            dict[str, ScheduleEntry]: A merged dictionary of scheduled tasks.
+            合并后的调度任务字典
         """
         celery_beat = self.get_database_schedule()
 
@@ -86,26 +84,36 @@ class Scheduler(_Scheduler):
         return celery_beat
 
     def setup_schedule(self) -> None:
-        """Merges database tasks and config tasks, then installs default entries."""
+        """
+        合并数据库与配置任务，并安装默认调度条目。
+        """
         schedule = self._database_schedule()
         self.merge_inplace(schedule)
         self.install_default_entries(self._store)
 
     def get_schedule(self) -> dict[str, ScheduleEntry]:
-        """Get schedule info."""
+        """
+        获取调度信息。
+        """
         return self._store
 
     def set_schedule(self, schedule: dict[str, ScheduleEntry]) -> None:
-        """Set schedule info."""
+        """
+        设置调度信息。
+        """
         self._store = schedule
 
     def sync(self) -> None:
-        """Synchronizes the in-memory schedule data to database."""
+        """
+        同步内存中的调度数据到数据库。
+        """
         # TODO: add sync database.
         super().sync()
 
     def close(self) -> None:
-        """Closes the scheduler and clears the stored tasks."""
+        """
+        关闭调度器并清空已存储任务。
+        """
         super().close()
         self._store.clear()
 
@@ -113,17 +121,14 @@ class Scheduler(_Scheduler):
 
     def tick(self, *args: Any, **kwargs: Any) -> None:
         """
-        Called on each scheduler heartbeat to refresh periodic tasks periodically.
+        每次心跳时调用，用于定期刷新周期性任务。
 
-        If the current time exceeds the last update time by more than
-        `refresh_interval` seconds, reloads and merges the latest schedule
-        from the database and config to keep tasks up-to-date.
-
-        Then calls the parent class's tick method to continue normal scheduling.
+        若当前时间距离上次更新时间超过 refresh_interval 秒，则重新加载并合并数据库与配置中的调度任务。
+        然后调用父类 tick 方法继续调度。
 
         Args:
-            *args (Any): Positional arguments passed to the parent tick method.
-            **kwargs (Any): Keyword arguments passed to the parent tick method.
+            *args: 传递给父类 tick 的位置参数。
+            **kwargs: 传递给父类 tick 的关键字参数。
         """
 
         now = datetime.now(UTC)
@@ -136,9 +141,12 @@ class Scheduler(_Scheduler):
 
 
 class AsyncDatabaseScheduler(Scheduler):
-    """Async Database Scheduler."""
+    """异步数据库调度器。"""
 
     def __init__(self, app: Celery, **kwargs: Any) -> None:
+        """
+        初始化异步数据库调度器。
+        """
         database_url = app.conf.get("database_url")
         if database_url is None:
             raise ValueError("Database URL must be configured.")
@@ -148,10 +156,10 @@ class AsyncDatabaseScheduler(Scheduler):
 
     async def get_database_schedule(self) -> dict[str, ScheduleEntry]:
         """
-        Fetches enabled periodic tasks from the database and returns them as a dictionary.
+        从数据库中获取已启用的周期性任务，并以字典形式返回。
 
         Returns:
-            dict[str, ScheduleEntry]
+            周期性任务调度字典
         """
         async with self.AsyncSessionLocal() as session:
             _tasks = await session.exec(select(PeriodicTask).filter(col(PeriodicTask.enabled).is_(True)))

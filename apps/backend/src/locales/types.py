@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-languages = {"zh-CN", "en-US"}
+languages = {"en-US", "zh-CN"}
 
 I18nKey = Literal[
     "auth.error.invalidCredentials",

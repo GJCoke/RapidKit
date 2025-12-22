@@ -20,10 +20,9 @@ WEEKDAYS = 7 * DAYS
 
 class Celery(_Celery):
     """
-    Custom Celery.
+    自定义 Celery。
 
-    This code simply improves IDE type hints for Celery and adds support for async def functions
-    by converting asynchronous functions into synchronous execution using asyncio.
+    该类增强了 Celery 的 IDE 类型提示，并通过 asyncio 支持 async def 异步函数。
     """
 
     def task(
@@ -33,12 +32,11 @@ class Celery(_Celery):
             str | None,
             Doc(
                 """
-                Every task must have a unique name.
+                每个任务必须有唯一名称。
 
-                If no explicit name is provided the task decorator will generate one for you, and this
-                name will be based on 1) the module the task is defined in, and 2) the name of the task function.
+                如果未显式指定名称，装饰器会自动生成，基于模块名和函数名。
 
-                Examples:
+                示例：
                     @app.task(name='sum-of-two-numbers')
                     def add(x, y):
                         return x + y
@@ -51,16 +49,13 @@ class Celery(_Celery):
             type[Task],
             Doc(
                 """
-                The base parameter is used to specify the base class for the task. By default,
-                the base class for Celery tasks is celery.Task.
-                By specifying base, you can define a custom base class for the task in order to implement special
-                behaviors or modify the default behavior of the task.
+                base 参数用于指定任务的基类，默认 celery.Task。
+                可自定义基类以实现特殊行为或修改默认行为。
 
-                Examples:
+                示例：
                     import celery
 
                     class MyTask(celery.Task):
-
                         def on_failure(self, exc, task_id, args, kwargs, einfo):
                             print('{0!r} failed: {1!r}'.format(task_id, exc))
 
@@ -74,17 +69,12 @@ class Celery(_Celery):
             bool,
             Doc(
                 """
-                `bind=True` makes the task a "bound task,"
-                meaning the `run` method of the task will receive an additional self parameter,
-                where `self` represents the current task instance. Through this instance,
-                you can access various information about the task (such as task ID, retry mechanisms, etc.)
-                and call methods of the task instance (like `self.retry()`).
+                bind=True 表示任务为绑定任务，run 方法会多一个 self 参数，代表当前任务实例。
+                可通过 self 访问任务信息（如 task_id、重试等）及调用实例方法（如 self.retry()）。
 
-                `bind=False` (the default value) means the task is not bound to the current task instance,
-                and the `run` method will only receive the task's arguments,
-                without access to the instance's properties and methods.
+                bind=False（默认）时，run 只接收任务参数，无法访问实例属性和方法。
 
-                Examples:
+                示例：
                     @app.task(bind=True)
                     def add(self: Task, x, y):
                         try:
@@ -98,23 +88,12 @@ class Celery(_Celery):
             bool,
             Doc(
                 """
-                `acks_late=True`: This means that the acknowledgment will be sent after the task has been
-                successfully completed.  In other words, Celery will not acknowledge the task as completed until
-                the run method of the task finishes without errors.
+                acks_late=True：任务执行成功后才发送确认，确保 worker 崩溃时任务不会丢失，会被重新分发。
+                acks_late=False（默认）：worker 接收到任务即确认，worker 执行中崩溃可能导致任务丢失。
 
-                Use case: This is particularly useful if you want to ensure that tasks are not lost in case
-                of worker crashes during task execution.  If the worker crashes before the task finishes,
-                the task will be re-queued and retried by another worker.
+                适用于需要保证任务不丢失的场景。
 
-                `acks_late=False` (default behavior): This means that the acknowledgment is sent as soon as
-                the task is received by the worker, even before the task is actually executed.
-                This could lead to tasks being lost if the worker crashes during execution,
-                because Celery considers the task as successfully completed the moment it starts processing.
-
-                Use case: This is useful in scenarios where you want tasks to be acknowledged
-                immediately to avoid task retries, assuming the tasks are idempotent (safe to execute multiple times).
-
-                Examples:
+                示例：
                     @app.task(acks_late=True)
                     def add(data):
                         if data == "error":
@@ -127,15 +106,11 @@ class Celery(_Celery):
             int,
             Doc(
                 """
-                `max_retries`: Defines how many times a task should be retried after failure.
-                Once this limit is reached, the task will be marked as failed and no further retries will be attempted.
+                max_retries：任务失败后最大重试次数，达到上限后任务标记为失败。
+                默认值为 3。
+                可全局或单独设置。
 
-                The default value of `max_retries` is 3.
-
-                You can override the `max_retries` setting either globally (in Celery's configuration) or
-                on a per-task basis (in the task definition).
-
-                Examples:
+                示例：
                     @app.task(bind=True, max_retries=3)
                     def add(data):
                         try:
@@ -151,14 +126,10 @@ class Celery(_Celery):
             int,
             Doc(
                 """
-                default_retry_delay: It specifies the default time (in seconds) to wait before
-                retrying a task that failed, if no specific retry delay (countdown) is provided.
+                default_retry_delay：任务失败重试的默认等待时间（秒），默认 300 秒（5 分钟）。
+                可全局或单独设置。
 
-                The default value of default_retry_delay is 300 seconds (5 minutes).
-
-                This value can be overridden on a per-task basis or globally in the Celery configuration.
-
-                Examples:
+                示例：
                     @app.task(bind=True, max_retries=3, default_retry_delay=300)
                     def add(data):
                         try:
@@ -174,27 +145,14 @@ class Celery(_Celery):
             int | float | str | None,
             Doc(
                 """
-                Set the rate limit for this task type (limits the number of tasks that can be run
-                in a given time frame).  Tasks will still complete when a rate limit is in effect,
-                but it may take some time before it’s allowed to start.
+                rate_limit：设置任务类型的速率限制（单位时间内可执行的任务数）。
+                None 表示不限制，数字为每秒任务数。
+                可用“/s”、“/m”、“/h”指定单位。
 
-                If this is None no rate limit is in effect.  If it is an integer or float,
-                it is interpreted as “tasks per second”.
+                示例：“100/m”表示每分钟最多 100 个任务。
+                该限制为每个 worker 实例独立生效。
 
-                The rate limits can be specified in seconds, minutes or hours by appending
-                “/s”, “/m” or “/h” to the value.  Tasks will be evenly distributed over the specified time frame.
-
-                Example: “100/m” (hundred tasks a minute).
-                This will enforce a minimum delay of 600ms between starting two tasks on the same worker instance.
-
-                Default is the task_default_rate_limit setting:
-                if not specified means rate limiting for tasks is disabled by default.
-
-                Note that this is a per worker instance rate limit, and not a global rate limit.
-                To enforce a global rate limit (e.g., for an API with a maximum number of requests per second),
-                you must restrict to a given queue.
-
-                Examples:
+                示例：
                     @app.task(rate_limit="100/m")
                     def add():
                         return "Fetched data"
@@ -205,16 +163,11 @@ class Celery(_Celery):
             int | None,
             Doc(
                 """
-                time_limit: Defines the maximum execution time for a task.
-                If the task takes longer than the specified time limit, it will be terminated.
+                time_limit：任务最大执行时长（秒），超时将被强制终止。
+                未设置时使用 worker 默认值。
+                可全局或单独设置。
 
-                The value of time_limit is provided in seconds.
-
-                Default behavior: When not set the workers default is used.
-
-                You can set time_limit both globally (in Celery's configuration) or on a per-task basis.
-
-                Examples:
+                示例：
                     @app.task(time_limit=10)
                     def process_data(data):
                         print(f"Processing {data}")
@@ -228,18 +181,11 @@ class Celery(_Celery):
             int | None,
             Doc(
                 """
-                soft_time_limit: Defines the time (in seconds) that a task is allowed to run before
-                Celery sends a soft timeout signal (a SoftTimeLimitExceeded exception).
+                soft_time_limit：任务允许运行的软超时时间（秒），超时会抛出 SoftTimeLimitExceeded 异常。
+                可用于优雅处理（如清理、日志等）。
+                若超时后未终止，time_limit 会强制终止。
 
-                Graceful Handling: When the soft time limit is exceeded,
-                Celery raises a SoftTimeLimitExceeded exception inside the task,
-                giving the task a chance to handle the situation (e.g., by performing cleanup or logging).
-
-                time_limit: Works in tandem with soft_time_limit.
-                If the task does not stop after the soft_time_limit,
-                the hard time limit (time_limit) will forcibly terminate the task.
-
-                Examples:
+                示例：
                     @app.task(time_limit=15, soft_time_limit=10)
                     def process_data(data):
                         try:
@@ -257,23 +203,11 @@ class Celery(_Celery):
             int,
             Doc(
                 """
-                priority: This is an integer value that determines the priority of a task.
-                The lower the value, the higher the priority.
+                priority：任务优先级，数值越小优先级越高。
+                默认 0。
+                RabbitMQ 支持原生优先级，Redis 通过顺序模拟。
 
-                A lower number means higher priority.
-
-                A higher number means lower priority.
-
-                Default Value: If you do not specify a priority,
-                the task will be assigned the default priority, which is typically 0 (neutral priority).
-
-                Priority and Queues: Celery uses brokers (like RabbitMQ or Redis),
-                and they support task prioritization. However, the ability to prioritize tasks depends
-                on the message broker being used. For example, RabbitMQ supports priorities natively,
-                but Redis does not directly support prioritizing tasks. For Redis,
-                priority will be simulated through task ordering.
-
-                Examples:
+                示例：
                     @app.task(priority=0)
                     def process_data(data):
                         print(f"Processing data: {data}")
@@ -285,19 +219,13 @@ class Celery(_Celery):
             bool,
             Doc(
                 """
-                ignore_result=True: When this option is set to True,
-                Celery will not store the result of the task. The result will not be sent to the backend,
-                so calling task.result or trying to retrieve the result later will not work.
+                ignore_result=True：不存储任务结果，无法通过 task.result 或 AsyncResult.get() 获取结果。
+                ignore_result=False（默认）：结果会存储到后端，可随时获取。
 
-                ignore_result=False (default): Celery will store the task result in the result backend.
-                You can retrieve the result of the task using task.result or AsyncResult.get().
-
-                Examples:
+                示例：
                     @app.task(ignore_result=True)
                     def send_email(recipient, subject, body):
-                        # Simulate sending an email
                         print(f"Sending email to {recipient} with subject '{subject}'")
-                        # No result is needed, so we ignore it
                         return "Email sent"
                 """
             ),
@@ -306,13 +234,10 @@ class Celery(_Celery):
             bool,
             Doc(
                 """
-                store_errors_even_if_ignored=True: When this option is set to True,
-                Celery will store any exceptions (errors) raised during the execution of the task,
-                even if the task is configured to ignore its result.
-                This can be useful for logging errors or tracking task failures,
-                even when you don't care about the results themselves.
+                store_errors_even_if_ignored=True：即使 ignore_result=True 也会存储任务异常。
+                便于日志记录或追踪失败。
 
-                Examples:
+                示例：
                     @app.task(ignore_result=True, store_errors_even_if_ignored=True)
                     def process_data(data):
                         if data == "bad":
@@ -326,9 +251,7 @@ class Celery(_Celery):
             tuple[type[Exception]],
             Doc(
                 """
-                autoretry_for: This option is used to define a list of exceptions that,
-                when raised during the execution of the task, will trigger an automatic retry.
-                The task will attempt to execute again without you needing to manually invoke the retry logic.
+                autoretry_for：指定哪些异常会自动触发任务重试，无需手动调用 retry。
                 """
             ),
         ] = (),  # type: ignore
@@ -336,8 +259,7 @@ class Celery(_Celery):
             bool,
             Doc(
                 """
-                retry_backoff=True: This enables exponential backoff,
-                meaning that after each failure, the retry delay will increase exponentially.
+                retry_backoff=True：启用指数退避，重试间隔会指数增长。
                 """
             ),
         ] = False,
@@ -345,8 +267,7 @@ class Celery(_Celery):
             int,
             Doc(
                 """
-                retry_backoff_max: This is an optional setting that defines the maximum retry delay.
-                Even with exponential backoff, the retry delay will not exceed this value.
+                retry_backoff_max：最大重试间隔，指数退避时不会超过该值。
                 """
             ),
         ] = 600,
@@ -354,18 +275,11 @@ class Celery(_Celery):
             str | None,
             Doc(
                 """
-                Queue: A logical container where tasks are placed to be picked up by workers.
-                In Celery, queues are implemented using the message broker (such as RabbitMQ or Redis).
+                queue：任务队列名，决定任务被哪个 worker 消费。
+                可用于负载均衡、优先级、任务隔离等。
+                支持多队列，worker 可订阅多个队列。
 
-                Task Routing: The queue option helps route specific tasks to different queues,
-                so workers can process them independently, allowing you to manage load balancing,
-                prioritization, and task segregation.
-
-                Multiple Queues: In a Celery setup, you can have multiple queues,
-                and workers can subscribe to one or more of them. This allows for better organization,
-                especially when you have different types of tasks that require different resources or processing times.
-
-                Examples:
+                示例：
                     @app.task(queue='high_priority')
                     def high_priority_task():
                         print("Processing high-priority task")
@@ -380,11 +294,8 @@ class Celery(_Celery):
             bool,
             Doc(
                 """
-                If True the task will report its status as “started” when the task is executed by a worker.
-                The default value is False as the normal behavior is to not report that level of granularity.
-                Tasks are either pending, finished, or waiting to be retried.
-                Having a “started” status can be useful for when there are long running tasks and
-                there’s a need to report what task is currently running.
+                track_started=True：任务被 worker 执行时会上报“started”状态。
+                适用于长时间运行的任务，便于追踪当前正在运行的任务。
                 """
             ),
         ] = False,
@@ -392,7 +303,7 @@ class Celery(_Celery):
             dict[str, Any],
             Doc(
                 """
-                Celery kwargs.
+                Celery 关键字参数。
                 """
             ),
         ],

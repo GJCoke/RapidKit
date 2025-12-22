@@ -38,7 +38,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"], route_class=BaseRoute)
 
 @router.get("/keys/public")
 async def get_public_key() -> Response[str]:
-    """Obtain the public key for RSA encryption of password."""
+    """得到用于 RSA 加密密码的公开密钥。"""
 
     return Response(data=auth_settings.RSA_PUBLIC_KEY.get_secret_value())
 
@@ -52,20 +52,19 @@ async def login(
     user_agent: HeaderUserAgentDep,
 ) -> Response[TokenResponse]:
     """
-    User login endpoint.
+    用户登录端点。
 
-    This endpoint validates the user's credentials, decrypts the password,
-    checks it against the database, and returns access and refresh tokens upon success.\f
+    该端点验证用户的凭证，解密密码，需验证数据库，并在成功时返回访问令牌和刷新令牌。\f
 
     Args:
-        body (LoginRequest): The login request payload containing username and encrypted password.
-        auth (AuthCrudDep): Dependency-injected authentication CRUD logic.
-        role (RoleCrudDep): Dependency-injected permission CRUD logic.
-        redis (RedisDep): Redis client dependency.
-        user_agent (HeaderUserAgentDep): User-Agent request object.
+        body: 登录请求轻载，一含用户名和加密密码。
+        auth: 依赖注入的认证 CRUD 逻辑。
+        role: 依赖注入的权限 CRUD 逻辑。
+        redis: Redis 客户端依赖。
+        user_agent: User-Agent 请求对象。
 
     Returns:
-        Response[TokenResponse]: A standardized response containing access and refresh tokens.
+        一个标准化响应，不含访问令牌和刷新令牌。
     """
     token = await user_login(
         body.username,
@@ -81,14 +80,14 @@ async def login(
 @router.post("/logout")
 async def logout(auth: UserAccessJWTDep, redis: RedisDep) -> Response[bool]:
     """
-    Log out the current user.\f
+    登出当前用户。\f
 
     Args:
-        auth (UserAccessJWTDep): The access token containing the user's identity and metadata.
-        redis (RedisDep): Redis client dependency for interacting with the Redis database.
+        auth: 下需验证的访问令牌，包含用户的身份和元数据。
+        redis: Redis 客户端依赖，用于与 Redis 数据库交互。
 
     Returns:
-        Response[bool]: A response indicating whether the logout process was successful.
+        一个响应，指示登出是否成功。
     """
     token = refresh_structure.format(user_id=auth.user_id, jti=auth.jti)
     if await redis.exists(token):
@@ -110,21 +109,21 @@ async def refresh_token(
     user_agent: HeaderUserAgentDep,
 ) -> Response[TokenResponse]:
     """
-    Refresh the user's access token using their refresh token.\f
+    使用刷新令牌刷新用户的访问令牌。\f
 
     Args:
-        jwt_user (UserRefreshJWTDep): Refresh token user info.
-        user (UserRefreshDep): The decoded user data retrieved using the refresh token.
-        role (RoleCrudDep): Dependency-injected permission CRUD logic.
-        redis (RedisDep): Redis client dependency for interacting with the Redis database.
-        user_agent (HeaderUserAgentDep): The user-agent header from the request, used to validate the request.
+        jwt_user: 刷新令牌用户信息。
+        user: 使用刷新令牌检索的解码用户数据。
+        role: 依赖注入的权限 CRUD 逻辑。
+        redis: Redis 客户端依赖，用于与 Redis 数据库交互。
+        user_agent: 请求中的 user-agent 标头，用于验证请求。
 
     Returns:
-        Response[TokenResponse]: A response containing the new access and refresh tokens for the user.
+        一个响应，不含新的访问令牌和刷新令牌。
 
     Raises:
-        PermissionDeniedException: If the refresh token is invalid.
-        BadRequestException: If the user-agent does not match.
+        PermissionDeniedException: 刷新令牌无效时。
+        BadRequestException: 当 user-agent 不匹配時。
     """
     token = await refresh_user_token(jwt_user.jti, user, role, redis, user_agent)
     return Response(data=token)
@@ -133,17 +132,17 @@ async def refresh_token(
 @router.post("/login/swagger", include_in_schema=False, dependencies=[Depends(check_debug)])
 async def login_swagger(form: OAuth2Form, auth: AuthCrudDep) -> OAuth2TokenResponse:
     """
-    Authenticate the user through Swagger login and generate an access token.
+    通过 Swagger 登录验证用户并生成访问令牌。
 
-    This endpoint is intended for development or testing environments
-    and is hidden from the public API documentation.\f
+    该端点采用于开发或测试环境
+    且決不会出现在公共 API 文档中。\f
 
     Args:
-        form (OAuth2Form): The login form containing username and password.
-        auth (AuthCrudDep): Dependency that provides access to the authentication CRUD logic.
+        form: 登录表单，不含用户名和密码。
+        auth: 依赖，为身份验证 CRUD 逻辑提供访问。
 
     Returns:
-        OAuth2TokenResponse: The generated access token and token type.
+        已生成的访问令牌和令牌类型。
     """
     user_info = await auth.get_user_by_username(form.username)
     token = create_access_token(
@@ -161,15 +160,14 @@ async def login_swagger(form: OAuth2Form, auth: AuthCrudDep) -> OAuth2TokenRespo
 @router.get("/user/info")
 async def get_user_info(user: UserDBDep) -> Response[UserInfoResponse]:
     """
-    Retrieve the current authenticated user's information.
+    检索当前的用户信息。
 
-    This endpoint returns detailed information of the user after validating the token
-    and fetching the full record from the database.\f
+    该端点在验证令牌和从数据库检索了完整记录后需出有详细信息。\f
 
     Args:
-        user (UserDBDep): Dependency that resolves the current user from the database.
+        user: 依赖，从数据库解析当前用户。
 
     Returns:
-        Response[UserInfoResponse]: A standardized response containing user details.
+        一个标准化响应，不含用户详情。
     """
     return Response(data=UserInfoResponse.model_validate(user))

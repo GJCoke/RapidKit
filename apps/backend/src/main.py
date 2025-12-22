@@ -1,11 +1,10 @@
 """
-FastAPI entry point.
+FastAPI 入口。
 
-This is the main entry point for the FastAPI application. It sets up the middleware,
-routes, and exception handling for the application.
+这是 FastAPI 应用的主入口，负责设置中间件、路由和异常处理。
 
-Author : Coke
-Date   : 2025-03-10
+作者 : Coke
+日期 : 2025-03-10
 """
 
 import logging
@@ -40,15 +39,15 @@ app.add_middleware(
     allow_headers=settings.CORS_HEADERS,
 )
 app.add_middleware(I18nMiddleware)  # type: ignore
-
 app.add_middleware(ContextMiddleware)  # type: ignore
-
 app.add_middleware(LoggerMiddleware)  # type: ignore
 
 
 @app.exception_handler(Exception)
 async def handle_server_errors(request: Request, exc: Exception) -> JSONResponse:
-    """Capture all non-deliberate exceptions and respond with a 500 status code."""
+    """
+    捕获所有非预期异常并返回 500 状态码。
+    """
 
     logger.error(
         '"%s %s" %d ServerException: %s',
@@ -66,7 +65,9 @@ async def handle_server_errors(request: Request, exc: Exception) -> JSONResponse
 
 @app.exception_handler(RequestValidationError)
 async def handle_request_validation_errors(request: Request, exc: RequestValidationError) -> JSONResponse:
-    """Capture parameter exception errors and process their structure."""
+    """
+    捕获参数校验异常并处理其结构。
+    """
 
     details = format_validation_errors(exc)
     logger.warning(
@@ -84,7 +85,9 @@ async def handle_request_validation_errors(request: Request, exc: RequestValidat
 
 @app.exception_handler(HTTPException)
 async def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
-    """Custom handler for HTTP exceptions."""
+    """
+    HTTP 异常自定义处理。
+    """
 
     logger.error(
         '"%s %s" %d HTTPException: %s',

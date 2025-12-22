@@ -1,26 +1,15 @@
 """
-Auth schemas.
+认证相关数据结构。
 
-Why do we separate the request model, response model,
- and database model in our design? Can’t we just use a single model for all purposes?
+为什么要将请求模型、响应模型和数据库模型分离？不能只用一个模型吗？
 
- - It allows each model to focus on its specific task, making the code easier to maintain.
-
- - Request and response models leverage Pydantic for data validation, ensuring the data meets the expected structure.
-
- - Separating request and response models helps to avoid returning sensitive database fields (e.g., password fields),
-  enhancing security.
-
- - You can independently extend or modify each layer without affecting others, such as modifying the database model
-  fields while leaving the request and response models unchanged.
-
- - Having request and response models as distinct layers ensures that all inputs and outputs adhere to
-  the defined structure, preventing confusion.
-
- - The independence of each model makes unit testing easier, as each model has clear responsibilities and functions.
-
- - The layered design allows for easy replacement, modification, or extension of any layer when needed,
-  without affecting others.
+- 每个模型专注于各自的职责，代码更易维护。
+- 请求和响应模型利用 Pydantic 进行数据校验，确保数据结构符合预期。
+- 分离请求和响应模型可避免返回敏感数据库字段（如密码），提升安全性。
+- 各层可独立扩展或修改，如修改数据库模型字段不会影响请求/响应模型。
+- 明确的输入输出结构防止混淆。
+- 各模型职责清晰，便于单元测试。
+- 分层设计便于替换、扩展或修改任意一层而不影响其他层。
 
 Author : Coke
 Date   : 2025-03-13
@@ -35,7 +24,7 @@ from src.schemas import BaseModel, BaseRequest, BaseResponse, ResponseSchema
 
 
 class UserAccessJWT(BaseRequest):
-    """The user information embedded in a JWT access token."""
+    """JWT 访问令牌中包含的用户信息。"""
 
     user_id: UUID = Field(..., alias="sub")
     name: str
@@ -43,26 +32,26 @@ class UserAccessJWT(BaseRequest):
 
 
 class UserRefreshJWT(UserAccessJWT):
-    """The user information embedded in a JWT refresh token."""
+    """JWT 刷新令牌中包含的用户信息。"""
 
     agent: str
 
 
 class LoginRequest(BaseRequest):
-    """Login schemas request."""
+    """登录请求数据结构。"""
 
     username: str
     password: str
 
 
 class RefreshTokenRequest(BaseRequest):
-    """The refresh token schemas request."""
+    """刷新令牌请求数据结构。"""
 
     refresh_token: str
 
 
 class UserSchema(BaseModel):
-    """User schema."""
+    """用户数据结构。"""
 
     name: str
     email: EmailStr
@@ -72,29 +61,29 @@ class UserSchema(BaseModel):
 
 
 class UserInfoResponse(UserSchema, ResponseSchema):
-    """User info schemas response."""
+    """用户信息响应数据结构。"""
 
 
 class UserCreate(UserSchema, BaseRequest):
-    """Create user schemas request."""
+    """创建用户请求数据结构。"""
 
     is_admin: bool = False
     password: str
 
 
 class UserUpdate(UserSchema, BaseRequest):
-    """Update user schemas request."""
+    """更新用户请求数据结构。"""
 
 
 class OAuth2TokenResponse(PydanticBaseModel):
-    """OAuth2 token response."""
+    """OAuth2 令牌响应。"""
 
     access_token: str
     token_type: str
 
 
 class TokenResponse(BaseResponse):
-    """Token response."""
+    """令牌响应。"""
 
     access_token: str
     refresh_token: str

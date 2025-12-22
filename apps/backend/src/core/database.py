@@ -40,13 +40,13 @@ SyncSessionLocal = sessionmaker(sync_engine, class_=Session, expire_on_commit=Fa
 
 async def get_async_session() -> AsyncIterator[AsyncSession]:
     """
-    Provides an asynchronous database session.
+    提供异步数据库会话。
 
-    This function yields a SQLAlchemy AsyncSession object using an async context manager.
-    Typically used as a dependency in FastAPI routes with asynchronous handlers.
+    本函数通过异步上下文管理器 yield 一个 SQLAlchemy AsyncSession 对象。
+    通常用于 FastAPI 路由的异步依赖。
 
     Yields:
-        AsyncSession: An asynchronous SQLAlchemy session instance.
+        异步 SQLAlchemy 会话实例。
     """
     async with AsyncSessionLocal() as session:
         yield session
@@ -54,13 +54,13 @@ async def get_async_session() -> AsyncIterator[AsyncSession]:
 
 def get_sync_session() -> Iterator[Session]:
     """
-    Provides a synchronous database session.
+    提供同步数据库会话。
 
-    This function yields a SQLAlchemy Session object using a standard context manager.
-    Suitable for synchronous interfaces or tasks that require database access.
+    本函数通过标准上下文管理器 yield 一个 SQLAlchemy Session 对象。
+    适用于需要数据库访问的同步接口或任务。
 
     Yields:
-        Session: A synchronous SQLAlchemy session instance.
+        同步 SQLAlchemy 会话实例。
     """
     with SyncSessionLocal() as session:
         yield session
@@ -68,20 +68,19 @@ def get_sync_session() -> Iterator[Session]:
 
 class BaseManager(ABC):
     """
-    Abstract base class for resource managers.
+    资源管理器抽象基类。
 
-    Defines a common interface for connecting to, disconnecting from,
-    and accessing resource clients (e.g., database, Redis).
-    Subclasses must implement the actual logic.
+    定义了连接、断开和访问资源客户端（如数据库、Redis）的通用接口，
+    子类需实现具体逻辑。
     """
 
     @classmethod
     @abstractmethod
     def connect(cls) -> Any:
         """
-        Establish a connection to the resource.
+        建立资源连接。
 
-        Should be implemented by subclasses to handle specific connection logic.
+        子类需实现具体连接逻辑。
         """
         ...
 
@@ -89,9 +88,9 @@ class BaseManager(ABC):
     @abstractmethod
     def disconnect(cls) -> Any:
         """
-        Disconnect from the resource.
+        断开资源连接。
 
-        Should be implemented by subclasses to cleanly close the connection and release any associated resources.
+        子类需实现具体断开和资源释放逻辑。
         """
         ...
 
@@ -99,20 +98,19 @@ class BaseManager(ABC):
     @abstractmethod
     def client(cls) -> Any:
         """
-        Return the connected client instance.
+        返回已连接的客户端实例。
 
-        Should be implemented by subclasses to provide the connected client for further operations.
+        子类需实现，返回可用于后续操作的客户端。
         """
         ...
 
 
 class RedisManager(BaseManager):
     """
-    A class to manage Redis connection pool and client.
+    Redis 连接池和客户端管理类。
 
-    This class is responsible for initializing and managing a Redis connection pool,
-    providing a Redis client, and ensuring only one instance of the connection pool
-    and client is used throughout the application.
+    负责初始化和管理 Redis 连接池，提供 Redis 客户端，
+    并保证全局唯一。
     """
 
     _pools: dict[str, ConnectionPool] = {}
@@ -123,13 +121,13 @@ class RedisManager(BaseManager):
         cls, *, redis_url: str | None = None, pool_name: str = "default", max_connections: int | None = None
     ) -> ConnectionPool:
         """
-        Initializes the Redis connection pool if it has not been initialized yet.
+        初始化 Redis 连接池（如未初始化）。
 
         Returns:
-            ConnectionPool: The initialized Redis connection pool.
+            已初始化的 Redis 连接池。
 
         Raises:
-            RuntimeError: If Redis connection fails.
+            RuntimeError: Redis 连接失败时抛出。
         """
         redis_url = redis_url or REDIS_URL
         max_connections = max_connections or settings.REDIS_MAX_CONNECTIONS
@@ -143,7 +141,9 @@ class RedisManager(BaseManager):
 
     @classmethod
     async def disconnect(cls, pool_name: str = "default") -> None:
-        """Closes the Redis connection pool and client."""
+        """
+        关闭 Redis 连接池和客户端。
+        """
         if pool_name in cls._pools:
             await cls._pools[pool_name].disconnect()
             logger.info(f'Redis connection pool for "{pool_name}" disconnect completed.')
@@ -152,7 +152,9 @@ class RedisManager(BaseManager):
 
     @classmethod
     async def clear(cls) -> None:
-        """Clears the Redis connection pool and client."""
+        """
+        清理所有 Redis 连接池和客户端。
+        """
         if cls._clients:
             await asyncio.gather(*(pool.disconnect() for pool in cls._pools.values()))
             cls._pools.clear()
@@ -161,16 +163,13 @@ class RedisManager(BaseManager):
     @classmethod
     def client(cls, pool_name: str = "default") -> Redis:
         """
-        Returns the initialized Redis client.
-
-        This method retrieves the Redis client if it has been initialized. Raises an
-        exception if the client has not been set up yet.
+        返回已初始化的 Redis 客户端。
 
         Returns:
-            Redis: The initialized Redis client.
+            已初始化的 Redis 客户端。
 
         Raises:
-            RuntimeError: If the Redis client is not initialized.
+            RuntimeError: 客户端未初始化时抛出。
         """
         if pool_name not in cls._clients:
             raise RuntimeError(f'Redis client for pool "{pool_name}" not initialized.')

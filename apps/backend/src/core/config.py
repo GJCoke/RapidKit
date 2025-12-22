@@ -25,18 +25,18 @@ from src.utils.security import AccessSecret, RefreshSecret, generate_rsa_key_pai
 
 
 class ConfigError(Exception):
-    """Config error."""
+    """配置错误。"""
 
 
 class BaseSettings(_BaseSettings):
-    """Pydantic BaseSettings class."""
+    """Pydantic 的 BaseSettings 基类。"""
 
     # Pydantic model config for reading from an .env file
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 
 class Config(BaseSettings):
-    """Project configuration settings loaded from environment variables."""
+    """从环境变量加载的项目配置设置。"""
 
     # PostgreSQL configuration settings
     POSTGRESQL_ASYNC_SCHEME: str
@@ -49,7 +49,7 @@ class Config(BaseSettings):
 
     @property
     def ASYNC_DATABASE_POSTGRESQL_URL(self) -> PostgresDsn:
-        """Generate and return the postgresql connection URL."""
+        """生成并返回 PostgreSQL 连接 URL。"""
         return PostgresDsn.build(
             scheme=self.POSTGRESQL_ASYNC_SCHEME,
             username=self.POSTGRESQL_USERNAME,
@@ -61,7 +61,7 @@ class Config(BaseSettings):
 
     @property
     def SYNC_DATABASE_POSTGRESQL_URL(self) -> PostgresDsn:
-        """Generate and return the postgresql connection URL."""
+        """生成并返回 PostgreSQL 连接 URL。"""
         return PostgresDsn.build(
             scheme=self.POSTGRESQL_SYNC_SCHEME,
             username=self.POSTGRESQL_USERNAME,
@@ -82,7 +82,7 @@ class Config(BaseSettings):
 
     @property
     def REDIS_URL(self) -> RedisDsn:
-        """Generate and return the Redis connection URL."""
+        """生成并返回 Redis 连接 URL。"""
         return RedisDsn.build(
             scheme=self.REDIS_SCHEME,
             username=self.REDIS_ROOT_USERNAME,
@@ -97,7 +97,7 @@ class Config(BaseSettings):
 
     @property
     def CELERY_REDIS_URL(self) -> RedisDsn:
-        """Generate and return the Celery Redis connection URL."""
+        """生成并返回 Celery Redis 连接 URL。"""
 
         return RedisDsn.build(
             scheme=self.REDIS_SCHEME,
@@ -119,7 +119,7 @@ class Config(BaseSettings):
     @field_validator("ENVIRONMENT")
     @classmethod
     def environment_validator(cls, environment: Environment) -> Environment:
-        """Local environment warn."""
+        """本地环境警告：在本地环境运行时发出警告。"""
         if environment.value == Environment.LOCAL:
             warnings.warn(
                 "The application is currently running in the local environment. "
@@ -149,7 +149,7 @@ settings = Config()  # type: ignore
 
 
 class AuthConfig(BaseSettings):
-    """Auth configuration."""
+    """认证配置。"""
 
     JWT_ALG: str = "HS256"
 
@@ -167,16 +167,15 @@ class AuthConfig(BaseSettings):
     @classmethod
     def set_token_expires(cls, expires: str) -> timedelta:
         """
-        Convert token expiration configuration to timedelta.
+        将令牌过期配置转换为 timedelta。
 
-        This validator supports values defined as either timedelta objects
-        or string/integer seconds (e.g., from environment variables).
+        该校验器支持以 timedelta 对象或字符串/整数秒数形式配置的值（例如来自环境变量）。
 
         Args:
-            expires (str | int | timedelta): The configured expiration time.
+            expires: 配置的过期时间。
 
         Returns:
-            timedelta: A valid timedelta representing the expiration duration.
+            有效的 timedelta，表示过期持续时间。
         """
 
         if isinstance(expires, timedelta):
@@ -189,12 +188,12 @@ class AuthConfig(BaseSettings):
     @classmethod
     def ensure_keys_config(cls, auth: dict) -> dict:
         """
-        Ensures that the ACCESS_TOKEN_KEY and REFRESH_TOKEN_KEY are configured in the environment.
-        If the keys are missing, this function will raise an error in a deployed environment
-        or generate new ones if not deployed.
+        确保环境中已配置 ACCESS_TOKEN_KEY 和 REFRESH_TOKEN_KEY。
+
+        如果缺少密钥，在已部署环境中会引发错误；在非部署环境中会动态生成新的密钥。
 
         Raises:
-            ValueError: If the keys are missing and the application is deployed.
+            ValueError: 如果在部署环境中缺少密钥。
         """
         message = """
             Please configure `{field}` in your `.env` file.
@@ -228,22 +227,20 @@ class AuthConfig(BaseSettings):
     @classmethod
     def ensure_key_exists(cls, auth: dict, key: str, message: str) -> None:
         """
-        Ensures that a specified key exists in the given dictionary `auth`.
-        If the key does not exist, it generates a new value using `secrets.token_urlsafe(32)`
-        unless the environment is deployed, in which case a ValueError is raised.
+        确保指定的键存在于 `auth` 字典中。
+
+        如果键不存在，则使用 `secrets.token_urlsafe(32)` 生成新值；在已部署环境中则抛出错误。
 
         Args:
-            auth (dict): The dictionary where the key is checked and potentially added.
-            key (str): The key to check for in the `auth` dictionary.
-            message (str): The error message format used when raising a ValueError if the key is missing
-                           and the environment is deployed.
+            auth: 要检查并可能添加键的字典。
+            key: 要检查的键名称。
+            message: 当键缺失且为已部署环境时用于抛出错误的消息模板。
 
         Raises:
-            ValueError: If the key is missing in the `auth` dictionary and the environment is deployed.
+            ValueError: 如果在已部署环境中缺少该键。
 
         Returns:
-            None: This method does not return anything; it either adds the key to the `auth` dictionary
-                  or raises a ValueError.
+            无。该方法不返回值；要么将键添加到 `auth`，要么抛出错误。
         """
         if not auth.get(key):
             if settings.ENVIRONMENT.is_deployed:
@@ -253,21 +250,19 @@ class AuthConfig(BaseSettings):
     @classmethod
     def load_rsa_key(cls, key: str) -> str:
         """
-        Loads the RSA key from a file if the provided `key` is a file path.
-        If the `key` is not a file path, it returns the `key` as is.
+        如果提供的 `key` 是文件路径，则从文件加载 RSA 密钥；否则直接返回该 `key`。
 
-        The function checks if the `key` contains a directory separator (e.g., `/` or `\\`),
-        and if so, it attempts to read the contents of the file at the given path.
-        If the file does not exist, a ValueError is raised.
+        本函数检查 `key` 是否包含目录分隔符（例如 `/` 或 `\\`），
+        若包含则尝试读取文件内容；文件不存在时抛出错误。
 
         Args:
-            key (str): The RSA private or public key, either as a file path or as a raw string.
+            key: RSA 私钥或公钥，可为文件路径或原始字符串。
 
         Raises:
-            ValueError: If the file path does not exist when `key` contains directory separators.
+            ValueError: 当 `key` 包含目录分隔符但路径不存在时。
 
         Returns:
-            str: The RSA key, either the contents of the file or the raw `key` as provided.
+            RSA 密钥字符串（文件内容或原始提供的 `key`）。
         """
         if re.search(r"[\\/]", key):
             if not os.path.exists(key):

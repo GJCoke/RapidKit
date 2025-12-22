@@ -10,7 +10,7 @@ from src.schemas.request import BatchRequest, PaginatedRequest
 
 
 class RoleSchema(BaseModel):
-    """Role Schema."""
+    """角色数据结构。"""
 
     name: str
     description: str
@@ -22,33 +22,33 @@ class RoleSchema(BaseModel):
 
 
 class RoleResponse(RoleSchema, ResponseSchema):
-    """Role response schema."""
+    """角色响应数据结构。"""
 
     id: UUID
 
 
 class RoleCreate(RoleSchema, BaseRequest):
-    """Create role schema."""
+    """创建角色数据结构。"""
 
 
 class RoleUpdate(RoleSchema, BaseRequest):
-    """Update role schema."""
+    """更新角色数据结构。"""
 
 
 class RoleQueriesSchema(BaseModel):
-    """Queries role schema."""
+    """角色查询数据结构。"""
 
     keyword: str = ""
     status: bool | None = None
 
 
 class RolePageQuery(RoleQueriesSchema, PaginatedRequest):
-    """Queries page role schema."""
+    """分页角色查询数据结构。"""
 
 
 class RoleAllQuery(RoleQueriesSchema):
-    """Queries all role schema."""
+    """全部角色查询数据结构。"""
 
 
 class RoleBatchBody(BatchRequest):
-    """Queries batch role schema."""
+    """批量角色操作数据结构。"""

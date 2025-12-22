@@ -16,10 +16,10 @@ from src.utils.uuid7 import uuid7
 
 class SQLModel(_SQLModel):
     """
-    Base SQLModel class that combines Pydantic and SQLAlchemy functionality.
+    结合 Pydantic 与 SQLAlchemy 功能的基础 SQLModel 类。
 
-    Inherits from both BaseModel (custom Pydantic model) and SQLModel (SQLAlchemy model).
-    Provides common fields and serialization for database models.
+    继承自 BaseModel（自定义 Pydantic 模型）和 SQLModel（SQLAlchemy 模型），
+    提供数据库模型的通用字段和序列化能力。
     """
 
     id: UUID = Field(
@@ -27,11 +27,11 @@ class SQLModel(_SQLModel):
         primary_key=True,
         index=True,
         nullable=False,
-        description="Unique ID",
+        description="唯一ID",
     )
-    create_time: datetime = Field(default_factory=datetime.now, description="Creation time")
+    create_time: datetime = Field(default_factory=datetime.now, description="创建时间")
     update_time: datetime = Field(
         default_factory=datetime.now,
         sa_column_kwargs={"onupdate": datetime.now},
-        description="Update time",
+        description="更新时间",
     )

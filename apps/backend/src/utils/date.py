@@ -9,13 +9,13 @@ from zoneinfo import ZoneInfo
 
 def convert_datetime_to_gmt(dt: datetime) -> str:
     """
-    Convert datetime object to GMT timezone string representation.
+    将 datetime 对象转换为 GMT 时区字符串。
 
     Args:
-        dt: datetime object to convert (naive or aware)
+        dt: 要转换的 datetime 对象（可为 naive 或 aware）。
 
     Returns:
-        String formatted as '%Y-%m-%d %H:%M:%S' in GMT timezone
+        GMT 时区格式的字符串 '%Y-%m-%d %H:%M:%S'
     """
     if not dt.tzinfo:
         dt = dt.replace(tzinfo=ZoneInfo("UTC"))
@@ -23,5 +23,7 @@ def convert_datetime_to_gmt(dt: datetime) -> str:
 
 
 def get_current_utc_time() -> datetime:
-    """Get current UTC time."""
+    """
+    获取当前 UTC 时间。
+    """
     return datetime.now(UTC)

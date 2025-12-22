@@ -11,7 +11,7 @@ from src.schemas import BaseModel, BaseRequest, ResponseSchema
 
 
 class InterfaceRouterSchema(BaseModel):
-    """Interface Router Schema."""
+    """接口路由数据结构。"""
 
     name: str
     description: str
@@ -20,19 +20,21 @@ class InterfaceRouterSchema(BaseModel):
 
 
 class FastAPIRouterResponse(InterfaceRouterSchema, ResponseSchema):
-    """Interface router response schema."""
+    """接口路由响应数据结构。"""
 
     @computed_field
     def code(self) -> str:
-        """Role interface permission code."""
+        """
+        角色接口权限编码。
+        """
         return f"{':'.join(self.methods)}:{self.path}"
 
 
 class FastAPIRouterCreate(InterfaceRouterSchema, BaseRequest):
-    """Create interface router schema."""
+    """创建接口路由数据结构。"""
 
 
 class FastAPIRouterUpdate(InterfaceRouterSchema, BaseRequest):
-    """Update interface router schema."""
+    """更新接口路由数据结构。"""
 
     id: UUID

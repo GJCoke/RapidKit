@@ -23,8 +23,8 @@ SessionDep = Annotated[
     Depends(get_async_session),
     Doc(
         """
-        This dependency is used to provide an instance of `AsyncSession` for database operations.
-        The session is obtained from the `get_async_session`, which manages the lifecycle of the database session.
+        依赖项：用于数据库操作的 AsyncSession 实例。
+        会话由 get_async_session 提供，自动管理数据库会话生命周期。
         """
     ),
 ]
@@ -32,10 +32,10 @@ SessionDep = Annotated[
 
 async def get_redis_client() -> AsyncRedisClient:
     """
-    Returns an instance of AsyncRedisClient using the current Redis client.
+    获取当前 Redis 客户端的 AsyncRedisClient 实例。
 
     Returns:
-        AsyncRedisClient: The Redis client instance.
+        AsyncRedisClient: Redis 客户端实例。
     """
     client = RedisManager.client()
     return AsyncRedisClient(client=client, echo=settings.ENVIRONMENT.is_debug)
@@ -46,8 +46,8 @@ RedisDep = Annotated[
     Depends(get_redis_client),
     Doc(
         """
-        This dependency provides an instance of `AsyncRedisClient`, which allows interaction with a Redis database.
-        The client is obtained from the `get_redis_client`, which manages the lifecycle of the Redis connection.
+        依赖项：提供 AsyncRedisClient 实例，可用于操作 Redis 数据库。
+        客户端由 get_redis_client 提供，自动管理 Redis 连接生命周期。
         """
     ),
 ]

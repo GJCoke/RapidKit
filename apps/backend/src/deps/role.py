@@ -22,13 +22,13 @@ permission_structure = "auth:permission:<{user_id}>"
 
 async def get_role_crud(session: SessionDep) -> RoleCRUD:
     """
-    Returns a `RoleCRUD` instance initialized with the provided session.
+    返回初始化了指定会话的 RoleCRUD 实例。
 
     Args:
-        session (SessionDep): The session dependency to interact with the database.
+        session: 用于数据库操作的会话依赖。
 
     Returns:
-        RoleCRUD: An instance of the `RoleCRUD` class, initialized with the `Role` model and the provided session.
+        RoleCRUD: 以 Role 模型和指定会话初始化的 RoleCRUD 实例。
     """
     return RoleCRUD(Role, session=session)
 
@@ -38,11 +38,10 @@ RoleCrudDep = Annotated[
     Depends(get_role_crud),
     Doc(
         """
-        Dependency for accessing the `RoleCRUD` instance.
+        依赖项：用于访问 RoleCRUD 实例。
 
-        This dependency resolves to an instance of `RoleCRUD` that is used to interact
-        with the roles data model in the database. It will be injected into routes that
-        require role-based operations.
+        该依赖会注入用于操作角色数据模型的 RoleCRUD 实例，
+        可在需要基于角色操作的路由中使用。
         """
     ),
 ]
@@ -55,20 +54,19 @@ async def create_user_permission_cache(
     role_crud: RoleCRUD,
 ) -> list[str]:
     """
-    Create and cache user permissions in Redis based on role codes.
+    根据角色编码在 Redis 中创建并缓存用户权限。
 
-    This function deletes any existing permission cache for the given user,
-    retrieves all permissions associated with the provided role codes,
-    and stores them in Redis with a specified TTL (time-to-live).
+    会先删除用户已有的权限缓存，
+    然后获取所有角色对应的权限并存入 Redis，设置过期时间。
 
     Args:
-        user_id (UUID): The unique identifier of the user.
-        codes (list[str]): A list of role codes assigned to the user.
-        redis (AsyncRedisClient): The Redis client used to cache the permissions.
-        role_crud (RoleCRUD): The role CRUD instance used to retrieve role information.
+        user_id: 用户唯一标识。
+        codes: 用户拥有的角色编码列表。
+        redis: 用于缓存权限的 Redis 客户端。
+        role_crud: 用于查询角色信息的 CRUD 实例。
 
     Returns:
-        list[str]: A list of permission codes.
+        list[str]: 权限编码列表。
     """
     redis_key = permission_structure.format(user_id=user_id)
     if await redis.exists(redis_key):
@@ -84,23 +82,22 @@ async def create_user_permission_cache(
 
 async def verify_user_permission(user: UserDBDep, route: RequestRouterDep, redis: RedisDep, role: RoleCrudDep) -> User:
     """
-    Verifies if the user has permission to access a specific route.
+    校验用户是否有权限访问指定路由。
 
-    This function checks if the user has the required permissions to access a specific
-    route. If the user is not an admin, it fetches the permissions from Redis or the database,
-    depending on the cache state, and verifies if the route is within the user's permissions.
+    若用户不是管理员，则从 Redis 或数据库获取权限，
+    并校验当前路由是否在用户权限列表中。
 
     Args:
-        user (UserDBDep): The user whose permissions need to be checked.
-        route (RequestRouterDep): The route the user is attempting to access.
-        redis (RedisDep): A Redis dependency to cache and retrieve user permissions.
-        role (RoleCRUD): The `RoleCRUD` dependency to interact with the roles and their permissions.
+        user: 需要校验权限的用户。
+        route: 用户尝试访问的路由。
+        redis: Redis 依赖，用于缓存和获取权限。
+        role: 角色权限相关的 CRUD 依赖。
 
     Raises:
-        PermissionDeniedException: If the user does not have permission to access the route.
+        PermissionDeniedException: 用户无权限访问该路由时抛出。
 
     Returns:
-        User: The user model.
+        User: 用户模型。
     """
     if not user.is_admin:
         redis_key = permission_structure.format(user_id=user.id)
@@ -122,10 +119,8 @@ VerifyPermissionDep = Annotated[
     Depends(verify_user_permission),
     Doc(
         """
-        This dependency will invoke the `verify_user_permission` function to check if the user
-        has the necessary permissions to access a specific route. It will automatically check
-        the user's permissions from the cache (Redis) or fetch them from the database if they
-        are not cached.
+        依赖项：调用 verify_user_permission 校验用户是否有权限访问指定路由。
+        会自动从缓存（Redis）或数据库获取用户权限。
         """
     ),
 ]

@@ -24,14 +24,13 @@ router = APIRouter(
 @router.get("/backend")
 async def get_router(route: RouterCrudDep) -> Response[list[FastAPIRouterResponse]]:
     """
-    This endpoint retrieves all routes from the database and returns them in the response.\f
+    该端点从数据库检索所有路由并在响应中返回。\f
 
     Args:
-        route (RouterCrudDep): Dependency that handles CRUD operations for routes.
+        route: 处理路由 CRUD 操作的依赖。
 
     Returns:
-        Response[list[FastAPIRouterResponse]]: A list of FastAPIRouterResponse models, which are
-                                                validated and returned as a response.
+        路由模型列表，已验证并作为响应返回。
     """
 
     routes = await route.get_all()

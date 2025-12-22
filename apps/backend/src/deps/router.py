@@ -15,16 +15,15 @@ from src.models.router import InterfaceRouter
 
 async def get_request_router(request: Request) -> BaseRoute:
     """
-    Dependency function to retrieve the current route object from the request.
+    依赖函数：从请求中获取当前路由对象。
 
-    This is useful for scenarios like permission checks, route-level logging,
-    or dynamic route metadata extraction.
+    可用于权限校验、路由级日志、动态路由元数据提取等场景。
 
     Args:
-        request (Request): The incoming FastAPI request object.
+        request: 当前 FastAPI 请求对象。
 
     Returns:
-        BaseRoute: The route object that matches the current request path.
+        BaseRoute: 匹配当前请求路径的路由对象。
     """
     route = request.scope.get("route")
     if not isinstance(route, BaseRoute):
@@ -35,13 +34,13 @@ async def get_request_router(request: Request) -> BaseRoute:
 
 async def get_router_crud(session: SessionDep) -> RouterCRUD:
     """
-    Provides an instance of RouterCRUD for authentication logic.
+    提供用于认证逻辑的 RouterCRUD 实例。
 
     Args:
-        session (SessionDep): The database session injected from request context.
+        session: 注入的数据库会话。
 
     Returns:
-        RouterCRUD: An initialized CRUD instance for InterfaceRouter operations.
+        RouterCRUD: 初始化的 InterfaceRouter 操作 CRUD 实例。
     """
     return RouterCRUD(InterfaceRouter, session=session)
 
@@ -51,12 +50,12 @@ RequestRouterDep = Annotated[
     Depends(get_request_router),
     Doc(
         """
-        The route object for the current request, injected via dependency.
+        当前请求的路由对象，通过依赖注入。
 
-        This can be used for purposes like:
-        - Automatic permission code generation
-        - Route-level logging and analytics
-        - Extracting dynamic metadata from path/method
+        可用于：
+        - 自动生成权限码
+        - 路由级日志与分析
+        - 动态提取路径/方法元数据
         """
     ),
 ]
@@ -65,9 +64,8 @@ RouterCrudDep = Annotated[
     Depends(get_router_crud),
     Doc(
         """
-        This dependency uses the `get_router_crud` function to inject a session-based `RouterCRUD`
-        instance into the route, allowing for operations such as creating, reading, updating, and deleting
-        routers in the context of the authentication logic.
+        依赖项：通过 get_router_crud 注入基于会话的 RouterCRUD 实例。
+        用于认证逻辑下的路由增删改查操作。
         """
     ),
 ]

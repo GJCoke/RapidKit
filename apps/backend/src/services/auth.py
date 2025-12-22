@@ -31,13 +31,13 @@ logger = logging.getLogger(__name__)
 
 def create_access_token(user: UserAccessJWT) -> str:
     """
-    Create a JWT access token for the given user.
+    为指定用户创建 JWT 访问令牌。
 
     Args:
-        user (UserAccessJWT): The payload containing user identity information.
+        user: 包含用户身份信息的载荷。
 
     Returns:
-        str: Encoded JWT access token.
+        编码后的 JWT 访问令牌。
     """
     return create_token(
         user,
@@ -49,13 +49,13 @@ def create_access_token(user: UserAccessJWT) -> str:
 
 def create_refresh_token(user: UserRefreshJWT) -> str:
     """
-    Create a JWT refresh token for the given user.
+    为指定用户创建 JWT 刷新令牌。
 
     Args:
-        user (UserRefreshJWT): The payload containing user identity information.
+        user: 包含用户身份信息的载荷。
 
     Returns:
-        str: Encoded JWT refresh token.
+        编码后的 JWT 刷新令牌。
     """
     return create_token(
         user,
@@ -67,16 +67,16 @@ def create_refresh_token(user: UserRefreshJWT) -> str:
 
 def decrypt_password(rsa_password: str) -> str:
     """
-    Decrypt an RSA-encrypted password using the configured private key.
+    使用配置的私钥解密 RSA 加密的密码。
 
     Args:
-        rsa_password (str): The encrypted password string (base64-encoded).
+        rsa_password: 加密后的密码字符串（base64 编码）。
 
     Raises:
-        BadRequestException: If decryption fails.
+        BadRequestException: 解密失败时抛出。
 
     Returns:
-        str: The decrypted plaintext password.
+        解密后的明文密码。
     """
     try:
         password = decrypt_message(auth_settings.RSA_PRIVATE_KEY, rsa_password)
@@ -94,20 +94,18 @@ async def create_user_token(
     user_agent: str,
 ) -> TokenResponse:
     """
-    Generate a new access token and refresh token for a user.
+    为用户生成新的访问令牌和刷新令牌。
 
-    This function creates a new access token and refresh token pair,
-    stores the refresh token in Redis with an expiration time, and
-    returns both tokens in a TokenResponse.
+    创建访问令牌和刷新令牌对，将刷新令牌存入 Redis 并设置过期时间，返回包含两个令牌的 TokenResponse。
 
     Args:
-        user_id (UUID): The ID of the user.
-        name (str): The name of the user.
-        redis (AsyncRedisClient): The Redis client used to store the refresh token.
-        user_agent (str): The User-Agent header of the current request, used to bind the refresh token to the device.
+        user_id: 用户 ID。
+        name: 用户名。
+        redis: 用于存储刷新令牌的 Redis 客户端。
+        user_agent: 当前请求的 User-Agent，用于绑定刷新令牌到设备。
 
     Returns:
-        TokenResponse: An object containing the access token and refresh token.
+        包含访问令牌和刷新令牌的对象。
     """
     jti = str(uuid8())
 
@@ -142,23 +140,22 @@ async def refresh_user_token(
     user_agent: str,
 ) -> TokenResponse:
     """
-    Refreshes the user's access and refresh tokens.
+    刷新用户的访问令牌和刷新令牌。
 
-    This function verifies the existence of a valid refresh token in Redis,
-    deletes the old token to prevent reuse, and generates new access and refresh tokens.
+    校验 Redis 中刷新令牌的有效性，删除旧令牌防止复用，并生成新的访问令牌和刷新令牌。
 
     Args:
-        jti (UUID): The JWT ID of the current refresh token.
-        user (User): User Models.
-        role_crud (RoleCRUD): A CRUD class instance for role-related operations.
-        redis (AsyncRedisClient): The Redis client used for token validation and storage.
-        user_agent (str): The user agent string from the request headers.
+        jti: 当前刷新令牌的 JWT ID。
+        user: 用户模型。
+        role_crud: 角色相关操作的 CRUD 实例。
+        redis: 用于令牌校验和存储的 Redis 客户端。
+        user_agent: 请求头中的 user agent 字符串。
 
     Returns:
-        TokenResponse: An object containing the newly generated access and refresh tokens.
+        新生成的访问令牌和刷新令牌对象。
 
     Raises:
-        PermissionDeniedException: If the provided refresh token is invalid or expired.
+        PermissionDeniedException: 刷新令牌无效或已过期时抛出。
     """
     redis_key = refresh_structure.format(user_id=user.id, jti=jti)
     if not await redis.exists(redis_key):
@@ -182,21 +179,21 @@ async def user_login(
     user_agent: str,
 ) -> TokenResponse:
     """
-    Authenticate the user and return access and refresh tokens.
+    用户认证并返回访问令牌和刷新令牌。
 
     Args:
-        username (str): The username provided by the client.
-        password (str): The RSA-encrypted password provided by the client.
-        user_crud (UserCRUD): A CRUD class instance for user-related operations.
-        role_crud (RoleCRUD): A CRUD class instance for role-related operations.
-        redis (AsyncRedisClient): Redis client to use for authentication.
-        user_agent (str): Request object to use for agent.
+        username: 客户端提供的用户名。
+        password: 客户端提供的 RSA 加密密码。
+        user_crud: 用户相关操作的 CRUD 实例。
+        role_crud: 角色相关操作的 CRUD 实例。
+        redis: 用于认证的 Redis 客户端。
+        user_agent: 请求的 user agent。
 
     Raises:
-        BadRequestException: If username does not exist or password is incorrect.
+        BadRequestException: 用户名不存在或密码错误时抛出。
 
     Returns:
-        TokenResponse: JWT access and refresh tokens.
+        JWT 访问令牌和刷新令牌。
     """
 
     user_info = await user_crud.get_user_by_username(username)

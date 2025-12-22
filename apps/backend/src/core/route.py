@@ -15,20 +15,20 @@ from src.schemas.response import RESPONSES
 
 
 class BaseRoute(APIRoute):
-    """Custom route class."""
+    """自定义路由类。"""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
-        Set multiple values for the responses status code.
+        设置 responses 状态码的多种返回值。
 
-        You can add response information in RESPONSES,
-         but all APIRouter instances need to have route_class set to BaseRoute.
+        可以在 RESPONSES 中添加响应信息，
+        但所有 APIRouter 实例都需要将 route_class 设置为 BaseRoute。
 
-        Similar:
+        Example:
             @app.post("/login", responses={
                 400: {"description": "Bad request.", "model": BadRequestResponse},
                 422: {"description": "Validation error.", "model": ValidationErrorResponse},
-                })
+            })
             async def login():
                 pass
         """

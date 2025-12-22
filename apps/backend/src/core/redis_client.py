@@ -18,25 +18,18 @@ logger = logging.getLogger(__name__)
 # TODO: Support Pydantic and refactor.
 class AsyncRedisClient:
     """
-    A client for interacting with a Redis database using asyncio.
+    基于 asyncio 的 Redis 客户端。
 
-    This class wraps around a Redis client instance and provides asynchronous methods
-    for interacting with Redis. It also includes support for logging Redis commands if
-    the 'echo' flag is enabled.
+    封装 Redis 客户端实例，提供异步方法操作 Redis，并支持 echo 日志输出。
     """
 
     def __init__(self, client: Redis, echo: bool = False) -> None:
         """
-        Initializes the AsyncRedisClient with a Redis client.
+        初始化 AsyncRedisClient。
 
         Args:
-            client (Redis): The Redis client to be used.
-            echo (bool, optional): Whether to log Redis commands. Defaults to False.
-
-        Attributes:
-            client (Redis): The Redis client.
-            echo (bool): A flag to control logging of commands.
-            logger (logging.Logger): The logger instance for logging Redis operations.
+            client: Redis 客户端实例。
+            echo: 是否输出 Redis 命令日志，默认 False。
         """
         self._client: Redis = client
         self._echo = echo
@@ -46,34 +39,33 @@ class AsyncRedisClient:
     @property
     def client(self) -> Redis:
         """
-        Returns the Redis client instance.
+        获取 Redis 客户端实例。
 
         Returns:
-            Redis: The Redis client.
+            Redis: Redis 客户端。
         """
         return self._client
 
     @property
     def echo(self) -> bool:
         """
-        Returns the echo flag that controls logging.
+        获取是否输出 Redis 命令日志的标志。
 
         Returns:
-            bool: The echo flag.
+            bool: echo 标志。
         """
         return self._echo
 
     @staticmethod
     def _to_str(key: KeyT) -> str:
         """
-        Converts the input `key` (of type memoryview, bytes, or any other type)
-        into a string representation.
+        将输入 key（memoryview、bytes 或其他类型）转换为字符串。
 
         Args:
-            key (KeyT): The input value, which can be of type memoryview, bytes, or other types.
+            key: 输入值，可以是 memoryview、bytes 或其他类型。
 
         Returns:
-            str: The string representation of the input key.
+            str: 转换后的字符串。
         """
 
         if isinstance(key, memoryview):
@@ -84,11 +76,11 @@ class AsyncRedisClient:
 
     def _get_log(self, key: KeyT, response: Any) -> None:
         """
-        Log Redis key access and corresponding response for debugging.
+        记录 Redis key 的访问及响应结果。
 
         Args:
-            key (KeyT): The Redis key that was accessed.
-            response (Any): The value or data returned from Redis.
+            key: 被访问的 Redis key。
+            response: Redis 返回的数据。
         """
         self.logger.info('Attempting to retrieve value for key: "%s" from Redis.', key)
         self.logger.debug('Successfully retrieved value for key "%s": %s', key, response)
@@ -122,13 +114,13 @@ class AsyncRedisClient:
         is_transaction: bool = False,
     ) -> None:
         """
-        Sets a key-value pair in Redis.
+        设置 Redis 的键值对。
 
         Args:
-            key (KeyT): The key to store in Redis.
-            value (EncodableT | dict | list): The value to store for the key.
-            ttl (int | timedelta | None, optional): The time-to-live for the key. Defaults to None.
-            is_transaction (bool, optional): Whether to perform this operation as part of a transaction.
+            key: Redis 键。
+            value: 存储的值（可为 dict、list、set 或基本类型）。
+            ttl: 键的过期时间，默认 None。
+            is_transaction: 是否作为事务执行。
         """
 
         async with self.client.pipeline(transaction=is_transaction) as pipe:
@@ -157,13 +149,13 @@ class AsyncRedisClient:
 
     async def get(self, key: KeyT) -> str:
         """
-        Retrieves the value for a given key from Redis.
+        获取指定 key 的值。
 
         Args:
-            key (KeyT): The key to retrieve from Redis.
+            key: Redis 键。
 
         Returns:
-            str: The value associated with the key.
+            str: 键对应的值。
         """
 
         response = await self.client.get(key)
@@ -173,13 +165,13 @@ class AsyncRedisClient:
 
     async def get_mapping(self, key: str) -> dict:
         """
-        Retrieve all fields and values from a Redis hash stored at the given key.
+        获取 Redis 哈希表中所有字段和值。
 
         Args:
-            key (KeyT): The key of the Redis hash.
+            key: Redis 哈希表的键。
 
         Returns:
-            dict: A dictionary containing all field-value pairs in the hash.
+            dict: 哈希表的所有字段和值。
         """
         response = await self.client.hgetall(key)  # type: ignore
 
@@ -188,15 +180,15 @@ class AsyncRedisClient:
 
     async def get_array(self, key: str, *, start: int = 0, end: int = -1) -> list:
         """
-        Retrieve a range of elements from a Redis list stored at the given key.
+        获取 Redis 列表指定范围的元素。
 
         Args:
-            key (str): The key of the Redis list.
-            start (int, optional): The starting index. Defaults to 0.
-            end (int, optional): The ending index. Defaults to -1 (end of list).
+            key: Redis 列表的键。
+            start: 起始索引，默认 0。
+            end: 结束索引，默认 -1（到末尾）。
 
         Returns:
-            list: A list of elements from the specified range in the Redis list.
+            list: 指定范围的元素列表。
         """
         response = await self.client.lrange(key, start=start, end=end)  # type: ignore
 
@@ -205,38 +197,38 @@ class AsyncRedisClient:
 
     async def get_sets(self, key: str) -> Set:
         """
-        Get all Sets of a Redis set.
+        获取 Redis 集合的所有成员。
 
         Args:
-            key (str): The key of the Redis set.
+            key: Redis 集合的键。
 
         Returns:
-            set: A set containing all members of the Redis set.
+            set: 集合的所有成员。
         """
         return await self.client.smembers(key)  # type: ignore
 
     async def exists(self, *args: KeyT) -> int:
         """
-        Checks if a key exists in Redis.
+        检查 Redis 中的键是否存在。
 
         Args:
-            args (KeyT): The key to check.
+            args: 要检查的键。
 
         Returns:
-            int: The key exists number.
+            int: 存在的键数量。
         """
         response = await self.client.exists(*args)
         return response
 
     async def delete(self, *args: KeyT) -> bool:
         """
-        Deletes one or more keys from Redis.
+        删除 Redis 中的一个或多个键。
 
         Args:
-            args (KeyT): The keys to delete.
+            args: 要删除的键。
 
         Returns:
-            bool: True if the deletion was successful, False otherwise.
+            bool: 删除成功返回 True，否则返回 False。
         """
 
         response = await self.client.delete(*args)
@@ -251,13 +243,13 @@ class AsyncRedisClient:
 
     async def delete_set(self, key: str, *args: EncodableT) -> int:
         """
-        Remove one or more elements from a Redis set.
+        移除 Redis 集合中的一个或多个元素。
 
         Args:
-            key (str): The key of the Redis set.
-            *args (EncodableT): One or more elements to remove from the set.
+            key: Redis 集合的键。
+            *args: 要移除的元素。
 
         Returns:
-            int: The number of elements that were removed from the set.
+            int: 被移除的元素数量。
         """
         return await self.client.srem(key, *args)  # type: ignore

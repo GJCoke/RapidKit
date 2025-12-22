@@ -10,15 +10,12 @@ from src.locales.utils import load_and_flatten_locales
 
 class I18n:
     """
-    Provides internationalization (i18n) support for the application, allowing
-    developers to easily fetch and format localized strings based on the current
-    language setting.
+    为应用程序提供国际化 (i18n) 支持，允许开发人员根据当前语言设置
+    轻松获取和格式化本地化字符串。
 
     Attributes:
-        locales (dict[str, dict[str, str]]): A dictionary containing all loaded
-            language translations, where each key is a language code and the value is
-            another dictionary mapping translation keys to their corresponding
-            localized strings.
+        locales: 包含所有已加载语言翻译的字典，其中每个键是语言代码，
+            值是另一个字典，映射翻译键到其对应的本地化字符串。
     """
 
     def __init__(self) -> None:
@@ -28,10 +25,10 @@ class I18n:
     @property
     def current_language(self) -> str:
         """
-        Gets the current language setting from the context.
+        获取上下文中的当前语言设置。
 
         Returns:
-            The current language code as a string.
+            当前语言代码。
         """
         try:
             return ctx.language
@@ -41,23 +38,23 @@ class I18n:
     @current_language.setter
     def current_language(self, language: str) -> None:
         """
-        Sets the current language in the context.
+        设置上下文中的当前语言。
 
         Args:
-            language: The language code to set as current.
+            language: 要设置为当前的语言代码。
         """
         ctx.language = language
 
     def t(self, key: I18nKey, **kwargs) -> str:
         """
-        Fetches and formats a localized string based on the current language setting.
+        基于当前语言设置获取和格式化本地化字符串。
 
         Args:
-            key: The localization key to look up.
-            **kwargs: Additional keyword arguments for formatting the string.
+            key: 要查找的本地化键。
+            **kwargs: 用于格式化字符串的附加关键字参数。
 
         Returns:
-            The formatted localized string or the default value if the key is not found.
+            格式化的本地化字符串，如果未找到键则返回默认值。
         """
         data = self.locales.get(self.current_language, {})
         return data.get(key, key).format(**kwargs)

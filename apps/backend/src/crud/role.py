@@ -14,19 +14,18 @@ from src.schemas.role import RoleCreate, RoleUpdate
 
 
 class RoleCRUD(BaseSQLModelCRUD[Role, RoleCreate, RoleUpdate]):
-    """Role CRUD operations using SQLAlchemy."""
+    """基于 SQLAlchemy 的角色 CRUD 操作。"""
 
     async def get_role_by_codes(self, codes: list[str], *, session: AsyncSession | None = None) -> list[Role]:
         """
-        Retrieve a list of roles based on the provided role codes.
+        根据角色编码列表查询角色。
 
         Args:
-            codes (List[str]): A list of role codes to filter roles by.
-            session (Optional[AsyncSession], optional): An optional SQLAlchemy `AsyncSession` object.
-                If not provided, the default session will be used.
+            codes: 用于筛选角色的编码列表。
+            session: 可选 SQLAlchemy 异步会话，未提供时使用默认会话。
 
         Returns:
-            List[Role]: A list of `Role` objects that match the given role codes.
+            List[Role]: 匹配给定编码的角色对象列表。
         """
         session = session or self.session
         roles = await self.get_all(col(self.model.code).in_(codes), session=session)

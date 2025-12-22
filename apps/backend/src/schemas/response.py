@@ -1,5 +1,5 @@
 """
-Response model schemas.
+响应模型数据结构。
 
 Author : Coke
 Date   : 2025-03-12
@@ -19,7 +19,7 @@ T = TypeVar("T")
 
 
 class BaseResponse(BaseModel):
-    """Base response model."""
+    """基础响应模型。"""
 
     model_config = ConfigDict(**(BaseModel.model_config or {}), from_attributes=True)
 
@@ -33,38 +33,38 @@ class BaseSchema(BaseResponse):
     @field_serializer("create_time", "update_time")
     def serialize_datetime(self, value: datetime) -> str:
         """
-        Pydantic serializer for datetime fields.
+        Pydantic 用于 datetime 字段的序列化方法。
 
-        Converts datetime fields to GMT string format when serializing to JSON.
+        序列化为 GMT 字符串格式。
 
         Args:
-            value: datetime value to serialize
+            value: 要序列化的 datetime 值
 
         Returns:
-            String representation of datetime in GMT
+            GMT 格式字符串
         """
         return convert_datetime_to_gmt(value)
 
 
 class ResponseSchema(BaseSchema):
-    """Response schema."""
+    """响应数据结构。"""
 
     id: UUID
 
 
 class Response(BaseResponse, Generic[T]):
     """
-    Unified response.
+    统一响应结构。
 
-    Examples:
+    Example:
         @router.get("/user")
         def user() -> Response[UserInfo]:
             pass
     """
 
-    code: int = Field(status.HTTP_200_OK, description="Status code.")
+    code: int = Field(status.HTTP_200_OK, description="状态码。")
     message: str = Field("Successful.")
-    data: T | None = Field(None, description="Response data.")
+    data: T | None = Field(None, description="响应数据。")
 
     def __init__(
         self,
@@ -81,33 +81,33 @@ class Response(BaseResponse, Generic[T]):
 
 class PaginatedResponse(BaseResponse, Generic[T]):
     """
-    Unified paginated response.
+    统一分页响应结构。
 
-    Examples:
-        @router.get("/user")
-        def user() -> Response[PaginatedResponse[UserInfo]]:
-            pass
+    Example:
+            @router.get("/user")
+            def user() -> Response[PaginatedResponse[UserInfo]]:
+                    pass
 
-        {
-          "code": 200,
-          "message": "Successful.",
-          "data": {
-            "page": 1,
-            "pageSize": 20,
-            "total": 100,
-            "records": []
-          }
-        }
+            {
+                "code": 200,
+                "message": "Successful.",
+                "data": {
+                    "page": 1,
+                    "pageSize": 20,
+                    "total": 100,
+                    "records": []
+                }
+            }
     """
 
-    page: int = Field(..., description="Page number.")
-    page_size: int = Field(..., description="Number of items per page.")
-    total: int = Field(..., description="Total number of items.")
-    records: list[T] = Field(..., description="Records.")
+    page: int = Field(..., description="页码。")
+    page_size: int = Field(..., description="每页条数。")
+    total: int = Field(..., description="总条数。")
+    records: list[T] = Field(..., description="记录列表。")
 
 
 class BadRequestResponse(Response):
-    """Unified Bad request response."""
+    """统一错误请求响应。"""
 
     code: int = status.HTTP_400_BAD_REQUEST
     message: str = "Bad Request."
@@ -115,7 +115,7 @@ class BadRequestResponse(Response):
 
 
 class AuthenticationError(Response):
-    """Authentication error response."""
+    """认证错误响应。"""
 
     code: int = status.HTTP_401_UNAUTHORIZED
     message: str = "Invalid credentials."
@@ -123,7 +123,7 @@ class AuthenticationError(Response):
 
 
 class PermissionResponse(Response):
-    """Unified permission response."""
+    """统一权限响应。"""
 
     code: int = status.HTTP_403_FORBIDDEN
     message: str = "Permission denied."
@@ -131,7 +131,7 @@ class PermissionResponse(Response):
 
 
 class NotFoundResponse(Response):
-    """Unified not found response."""
+    """统一未找到响应。"""
 
     code: int = status.HTTP_404_NOT_FOUND
     message: str = "Not found."
@@ -139,7 +139,7 @@ class NotFoundResponse(Response):
 
 
 class ValidationErrorResponse(Response):
-    """Unified unprocessable entity response."""
+    """统一参数校验失败响应。"""
 
     code: int = status.HTTP_422_UNPROCESSABLE_CONTENT
     message: str = "Validation error."
@@ -147,7 +147,7 @@ class ValidationErrorResponse(Response):
 
 
 class ServerErrorResponse(Response):
-    """Unified server error response."""
+    """统一服务器错误响应。"""
 
     code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
     message: str = "Internal Server Error."
@@ -155,7 +155,7 @@ class ServerErrorResponse(Response):
 
 
 class SocketErrorResponse(Response):
-    """Unified websocket server error response."""
+    """统一 websocket 服务器错误响应。"""
 
     code: int = status.WS_1011_INTERNAL_ERROR
     message: str = "Internal Server Error."

@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 
 async def watch_locale_files():
     """
-    Asynchronously watches for changes in localization files and regenerates the types file accordingly.
+    程序化监听本地化文件的更改，并根据需要重新生成类型文件。
 
     Raises:
-        - Any exceptions that may occur during file operations, such as IOError.
-        - Exceptions related to loading or processing locale data.
+        - 文件操作期间可能発生的任何异常，例如 IOError。
+        - 与加载或处理本地化数据相关的异常。
 
     Returns:
-        This function does not return any value. Its purpose is to watch for changes and update the types file.
+        该函数不返回任何值。它的目的是监听更改并更新类型文件。
     """
     base_path = os.path.dirname(__file__)
     lang_path = os.path.join(base_path, "langs")

@@ -1,7 +1,6 @@
 """
-This module provides utilities for resolving and converting dependency injection
-information from function parameters, including support for both custom `Depends`
-and FastAPI-style `Depends`, with compatibility for `Annotated` type hints.
+本模块提供用于解析和转换函数参数依赖注入信息的工具，支持自定义 `Depends` 和 FastAPI 风格的 `Depends`，
+兼容 `Annotated` 类型注解。
 
 Author  : Coke
 Date    : 2025-05-20
@@ -21,15 +20,15 @@ except ImportError:
 
 def convert_to_depends(obj: Any) -> Depends | None:
     """
-    Convert an object to a `Depends` instance.
+    将对象转换为 `Depends` 实例。
 
-    This function supports both custom `Depends` and FastAPI `Depends` object.
+    此函数支持自定义 `Depends` 和 FastAPI 的 Depends 对象。
 
     Args:
-        obj: The object to be converted, possibly a `Depends` or FastAPI Depends.
+        obj: 要转换的对象，可能为 `Depends` 或 FastAPI Depends。
 
     Returns:
-        A `Depends` instance if conversion is possible, otherwise `None`.
+        如果可转换则返回 `Depends` 实例，否则返回 None。
     """
     if isinstance(obj, Depends):
         return obj
@@ -40,16 +39,15 @@ def convert_to_depends(obj: Any) -> Depends | None:
 
 def extract_annotated_dependency(annotation: Any) -> Depends | None:
     """
-    Extract a dependency from an Annotated type hint.
+    从 Annotated 类型注解中提取依赖。
 
-    Iterates through the metadata in an `Annotated` type and returns the first
-    convertible `Depends` instance.
+    遍历 `Annotated` 类型中的元数据，返回第一个可转换的 `Depends` 实例。
 
     Args:
-        annotation: The type annotation, potentially an `Annotated`.
+        annotation: 类型注解，可能为 `Annotated`。
 
     Returns:
-        A `Depends` instance if found, otherwise `None`.
+        如果找到则返回 `Depends` 实例，否则返回 None。
     """
     if get_origin(annotation) is not Annotated:
         return None
@@ -62,28 +60,28 @@ def extract_annotated_dependency(annotation: Any) -> Depends | None:
 
 def extract_default_dependency(default: Any) -> Depends | None:
     """
-    Extract a dependency from a parameter's default value.
+    从参数的默认值中提取依赖。
 
     Args:
-        default: The default value of the parameter.
+        default: 参数的默认值。
 
     Returns:
-        A `Depends` instance if found, otherwise `None`.
+        如果找到则返回 `Depends` 实例，否则返回 None。
     """
     return convert_to_depends(default)
 
 
 def get_param_depend(param: inspect.Parameter) -> Depends | None:
     """
-    Extract dependency information from a function parameter.
+    从函数参数中提取依赖信息。
 
-    Checks both Annotated metadata and default values to resolve any defined dependencies.
+    同时检查 Annotated 元数据和默认值以解析已定义的依赖。
 
     Args:
-        param: The function parameter to inspect.
+        param: 要检查的函数参数。
 
     Returns:
-        A `Depends` instance if a dependency is declared, otherwise `None`.
+        如果声明了依赖则返回 `Depends` 实例，否则返回 None。
     """
     if depend := extract_annotated_dependency(param.annotation):
         return depend

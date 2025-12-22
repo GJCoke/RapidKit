@@ -18,7 +18,9 @@ T = TypeVar("T")
 
 
 class AsyncServer(SocketIOAsyncServer):
-    """"""
+    """
+    异步 Socket.IO 服务器，支持依赖注入和事件处理。
+    """
 
     def __init__(self, cors_allowed_origins: str | list[str] | None = None, **kwargs: Any) -> None:
         if cors_allowed_origins is not None and "*" in cors_allowed_origins:
@@ -27,19 +29,17 @@ class AsyncServer(SocketIOAsyncServer):
 
     def on(self, event: str, handler: Callable | None = None, namespace: str | None = None) -> Callable:
         """
-        Decorator for registering an event handler with dependency injection support.
+        事件处理器注册装饰器，支持依赖注入。
 
-        This method wraps the provided handler function and automatically resolves its
-        dependencies using a custom dependency system. It supports context teardown,
-        validation error handling, and emits error messages back to the client if needed.
+        此方法包装提供的处理函数，并自动解析其依赖，支持上下文清理、校验错误处理，并在需要时向客户端发送错误消息。
 
         Args:
-            event (str): The event name to bind the handler to.
-            handler (Callable | None, optional): The event handler function. If None, the decorator is returned.
-            namespace (str | None, optional): An optional namespace for the event.
+            event: 要绑定的事件名。
+            handler: 事件处理函数。如果为 None，则返回装饰器。
+            namespace: 事件的命名空间。
 
         Returns:
-            Callable: The decorator function or the original handler if one was provided.
+            装饰器函数或原始处理函数。
         """
 
         def decorator(func: Callable) -> Callable:
@@ -104,21 +104,21 @@ class AsyncServer(SocketIOAsyncServer):
         serializer: str = "serializable_dict",
     ) -> Awaitable[None]:
         """
-        Emit an event to clients, optionally including data, specific room or namespace.
+        向客户端发送事件，可选携带数据、房间或命名空间。
 
         Args:
-            event (str): The event name to emit.
-            data (Any | None, optional): The data to send with the event.
-            to (str | None, optional): The specific client ID(s) to send the event to.
-            room (str | None, optional): The room to send the event to.
-            skip_sid (str | list[str] | None, optional): The session ID(s) to skip when emitting the event.
-            namespace (str | None, optional): The namespace in which to emit the event.
-            callback (Callable | None, optional): A callback function to invoke when the emit operation is complete.
-            ignore_queue (bool, optional): Whether to ignore the event queue.
-            serializer (str, optional): The method name used to serialize the model.
+            event: 要发送的事件名。
+            data: 发送的事件数据。
+            to: 指定发送的客户端ID。
+            room: 指定发送的房间。
+            skip_sid: 发送时跳过的会话ID。
+            namespace: 发送事件的命名空间。
+            callback: 发送完成后的回调函数。
+            ignore_queue: 是否忽略事件队列。
+            serializer: 用于序列化模型的方法名。
 
         Returns:
-            Awaitable[None]: An awaitable object indicating when the emit operation is complete.
+            发送完成的 awaitable 对象。
         """
         data = self._pydantic_model_to_dict(data, serializer=serializer)
         return await super().emit(
@@ -144,20 +144,20 @@ class AsyncServer(SocketIOAsyncServer):
         serializer: str = "serializable_dict",
     ) -> Awaitable[None]:
         """
-        Send a message with optional routing details, such as specific client(s), room, or namespace.
+        发送消息，可选指定客户端、房间或命名空间。
 
         Args:
-            data (Any): The data to send.
-            to (str | None, optional): The specific client ID(s) to send the message to.
-            room (str | None, optional): The room to send the message to.
-            skip_sid (str | list[str] | None, optional): The session ID(s) to skip when sending the message.
-            namespace (str | None, optional): The namespace in which to send the message.
-            callback (Callable | None, optional): A callback function to invoke when the send operation is complete.
-            ignore_queue (bool, optional): Whether to ignore the message queue. Defaults to False.
-            serializer (str, optional): The method name used to serialize the model.
+            data: 要发送的数据。
+            to: 指定发送的客户端ID。
+            room: 指定发送的房间。
+            skip_sid: 发送时跳过的会话ID。
+            namespace: 发送消息的命名空间。
+            callback: 发送完成后的回调函数。
+            ignore_queue: 是否忽略消息队列。
+            serializer: 用于序列化模型的方法名。
 
         Returns:
-            Awaitable[None]: An awaitable object indicating when the send operation is complete.
+            发送完成的 awaitable 对象。
         """
         return await self.emit(
             "message",
@@ -173,21 +173,18 @@ class AsyncServer(SocketIOAsyncServer):
 
     async def _trigger_event(self, event: str, namespace: str, *args: Any) -> Awaitable[object] | object:
         """
-        Trigger an application-level event handler.
+        触发应用级事件处理器。
 
-        This method attempts to locate and invoke a registered event handler
-        (either a specific event handler or a namespace-level handler).
-        It supports both coroutine and regular function handlers.
+        此方法尝试定位并调用已注册的事件处理器（包括具体事件或命名空间级处理器），支持协程和普通函数。
 
         Args:
-            event (str): The name of the event to trigger (e.g., "connect").
-            namespace (str): The namespace associated with the event.
-            *args (Any): Positional arguments to pass to the event handler.
-                For "connect" events, the expected order is (sid, environ, data).
+            event: 要触发的事件名（如 "connect"）。
+            namespace: 事件关联的命名空间。
+            *args: 传递给事件处理器的位置参数。
+                对于 "connect" 事件，顺序为 (sid, environ, data)。
 
         Returns:
-            Awaitable[None] | None: The return value from the event handler,
-            or `self.not_handled` if no handler was found.
+            事件处理器的返回值，或未找到时为 self.not_handled。
         """
         handler, args = self._get_event_handler(event, namespace, args)
         if handler:
@@ -209,19 +206,18 @@ class AsyncServer(SocketIOAsyncServer):
     @staticmethod
     def _call_handler(handler: Callable, event: str, args: tuple) -> Any:
         """
-        Call the given event handler with appropriate arguments.
+        用合适参数调用事件处理器。
 
-        For "connect" events, this method injects the `environ` argument
-        as a keyword parameter, while preserving `sid` and `data` as positional arguments.
-        For "disconnect", it removes the last argument for backward compatibility.
+        对于 "connect" 事件，注入 environ 关键字参数，其余参数按位置传递。
+        对于 "disconnect"，为兼容性去除最后一个参数。
 
         Args:
-            handler (Callable): The function or coroutine to call.
-            event (str): The name of the event ("connect", "disconnect", etc.).
-            args (tuple): The arguments to pass to the handler.
+            handler: 要调用的函数或协程。
+            event: 事件名（如 "connect"、"disconnect" 等）。
+            args: 传递给处理器的参数。
 
         Returns:
-            Any: The return value from the handler.
+            处理器的返回值。
         """
         if event == "connect":
             if len(args) == 3:
@@ -246,18 +242,16 @@ class AsyncServer(SocketIOAsyncServer):
     @staticmethod
     def _pydantic_model_to_dict(data: BaseModel | T, serializer: str = "serializable_dict") -> dict | T:
         """
-        Converts a Pydantic model to a dictionary using a specified serializer method.
+        使用指定序列化方法将 Pydantic 模型转换为字典。
 
-        If the input `data` is an instance of BaseModel, it will try to use the
-        specified serializer method (e.g., `serializable_dict`). If the method does not exist,
-        it will fall back to using `model_dump()` (Pydantic v2).
+        如果输入 data 是 BaseModel 实例，则优先使用指定的序列化方法（如 serializable_dict），否则回退为 model_dump()。
 
         Args:
-            data (BaseModel | T): The data to convert. If it's a Pydantic model, it will be converted.
-            serializer (str, optional): The method name used to serialize the model.
+            data: 要转换的数据。如果是 Pydantic 模型则会被转换。
+            serializer: 用于序列化模型的方法名。
 
         Returns:
-            dict | T: A dictionary if `data` is a Pydantic model, otherwise returns `data` unchanged.
+            如果 data 是 Pydantic 模型则返回字典，否则原样返回。
         """
         if isinstance(data, BaseModel):
             if serializer != "model_dump" and hasattr(data, serializer):

@@ -1,5 +1,5 @@
 """
-Request model schemas.
+请求模型数据结构。
 
 Author : Coke
 Date   : 2025-03-24
@@ -13,35 +13,35 @@ from .base import BaseModel
 
 
 class BaseRequest(BaseModel):
-    """Base request model."""
+    """基础请求模型。"""
 
 
 class PaginatedRequest(BaseRequest):
-    """Unified paginated request."""
+    """统一分页请求。"""
 
-    page: int = Field(..., description="current page number.")
-    page_size: int = Field(..., description="number of items per page.")
+    page: int = Field(..., description="当前页码。")
+    page_size: int = Field(..., description="每页条数。")
 
 
 class SearchRequest(BaseRequest):
-    """Unified search request."""
+    """统一搜索请求。"""
 
-    keyword: str = Field(..., description="search keyword.")
+    keyword: str = Field(..., description="搜索关键词。")
 
 
 class DeleteRequest(BaseRequest):
-    """Unified delete request."""
+    """统一删除请求。"""
 
-    id: UUID = Field(..., description="item id to delete.")
+    id: UUID = Field(..., description="要删除的项 id。")
 
 
 class DetailsRequest(BaseRequest):
-    """Unified details request."""
+    """统一详情请求。"""
 
-    id: UUID = Field(..., description="item id to retrieve details.")
+    id: UUID = Field(..., description="要获取详情的项 id。")
 
 
 class BatchRequest(BaseRequest):
-    """Unified batch request."""
+    """统一批量请求。"""
 
-    ids: list[UUID] = Field(..., description="list of item ids.")
+    ids: list[UUID] = Field(..., description="项 id 列表。")

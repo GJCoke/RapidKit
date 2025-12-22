@@ -25,11 +25,9 @@ from typing_extensions import Annotated, Doc
 
 class Task(_Task):
     """
-    Custom Celery Task that supports running asynchronous (async def) tasks.
+    支持异步（async def）任务的自定义 Celery 任务。
 
-    This task class overrides the default `__call__` method to detect whether
-    the result of `run()` is a coroutine. If it is, the coroutine is executed
-    within an appropriate event loop context.
+    重写了默认的 __call__ 方法，自动检测 run() 返回值是否为协程，若是则在事件循环中执行。
     """
 
     def apply_async(
@@ -38,7 +36,7 @@ class Task(_Task):
             tuple[Any] | None,
             Doc(
                 """
-                Positional arguments for the task (list or tuple).
+                任务的位置参数（列表或元组）。
                 """
             ),
         ] = None,
@@ -46,7 +44,7 @@ class Task(_Task):
             dict[str, Any] | None,
             Doc(
                 """
-                Keyword arguments for the task (dict).
+                任务的关键字参数（字典）。
                 """
             ),
         ] = None,
@@ -54,7 +52,7 @@ class Task(_Task):
             int | float | None,
             Doc(
                 """
-                Number of seconds to delay execution.
+                延迟执行的秒数。
                 """
             ),
         ] = None,
@@ -62,7 +60,7 @@ class Task(_Task):
             datetime | None,
             Doc(
                 """
-                Exact time to execute the task (as a datetime object).
+                任务的精确执行时间（datetime 对象）。
                 """
             ),
         ] = None,
@@ -70,7 +68,7 @@ class Task(_Task):
             int | float | datetime | None,
             Doc(
                 """
-                Expiration time or seconds until the task expires.
+                任务过期时间或剩余秒数。
                 """
             ),
         ] = None,
@@ -78,7 +76,7 @@ class Task(_Task):
             str | None,
             Doc(
                 """
-                Custom task ID; if not set, Celery generates one automatically.
+                自定义任务 ID，未设置时 Celery 自动生成。
                 """
             ),
         ] = None,
@@ -86,7 +84,7 @@ class Task(_Task):
             bool,
             Doc(
                 """
-                Whether the task should be retried on failure.
+                任务失败时是否自动重试。
                 """
             ),
         ] = False,
@@ -94,7 +92,7 @@ class Task(_Task):
             dict[str, Any] | None,
             Doc(
                 """
-                Dictionary defining the retry behavior (max retries, intervals, etc.).
+                定义重试行为的字典（最大重试次数、间隔等）。
                 """
             ),
         ] = None,
@@ -102,7 +100,7 @@ class Task(_Task):
             str | None,
             Doc(
                 """
-                Name of the queue to send the task to.
+                任务发送到的队列名称。
                 """
             ),
         ] = None,
@@ -110,7 +108,7 @@ class Task(_Task):
             int,
             Doc(
                 """
-                Task priority (0 = highest, 255 = lowest).
+                任务优先级（0 最高，255 最低）。
                 """
             ),
         ] = 0,
@@ -118,12 +116,8 @@ class Task(_Task):
             Producer | None,
             Doc(
                 """
-                Custom kombu.Producer instance used to publish the task message.
-
-                If provided, this producer will be used instead of Celery's default
-                message publisher. This allows for fine-grained control over the message
-                publishing process, such as customizing delivery options, using a specific
-                channel or connection, or reusing existing connections to improve performance.
+                自定义 kombu.Producer 实例用于发布任务消息。
+                若提供，将替代 Celery 默认发布器，可自定义消息发布过程。
                 """
             ),
         ] = None,
@@ -131,7 +125,7 @@ class Task(_Task):
             Connection | None,
             Doc(
                 """
-                Custom connection to message broker.
+                自定义消息中间件连接。
                 """
             ),
         ] = None,
@@ -139,7 +133,7 @@ class Task(_Task):
             Signature | Iterable[Signature] | None,
             Doc(
                 """
-                A task (or list of tasks) to call if this task succeeds.
+                当前任务成功后要调用的任务（或任务列表）。
                 """
             ),
         ] = None,
@@ -147,7 +141,7 @@ class Task(_Task):
             Signature | Iterable[Signature] | None,
             Doc(
                 """
-                A task (or list of tasks) to call if this task fails.
+                当前任务失败后要调用的任务（或任务列表）。
                 """
             ),
         ] = None,
@@ -155,7 +149,7 @@ class Task(_Task):
             Signature | list[Signature] | None,
             Doc(
                 """
-                Chain of follow-up tasks.
+                后续任务链。
                 """
             ),
         ] = None,
@@ -163,7 +157,7 @@ class Task(_Task):
             str | None,
             Doc(
                 """
-                Use the task's original name (i.e., the function name).
+                使用任务原始名称（即函数名）。
                 """
             ),
         ] = None,
@@ -171,7 +165,7 @@ class Task(_Task):
             Router | None,
             Doc(
                 """
-                Custom task router.
+                自定义任务路由。
                 """
             ),
         ] = None,
@@ -179,7 +173,7 @@ class Task(_Task):
             bool,
             Doc(
                 """
-                Add to parent task’s group.
+                添加到父任务组。
                 """
             ),
         ] = True,
@@ -187,7 +181,7 @@ class Task(_Task):
             str | None,
             Doc(
                 """
-                Group ID.
+                任务组 ID。
                 """
             ),
         ] = None,
@@ -195,7 +189,7 @@ class Task(_Task):
             int,
             Doc(
                 """
-                Index in task group.
+                任务组内索引。
                 """
             ),
         ] = 0,
@@ -203,7 +197,7 @@ class Task(_Task):
             str | None,
             Doc(
                 """
-                Queue name to reply to.
+                回复队列名称。
                 """
             ),
         ] = None,
@@ -211,7 +205,7 @@ class Task(_Task):
             int | None,
             Doc(
                 """
-                Hard time limit.
+                硬超时时间。
                 """
             ),
         ] = None,
@@ -219,7 +213,7 @@ class Task(_Task):
             int | None,
             Doc(
                 """
-                Soft time limit.
+                软超时时间。
                 """
             ),
         ] = None,
@@ -227,7 +221,7 @@ class Task(_Task):
             str | None,
             Doc(
                 """
-                Root task ID.
+                根任务 ID。
                 """
             ),
         ] = None,
@@ -235,7 +229,7 @@ class Task(_Task):
             str | None,
             Doc(
                 """
-                Parent task ID.
+                父任务 ID。
                 """
             ),
         ] = None,
@@ -243,7 +237,7 @@ class Task(_Task):
             str | None,
             Doc(
                 """
-                Route name.
+                路由名称。
                 """
             ),
         ] = None,
@@ -251,7 +245,7 @@ class Task(_Task):
             bool,
             Doc(
                 """
-                `Custom parameter`: Whether to ignore warning messages. Default value False.
+                【自定义参数】是否忽略警告信息，默认 False。
                 """
             ),
         ] = False,
@@ -259,7 +253,7 @@ class Task(_Task):
             dict[str, Any],
             Doc(
                 """
-                Celery options.
+                Celery 选项参数。
                 """
             ),
         ],
@@ -315,43 +309,39 @@ class Task(_Task):
 
     def __call__(self, *args: tuple[Any], **kwargs: dict[str, Any]) -> Any:
         """
-        Execute the task, with support for both sync and async run methods.
+        执行任务，支持同步和异步 run 方法。
 
-        If `run()` returns a coroutine, the method will attempt to run it using
-        the current running event loop. If no loop is running, it will create
-        and run a new one using `asyncio.run()`.
+        若 run() 返回协程，则自动检测当前事件循环并运行。
 
         Args:
-            *args: Positional arguments passed to the task.
-            **kwargs: Keyword arguments passed to the task.
+            *args: 传递给任务的参数。
+            **kwargs: 传递给任务的关键字参数。
 
         Returns:
-            Any: The result of the task execution, either from the coroutine or regular function.
+            任务执行结果。
 
         Raises:
-            Exception: Re-raises any exception that occurs during task execution
-                       after calling `on_failure()`.
+            Exception: 执行异常时抛出。
         """
 
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs)
 
         try:
-            # Call the original run() method with provided arguments.
+            # 调用原始 run() 方法。
             result = self.run(*args, **kwargs)
-            # Check if the result is a coroutine (i.e., async function).
+            # 检查返回值是否为协程。
             if asyncio.iscoroutine(result):
                 try:
-                    # Try to get the currently running event loop.
-                    # If successful, execute the coroutine using run_until_complete.
+                    # 获取当前事件循环。
                     loop = asyncio.get_running_loop()
                     return loop.run_until_complete(result)
 
                 except RuntimeError:
-                    # If no running event loop exists, start a new one with asyncio.run.
+                    # 若无事件循环则新建。
                     return asyncio.run(result)
 
-            # If result is not a coroutine, return it directly
+            # 非协程直接返回
             return result
 
         finally:

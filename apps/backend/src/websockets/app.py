@@ -14,11 +14,10 @@ from src.websockets.server import AsyncServer
 
 def auto_register_events() -> None:
     """
-    Dynamically import all Python files in the 'events' directory to register Socket.IO events.
+    动态导入 events 目录下所有 Python 文件以注册 Socket.IO 事件。
 
-    This function scans the 'websockets/events' directory, imports all `.py` files except those starting
-    with an `_` (e.g., `__init__.py`), and loads them as modules. This ensures that all
-    event handlers decorated with `@socket.event` are automatically registered with the server.
+    此函数会扫描 websockets/events 目录，导入所有不以下划线开头的 .py 文件，并加载为模块。
+    这样可确保所有用 @socket.event 装饰的事件处理器自动注册到服务器。
     """
     base_path = Path(__file__).parent / "events"
     for file in base_path.glob("*.py"):

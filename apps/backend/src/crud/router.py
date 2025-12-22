@@ -18,14 +18,14 @@ from src.schemas.router import FastAPIRouterCreate, FastAPIRouterUpdate
 
 
 class RouterCRUD(BaseSQLModelCRUD[InterfaceRouter, FastAPIRouterCreate, FastAPIRouterUpdate]):
-    """Router CRUD operations using SQLAlchemy."""
+    """基于 SQLAlchemy 的路由 CRUD 操作。"""
 
     async def clear_router(self, *, session: AsyncSession | None = None) -> None:
         """
-        Delete all records from the associated router model table.
+        删除路由表中的所有记录。
 
         Args:
-            session (AsyncSession | None): Optional SQLAlchemy async session. If not provided, uses the default session.
+            session: 可选 SQLAlchemy 异步会话，未提供时使用默认会话。
         """
         session = session or self.session
 
@@ -40,11 +40,11 @@ class RouterCRUD(BaseSQLModelCRUD[InterfaceRouter, FastAPIRouterCreate, FastAPIR
         session: AsyncSession | None = None,
     ) -> None:
         """
-        Batch insert multiple router records into the database.
+        批量插入多条路由记录到数据库。
 
         Args:
-            routes (list[FastAPIRouterCreate]): A list of route creation schema instances to be inserted.
-            session (AsyncSession | None): Optional SQLAlchemy async session. If not provided, uses the default session.
+            routes: 路由创建 schema 实例列表。
+            session: 可选 SQLAlchemy 异步会话，未提供时使用默认会话。
         """
         session = session or self.session
 

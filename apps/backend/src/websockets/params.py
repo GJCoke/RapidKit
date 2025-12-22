@@ -8,10 +8,9 @@ from typing import Callable
 
 class SID(str):
     """
-    Marker class to indicate a 'sid' dependency.
+    标记 'sid' 依赖的类。
 
-    Used as a type annotation to signal that the parameter
-    should be resolved from the socket session ID.
+    用作类型注解，表示该参数应从 socket 会话 ID 解析。
 
     Examples:
         @sio.on("message")
@@ -22,12 +21,11 @@ class SID(str):
 
 class Environ(dict):
     """
-    Marker class to indicate an 'environ' dependency.
+    标记 'environ' 依赖的类。
 
-    Used as a type annotation to signal that the parameter
-    should be resolved from the socket environment/context.
+    用作类型注解，表示该参数应从 socket 环境/上下文解析。
 
-    Only takes effect during the 'connect' event.
+    仅在 'connect' 事件中生效。
 
     Examples:
         @sio.on("connect")
@@ -38,15 +36,13 @@ class Environ(dict):
 
 class Depends:
     """
-    Dependency descriptor class.
+    依赖描述符类。
 
-    Wraps a callable dependency and optionally indicates
-    whether the result should be cached during resolution.
+    包装可调用依赖，并可选指示解析时是否缓存结果。
 
     Args:
-        dependency (Callable): The callable to resolve as a dependency.
-        use_cache (bool, optional): Whether to cache the dependency result. Defaults to True.
-
+        dependency: 需要作为依赖解析的可调用对象。
+        use_cache: 是否缓存依赖结果，默认为 True。
     """
 
     def __init__(self, dependency: Callable, use_cache: bool = True):

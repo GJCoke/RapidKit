@@ -46,8 +46,8 @@ OAuth2Form = Annotated[
     Depends(),
     Doc(
         """
-        OAuth2 password login form, containing the username and password fields.
-        This is used to authenticate users via the OAuth2 password flow.
+        OAuth2 密码登录表单，包含用户名和密码字段。
+        用于通过 OAuth2 密码模式认证用户。
         """
     ),
 ]
@@ -55,16 +55,16 @@ OAuth2Form = Annotated[
 
 def get_access_token(token: Annotated[str, Depends(oauth2_scheme)]) -> str:
     """
-    Dependency to extract and validate the access token from the Authorization header.
+    依赖项：从 Authorization 头部提取并校验 access token。
 
     Args:
-        token (str): The JWT access token obtained from the request header.
+        token: 从请求头获取的 JWT access token。
 
     Raises:
-        UnauthorizedException: If no token is provided or token is invalid.
+        UnauthorizedException: 未提供 token 或 token 无效时抛出。
 
     Returns:
-        str: The extracted JWT access token.
+        str: 提取到的 JWT access token。
     """
     if token is None:
         logger.debug("No token is provided.")
@@ -75,16 +75,16 @@ def get_access_token(token: Annotated[str, Depends(oauth2_scheme)]) -> str:
 
 def get_refresh_token(x_refresh_token: Annotated[str, Header(...)]) -> str:
     """
-    Dependency to extract the refresh token from the 'x-refresh-token' request header.
+    依赖项：从 'x-refresh-token' 请求头提取 refresh token。
 
     Args:
-        x_refresh_token (str): The refresh token from the custom header.
+        x_refresh_token: 自定义头部中的 refresh token。
 
     Raises:
-        PermissionDeniedException: If the header is missing.
+        PermissionDeniedException: 缺少该头部时抛出。
 
     Returns:
-        str: The extracted refresh token.
+        str: 提取到的 refresh token。
     """
     if x_refresh_token is None:
         logger.debug("No refresh token is provided.")
@@ -95,16 +95,16 @@ def get_refresh_token(x_refresh_token: Annotated[str, Header(...)]) -> str:
 
 def get_user_agent(user_agent: Annotated[str, Header(..., include_in_schema=False)]) -> str:
     """
-    Dependency to extract the User-Agent from the request header.
+    依赖项：从请求头提取 User-Agent。
 
     Args:
-        user_agent (str): The User-Agent string from the header.
+        user_agent: 请求头中的 User-Agent 字符串。
 
     Raises:
-        BadRequestException: If the header is missing.
+        BadRequestException: 缺少该头部时抛出。
 
     Returns:
-        str: The extracted User-Agent string.
+        str: 提取到的 User-Agent 字符串。
     """
     if user_agent is None:
         logger.debug("No User-Agent is provided.")
@@ -118,8 +118,8 @@ HeaderRefreshTokenDep = Annotated[
     Depends(get_refresh_token),
     Doc(
         """
-        A typed dependency to inject the refresh token from the request header.
-        This token is used for refreshing JWT access tokens and handling session re-authentication.
+        类型化依赖项：注入请求头中的 refresh token。
+        用于刷新 JWT access token 及处理会话重新认证。
         """
     ),
 ]
@@ -129,8 +129,8 @@ HeaderUserAgentDep = Annotated[
     Depends(get_user_agent),
     Doc(
         """
-        A typed dependency to inject the User-Agent header from the request.
-        This can be used to track the client's environment or for device-specific logic.
+        类型化依赖项：注入请求头中的 User-Agent。
+        可用于追踪客户端环境或设备相关逻辑。
         """
     ),
 ]
@@ -139,8 +139,8 @@ HeaderAccessTokenDep = Annotated[
     Depends(get_access_token),
     Doc(
         """
-        A typed dependency to inject the validated JWT access token from headers.
-        Useful for route functions that require authentication.
+        类型化依赖项：注入经过校验的 JWT access token。
+        适用于需要认证的路由函数。
         """
     ),
 ]
@@ -148,16 +148,16 @@ HeaderAccessTokenDep = Annotated[
 
 def parse_access_jwt_user(token: HeaderAccessTokenDep) -> UserAccessJWT:
     """
-    Parse the JWT access token and return the decoded user object.
+    解析 JWT access token 并返回解码后的用户对象。
 
     Args:
-        token (str): The JWT access token passed via request header.
+        token: 通过请求头传递的 JWT access token。
 
     Returns:
-        UserAccessJWT: The decoded user information extracted from the token.
+        UserAccessJWT: 从 token 解码得到的用户信息。
 
     Raises:
-        UnauthorizedException: If the token is invalid or decoding fails.
+        UnauthorizedException: token 无效或解码失败时抛出。
     """
 
     user = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
@@ -170,18 +170,18 @@ def parse_refresh_jwt_user(
     user_agent: HeaderUserAgentDep,
 ) -> UserRefreshJWT:
     """
-    Parse the JWT refresh access token and return the decoded user object.
+    解析 JWT refresh token 并返回解码后的用户对象。
 
     Args:
-        x_refresh_token (str): The JWT refresh access token passed via request header.
-        user_agent (str): The user agent via request header.
+        x_refresh_token: 通过请求头传递的 JWT refresh token。
+        user_agent: 请求头中的 user agent。
 
     Returns:
-        UserAccessJWT: The decoded user information extracted from the token.
+        UserAccessJWT: 从 token 解码得到的用户信息。
 
     Raises:
-        UnauthorizedException: If the token is invalid or decoding fails.
-        BadRequestException: if the device information does not match.
+        UnauthorizedException: token 无效或解码失败时抛出。
+        BadRequestException: 设备信息不匹配时抛出。
     """
 
     user = decode_token(x_refresh_token, auth_settings.REFRESH_TOKEN_KEY)
@@ -203,13 +203,13 @@ UserAccessJWTDep = Annotated[
     Depends(parse_access_jwt_user),
     Doc(
         """
-        Dependency that provides the decoded user information from the access JWT token.
+        依赖项：提供 access JWT token 解码后的用户信息。
 
-        This dependency uses the `parse_access_jwt_user` function to decode the JWT access token passed
-        via the request header, and injects the decoded user information (as a `UserAccessJWT` object) into
-        the route. If the token is invalid or decoding fails, an `UnauthorizedException` will be raised.
+        该依赖通过 parse_access_jwt_user 解码请求头中的 JWT access token，
+        并将解码后的用户信息（UserAccessJWT 对象）注入路由。
+        若 token 无效或解码失败会抛出 UnauthorizedException。
 
-        The decoded `UserAccessJWT` contains the user's identity and other relevant data extracted from the token.
+        解码后的 UserAccessJWT 包含用户身份及相关数据。
         """
     ),
 ]
@@ -218,14 +218,13 @@ UserRefreshJWTDep = Annotated[
     Depends(parse_refresh_jwt_user),
     Doc(
         """
-        Dependency that extracts and decodes the refresh JWT token from the request header.
+        依赖项：提取并解码请求头中的 refresh JWT token。
 
-        It ensures that the refresh token is valid, and the device making the request matches
-        the one stored in the token. If the token is invalid or the device mismatch occurs,
-        it raises a `PermissionDeniedException` or `BadRequestException`.
+        保证 refresh token 有效且请求设备与 token 中存储一致。
+        若 token 无效或设备不匹配会抛出 PermissionDeniedException 或 BadRequestException。
 
-        This dependency is used to retrieve the user information stored in the refresh token,
-        which is typically required for refreshing the access token or verifying the user's session.
+        用于获取 refresh token 中存储的用户信息，
+        通常用于刷新 access token 或校验用户会话。
         """
     ),
 ]
@@ -233,13 +232,13 @@ UserRefreshJWTDep = Annotated[
 
 async def get_auth_crud(session: SessionDep) -> UserCRUD:
     """
-    Provides an instance of UserCRUD for authentication logic.
+    提供用于认证逻辑的 UserCRUD 实例。
 
     Args:
-        session (SessionDep): The database session injected from request context.
+        session: 注入的数据库会话。
 
     Returns:
-        UserCRUD: An initialized CRUD instance for user operations.
+        UserCRUD: 初始化的用户操作 CRUD 实例。
     """
     return UserCRUD(User, session=session)
 
@@ -249,9 +248,9 @@ AuthCrudDep = Annotated[
     Depends(get_auth_crud),
     Doc(
         """
-        Dependency that provides an instance of `UserCRUD` for performing user authentication operations.
-        This dependency uses the `get_auth_crud` function to inject a session-based `UserCRUD` instance
-        into the route, allowing for operations like user retrieval and updates related to authentication.
+        依赖项：提供用于用户认证操作的 UserCRUD 实例。
+        通过 get_auth_crud 注入基于会话的 UserCRUD，
+        用于用户查询和认证相关操作。
         """
     ),
 ]
@@ -259,17 +258,17 @@ AuthCrudDep = Annotated[
 
 async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep) -> User:
     """
-    Retrieve the full user information from the database based on the user ID extracted from the JWT token.
+    根据 JWT token 中的 user_id 查询数据库中的完整用户信息。
 
     Args:
-        user (UserAccessJWTDep): The JWT payload containing the user_id, extracted via token parsing.
-        db_user (AuthCrudDep): The CRUD class for user operations, injected as a dependency.
+        user: 解析 token 得到的 user_id。
+        db_user: 用户操作的 CRUD 类。
 
     Returns:
-        User: The full user model fetched from the database.
+        User: 数据库中查到的完整用户模型。
 
     Raises:
-        UnauthorizedException: If the token is invalid or decoding fails or no user is found in the database.
+        UnauthorizedException: token 无效、解码失败或数据库无此用户时抛出。
     """
     user_info = await db_user.get(user.user_id)
     if not user_info:
@@ -280,22 +279,21 @@ async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep)
 
 async def get_current_user_form_redis_and_db(user: UserRefreshJWTDep, db_user: AuthCrudDep, redis: RedisDep) -> User:
     """
-    Retrieves the current user from both Redis and the database.
+    从 Redis 和数据库中获取当前用户。
 
-    This function first checks if a valid refresh token is present in Redis.
-    If the token is not found, or the user does not exist in the database,
-    a `PermissionDeniedException` is raised.
+    先检查 Redis 中是否存在有效的 refresh token，
+    若未找到或数据库无此用户则抛出 PermissionDeniedException。
 
     Args:
-        user (UserRefreshJWTDep): The decoded user information from the refresh token.
-        db_user (AuthCrudDep): The dependency to fetch user details from the database.
-        redis (RedisDep): The dependency to interact with Redis to fetch the refresh token.
+        user: refresh token 解码得到的用户信息。
+        db_user: 数据库用户操作依赖。
+        redis: Redis 操作依赖。
 
     Returns:
-        User: The user object fetched from the database.
+        User: 数据库中查到的用户对象。
 
     Raises:
-        PermissionDeniedException: If the refresh token is missing or the user is not found in the database.
+        PermissionDeniedException: refresh token 不存在或数据库无此用户时抛出。
     """
     refresh_token = redis.get(refresh_structure.format(user_id=user.user_id, jti=user.jti))
 
@@ -316,9 +314,8 @@ UserDBDep = Annotated[
     Depends(get_current_user_form_db),
     Doc(
         """
-        This dependency uses the `get_current_user_form_db` function to retrieve the user
-        details from the database. It is intended for use in route functions where user data
-        needs to be fetched directly from the database.
+        依赖项：通过 get_current_user_form_db 查询数据库中的用户信息。
+        用于需要直接从数据库获取用户数据的路由函数。
         """
     ),
 ]
@@ -327,9 +324,9 @@ UserRefreshDep = Annotated[
     Depends(get_current_user_form_redis_and_db),
     Doc(
         """
-        This dependency first checks if the user's refresh token exists in Redis. If the token
-        is found, it fetches the corresponding user data from the database. This is used when
-        you need to verify both the validity of the refresh token and the user information.
+        依赖项：先检查 Redis 中是否存在 refresh token，
+        若存在则从数据库获取对应用户数据。
+        用于同时校验 refresh token 有效性和用户信息的场景。
         """
     ),
 ]

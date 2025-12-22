@@ -5,17 +5,14 @@ from pathlib import Path
 
 def flatten_json(prefix: str, data: dict[str, str]) -> dict[str, str]:
     """
-    Flattens a nested JSON-like dictionary into a single-level dictionary with keys
-    constructed from the original keys and their nesting structure.
+    将嵌套化的类 JSON 字典整平成单水平的字典，键是上一水平的键和其嵌套结构构成。
 
     Args:
-        prefix: A string to be prepended to the keys in the resulting dictionary.
-                Used internally for recursion. Should be left empty when calling
-                this function initially.
-        data: The dictionary to flatten. Can contain nested dictionaries.
+        prefix: 要附加到结果字典中键的前缀字符串。内部用于递归。最初调用时应为空。
+        data: 要整平的字典。可以包含嵌套的字典。
 
     Returns:
-        A new dictionary with flattened keys and values from the input dictionary.
+        一个新的字典，输入字典中的键和值已整平。
     """
     result: dict[str, str] = {}
 
@@ -32,24 +29,20 @@ def flatten_json(prefix: str, data: dict[str, str]) -> dict[str, str]:
 
 def load_and_flatten_locales(root_dir: str | Path) -> dict[str, dict[str, str]]:
     """
-    Loads and flattens locales from a specified directory.
+    从指定目录加载和整平本地化。
 
-    The function iterates through all language directories within the given root
-    directory, processes each JSON file found in these directories, and flattens
-    the data. The flattened data is then stored in a dictionary with the language
-    as the key and the flattened locale data as the value.
+    该函数遍历根目录中的所有语言子目录，处理这些
+    目录中找到的每个 JSON 文件，并整平数据。然后将其存储在以语言
+    为键、整平的本地化数据为值的字典中。
 
     Args:
-        root_dir: The path to the directory containing the language subdirectories.
-            Each subdirectory should contain JSON files representing different
-            namespaces of localized strings.
+        root_dir: 指向包含语言子目录的目录的路径。每个子目录应上是一个
+        表示本地化字符串的不同整合的 JSON 文件。
 
     Returns:
-        A dictionary where each key is a language (subdirectory name) and the value
-        is another dictionary that contains the flattened locale data for that
-        language. The structure of the inner dictionary is such that it maps
-        fully-qualified keys (namespace.key) to their corresponding localized string
-        values.
+        一个字典，每个键是语言（子目录名称），值是另一个
+        本地化数据。内部字典的结构是将全限定键
+        （namespace.key）映射到其对应的本地化字符串值。
     """
     all_locales: dict[str, dict[str, str]] = {}
 
@@ -79,13 +72,13 @@ def load_and_flatten_locales(root_dir: str | Path) -> dict[str, dict[str, str]]:
 
 def load_language_namespace(root_dir: str | Path) -> set[str]:
     """
-    Loads a set of language namespaces from the specified root directory.
+    从指定根目录加载语言整合。
 
     Args:
-        root_dir: The root directory to search for language namespaces. Can be a string or a Path object.
+        root_dir: 要搜索语言整合的根目录。可以是字符串或 Path 对象。
 
     Returns:
-        A set containing the names of the language namespaces found in the root directory.
+        一个集合，包含根目录中找到的语言整合的名称。
     """
     languages: set[str] = set()
     for lang in os.listdir(root_dir):
@@ -100,21 +93,19 @@ def gen_literal_from_dict(
     indent: int = 4,
 ) -> str:
     """
-    Generates a string representation of a Python Literal type from a dictionary.
-    The generated string can be used to define a Literal type in Python, which is
-    useful for creating type-safe enums or constants based on the keys of a given
-    dictionary. The keys of the dictionary are sorted and each key is represented
-    as a string literal within the Literal type.
+    从字典生成 Python Literal 类型的字符串表示。
+    生成的字符串可以用于在 Python 中定义 Literal 类型，这
+    对于根据给定字典的键创建类型安全的枚举或常量很有用。
+    字典的键是排序的，每个键被表示为 Literal 类型中的字符串字根。
 
     Args:
-        data: A dictionary whose keys will be used to generate the Literal type.
-        name: The name of the Literal type to be generated. Defaults to "I18nKey".
-        indent: The number of spaces to use for indentation in the generated string.
-                This affects the readability of the output. Defaults to 4.
+        data: 一个字典，其键将用于生成 Literal 类型。
+        name: 要生成的 Literal 类型的名称。默认为 "I18nKey"。
+        indent: 用于在生成的字符串中输入的空格个数。这会
+                影响输出的可读性。默认为 4。
 
     Returns:
-        A string that represents the definition of a Python Literal type, with
-        the keys of the input dictionary as its possible values.
+        一个表示 Python Literal 类型定义的字符串，其中的加入列表是输入字典的键。
     """
     space = " " * indent
     lines = [f"{name} = Literal["]
@@ -126,14 +117,14 @@ def gen_literal_from_dict(
 
 def write_py_file(path: str | Path, content: str) -> None:
     """
-    Writes content to a Python file at the specified path.
+    将内容写入特定路径的 Python 文件。
 
     Args:
-        path: The path where the file will be written. Can be a string or a Path object.
-        content: The content to be written into the file.
+        path: 要写入文件的路径。可以是字符串或 Path 对象。
+        content: 要写入文件中的内容。
 
     Returns:
-        None
+        无。
     """
     path = Path(path)
 
@@ -146,17 +137,17 @@ def resolve_language(
     supported_languages: set[str],
 ) -> str | None:
     """
-    Resolves the most appropriate language based on the client's accept-language header and
-     the server's supported languages.
+    基于客户端的 accept-language 标头和服务器支持的语言
+    解决最不算特的语言。
 
     Args:
-        accept_language: A string representing the client's preferred languages, as specified in
-         the 'Accept-Language' HTTP header.
-        supported_languages: A set of strings, each representing a language code that the server supports.
+        accept_language: 一个表示客户端优先语言的字符串，其中
+         作为 'Accept-Language' HTTP 标头指定。
+        supported_languages: 一个普普通通遍历，每个数串表示了一个服务器支持的语言代码。
 
     Returns:
-        A string representing the most suitable language code from the server's supported languages,
-         or the default language if no match is found.
+        一个表示服务器支持的语言代码中最合需的一个语言
+         代码，如果找不到匹配则返回无。
     """
 
     supported = set(supported_languages)

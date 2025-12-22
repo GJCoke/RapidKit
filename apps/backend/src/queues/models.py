@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 
 class Period(Enum):
-    """datetime.timedelta kwargs enum."""
+    """datetime.timedelta 的参数枚举。"""
 
     WEEKS = "weeks"
     DAYS = "days"
@@ -30,7 +30,7 @@ class Period(Enum):
 
 
 class SolarEvent(Enum):
-    """Celery schedules solar events."""
+    """Celery 调度的天文事件枚举。"""
 
     DAWN_ASTRONOMICAL = "dawn_astronomical"
     DAWN_NAUTICAL = "dawn_nautical"
@@ -45,10 +45,9 @@ class SolarEvent(Enum):
 
 class BaseSchedule:
     """
-    Base schedule model.
+    调度基类模型。
 
-    To improve code type inference in IDEs such as VSCode or PyCharm,
-    custom scheduler classes that inherit from Scheduler should explicitly implement the schedule property.
+    为提升 VSCode、PyCharm 等 IDE 的类型推断，继承 Scheduler 的自定义调度类应显式实现 schedule 属性。
     """
 
     id: Any
@@ -59,20 +58,26 @@ class BaseSchedule:
 
 
 class IntervalSchedule(BaseSchedule):
-    """Celery Interval Schedule model."""
+    """Celery 间隔调度模型。"""
 
     every: int
     period: Period
 
     @property
     def schedule(self) -> Schedule:
+        """
+        获取调度计划。
+
+        Returns:
+            调度对象
+        """
         return Schedule(
             timedelta(**{self.period.value: self.every}),
         )
 
 
 class CrontabSchedule(BaseSchedule):
-    """Celery Crontab Schedule model."""
+    """Celery Crontab 调度模型。"""
 
     minute: str = "*"
     hour: str = "*"
@@ -82,6 +87,12 @@ class CrontabSchedule(BaseSchedule):
 
     @property
     def schedule(self) -> Crontab:
+        """
+        获取 crontab 调度计划。
+
+        Returns:
+            crontab 调度对象
+        """
         return Crontab(
             minute=self.minute,
             hour=self.hour,
@@ -92,7 +103,7 @@ class CrontabSchedule(BaseSchedule):
 
 
 class SolarSchedule(BaseSchedule):
-    """Celery Solar Schedule model."""
+    """Celery 天文调度模型。"""
 
     event: SolarEvent
     latitude: int
@@ -100,6 +111,12 @@ class SolarSchedule(BaseSchedule):
 
     @property
     def schedule(self) -> Solar:
+        """
+        获取天文调度计划。
+
+        Returns:
+            天文调度对象
+        """
         return Solar(
             event=self.event.value,
             lat=self.latitude,
@@ -108,7 +125,7 @@ class SolarSchedule(BaseSchedule):
 
 
 class TaskType(Enum):
-    """Celery periodic task type enum."""
+    """Celery 定时任务类型枚举。"""
 
     INTERVAL = ("interval", IntervalSchedule)
     CRONTAB = ("crontab", CrontabSchedule)
@@ -125,9 +142,9 @@ class TaskType(Enum):
 
 class RetryPolicy(BaseModel):
     """
-    Represents the retry policy for a task, based on Celery's retry configuration.
+    任务重试策略，基于 Celery 的 retry 配置。
 
-    Equivalent to Celery's beat retry_policy options:
+    等价于 Celery beat 的 retry_policy 选项：
         app = Celery("celery_app", broker=REDIS_URL, backend=REDIS_URL)
         app.conf.update({
             "beat_schedule": {
@@ -150,9 +167,9 @@ class RetryPolicy(BaseModel):
 
 class Options(BaseModel):
     """
-    Options for configuring Celery task scheduling, similar to Celery's beat options.
+    Celery 任务调度选项，类似于 Celery beat 的 options。
 
-    Equivalent to Celery's beat options:
+    等价于 Celery beat 的 options：
         app = Celery("celery_app", broker=REDIS_URL, backend=REDIS_URL)
         app.conf.update({
             "beat_schedule": {
@@ -174,11 +191,13 @@ class Options(BaseModel):
 
 
 class PeriodicTask:
-    """Celery Periodic Task Model."""
+    """
+    Celery 定时任务模型。
+    """
 
     name: str
     enabled: bool = True
-    description: str = ""
+    description: str = "任务描述"
 
     task: str
     task_type: TaskType

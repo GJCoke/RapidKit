@@ -31,14 +31,14 @@ async def get_roles(
     role_crud: RoleCrudDep,
 ) -> Response[PaginatedResponse[RoleResponse]]:
     """
-    Get a paginated list of roles.\f
+    获取分页的角色列表。\f
 
     Args:
-        query (RolePageQuery): Query parameters including status, keyword, page, and page size.
-        role_crud (RoleCrudDep): Dependency that provides CRUD operations for roles.
+        query: 包含状态、关键字、页码和每页大小的查询参数。
+        role_crud: 提供角色 CRUD 操作的依赖。
 
     Returns:
-        Response[PaginatedResponse[RoleResponse]]: Paginated role data.
+        分页的角色数据。
     """
 
     filter = filter_role(query.status, query.keyword)
@@ -49,14 +49,14 @@ async def get_roles(
 @router.get("/mine")
 async def get_my_roles(role_crud: RoleCrudDep, user: UserDBDep) -> Response[list[RoleResponse]]:
     """
-    Get roles assigned to the current user.\f
+    获取分配给当前用户的角色。\f
 
     Args:
-        role_crud (RoleCrudDep): Role CRUD dependency.
-        user (UserDBDep): Current authenticated user dependency.
+        role_crud: 角色 CRUD 依赖。
+        user: 当前认证的用户依赖。
 
     Returns:
-        Response[list[RoleResponse]]: List of roles.
+        角色列表。
     """
 
     roles = await role_crud.get_all(col(Role.code).in_(user.roles), serializer=RoleResponse)
@@ -69,14 +69,14 @@ async def get_all_roles(
     role_crud: RoleCrudDep,
 ) -> Response[list[RoleResponse]]:
     """
-    Get a full list of roles without pagination.\f
+    获取不带分页的完整角色列表。\f
 
     Args:
-        query (RoleAllQuery): Query parameters including status and keyword.
-        role_crud (RoleCrudDep): Role CRUD dependency.
+        query: 包含状态和关键字的查询参数。
+        role_crud: 角色 CRUD 依赖。
 
     Returns:
-        Response[list[RoleResponse]]: List of roles matching the filters.
+        与过滤条件匹配的角色列表。
     """
 
     filter = filter_role(query.status, query.keyword)
@@ -87,14 +87,14 @@ async def get_all_roles(
 @router.post("")
 async def create_role(body: RoleCreate, role_crud: RoleCrudDep) -> Response[RoleResponse]:
     """
-    Create a new role.\f
+    创建一个新角色。\f
 
     Args:
-        body (RoleCreate): Role creation data.
-        role_crud (RoleCrudDep): Role CRUD dependency.
+        body: 角色创建数据。
+        role_crud: 角色 CRUD 依赖。
 
     Returns:
-        Response[RoleResponse]: The newly created role.
+        新创建的角色。
     """
 
     role = await role_crud.create(body)
@@ -104,15 +104,15 @@ async def create_role(body: RoleCreate, role_crud: RoleCrudDep) -> Response[Role
 @router.put("/{role_id}")
 async def update_role(role_id: UUID, body: RoleUpdate, role_crud: RoleCrudDep) -> Response[RoleResponse]:
     """
-    Update a role by ID.\f
+    根据 ID 更新角色。\f
 
     Args:
-        role_id (UUID): ID of the role to update.
-        body (RoleUpdate): New role data.
-        role_crud (RoleCrudDep): Role CRUD dependency.
+        role_id: 要更新的角色 ID。
+        body: 新的角色数据。
+        role_crud: 角色 CRUD 依赖。
 
     Returns:
-        Response[RoleResponse]: The updated role.
+        更新后的角色。
     """
 
     role = await role_crud.update_by_id(role_id, body)
@@ -122,14 +122,14 @@ async def update_role(role_id: UUID, body: RoleUpdate, role_crud: RoleCrudDep) -
 @router.delete("")
 async def batch_delete_role(query: RoleBatchBody, role_crud: RoleCrudDep) -> Response[bool]:
     """
-    Delete multiple roles by a list of IDs.\f
+    根据 ID 列表删除多个角色。\f
 
     Args:
-        query (RoleBatchBody): Contains list of role IDs to delete.
-        role_crud (RoleCrudDep): Role CRUD dependency.
+        query: 包含要删除的角色 ID 列表。
+        role_crud: 角色 CRUD 依赖。
 
     Returns:
-        Response[bool]: True if deletion succeeded.
+        删除成功则为 True。
     """
 
     await role_crud.delete_all(query.ids)
@@ -139,14 +139,14 @@ async def batch_delete_role(query: RoleBatchBody, role_crud: RoleCrudDep) -> Res
 @router.delete("/{role_id}")
 async def delete_role(role_id: UUID, role_crud: RoleCrudDep) -> Response[bool]:
     """
-     Delete a single role by ID.\f
+    根据 ID 删除单个角色。\f
 
     Args:
-        role_id (UUID): ID of the role to delete.
-        role_crud (RoleCrudDep): Role CRUD dependency.
+        role_id: 要删除的角色 ID。
+        role_crud: 角色 CRUD 依赖。
 
     Returns:
-        Response[bool]: True if deletion succeeded.
+        删除成功则为 True。
     """
 
     await role_crud.delete(role_id)

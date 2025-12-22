@@ -18,7 +18,7 @@ from src.utils.constants import MB
 
 
 class UploadPart(BaseModel):
-    """Class representing a part of a multipart upload."""
+    """分片上传的分片信息数据结构。"""
 
     part_number: str
     upload_id: str
@@ -26,7 +26,7 @@ class UploadPart(BaseModel):
 
 # noinspection PyProtectedMember
 class MinioClient:
-    """MinioClient class to interact with the Minio(S3) object storage service."""
+    """MinioClient 用于操作 Minio(S3) 对象存储服务。"""
 
     # TODO: undone.
     def __init__(
@@ -39,14 +39,14 @@ class MinioClient:
         secure: bool = False,
     ):
         """
-        Initializes the Minio client.
+        初始化 Minio 客户端。
 
         Args:
-            endpoint (str): The Minio service endpoint.
-            access_key (str): The access key for authentication.
-            secret_key (str): The secret key for authentication.
-            bucket_name (Optional[str]): The default bucket name to use.
-            secure (bool): Whether to use HTTPS (True) or HTTP (False).
+            endpoint: Minio 服务端点。
+            access_key: 认证用 access key。
+            secret_key: 认证用 secret key。
+            bucket_name: 默认桶名。
+            secure: 是否使用 HTTPS。
         """
 
         self._endpoint = endpoint
@@ -63,25 +63,25 @@ class MinioClient:
     @property
     def client(self) -> Minio:
         """
-        Gets the Minio client instance.
+        获取 Minio 客户端实例。
 
         Returns:
-            Minio: The Minio client.
+            Minio 客户端对象。
         """
         return self._client
 
     @property
     def bucket_name(self) -> str:
         """
-        Gets the bucket name.
+        获取桶名。
 
-        Checks if the bucket exists, and raises an exception if not.
+        检查桶是否存在，不存在则抛出异常。
 
         Returns:
-            str: The bucket name.
+            桶名。
 
         Raises:
-            AttributeError: If the bucket name is not set or does not exist.
+            AttributeError: 桶名未设置或不存在时抛出。
         """
         if self._bucket_name is None:
             raise AttributeError("Bucket name is not set.")
@@ -93,30 +93,30 @@ class MinioClient:
 
     def bucket_exists(self, bucket_name: str) -> bool:
         """
-        Checks if a bucket exists.
+        检查桶是否存在。
 
         Args:
-            bucket_name (str): The name of the bucket.
+            bucket_name: 桶名。
 
         Returns:
-            bool: True if the bucket exists, False otherwise.
+            存在返回 True，否则返回 False。
         """
         return self.client.bucket_exists(bucket_name)
 
     def file_exists(self, filename: str, *, bucket_name: str | None = None, nullable: bool = True) -> bool:
         """
-        Checks if a file exists in the bucket.
+        检查桶中是否存在指定文件。
 
         Args:
-            filename (str): The name of the file to check.
-            bucket_name (Optional[str]): The name of the bucket. Defaults to the default bucket.
-            nullable (bool): If True, returns False when the file does not exist. If False, raises an exception.
+            filename: 文件名。
+            bucket_name: 桶名，默认使用默认桶。
+            nullable: True 时文件不存在返回 False，False 时抛出异常。
 
         Returns:
-            bool: True if the file exists, False otherwise.
+            存在返回 True，否则返回 False。
 
         Raises:
-            S3Error: If the file does not exist and nullable is False.
+            S3Error: 文件不存在且 nullable=False 时抛出。
         """
         bucket_name = bucket_name or self.bucket_name
 
@@ -137,20 +137,19 @@ class MinioClient:
         expires: timedelta = timedelta(days=30),
     ) -> str:
         """
-        Generates a presigned URL for downloading a file.
+        生成用于下载文件的预签名 URL。
 
         Args:
-            filename (str): The name of the file to generate the URL for.
-            bucket_name (Optional[str]): The name of the bucket. Defaults to the default bucket.
-            nullable (bool): If True, checks if the file exists before generating the URL.
-             If False, raises an exception if the file doesn't exist.
-            expires (timedelta): The expiration time of the presigned URL. Default is 30 days.
+            filename: 文件名。
+            bucket_name: 桶名，默认使用默认桶。
+            nullable: True 时先检查文件是否存在，False 时文件不存在抛异常。
+            expires: URL 过期时间，默认 30 天。
 
         Returns:
-            str: The presigned URL to access the file.
+            预签名下载 URL。
 
         Raises:
-            S3Error: If the file does not exist and nullable is False.
+            S3Error: 文件不存在且 nullable=False 时抛出。
         """
         bucket_name = bucket_name or self.bucket_name
         if not nullable:
@@ -165,15 +164,15 @@ class MinioClient:
         headers: dict | None = None,
     ) -> str:
         """
-        Starts a multipart upload for a file.
+        开始分片上传。
 
         Args:
-            filename (str): The name of the file to upload.
-            bucket_name (Optional[str]): The name of the bucket. Defaults to the default bucket.
-            headers (Optional[dict]): Custom headers to include in the upload request.
+            filename: 文件名。
+            bucket_name: 桶名，默认使用默认桶。
+            headers: 上传请求自定义头部。
 
         Returns:
-            str: The upload ID for the multipart upload.
+            分片上传的 upload_id。
         """
         bucket_name = bucket_name or self.bucket_name
         headers = headers or {}
@@ -188,13 +187,13 @@ class MinioClient:
         bucket_name: str | None = None,
     ) -> None:
         """
-        Completes the multipart upload by combining the uploaded parts.
+        合并所有分片，完成分片上传。
 
         Args:
-            filename (str): The name of the file.
-            upload_id (str): The upload ID for the multipart upload.
-            max_parts (int): The maximum number of parts to be listed and completed.
-            bucket_name (Optional[str]): The name of the bucket. Defaults to the default bucket.
+            filename: 文件名。
+            upload_id: 分片上传的 upload_id。
+            max_parts: 最大分片数。
+            bucket_name: 桶名，默认使用默认桶。
         """
         bucket_name = bucket_name or self.bucket_name
         part_list = self.client._list_parts(
@@ -219,20 +218,19 @@ class MinioClient:
         expires: timedelta = timedelta(days=2),
     ) -> str:
         """
-        Generates a presigned URL for uploading a file part.
+        生成用于上传分片的预签名 URL。
 
         Args:
-            filename (str): The name of the file to upload.
-            bucket_name (Optional[str]): The name of the bucket. Defaults to the default bucket.
-            upload_part (Optional[UploadPart|dict]): The part details (part number and upload ID).
-             Can be provided as a dictionary or an UploadPart instance.
-            expires (timedelta): The expiration time of the presigned URL. Default is 2 days.
+            filename: 文件名。
+            bucket_name: 桶名，默认使用默认桶。
+            upload_part: 分片信息，可为字典或 UploadPart 实例。
+            expires: URL 过期时间，默认 2 天。
 
         Returns:
-            str: The presigned PUT URL for uploading a part of the file.
+            上传分片的预签名 PUT URL。
 
         Raises:
-            AttributeError: If the part number is invalid.
+            AttributeError: 分片号无效时抛出。
         """
         bucket_name = bucket_name or self.bucket_name
         upload_part_map = {}
@@ -264,22 +262,20 @@ class MinioClient:
         bucket_name: str | None = None,
     ) -> ObjectWriteResult:
         """
-        Uploads a file to the specified Minio bucket.
+        上传文件到指定 Minio 桶。
 
-        This method uploads data to a bucket in parallel, using multiple parts if necessary.
+        支持多分片并行上传。
 
         Args:
-            filename (str): The name of the object in the Minio bucket.
-            data (BinaryIO): The file-like object containing the data to be uploaded.
-            length (int, optional): The length of the data to be uploaded. Defaults to -1 (unknown).
-            content_type (str, optional): The content type (MIME type) of the object.
-             Defaults to "application/octet-stream".
-            num_parallel_uploads (int, optional): The number of parallel uploads for large objects. Defaults to 3.
-            bucket_name (Optional[str], optional): The name of the bucket where the object will be uploaded.
-             Defaults to None (uses default bucket).
+            filename: Minio 桶中的对象名。
+            data: 待上传的文件对象。
+            length: 上传数据长度，默认 -1。
+            content_type: 对象的内容类型，默认 application/octet-stream。
+            num_parallel_uploads: 并行上传分片数，默认 3。
+            bucket_name: 上传目标桶名，默认使用默认桶。
 
         Returns:
-            ObjectWriteResult: The result of the object upload operation.
+            上传结果对象。
         """
         bucket_name = bucket_name or self.bucket_name
 
@@ -295,12 +291,10 @@ class MinioClient:
 
     def get_buckets_list(self) -> list[Bucket]:
         """
-        Retrieves the list of all available buckets in the Minio server.
-
-        This method returns a list of Bucket objects representing all the buckets available.
+        获取 Minio 服务端所有桶列表。
 
         Returns:
-            list[Bucket]: A list of Bucket objects.
+            桶对象列表。
         """
         return self.client.list_buckets()
 
@@ -312,17 +306,17 @@ class MinioClient:
         recursive: bool = False,
     ) -> Iterator[Object]:
         """
-        Retrieves a list of objects in the specified bucket on Minio.
+        获取指定桶中的对象列表。
 
-        This method allows you to list objects in a specific bucket, with optional filtering by prefix and recursion.
+        支持前缀过滤和递归遍历。
 
         Args:
-            bucket_name (Optional[str], optional): The name of the bucket. Defaults to None (uses default bucket).
-            prefix (Optional[str], optional): A prefix filter for the object names. Defaults to None.
-            recursive (bool, optional): List recursively than directory structure emulation. Defaults to False.
+            bucket_name: 桶名，默认使用默认桶。
+            prefix: 对象名前缀过滤。
+            recursive: 是否递归遍历。
 
         Returns:
-            Iterator[Object]: An iterator over the objects in the bucket matching the provided parameters.
+            对象迭代器。
         """
         bucket_name = bucket_name or self.bucket_name
         return self.client.list_objects(bucket_name=bucket_name, prefix=prefix, recursive=recursive)

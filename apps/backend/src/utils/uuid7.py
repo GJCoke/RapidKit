@@ -1,9 +1,9 @@
 """
-Copy of the uuid6 module from the uuid6-python package.
+uuid6-python 包的 uuid6 模块副本。
 
-Repo: https://github.com/oittaa/uuid6-python
+仓库: https://github.com/oittaa/uuid6-python
 
-Author  : Oittaa
+作者  : Oittaa
 """
 
 import secrets
@@ -16,22 +16,21 @@ from pydantic import UUID1
 
 class UUID(uuid.UUID):
     """
-    Instances of the UUID class represent UUIDs as specified in RFC 9562.
+    UUID 类的实例表示符合 RFC 9562 的 UUID。
 
-    This class allows creation of UUID objects for versions 6, 7, and 8 as defined
-    in RFC 9562. It provides properties to handle time and subsecond information.
+    此类允许创建 RFC 9562 中定义的 6、7、8 版本的 UUID 对象，并提供处理时间和亚秒信息的属性。
 
     Args:
-        hex (str, optional): The hexadecimal representation of the UUID.
-        bytes (bytes, optional): The byte representation of the UUID.
-        bytes_le (bytes, optional): The little-endian byte representation of the UUID.
-        fields (Tuple[int, int, int, int, int, int], optional): The 6 integer fields that form the UUID.
-        int (int, optional): The integer representation of the UUID.
-        version (int, optional): The version of the UUID (6, 7, or 8).
-        is_safe (uuid.SafeUUID, optional): The safety level of the UUID, default is unknown.
+        hex: UUID 的十六进制字符串表示。
+        bytes: UUID 的字节表示。
+        bytes_le: UUID 的小端字节表示。
+        fields: 构成 UUID 的 6 个整数字段。
+        int: UUID 的整数表示。
+        version: UUID 的版本号（6、7 或 8）。
+        is_safe: UUID 的安全级别，默认为 unknown。
 
     Raises:
-        ValueError: If the version is not 6, 7, or 8, or if the integer is out of range.
+        ValueError: 如果版本不是 6、7 或 8，或整数超出范围。
     """
 
     __slots__ = ()
@@ -48,19 +47,19 @@ class UUID(uuid.UUID):
         is_safe: uuid.SafeUUID = uuid.SafeUUID.unknown,
     ) -> None:
         """
-        Create a UUID.
+        创建一个 UUID。
 
         Args:
-            hex (Optional[str]): Hexadecimal representation of the UUID.
-            bytes (Optional[bytes]): Byte representation of the UUID.
-            bytes_le (Optional[bytes]): Little-endian byte representation of the UUID.
-            fields (Optional[Tuple[int, int, int, int, int, int]]): 6 integer fields that form the UUID.
-            int (Optional[int]): Integer representation of the UUID.
-            version (Optional[int]): The version of the UUID (6, 7, or 8).
-            is_safe (uuid.SafeUUID): Safety level of the UUID.
+            hex: UUID 的十六进制字符串。
+            bytes: UUID 的字节表示。
+            bytes_le: UUID 的小端字节表示。
+            fields: 构成 UUID 的 6 个整数字段。
+            int: UUID 的整数表示。
+            version: UUID 的版本号（6、7 或 8）。
+            is_safe: UUID 的安全级别。
 
         Raises:
-            ValueError: If the integer is out of range or if the version is not 6, 7, or 8.
+            ValueError: 如果整数超出范围或版本不是 6、7 或 8。
         """
         if int is None or [hex, bytes, bytes_le, fields].count(None) != 4:
             super().__init__(
@@ -89,20 +88,20 @@ class UUID(uuid.UUID):
     @property
     def subsec(self) -> int:
         """
-        Get the subsecond value encoded in the UUID.
+        获取 UUID 中编码的亚秒值。
 
         Returns:
-            int: The subsecond part of the UUID.
+            int: UUID 的亚秒部分。
         """
         return ((self.int >> 64) & 0x0FFF) << 8 | ((self.int >> 54) & 0xFF)
 
     @property
     def time(self) -> int:
         """
-        Get the timestamp associated with the UUID.
+        获取与 UUID 关联的时间戳。
 
         Returns:
-            int: The timestamp based on the UUID version (6, 7, or 8).
+            int: 基于 UUID 版本（6、7 或 8）的时间戳。
         """
         if self.version == 6:
             return (self.time_low << 28) | (self.time_mid << 12) | (self.time_hi_version & 0x0FFF)
@@ -127,42 +126,42 @@ class UUID8(UUID1):
 
 def _subsec_decode(value: int) -> int:
     """
-    Decode the subsecond value.
+    解码亚秒值。
 
     Args:
-        value (int): The subsecond value to decode.
+        value: 要解码的亚秒值。
 
     Returns:
-        int: The decoded subsecond value.
+        int: 解码后的亚秒值。
     """
     return -(-value * 10**6 // 2**20)
 
 
 def _subsec_encode(value: int) -> int:
     """
-    Encode the subsecond value.
+    编码亚秒值。
 
     Args:
-        value (int): The subsecond value to encode.
+        value: 要编码的亚秒值。
 
     Returns:
-        int: The encoded subsecond value.
+        int: 编码后的亚秒值。
     """
     return value * 2**20 // 10**6
 
 
 def uuid1_to_uuid6(uuid1: uuid.UUID) -> UUID:
     """
-    Generate a UUID version 6 object from a UUID version 1 object.
+    从 UUID 版本1对象生成 UUID 版本6对象。
 
     Args:
-        uuid1 (uuid.UUID): A UUID version 1 object.
+        uuid1: UUID 版本1对象。
 
     Returns:
-        UUID: A UUID version 6 object.
+        UUID: UUID 版本6对象。
 
     Raises:
-        ValueError: If the given UUID is not version 1.
+        ValueError: 如果给定的 UUID 不是版本1。
     """
     if uuid1.version != 1:
         raise ValueError("given UUID's version number must be 1")
@@ -178,18 +177,16 @@ _last_v8_timestamp = None
 
 def uuid6(node: Optional[int] = None, clock_seq: Optional[int] = None) -> UUID:
     """
-    Generate a UUID version 6 object.
+    生成一个UUID版本6对象。
 
-    UUID version 6 is a field-compatible version of UUIDv1, reordered for
-    improved database locality. UUIDv6 is intended for use with systems
-    that involve legacy UUIDv1 values. If possible, UUIDv7 should be used.
+    UUID版本6是UUIDv1的字段兼容版本，重新排序以提升数据库局部性。UUIDv6适用于需要兼容旧UUIDv1的系统。如果可能，建议优先使用UUIDv7。
 
     Args:
-        node (Optional[int]): The node value (48-bit) to use. If not provided, a random value is used.
-        clock_seq (Optional[int]): The clock sequence value (14-bit). If not provided, a random value is used.
+        node: 要使用的节点值（48位），如果未提供则使用随机值。
+        clock_seq: 时钟序列值（14位），如果未提供则使用随机值。
 
     Returns:
-        UUID: A UUID version 6 object.
+        UUID: UUID版本6对象。
     """
     global _last_v6_timestamp
 
@@ -213,14 +210,12 @@ def uuid6(node: Optional[int] = None, clock_seq: Optional[int] = None) -> UUID:
 
 def uuid7() -> UUID:
     """
-    Generate a UUID version 7 object.
+    生成一个UUID版本7对象。
 
-    UUID version 7 is a time-ordered UUID derived from the Unix epoch timestamp
-    (milliseconds since 1970-01-01 UTC). It provides improved entropy compared
-    to UUID versions 1 and 6.
+    UUID版本7是基于Unix纪元时间戳（自1970-01-01 UTC以来的毫秒数）生成的有序UUID。相比UUIDv1和v6，提供了更高的熵。
 
     Returns:
-        UUID: A UUID version 7 object.
+        UUID: UUID版本7对象。
     """
     global _last_v7_timestamp
 
@@ -236,13 +231,12 @@ def uuid7() -> UUID:
 
 def uuid8() -> UUID:
     """
-    Generate a UUID version 8 object.
+    生成一个UUID版本8对象。
 
-    UUID version 8 is a custom UUID that uses a time-ordered value field derived
-    from the Unix epoch timestamp (nanoseconds since 1970-01-01 UTC).
+    UUID版本8是自定义UUID，使用基于Unix纪元时间戳（自1970-01-01 UTC以来的纳秒数）生成的有序值字段。
 
     Returns:
-        UUID: A UUID version 8 object.
+        UUID: UUID版本8对象。
     """
     global _last_v8_timestamp
 

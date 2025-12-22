@@ -20,22 +20,21 @@ from src.schemas.auth import UserCreate, UserUpdate
 
 
 class UserCRUD(BaseSQLModelCRUD[User, UserCreate, UserUpdate]):
-    """User CRUD operations using SQLAlchemy."""
+    """基于 SQLAlchemy 的用户 CRUD 操作。"""
 
     async def get_user_by_username(self, username: str, *, session: AsyncSession | None = None) -> User:
         """
-        retrieve a user by their username.
+        通过用户名查询用户。
 
         Args:
-            username (str): The username to look up.
-            session (AsyncSession | None, optional): Optional database session.
-            Defaults to `self. session` if not provided.
+            username: 要查找的用户名。
+            session: 可选的数据库会话对象，未提供时使用 self.session。
 
         Returns:
-            User: The matched user object.
+            User: 匹配的用户对象。
 
         Raises:
-            BadRequestException: If no user is found with the username.
+            BadRequestException: 未找到对应用户名的用户时抛出。
         """
 
         session = session or self.session
