@@ -9,7 +9,6 @@ Date   : 2025-03-17
 """
 
 import asyncio
-import logging
 from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator, Iterator
 
@@ -20,8 +19,8 @@ from sqlmodel import Session, create_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.core.config import settings
+from src.core.log import logger
 
-logger = logging.getLogger(__name__)
 ASYNC_DATABASE_URL = str(settings.ASYNC_DATABASE_POSTGRESQL_URL)
 SYNC_DATABASE_URL = str(settings.SYNC_DATABASE_POSTGRESQL_URL)
 REDIS_URL = str(settings.REDIS_URL)

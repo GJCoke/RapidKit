@@ -8,14 +8,13 @@ Author : Coke
 Date   : 2025-04-17
 """
 
-import logging
-
 from fastapi import Depends, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing_extensions import Annotated, Doc
 
 from src.core.config import auth_settings, settings
 from src.core.exceptions import BadRequestException, PermissionDeniedException, UnauthorizedException
+from src.core.log import logger
 from src.crud.auth import UserCRUD
 from src.deps.database import RedisDep, SessionDep
 from src.models.auth import User
@@ -35,8 +34,6 @@ __all__ = [
     "refresh_structure",
     "oauth2_scheme",
 ]
-
-logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_PREFIX_V1}/auth/login/swagger", auto_error=False)
 refresh_structure = "auth:refresh:<{user_id}>:<{jti}>"

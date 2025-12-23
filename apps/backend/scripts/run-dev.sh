@@ -19,8 +19,6 @@ export APP_MODULE=${APP_MODULE:-"$MODULE_NAME:$VARIABLE_NAME"}
 # Log and port configuration, using default values if none are provided.
 HOST=${HOST:-0.0.0.0}
 PORT=${PORT:-8006}
-LOG_LEVEL=${LOG_LEVEL:-info}
-LOG_CONFIG=${LOG_CONFIG:-logging.ini}
 
 # Start the server.
-exec uvicorn --reload --proxy-headers --host "$HOST" --port "$PORT" --log-config "$LOG_CONFIG" "$APP_MODULE"
+exec uvicorn --reload --proxy-headers --host "$HOST" --port "$PORT" "$APP_MODULE"

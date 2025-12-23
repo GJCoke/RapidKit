@@ -7,8 +7,6 @@ FastAPI 入口。
 日期 : 2025-03-10
 """
 
-import logging
-
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,16 +17,19 @@ from starlette_context.middleware import ContextMiddleware
 from src.api.v1 import v1_router
 from src.core.config import app_configs, settings
 from src.core.lifecycle import lifespan
+from src.core.log import logger, set_custom_logfile, setup_logging
 from src.locales.i18n import t
 from src.middlewares.i18n import I18nMiddleware
 from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.state import StateMiddleware
 from src.schemas.response import Response as SchemaResponse
 from src.schemas.response import ServerErrorResponse, ValidationErrorResponse
+from src.utils.nanoid import NanoIdPlugin
 from src.utils.utils import format_validation_errors
 from src.websockets.app import socket_app
 
-logger = logging.getLogger(__name__)
+setup_logging()
+set_custom_logfile()
 
 app = FastAPI(**app_configs, lifespan=lifespan)
 app.mount("/socket.io", socket_app)
@@ -42,7 +43,10 @@ app.add_middleware(
 )
 app.add_middleware(StateMiddleware)  # type: ignore
 app.add_middleware(I18nMiddleware)  # type: ignore
-app.add_middleware(ContextMiddleware)  # type: ignore
+app.add_middleware(
+    ContextMiddleware,  # type: ignore
+    plugins=(NanoIdPlugin(),),
+)
 app.add_middleware(LoggerMiddleware)  # type: ignore
 
 
@@ -53,11 +57,11 @@ async def handle_server_errors(request: Request, exc: Exception) -> JSONResponse
     """
 
     logger.error(
-        '"%s %s" %d ServerException: %s',
-        request.method,
-        request.url.path,
-        status.HTTP_500_INTERNAL_SERVER_ERROR,
-        str(exc),
+        '"{method} {path}" {status_code} ServerException: {detail}',
+        method=request.method,
+        path=request.url.path,
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=str(exc),
     )
 
     return JSONResponse(
@@ -74,10 +78,10 @@ async def handle_request_validation_errors(request: Request, exc: RequestValidat
 
     details = format_validation_errors(exc)
     logger.warning(
-        '"%s %s" RequestValidationError: %s',
-        request.method,
-        request.url.path,
-        details,
+        '"{method} {path}" RequestValidationError: {details}',
+        method=request.method,
+        path=request.url.path,
+        details=details,
     )
 
     return JSONResponse(
@@ -93,11 +97,11 @@ async def handle_http_exception(request: Request, exc: HTTPException) -> JSONRes
     """
 
     logger.error(
-        '"%s %s" %d HTTPException: %s',
-        request.method,
-        request.url.path,
-        exc.status_code,
-        exc.detail,
+        '"{method} {path}" {status_code} HTTPException: {detail}',
+        method=request.method,
+        path=request.url.path,
+        status_code=exc.status_code,
+        detail=exc.detail,
     )
 
     return JSONResponse(

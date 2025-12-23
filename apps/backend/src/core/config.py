@@ -93,7 +93,8 @@ class Config(BaseSettings):
         )
 
     CELERY_REDIS_DATABASE: int = Field(1, ge=0, le=15)
-    CELERY_TIMEZONE: str = "Asia/Shanghai"
+    DATETIME_TIMEZONE: str = "Asia/Shanghai"
+    DATETIME_FORMAT: str = "%Y-%m-%d %H:%M:%S"
 
     @property
     def CELERY_REDIS_URL(self) -> RedisDsn:
@@ -138,8 +139,22 @@ class Config(BaseSettings):
     # App version
     APP_VERSION: str = "0.1.0"
 
-    # Logging level
+    # nanoid settings
+    NANOID_REQUEST_HEADER_KEY: str = "x-request-id"
+    NANOID_LOG_LENGTH: int = 21
+    NANOID_LOG_DEFAULT_VALUE: str = "-"
+
+    # Logging
     LOG_LEVEL: str = "INFO"
+    LOG_FILE_ACCESS_LEVEL: str = "INFO"
+    LOG_FILE_ERROR_LEVEL: str = "ERROR"
+
+    LOG_ACCESS_FILENAME: str = "access.log"
+    LOG_ERROR_FILENAME: str = "error.log"
+
+    LOG_FORMAT: str = (
+        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</> | <lvl>{level: <8}</> | <cyan>{request_id}</> | <lvl>{message}</>"
+    )
 
     # I18n settings
     DEFAULT_LANGUAGE: str = "zh-CN"

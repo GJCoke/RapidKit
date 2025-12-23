@@ -1,13 +1,11 @@
-import logging
 from typing import Awaitable, Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.core.context import ctx
+from src.core.log import logger
 from src.utils.request import get_client_ip, parse_user_agent
-
-logger = logging.getLogger(__name__)
 
 
 class StateMiddleware(BaseHTTPMiddleware):

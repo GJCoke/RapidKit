@@ -6,7 +6,6 @@ Date   : 2025-03-17
 """
 
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 from uuid import UUID
@@ -16,13 +15,12 @@ from starlette.routing import BaseRoute as StarletteRoute
 
 from src.core.config import settings
 from src.core.database import AsyncSessionLocal, RedisManager
+from src.core.log import logger
 from src.core.route import BaseRoute
 from src.crud.router import RouterCRUD
 from src.locales.watch import watch_locale_files
 from src.models.router import InterfaceRouter
 from src.schemas.router import FastAPIRouterCreate
-
-logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager

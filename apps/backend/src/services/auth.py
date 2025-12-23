@@ -9,12 +9,12 @@ Author  : Coke
 Date    : 2025-04-18
 """
 
-import logging
 import time
 from uuid import UUID
 
 from src.core.config import auth_settings
 from src.core.exceptions import BadRequestException, PermissionDeniedException
+from src.core.log import logger
 from src.core.redis_client import AsyncRedisClient
 from src.crud.auth import UserCRUD
 from src.crud.role import RoleCRUD
@@ -25,8 +25,6 @@ from src.models import User
 from src.schemas.auth import TokenResponse, UserAccessJWT, UserRefreshJWT
 from src.utils.security import check_password, create_token, decrypt_message
 from src.utils.uuid7 import uuid8
-
-logger = logging.getLogger(__name__)
 
 
 def create_access_token(user: UserAccessJWT) -> str:

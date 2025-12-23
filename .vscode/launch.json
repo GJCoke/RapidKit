@@ -6,7 +6,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
-      "args": ["src.main:app", "--reload", "--host", "127.0.0.1", "--port", "16000", "--log-config", "logging.ini"],
+      "args": ["src.main:app", "--reload", "--host", "127.0.0.1", "--port", "16000"],
       "cwd": "${workspaceFolder}/apps/backend",
       "jinja": true,
       "env": {

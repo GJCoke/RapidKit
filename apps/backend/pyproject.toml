@@ -8,7 +8,7 @@ authors = [
     {name = "Coke", email = "jock74608@gmail.com"}
 ]
 description = "Async-FastAPI-MultiDB is an asynchronous FastAPI template project designed to seamlessly integrate both SQL (e.g., PostgreSQL, MySQL) and NoSQL (e.g., MongoDB) databases. This template offers a modern and efficient web framework solution supporting asynchronous request handling, making it ideal for building scalable API services."
-requires-python = ">= 3.12"
+requires-python = ">= 3.14"
 version = "0.1.0"
 dependencies = [
     # Server
@@ -42,6 +42,8 @@ dependencies = [
     "watchfiles>=1.1.1,<2.0",
     "starlette-context>=0.4.0,<1.0",
     "user-agents>=2.2.0,<3.0",
+    "nanoid>=2.0.0",
+    "loguru>=0.7.3",
 ]
 
 [dependency-groups]

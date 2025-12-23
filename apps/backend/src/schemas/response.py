@@ -13,7 +13,6 @@ from fastapi import status
 from pydantic import ConfigDict, Field, field_serializer
 
 from src.schemas import BaseModel
-from src.utils.date import convert_datetime_to_gmt
 
 T = TypeVar("T")
 
@@ -43,7 +42,7 @@ class BaseSchema(BaseResponse):
         Returns:
             GMT 格式字符串
         """
-        return convert_datetime_to_gmt(value)
+        return value.strftime("%Y-%m-%d %H:%M:%S")
 
 
 class ResponseSchema(BaseSchema):
