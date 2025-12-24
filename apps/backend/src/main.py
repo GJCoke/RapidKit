@@ -22,8 +22,8 @@ from src.locales.i18n import t
 from src.middlewares.i18n import I18nMiddleware
 from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.state import StateMiddleware
+from src.schemas.response import BadRequestResponse, ServerErrorResponse, ValidationErrorResponse
 from src.schemas.response import Response as SchemaResponse
-from src.schemas.response import ServerErrorResponse, ValidationErrorResponse
 from src.utils.nanoid import NanoIdPlugin
 from src.utils.utils import format_validation_errors
 from src.websockets.app import socket_app
@@ -46,6 +46,10 @@ app.add_middleware(I18nMiddleware)  # type: ignore
 app.add_middleware(
     ContextMiddleware,  # type: ignore
     plugins=(NanoIdPlugin(),),
+    default_error_response=JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=BadRequestResponse().serializable_dict(),
+    ),
 )
 app.add_middleware(LoggerMiddleware)  # type: ignore
 

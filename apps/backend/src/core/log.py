@@ -10,7 +10,9 @@ from loguru import logger as ruLogger
 from src.core.config import settings
 from src.core.path import LOG_PATH
 from src.utils.nanoid import get_request_nanoid
-from src.utils.timezone import timezone
+from src.utils.timezone import TimeZone
+
+timezone = TimeZone(settings.DATETIME_TIMEZONE, settings.DATETIME_FORMAT)
 
 
 class InterceptHandler(logging.Handler):
@@ -49,7 +51,7 @@ def default_formatter(record: dict) -> str:
 def request_id_filter(record: dict) -> dict:
     """请求 ID 过滤器"""
     rid = get_request_nanoid()
-    record["request_id"] = rid[: settings.NANOID_LOG_LENGTH]
+    record["request_id"] = rid
     return record
 
 

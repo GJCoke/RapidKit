@@ -22,12 +22,12 @@ from src.deps.auth import refresh_structure
 from src.deps.role import create_user_permission_cache
 from src.locales.i18n import t
 from src.models import User
-from src.schemas.auth import TokenResponse, UserAccessJWT, UserRefreshJWT
-from src.utils.security import check_password, create_token, decrypt_message
+from src.schemas.auth import TokenResponse
+from src.utils.security import AccessJWT, RefreshJWT, check_password, create_token, decrypt_message
 from src.utils.uuid7 import uuid8
 
 
-def create_access_token(user: UserAccessJWT) -> str:
+def create_access_token(user: AccessJWT) -> str:
     """
     为指定用户创建 JWT 访问令牌。
 
@@ -45,7 +45,7 @@ def create_access_token(user: UserAccessJWT) -> str:
     )
 
 
-def create_refresh_token(user: UserRefreshJWT) -> str:
+def create_refresh_token(user: RefreshJWT) -> str:
     """
     为指定用户创建 JWT 刷新令牌。
 
@@ -109,12 +109,12 @@ async def create_user_token(
 
     # access token
     token_info = {"sub": user_id, "name": name, "jti": jti}
-    access = UserAccessJWT.model_validate(token_info)
+    access = AccessJWT.model_validate(token_info)
     access_token = create_access_token(access)
 
     # refresh token
     redis_key = refresh_structure.format(user_id=user_id, jti=jti)
-    refresh = UserRefreshJWT.model_validate({**token_info, "agent": user_agent})
+    refresh = RefreshJWT.model_validate({**token_info, "agent": user_agent})
     refresh_token = create_refresh_token(refresh)
     refresh_value = {
         "token": refresh_token,

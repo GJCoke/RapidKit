@@ -26,11 +26,11 @@ from src.schemas.auth import (
     LoginRequest,
     OAuth2TokenResponse,
     TokenResponse,
-    UserAccessJWT,
     UserInfoResponse,
 )
 from src.schemas.response import Response
 from src.services.auth import create_access_token, refresh_user_token, user_login
+from src.utils.security import AccessJWT
 from src.utils.uuid7 import uuid8
 
 router = APIRouter(prefix="/auth", tags=["Auth"], route_class=BaseRoute)
@@ -89,11 +89,11 @@ async def logout(auth: UserAccessJWTDep, redis: RedisDep) -> Response[bool]:
     Returns:
         一个响应，指示登出是否成功。
     """
-    token = refresh_structure.format(user_id=auth.user_id, jti=auth.jti)
+    token = refresh_structure.format(user_id=auth.sub, jti=auth.jti)
     if await redis.exists(token):
         await redis.delete(token)
 
-    permission_key = permission_structure.format(user_id=auth.user_id)
+    permission_key = permission_structure.format(user_id=auth.sub)
     if await redis.exists(permission_key):
         await redis.delete(permission_key)
 
@@ -146,7 +146,7 @@ async def login_swagger(form: OAuth2Form, auth: AuthCrudDep) -> OAuth2TokenRespo
     """
     user_info = await auth.get_user_by_username(form.username)
     token = create_access_token(
-        UserAccessJWT.model_validate(
+        AccessJWT.model_validate(
             {
                 "sub": user_info.id,
                 "name": user_info.name,

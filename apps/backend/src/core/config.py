@@ -139,11 +139,6 @@ class Config(BaseSettings):
     # App version
     APP_VERSION: str = "0.1.0"
 
-    # nanoid settings
-    NANOID_REQUEST_HEADER_KEY: str = "x-request-id"
-    NANOID_LOG_LENGTH: int = 21
-    NANOID_LOG_DEFAULT_VALUE: str = "-"
-
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FILE_ACCESS_LEVEL: str = "INFO"

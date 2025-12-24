@@ -12,6 +12,7 @@ from uuid import UUID
 from fastapi import status
 from pydantic import ConfigDict, Field, field_serializer
 
+from src.locales.i18n import t
 from src.schemas import BaseModel
 
 T = TypeVar("T")
@@ -62,7 +63,7 @@ class Response(BaseResponse, Generic[T]):
     """
 
     code: int = Field(status.HTTP_200_OK, description="状态码。")
-    message: str = Field("Successful.")
+    message: str = Field(t("common.response.success"), description="响应消息。")
     data: T | None = Field(None, description="响应数据。")
 
     def __init__(
@@ -109,7 +110,7 @@ class BadRequestResponse(Response):
     """统一错误请求响应。"""
 
     code: int = status.HTTP_400_BAD_REQUEST
-    message: str = "Bad Request."
+    message: str = t("common.response.badRequest")
     data: None = None
 
 
@@ -117,7 +118,7 @@ class AuthenticationError(Response):
     """认证错误响应。"""
 
     code: int = status.HTTP_401_UNAUTHORIZED
-    message: str = "Invalid credentials."
+    message: str = t("common.response.unauthorized")
     data: None = None
 
 
@@ -125,7 +126,7 @@ class PermissionResponse(Response):
     """统一权限响应。"""
 
     code: int = status.HTTP_403_FORBIDDEN
-    message: str = "Permission denied."
+    message: str = t("common.response.permissionDenied")
     data: None = None
 
 
@@ -133,7 +134,7 @@ class NotFoundResponse(Response):
     """统一未找到响应。"""
 
     code: int = status.HTTP_404_NOT_FOUND
-    message: str = "Not found."
+    message: str = t("common.response.notFound")
     data: None = None
 
 
@@ -141,25 +142,25 @@ class ValidationErrorResponse(Response):
     """统一参数校验失败响应。"""
 
     code: int = status.HTTP_422_UNPROCESSABLE_CONTENT
-    message: str = "Validation error."
-    data: str = "Validation error details."
+    message: str = t("common.response.invalidParameter")
+    data: str = t("common.response.invalidParameterDetails")
 
 
 class ServerErrorResponse(Response):
     """统一服务器错误响应。"""
 
     code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
-    message: str = "Internal Server Error."
-    data: str = "Internal Server Error details."
+    message: str = t("common.response.internalServer")
+    data: str = t("common.response.internalServerDetails")
 
 
 class SocketErrorResponse(Response):
     """统一 websocket 服务器错误响应。"""
 
     code: int = status.WS_1011_INTERNAL_ERROR
-    message: str = "Internal Server Error."
+    message: str = t("common.response.internalServer")
     event: str
-    data: str = "Internal Server Error details."
+    data: str = t("common.response.internalServerDetails")
 
 
 RESPONSES = {

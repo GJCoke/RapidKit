@@ -15,12 +15,11 @@ from starlette.responses import Response
 from starlette.types import Message
 from starlette_context import context
 from starlette_context.errors import MiddleWareValidationError
+from starlette_context.header_keys import HeaderKeys
 from starlette_context.plugins import Plugin
 
-from src.core.config import settings
 
-
-def get_request_nanoid(default: str = settings.NANOID_LOG_DEFAULT_VALUE) -> str:
+def get_request_nanoid(default: str = "-") -> str:
     """
     获取当前请求的 Nanoid。
 
@@ -28,7 +27,7 @@ def get_request_nanoid(default: str = settings.NANOID_LOG_DEFAULT_VALUE) -> str:
         当前请求的 Nanoid 字符串，若不存在则返回默认值 settings.NANOID_LOG_DEFAULT_VALUE
     """
     if context.exists():
-        return context.get(settings.NANOID_REQUEST_HEADER_KEY, default)
+        return context.get(HeaderKeys.request_id, default)
     return default
 
 
@@ -46,12 +45,12 @@ class NanoIdPlugin(Plugin):
     支持从请求头提取、强制生成新值、格式校验，并在响应头中回写。
     """
 
-    key: str = settings.NANOID_REQUEST_HEADER_KEY
+    key: str = HeaderKeys.api_key
 
     def __init__(
         self,
         force_new_nanoid: bool = False,
-        size: int = settings.NANOID_LOG_LENGTH,
+        size: int = 21,
         alphabet: str | None = None,
         validate: bool = True,
         error_response: Response | None = None,

@@ -2,19 +2,20 @@ import zoneinfo
 from datetime import UTC, datetime
 from datetime import timezone as datetime_timezone
 
-from src.core.config import settings
-
 
 class TimeZone:
     """
     时区转换器类。
     """
 
-    def __init__(self) -> None:
+    format_str: str
+
+    def __init__(self, timezone: str, format_str: str = "%Y-%m-%d %H:%M:%S") -> None:
         """
         初始化时区转换器。
         """
-        self.tz_info = zoneinfo.ZoneInfo(settings.DATETIME_TIMEZONE)
+        self.tz_info = zoneinfo.ZoneInfo(timezone)
+        self.format_str = format_str
 
     def now(self) -> datetime:
         """
@@ -46,32 +47,29 @@ class TimeZone:
         """
         return t.astimezone(self.tz_info)
 
-    def from_str(self, t_str: str, format_str: str = settings.DATETIME_FORMAT) -> datetime:
+    def from_str(self, t_str: str) -> datetime:
         """
         将时间字符串转换为当前时区的 datetime 对象。
 
         Args:
             t_str: 时间字符串。
-            format_str: 时间格式字符串，默认为 settings.DATETIME_FORMAT。
 
         Returns:
             转换后的当前时区 datetime 对象。
         """
-        return datetime.strptime(t_str, format_str).replace(tzinfo=self.tz_info)
+        return datetime.strptime(t_str, self.format_str).replace(tzinfo=self.tz_info)
 
-    @staticmethod
-    def to_str(t: datetime, format_str: str = settings.DATETIME_FORMAT) -> str:
+    def to_str(self, t: datetime) -> str:
         """
         将 datetime 对象转换为指定格式的时间字符串。
 
         Args:
             t: datetime 对象。
-            format_str: 时间格式字符串，默认为 settings.DATETIME_FORMAT。
 
         Returns:
             格式化后的时间字符串。
         """
-        return t.strftime(format_str)
+        return t.strftime(self.format_str)
 
     @staticmethod
     def to_utc(t: datetime | int) -> datetime:
@@ -87,6 +85,3 @@ class TimeZone:
         if isinstance(t, datetime):
             return t.astimezone(datetime_timezone.utc)
         return datetime.fromtimestamp(t, tz=datetime_timezone.utc)
-
-
-timezone: TimeZone = TimeZone()

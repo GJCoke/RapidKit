@@ -15,26 +15,10 @@ Author : Coke
 Date   : 2025-03-13
 """
 
-from uuid import UUID
-
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import EmailStr, Field
+from pydantic import EmailStr
 
 from src.schemas import BaseModel, BaseRequest, BaseResponse, ResponseSchema
-
-
-class UserAccessJWT(BaseRequest):
-    """JWT 访问令牌中包含的用户信息。"""
-
-    user_id: UUID = Field(..., alias="sub")
-    name: str
-    jti: UUID
-
-
-class UserRefreshJWT(UserAccessJWT):
-    """JWT 刷新令牌中包含的用户信息。"""
-
-    agent: str
 
 
 class LoginRequest(BaseRequest):

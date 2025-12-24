@@ -63,7 +63,7 @@ async def connect(sid: SID, auth: AccessToken, db_user: AuthCrudDep, redis: Redi
 
     user = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
 
-    user_info = await db_user.get(user.user_id)
+    user_info = await db_user.get(user.sub)
     if not user_info:
         return False
 

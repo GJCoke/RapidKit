@@ -18,7 +18,7 @@
     "sync:version": "changeset version && tsx ./scripts/sync-changelogs.ts",
     "dev:frontend": "turbo build --filter !@monorepo-example/frontend && turbo watch dev --filter @monorepo-example/frontend",
     "dev:desktop": "turbo build --filter !@monorepo-example/desktop && turbo watch dev --filter @monorepo-example/desktop",
-    "dev:backend": "turbo dev --filter @monorepo-example/backend",
+    "dev:backend": "pnpm --filter @monorepo-example/backend dev",
     "dev:website": "turbo dev --filter @monorepo-example/website"
   },
   "config": {

@@ -254,7 +254,7 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Bad Request.
+             * @default 错误的请求。
              */
             message: string;
             /** Data */
@@ -373,7 +373,8 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Successful.
+             * @description 响应消息。
+             * @default 请求成功。
              */
             message: string;
             /** @description 响应数据。 */
@@ -389,7 +390,8 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Successful.
+             * @description 响应消息。
+             * @default 请求成功。
              */
             message: string;
             /** @description 响应数据。 */
@@ -405,7 +407,8 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Successful.
+             * @description 响应消息。
+             * @default 请求成功。
              */
             message: string;
             /** @description 响应数据。 */
@@ -421,7 +424,8 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Successful.
+             * @description 响应消息。
+             * @default 请求成功。
              */
             message: string;
             /** @description 响应数据。 */
@@ -437,7 +441,8 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Successful.
+             * @description 响应消息。
+             * @default 请求成功。
              */
             message: string;
             /**
@@ -456,7 +461,8 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Successful.
+             * @description 响应消息。
+             * @default 请求成功。
              */
             message: string;
             /**
@@ -475,7 +481,8 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Successful.
+             * @description 响应消息。
+             * @default 请求成功。
              */
             message: string;
             /**
@@ -494,7 +501,8 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Successful.
+             * @description 响应消息。
+             * @default 请求成功。
              */
             message: string;
             /**

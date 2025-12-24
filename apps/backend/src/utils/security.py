@@ -15,6 +15,7 @@ import base64
 import logging
 from datetime import UTC, datetime, timedelta
 from typing import overload
+from uuid import UUID
 
 import bcrypt
 from authlib.jose import jwt
@@ -24,12 +25,25 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey, generate_private_key
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes, PublicKeyTypes
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 
 from src.core.exceptions import UnauthorizedException
-from src.schemas.auth import UserAccessJWT, UserRefreshJWT
 
 logger = logging.getLogger(__name__)
+
+
+class AccessJWT(BaseModel):
+    """JWT 访问令牌中包含的用户信息。"""
+
+    sub: UUID
+    name: str
+    jti: UUID
+
+
+class RefreshJWT(AccessJWT):
+    """JWT 刷新令牌中包含的用户信息。"""
+
+    agent: str
 
 
 class AccessSecret(SecretStr):
@@ -47,7 +61,7 @@ class RefreshSecret(SecretStr):
 
 
 def create_token(
-    user: UserAccessJWT,
+    user: AccessJWT,
     expires_delta: timedelta,
     key: AccessSecret | RefreshSecret,
     alg: str,
@@ -65,21 +79,21 @@ def create_token(
         生成的 JWT 字符串。
     """
     header = dict(alg=alg, typ="JWT")
-    payload = user.serializable_dict()
+    payload = user.model_dump(mode="json")
     payload["exp"] = datetime.now(UTC) + expires_delta
 
     return jwt.encode(header=header, payload=payload, key=key.get_secret_value()).decode("utf-8")
 
 
 @overload
-def decode_token(token: str, key: AccessSecret) -> UserAccessJWT: ...
+def decode_token(token: str, key: AccessSecret) -> AccessJWT: ...
 
 
 @overload
-def decode_token(token: str, key: RefreshSecret) -> UserRefreshJWT: ...
+def decode_token(token: str, key: RefreshSecret) -> RefreshJWT: ...
 
 
-def decode_token(token: str, key: AccessSecret | RefreshSecret) -> UserAccessJWT | UserRefreshJWT:
+def decode_token(token: str, key: AccessSecret | RefreshSecret) -> AccessJWT | RefreshJWT:
     """
     解码并校验 JWT 令牌，返回对应的用户信息。
 
@@ -100,7 +114,7 @@ def decode_token(token: str, key: AccessSecret | RefreshSecret) -> UserAccessJWT
         logger.exception("Invalid JWT token: %s", token)
         raise UnauthorizedException()
 
-    return UserAccessJWT(**payload) if isinstance(key, AccessSecret) else UserRefreshJWT(**payload)
+    return AccessJWT(**payload) if isinstance(key, AccessSecret) else RefreshJWT(**payload)
 
 
 def hash_password(password: str) -> bytes:

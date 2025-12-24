@@ -18,8 +18,7 @@ from src.core.log import logger
 from src.crud.auth import UserCRUD
 from src.deps.database import RedisDep, SessionDep
 from src.models.auth import User
-from src.schemas.auth import UserAccessJWT, UserRefreshJWT
-from src.utils.security import decode_token
+from src.utils.security import AccessJWT, RefreshJWT, decode_token
 
 __all__ = [
     "OAuth2Form",
@@ -143,7 +142,7 @@ HeaderAccessTokenDep = Annotated[
 ]
 
 
-def parse_access_jwt_user(token: HeaderAccessTokenDep) -> UserAccessJWT:
+def parse_access_jwt_user(token: HeaderAccessTokenDep) -> AccessJWT:
     """
     解析 JWT access token 并返回解码后的用户对象。
 
@@ -151,7 +150,7 @@ def parse_access_jwt_user(token: HeaderAccessTokenDep) -> UserAccessJWT:
         token: 通过请求头传递的 JWT access token。
 
     Returns:
-        UserAccessJWT: 从 token 解码得到的用户信息。
+        AccessJWT: 从 token 解码得到的用户信息。
 
     Raises:
         UnauthorizedException: token 无效或解码失败时抛出。
@@ -165,7 +164,7 @@ def parse_access_jwt_user(token: HeaderAccessTokenDep) -> UserAccessJWT:
 def parse_refresh_jwt_user(
     x_refresh_token: HeaderRefreshTokenDep,
     user_agent: HeaderUserAgentDep,
-) -> UserRefreshJWT:
+) -> RefreshJWT:
     """
     解析 JWT refresh token 并返回解码后的用户对象。
 
@@ -174,7 +173,7 @@ def parse_refresh_jwt_user(
         user_agent: 请求头中的 user agent。
 
     Returns:
-        UserAccessJWT: 从 token 解码得到的用户信息。
+        RefreshJWT: 从 token 解码得到的用户信息。
 
     Raises:
         UnauthorizedException: token 无效或解码失败时抛出。
@@ -196,7 +195,7 @@ def parse_refresh_jwt_user(
 
 
 UserAccessJWTDep = Annotated[
-    UserAccessJWT,
+    AccessJWT,
     Depends(parse_access_jwt_user),
     Doc(
         """
@@ -206,12 +205,12 @@ UserAccessJWTDep = Annotated[
         并将解码后的用户信息（UserAccessJWT 对象）注入路由。
         若 token 无效或解码失败会抛出 UnauthorizedException。
 
-        解码后的 UserAccessJWT 包含用户身份及相关数据。
+        解码后的 AccessJWT 包含用户身份及相关数据。
         """
     ),
 ]
 UserRefreshJWTDep = Annotated[
-    UserRefreshJWT,
+    RefreshJWT,
     Depends(parse_refresh_jwt_user),
     Doc(
         """
@@ -267,7 +266,7 @@ async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep)
     Raises:
         UnauthorizedException: token 无效、解码失败或数据库无此用户时抛出。
     """
-    user_info = await db_user.get(user.user_id)
+    user_info = await db_user.get(user.sub)
     if not user_info:
         logger.debug("No user found in the database.")
         raise UnauthorizedException()
@@ -292,13 +291,13 @@ async def get_current_user_form_redis_and_db(user: UserRefreshJWTDep, db_user: A
     Raises:
         PermissionDeniedException: refresh token 不存在或数据库无此用户时抛出。
     """
-    refresh_token = redis.get(refresh_structure.format(user_id=user.user_id, jti=user.jti))
+    refresh_token = redis.get(refresh_structure.format(user_id=user.sub, jti=user.jti))
 
     if not refresh_token:
         logger.debug("No refresh token found in the redis.")
         raise PermissionDeniedException()
 
-    user_info = await db_user.get(user.user_id)
+    user_info = await db_user.get(user.sub)
     if not user_info:
         logger.debug("No user found in the database.")
         raise PermissionDeniedException()
