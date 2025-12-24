@@ -45,7 +45,7 @@ class NanoIdPlugin(Plugin):
     支持从请求头提取、强制生成新值、格式校验，并在响应头中回写。
     """
 
-    key: str = HeaderKeys.api_key
+    key: str = HeaderKeys.request_id
 
     def __init__(
         self,

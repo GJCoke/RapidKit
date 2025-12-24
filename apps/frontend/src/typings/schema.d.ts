@@ -236,7 +236,7 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Invalid credentials.
+             * @default 未授权。
              */
             message: string;
             /** Data */
@@ -316,7 +316,7 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Not found.
+             * @default 未找到资源。
              */
             message: string;
             /** Data */
@@ -357,7 +357,7 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Permission denied.
+             * @default 没有权限。
              */
             message: string;
             /** Data */
@@ -645,12 +645,12 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Internal Server Error.
+             * @default 服务器内部错误。
              */
             message: string;
             /**
              * Data
-             * @default Internal Server Error details.
+             * @default 服务器内部错误详情。
              */
             data: string;
         };
@@ -716,12 +716,12 @@ export interface components {
             code: number;
             /**
              * Message
-             * @default Validation error.
+             * @default 参数不合法。
              */
             message: string;
             /**
              * Data
-             * @default Validation error details.
+             * @default 参数校验错误详情。
              */
             data: string;
         };
