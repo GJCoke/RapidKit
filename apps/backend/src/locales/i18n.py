@@ -59,6 +59,22 @@ class I18n:
         data = self.locales.get(self.current_language, {})
         return data.get(key, key).format(**kwargs)
 
+    def is_i18n_key(value: str) -> bool:
+        """
+        判断给定的值是否为 i18n 翻译键。
+
+        i18n 键的格式特征是包含 "."（如 "common.response.success"），
+        用于区分实际的翻译键和直接的错误消息字符串。
+
+        Args:
+            value: 要判断的字符串值。
+
+        Returns:
+            如果是 i18n 键则返回 True，否则返回 False。
+        """
+        return "." in value
+
 
 i18n = I18n()
 t = i18n.t
+is_i18n_key = I18n.is_i18n_key

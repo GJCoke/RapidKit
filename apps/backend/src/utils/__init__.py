@@ -1,7 +1,8 @@
 """
-Title.
+工具函数模块。
 
-Description.
+该模块包含项目的独立工具函数。这些函数应该是纯粹的、可复用的工具，不应该依赖于任何请求周期内的信息
+（如 context、i18n、request、settings 等），确保在任何上下文中都能正确使用。
 
 Author : Coke
 Date   : 2025-03-10

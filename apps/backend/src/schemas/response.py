@@ -12,7 +12,7 @@ from uuid import UUID
 from fastapi import status
 from pydantic import ConfigDict, Field, field_serializer
 
-from src.locales.i18n import t
+from src.locales.i18n import is_i18n_key, t
 from src.schemas import BaseModel
 
 T = TypeVar("T")
@@ -63,7 +63,7 @@ class Response(BaseResponse, Generic[T]):
     """
 
     code: int = Field(status.HTTP_200_OK, description="状态码。")
-    message: str = Field(t("common.response.success"), description="响应消息。")
+    message: str = Field("common.response.success", description="响应消息。")
     data: T | None = Field(None, description="响应数据。")
 
     def __init__(
@@ -77,6 +77,22 @@ class Response(BaseResponse, Generic[T]):
         payload = {k: v for k, v in dict(code=code, message=message, data=data).items() if v is not None}
         payload = {**payload, **kwargs}
         super().__init__(**payload)
+
+    @field_serializer("message")
+    def serialize_message(self, value: str) -> str:
+        """
+        Pydantic 用于 message 字段的序列化方法。
+
+        Args:
+            value: 要序列化的 message 值
+
+        Returns:
+            序列化后的 message 字符串
+        """
+        # 判断是否为 i18n key（包含 "."，如 "common.response.success"）
+        # 虽然 t() 未找到 key 时也会返回原始值，但通过先检查 "." 可以避免不必要的翻译字典查询，提高效率
+        # 特别是在大量错误响应场景下，这个简单的字符串检查比翻译查询更快
+        return t(value) if is_i18n_key(value) else value  # ty:ignore[invalid-argument-type]
 
 
 class PaginatedResponse(BaseResponse, Generic[T]):
@@ -110,7 +126,7 @@ class BadRequestResponse(Response):
     """统一错误请求响应。"""
 
     code: int = status.HTTP_400_BAD_REQUEST
-    message: str = t("common.response.badRequest")
+    message: str = "common.response.badRequest"
     data: None = None
 
 
@@ -118,7 +134,7 @@ class AuthenticationError(Response):
     """认证错误响应。"""
 
     code: int = status.HTTP_401_UNAUTHORIZED
-    message: str = t("common.response.unauthorized")
+    message: str = "common.response.unauthorized"
     data: None = None
 
 
@@ -126,7 +142,7 @@ class PermissionResponse(Response):
     """统一权限响应。"""
 
     code: int = status.HTTP_403_FORBIDDEN
-    message: str = t("common.response.permissionDenied")
+    message: str = "common.response.permissionDenied"
     data: None = None
 
 
@@ -134,7 +150,7 @@ class NotFoundResponse(Response):
     """统一未找到响应。"""
 
     code: int = status.HTTP_404_NOT_FOUND
-    message: str = t("common.response.notFound")
+    message: str = "common.response.notFound"
     data: None = None
 
 
@@ -142,25 +158,25 @@ class ValidationErrorResponse(Response):
     """统一参数校验失败响应。"""
 
     code: int = status.HTTP_422_UNPROCESSABLE_CONTENT
-    message: str = t("common.response.invalidParameter")
-    data: str = t("common.response.invalidParameterDetails")
+    message: str = "common.response.invalidParameter"
+    data: str = "Validation error details."
 
 
 class ServerErrorResponse(Response):
     """统一服务器错误响应。"""
 
     code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
-    message: str = t("common.response.internalServer")
-    data: str = t("common.response.internalServerDetails")
+    message: str = "common.response.internalServer"
+    data: str = "Internal server error details."
 
 
 class SocketErrorResponse(Response):
     """统一 websocket 服务器错误响应。"""
 
     code: int = status.WS_1011_INTERNAL_ERROR
-    message: str = t("common.response.internalServer")
+    message: str = "common.response.internalServer"
     event: str
-    data: str = t("common.response.internalServerDetails")
+    data: str = "Internal server error details."
 
 
 RESPONSES = {

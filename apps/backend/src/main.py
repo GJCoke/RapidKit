@@ -18,7 +18,7 @@ from src.api.v1 import v1_router
 from src.core.config import app_configs, settings
 from src.core.lifecycle import lifespan
 from src.core.log import logger, set_custom_logfile, setup_logging
-from src.locales.i18n import t
+from src.locales.i18n import is_i18n_key, t
 from src.middlewares.i18n import I18nMiddleware
 from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.state import StateMiddleware
@@ -33,6 +33,19 @@ set_custom_logfile()
 
 app = FastAPI(**app_configs, lifespan=lifespan)
 app.mount("/socket.io", socket_app)
+
+# 中间件的注册机制为 先进后出
+app.add_middleware(StateMiddleware)  # type: ignore
+app.add_middleware(I18nMiddleware)  # type: ignore
+app.add_middleware(LoggerMiddleware)  # type: ignore
+app.add_middleware(
+    ContextMiddleware,  # type: ignore
+    plugins=(NanoIdPlugin(),),
+    default_error_response=JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=BadRequestResponse().model_dump(),  # i18n 内容依赖上下文，此时还未进入请求周期，暂用原始值
+    ),
+)
 app.add_middleware(
     CORSMiddleware,  # type: ignore
     allow_origins=settings.CORS_ORIGINS,
@@ -41,17 +54,6 @@ app.add_middleware(
     allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
     allow_headers=settings.CORS_HEADERS,
 )
-app.add_middleware(StateMiddleware)  # type: ignore
-app.add_middleware(I18nMiddleware)  # type: ignore
-app.add_middleware(
-    ContextMiddleware,  # type: ignore
-    plugins=(NanoIdPlugin(),),
-    default_error_response=JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=BadRequestResponse().serializable_dict(),
-    ),
-)
-app.add_middleware(LoggerMiddleware)  # type: ignore
 
 
 @app.exception_handler(Exception)
@@ -107,10 +109,12 @@ async def handle_http_exception(request: Request, exc: HTTPException) -> JSONRes
         status_code=exc.status_code,
         detail=exc.detail,
     )
+    detail = str(exc.detail)
+    msg = t(detail) if is_i18n_key(detail) else detail  # type: ignore
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=SchemaResponse(code=exc.status_code, message=t(str(exc.detail))).serializable_dict(),  # type: ignore
+        content=SchemaResponse(code=exc.status_code, message=msg).serializable_dict(),
     )
 
 
