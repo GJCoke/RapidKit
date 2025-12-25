@@ -234,11 +234,8 @@ export interface components {
              * @default 401
              */
             code: number;
-            /**
-             * Message
-             * @default 未授权。
-             */
-            message: string;
+            /** Message */
+            message?: string;
             /** Data */
             data?: null;
         };
@@ -252,11 +249,8 @@ export interface components {
              * @default 400
              */
             code: number;
-            /**
-             * Message
-             * @default 错误的请求。
-             */
-            message: string;
+            /** Message */
+            message?: string;
             /** Data */
             data?: null;
         };
@@ -314,11 +308,8 @@ export interface components {
              * @default 404
              */
             code: number;
-            /**
-             * Message
-             * @default 未找到资源。
-             */
-            message: string;
+            /** Message */
+            message?: string;
             /** Data */
             data?: null;
         };
@@ -355,11 +346,8 @@ export interface components {
              * @default 403
              */
             code: number;
-            /**
-             * Message
-             * @default 没有权限。
-             */
-            message: string;
+            /** Message */
+            message?: string;
             /** Data */
             data?: null;
         };
@@ -368,15 +356,14 @@ export interface components {
             /**
              * Code
              * @description 状态码。
-             * @default 200
+             * @default 0
              */
             code: number;
             /**
              * Message
              * @description 响应消息。
-             * @default 请求成功。
              */
-            message: string;
+            message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_RoleResponse_"] | null;
         };
@@ -385,15 +372,14 @@ export interface components {
             /**
              * Code
              * @description 状态码。
-             * @default 200
+             * @default 0
              */
             code: number;
             /**
              * Message
              * @description 响应消息。
-             * @default 请求成功。
              */
-            message: string;
+            message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["RoleResponse"] | null;
         };
@@ -402,15 +388,14 @@ export interface components {
             /**
              * Code
              * @description 状态码。
-             * @default 200
+             * @default 0
              */
             code: number;
             /**
              * Message
              * @description 响应消息。
-             * @default 请求成功。
              */
-            message: string;
+            message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["TokenResponse"] | null;
         };
@@ -419,15 +404,14 @@ export interface components {
             /**
              * Code
              * @description 状态码。
-             * @default 200
+             * @default 0
              */
             code: number;
             /**
              * Message
              * @description 响应消息。
-             * @default 请求成功。
              */
-            message: string;
+            message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["UserInfoResponse"] | null;
         };
@@ -436,15 +420,14 @@ export interface components {
             /**
              * Code
              * @description 状态码。
-             * @default 200
+             * @default 0
              */
             code: number;
             /**
              * Message
              * @description 响应消息。
-             * @default 请求成功。
              */
-            message: string;
+            message?: string;
             /**
              * Data
              * @description 响应数据。
@@ -456,15 +439,14 @@ export interface components {
             /**
              * Code
              * @description 状态码。
-             * @default 200
+             * @default 0
              */
             code: number;
             /**
              * Message
              * @description 响应消息。
-             * @default 请求成功。
              */
-            message: string;
+            message?: string;
             /**
              * Data
              * @description 响应数据。
@@ -476,15 +458,14 @@ export interface components {
             /**
              * Code
              * @description 状态码。
-             * @default 200
+             * @default 0
              */
             code: number;
             /**
              * Message
              * @description 响应消息。
-             * @default 请求成功。
              */
-            message: string;
+            message?: string;
             /**
              * Data
              * @description 响应数据。
@@ -496,15 +477,14 @@ export interface components {
             /**
              * Code
              * @description 状态码。
-             * @default 200
+             * @default 0
              */
             code: number;
             /**
              * Message
              * @description 响应消息。
-             * @default 请求成功。
              */
-            message: string;
+            message?: string;
             /**
              * Data
              * @description 响应数据。
@@ -643,14 +623,11 @@ export interface components {
              * @default 500
              */
             code: number;
-            /**
-             * Message
-             * @default 服务器内部错误。
-             */
-            message: string;
+            /** Message */
+            message?: string;
             /**
              * Data
-             * @default 服务器内部错误详情。
+             * @default Internal server error details.
              */
             data: string;
         };
@@ -714,14 +691,11 @@ export interface components {
              * @default 422
              */
             code: number;
-            /**
-             * Message
-             * @default 参数不合法。
-             */
-            message: string;
+            /** Message */
+            message?: string;
             /**
              * Data
-             * @default 参数校验错误详情。
+             * @default Validation error details.
              */
             data: string;
         };

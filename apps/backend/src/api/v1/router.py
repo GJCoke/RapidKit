@@ -7,7 +7,6 @@ Date    : 2025-04-23
 
 from fastapi import APIRouter, Depends
 
-from src.core.route import BaseRoute
 from src.deps.role import verify_user_permission
 from src.deps.router import RouterCrudDep
 from src.schemas.response import Response
@@ -16,7 +15,6 @@ from src.schemas.router import FastAPIRouterResponse
 router = APIRouter(
     prefix="/router",
     tags=["Router"],
-    route_class=BaseRoute,
     dependencies=[Depends(verify_user_permission)],
 )
 

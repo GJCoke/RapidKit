@@ -17,7 +17,8 @@ from sqlalchemy.sql import ColumnElement
 from sqlmodel import col, delete, func, select, update
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.core.exceptions import ExistsException, InvalidParameterError, NotFoundException
+from src.core.exceptions import AppException
+from src.core.status_codes import StatusCode
 from src.models.base import SQLModel as _SQLModel
 from src.schemas.base import BaseModel
 from src.schemas.response import PaginatedResponse
@@ -143,7 +144,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         response = result.first()
 
         if not nullable and not response:
-            raise NotFoundException(detail=f"{_id} not found.")
+            raise AppException(StatusCode.RESOURCE_NOT_FOUND)
 
         return response
 
@@ -188,7 +189,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
             list[SQLModel]: 查询到的记录列表，未找到返回空列表。
         """
         if not ids:
-            raise InvalidParameterError(param="ids")
+            raise AppException(StatusCode.MISSING_REQUIRED_FIELD)
 
         session = session or self.session
         statement = select(self.model).filter(col(self.model.id).in_(ids))
@@ -366,9 +367,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         session = session or self.session
         if not validate:
             if not isinstance(create_in, self.model):
-                raise InvalidParameterError(
-                    f"Expected type {type(self.model)} for 'create_in', but got {type(create_in)}."
-                )
+                raise AppException(StatusCode.VALIDATION_ERROR)
         else:
             create_in = self.model.model_validate(create_in)
 
@@ -380,7 +379,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
             await session.refresh(create_in)
         except IntegrityError:
             await session.rollback()
-            raise ExistsException()
+            raise AppException(StatusCode.ALREADY_EXISTS)
 
         return create_in  # type: ignore
 
@@ -403,7 +402,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
             ExistsException: 存在唯一约束冲突时抛出。
         """
         if not creates_in:
-            raise InvalidParameterError(param="creates_in")
+            raise AppException(StatusCode.MISSING_REQUIRED_FIELD)
 
         session = session or self.session
         creates_in = [self.model.model_validate(create_item) for create_item in creates_in]
@@ -415,7 +414,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
             await self.commit(auto_commit=auto_commit)
         except IntegrityError:
             await session.rollback()
-            raise ExistsException()
+            raise AppException(StatusCode.ALREADY_EXISTS)
 
     async def update(
         self,
@@ -498,19 +497,19 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
             NotFoundException: 未找到指定 ID 的记录时抛出。
         """
         if not updates_in:
-            raise InvalidParameterError(param="updates_in")
+            raise AppException(StatusCode.MISSING_REQUIRED_FIELD)
 
         session = session or self.session
         try:
             for index, update_info in enumerate(updates_in):
                 _id = update_info.pop("id", None)
                 if not _id:
-                    raise InvalidParameterError(f"[index={index}] Missing 'id' in update payload.")
+                    raise AppException(StatusCode.MISSING_REQUIRED_FIELD)
 
                 statement = update(self.model).where(col(self.model.id) == _id).values(**update_info)
                 result = await session.exec(statement)  # type: ignore
                 if result.rowcount == 0:
-                    raise NotFoundException(detail=f"[index={index}] ID '{_id}' not found.")
+                    raise AppException(StatusCode.RESOURCE_NOT_FOUND)
 
             await self.commit(auto_commit=auto_commit)
 
@@ -556,7 +555,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
             auto_commit: 是否自动提交更改，默认 True。
         """
         if not ids:
-            raise InvalidParameterError(param="ids")
+            raise AppException(StatusCode.MISSING_REQUIRED_FIELD)
 
         session = session or self.session
         statement = delete(self.model).filter(col(self.model.id).in_(ids))

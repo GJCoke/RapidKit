@@ -7,8 +7,12 @@ Author : Coke
 Date   : 2025-03-13
 """
 
+from typing import Any
+
 from fastapi import status
 from fastapi.exceptions import HTTPException
+
+from src.core.status_codes import StatusCode, get_status_code, get_status_description
 
 
 class BaseHTTPException(HTTPException):
@@ -20,7 +24,7 @@ class BaseHTTPException(HTTPException):
         self,
         *,
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail="common.response.internalServer",
+        detail="common.response.internalServerError",
         headers=None,
     ):
         """
@@ -34,112 +38,66 @@ class BaseHTTPException(HTTPException):
         super().__init__(status_code, detail, headers)
 
 
-class BadRequestException(BaseHTTPException):
-    """请求参数错误（400 错误）异常。"""
+class AppException(BaseHTTPException):
+    """基于应用状态码的通用异常类。"""
 
     def __init__(
         self,
+        code: StatusCode | int,
         *,
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="common.response.badRequest",
+        message: str | None = None,
+        data: Any = None,
+        http_status_code: int = status.HTTP_200_OK,
+        headers: dict[str, str] | None = None,
     ):
         """
-        初始化 BadRequestException。
+        初始化应用异常。
 
         Args:
-            status_code: 错误请求的 HTTP 状态码（默认 400）。
-            detail: 错误信息（默认 "bad request."）。
+            code: 应用状态码（StatusCode 枚举或整数）
+            message: 自定义错误消息，如果为 None 则使用状态码的默认描述
+            data: 错误详情数据
+            http_status_code: HTTP 状态码（默认 200）
+            headers: 响应中包含的自定义头部
+
+        Raises:
+            ValueError: 如果 code 是无效的整数且不在 StatusCode 中
         """
-        super().__init__(status_code=status_code, detail=detail)
+        # 处理状态码
+        if isinstance(code, StatusCode):
+            self.code = code.code
+            self.status_code_enum = code
+            description = code.description
+        elif isinstance(code, int):
+            status_code_enum = get_status_code(code)
+            if status_code_enum is None:
+                raise ValueError(f"Invalid status code: {code}")
+            self.code = code
+            self.status_code_enum = status_code_enum
+            description = get_status_description(code)
+        else:
+            raise TypeError(f"The status code must be a StatusCode enum or integer; it cannot be: {type(code)}")
 
+        # 设置错误消息
+        self.message = message or description
+        self.data = data
 
-class UnauthorizedException(BaseHTTPException):
-    """未授权（401 错误）异常。"""
+        # 调用父类初始化（不使用 detail，由异常处理器处理）
+        super().__init__(
+            status_code=http_status_code,
+            detail=self.message,
+            headers=headers,
+        )
 
-    def __init__(
-        self,
-        *,
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="common.response.unauthorized",
-    ):
+    def dump(self) -> dict[str, Any]:
         """
-        初始化 UnauthorizedException。
+        将异常转换为字典格式。
 
-        Args:
-            status_code: 未授权的 HTTP 状态码（默认 401）。
-            detail: 错误信息（默认 "unauthorized."）。
+        Returns:
+            包含 code、message、data 的字典
         """
-        super().__init__(status_code=status_code, detail=detail)
-
-
-class PermissionDeniedException(BaseHTTPException):
-    """权限拒绝（403 错误）异常。"""
-
-    def __init__(
-        self,
-        *,
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="common.response.permissionDenied",
-    ):
-        """
-        初始化 PermissionDeniedException。
-
-        Args:
-            status_code: 权限拒绝的 HTTP 状态码（默认 403）。
-            detail: 错误信息（默认 "permission denied."）。
-        """
-        super().__init__(status_code=status_code, detail=detail)
-
-
-class NotFoundException(BaseHTTPException):
-    """资源未找到（404 错误）异常。"""
-
-    def __init__(
-        self,
-        *,
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="common.response.notFound",
-    ):
-        """
-        初始化 NotFoundException。
-
-        Args:
-            status_code: 未找到错误的 HTTP 状态码（默认 404）。
-            detail: 错误信息（默认 "not found."）。
-        """
-        super().__init__(status_code=status_code, detail=detail)
-
-
-class ExistsException(BaseHTTPException):
-    """资源已存在（409 错误）异常。"""
-
-    def __init__(
-        self,
-        *,
-        status_code=status.HTTP_409_CONFLICT,
-        detail="common.response.resourceAlreadyExists",
-    ):
-        """
-        初始化 ExistsException。
-
-        Args:
-            status_code: 资源已存在错误的 HTTP 状态码（默认 409）。
-            detail: 错误信息（默认 "resource already exists."）。
-        """
-        super().__init__(status_code=status_code, detail=detail)
-
-
-class InvalidParameterError(Exception):
-    """参数无效异常。"""
-
-    def __init__(self, message="Invalid parameter.", param=""):
-        """
-        初始化 InvalidParameterError。
-
-        Args:
-            message: 错误信息（默认 "Invalid parameter."）。
-            param: 参数名（可选）。
-        """
-        if param:
-            message = f"Parameter '{param}' is required and cannot be empty."
-        super().__init__(message)
+        return {
+            "code": self.code,
+            "message": self.message,
+            "data": self.data,
+        }

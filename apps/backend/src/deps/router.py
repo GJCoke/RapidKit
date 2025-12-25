@@ -4,16 +4,17 @@ Date    : 2025-04-23
 """
 
 from fastapi import Depends, Request
+from fastapi.routing import APIRoute
 from typing_extensions import Annotated, Doc
 
-from src.core.exceptions import BadRequestException
-from src.core.route import BaseRoute
+from src.core.exceptions import AppException
+from src.core.status_codes import StatusCode
 from src.crud.router import RouterCRUD
 from src.deps import SessionDep
 from src.models.router import InterfaceRouter
 
 
-async def get_request_router(request: Request) -> BaseRoute:
+async def get_request_router(request: Request) -> APIRoute:
     """
     依赖函数：从请求中获取当前路由对象。
 
@@ -23,11 +24,11 @@ async def get_request_router(request: Request) -> BaseRoute:
         request: 当前 FastAPI 请求对象。
 
     Returns:
-        BaseRoute: 匹配当前请求路径的路由对象。
+        APIRoute: 匹配当前请求路径的路由对象。
     """
     route = request.scope.get("route")
-    if not isinstance(route, BaseRoute):
-        raise BadRequestException()
+    if not isinstance(route, APIRoute):
+        raise AppException(StatusCode.INTERNAL_SERVER_ERROR)
 
     return route
 
@@ -46,7 +47,7 @@ async def get_router_crud(session: SessionDep) -> RouterCRUD:
 
 
 RequestRouterDep = Annotated[
-    BaseRoute,
+    APIRoute,
     Depends(get_request_router),
     Doc(
         """

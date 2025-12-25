@@ -13,8 +13,9 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing_extensions import Annotated, Doc
 
 from src.core.config import auth_settings, settings
-from src.core.exceptions import BadRequestException, PermissionDeniedException, UnauthorizedException
+from src.core.exceptions import AppException
 from src.core.log import logger
+from src.core.status_codes import StatusCode
 from src.crud.auth import UserCRUD
 from src.deps.database import RedisDep, SessionDep
 from src.models.auth import User
@@ -64,7 +65,7 @@ def get_access_token(token: Annotated[str, Depends(oauth2_scheme)]) -> str:
     """
     if token is None:
         logger.debug("No token is provided.")
-        raise UnauthorizedException()
+        raise AppException(StatusCode.TOKEN_INVALID)
 
     return token
 
@@ -84,7 +85,7 @@ def get_refresh_token(x_refresh_token: Annotated[str, Header(...)]) -> str:
     """
     if x_refresh_token is None:
         logger.debug("No refresh token is provided.")
-        raise PermissionDeniedException()
+        raise AppException(StatusCode.TOKEN_REFRESH_FAILED)
 
     return x_refresh_token
 
@@ -104,7 +105,7 @@ def get_user_agent(user_agent: Annotated[str, Header(..., include_in_schema=Fals
     """
     if user_agent is None:
         logger.debug("No User-Agent is provided.")
-        raise BadRequestException()
+        raise AppException(StatusCode.BAD_REQUEST)
 
     return user_agent
 
@@ -189,7 +190,7 @@ def parse_refresh_jwt_user(
             user_agent,
             user.agent,
         )
-        raise BadRequestException()
+        raise AppException(StatusCode.BAD_REQUEST)
 
     return user
 
@@ -269,7 +270,7 @@ async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep)
     user_info = await db_user.get(user.sub)
     if not user_info:
         logger.debug("No user found in the database.")
-        raise UnauthorizedException()
+        raise AppException(StatusCode.USER_NOT_FOUND)
     return user_info
 
 
@@ -295,12 +296,12 @@ async def get_current_user_form_redis_and_db(user: UserRefreshJWTDep, db_user: A
 
     if not refresh_token:
         logger.debug("No refresh token found in the redis.")
-        raise PermissionDeniedException()
+        raise AppException(StatusCode.TOKEN_EXPIRED)
 
     user_info = await db_user.get(user.sub)
     if not user_info:
         logger.debug("No user found in the database.")
-        raise PermissionDeniedException()
+        raise AppException(StatusCode.USER_NOT_FOUND)
 
     return user_info
 

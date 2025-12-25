@@ -4,7 +4,8 @@ Date    : 2025-04-18
 """
 
 from src.core.config import settings
-from src.core.exceptions import NotFoundException
+from src.core.exceptions import AppException
+from src.core.status_codes import StatusCode
 
 
 def check_debug() -> None:
@@ -17,4 +18,4 @@ def check_debug() -> None:
         NotFoundException: 当前环境不是调试模式时抛出。
     """
     if not settings.ENVIRONMENT.is_debug:
-        raise NotFoundException()
+        raise AppException(StatusCode.INVALID_OPERATION)

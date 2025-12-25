@@ -9,7 +9,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import col
 
-from src.core.route import BaseRoute
 from src.deps.auth import UserDBDep
 from src.deps.role import RoleCrudDep, verify_user_permission
 from src.models import Role
@@ -20,7 +19,6 @@ from src.services.roles import filter_role
 router = APIRouter(
     prefix="/roles",
     tags=["Role"],
-    route_class=BaseRoute,
     dependencies=[Depends(verify_user_permission)],
 )
 

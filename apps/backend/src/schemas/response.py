@@ -9,9 +9,9 @@ from datetime import datetime
 from typing import Any, Generic, TypeVar
 from uuid import UUID
 
-from fastapi import status
 from pydantic import ConfigDict, Field, field_serializer
 
+from src.core.status_codes import StatusCode
 from src.locales.i18n import is_i18n_key, t
 from src.schemas import BaseModel
 
@@ -62,7 +62,7 @@ class Response(BaseResponse, Generic[T]):
             pass
     """
 
-    code: int = Field(status.HTTP_200_OK, description="状态码。")
+    code: int = Field(int(StatusCode.SUCCESS), description="状态码。")
     message: str = Field("common.response.success", description="响应消息。")
     data: T | None = Field(None, description="响应数据。")
 
@@ -120,70 +120,3 @@ class PaginatedResponse(BaseResponse, Generic[T]):
     page_size: int = Field(..., description="每页条数。")
     total: int = Field(..., description="总条数。")
     records: list[T] = Field(..., description="记录列表。")
-
-
-class BadRequestResponse(Response):
-    """统一错误请求响应。"""
-
-    code: int = status.HTTP_400_BAD_REQUEST
-    message: str = "common.response.badRequest"
-    data: None = None
-
-
-class AuthenticationError(Response):
-    """认证错误响应。"""
-
-    code: int = status.HTTP_401_UNAUTHORIZED
-    message: str = "common.response.unauthorized"
-    data: None = None
-
-
-class PermissionResponse(Response):
-    """统一权限响应。"""
-
-    code: int = status.HTTP_403_FORBIDDEN
-    message: str = "common.response.permissionDenied"
-    data: None = None
-
-
-class NotFoundResponse(Response):
-    """统一未找到响应。"""
-
-    code: int = status.HTTP_404_NOT_FOUND
-    message: str = "common.response.notFound"
-    data: None = None
-
-
-class ValidationErrorResponse(Response):
-    """统一参数校验失败响应。"""
-
-    code: int = status.HTTP_422_UNPROCESSABLE_CONTENT
-    message: str = "common.response.invalidParameter"
-    data: str = "Validation error details."
-
-
-class ServerErrorResponse(Response):
-    """统一服务器错误响应。"""
-
-    code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
-    message: str = "common.response.internalServer"
-    data: str = "Internal server error details."
-
-
-class SocketErrorResponse(Response):
-    """统一 websocket 服务器错误响应。"""
-
-    code: int = status.WS_1011_INTERNAL_ERROR
-    message: str = "common.response.internalServer"
-    event: str
-    data: str = "Internal server error details."
-
-
-RESPONSES = {
-    400: {"description": "Bad Request.", "model": BadRequestResponse},
-    401: {"description": "Unauthorized.", "model": AuthenticationError},
-    403: {"description": "Permission denied.", "model": PermissionResponse},
-    404: {"description": "Not found.", "model": NotFoundResponse},
-    422: {"description": "Unprocessable Entity.", "model": ValidationErrorResponse},
-    500: {"description": "Internal Server Error.", "model": ServerErrorResponse},
-}

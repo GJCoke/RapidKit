@@ -3,8 +3,8 @@ FastAPI 入口。
 
 这是 FastAPI 应用的主入口，负责设置中间件、路由和异常处理。
 
-作者 : Coke
-日期 : 2025-03-10
+Author : Coke
+Date   : 2025-03-10
 """
 
 from fastapi import FastAPI, Request, status
@@ -16,13 +16,14 @@ from starlette_context.middleware import ContextMiddleware
 
 from src.api.v1 import v1_router
 from src.core.config import app_configs, settings
+from src.core.exceptions import AppException
 from src.core.lifecycle import lifespan
 from src.core.log import logger, set_custom_logfile, setup_logging
+from src.core.status_codes import StatusCode
 from src.locales.i18n import is_i18n_key, t
 from src.middlewares.i18n import I18nMiddleware
 from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.state import StateMiddleware
-from src.schemas.response import BadRequestResponse, ServerErrorResponse, ValidationErrorResponse
 from src.schemas.response import Response as SchemaResponse
 from src.utils.nanoid import NanoIdPlugin
 from src.utils.utils import format_validation_errors
@@ -43,7 +44,7 @@ app.add_middleware(
     plugins=(NanoIdPlugin(),),
     default_error_response=JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=BadRequestResponse().model_dump(),  # i18n 内容依赖上下文，此时还未进入请求周期，暂用原始值
+        content=AppException(StatusCode.BAD_REQUEST).dump(),  # i18n 内容依赖上下文，此时还未进入请求周期，暂用原始值
     ),
 )
 app.add_middleware(
@@ -72,7 +73,7 @@ async def handle_server_errors(request: Request, exc: Exception) -> JSONResponse
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=ServerErrorResponse(data=str(exc)).serializable_dict(),
+        content=AppException(StatusCode.INTERNAL_SERVER_ERROR, data=str(exc)).dump(),
     )
 
 
@@ -92,7 +93,7 @@ async def handle_request_validation_errors(request: Request, exc: RequestValidat
 
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=ValidationErrorResponse(data=details).serializable_dict(),
+        content=AppException(StatusCode.VALIDATION_ERROR, data=details).dump(),
     )
 
 

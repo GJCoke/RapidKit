@@ -13,7 +13,8 @@ Date   : 2025-04-18
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.core.exceptions import BadRequestException
+from src.core.exceptions import AppException
+from src.core.status_codes import StatusCode
 from src.crud.crud_sqlmodel import BaseSQLModelCRUD
 from src.models.auth import User
 from src.schemas.auth import UserCreate, UserUpdate
@@ -34,7 +35,7 @@ class UserCRUD(BaseSQLModelCRUD[User, UserCreate, UserUpdate]):
             User: 匹配的用户对象。
 
         Raises:
-            BadRequestException: 未找到对应用户名的用户时抛出。
+            AppException: 未找到对应用户名的用户时抛出。
         """
 
         session = session or self.session
@@ -44,6 +45,6 @@ class UserCRUD(BaseSQLModelCRUD[User, UserCreate, UserUpdate]):
         response = result.first()
 
         if not response:
-            raise BadRequestException()
+            raise AppException(StatusCode.USER_NOT_FOUND)
 
         return response

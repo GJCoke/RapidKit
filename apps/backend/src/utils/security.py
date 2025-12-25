@@ -27,7 +27,8 @@ from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes, Pub
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
 from pydantic import BaseModel, SecretStr
 
-from src.core.exceptions import UnauthorizedException
+from src.core.exceptions import AppException
+from src.core.status_codes import StatusCode
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +113,7 @@ def decode_token(token: str, key: AccessSecret | RefreshSecret) -> AccessJWT | R
         payload.validate()
     except JoseError:
         logger.exception("Invalid JWT token: %s", token)
-        raise UnauthorizedException()
+        raise AppException(StatusCode.TOKEN_INVALID)
 
     return AccessJWT(**payload) if isinstance(key, AccessSecret) else RefreshJWT(**payload)
 

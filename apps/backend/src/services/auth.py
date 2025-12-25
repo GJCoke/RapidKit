@@ -13,14 +13,14 @@ import time
 from uuid import UUID
 
 from src.core.config import auth_settings
-from src.core.exceptions import BadRequestException, PermissionDeniedException
+from src.core.exceptions import AppException
 from src.core.log import logger
 from src.core.redis_client import AsyncRedisClient
+from src.core.status_codes import StatusCode
 from src.crud.auth import UserCRUD
 from src.crud.role import RoleCRUD
 from src.deps.auth import refresh_structure
 from src.deps.role import create_user_permission_cache
-from src.locales.i18n import t
 from src.models import User
 from src.schemas.auth import TokenResponse
 from src.utils.security import AccessJWT, RefreshJWT, check_password, create_token, decrypt_message
@@ -80,7 +80,7 @@ def decrypt_password(rsa_password: str) -> str:
         password = decrypt_message(auth_settings.RSA_PRIVATE_KEY, rsa_password)
     except Exception:
         logger.exception("Failed to decrypt password.", exc_info=True)
-        raise BadRequestException(detail=t("auth.error.invalidCredentials"))
+        raise AppException(StatusCode.AUTHENTICATION_FAILED)
 
     return password
 
@@ -158,7 +158,7 @@ async def refresh_user_token(
     redis_key = refresh_structure.format(user_id=user.id, jti=jti)
     if not await redis.exists(redis_key):
         logger.debug("No refresh token found in the redis.")
-        raise PermissionDeniedException()
+        raise AppException(StatusCode.TOKEN_EXPIRED)
 
     await redis.delete(redis_key)
 
@@ -200,7 +200,7 @@ async def user_login(
 
     if not check_password(decrypted_password, user_info.password):
         logger.debug("Invalid password for user %s", username)
-        raise BadRequestException(detail=t("auth.error.invalidCredentials"))
+        raise AppException(StatusCode.AUTHENTICATION_FAILED)
 
     token = await create_user_token(user_info.id, user_info.name, redis, user_agent)
     await create_user_permission_cache(user_info.id, user_info.roles, redis, role_crud)

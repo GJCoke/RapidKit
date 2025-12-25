@@ -11,12 +11,12 @@ from typing import Any, AsyncIterator
 from uuid import UUID
 
 from fastapi import FastAPI
+from fastapi.routing import APIRoute
 from starlette.routing import BaseRoute as StarletteRoute
 
 from src.core.config import settings
 from src.core.database import AsyncSessionLocal, RedisManager
 from src.core.log import logger
-from src.core.route import BaseRoute
 from src.crud.router import RouterCRUD
 from src.locales.watch import watch_locale_files
 from src.models.router import InterfaceRouter
@@ -52,14 +52,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("Application shutdown complete.")
 
 
-async def store_router_in_db(routes: list[StarletteRoute | BaseRoute]) -> None:
+async def store_router_in_db(routes: list[StarletteRoute | APIRoute]) -> None:
     """
     过滤和校验后将路由信息存储到数据库。
 
-    该函数处理路由对象列表，校验并存储到数据库，仅包含 BaseRoute 类型且需要包含在 schema 中的路由。
+    该函数处理路由对象列表，校验并存储到数据库，仅包含 APIRoute 类型且需要包含在 schema 中的路由。
 
     Args:
-        routes: 路由对象列表（StarletteRoute 或 BaseRoute）。
+        routes: 路由对象列表（StarletteRoute 或 APIRoute
     """
 
     # if not settings.ENVIRONMENT.is_deployed:
@@ -68,7 +68,7 @@ async def store_router_in_db(routes: list[StarletteRoute | BaseRoute]) -> None:
     app_routes: list[FastAPIRouterCreate] = []
 
     for route in routes:
-        if not isinstance(route, BaseRoute):
+        if not isinstance(route, APIRoute):
             continue
 
         if not route.include_in_schema:

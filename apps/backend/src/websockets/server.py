@@ -6,11 +6,11 @@ Date    : 2025-05-16
 import asyncio
 from typing import Any, Awaitable, Callable, TypeVar, overload
 
-from fastapi import status
 from pydantic import BaseModel, ValidationError
 from socketio import AsyncServer as SocketIOAsyncServer
 
-from src.schemas.response import SocketErrorResponse
+from src.core.exceptions import AppException
+from src.core.status_codes import StatusCode
 from src.utils.utils import format_validation_errors
 from src.websockets.dependencies.core import LifespanContext, solve_dependency
 
@@ -61,12 +61,7 @@ class AsyncServer(SocketIOAsyncServer):
                     details = format_validation_errors(e)
                     await self.emit(
                         "error",
-                        SocketErrorResponse(
-                            code=status.WS_1007_INVALID_FRAME_PAYLOAD_DATA,
-                            event=event,
-                            message="Data Validation Error.",
-                            data=details,
-                        ),
+                        AppException(StatusCode.SOCKET_AUTHENTICATION_FAILED, data=details).dump(),
                         to=sid,
                     )
                     raise
@@ -74,12 +69,10 @@ class AsyncServer(SocketIOAsyncServer):
                 except TypeError:
                     await self.emit(
                         "error",
-                        SocketErrorResponse(
-                            code=status.WS_1003_UNSUPPORTED_DATA,
-                            event=event,
-                            message="Data Type Error.",
+                        AppException(
+                            code=StatusCode.SOCKET_INVALID_MESSAGE,
                             data=f"TypeError: expected a 'map', but received an '{type(data).__name__}'.",
-                        ),
+                        ).dump(),
                         to=sid,
                     )
                     raise
