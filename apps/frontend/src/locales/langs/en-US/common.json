@@ -39,5 +39,8 @@
   "yesOrNo": {
     "no": "No",
     "yes": "Yes"
+  },
+  "response": {
+    "badRequest": "Request format error"
   }
 }

@@ -5,6 +5,7 @@
     "invalidInput": "Invalid input data",
     "missingRequiredField": "Missing required field",
     "invalidFormat": "Invalid data format",
+    "badRequest": "Bad request format",
     "userOperationError": "User operation failed",
     "roleOperationError": "Role operation failed",
     "menuOperationError": "Menu operation failed",

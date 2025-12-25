@@ -32,6 +32,7 @@ declare namespace I18nKeys {
     | "pleaseCheckValue"
     | "refresh"
     | "reset"
+    | "response.badRequest"
     | "search"
     | "switch"
     | "tip"
