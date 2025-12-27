@@ -46,7 +46,6 @@ app.state.limiter = limiter
 app.add_middleware(StateMiddleware)  # type: ignore
 app.add_middleware(SlowAPIMiddleware)  # type: ignore
 app.add_middleware(I18nMiddleware)  # type: ignore
-app.add_middleware(LoggerMiddleware)  # type: ignore
 app.add_middleware(
     ContextMiddleware,  # type: ignore
     plugins=(NanoIdPlugin(),),
@@ -59,6 +58,7 @@ app.add_middleware(
     allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
     allow_headers=settings.CORS_HEADERS,
 )
+app.add_middleware(LoggerMiddleware)  # type: ignore
 
 
 @app.exception_handler(RateLimitExceeded)
@@ -66,13 +66,6 @@ async def handle_rate_limit_exceeded(request: Request, exc: RateLimitExceeded) -
     """
     处理请求速率限制超出异常。
     """
-
-    logger.warning(
-        '"{method} {path}" RateLimitExceeded: {detail}',
-        method=request.method,
-        path=request.url.path,
-        detail=str(exc),
-    )
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,

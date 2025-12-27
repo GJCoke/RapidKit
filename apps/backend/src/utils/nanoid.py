@@ -90,7 +90,7 @@ class NanoIdPlugin(Plugin):
         Raises:
             WrongNanoIdError: 如果 Nanoid 格式不正确。
         """
-        if nanoid_to_validate:
+        if not nanoid_to_validate:
             raise WrongNanoIdError("Nanoid cannot be empty", error_response=self.error_response)
 
         if len(nanoid_to_validate) != self.size:

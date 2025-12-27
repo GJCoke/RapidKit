@@ -141,7 +141,7 @@ def resolve_language(
 
     Args:
         accept_language: 一个表示客户端优先语言的字符串，其中作为 'Accept-Language' HTTP 标头指定。
-        supported_languages: 一个普普通通遍历，每个数串表示了一个服务器支持的语言代码。
+        supported_languages: 一个普通集合，每个字符串表示了一个服务器支持的语言代码。
 
     Returns:
         一个表示服务器支持的语言代码中最合适的一个语言

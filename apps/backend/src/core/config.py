@@ -12,7 +12,7 @@ import re
 import secrets
 import warnings
 from datetime import timedelta
-from typing import Any
+from typing import Any, Literal, TypeAlias
 
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from pydantic import Field, PostgresDsn, RedisDsn, Secret, field_validator, model_validator
@@ -21,8 +21,11 @@ from pydantic_settings import SettingsConfigDict
 from slowapi.extension import StrOrCallableStr
 
 from src.core.environment import Environment
+from src.locales.types import LANGUAGE_TYPE
 from src.utils.constants import DAYS, WEEKS
 from src.utils.security import AccessSecret, RefreshSecret, generate_rsa_key_pair, load_private_key, serialize_key
+
+LOG_LEVELS: TypeAlias = Literal["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 
 class ConfigError(Exception):
@@ -141,9 +144,9 @@ class Config(BaseSettings):
     APP_VERSION: str = "0.1.0"
 
     # Logging
-    LOG_LEVEL: str = "INFO"
-    LOG_FILE_ACCESS_LEVEL: str = "INFO"
-    LOG_FILE_ERROR_LEVEL: str = "ERROR"
+    LOG_LEVEL: LOG_LEVELS = "INFO"
+    LOG_FILE_ACCESS_LEVEL: LOG_LEVELS = "INFO"
+    LOG_FILE_ERROR_LEVEL: LOG_LEVELS = "WARNING"
 
     LOG_ACCESS_FILENAME: str = "access.log"
     LOG_ERROR_FILENAME: str = "error.log"
@@ -153,7 +156,7 @@ class Config(BaseSettings):
     )
 
     # I18n settings
-    DEFAULT_LANGUAGE: str = "zh-CN"
+    DEFAULT_LANGUAGE: LANGUAGE_TYPE = "zh-CN"
 
     # Rate limiting settings
     DEFAULT_LIMITS: list[StrOrCallableStr] = ["20/minute"]
