@@ -6,6 +6,7 @@
     "missingRequiredField": "Missing required field",
     "invalidFormat": "Invalid data format",
     "badRequest": "Bad request format",
+    "tooManyRequests": "Too many requests, please try again later",
     "userOperationError": "User operation failed",
     "roleOperationError": "Role operation failed",
     "menuOperationError": "Menu operation failed",
@@ -35,11 +36,11 @@
     "internalServerError": "Internal server error",
     "databaseError": "Database operation failed",
     "systemBusy": "System busy, please try again later",
-    "socketConnectionError": "WebSocket connection failed",
-    "socketConnectionClosed": "WebSocket connection closed",
-    "socketMessageSendError": "WebSocket message send failed",
-    "socketInvalidMessage": "WebSocket message format error",
-    "socketAuthenticationFailed": "WebSocket authentication failed",
-    "socketNamespaceNotFound": "WebSocket namespace not found"
+    "socketConnectionError": "Socket connection failed",
+    "socketConnectionClosed": "Socket connection closed",
+    "socketMessageSendError": "Socket message send failed",
+    "socketInvalidMessage": "Socket message format error",
+    "socketAuthenticationFailed": "Socket authentication failed",
+    "socketNamespaceNotFound": "Socket namespace not found"
   }
 }

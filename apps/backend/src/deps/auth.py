@@ -8,6 +8,7 @@ Author : Coke
 Date   : 2025-04-17
 """
 
+from authlib.jose.errors import JoseError
 from fastapi import Depends, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing_extensions import Annotated, Doc
@@ -157,7 +158,10 @@ def parse_access_jwt_user(token: HeaderAccessTokenDep) -> AccessJWT:
         UnauthorizedException: token 无效或解码失败时抛出。
     """
 
-    user = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
+    try:
+        user = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
+    except JoseError:
+        raise AppException(StatusCode.TOKEN_INVALID)
 
     return user
 
@@ -181,7 +185,10 @@ def parse_refresh_jwt_user(
         BadRequestException: 设备信息不匹配时抛出。
     """
 
-    user = decode_token(x_refresh_token, auth_settings.REFRESH_TOKEN_KEY)
+    try:
+        user = decode_token(x_refresh_token, auth_settings.REFRESH_TOKEN_KEY)
+    except JoseError:
+        raise AppException(StatusCode.TOKEN_INVALID)
 
     if user.agent != user_agent:
         logger.warning(
@@ -271,6 +278,10 @@ async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep)
     if not user_info:
         logger.debug("No user found in the database.")
         raise AppException(StatusCode.USER_NOT_FOUND)
+
+    if not user_info.status:
+        logger.debug("User found but is inactive.")
+        raise AppException(StatusCode.USER_DISABLED)
     return user_info
 
 

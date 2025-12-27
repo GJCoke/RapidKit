@@ -54,63 +54,64 @@ class StatusCode(Enum):
     """应用程序状态码定义。使用 4 位自定义格式。"""
 
     # ==================== 成功 (0XXX) ====================
-    SUCCESS = (0, "common.response.success")
+    SUCCESS = (0, "common.response.success")  # 请求成功
 
     # ==================== 参数/请求错误 (1XXX) ====================
-    VALIDATION_ERROR = (1001, "common.response.validationError")
-    INVALID_INPUT = (1002, "common.response.invalidInput")
-    MISSING_REQUIRED_FIELD = (1003, "common.response.missingRequiredField")
-    INVALID_FORMAT = (1004, "common.response.invalidFormat")
-    BAD_REQUEST = (1005, "common.response.badRequest")
+    VALIDATION_ERROR = (1001, "common.response.validationError")  # 请求参数验证失败
+    INVALID_INPUT = (1002, "common.response.invalidInput")  # 输入数据无效
+    MISSING_REQUIRED_FIELD = (1003, "common.response.missingRequiredField")  # 缺少必需字段
+    INVALID_FORMAT = (1004, "common.response.invalidFormat")  # 数据格式错误
+    BAD_REQUEST = (1005, "common.response.badRequest")  # 请求格式错误
+    TOO_MANY_REQUESTS = (1006, "common.response.tooManyRequests")  # 请求过于频繁，已被限流
 
     # ==================== 业务错误 (2XXX) ====================
-    USER_OPERATION_ERROR = (2001, "common.response.userOperationError")
-    ROLE_OPERATION_ERROR = (2002, "common.response.roleOperationError")
-    MENU_OPERATION_ERROR = (2003, "common.response.menuOperationError")
-    PERMISSION_OPERATION_ERROR = (2004, "common.response.permissionOperationError")
-    INVALID_OPERATION = (2005, "common.response.invalidOperation")
+    USER_OPERATION_ERROR = (2001, "common.response.userOperationError")  # 用户操作失败
+    ROLE_OPERATION_ERROR = (2002, "common.response.roleOperationError")  # 角色操作失败
+    MENU_OPERATION_ERROR = (2003, "common.response.menuOperationError")  # 菜单操作失败
+    PERMISSION_OPERATION_ERROR = (2004, "common.response.permissionOperationError")  # 权限操作失败
+    INVALID_OPERATION = (2005, "common.response.invalidOperation")  # 无效的操作
 
     # ==================== 状态/并发/幂等 (3XXX) ====================
-    ALREADY_EXISTS = (3001, "common.response.alreadyExists")
-    DUPLICATE_REQUEST = (3002, "common.response.duplicateRequest")
-    STATE_CONFLICT = (3003, "common.response.stateConflict")
-    CONCURRENT_MODIFICATION = (3004, "common.response.concurrentModification")
+    ALREADY_EXISTS = (3001, "common.response.alreadyExists")  # 资源已存在，无法重复创建
+    DUPLICATE_REQUEST = (3002, "common.response.duplicateRequest")  # 重复请求
+    STATE_CONFLICT = (3003, "common.response.stateConflict")  # 资源状态冲突
+    CONCURRENT_MODIFICATION = (3004, "common.response.concurrentModification")  # 并发修改冲突
 
     # ==================== 权限/安全 (4XXX) ====================
-    AUTHENTICATION_FAILED = (4001, "common.response.authenticationFailed")
-    TOKEN_EXPIRED = (4002, "common.response.tokenExpired")
-    TOKEN_INVALID = (4003, "common.response.tokenInvalid")
-    INSUFFICIENT_PERMISSIONS = (4004, "common.response.insufficientPermissions")
-    ROLE_PERMISSION_DENIED = (4005, "common.response.rolePermissionDenied")
-    MENU_PERMISSION_DENIED = (4006, "common.response.menuPermissionDenied")
-    RESOURCE_PERMISSION_DENIED = (4007, "common.response.resourcePermissionDenied")
-    USER_DISABLED = (4008, "common.response.userDisabled")
-    TOKEN_REFRESH_FAILED = (4009, "common.response.tokenRefreshFailed")
+    AUTHENTICATION_FAILED = (4001, "common.response.authenticationFailed")  # 认证失败，用户名或密码错误
+    TOKEN_EXPIRED = (4002, "common.response.tokenExpired")  # 认证令牌已过期
+    TOKEN_INVALID = (4003, "common.response.tokenInvalid")  # 认证令牌无效
+    INSUFFICIENT_PERMISSIONS = (4004, "common.response.insufficientPermissions")  # 权限不足，无法执行此操作
+    ROLE_PERMISSION_DENIED = (4005, "common.response.rolePermissionDenied")  # 角色权限不足
+    MENU_PERMISSION_DENIED = (4006, "common.response.menuPermissionDenied")  # 菜单权限不足，无权访问此菜单
+    RESOURCE_PERMISSION_DENIED = (4007, "common.response.resourcePermissionDenied")  # 资源权限不足
+    USER_DISABLED = (4008, "common.response.userDisabled")  # 用户已被禁用，无法登录
+    TOKEN_REFRESH_FAILED = (4009, "common.response.tokenRefreshFailed")  # 令牌刷新失败
 
     # ==================== 资源不存在 (5XXX) ====================
-    USER_NOT_FOUND = (5001, "common.response.userNotFound")
-    ROLE_NOT_FOUND = (5002, "common.response.roleNotFound")
-    MENU_NOT_FOUND = (5003, "common.response.menuNotFound")
-    RESOURCE_NOT_FOUND = (5004, "common.response.resourceNotFound")
-    MENU_INVALID_PARENT = (5005, "common.response.menuInvalidParent")
+    USER_NOT_FOUND = (5001, "common.response.userNotFound")  # 用户不存在
+    ROLE_NOT_FOUND = (5002, "common.response.roleNotFound")  # 角色不存在
+    MENU_NOT_FOUND = (5003, "common.response.menuNotFound")  # 菜单不存在
+    RESOURCE_NOT_FOUND = (5004, "common.response.resourceNotFound")  # 资源不存在
+    MENU_INVALID_PARENT = (5005, "common.response.menuInvalidParent")  # 菜单父级不存在
 
     # ==================== 第三方/依赖错误 (6XXX) ====================
-    EXTERNAL_SERVICE_ERROR = (6001, "common.response.externalServiceError")
-    THIRD_PARTY_ERROR = (6002, "common.response.thirdPartyError")
-    DEPENDENCY_ERROR = (6003, "common.response.dependencyError")
+    EXTERNAL_SERVICE_ERROR = (6001, "common.response.externalServiceError")  # 外部服务调用失败
+    THIRD_PARTY_ERROR = (6002, "common.response.thirdPartyError")  # 第三方服务错误
+    DEPENDENCY_ERROR = (6003, "common.response.dependencyError")  # 依赖服务错误
 
     # ==================== 系统错误 (7XXX) ====================
-    INTERNAL_SERVER_ERROR = (7001, "common.response.internalServerError")
-    DATABASE_ERROR = (7002, "common.response.databaseError")
-    SYSTEM_BUSY = (7003, "common.response.systemBusy")
+    INTERNAL_SERVER_ERROR = (7001, "common.response.internalServerError")  # 服务器内部错误
+    DATABASE_ERROR = (7002, "common.response.databaseError")  # 数据库操作失败
+    SYSTEM_BUSY = (7003, "common.response.systemBusy")  # 系统繁忙，请稍后重试
 
     # ==================== Socket/实时通信错误 (8XXX) ====================
-    SOCKET_CONNECTION_ERROR = (8001, "common.response.socketConnectionError")
-    SOCKET_CONNECTION_CLOSED = (8002, "common.response.socketConnectionClosed")
-    SOCKET_MESSAGE_SEND_ERROR = (8003, "common.response.socketMessageSendError")
-    SOCKET_INVALID_MESSAGE = (8004, "common.response.socketInvalidMessage")
-    SOCKET_AUTHENTICATION_FAILED = (8005, "common.response.socketAuthenticationFailed")
-    SOCKET_NAMESPACE_NOT_FOUND = (8006, "common.response.socketNamespaceNotFound")
+    SOCKET_CONNECTION_ERROR = (8001, "common.response.socketConnectionError")  # WebSocket 连接失败
+    SOCKET_CONNECTION_CLOSED = (8002, "common.response.socketConnectionClosed")  # WebSocket 连接已关闭
+    SOCKET_MESSAGE_SEND_ERROR = (8003, "common.response.socketMessageSendError")  # WebSocket 消息发送失败
+    SOCKET_INVALID_MESSAGE = (8004, "common.response.socketInvalidMessage")  # WebSocket 消息格式错误
+    SOCKET_AUTHENTICATION_FAILED = (8005, "common.response.socketAuthenticationFailed")  # WebSocket 认证失败
+    SOCKET_NAMESPACE_NOT_FOUND = (8006, "common.response.socketNamespaceNotFound")  # WebSocket 命名空间不存在
 
     def __init__(self, code: int, description: str) -> None:
         """

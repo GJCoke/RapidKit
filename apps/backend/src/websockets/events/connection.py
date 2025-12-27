@@ -5,7 +5,11 @@ Date    : 2025-05-16
 
 from typing import Literal
 
+from authlib.jose.errors import JoseError
+
 from src.core.config import auth_settings
+from src.core.exceptions import AppException
+from src.core.status_codes import StatusCode
 from src.deps.auth import AuthCrudDep
 from src.deps.database import RedisDep
 from src.schemas import BaseModel
@@ -61,7 +65,10 @@ async def connect(sid: SID, auth: AccessToken, db_user: AuthCrudDep, redis: Redi
     if not token:
         return False
 
-    user = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
+    try:
+        user = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
+    except JoseError:
+        raise AppException(StatusCode.TOKEN_INVALID)
 
     user_info = await db_user.get(user.sub)
     if not user_info:

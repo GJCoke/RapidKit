@@ -18,6 +18,7 @@ from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from pydantic import Field, PostgresDsn, RedisDsn, Secret, field_validator, model_validator
 from pydantic_settings import BaseSettings as _BaseSettings
 from pydantic_settings import SettingsConfigDict
+from slowapi.extension import StrOrCallableStr
 
 from src.core.environment import Environment
 from src.utils.constants import DAYS, WEEKS
@@ -153,6 +154,9 @@ class Config(BaseSettings):
 
     # I18n settings
     DEFAULT_LANGUAGE: str = "zh-CN"
+
+    # Rate limiting settings
+    DEFAULT_LIMITS: list[StrOrCallableStr] = ["20/minute"]
 
 
 settings = Config()  # type: ignore

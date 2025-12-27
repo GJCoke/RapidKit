@@ -45,7 +45,7 @@ class I18n:
         """
         ctx.language = language
 
-    def t(self, key: I18nKey, **kwargs) -> str:
+    def t(self, key: I18nKey, language: str | None = None, **kwargs) -> str:
         """
         基于当前语言设置获取和格式化本地化字符串。
 
@@ -56,7 +56,7 @@ class I18n:
         Returns:
             格式化的本地化字符串，如果未找到键则返回默认值。
         """
-        data = self.locales.get(self.current_language, {})
+        data = self.locales.get(language or self.current_language, {})
         return data.get(key, key).format(**kwargs)
 
     def is_i18n_key(value: str) -> bool:

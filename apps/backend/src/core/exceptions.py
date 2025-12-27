@@ -13,6 +13,7 @@ from fastapi import status
 from fastapi.exceptions import HTTPException
 
 from src.core.status_codes import StatusCode, get_status_code, get_status_description
+from src.locales.i18n import t
 
 
 class BaseHTTPException(HTTPException):
@@ -79,7 +80,7 @@ class AppException(BaseHTTPException):
             raise TypeError(f"The status code must be a StatusCode enum or integer; it cannot be: {type(code)}")
 
         # 设置错误消息
-        self.message = message or description
+        self.message = message or t(description)  # type: ignore
         self.data = data
 
         # 调用父类初始化（不使用 detail，由异常处理器处理）

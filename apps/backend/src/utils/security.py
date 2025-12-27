@@ -19,16 +19,12 @@ from uuid import UUID
 
 import bcrypt
 from authlib.jose import jwt
-from authlib.jose.errors import JoseError
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey, generate_private_key
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes, PublicKeyTypes
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
 from pydantic import BaseModel, SecretStr
-
-from src.core.exceptions import AppException
-from src.core.status_codes import StatusCode
 
 logger = logging.getLogger(__name__)
 
@@ -106,14 +102,10 @@ def decode_token(token: str, key: AccessSecret | RefreshSecret) -> AccessJWT | R
         解码后的用户信息。
 
     Raises:
-        UnauthorizedException: 令牌无效或解码失败时抛出。
+        JoseError: 令牌无效或解码失败时抛出。
     """
-    try:
-        payload = jwt.decode(token, key=key.get_secret_value())
-        payload.validate()
-    except JoseError:
-        logger.exception("Invalid JWT token: %s", token)
-        raise AppException(StatusCode.TOKEN_INVALID)
+    payload = jwt.decode(token, key=key.get_secret_value())
+    payload.validate()
 
     return AccessJWT(**payload) if isinstance(key, AccessSecret) else RefreshJWT(**payload)
 

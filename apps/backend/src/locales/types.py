@@ -43,6 +43,7 @@ I18nKey = Literal[
     "common.response.tokenExpired",
     "common.response.tokenInvalid",
     "common.response.tokenRefreshFailed",
+    "common.response.tooManyRequests",
     "common.response.userDisabled",
     "common.response.userNotFound",
     "common.response.userOperationError",

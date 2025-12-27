@@ -11,17 +11,20 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException
-from starlette_context.middleware import ContextMiddleware
 
 from src.api.v1 import v1_router
 from src.core.config import app_configs, settings
 from src.core.exceptions import AppException
 from src.core.lifecycle import lifespan
+from src.core.limiter import RateLimiterService
 from src.core.log import logger, set_custom_logfile, setup_logging
 from src.core.status_codes import StatusCode
 from src.locales.i18n import is_i18n_key, t
+from src.middlewares.context import ContextMiddleware
 from src.middlewares.i18n import I18nMiddleware
+from src.middlewares.limiter import SlowAPIMiddleware
 from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.state import StateMiddleware
 from src.schemas.response import Response as SchemaResponse
@@ -35,17 +38,18 @@ set_custom_logfile()
 app = FastAPI(**app_configs, lifespan=lifespan)
 app.mount("/socket.io", socket_app)
 
+# 初始化速率限制服务
+limiter = RateLimiterService.init_limiter()
+app.state.limiter = limiter
+
 # 中间件的注册机制为 先进后出
 app.add_middleware(StateMiddleware)  # type: ignore
+app.add_middleware(SlowAPIMiddleware)  # type: ignore
 app.add_middleware(I18nMiddleware)  # type: ignore
 app.add_middleware(LoggerMiddleware)  # type: ignore
 app.add_middleware(
     ContextMiddleware,  # type: ignore
     plugins=(NanoIdPlugin(),),
-    default_error_response=JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=AppException(StatusCode.BAD_REQUEST).dump(),  # i18n 内容依赖上下文，此时还未进入请求周期，暂用原始值
-    ),
 )
 app.add_middleware(
     CORSMiddleware,  # type: ignore
@@ -55,6 +59,25 @@ app.add_middleware(
     allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
     allow_headers=settings.CORS_HEADERS,
 )
+
+
+@app.exception_handler(RateLimitExceeded)
+async def handle_rate_limit_exceeded(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    """
+    处理请求速率限制超出异常。
+    """
+
+    logger.warning(
+        '"{method} {path}" RateLimitExceeded: {detail}',
+        method=request.method,
+        path=request.url.path,
+        detail=str(exc),
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=AppException(StatusCode.TOO_MANY_REQUESTS).dump(),
+    )
 
 
 @app.exception_handler(Exception)

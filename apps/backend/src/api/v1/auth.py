@@ -38,7 +38,6 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 @router.get("/keys/public")
 async def get_public_key() -> Response[str]:
     """得到用于 RSA 加密密码的公开密钥。"""
-    raise ValueError("Just for test exception handling.")
     return Response(data=auth_settings.RSA_PUBLIC_KEY.get_secret_value())
 
 
