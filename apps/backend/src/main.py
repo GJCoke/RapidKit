@@ -32,107 +32,116 @@ from src.utils.nanoid import NanoIdPlugin
 from src.utils.utils import format_validation_errors
 from src.websockets.app import socket_app
 
-setup_logging()
-set_custom_logfile()
 
-app = FastAPI(**app_configs, lifespan=lifespan)
-app.mount("/socket.io", socket_app)
-
-# 初始化速率限制服务
-limiter = RateLimiterService.init_limiter()
-app.state.limiter = limiter
-
-# 中间件的注册机制为 先进后出
-app.add_middleware(StateMiddleware)  # type: ignore
-app.add_middleware(SlowAPIMiddleware)  # type: ignore
-app.add_middleware(I18nMiddleware)  # type: ignore
-app.add_middleware(
-    ContextMiddleware,  # type: ignore
-    plugins=(NanoIdPlugin(),),
-)
-app.add_middleware(
-    CORSMiddleware,  # type: ignore
-    allow_origins=settings.CORS_ORIGINS,
-    allow_origin_regex=settings.CORS_ORIGINS_REGEX,
-    allow_credentials=True,
-    allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
-    allow_headers=settings.CORS_HEADERS,
-)
-app.add_middleware(LoggerMiddleware)  # type: ignore
+def setup_logging_config() -> None:
+    """初始化日志配置。"""
+    setup_logging()
+    set_custom_logfile()
 
 
-@app.exception_handler(RateLimitExceeded)
-async def handle_rate_limit_exceeded(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+def setup_middlewares(app: FastAPI) -> None:
     """
-    处理请求速率限制超出异常。
-    """
+    配置应用中间件。
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=AppException(StatusCode.TOO_MANY_REQUESTS).dump(),
+    中间件的注册机制为 先进后出。
+    """
+    app.add_middleware(StateMiddleware)  # type: ignore
+    app.add_middleware(SlowAPIMiddleware)  # type: ignore
+    app.add_middleware(I18nMiddleware)  # type: ignore
+    app.add_middleware(
+        ContextMiddleware,  # type: ignore
+        plugins=(NanoIdPlugin(),),
     )
-
-
-@app.exception_handler(Exception)
-async def handle_server_errors(request: Request, exc: Exception) -> JSONResponse:
-    """
-    捕获所有非预期异常并返回 500 状态码。
-    """
-
-    logger.error(
-        '"{method} {path}" {status_code} ServerException: {detail}',
-        method=request.method,
-        path=request.url.path,
-        status_code=int(StatusCode.INTERNAL_SERVER_ERROR),
-        detail=str(exc),
+    app.add_middleware(
+        CORSMiddleware,  # type: ignore
+        allow_origins=settings.CORS_ORIGINS,
+        allow_origin_regex=settings.CORS_ORIGINS_REGEX,
+        allow_credentials=True,
+        allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
+        allow_headers=settings.CORS_HEADERS,
     )
-
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=AppException(StatusCode.INTERNAL_SERVER_ERROR, data=str(exc)).dump(),
-    )
+    app.add_middleware(LoggerMiddleware)  # type: ignore
 
 
-@app.exception_handler(RequestValidationError)
-async def handle_request_validation_errors(request: Request, exc: RequestValidationError) -> JSONResponse:
-    """
-    捕获参数校验异常并处理其结构。
-    """
+def setup_exception_handlers(app: FastAPI) -> None:
+    """配置异常处理器。"""
 
-    details = format_validation_errors(exc)
-    logger.warning(
-        '"{method} {path}" RequestValidationError: {details}',
-        method=request.method,
-        path=request.url.path,
-        details=details,
-    )
+    @app.exception_handler(RateLimitExceeded)
+    async def handle_rate_limit_exceeded(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+        """处理请求速率限制超出异常。"""
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=AppException(StatusCode.TOO_MANY_REQUESTS).dump(),
+        )
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=AppException(StatusCode.VALIDATION_ERROR, data=details).dump(),
-    )
+    @app.exception_handler(RequestValidationError)
+    async def handle_request_validation_errors(request: Request, exc: RequestValidationError) -> JSONResponse:
+        """捕获参数校验异常并处理其结构。"""
+        details = format_validation_errors(exc)
+        logger.warning(
+            '"{method} {path}" RequestValidationError: {details}',
+            method=request.method,
+            path=request.url.path,
+            details=details,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=AppException(StatusCode.VALIDATION_ERROR, data=details).dump(),
+        )
+
+    @app.exception_handler(HTTPException)
+    async def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
+        """HTTP 异常自定义处理。"""
+        logger.error(
+            '"{method} {path}" {status_code} HTTPException: {detail}',
+            method=request.method,
+            path=request.url.path,
+            status_code=exc.status_code,
+            detail=exc.detail,
+        )
+        detail = str(exc.detail)
+        msg = t(detail) if is_i18n_key(detail) else detail  # type: ignore
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=SchemaResponse(code=exc.status_code, message=msg).serializable_dict(),
+        )
+
+    @app.exception_handler(Exception)
+    async def handle_server_errors(request: Request, exc: Exception) -> JSONResponse:
+        """捕获所有非预期异常并返回 500 状态码。"""
+        logger.error(
+            '"{method} {path}" {status_code} ServerException: {detail}',
+            method=request.method,
+            path=request.url.path,
+            status_code=int(StatusCode.INTERNAL_SERVER_ERROR),
+            detail=str(exc),
+        )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=AppException(StatusCode.INTERNAL_SERVER_ERROR, data=str(exc)).dump(),
+        )
 
 
-@app.exception_handler(HTTPException)
-async def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
-    """
-    HTTP 异常自定义处理。
-    """
+def create_app() -> FastAPI:
+    """创建并配置 FastAPI 应用。"""
+    setup_logging_config()
 
-    logger.error(
-        '"{method} {path}" {status_code} HTTPException: {detail}',
-        method=request.method,
-        path=request.url.path,
-        status_code=exc.status_code,
-        detail=exc.detail,
-    )
-    detail = str(exc.detail)
-    msg = t(detail) if is_i18n_key(detail) else detail  # type: ignore
+    app = FastAPI(**app_configs, lifespan=lifespan)
+    app.mount("/socket.io", socket_app)
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=SchemaResponse(code=exc.status_code, message=msg).serializable_dict(),
-    )
+    # 初始化速率限制服务
+    limiter = RateLimiterService.init_limiter()
+    app.state.limiter = limiter
+
+    # 配置中间件和异常处理器
+    setup_middlewares(app)
+    setup_exception_handlers(app)
+
+    # 注册路由
+    app.include_router(v1_router)
+
+    return app
 
 
-app.include_router(v1_router)
+app = create_app()
