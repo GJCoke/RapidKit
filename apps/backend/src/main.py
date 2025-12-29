@@ -83,12 +83,12 @@ async def handle_server_errors(request: Request, exc: Exception) -> JSONResponse
         '"{method} {path}" {status_code} ServerException: {detail}',
         method=request.method,
         path=request.url.path,
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        status_code=int(StatusCode.INTERNAL_SERVER_ERROR),
         detail=str(exc),
     )
 
     return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        status_code=status.HTTP_200_OK,
         content=AppException(StatusCode.INTERNAL_SERVER_ERROR, data=str(exc)).dump(),
     )
 
@@ -108,7 +108,7 @@ async def handle_request_validation_errors(request: Request, exc: RequestValidat
     )
 
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_200_OK,
         content=AppException(StatusCode.VALIDATION_ERROR, data=details).dump(),
     )
 
