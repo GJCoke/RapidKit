@@ -14,7 +14,6 @@ from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException
 
-from src.api.v1 import v1_router
 from src.core.config import app_configs, settings
 from src.core.exceptions import AppException
 from src.core.lifecycle import lifespan
@@ -123,6 +122,13 @@ def setup_exception_handlers(app: FastAPI) -> None:
         )
 
 
+def setup_router(app: FastAPI) -> None:
+    """配置应用路由。"""
+    from src.api.v1 import v1_router
+
+    app.include_router(v1_router)
+
+
 def create_app() -> FastAPI:
     """创建并配置 FastAPI 应用。"""
     setup_logging_config()
@@ -139,7 +145,7 @@ def create_app() -> FastAPI:
     setup_exception_handlers(app)
 
     # 注册路由
-    app.include_router(v1_router)
+    setup_router(app)
 
     return app
 
