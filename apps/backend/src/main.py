@@ -109,7 +109,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(Exception)
     async def handle_server_errors(request: Request, exc: Exception) -> JSONResponse:
         """捕获所有非预期异常并返回 500 状态码。"""
-        logger.error(
+        logger.exception(
             '"{method} {path}" {status_code} ServerException: {detail}',
             method=request.method,
             path=request.url.path,

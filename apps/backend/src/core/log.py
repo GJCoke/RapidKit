@@ -45,7 +45,11 @@ def default_formatter(record: dict) -> str:
     if record_name.startswith("sqlalchemy"):
         record["message"] = re.sub(r"\s+", " ", record["message"]).strip()
 
-    return settings.LOG_FORMAT.rstrip("\n") + "\n"
+    format_str = settings.LOG_FORMAT.rstrip("\n") + "\n"
+
+    if record["exception"] is not None:
+        format_str += "{exception}\n"
+    return format_str
 
 
 def request_id_filter(record: dict) -> dict:
@@ -85,7 +89,7 @@ def setup_logging() -> None:
 
     # 配置 loguru 处理器
     ruLogger.configure(
-        handlers=[
+        handlers=[  # type: ignore
             {
                 "sink": sys.stdout,
                 "level": settings.LOG_LEVEL,
