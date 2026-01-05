@@ -27,9 +27,9 @@ from src.middlewares.limiter import SlowAPIMiddleware
 from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.state import StateMiddleware
 from src.schemas.response import Response as SchemaResponse
+from src.sio.app import socket_app
 from src.utils.nanoid import NanoIdPlugin
 from src.utils.utils import format_validation_errors
-from src.websockets.app import socket_app
 
 
 def setup_logging_config() -> None:

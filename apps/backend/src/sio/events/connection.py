@@ -6,6 +6,7 @@ Date    : 2025-05-16
 from typing import Literal
 
 from authlib.jose.errors import JoseError
+from fastapi_sio_di import SID
 
 from src.core.config import auth_settings
 from src.core.exceptions import AppException
@@ -13,9 +14,8 @@ from src.core.status_codes import StatusCode
 from src.deps.auth import AuthCrudDep
 from src.deps.database import RedisDep
 from src.schemas import BaseModel
+from src.sio.app import socket
 from src.utils.security import decode_token
-from src.websockets.app import socket
-from src.websockets.params import SID
 
 user_sid_structure = "user:<{user_id}>:sid"
 sid_user_structure = "sid:<{sid}>:user"

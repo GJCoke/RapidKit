@@ -6,17 +6,17 @@ Date    : 2025-05-19
 from importlib import util
 from pathlib import Path
 
+from fastapi_sio_di import AsyncServer
 from socketio import ASGIApp, AsyncRedisManager
 
 from src.core.config import settings
-from src.websockets.server import AsyncServer
 
 
 def auto_register_events() -> None:
     """
     动态导入 events 目录下所有 Python 文件以注册 Socket.IO 事件。
 
-    此函数会扫描 websockets/events 目录，导入所有不以下划线开头的 .py 文件，并加载为模块。
+    此函数会扫描 sio/events 目录，导入所有不以下划线开头的 .py 文件，并加载为模块。
     这样可确保所有用 @socket.event 装饰的事件处理器自动注册到服务器。
     """
     base_path = Path(__file__).parent / "events"
@@ -24,7 +24,7 @@ def auto_register_events() -> None:
         if file.name.startswith("_"):
             continue
 
-        module_name = f"websockets.events.{file.stem}"
+        module_name = f"sio.events.{file.stem}"
         spec = util.spec_from_file_location(module_name, file)
         if spec is None:
             raise ImportError(f"Could not create a spec for module '{module_name}' at '{base_path}'")
@@ -39,7 +39,7 @@ def auto_register_events() -> None:
 redis_manager = AsyncRedisManager(url=str(settings.REDIS_URL))
 socket = AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=settings.CORS_ORIGINS,
+    cors_allowed_origins=[],
     client_manager=redis_manager,
 )
 socket_app = ASGIApp(socket)
