@@ -42,5 +42,6 @@ socket = AsyncServer(
     cors_allowed_origins=[],
     client_manager=redis_manager,
 )
+socket.instrument({"username": "admin", "password": "123456"})
 socket_app = ASGIApp(socket)
 auto_register_events()

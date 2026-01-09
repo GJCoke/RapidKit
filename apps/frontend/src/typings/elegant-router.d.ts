@@ -28,6 +28,10 @@ declare module "@elegant-router/types" {
     "manage_role": "/manage/role";
     "manage_user": "/manage/user";
     "manage_user-detail": "/manage/user-detail/:id";
+    "socketio": "/socketio";
+    "socketio_chat": "/socketio/chat";
+    "socketio_debug": "/socketio/debug";
+    "socketio_instrument": "/socketio/instrument";
   };
 
   /**
@@ -66,6 +70,7 @@ declare module "@elegant-router/types" {
     | "iframe-page"
     | "login"
     | "manage"
+    | "socketio"
   >;
 
   /**
@@ -92,6 +97,9 @@ declare module "@elegant-router/types" {
     | "manage_role"
     | "manage_user-detail"
     | "manage_user"
+    | "socketio_chat"
+    | "socketio_debug"
+    | "socketio_instrument"
   >;
 
   /**

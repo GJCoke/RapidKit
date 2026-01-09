@@ -40,6 +40,10 @@
     "no": "No",
     "yes": "Yes"
   },
+  "sentOrReceived": {
+    "sent": "Sent",
+    "received": "Received"
+  },
   "response": {
     "badRequest": "Request format error"
   }

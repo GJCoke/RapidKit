@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "monorepo-example-backend"
 authors = [
-    {name = "Coke", email = "jock74608@gmail.com"}
+    { name = "Coke", email = "jock74608@gmail.com" }
 ]
 description = "Async-FastAPI-MultiDB is an asynchronous FastAPI template project designed to seamlessly integrate both SQL (e.g., PostgreSQL, MySQL) and NoSQL (e.g., MongoDB) databases. This template offers a modern and efficient web framework solution supporting asynchronous request handling, making it ideal for building scalable API services."
 requires-python = ">= 3.14"
@@ -45,7 +45,7 @@ dependencies = [
     "nanoid>=2.0.0",
     "loguru>=0.7.3",
     "slowapi>=0.1.9",
-    "fastapi-sio-di>=0.1.1",
+    "fastapi-sio-di==0.3.6",
 ]
 
 [dependency-groups]

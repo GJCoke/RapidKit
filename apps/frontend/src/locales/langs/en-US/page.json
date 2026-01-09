@@ -184,5 +184,60 @@
       "userStatus": "User Status",
       "username": "User Name"
     }
+  },
+  "socketio": {
+    "common": {
+      "connect": "Connect",
+      "disconnect": "Disconnect",
+      "url": "URL",
+      "urlPlaceholder": "Enter Socket.IO domain",
+      "path": "Path",
+      "namespace": "Namespace"
+    },
+    "debug": {
+      "connectionTitle": "Socket.IO Connection",
+      "authToken": "Auth Token",
+      "tokenPlaceholder": "JWT Token",
+      "emitTitle": "Emit Event",
+      "eventName": "Event Name",
+      "eventPlaceholder": "e.g. message",
+      "dataJson": "Data (JSON)",
+      "dataPlaceholder": "Please enter the data to send",
+      "sendEvent": "Send Event",
+      "logsTitle": "Logs",
+      "clear": "Clear",
+      "noMessages": "No messages yet",
+      "connectFirst": "Please connect first",
+      "invalidJson": "Invalid JSON data"
+    },
+    "instrument": {
+      "tip": "Tip: Standard Admin UI uses \"/admin\" namespace.",
+      "username": "Username",
+      "password": "Password",
+      "advanced": "Advanced",
+      "hideAdvanced": "Hide Advanced",
+      "terminateConnection": "Terminate Connection",
+      "terminateContent": "Are you sure you want to disconnect client {sid}?",
+      "clientDistribution": "Client Distribution",
+      "totalClients": "Total Clients",
+      "online": "Online",
+      "connectedHistory": "Connected Sockets History",
+      "eventsEmpty": "No connect events captured yet.",
+      "namespaces": "Namespaces",
+      "namespaceInstance": "Namespace Instance",
+      "clients": "Clients",
+      "clientsInNamespace": "Clients in {selectedNsp} Namespace",
+      "noNamespaces": "No namespaces",
+      "noInNamespace": "No clients in this namespace",
+      "serverInfo": "Server Info",
+      "uptime": "Uptime:",
+      "formatUptime": "{h}h {m}m {s}s",
+      "connectionStatistics": "Connection Statistics",
+      "networkTraffic": "Network Traffic (Last 10 min)",
+      "received": "Bytes Received",
+      "sent": "Bytes Sent",
+      "eventMessages": "Event Messages (Received/Sent)",
+      "noCaptured": "No messages captured yet"
+    }
   }
 }

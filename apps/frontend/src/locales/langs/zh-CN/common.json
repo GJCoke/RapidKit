@@ -39,5 +39,9 @@
   "yesOrNo": {
     "no": "否",
     "yes": "是"
+  },
+  "sentOrReceived": {
+    "sent": "发送",
+    "received": "接收"
   }
 }

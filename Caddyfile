@@ -1,0 +1,6 @@
+:3000 {
+  reverse_proxy /socket.io/* {
+    to localhost:16001 localhost:16000
+    lb_policy random
+  }
+}

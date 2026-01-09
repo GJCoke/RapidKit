@@ -116,4 +116,44 @@ export const generatedRoutes: GeneratedRoute[] = [{
       i18nKey: 'route.manage_user-detail'
     }
   }]
+}, {
+  name: 'socketio',
+  path: '/socketio',
+  component: 'layout.base',
+  meta: {
+    icon: 'logos:socket-io',
+    title: 'socketio',
+    i18nKey: 'route.socketio'
+  },
+  children: [{
+    name: 'socketio_chat',
+    path: '/socketio/chat',
+    component: 'view.socketio_chat',
+    meta: {
+      title: 'socketio_chat',
+      icon: 'heroicons:chat-bubble-bottom-center-text',
+      i18nKey: 'route.socketio_chat',
+      order: 5
+    }
+  }, {
+    name: 'socketio_debug',
+    path: '/socketio/debug',
+    component: 'view.socketio_debug',
+    meta: {
+      title: 'socketio_debug',
+      icon: 'codicon:debug-all',
+      order: 4,
+      i18nKey: 'route.socketio_debug'
+    }
+  }, {
+    name: 'socketio_instrument',
+    path: '/socketio/instrument',
+    component: 'view.socketio_instrument',
+    meta: {
+      title: 'socketio_instrument',
+      icon: 'stash:dashboard',
+      order: 3,
+      i18nKey: 'route.socketio_instrument'
+    }
+  }]
 }];

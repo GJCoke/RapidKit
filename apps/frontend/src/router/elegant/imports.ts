@@ -25,4 +25,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   manage_role: () => import("@/views/manage/role/index.vue"),
   "manage_user-detail": () => import("@/views/manage/user-detail/[id].vue"),
   manage_user: () => import("@/views/manage/user/index.vue"),
+  socketio_chat: () => import("@/views/socketio/chat/index.vue"),
+  socketio_debug: () => import("@/views/socketio/debug/index.vue"),
+  socketio_instrument: () => import("@/views/socketio/instrument/index.vue"),
 };

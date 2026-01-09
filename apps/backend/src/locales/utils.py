@@ -2,6 +2,8 @@ import json
 import os
 from pathlib import Path
 
+from src.locales.types import LANGUAGE_TYPE
+
 
 def flatten_json(prefix: str, data: dict[str, str]) -> dict[str, str]:
     """
@@ -134,7 +136,7 @@ def write_py_file(path: str | Path, content: str) -> None:
 
 def resolve_language(
     accept_language: str | None,
-    supported_languages: set[str],
+    supported_languages: set[LANGUAGE_TYPE],
 ) -> str | None:
     """
     基于客户端的 accept-language 标头和服务器支持的语言

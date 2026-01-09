@@ -82,12 +82,6 @@ async def connect(sid: SID, auth: AccessToken, db_user: AuthCrudDep, redis: Redi
     return None
 
 
-# @socket.on("test")
-# async def test(sid: SID, data1: User, redis: RedisDep) -> None:
-#     data = await redis.get("test_123")
-#     print(data, data1, sid)
-
-
 @socket.event
 async def disconnect(sid: SID, redis: RedisDep) -> None:
     """
