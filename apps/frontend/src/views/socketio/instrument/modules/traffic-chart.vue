@@ -41,7 +41,7 @@
     yAxis: { type: "value", name: "Bytes" },
     series: [
       { name: $t("page.socketio.instrument.received"), type: "bar", data: [], itemStyle: { color: "#18a058" } },
-      { name: $t("page.socketio.instrument.sent"), type: "bar", data: [], itemStyle: { color: "#2080f0" } },
+      { name: $t("page.socketio.instrument.sent"), type: "bar", data: [], itemStyle: { color: "#f0a020" } },
     ],
   }))
 
