@@ -5,7 +5,7 @@ Date    : 2025-05-16
 
 from typing import Literal
 
-from authlib.jose.errors import JoseError
+from authlib.jose.errors import ExpiredTokenError, JoseError
 from fastapi_sio_di import SID
 
 from src.core.config import auth_settings
@@ -67,6 +67,8 @@ async def connect(sid: SID, auth: AccessToken, db_user: AuthCrudDep, redis: Redi
 
     try:
         user = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
+    except ExpiredTokenError:
+        raise AppException(StatusCode.TOKEN_EXPIRED)
     except JoseError:
         raise AppException(StatusCode.TOKEN_INVALID)
 

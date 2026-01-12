@@ -8,6 +8,9 @@ export interface Options {
   auth?: any
   namespace?: string
   ioOptions?: Partial<ManagerOptions & SocketOptions>
+  onConnect?: () => void
+  onDisconnect?: (reason: Socket.DisconnectReason) => void
+  onError?: (err: Error) => void
 }
 
 export interface Result {
@@ -32,7 +35,16 @@ export function useSocket(): Result {
     if (socket.value?.connected) return
 
     isConnecting.value = true
-    const { url, path = "/socket.io", namespace = "/", ioOptions = {}, auth } = options
+    const {
+      url,
+      path = "/socket.io",
+      namespace = "/",
+      ioOptions = {},
+      auth,
+      onConnect,
+      onDisconnect,
+      onError,
+    } = options
     const socketUrl = namespace === "/" ? url : `${url}${namespace.startsWith("/") ? "" : "/"}${namespace}`
 
     const instance = io(socketUrl, {
@@ -45,15 +57,18 @@ export function useSocket(): Result {
     instance.on("connect", () => {
       isConnected.value = true
       isConnecting.value = false
+      onConnect?.()
     })
 
-    instance.on("disconnect", () => {
+    instance.on("disconnect", (reason) => {
       isConnected.value = false
       isConnecting.value = false
+      onDisconnect?.(reason)
     })
 
-    instance.on("connect_error", () => {
+    instance.on("connect_error", (err) => {
       isConnecting.value = false
+      onError?.(err)
     })
 
     socket.value = instance

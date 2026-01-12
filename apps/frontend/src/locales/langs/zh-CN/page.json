@@ -192,12 +192,14 @@
       "url": "URL",
       "urlPlaceholder": "请输入要连接的 Socket.IO 域名",
       "path": "路径",
-      "namespace": "命名空间"
+      "namespace": "命名空间",
+      "namespacePlaceholder": "请输入 Socket.IO 命名空间（默认为 /）",
+      "pathPlaceholder": "请输入服务的连接路径（例如：/socket.io）",
+      "authTitle": "身份认证（JSON）",
+      "authPlaceholder": "请输入 Socket.IO 连接所需的认证信息（如 Token、API Key、用户名等）"
     },
     "debug": {
       "connectionTitle": "Socket.IO 连接",
-      "authToken": "鉴权令牌",
-      "tokenPlaceholder": "JWT 令牌",
       "emitTitle": "发送事件",
       "eventName": "事件名称",
       "eventPlaceholder": "例如: message",
@@ -214,8 +216,6 @@
       "tip": "提示：标准 Admin UI 使用 \"/admin\" 命名空间。",
       "username": "用户名",
       "password": "密码",
-      "advanced": "高级",
-      "hideAdvanced": "隐藏",
       "terminateConnection": "终止连接",
       "terminateContent": "确定要断开客户端 {sid} 的连接吗？",
       "clientDistribution": "客户端分布",
@@ -237,7 +237,11 @@
       "received": "接收",
       "sent": "发送",
       "eventMessages": "事件消息（接收/发送）",
-      "noCaptured": "暂无消息捕获"
+      "noCaptured": "暂无消息捕获",
+      "adminSessionStarted": "管理员会话已启动",
+      "authFailed": "认证失败：{message}",
+      "serverRemoved": "服务器 {serverId} 已从视图中移除",
+      "disconnectCommandSent": "已发送断开连接指令给：{sid}"
     }
   }
 }

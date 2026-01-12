@@ -192,12 +192,14 @@
       "url": "URL",
       "urlPlaceholder": "Enter Socket.IO domain",
       "path": "Path",
-      "namespace": "Namespace"
+      "namespace": "Namespace",
+      "namespacePlaceholder": "Enter the Socket.IO namespace (default is /)",
+      "pathPlaceholder": "Enter the service connection path (e.g. /socket.io)",
+      "authTitle": "Auth Payload (JSON)",
+      "authPlaceholder": "Enter the authentication info required for Socket.IO (e.g. token, API key, username)"
     },
     "debug": {
       "connectionTitle": "Socket.IO Connection",
-      "authToken": "Auth Token",
-      "tokenPlaceholder": "JWT Token",
       "emitTitle": "Emit Event",
       "eventName": "Event Name",
       "eventPlaceholder": "e.g. message",
@@ -214,8 +216,6 @@
       "tip": "Tip: Standard Admin UI uses \"/admin\" namespace.",
       "username": "Username",
       "password": "Password",
-      "advanced": "Advanced",
-      "hideAdvanced": "Hide Advanced",
       "terminateConnection": "Terminate Connection",
       "terminateContent": "Are you sure you want to disconnect client {sid}?",
       "clientDistribution": "Client Distribution",
@@ -237,7 +237,11 @@
       "received": "Bytes Received",
       "sent": "Bytes Sent",
       "eventMessages": "Event Messages (Received/Sent)",
-      "noCaptured": "No messages captured yet"
+      "noCaptured": "No messages captured yet",
+      "adminSessionStarted": "Admin Session Started",
+      "authFailed": "Auth Failed: {message}",
+      "serverRemoved": "Server {serverId} removed from view",
+      "disconnectCommandSent": "Disconnect command sent for: {sid}"
     }
   }
 }

@@ -8,7 +8,7 @@ Author : Coke
 Date   : 2025-04-17
 """
 
-from authlib.jose.errors import JoseError
+from authlib.jose.errors import ExpiredTokenError, JoseError
 from fastapi import Depends, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing_extensions import Annotated, Doc
@@ -160,6 +160,8 @@ def parse_access_jwt_user(token: HeaderAccessTokenDep) -> AccessJWT:
 
     try:
         user = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
+    except ExpiredTokenError:
+        raise AppException(StatusCode.TOKEN_EXPIRED)
     except JoseError:
         raise AppException(StatusCode.TOKEN_INVALID)
 
@@ -187,6 +189,8 @@ def parse_refresh_jwt_user(
 
     try:
         user = decode_token(x_refresh_token, auth_settings.REFRESH_TOKEN_KEY)
+    except ExpiredTokenError:
+        raise AppException(StatusCode.TOKEN_EXPIRED)
     except JoseError:
         raise AppException(StatusCode.TOKEN_INVALID)
 

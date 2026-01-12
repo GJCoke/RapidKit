@@ -1,11 +1,3 @@
-export interface ConnectConfig {
-  url: string
-  path: string
-  namespace: string
-  username: string
-  password: string
-}
-
 export interface NamespaceInfo {
   name: string
   socketsCount: number
@@ -39,10 +31,8 @@ export interface ServerStats {
   clientsCount: number
   pollingClientsCount: number
   aggregatedEvents: AggregatedEvent[]
-  namespaces: {
-    name: string
-    socketsCount: number
-  }[]
+  namespaces: NamespaceInfo[]
+  lastUpdate?: number
 }
 
 export interface EventLog {

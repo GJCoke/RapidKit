@@ -43,8 +43,8 @@
     </div>
 
     <div class="grid grid-cols-2 gap-2 mb-2 text-[10px] text-zinc-400">
-      <div v-if="sid" class="truncate"><span class="uppercase">SID:</span> {{ sid }}</div>
-      <div v-if="namespace" class="text-right uppercase">{{ namespace }}</div>
+      <div v-if="sid" class="truncate"><span>SID:</span> {{ sid }}</div>
+      <div v-if="namespace" class="text-right">{{ namespace }}</div>
     </div>
 
     <div v-if="data" class="bg-zinc-50 dark:bg-zinc-950 p-2 rounded border border-zinc-100 dark:border-zinc-800">
