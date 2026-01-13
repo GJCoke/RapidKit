@@ -7,7 +7,7 @@
   import EventLogs from "./modules/event-logs.vue"
   import ServerCard from "./modules/server-card.vue"
   import { useMessage } from "naive-ui"
-  import type { AggregatedEvent, ClientDetail, EventLog, ServerStats } from "@/views/socketio/instrument/modules/types"
+  import type { AggregatedEvent, ClientDetail, EventLog, ServerStats } from "./modules/types"
   import dayjs from "dayjs"
   import { useSocket } from "@/hooks/business/socket"
   import { $t } from "@/locales"

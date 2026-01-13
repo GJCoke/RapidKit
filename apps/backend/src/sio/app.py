@@ -42,6 +42,13 @@ socket = AsyncServer(
     cors_allowed_origins=[],
     client_manager=redis_manager,
 )
-socket.instrument({"username": "admin", "password": "123456"})
+
+if settings.ENVIRONMENT.is_debug:
+    socket.instrument(
+        {
+            "username": settings.SOCKETIO_ADMIN_USERNAME,
+            "password": settings.SOCKETIO_ADMIN_PASSWORD.get_secret_value(),
+        }
+    )
 socket_app = ASGIApp(socket)
 auto_register_events()

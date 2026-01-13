@@ -161,6 +161,10 @@ class Config(BaseSettings):
     # Rate limiting settings
     DEFAULT_LIMITS: list[StrOrCallableStr] = ["20/minute"]
 
+    # Socketio Admin settings
+    SOCKETIO_ADMIN_USERNAME: str = "admin"
+    SOCKETIO_ADMIN_PASSWORD: Secret[str] = Secret("123456")
+
 
 settings = Config()  # type: ignore
 

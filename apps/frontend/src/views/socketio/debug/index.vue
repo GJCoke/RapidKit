@@ -4,8 +4,14 @@
   import { localStg } from "@/utils/storage"
   import { $t } from "@/locales"
   import { useSocket } from "@/hooks/business/socket"
-  import { useSocketLog } from "./modules/hooks"
   import SocketLogCard from "@/components/custom/socket-log-card.vue"
+
+  interface LogItem {
+    type: "info" | "error" | "send" | "receive"
+    time: string
+    event?: string
+    content: string
+  }
 
   defineOptions({ name: "SocketIoDebug" })
 
@@ -26,8 +32,23 @@
     data: '{"msg": "hello"}',
   })
 
+  const logs = ref<LogItem[]>([])
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const addLog = (type: LogItem["type"], content: any, event?: string) => {
+    logs.value.unshift({
+      type,
+      time: new Date().toLocaleTimeString(),
+      event,
+      content: typeof content === "object" ? JSON.stringify(content, null, 2) : String(content),
+    })
+  }
+
+  const clearLogs = () => {
+    logs.value = []
+  }
+
   const { socket, isConnected, isConnecting, connect, disconnect } = useSocket()
-  const { logs, addLog, clearLogs } = useSocketLog()
 
   // 在页面层处理具体的监听和日志记录
   const handleConnect = () => {
