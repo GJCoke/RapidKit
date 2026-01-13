@@ -193,13 +193,20 @@
               <n-gi :span="12">
                 <n-input-group>
                   <n-input-group-label>{{ $t("page.socketio.instrument.username") }}</n-input-group-label>
-                  <n-input v-model:value="config.username" placeholder="Admin username" />
+                  <n-input
+                    v-model:value="config.username"
+                    :placeholder="$t('page.socketio.instrument.usernamePlaceholder')"
+                  />
                 </n-input-group>
               </n-gi>
               <n-gi :span="12">
                 <n-input-group>
                   <n-input-group-label>{{ $t("page.socketio.instrument.password") }}</n-input-group-label>
-                  <n-input v-model:value="config.password" type="password" placeholder="Admin password" />
+                  <n-input
+                    v-model:value="config.password"
+                    type="password"
+                    :placeholder="$t('page.socketio.instrument.passwordPlaceholder')"
+                  />
                 </n-input-group>
               </n-gi>
             </n-grid>

@@ -196,7 +196,10 @@
       "namespacePlaceholder": "Enter the Socket.IO namespace (default is /)",
       "pathPlaceholder": "Enter the service connection path (e.g. /socket.io)",
       "authTitle": "Auth Payload (JSON)",
-      "authPlaceholder": "Enter the authentication info required for Socket.IO (e.g. token, API key, username)"
+      "authPlaceholder": "Enter the authentication info required for Socket.IO (e.g. token, API key, username)",
+      "transport": "Transport",
+      "connectTime": "Connect Time",
+      "rooms": "Rooms"
     },
     "debug": {
       "connectionTitle": "Socket.IO Connection",
@@ -241,7 +244,13 @@
       "adminSessionStarted": "Admin Session Started",
       "authFailed": "Auth Failed: {message}",
       "serverRemoved": "Server {serverId} removed from view",
-      "disconnectCommandSent": "Disconnect command sent for: {sid}"
+      "disconnectCommandSent": "Disconnect command sent for: {sid}",
+      "clientDetail": "Client Handshake Detail",
+      "ipAddress": "IP Address",
+      "queryParams": "Query Parameters",
+      "httpHeaders": "HTTP Headers",
+      "usernamePlaceholder": "Please enter username",
+      "passwordPlaceholder": "Please enter password"
     }
   }
 }

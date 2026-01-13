@@ -13,6 +13,7 @@ export interface ClientDetail {
     headers: Record<string, string>
     time: string
     url: string
+    query: Record<string, string>
   }
   rooms: string[]
 }

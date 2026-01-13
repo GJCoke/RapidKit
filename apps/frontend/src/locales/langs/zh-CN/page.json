@@ -196,7 +196,10 @@
       "namespacePlaceholder": "请输入 Socket.IO 命名空间（默认为 /）",
       "pathPlaceholder": "请输入服务的连接路径（例如：/socket.io）",
       "authTitle": "身份认证（JSON）",
-      "authPlaceholder": "请输入 Socket.IO 连接所需的认证信息（如 Token、API Key、用户名等）"
+      "authPlaceholder": "请输入 Socket.IO 连接所需的认证信息（如 Token、API Key、用户名等）",
+      "transport": "传输协议",
+      "connectTime": "连接时间",
+      "rooms": "房间号"
     },
     "debug": {
       "connectionTitle": "Socket.IO 连接",
@@ -241,7 +244,13 @@
       "adminSessionStarted": "管理员会话已启动",
       "authFailed": "认证失败：{message}",
       "serverRemoved": "服务器 {serverId} 已从视图中移除",
-      "disconnectCommandSent": "已发送断开连接指令给：{sid}"
+      "disconnectCommandSent": "已发送断开连接指令给：{sid}",
+      "clientDetail": "客户端详情",
+      "ipAddress": "IP 地址",
+      "queryParams": "查询参数",
+      "httpHeaders": "HTTP 请求头",
+      "usernamePlaceholder": "请输入用户名",
+      "passwordPlaceholder": "请输入密码"
     }
   }
 }
