@@ -72,7 +72,9 @@
       <div class="flex items-center gap-2">
         <n-avatar round size="small" :src="avatar" />
         <div class="flex flex-col">
-          <span class="font-bold text-xs leading-none mb-1">{{ $t("page.socketio.chat.characters." + username) }}</span>
+          <span class="font-bold text-xs leading-none mb-1">
+            {{ $t(("page.socketio.chat.characters." + username) as I18nFullKey) }}
+          </span>
           <div class="flex items-center gap-1">
             <div :class="['w-1.5 h-1.5 rounded-full', isConnected ? 'bg-success' : 'bg-zinc-300']"></div>
             <span class="text-[9px] text-zinc-400 uppercase font-bold">
@@ -80,7 +82,9 @@
             </span>
           </div>
         </div>
-        <n-tag size="small" round type="info" class="ml-2">{{ $t("page.socketio.chat.rooms." + group) }}</n-tag>
+        <n-tag size="small" round type="info" class="ml-2">
+          {{ $t(("page.socketio.chat.rooms." + group) as I18nFullKey) }}
+        </n-tag>
       </div>
     </template>
 
@@ -91,10 +95,10 @@
           <div v-if="m.type === 'system'" class="flex justify-center my-1">
             <span class="px-3 py-1 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-full text-[10px] text-zinc-500">
               {{
-                $t(m.content.key, {
+                $t(m.content.key as I18nFullKey, {
                   ...m.content.params,
-                  username: $t("page.socketio.chat.characters." + m.content.params?.username),
-                  group: $t("page.socketio.chat.rooms." + m.content.params?.group),
+                  username: $t(("page.socketio.chat.characters." + m.content.params?.username) as I18nFullKey),
+                  group: $t(("page.socketio.chat.rooms." + m.content.params?.group) as I18nFullKey),
                 })
               }}
             </span>
@@ -116,7 +120,7 @@
             <!-- 消息内容 -->
             <div :class="['flex flex-col', m.isSelf ? 'items-end' : 'items-start']">
               <span class="text-[10px] text-zinc-400 mb-1 px-1">
-                {{ $t("page.socketio.chat.characters." + m.sender) }} · {{ m.time }}
+                {{ $t(("page.socketio.chat.characters." + m.sender) as I18nFullKey) }} · {{ m.time }}
               </span>
               <div
                 :class="[
@@ -139,7 +143,11 @@
         <n-input
           v-model:value="inputText"
           size="small"
-          :placeholder="$t('page.socketio.chat.sendRoomMessage', { group: $t('page.socketio.chat.rooms.' + group) })"
+          :placeholder="
+            $t('page.socketio.chat.sendRoomMessage', {
+              group: $t(('page.socketio.chat.rooms.' + group) as I18nFullKey),
+            })
+          "
           @keydown.enter="sendMessage"
         />
         <n-button type="primary" size="small" @click="sendMessage">

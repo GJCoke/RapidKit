@@ -67,13 +67,13 @@
               </template>
               {{
                 $t("page.socketio.chat.confirmJoin", {
-                  username: $t("page.socketio.chat.characters." + user.name),
-                  group: $t("page.socketio.chat.rooms." + selectedGroup),
+                  username: $t(("page.socketio.chat.characters." + user.name) as I18nFullKey),
+                  group: $t(("page.socketio.chat.rooms." + selectedGroup) as I18nFullKey),
                 })
               }}
             </n-popconfirm>
             <span class="text-[11px] font-medium text-zinc-500 group-hover:text-primary transition-colors">
-              {{ $t("page.socketio.chat.characters." + user.name) }}
+              {{ $t(("page.socketio.chat.characters." + user.name) as I18nFullKey) }}
             </span>
           </div>
         </div>
@@ -86,7 +86,12 @@
         <n-select
           v-model:value="selectedGroup"
           size="medium"
-          :options="['Public', 'VIP', 'Test'].map((v) => ({ label: $t('page.socketio.chat.rooms.' + v), value: v }))"
+          :options="
+            ['Public', 'VIP', 'Test'].map((v) => ({
+              label: $t(('page.socketio.chat.rooms.' + v) as I18nFullKey),
+              value: v,
+            }))
+          "
         />
       </div>
     </div>
