@@ -199,7 +199,9 @@
       "authPlaceholder": "Enter the authentication info required for Socket.IO (e.g. token, API key, username)",
       "transport": "Transport",
       "connectTime": "Connect Time",
-      "rooms": "Rooms"
+      "rooms": "Rooms",
+      "online": "Online",
+      "offline": "Offline"
     },
     "debug": {
       "connectionTitle": "Socket.IO Connection",
@@ -251,6 +253,30 @@
       "httpHeaders": "HTTP Headers",
       "usernamePlaceholder": "Please enter username",
       "passwordPlaceholder": "Please enter password"
+    },
+    "chat": {
+      "userJoined": "User {username} has joined the group {group}",
+      "userLeft": "User {username} has left the group {group}",
+      "selectCharacter": "Select Character",
+      "targetRoom": "Target Room",
+      "confirmJoin": "Are you sure to let {username} join the \"{group}\" room?",
+      "activeInstances": "Active Instances: {current} / {max}",
+      "noInstances": "Click a character avatar above to join the conversation",
+      "alreadyInRoom": "{username} is already in the \"{group}\" room",
+      "sendRoomMessage": "Send to {group}",
+      "characters": {
+        "Doraemon": "Doraemon",
+        "Nobita": "Nobita",
+        "Shizuka": "Shizuka",
+        "Gian": "Gian",
+        "Suneo": "Suneo"
+      },
+      "rooms": {
+        "Public": "Public",
+        "VIP": "VIP",
+        "Test": "Test",
+        "Doraemon-Fans": "Doraemon-Fans"
+      }
     }
   }
 }

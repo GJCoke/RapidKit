@@ -199,7 +199,9 @@
       "authPlaceholder": "请输入 Socket.IO 连接所需的认证信息（如 Token、API Key、用户名等）",
       "transport": "传输协议",
       "connectTime": "连接时间",
-      "rooms": "房间号"
+      "rooms": "房间号",
+      "online": "在线",
+      "offline": "离线"
     },
     "debug": {
       "connectionTitle": "Socket.IO 连接",
@@ -251,6 +253,30 @@
       "httpHeaders": "HTTP 请求头",
       "usernamePlaceholder": "请输入用户名",
       "passwordPlaceholder": "请输入密码"
+    },
+    "chat": {
+      "userJoined": "用户 {username} 已加入群组 {group}",
+      "userLeft": "用户 {username} 已离开群组 {group}",
+      "selectCharacter": "选择角色",
+      "targetRoom": "目标房间",
+      "confirmJoin": "确定让 {username} 加入 \"{group}\" 房间吗？",
+      "activeInstances": "活跃实例: {current} / {max}",
+      "noInstances": "点击上方角色头像加入对话",
+      "alreadyInRoom": "{username} 已经在 \"{group}\" 房间中了",
+      "sendRoomMessage": "发送给{group}",
+      "characters": {
+        "Doraemon": "哆啦A梦",
+        "Nobita": "野比大雄",
+        "Shizuka": "源静香",
+        "Gian": "刚田武",
+        "Suneo": "骨川小夫"
+      },
+      "rooms": {
+        "Public": "公共频道",
+        "VIP": "VIP 贵宾席",
+        "Test": "测试房间",
+        "Doraemon-Fans": "哆啦A梦粉丝团"
+      }
     }
   }
 }

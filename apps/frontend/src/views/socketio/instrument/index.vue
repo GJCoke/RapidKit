@@ -9,7 +9,7 @@
   import { useMessage } from "naive-ui"
   import type { AggregatedEvent, ClientDetail, EventLog, ServerStats } from "./modules/types"
   import dayjs from "dayjs"
-  import { useSocket } from "@/hooks/business/socket"
+  import { useSocket } from "@/hooks/common/socket"
   import { $t } from "@/locales"
 
   defineOptions({ name: "SocketIoInstrument" })

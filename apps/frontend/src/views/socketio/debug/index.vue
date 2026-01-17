@@ -3,7 +3,7 @@
   import { useMessage } from "naive-ui"
   import { localStg } from "@/utils/storage"
   import { $t } from "@/locales"
-  import { useSocket } from "@/hooks/business/socket"
+  import { useSocket } from "@/hooks/common/socket"
   import SocketLogCard from "@/components/custom/socket-log-card.vue"
 
   interface LogItem {
