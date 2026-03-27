@@ -7,9 +7,10 @@ from sqlalchemy import ColumnElement
 from sqlmodel import col, or_
 
 from src.models import Role
+from src.utils.enums import Status
 
 
-def filter_role(status: bool | None, keyword: str) -> list[ColumnElement[bool]]:
+def filter_role(status: Status | None, keyword: str) -> list[ColumnElement[bool]]:
     """
     生成用于查询角色的 SQLAlchemy 过滤条件。
 
