@@ -19,7 +19,7 @@ from src.core.log import logger
 from src.core.status_codes import StatusCode
 from src.crud.auth import UserCRUD
 from src.deps.database import RedisDep, SessionDep
-from src.models.auth import User
+from src.models.manage import User
 from src.utils.security import AccessJWT, RefreshJWT, decode_token
 
 __all__ = [

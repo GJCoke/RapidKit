@@ -16,7 +16,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.core.exceptions import AppException
 from src.core.status_codes import StatusCode
 from src.crud.crud_sqlmodel import BaseSQLModelCRUD
-from src.models.auth import User
+from src.models.manage import User
 from src.schemas.auth import UserCreate, UserUpdate
 
 

@@ -109,7 +109,7 @@ class PaginatedResponse(BaseResponse, Generic[T]):
                 "message": "Successful.",
                 "data": {
                     "page": 1,
-                    "pageSize": 20,
+                    "pageSize": 10,
                     "total": 100,
                     "records": []
                 }

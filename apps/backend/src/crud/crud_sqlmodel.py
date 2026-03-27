@@ -206,6 +206,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
     async def get_all(
         self,
         *args: ColumnElement[Any],
+        entities: list[Any] | None = None,
         order_by: ColumnElement[Any] | Any | None = None,
         session: AsyncSession | None = None,
         serializer: type[_PydanticBaseModel],
@@ -215,6 +216,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
     async def get_all(
         self,
         *args: ColumnElement[Any],
+        entities: list[Any] | None = None,
         order_by: ColumnElement[Any] | Any | None = None,
         session: AsyncSession | None = None,
         serializer: Literal[None] = None,
@@ -223,6 +225,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
     async def get_all(
         self,
         *args: ColumnElement[Any],
+        entities: list[Any] | None = None,
         order_by: ColumnElement[Any] | Any | None = None,
         session: AsyncSession | None = None,
         serializer: type[_PydanticBaseModel] | None = None,
@@ -232,6 +235,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
 
         Args:
             args: 可选的过滤条件。
+            entities: 可选的字段选择列表。
             order_by: 可选排序字段。
             session: SQLAlchemy 异步会话。
             serializer: 可选的 Pydantic 模型类用于序列化。
@@ -244,7 +248,12 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
             await self.get_all(order_by=col(YourModel.id).desc())
         """
         session = session or self.session
-        statement = select(self.model).filter(*args)
+        if entities:
+            statement = select(*entities)
+        else:
+            statement = select(self.model)
+        statement = statement.filter(*args)
+
         if order_by is not None:
             statement = statement.order_by(order_by)
         result = await session.exec(statement)
@@ -280,7 +289,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         self,
         *args: ColumnExpressionArgument[bool],
         page: int = 1,
-        size: int = 20,
+        size: int = 10,
         order_by: ColumnElement[Any] | Any | None = None,
         session: AsyncSession | None = None,
         serializer: type[_PydanticBaseModel],
@@ -291,7 +300,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         self,
         *args: ColumnExpressionArgument[bool],
         page: int = 1,
-        size: int = 20,
+        size: int = 10,
         order_by: ColumnElement[Any] | Any | None = None,
         session: AsyncSession | None = None,
         serializer: Literal[None] = None,
@@ -301,7 +310,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
         self,
         *args: ColumnExpressionArgument[bool],
         page: int = 1,
-        size: int = 20,
+        size: int = 10,
         order_by: ColumnElement[Any] | Any | None = None,
         session: AsyncSession | None = None,
         serializer: type[_PydanticBaseModel] | None = None,

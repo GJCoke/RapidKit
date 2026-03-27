@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-  import { ref } from "vue"
+  import { reactive, ref } from "vue"
   import type { Ref } from "vue"
   import { NButton, NPopconfirm, NTag } from "naive-ui"
   import { useBoolean } from "@monorepo-example/hooks"
@@ -18,8 +18,17 @@
 
   const wrapperRef = ref<HTMLElement | null>(null)
 
+  const searchParams: Api.SystemManage.RoleSearchParams = reactive({
+    page: 1,
+    pageSize: 10,
+  })
+
   const { columns, columnChecks, data, loading, pagination, getData, getDataByPage } = useNaivePaginatedTable({
-    api: () => fetchGetMenuList(),
+    api: () => fetchGetMenuList(searchParams),
+    onPaginationParamsChange: (params) => {
+      searchParams.page = params.page
+      searchParams.pageSize = params.pageSize
+    },
     transform: (response) => defaultTransform(response),
     columns: () => [
       {
@@ -31,6 +40,7 @@
         key: "id",
         title: $t("page.manage.menu.id"),
         align: "center",
+        ellipsis: true,
       },
       {
         key: "menuType",
@@ -133,6 +143,7 @@
         title: $t("page.manage.menu.parentId"),
         width: 90,
         align: "center",
+        ellipsis: true,
       },
       {
         key: "order",

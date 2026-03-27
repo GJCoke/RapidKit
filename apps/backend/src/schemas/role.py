@@ -7,6 +7,7 @@ from uuid import UUID
 
 from src.schemas import BaseModel, BaseRequest, ResponseSchema
 from src.schemas.request import BatchRequest, PaginatedRequest
+from src.utils.enums import Status
 
 
 class RoleSchema(BaseModel):
@@ -15,7 +16,7 @@ class RoleSchema(BaseModel):
     name: str
     description: str
     code: str
-    status: bool = True
+    status: Status = Status.ON
     interface_permissions: list[str] = []
     button_permissions: list[str] = []
     router_permissions: list[str] = []
@@ -39,7 +40,7 @@ class RoleQueriesSchema(BaseModel):
     """角色查询数据结构。"""
 
     keyword: str = ""
-    status: bool | None = None
+    status: Status | None = None
 
 
 class RolePageQuery(RoleQueriesSchema, PaginatedRequest):

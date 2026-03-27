@@ -10,7 +10,7 @@
   "manage_role": "角色管理",
   "manage_user": "用户管理",
   "manage_user-detail": "用户详情",
-  "socketio": "实时通信",
+  "socketio": "即时通讯",
   "socketio_chat": "聊天室",
   "socketio_debug": "调试面板",
   "socketio_instrument": "仪表盘"

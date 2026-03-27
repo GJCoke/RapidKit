@@ -10,7 +10,7 @@
   "manage_role": "Role Manage",
   "manage_user": "User Manage",
   "manage_user-detail": "User Detail",
-  "socketio": "SocketIO",
+  "socketio": "Instant Messaging",
   "socketio_chat": "Chat Room",
   "socketio_debug": "Debug Panel",
   "socketio_instrument": "Instrument Panel"

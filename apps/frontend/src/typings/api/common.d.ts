@@ -8,9 +8,9 @@ declare namespace Api {
     /** common params of paginating */
     interface PaginatingCommonParams {
       /** current page number */
-      current: number
+      page: number
       /** page size */
-      size: number
+      pageSize: number
       /** total count */
       total: number
     }

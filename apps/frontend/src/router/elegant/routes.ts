@@ -75,7 +75,7 @@ export const generatedRoutes: GeneratedRoute[] = [{
   meta: {
     title: 'manage',
     order: 9,
-    icon: 'carbon:cloud-service-management',
+    icon: 'tabler:settings-spark',
     i18nKey: 'route.manage'
   },
   children: [{
@@ -121,9 +121,10 @@ export const generatedRoutes: GeneratedRoute[] = [{
   path: '/socketio',
   component: 'layout.base',
   meta: {
-    icon: 'logos:socket-io',
+    icon: 'ri:message-ai-3-line',
     title: 'socketio',
-    i18nKey: 'route.socketio'
+    i18nKey: 'route.socketio',
+    order: 6
   },
   children: [{
     name: 'socketio_chat',
@@ -131,7 +132,7 @@ export const generatedRoutes: GeneratedRoute[] = [{
     component: 'view.socketio_chat',
     meta: {
       title: 'socketio_chat',
-      icon: 'heroicons:chat-bubble-bottom-center-text',
+      icon: 'fluent:chat-multiple-24-regular',
       i18nKey: 'route.socketio_chat',
       order: 5
     }

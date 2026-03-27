@@ -11,7 +11,7 @@ from src.core.exceptions import AppException
 from src.core.status_codes import StatusCode
 from src.crud.router import RouterCRUD
 from src.deps import SessionDep
-from src.models.router import InterfaceRouter
+from src.models.manage import InterfaceRouter
 
 
 async def get_request_router(request: Request) -> APIRoute:

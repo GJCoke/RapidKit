@@ -19,7 +19,7 @@ from src.core.database import AsyncSessionLocal, RedisManager
 from src.core.log import logger
 from src.crud.router import RouterCRUD
 from src.locales.watch import watch_locale_files
-from src.models.router import InterfaceRouter
+from src.models.manage import InterfaceRouter
 from src.schemas.router import FastAPIRouterCreate
 
 

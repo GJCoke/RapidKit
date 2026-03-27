@@ -220,10 +220,137 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/manage/menus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Menu List
+         * @description 获取菜单列表（支持分页）
+         */
+        get: operations["get_menu_list_api_v1_manage_menus_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get All Pages
+         * @description 获取所有页面组件名称
+         */
+        get: operations["get_all_pages_api_v1_manage_pages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Menu
+         * @description 新增菜单。
+         */
+        post: operations["add_menu_api_v1_manage_add_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Menu
+         * @description 更新菜单。
+         */
+        put: operations["update_menu_api_v1_manage_update_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Menu
+         * @description 删除单个菜单。
+         */
+        delete: operations["delete_menu_api_v1_manage_delete_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/batchDelete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Batch Delete Menus
+         * @description 批量删除菜单。
+         */
+        post: operations["batch_delete_menus_api_v1_manage_batchDelete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Button */
+        Button: {
+            /** Code */
+            code: string;
+            /** Desc */
+            desc: string;
+        };
         /**
          * FastAPIRouterResponse
          * @description 接口路由响应数据结构。
@@ -273,6 +400,514 @@ export interface components {
             /** Password */
             password: string;
         };
+        /**
+         * MenuBatchRequest
+         * @description 批量操作菜单请求。
+         */
+        MenuBatchRequest: {
+            /**
+             * Ids
+             * @description 菜单 ID 列表
+             */
+            ids: string[];
+        };
+        /**
+         * MenuCreate
+         * @description 创建菜单请求。
+         */
+        MenuCreate: {
+            /**
+             * Menuname
+             * @description 菜单名称
+             */
+            menuName: string;
+            /**
+             * @description 菜单类型: 1-目录, 2-菜单
+             * @default 1
+             */
+            menuType: components["schemas"]["MenuType"];
+            /**
+             * Order
+             * @description 排序序号
+             * @default 0
+             */
+            order: number;
+            /**
+             * Routename
+             * @description 路由名称
+             */
+            routeName: string;
+            /**
+             * Routepath
+             * @description 路由路径
+             */
+            routePath: string;
+            /**
+             * Component
+             * @description 组件路径
+             */
+            component?: string | null;
+            /**
+             * Icon
+             * @description 图标名称
+             */
+            icon?: string | null;
+            /**
+             * @description 图标类型
+             * @default 1
+             */
+            iconType: components["schemas"]["MenuIconType"];
+            /**
+             * @description 状态
+             * @default 1
+             */
+            status: components["schemas"]["Status"];
+            /**
+             * Hideinmenu
+             * @description 是否隐藏
+             * @default false
+             */
+            hideInMenu: boolean;
+            /**
+             * Parentid
+             * @description 父级ID
+             */
+            parentId?: string | null;
+            /**
+             * I18Nkey
+             * @description 国际化Key
+             */
+            i18NKey?: string | null;
+            /**
+             * Keepalive
+             * @description 是否缓存
+             * @default false
+             */
+            keepAlive: boolean;
+            /**
+             * Constant
+             * @description 是否常量路由
+             * @default false
+             */
+            constant: boolean;
+            /**
+             * Href
+             * @description 外链
+             */
+            href?: string | null;
+            /**
+             * Multitab
+             * @description 是否支持多页签
+             * @default false
+             */
+            multiTab: boolean;
+            /**
+             * Fixedindexintab
+             * @description 固定页签次序
+             */
+            fixedIndexInTab?: number | null;
+            /**
+             * Query
+             * @description 路由参数
+             * @default []
+             */
+            query: components["schemas"]["Query"][];
+            /**
+             * Buttons
+             * @description 按钮权限
+             * @default []
+             */
+            buttons: components["schemas"]["Button"][];
+        };
+        /**
+         * MenuIconType
+         * @enum {string}
+         */
+        MenuIconType: "1" | "2";
+        /** MenuListResponse */
+        MenuListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /**
+             * Menuname
+             * @description 菜单名称
+             */
+            menuName: string;
+            /**
+             * @description 菜单类型: 1-目录, 2-菜单
+             * @default 1
+             */
+            menuType: components["schemas"]["MenuType"];
+            /**
+             * Order
+             * @description 排序序号
+             * @default 0
+             */
+            order: number;
+            /**
+             * Routename
+             * @description 路由名称
+             */
+            routeName: string;
+            /**
+             * Routepath
+             * @description 路由路径
+             */
+            routePath: string;
+            /**
+             * Component
+             * @description 组件路径
+             */
+            component?: string | null;
+            /**
+             * Icon
+             * @description 图标名称
+             */
+            icon?: string | null;
+            /**
+             * @description 图标类型
+             * @default 1
+             */
+            iconType: components["schemas"]["MenuIconType"];
+            /**
+             * @description 状态
+             * @default 1
+             */
+            status: components["schemas"]["Status"];
+            /**
+             * Hideinmenu
+             * @description 是否隐藏
+             * @default false
+             */
+            hideInMenu: boolean;
+            /**
+             * Parentid
+             * @description 父级ID
+             */
+            parentId?: string | null;
+            /**
+             * I18Nkey
+             * @description 国际化Key
+             */
+            i18NKey?: string | null;
+            /**
+             * Keepalive
+             * @description 是否缓存
+             * @default false
+             */
+            keepAlive: boolean;
+            /**
+             * Constant
+             * @description 是否常量路由
+             * @default false
+             */
+            constant: boolean;
+            /**
+             * Href
+             * @description 外链
+             */
+            href?: string | null;
+            /**
+             * Multitab
+             * @description 是否支持多页签
+             * @default false
+             */
+            multiTab: boolean;
+            /**
+             * Fixedindexintab
+             * @description 固定页签次序
+             */
+            fixedIndexInTab?: number | null;
+            /**
+             * Query
+             * @description 路由参数
+             * @default []
+             */
+            query: components["schemas"]["Query"][];
+            /**
+             * Buttons
+             * @description 按钮权限
+             * @default []
+             */
+            buttons: components["schemas"]["Button"][];
+            /**
+             * Children
+             * @default []
+             */
+            children: components["schemas"]["MenuListResponse"][];
+        };
+        /**
+         * MenuResponse
+         * @description 菜单响应数据结构。
+         */
+        MenuResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /**
+             * Menuname
+             * @description 菜单名称
+             */
+            menuName: string;
+            /**
+             * @description 菜单类型: 1-目录, 2-菜单
+             * @default 1
+             */
+            menuType: components["schemas"]["MenuType"];
+            /**
+             * Order
+             * @description 排序序号
+             * @default 0
+             */
+            order: number;
+            /**
+             * Routename
+             * @description 路由名称
+             */
+            routeName: string;
+            /**
+             * Routepath
+             * @description 路由路径
+             */
+            routePath: string;
+            /**
+             * Component
+             * @description 组件路径
+             */
+            component?: string | null;
+            /**
+             * Icon
+             * @description 图标名称
+             */
+            icon?: string | null;
+            /**
+             * @description 图标类型
+             * @default 1
+             */
+            iconType: components["schemas"]["MenuIconType"];
+            /**
+             * @description 状态
+             * @default 1
+             */
+            status: components["schemas"]["Status"];
+            /**
+             * Hideinmenu
+             * @description 是否隐藏
+             * @default false
+             */
+            hideInMenu: boolean;
+            /**
+             * Parentid
+             * @description 父级ID
+             */
+            parentId?: string | null;
+            /**
+             * I18Nkey
+             * @description 国际化Key
+             */
+            i18NKey?: string | null;
+            /**
+             * Keepalive
+             * @description 是否缓存
+             * @default false
+             */
+            keepAlive: boolean;
+            /**
+             * Constant
+             * @description 是否常量路由
+             * @default false
+             */
+            constant: boolean;
+            /**
+             * Href
+             * @description 外链
+             */
+            href?: string | null;
+            /**
+             * Multitab
+             * @description 是否支持多页签
+             * @default false
+             */
+            multiTab: boolean;
+            /**
+             * Fixedindexintab
+             * @description 固定页签次序
+             */
+            fixedIndexInTab?: number | null;
+            /**
+             * Query
+             * @description 路由参数
+             * @default []
+             */
+            query: components["schemas"]["Query"][];
+            /**
+             * Buttons
+             * @description 按钮权限
+             * @default []
+             */
+            buttons: components["schemas"]["Button"][];
+        };
+        /**
+         * MenuType
+         * @enum {string}
+         */
+        MenuType: "1" | "2";
+        /**
+         * MenuUpdate
+         * @description 更新菜单请求。
+         */
+        MenuUpdate: {
+            /**
+             * Menuname
+             * @description 菜单名称
+             */
+            menuName: string;
+            /**
+             * @description 菜单类型: 1-目录, 2-菜单
+             * @default 1
+             */
+            menuType: components["schemas"]["MenuType"];
+            /**
+             * Order
+             * @description 排序序号
+             * @default 0
+             */
+            order: number;
+            /**
+             * Routename
+             * @description 路由名称
+             */
+            routeName: string;
+            /**
+             * Routepath
+             * @description 路由路径
+             */
+            routePath: string;
+            /**
+             * Component
+             * @description 组件路径
+             */
+            component?: string | null;
+            /**
+             * Icon
+             * @description 图标名称
+             */
+            icon?: string | null;
+            /**
+             * @description 图标类型
+             * @default 1
+             */
+            iconType: components["schemas"]["MenuIconType"];
+            /**
+             * @description 状态
+             * @default 1
+             */
+            status: components["schemas"]["Status"];
+            /**
+             * Hideinmenu
+             * @description 是否隐藏
+             * @default false
+             */
+            hideInMenu: boolean;
+            /**
+             * Parentid
+             * @description 父级ID
+             */
+            parentId?: string | null;
+            /**
+             * I18Nkey
+             * @description 国际化Key
+             */
+            i18NKey?: string | null;
+            /**
+             * Keepalive
+             * @description 是否缓存
+             * @default false
+             */
+            keepAlive: boolean;
+            /**
+             * Constant
+             * @description 是否常量路由
+             * @default false
+             */
+            constant: boolean;
+            /**
+             * Href
+             * @description 外链
+             */
+            href?: string | null;
+            /**
+             * Multitab
+             * @description 是否支持多页签
+             * @default false
+             */
+            multiTab: boolean;
+            /**
+             * Fixedindexintab
+             * @description 固定页签次序
+             */
+            fixedIndexInTab?: number | null;
+            /**
+             * Query
+             * @description 路由参数
+             * @default []
+             */
+            query: components["schemas"]["Query"][];
+            /**
+             * Buttons
+             * @description 按钮权限
+             * @default []
+             */
+            buttons: components["schemas"]["Button"][];
+        };
+        /** PaginatedResponse[MenuListResponse] */
+        PaginatedResponse_MenuListResponse_: {
+            /**
+             * Page
+             * @description 页码。
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @description 每页条数。
+             */
+            pageSize: number;
+            /**
+             * Total
+             * @description 总条数。
+             */
+            total: number;
+            /**
+             * Records
+             * @description 记录列表。
+             */
+            records: components["schemas"]["MenuListResponse"][];
+        };
         /** PaginatedResponse[RoleResponse] */
         PaginatedResponse_RoleResponse_: {
             /**
@@ -295,6 +930,45 @@ export interface components {
              * @description 记录列表。
              */
             records: components["schemas"]["RoleResponse"][];
+        };
+        /** Query */
+        Query: {
+            /** Key */
+            key: string;
+            /** Value */
+            value: string;
+        };
+        /** Response[MenuResponse] */
+        Response_MenuResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["MenuResponse"] | null;
+        };
+        /** Response[PaginatedResponse[MenuListResponse]] */
+        Response_PaginatedResponse_MenuListResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PaginatedResponse_MenuListResponse_"] | null;
         };
         /** Response[PaginatedResponse[RoleResponse]] */
         Response_PaginatedResponse_RoleResponse__: {
@@ -417,6 +1091,25 @@ export interface components {
              */
             data?: components["schemas"]["RoleResponse"][] | null;
         };
+        /** Response[list[str]] */
+        Response_list_str__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: string[] | null;
+        };
         /** Response[str] */
         Response_str_: {
             /**
@@ -458,11 +1151,8 @@ export interface components {
             description: string;
             /** Code */
             code: string;
-            /**
-             * Status
-             * @default true
-             */
-            status: boolean;
+            /** @default 1 */
+            status: components["schemas"]["Status"];
             /**
              * Interfacepermissions
              * @default []
@@ -505,11 +1195,8 @@ export interface components {
             description: string;
             /** Code */
             code: string;
-            /**
-             * Status
-             * @default true
-             */
-            status: boolean;
+            /** @default 1 */
+            status: components["schemas"]["Status"];
             /**
              * Interfacepermissions
              * @default []
@@ -537,11 +1224,8 @@ export interface components {
             description: string;
             /** Code */
             code: string;
-            /**
-             * Status
-             * @default true
-             */
-            status: boolean;
+            /** @default 1 */
+            status: components["schemas"]["Status"];
             /**
              * Interfacepermissions
              * @default []
@@ -558,6 +1242,11 @@ export interface components {
              */
             routerPermissions: string[];
         };
+        /**
+         * Status
+         * @enum {string}
+         */
+        Status: "1" | "2";
         /**
          * TokenResponse
          * @description 令牌响应。
@@ -772,13 +1461,13 @@ export interface operations {
     };
     get_roles_api_v1_roles_get: {
         parameters: {
-            query: {
+            query?: {
                 /** @description 当前页码。 */
-                page: number;
+                page?: number;
                 /** @description 每页条数。 */
-                pageSize: number;
+                pageSize?: number;
                 keyword?: string;
-                status?: boolean | null;
+                status?: components["schemas"]["Status"] | null;
             };
             header?: never;
             path?: never;
@@ -896,7 +1585,7 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                status?: boolean | null;
+                status?: components["schemas"]["Status"] | null;
             };
             header?: never;
             path?: never;
@@ -969,6 +1658,194 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_menu_list_api_v1_manage_menus_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                keyword?: string;
+                status?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_MenuListResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_all_pages_api_v1_manage_pages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_str__"];
+                };
+            };
+        };
+    };
+    add_menu_api_v1_manage_add_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_menu_api_v1_manage_update_put: {
+        parameters: {
+            query: {
+                menu_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_MenuResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_menu_api_v1_manage_delete_delete: {
+        parameters: {
+            query: {
+                menu_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_delete_menus_api_v1_manage_batchDelete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuBatchRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

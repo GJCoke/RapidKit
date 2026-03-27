@@ -2,7 +2,6 @@
   import { computed, ref, watch } from "vue"
   import type { SelectOption } from "naive-ui"
   import { enableStatusOptions, menuIconTypeOptions, menuTypeOptions } from "@/constants/business"
-  import { fetchGetAllRoles } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { getLocalIcons } from "@/utils/icon"
   import { $t } from "@/locales"
@@ -164,22 +163,6 @@
     },
   ]
 
-  /** the enabled role options */
-  const roleOptions = ref<CommonType.Option<string>[]>([])
-
-  async function getRoleOptions() {
-    const { error, data } = await fetchGetAllRoles()
-
-    if (!error) {
-      const options = data.map((item) => ({
-        label: item.roleName,
-        value: item.roleCode,
-      }))
-
-      roleOptions.value = [...options]
-    }
-  }
-
   function handleInitModel() {
     model.value = createDefaultModel()
 
@@ -266,7 +249,6 @@
     if (visible.value) {
       handleInitModel()
       restoreValidation()
-      getRoleOptions()
     }
   })
 

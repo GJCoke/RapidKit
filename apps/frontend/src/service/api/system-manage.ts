@@ -3,7 +3,7 @@ import { request } from "../request"
 /** get role list */
 export function fetchGetRoleList(params?: Api.SystemManage.RoleSearchParams) {
   return request<Api.SystemManage.RoleList>({
-    url: "/systemManage/getRoleList",
+    url: "/roles",
     method: "get",
     params,
   })
@@ -31,17 +31,18 @@ export function fetchGetUserList(params?: Api.SystemManage.UserSearchParams) {
 }
 
 /** get menu list */
-export function fetchGetMenuList() {
+export function fetchGetMenuList(params?: Api.SystemManage.MenuSearchParams) {
   return request<Api.SystemManage.MenuList>({
-    url: "/systemManage/getMenuList/v2",
+    url: "/manage/menus",
     method: "get",
+    params,
   })
 }
 
 /** get all pages */
 export function fetchGetAllPages() {
   return request<string[]>({
-    url: "/systemManage/getAllPages",
+    url: "/manage/pages",
     method: "get",
   })
 }

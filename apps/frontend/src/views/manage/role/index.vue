@@ -12,19 +12,18 @@
   const appStore = useAppStore()
 
   const searchParams: Api.SystemManage.RoleSearchParams = reactive({
-    current: 1,
-    size: 10,
-    roleName: null,
-    roleCode: null,
-    status: null,
+    page: 1,
+    pageSize: 10,
+    keyword: undefined,
+    status: undefined,
   })
 
   const { columns, columnChecks, data, loading, getData, getDataByPage, mobilePagination } = useNaivePaginatedTable({
     api: () => fetchGetRoleList(searchParams),
     transform: (response) => defaultTransform(response),
     onPaginationParamsChange: (params) => {
-      searchParams.current = params.page
-      searchParams.size = params.pageSize
+      searchParams.page = params.page
+      searchParams.pageSize = params.pageSize
     },
     columns: () => [
       {
@@ -40,19 +39,19 @@
         render: (_, index) => index + 1,
       },
       {
-        key: "roleName",
+        key: "name",
         title: $t("page.manage.role.roleName"),
         align: "center",
         minWidth: 120,
       },
       {
-        key: "roleCode",
+        key: "code",
         title: $t("page.manage.role.roleCode"),
         align: "center",
         minWidth: 120,
       },
       {
-        key: "roleDesc",
+        key: "description",
         title: $t("page.manage.role.roleDesc"),
         minWidth: 120,
       },
@@ -121,14 +120,14 @@
     onBatchDeleted()
   }
 
-  function handleDelete(id: number) {
+  function handleDelete(id: string) {
     // request
     console.log(id)
 
     onDeleted()
   }
 
-  function edit(id: number) {
+  function edit(id: string) {
     handleEdit(id)
   }
 </script>

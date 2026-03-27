@@ -16,7 +16,7 @@ from src.crud.role import RoleCRUD
 from src.deps import RedisDep, SessionDep
 from src.deps.auth import UserDBDep
 from src.deps.router import RequestRouterDep
-from src.models.auth import Role, User
+from src.models.manage import Role, User
 
 permission_structure = "auth:permission:<{user_id}>"
 
