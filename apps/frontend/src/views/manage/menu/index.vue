@@ -198,7 +198,7 @@
     onBatchDeleted()
   }
 
-  function handleDelete(id: number) {
+  function handleDelete(id: string) {
     // request
     console.log(id)
 

@@ -12,7 +12,18 @@ declare global {
 
       /** role */
       type Role = Common.CommonRecord<{
-        keyword: string
+        /** role name */
+        name: string
+        /** role description */
+        description: string
+        /** role code */
+        code: string
+        /** interface permissions */
+        interfacePermissions: string[]
+        /** button permissions */
+        buttonPermissions: string[]
+        /** router permissions */
+        routerPermissions: string[]
       }>
 
       /** role search params */
@@ -22,7 +33,7 @@ declare global {
       type RoleList = Service.ApiResponse<"/api/v1/roles">
 
       /** all role */
-      type AllRole = Pick<Role, "id" | "roleName" | "roleCode">
+      type AllRole = Pick<Role, "id" | "name" | "code">
 
       /**
        * user gender

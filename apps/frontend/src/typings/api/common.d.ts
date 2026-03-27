@@ -21,7 +21,7 @@ declare namespace Api {
     }
 
     /** common search params of table */
-    type CommonSearchParams = Pick<Common.PaginatingCommonParams, "current" | "size">
+    type CommonSearchParams = Pick<Common.PaginatingCommonParams, "page" | "pageSize">
 
     /**
      * enable status
@@ -34,13 +34,9 @@ declare namespace Api {
     /** common record */
     type CommonRecord<T = any> = {
       /** record id */
-      id: number
-      /** record creator */
-      createBy: string
+      id: string
       /** record create time */
       createTime: string
-      /** record updater */
-      updateBy: string
       /** record update time */
       updateTime: string
       /** record status */

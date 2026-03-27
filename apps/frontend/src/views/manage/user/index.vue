@@ -12,8 +12,8 @@
   const appStore = useAppStore()
 
   const searchParams: Api.SystemManage.UserSearchParams = reactive({
-    current: 1,
-    size: 10,
+    page: 1,
+    pageSize: 10,
     status: null,
     username: null,
     userGender: null,
@@ -26,8 +26,8 @@
     api: () => fetchGetUserList(searchParams),
     transform: (response) => defaultTransform(response),
     onPaginationParamsChange: (params) => {
-      searchParams.current = params.page
-      searchParams.size = params.pageSize
+      searchParams.page = params.page
+      searchParams.pageSize = params.pageSize
     },
     columns: () => [
       {
@@ -151,14 +151,14 @@
     onBatchDeleted()
   }
 
-  function handleDelete(id: number) {
+  function handleDelete(id: string) {
     // request
     console.log(id)
 
     onDeleted()
   }
 
-  function edit(id: number) {
+  function edit(id: string) {
     handleEdit(id)
   }
 </script>
