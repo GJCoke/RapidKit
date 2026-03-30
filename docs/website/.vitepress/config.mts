@@ -12,7 +12,7 @@ export default defineConfig({
     server: {
       host: "0.0.0.0",
       port: 9628,
-    }
+    },
   },
   locales: {
     root: {
@@ -32,16 +32,16 @@ export default defineConfig({
             {
               text: "项目概述",
               items: [
-                { text: "项目介绍", link: "/guide/", },
+                { text: "项目介绍", link: "/guide/" },
                 { text: "快速开始", link: "/guide/quickstart" },
-              ]
+              ],
             },
             {
               text: "项目结构与架构设计",
               items: [
                 { text: "目录结构概览", link: "/guide/overview" },
                 { text: "架构设计", link: "/guide/design" },
-              ]
+              ],
             },
             {
               text: "静态检查工具",
@@ -50,14 +50,14 @@ export default defineConfig({
                 { text: "Mypy 配置与使用", link: "/guide/mypy" },
                 { text: "TypeScript 检查", link: "/guide/tsc" },
                 { text: "拼写检查工具", link: "/guide/spellcheck" },
-              ]
+              ],
             },
             {
               text: "格式化工具",
               items: [
                 { text: "Prettier 配置与使用", link: "/guide/prettier" },
                 { text: "Ruff 配置与使用", link: "/guide/ruff" },
-              ]
+              ],
             },
             {
               text: "Git 提交规范",
@@ -65,27 +65,25 @@ export default defineConfig({
                 { text: "Husky 提交钩子配置", link: "/guide/husky" },
                 { text: "Lint-staged 配置", link: "/guide/lint-staged" },
                 { text: "Commitlint 提交信息规范", link: "/guide/commitlint" },
-              ]
+              ],
             },
             {
               text: "更新日志",
               items: [
                 { text: "Changesets 是什么", link: "/guide/changeset" },
                 { text: "Changesets 使用", link: "/guide/changelog" },
-              ]
+              ],
             },
             {
               text: "类型生成",
               items: [
                 { text: "API 类型自动生成", link: "/guide/openapi-types" },
                 { text: "I18n 类型自动生成", link: "/guide/i18n-types" },
-              ]
+              ],
             },
             {
               text: "部署",
-              items: [
-                { text: "部署", link: "/guide/deployment" },
-              ]
+              items: [{ text: "部署", link: "/guide/deployment" }],
             },
           ],
           "/frontend/": [
@@ -98,24 +96,24 @@ export default defineConfig({
                 { text: "i18n", link: "/frontend/i18n" },
                 { text: "UI 结构", link: "/frontend/ui" },
                 { text: "构建", link: "/frontend/build" },
-                { text: "Vite 插件", link: "/frontend/vite-plugins" }
-              ]
-            }
+                { text: "Vite 插件", link: "/frontend/vite-plugins" },
+              ],
+            },
           ],
           "/backend/": [
             {
               text: "项目概述",
               items: [
-                { text: "项目介绍", link: "/backend/", },
+                { text: "项目介绍", link: "/backend/" },
                 { text: "快速开始", link: "/backend/quickstart" },
-              ]
+              ],
             },
             {
               text: "项目结构与架构设计",
               items: [
                 { text: "目录结构概览", link: "/backend/overview" },
-                { text: "架构设计", link: "/backend/design" },
-              ]
+                { text: "架构设计", link: "/backend/architecture" },
+              ],
             },
             {
               text: "核心模块说明",
@@ -125,20 +123,18 @@ export default defineConfig({
                 { text: "异步任务调度 (Celery)", link: "/modules/celery" },
                 { text: "用户认证与授权", link: "/modules/auth" },
                 { text: "工具链与代码质量", link: "/modules/toolchain" },
-              ]
+              ],
             },
             {
               text: "ORM 模型",
-              items: [
-                { text: "模型定义", link: "/backend/pydantic-models" },
-              ],
+              items: [{ text: "模型定义", link: "/backend/pydantic-models" }],
             },
             {
               text: "开发规范",
               items: [
                 { text: "代码风格与格式化", link: "/guide/code-style" },
                 { text: "静态检查工具使用", link: "/guide/static-check" },
-              ]
+              ],
             },
             {
               text: "测试与部署",
@@ -146,7 +142,7 @@ export default defineConfig({
                 { text: "单元测试与覆盖率", link: "/guide/testing" },
                 { text: "CI/CD 工作流", link: "/guide/ci" },
                 { text: "部署指南", link: "/guide/deployment" },
-              ]
+              ],
             },
           ],
           "/desktop/": [
@@ -156,31 +152,29 @@ export default defineConfig({
                 { text: "Electron 概览", link: "/desktop/overview" },
                 { text: "Preload", link: "/desktop/preload" },
                 { text: "IPC 机制", link: "/desktop/ipc" },
-                { text: "打包", link: "/desktop/packaging" }
+                { text: "打包", link: "/desktop/packaging" },
               ],
             },
           ],
           "/tutorial/": [
             {
               text: "容器工具",
-              items: [
-                { text: "Podman 国内源", link: "/tutorial/podman-source" }
-              ]
+              items: [{ text: "Podman 国内源", link: "/tutorial/podman-source" }],
             },
             {
               text: "包管理",
               items: [
                 { text: "uv 管理工具", link: "/tutorial/uv" },
-                { text: "pnpm 管理工具", link: "/tutorial/pnpm" }
-              ]
+                { text: "pnpm 管理工具", link: "/tutorial/pnpm" },
+              ],
             },
             {
               text: "VSCode",
               items: [
                 { text: "推荐插件", link: "/tutorial/vscode-extensions" },
-                { text: "隐藏目录", link: "/tutorial/hide-folder"}
-              ]
-            }
+                { text: "隐藏目录", link: "/tutorial/hide-folder" },
+              ],
+            },
           ],
           "/changelog/": [
             {
@@ -265,6 +259,6 @@ export default defineConfig({
   markdown: {
     config(md) {
       md.use(tabsMarkdownPlugin)
-    }
-  }
+    },
+  },
 })
