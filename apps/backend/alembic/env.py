@@ -1,13 +1,13 @@
 import asyncio
 from logging.config import fileConfig
 
+from alembic import context  # type: ignore
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
-
-from alembic import context  # type: ignore
 from src.core.config import settings
-from src.models import *  # noqa: F403
+from src.domains import *  # noqa: F403
+from src.queues.schedule import *  # noqa: F403
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -32,8 +32,8 @@ target_metadata = SQLModel.metadata
 DATABASE_URL = str(settings.ASYNC_DATABASE_POSTGRESQL_URL)
 
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
-config.compare_type = True
-config.compare_server_default = True
+config.compare_type = True  # type: ignore[attr-defined]
+config.compare_server_default = True  # type: ignore[attr-defined]
 
 
 def run_migrations_offline() -> None:

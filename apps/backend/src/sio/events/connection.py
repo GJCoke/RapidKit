@@ -8,12 +8,12 @@ from typing import Literal
 from authlib.jose.errors import ExpiredTokenError, JoseError
 from fastapi_sio_di import SID
 
+from src.common.deps import RedisDep
+from src.common.schemas import BaseModel
 from src.core.config import auth_settings
 from src.core.exceptions import AppException
 from src.core.status_codes import StatusCode
-from src.deps.auth import AuthCrudDep
-from src.deps.database import RedisDep
-from src.schemas import BaseModel
+from src.domains.auth.deps import AuthCrudDep
 from src.sio.app import socket
 from src.utils.security import decode_token
 

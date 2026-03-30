@@ -4,8 +4,8 @@ from typing import Any, Literal, TypeAlias
 
 from fastapi_sio_di import SID
 
+from src.common.schemas import BaseModel
 from src.core.log import logger
-from src.schemas import BaseModel
 from src.sio.app import socket
 
 MessageType: TypeAlias = Literal["text", "image", "video", "audio", "file", "system"]

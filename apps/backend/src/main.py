@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException
 
+from src.common.schemas.response import Response as SchemaResponse
 from src.core.config import app_configs, settings
 from src.core.exceptions import AppException
 from src.core.lifecycle import lifespan
@@ -26,7 +27,6 @@ from src.middlewares.i18n import I18nMiddleware
 from src.middlewares.limiter import SlowAPIMiddleware
 from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.state import StateMiddleware
-from src.schemas.response import Response as SchemaResponse
 from src.sio.app import socket_app
 from src.utils.nanoid import NanoIdPlugin
 from src.utils.utils import format_validation_errors
@@ -124,7 +124,19 @@ def setup_exception_handlers(app: FastAPI) -> None:
 
 def setup_router(app: FastAPI) -> None:
     """配置应用路由。"""
-    from src.api.v1 import v1_router
+    from fastapi import APIRouter
+
+    from src.core.config import settings
+    from src.domains.auth import api as auth
+    from src.domains.menu import api as manage
+    from src.domains.role import api as roles
+    from src.domains.router import api as router
+
+    v1_router = APIRouter(prefix=settings.API_PREFIX_V1)
+    v1_router.include_router(auth.router)
+    v1_router.include_router(router.router)
+    v1_router.include_router(roles.router)
+    v1_router.include_router(manage.router)
 
     app.include_router(v1_router)
 

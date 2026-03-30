@@ -17,10 +17,10 @@ from starlette.routing import BaseRoute as StarletteRoute
 from src.core.config import settings
 from src.core.database import AsyncSessionLocal, RedisManager
 from src.core.log import logger
-from src.crud.router import RouterCRUD
+from src.domains.router.crud import RouterCRUD
+from src.domains.router.models import InterfaceRouter
+from src.domains.router.schemas import FastAPIRouterCreate
 from src.locales.watch import watch_locale_files
-from src.models.manage import InterfaceRouter
-from src.schemas.router import FastAPIRouterCreate
 
 
 @asynccontextmanager

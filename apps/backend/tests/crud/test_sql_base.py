@@ -11,11 +11,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Field, col, delete
 from sqlmodel import SQLModel as _SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
+from src.common.crud import BaseSQLModelCRUD
+from src.common.models import SQLModel
+from src.common.schemas import BaseRequest, BaseResponse
+from src.core.exceptions import AppException
 
-from src.core.exceptions import ExistsException, InvalidParameterError, NotFoundException
-from src.crud.crud_sqlmodel import BaseSQLModelCRUD
-from src.models.base import SQLModel
-from src.schemas import BaseRequest, BaseResponse
 from tests.conftest import engine
 from tests.utils import random_lowercase, random_uuid
 
@@ -89,7 +89,7 @@ async def test_create_with_model(crud: CRUD) -> None:
 @pytest.mark.asyncio
 async def test_create_with_schema_not_validate(crud: CRUD) -> None:
     name = random_lowercase()
-    with pytest.raises(InvalidParameterError) as exc:
+    with pytest.raises(AppException) as exc:
         await crud.create(PyUserCreate(name=name), validate=False)  # type: ignore
     assert "Expected type" in str(exc.value)
 
@@ -98,7 +98,7 @@ async def test_create_with_schema_not_validate(crud: CRUD) -> None:
 async def test_create_repeat_creation(crud: CRUD) -> None:
     name = random_lowercase()
     await crud.create(PyUser(name=name))
-    with pytest.raises(ExistsException):
+    with pytest.raises(AppException):
         await crud.create(PyUser(name=name))
 
 
@@ -143,14 +143,14 @@ async def test_create_all_model(crud: CRUD) -> None:
 
 @pytest.mark.asyncio
 async def test_create_all_empty(crud: CRUD) -> None:
-    with pytest.raises(InvalidParameterError):
+    with pytest.raises(AppException):
         await crud.create_all([])
 
 
 @pytest.mark.asyncio
 async def test_create_all_repeat(crud: CRUD) -> None:
     name = random_lowercase()
-    with pytest.raises(ExistsException):
+    with pytest.raises(AppException):
         await crud.create_all([PyUser(name=name), PyUser(name=name)])
 
 
@@ -219,7 +219,7 @@ async def test_get_by_invalid_id_returns_none(crud: CRUD) -> None:
 
 @pytest.mark.asyncio
 async def test_get_by_invalid_id_with_nullable_false_raises(crud: CRUD) -> None:
-    with pytest.raises(NotFoundException) as exc:
+    with pytest.raises(AppException) as exc:
         await crud.get(random_uuid(), nullable=False)
     assert "not found" in str(exc.value)
 
@@ -245,7 +245,7 @@ async def test_get_by_ids_all_invalid(crud: CRUD) -> None:
 
 @pytest.mark.asyncio
 async def test_get_by_ids_empty_list(crud: CRUD) -> None:
-    with pytest.raises(InvalidParameterError):
+    with pytest.raises(AppException):
         await crud.get_by_ids([])
 
 
@@ -366,19 +366,19 @@ async def test_update_all_success(crud: CRUD, with_data: list[PyUser]) -> None:
 
 @pytest.mark.asyncio
 async def test_update_all_missing_id_raises(crud: CRUD) -> None:
-    with pytest.raises(InvalidParameterError):
+    with pytest.raises(AppException):
         await crud.update_all([{"name": "no_id"}])
 
 
 @pytest.mark.asyncio
 async def test_update_all_not_found_id_raises(crud: CRUD) -> None:
-    with pytest.raises(NotFoundException):
+    with pytest.raises(AppException):
         await crud.update_all([{"name": "test", "id": random_uuid()}])
 
 
 @pytest.mark.asyncio
 async def test_update_all_empty(crud: CRUD) -> None:
-    with pytest.raises(InvalidParameterError):
+    with pytest.raises(AppException):
         await crud.update_all([])
 
 
@@ -393,13 +393,13 @@ async def test_delete_single_success(crud: CRUD, with_data: list[PyUser]) -> Non
     deleted = await crud.delete(with_data[0].id)
     assert deleted.id == with_data[0].id
     assert deleted.name == with_data[0].name
-    with pytest.raises(NotFoundException):
+    with pytest.raises(AppException):
         await crud.get(with_data[0].id, nullable=False)
 
 
 @pytest.mark.asyncio
 async def test_delete_single_not_found_raises(crud: CRUD) -> None:
-    with pytest.raises(NotFoundException):
+    with pytest.raises(AppException):
         await crud.delete(random_uuid())
 
 
@@ -419,5 +419,5 @@ async def test_delete_all_partial_not_found(crud: CRUD, with_data: list[PyUser])
 
 @pytest.mark.asyncio
 async def test_delete_all_empty(crud: CRUD) -> None:
-    with pytest.raises(InvalidParameterError):
+    with pytest.raises(AppException):
         await crud.delete_all([])

@@ -74,9 +74,9 @@ async def test_login(client: AsyncClient, rsa_public_key: RSAPublicKey, redis: R
         rsa_public_key (RSAPublicKey): The public RSA key used for encrypting the password.
     """
     from src.core.config import auth_settings
-    from src.deps.auth import refresh_structure
+    from src.domains.auth.deps import refresh_structure
+    from src.domains.auth.schemas import TokenResponse, UserInfoResponse
     from src.initdb import PASSWORD, USERNAME
-    from src.schemas.auth import TokenResponse, UserInfoResponse
     from src.utils.security import decode_token, encrypt_message
 
     response = await client.post(
@@ -97,6 +97,6 @@ async def test_login(client: AsyncClient, rsa_public_key: RSAPublicKey, redis: R
     user_info = UserInfoResponse.model_validate(user_response.json()["data"])
 
     redis_key = refresh_structure.format(user_id=user_info.id, jti=access_token.jti)
-    redis_refresh = await redis.hgetall(redis_key)
+    redis_refresh = await redis.hgetall(redis_key)  # type: ignore[misc]
     assert redis_refresh["token"] == token_response.refresh_token
     assert redis_refresh["agent"] == refresh_token.agent

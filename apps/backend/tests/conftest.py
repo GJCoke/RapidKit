@@ -112,7 +112,7 @@ async def client(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[AsyncClient]:
     """
     from src.core import database, lifecycle
     from src.core.config import settings
-    from src.deps.role import verify_user_permission
+    from src.domains.role.deps import verify_user_permission
     from src.main import app
 
     monkeypatch.setattr(database, "ASYNC_DATABASE_URL", pytest_settings.SQL_DATABASE_URL)

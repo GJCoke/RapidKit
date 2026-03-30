@@ -4,7 +4,7 @@ from fastapi import Request
 from user_agents import parse
 from user_agents.parsers import UserAgent as UAParser
 
-from src.schemas.request import UserAgent
+from src.common.schemas.request import UserAgent
 
 
 def get_client_ip(request: Request) -> str | None:

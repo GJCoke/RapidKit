@@ -18,8 +18,8 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.models import PeriodicTask
 from src.queues.celery import Celery
+from src.queues.schedule import PeriodicTask
 
 logger = get_logger("celery.queues.scheduler")
 

@@ -11,9 +11,11 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.core.database import AsyncSessionLocal
-from src.models.manage import Menu, Role, User
-from src.schemas.auth import UserCreate
-from src.schemas.role import RoleCreate
+from src.domains.auth.models import User
+from src.domains.auth.schemas import UserCreate
+from src.domains.menu.models import Menu
+from src.domains.role.models import Role
+from src.domains.role.schemas import RoleCreate
 from src.utils.enums import MenuIconType, MenuType
 from src.utils.security import hash_password
 from src.utils.uuid7 import uuid8
