@@ -15,6 +15,10 @@ app.conf.update({"timezone": settings.DATETIME_TIMEZONE, "database_url": DATABAS
 
 app.autodiscover_tasks(["src.queues.tasks"])
 
+# 导入信号处理器，确保 Worker 启动时注册
+if settings.ENABLE_CELERY_MONITOR:
+    import src.queues.signals  # noqa: F401, E402
+
 # TODO: this is delete code.
 app.conf.beat_schedule = {
     "test_task2": {

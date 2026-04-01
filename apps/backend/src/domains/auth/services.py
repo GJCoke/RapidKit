@@ -20,7 +20,7 @@ from src.core.status_codes import StatusCode
 from src.domains.auth.crud import UserCRUD
 from src.domains.auth.deps import refresh_structure
 from src.domains.auth.models import User
-from src.domains.auth.schemas import TokenResponse
+from src.domains.auth.schemas import RefreshTokenCache, TokenResponse
 from src.domains.role.crud import RoleCRUD
 from src.domains.role.deps import create_user_permission_cache
 from src.utils.security import AccessJWT, RefreshJWT, check_password, create_token, decrypt_message
@@ -116,13 +116,13 @@ async def create_user_token(
     redis_key = refresh_structure.format(user_id=user_id, jti=jti)
     refresh = RefreshJWT.model_validate({**token_info, "agent": user_agent})
     refresh_token = create_refresh_token(refresh)
-    refresh_value = {
-        "token": refresh_token,
-        "agent": user_agent,
-        "created_at": int(time.time()),
-    }
+    refresh_cache = RefreshTokenCache(
+        token=refresh_token,
+        agent=user_agent,
+        created_at=int(time.time()),
+    )
 
-    await redis.set(redis_key, refresh_value, ttl=auth_settings.REFRESH_TOKEN_EXP)
+    await redis.set(redis_key, refresh_cache, ex=auth_settings.REFRESH_TOKEN_EXP)
 
     return TokenResponse(
         access_token=access_token,

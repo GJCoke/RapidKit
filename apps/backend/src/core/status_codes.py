@@ -70,6 +70,11 @@ class StatusCode(Enum):
     MENU_OPERATION_ERROR = (2003, "common.response.menuOperationError")  # 菜单操作失败
     PERMISSION_OPERATION_ERROR = (2004, "common.response.permissionOperationError")  # 权限操作失败
     INVALID_OPERATION = (2005, "common.response.invalidOperation")  # 无效的操作
+    TASK_TRIGGER_FAILED = (2006, "common.response.taskTriggerFailed")  # 任务触发失败
+    TASK_REVOKE_FAILED = (2007, "common.response.taskRevokeFailed")  # 任务撤销失败
+    TASK_NOT_REGISTERED = (2008, "common.response.taskNotRegistered")  # 任务未注册
+    WORKER_CONTROL_FAILED = (2009, "common.response.workerControlFailed")  # Worker 控制指令失败
+    WORKER_OFFLINE = (2010, "common.response.workerOffline")  # Worker 离线，无法操作
 
     # ==================== 状态/并发/幂等 (3XXX) ====================
     ALREADY_EXISTS = (3001, "common.response.alreadyExists")  # 资源已存在，无法重复创建
@@ -94,6 +99,8 @@ class StatusCode(Enum):
     MENU_NOT_FOUND = (5003, "common.response.menuNotFound")  # 菜单不存在
     RESOURCE_NOT_FOUND = (5004, "common.response.resourceNotFound")  # 资源不存在
     MENU_INVALID_PARENT = (5005, "common.response.menuInvalidParent")  # 菜单父级不存在
+    WORKER_NOT_FOUND = (5006, "common.response.workerNotFound")  # Worker 不存在
+    TASK_NOT_FOUND = (5007, "common.response.taskNotFound")  # 任务不存在
 
     # ==================== 第三方/依赖错误 (6XXX) ====================
     EXTERNAL_SERVICE_ERROR = (6001, "common.response.externalServiceError")  # 外部服务调用失败

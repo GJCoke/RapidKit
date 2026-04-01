@@ -71,3 +71,11 @@ class TokenResponse(BaseResponse):
 
     access_token: str
     refresh_token: str
+
+
+class RefreshTokenCache(PydanticBaseModel):
+    """Redis 中存储的刷新令牌缓存数据结构。"""
+
+    token: str
+    agent: str
+    created_at: int

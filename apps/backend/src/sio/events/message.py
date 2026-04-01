@@ -25,6 +25,6 @@ class MessageResponse(BaseModel):
 
 @socket.event
 async def message(sid: SID, data: MessageEvent, redis: RedisDep) -> None:
-    user = await redis.get_mapping("sid:<{sid}>:user".format(sid=sid))
+    user = await redis.hgetall("sid:<{sid}>:user".format(sid=sid), response_model=RedisUser)
     print(f"{user} sent a message: {data.msg}")
-    await socket.send(MessageResponse(user=RedisUser(**user), send=data), room=sid)
+    await socket.send(MessageResponse(user=user, send=data), room=sid)

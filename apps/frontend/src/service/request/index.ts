@@ -29,6 +29,11 @@ export const request = createFlatRequest(
       const language = localStg.get("lang") || "zh-CN"
       Object.assign(config.headers, { Authorization, "Accept-Language": language })
 
+      // 过滤 params 中的 null/undefined 值，避免序列化为空字符串参数
+      if (config.params) {
+        config.params = Object.fromEntries(Object.entries(config.params).filter(([, v]) => v !== null))
+      }
+
       return config
     },
     isBackendSuccess(response) {

@@ -307,7 +307,7 @@ async def get_current_user_form_redis_and_db(user: UserRefreshJWTDep, db_user: A
     Raises:
         PermissionDeniedException: refresh token 不存在或数据库无此用户时抛出。
     """
-    refresh_token = redis.get(refresh_structure.format(user_id=user.sub, jti=user.jti))
+    refresh_token = await redis.get(refresh_structure.format(user_id=user.sub, jti=user.jti))
 
     if not refresh_token:
         logger.debug("No refresh token found in the redis.")

@@ -1,0 +1,31 @@
+{
+  "name": "@monorepo-example/editor",
+  "version": "1.0.0",
+  "description": "Monaco Editor Vue component for monorepo-example",
+  "type": "module",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "lint:format": "prettier --write \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
+    "lint:lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
+    "dev": "tsx ../builder/cli.ts --dev",
+    "build": "tsx ../builder/cli.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.20.0",
+  "buildOptions": {
+    "type": "vue",
+    "name": "MonorepoExampleEditor",
+    "formats": ["esm"]
+  },
+  "files": ["dist"],
+  "dependencies": {
+    "monaco-editor": "^0.52.2"
+  },
+  "peerDependencies": {
+    "vue": ">=3.0.0"
+  }
+}

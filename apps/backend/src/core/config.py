@@ -97,6 +97,12 @@ class Config(BaseSettings):
         )
 
     CELERY_REDIS_DATABASE: int = Field(1, ge=0, le=15)
+    ENABLE_CELERY_MONITOR: bool = Field(
+        True,
+        description="是否启用 Celery 任务队列管理（事件消费、Worker 监控、管理 API）",
+    )
+    SCRIPT_EXEC_TIMEOUT: int = Field(30, description="脚本执行超时时间（秒）")
+    SCRIPT_EXEC_MAX_OUTPUT: int = Field(65536, description="脚本执行最大输出字节数")
     DATETIME_TIMEZONE: str = "Asia/Shanghai"
     DATETIME_FORMAT: str = "%Y-%m-%d %H:%M:%S"
 

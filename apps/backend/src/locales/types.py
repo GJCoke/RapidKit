@@ -2,9 +2,9 @@
 
 from typing import Literal, TypeAlias
 
-LANGUAGE_TYPE: TypeAlias = Literal["en-US", "zh-CN"]
+LANGUAGE_TYPE: TypeAlias = Literal["zh-CN", "en-US"]
 
-languages: set[LANGUAGE_TYPE] = {"en-US", "zh-CN"}
+languages: set[LANGUAGE_TYPE] = {"zh-CN", "en-US"}
 
 I18nKey = Literal[
     "auth.error.invalidCredentials",
@@ -41,6 +41,10 @@ I18nKey = Literal[
     "common.response.stateConflict",
     "common.response.success",
     "common.response.systemBusy",
+    "common.response.taskNotFound",
+    "common.response.taskNotRegistered",
+    "common.response.taskRevokeFailed",
+    "common.response.taskTriggerFailed",
     "common.response.thirdPartyError",
     "common.response.tokenExpired",
     "common.response.tokenInvalid",
@@ -50,4 +54,7 @@ I18nKey = Literal[
     "common.response.userNotFound",
     "common.response.userOperationError",
     "common.response.validationError",
+    "common.response.workerControlFailed",
+    "common.response.workerNotFound",
+    "common.response.workerOffline",
 ]

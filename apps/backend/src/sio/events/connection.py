@@ -77,9 +77,9 @@ async def connect(sid: SID, auth: AccessToken, db_user: AuthCrudDep, redis: Redi
         return False
 
     user_id = str(user_info.id)
-    await redis.set(sid_user_structure.format(sid=sid), RedisUser(id=user_id, name=user_info.name).model_dump())
+    await redis.hset(sid_user_structure.format(sid=sid), mapping=RedisUser(id=user_id, name=user_info.name))
     await redis.set(user_sid_structure.format(user_id=user_id), sid)
-    await redis.set(online_users_structure, {user_id})
+    await redis.sadd(online_users_structure, user_id)
 
     return None
 
@@ -93,8 +93,7 @@ async def disconnect(sid: SID, redis: RedisDep) -> None:
         sid: 会话ID。
         redis: Redis 依赖。
     """
-    user = await redis.get_mapping(sid_user_structure.format(sid=sid))
-    user_info = RedisUser.model_validate(user)
+    user = await redis.hgetall(sid_user_structure.format(sid=sid), response_model=RedisUser)
     await redis.delete(sid_user_structure.format(sid=sid))
-    await redis.delete(user_sid_structure.format(user_id=user_info.id))
-    await redis.delete_set(online_users_structure, user_info.id)
+    await redis.delete(user_sid_structure.format(user_id=user.id))
+    await redis.srem(online_users_structure, user.id)  # ty: ignore[invalid-await]

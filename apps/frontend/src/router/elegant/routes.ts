@@ -117,6 +117,63 @@ export const generatedRoutes: GeneratedRoute[] = [{
     }
   }]
 }, {
+  name: 'queue',
+  path: '/queue',
+  component: 'layout.base',
+  meta: {
+    title: 'queue',
+    i18nKey: 'route.queue',
+    icon: 'material-symbols:queue-play-next-outline',
+    order: 7
+  },
+  children: [{
+    name: 'queue_dashboard',
+    path: '/queue/dashboard',
+    component: 'view.queue_dashboard',
+    meta: {
+      title: 'queue_dashboard',
+      i18nKey: 'route.queue_dashboard',
+      icon: 'material-symbols:dashboard-outline-rounded'
+    }
+  }, {
+    name: 'queue_schedule',
+    path: '/queue/schedule',
+    component: 'view.queue_schedule',
+    meta: {
+      title: 'queue_schedule',
+      i18nKey: 'route.queue_schedule',
+      icon: 'material-symbols:alarm-smart-wake-outline'
+    }
+  }, {
+    name: 'queue_task',
+    path: '/queue/task',
+    component: 'view.queue_task',
+    meta: {
+      title: 'queue_task',
+      i18nKey: 'route.queue_task',
+      icon: 'material-symbols:history-2'
+    }
+  }, {
+    name: 'queue_worker',
+    path: '/queue/worker',
+    component: 'view.queue_worker',
+    meta: {
+      title: 'queue_worker',
+      i18nKey: 'route.queue_worker',
+      icon: 'fluent:tab-desktop-multiple-bottom-24-regular'
+    }
+  }]
+}, {
+  name: 'script',
+  path: '/script',
+  component: 'layout.base$view.script',
+  meta: {
+    title: 'script',
+    i18nKey: 'route.script',
+    icon: 'streamline-ultimate:programming-browser-1-bold',
+    order: 12
+  }
+}, {
   name: 'socketio',
   path: '/socketio',
   component: 'layout.base',

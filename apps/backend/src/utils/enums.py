@@ -14,3 +14,17 @@ class MenuType(str, Enum):
 class Status(str, Enum):
     ON = "1"  # 启用
     OFF = "2"  # 禁用
+
+
+class WorkerStatus(str, Enum):
+    ONLINE = "1"
+    OFFLINE = "2"
+
+
+class TaskStatus(str, Enum):
+    PENDING = "1"
+    STARTED = "2"
+    SUCCESS = "3"
+    FAILURE = "4"
+    RETRY = "5"
+    REVOKED = "6"

@@ -40,8 +40,7 @@ async def get_redis_client() -> AsyncRedisClient:
     Returns:
         AsyncRedisClient: Redis 客户端实例。
     """
-    client = RedisManager.client()
-    return AsyncRedisClient(client=client, echo=settings.ENVIRONMENT.is_debug)
+    return RedisManager.client()
 
 
 RedisDep = Annotated[

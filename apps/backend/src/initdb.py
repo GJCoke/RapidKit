@@ -208,7 +208,7 @@ async def create_menus(session: AsyncSession) -> None:
 
 
 async def init_db(session: AsyncSession) -> None:
-    # await create_user(session)
+    await create_user(session)
     await create_menus(session)
 
 

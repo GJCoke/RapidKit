@@ -8,6 +8,8 @@ Date   : 2025-04-12
 """
 
 import asyncio
+import io
+import sys
 import warnings
 from datetime import datetime, timedelta
 from typing import Any, Iterable
@@ -327,6 +329,11 @@ class Task(_Task):
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs)
 
+        # 捕获任务执行期间的 stdout 输出作为日志。
+        captured = io.StringIO()
+        old_stdout = sys.stdout
+        sys.stdout = captured
+
         try:
             # 调用原始 run() 方法。
             result = self.run(*args, **kwargs)
@@ -345,5 +352,7 @@ class Task(_Task):
             return result
 
         finally:
+            sys.stdout = old_stdout
+            self._logs = captured.getvalue() or None
             self.pop_request()
             _task_stack.pop()

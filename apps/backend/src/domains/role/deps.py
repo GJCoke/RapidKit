@@ -17,6 +17,7 @@ from src.domains.auth.deps import UserDBDep
 from src.domains.auth.models import User
 from src.domains.role.crud import RoleCRUD
 from src.domains.role.models import Role
+from src.domains.role.schemas import UserPermissionCache
 from src.domains.router.deps import RequestRouterDep
 
 permission_structure = "auth:permission:<{user_id}>"
@@ -71,13 +72,16 @@ async def create_user_permission_cache(
         list[str]: 权限编码列表。
     """
     redis_key = permission_structure.format(user_id=user_id)
-    if await redis.exists(redis_key):
-        await redis.delete(redis_key)
+    await redis.delete(redis_key)
 
     roles = await role_crud.get_role_by_codes(codes)
     user_permission_list = [permission for role_info in roles for permission in role_info.interface_permissions]
     if user_permission_list:
-        await redis.set(redis_key, user_permission_list, ttl=auth_settings.ACCESS_TOKEN_EXP)
+        await redis.set(
+            redis_key,
+            UserPermissionCache(permissions=user_permission_list),
+            ex=auth_settings.ACCESS_TOKEN_EXP,
+        )
 
     return user_permission_list
 
@@ -103,9 +107,9 @@ async def verify_user_permission(user: UserDBDep, route: RequestRouterDep, redis
     """
     if not user.is_admin:
         redis_key = permission_structure.format(user_id=user.id)
-        if await redis.exists(redis_key):
-            user_permission_list: list[str] = await redis.get_array(redis_key)
-
+        cache = await redis.get(redis_key, response_model=UserPermissionCache)
+        if cache:
+            user_permission_list = cache.permissions
         else:
             user_permission_list = await create_user_permission_cache(user.id, user.roles, redis, role)
 

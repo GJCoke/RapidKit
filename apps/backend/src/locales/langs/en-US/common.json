@@ -41,6 +41,13 @@
     "socketMessageSendError": "Socket message send failed",
     "socketInvalidMessage": "Socket message format error",
     "socketAuthenticationFailed": "Socket authentication failed",
-    "socketNamespaceNotFound": "Socket namespace not found"
+    "socketNamespaceNotFound": "Socket namespace not found",
+    "taskTriggerFailed": "Task trigger failed",
+    "taskRevokeFailed": "Task revoke failed",
+    "taskNotRegistered": "Task is not registered",
+    "workerNotFound": "Worker not found",
+    "taskNotFound": "Task not found",
+    "workerControlFailed": "Worker control command failed",
+    "workerOffline": "Worker is currently offline"
   }
 }

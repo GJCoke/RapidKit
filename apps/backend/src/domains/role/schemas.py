@@ -53,3 +53,9 @@ class RoleAllQuery(RoleQueriesSchema):
 
 class RoleBatchBody(BatchRequest):
     """批量角色操作数据结构。"""
+
+
+class UserPermissionCache(BaseModel):
+    """Redis 中存储的用户权限缓存数据结构。"""
+
+    permissions: list[str] = []

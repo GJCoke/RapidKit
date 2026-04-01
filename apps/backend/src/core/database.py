@@ -12,7 +12,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator, Iterator
 
-from redis.asyncio import ConnectionPool, Redis
+from redis.asyncio import ConnectionPool
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session, create_engine
@@ -20,6 +20,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.core.config import settings
 from src.core.log import logger
+from src.core.redis_client import AsyncRedisClient
 
 ASYNC_DATABASE_URL = str(settings.ASYNC_DATABASE_POSTGRESQL_URL)
 SYNC_DATABASE_URL = str(settings.SYNC_DATABASE_POSTGRESQL_URL)
@@ -113,7 +114,7 @@ class RedisManager(BaseManager):
     """
 
     _pools: dict[str, ConnectionPool] = {}
-    _clients: dict[str, Redis] = {}
+    _clients: dict[str, AsyncRedisClient] = {}
 
     @classmethod
     def connect(
@@ -133,7 +134,7 @@ class RedisManager(BaseManager):
         if pool_name not in cls._pools:
             pool = ConnectionPool.from_url(redis_url, max_connections=max_connections, decode_responses=True)
             cls._pools[pool_name] = pool
-            cls._clients[pool_name] = Redis(connection_pool=pool)
+            cls._clients[pool_name] = AsyncRedisClient(connection_pool=pool)
             logger.info(f'Redis connection pool for "{pool_name}" initialization completed.')
 
         return cls._pools[pool_name]
@@ -160,7 +161,7 @@ class RedisManager(BaseManager):
             cls._clients.clear()
 
     @classmethod
-    def client(cls, pool_name: str = "default") -> Redis:
+    def client(cls, pool_name: str = "default") -> AsyncRedisClient:
         """
         返回已初始化的 Redis 客户端。
 

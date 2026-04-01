@@ -118,11 +118,11 @@ export default defineConfig({
             {
               text: "核心模块说明",
               items: [
-                { text: "数据库与依赖注入", link: "/modules/database" },
-                { text: "WebSocket 服务", link: "/modules/websocket" },
-                { text: "异步任务调度 (Celery)", link: "/modules/celery" },
-                { text: "用户认证与授权", link: "/modules/auth" },
-                { text: "工具链与代码质量", link: "/modules/toolchain" },
+                { text: "数据库与依赖注入", link: "/backend/database" },
+                { text: "WebSocket 服务", link: "/backend/websocket" },
+                { text: "异步任务调度 (Celery)", link: "/backend/celery" },
+                { text: "用户认证与授权", link: "/backend/auth" },
+                { text: "工具链与代码质量", link: "/backend/toolchain" },
               ],
             },
             {

@@ -21,6 +21,7 @@ from src.domains.router.crud import RouterCRUD
 from src.domains.router.models import InterfaceRouter
 from src.domains.router.schemas import FastAPIRouterCreate
 from src.locales.watch import watch_locale_files
+from src.queues.consumer import check_worker_offline, consume_events
 
 
 @asynccontextmanager
@@ -37,7 +38,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         watch_task = asyncio.create_task(watch_locale_files())
 
     RedisManager.connect()
-    RedisManager.connect(redis_url=str(settings.CELERY_REDIS_URL), pool_name="celery")
+
+    consumer_task = None
+    offline_checker_task = None
+    if settings.ENABLE_CELERY_MONITOR:
+        RedisManager.connect(redis_url=str(settings.CELERY_REDIS_URL), pool_name="celery")
+        consumer_task = asyncio.create_task(consume_events())
+        offline_checker_task = asyncio.create_task(check_worker_offline())
+        logger.info("Celery monitor enabled.")
 
     logger.info("Application startup complete.")
 
@@ -45,6 +53,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     yield
 
+    if consumer_task:
+        consumer_task.cancel()
+    if offline_checker_task:
+        offline_checker_task.cancel()
     watch_task and watch_task.cancel()
 
     await RedisManager.clear()
