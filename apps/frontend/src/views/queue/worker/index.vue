@@ -189,8 +189,9 @@
                 <NSpace class="w-full" justify="end">
                   <NButton
                     @click="
-                      searchParams.hostname = undefined
-                      searchParams.status = undefined
+                      () => {
+                        ;((searchParams.hostname = undefined), (searchParams.status = undefined))
+                      }
                     "
                   >
                     <template #icon>
