@@ -3,10 +3,13 @@
   import { jsonClone } from "@monorepo-example/utils"
   import { useBoolean } from "@monorepo-example/hooks"
   import { enableStatusOptions } from "@/constants/business"
+  import { fetchCreateRole, fetchUpdateRole } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
+  import { useAuth } from "@/hooks/business/auth"
   import MenuAuthModal from "./menu-auth-modal.vue"
   import ButtonAuthModal from "./button-auth-modal.vue"
+  import InterfaceAuthModal from "./interface-auth-modal.vue"
 
   defineOptions({
     name: "RoleOperateDrawer",
@@ -35,6 +38,8 @@
   const { defaultRequiredRule } = useFormRules()
   const { bool: menuAuthVisible, setTrue: openMenuAuthModal } = useBoolean()
   const { bool: buttonAuthVisible, setTrue: openButtonAuthModal } = useBoolean()
+  const { bool: interfaceAuthVisible, setTrue: openInterfaceAuthModal } = useBoolean()
+  const { hasAuth } = useAuth()
 
   const title = computed(() => {
     const titles: Record<NaiveUI.TableOperateType, string> = {
@@ -83,7 +88,15 @@
 
   async function handleSubmit() {
     await validate()
-    // request
+
+    if (props.operateType === "add") {
+      const { error } = await fetchCreateRole(model.value)
+      if (error) return
+    } else {
+      const { error } = await fetchUpdateRole(props.rowData!.id, model.value)
+      if (error) return
+    }
+
     window.$message?.success($t("common.updateSuccess"))
     closeDrawer()
     emit("submitted")
@@ -117,10 +130,18 @@
         </NFormItem>
       </NForm>
       <NSpace v-if="isEdit">
-        <NButton @click="openMenuAuthModal">{{ $t("page.manage.role.menuAuth") }}</NButton>
+        <NButton v-if="hasAuth('manage_role:menuAuth')" @click="openMenuAuthModal">
+          {{ $t("page.manage.role.menuAuth") }}
+        </NButton>
         <MenuAuthModal v-model:visible="menuAuthVisible" :role-id="roleId" />
-        <NButton @click="openButtonAuthModal">{{ $t("page.manage.role.buttonAuth") }}</NButton>
+        <NButton v-if="hasAuth('manage_role:buttonAuth')" @click="openButtonAuthModal">
+          {{ $t("page.manage.role.buttonAuth") }}
+        </NButton>
         <ButtonAuthModal v-model:visible="buttonAuthVisible" :role-id="roleId" />
+        <NButton v-if="hasAuth('manage_role:interfaceAuth')" @click="openInterfaceAuthModal">
+          {{ $t("page.manage.role.interfaceAuth") }}
+        </NButton>
+        <InterfaceAuthModal v-model:visible="interfaceAuthVisible" :role-id="roleId" />
       </NSpace>
       <template #footer>
         <NSpace :size="16">

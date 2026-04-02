@@ -5,14 +5,16 @@
   import { useBoolean } from "@monorepo-example/hooks"
   import { yesOrNoRecord } from "@/constants/common"
   import { enableStatusRecord, menuTypeRecord } from "@/constants/business"
-  import { fetchGetAllPages, fetchGetMenuList } from "@/service/api"
+  import { fetchBatchDeleteMenus, fetchDeleteMenu, fetchGetAllPages, fetchGetMenuList } from "@/service/api"
   import { useAppStore } from "@/store/modules/app"
   import { defaultTransform, useNaivePaginatedTable, useTableOperate } from "@/hooks/common/table"
   import { $t } from "@/locales"
+  import { useAuth } from "@/hooks/business/auth"
   import SvgIcon from "@/components/custom/svg-icon.vue"
   import MenuOperateModal, { type OperateType } from "./modules/menu-operate-modal.vue"
 
   const appStore = useAppStore()
+  const { hasAuth } = useAuth()
 
   const { bool: visible, setTrue: openModal } = useBoolean()
 
@@ -158,24 +160,28 @@
         width: 230,
         render: (row) => (
           <div class="flex-center justify-end gap-8px">
-            {row.menuType === "1" && (
+            {row.menuType === "1" && hasAuth("manage_menu:add") && (
               <NButton type="primary" ghost size="small" onClick={() => handleAddChildMenu(row)}>
                 {$t("page.manage.menu.addChildMenu")}
               </NButton>
             )}
-            <NButton type="primary" ghost size="small" onClick={() => handleEdit(row)}>
-              {$t("common.edit")}
-            </NButton>
-            <NPopconfirm onPositiveClick={() => handleDelete(row.id)}>
-              {{
-                default: () => $t("common.confirmDelete"),
-                trigger: () => (
-                  <NButton type="error" ghost size="small">
-                    {$t("common.delete")}
-                  </NButton>
-                ),
-              }}
-            </NPopconfirm>
+            {hasAuth("manage_menu:edit") && (
+              <NButton type="primary" ghost size="small" onClick={() => handleEdit(row)}>
+                {$t("common.edit")}
+              </NButton>
+            )}
+            {hasAuth("manage_menu:delete") && (
+              <NPopconfirm onPositiveClick={() => handleDelete(row.id)}>
+                {{
+                  default: () => $t("common.confirmDelete"),
+                  trigger: () => (
+                    <NButton type="error" ghost size="small">
+                      {$t("common.delete")}
+                    </NButton>
+                  ),
+                }}
+              </NPopconfirm>
+            )}
           </div>
         ),
       },
@@ -192,16 +198,14 @@
   }
 
   async function handleBatchDelete() {
-    // request
-    console.log(checkedRowKeys.value)
-
+    const { error } = await fetchBatchDeleteMenus(checkedRowKeys.value as string[])
+    if (error) return
     onBatchDeleted()
   }
 
-  function handleDelete(id: string) {
-    // request
-    console.log(id)
-
+  async function handleDelete(id: string) {
+    const { error } = await fetchDeleteMenu(id)
+    if (error) return
     onDeleted()
   }
 
@@ -249,7 +253,25 @@
           @add="handleAdd"
           @delete="handleBatchDelete"
           @refresh="getData"
-        />
+        >
+          <NButton v-if="hasAuth('manage_menu:add')" size="small" ghost type="primary" @click="handleAdd">
+            <template #icon>
+              <icon-ic-round-plus class="text-icon" />
+            </template>
+            {{ $t("common.add") }}
+          </NButton>
+          <NPopconfirm v-if="hasAuth('manage_menu:delete')" @positive-click="handleBatchDelete">
+            <template #trigger>
+              <NButton size="small" ghost type="error" :disabled="checkedRowKeys.length === 0">
+                <template #icon>
+                  <icon-ic-round-delete class="text-icon" />
+                </template>
+                {{ $t("common.batchDelete") }}
+              </NButton>
+            </template>
+            {{ $t("common.confirmDelete") }}
+          </NPopconfirm>
+        </TableHeaderOperation>
       </template>
       <NDataTable
         v-model:checked-row-keys="checkedRowKeys"
