@@ -2,6 +2,7 @@
   import { computed, ref, watch } from "vue"
   import type { SelectOption } from "naive-ui"
   import { enableStatusOptions, menuIconTypeOptions, menuTypeOptions } from "@/constants/business"
+  import { fetchCreateMenu, fetchGetBackendRouters, fetchUpdateMenu } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { getLocalIcons } from "@/utils/icon"
   import { $t } from "@/locales"
@@ -76,6 +77,7 @@
   > & {
     query: NonNullable<Api.SystemManage.Menu["query"]>
     buttons: NonNullable<Api.SystemManage.Menu["buttons"]>
+    interfaces: string[]
     layout: string
     page: string
     pathParam: string
@@ -108,6 +110,7 @@
       fixedIndexInTab: null,
       query: [],
       buttons: [],
+      interfaces: [],
     }
   }
 
@@ -132,6 +135,22 @@
     ),
     value: item,
   }))
+
+  const backendRouters = ref<Api.SystemManage.BackendRouter[]>([])
+
+  async function getBackendRouters() {
+    const { error, data } = await fetchGetBackendRouters()
+    if (!error) {
+      backendRouters.value = data
+    }
+  }
+
+  const routerOptions = computed(() =>
+    backendRouters.value.map((r) => ({
+      label: `[${r.methods.join(",")}] ${r.path} — ${r.name}`,
+      value: r.code,
+    }))
+  )
 
   const showLayout = computed(() => model.value.parentId === 0)
 
@@ -189,6 +208,9 @@
     if (!model.value.buttons) {
       model.value.buttons = []
     }
+    if (!model.value.interfaces) {
+      model.value.interfaces = []
+    }
   }
 
   function closeDrawer() {
@@ -237,9 +259,14 @@
 
     const params = getSubmitParams()
 
-    console.log("params: ", params)
+    if (props.operateType === "edit" && props.rowData) {
+      const { error } = await fetchUpdateMenu(props.rowData.id, params)
+      if (error) return
+    } else {
+      const { error } = await fetchCreateMenu(params as Omit<Api.SystemManage.Menu, "id" | "children">)
+      if (error) return
+    }
 
-    // request
     window.$message?.success($t("common.updateSuccess"))
     closeDrawer()
     emit("submitted")
@@ -248,6 +275,7 @@
   watch(visible, () => {
     if (visible.value) {
       handleInitModel()
+      getBackendRouters()
       restoreValidation()
     }
   })
@@ -433,6 +461,15 @@
                 </NSpace>
               </template>
             </NDynamicInput>
+          </NFormItemGi>
+          <NFormItemGi span="24" :label="$t('page.manage.menu.interface')">
+            <NSelect
+              v-model:value="model.interfaces"
+              multiple
+              filterable
+              :options="routerOptions"
+              :placeholder="$t('page.manage.menu.form.interface')"
+            />
           </NFormItemGi>
         </NGrid>
       </NForm>
