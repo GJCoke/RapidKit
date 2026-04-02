@@ -1,2 +1,7 @@
 #!/usr/bin/env sh
+
+# Backup staged changes before lint-staged modifies them
+# If commit-msg (commitlint) fails later, the backup enables auto-restore
+git diff --cached --binary > .git/staged-backup.patch 2>/dev/null
+
 pnpm precommit

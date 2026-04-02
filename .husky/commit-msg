@@ -1,2 +1,17 @@
 #!/usr/bin/env sh
+
 pnpm lint:commit -- "$1"
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ] && [ -f .git/staged-backup.patch ]; then
+  echo ""
+  echo "Restoring staged changes from backup..."
+  git reset -q
+  git apply --cached .git/staged-backup.patch 2>/dev/null
+  rm -f .git/staged-backup.patch
+  echo "Staged changes restored. Please fix your commit message and retry."
+  exit $EXIT_CODE
+fi
+
+rm -f .git/staged-backup.patch
+exit $EXIT_CODE
