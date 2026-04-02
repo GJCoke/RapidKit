@@ -82,6 +82,7 @@
       "buttonCode": "按钮编码",
       "buttonDesc": "按钮描述",
       "constant": "常量路由",
+      "interface": "接口绑定",
       "editMenu": "编辑菜单",
       "fixedIndexInTab": "固定在页签中的序号",
       "form": {
@@ -89,6 +90,7 @@
         "button": "请选择是否按钮",
         "buttonCode": "请输入按钮编码",
         "buttonDesc": "请输入按钮描述",
+        "interface": "请选择绑定的接口",
         "fixedInTab": "请选择是否固定在页签中",
         "fixedIndexInTab": "请输入固定在页签中的序号",
         "hideInMenu": "请选择是否隐藏菜单",
@@ -146,6 +148,7 @@
       "addRole": "新增角色",
       "buttonAuth": "按钮权限",
       "editRole": "编辑角色",
+      "interfaceAuth": "接口权限",
       "form": {
         "roleCode": "请输入角色编码",
         "roleDesc": "请输入角色描述",
