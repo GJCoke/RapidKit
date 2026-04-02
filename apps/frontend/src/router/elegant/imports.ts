@@ -4,15 +4,15 @@
 // Read more: https://github.com/soybeanjs/elegant-router
 
 import type { RouteComponent } from "vue-router";
-import type { LastLevelRouteKey, RouteLayout } from "@elegant-router/types";
+import type { LastLevelRouteKey, RouteLayout } from "@elegant-router/types"
 
-import BaseLayout from "@/layouts/base-layout/index.vue";
-import BlankLayout from "@/layouts/blank-layout/index.vue";
+import BaseLayout from "@/layouts/base-layout/index.vue"
+import BlankLayout from "@/layouts/blank-layout/index.vue"
 
 export const layouts: Record<RouteLayout, RouteComponent | (() => Promise<RouteComponent>)> = {
   base: BaseLayout,
   blank: BlankLayout,
-};
+}
 
 export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<RouteComponent>)> = {
   403: () => import("@/views/_builtin/403/index.vue"),
@@ -28,9 +28,8 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   queue_dashboard: () => import("@/views/queue/dashboard/index.vue"),
   queue_schedule: () => import("@/views/queue/schedule/index.vue"),
   queue_task: () => import("@/views/queue/task/index.vue"),
-  queue_worker: () => import("@/views/queue/worker/index.vue"),
   script: () => import("@/views/script/index.vue"),
   socketio_chat: () => import("@/views/socketio/chat/index.vue"),
   socketio_debug: () => import("@/views/socketio/debug/index.vue"),
   socketio_instrument: () => import("@/views/socketio/instrument/index.vue"),
-};
+}

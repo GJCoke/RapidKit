@@ -20,7 +20,9 @@ export function fetchGetAllRoles() {
 }
 
 /** create role */
-export function fetchCreateRole(data: Omit<Api.SystemManage.Role, "id" | "status"> & { status?: string }) {
+export function fetchCreateRole(
+  data: Pick<Api.SystemManage.Role, "name" | "code" | "description"> & { status?: Api.Common.EnableStatus | null },
+) {
   return request<Api.SystemManage.Role>({
     url: "/roles",
     method: "post",
@@ -128,7 +130,7 @@ export function fetchUpdateUser(
     status?: string
     roles?: string[]
     isAdmin?: boolean
-  }
+  },
 ) {
   return request<Api.SystemManage.User>({
     url: `/users/${id}`,

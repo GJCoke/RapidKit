@@ -139,7 +139,7 @@ export function useEcharts<T extends ECOption>(optionsFactory: () => T, hooks: C
     await onUpdated?.(chart.value!)
   }
 
-  function setOptions(options: T) {
+  function setOptions(options: ECOption) {
     chart.value?.setOption(options)
   }
 

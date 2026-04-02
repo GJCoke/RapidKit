@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { NPopconfirm } from "naive-ui"
   import { workerStatusRecord } from "@/constants/business"
   import { $t } from "@/locales"
 
@@ -13,6 +14,7 @@
 
   interface Emits {
     (e: "select", worker: Api.Worker.WorkerInfo): void
+    (e: "shutdown", worker: Api.Worker.WorkerInfo): void
   }
 
   const props = defineProps<Props>()
@@ -40,9 +42,21 @@
             <div class="flex items-center gap-8px mb-8px">
               <NBadge :type="worker.status === '1' ? 'success' : 'default'" dot />
               <span class="font-bold text-14px truncate">{{ worker.hostname }}</span>
-              <NTag :type="worker.status === '1' ? 'success' : 'warning'" size="small" class="ml-auto">
-                {{ $t(workerStatusRecord[worker.status]) }}
-              </NTag>
+              <div class="ml-auto flex items-center gap-4px">
+                <NTag :type="worker.status === '1' ? 'success' : 'warning'" size="small">
+                  {{ $t(workerStatusRecord[worker.status]) }}
+                </NTag>
+                <NPopconfirm @positive-click.stop="emit('shutdown', worker)">
+                  <template #trigger>
+                    <NButton size="tiny" type="error" quaternary :disabled="worker.status !== '1'" @click.stop>
+                      <template #icon>
+                        <icon-ic-round-power-settings-new class="text-icon" />
+                      </template>
+                    </NButton>
+                  </template>
+                  {{ $t("page.manage.worker.control.shutdownConfirm") }}
+                </NPopconfirm>
+              </div>
             </div>
             <div class="text-12px text-gray-500 space-y-4px">
               <div class="flex justify-between">

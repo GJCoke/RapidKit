@@ -8,10 +8,10 @@ Date    : 2026-03-30
 """
 
 import json
+import logging
 import platform
 import threading
-import time
-from datetime import datetime
+from datetime import UTC, datetime
 
 import celery
 import celery.app.task
@@ -28,11 +28,14 @@ from celery.signals import (
 
 from src.core.config import settings
 
+logger = logging.getLogger("celery.signals")
+
 STREAM_KEY = "celery:events"
 STREAM_MAXLEN = 10000
 HEARTBEAT_INTERVAL = 30
 
 _redis_client: redis.Redis | None = None
+_heartbeat_stop = threading.Event()
 
 
 def _get_redis() -> redis.Redis:
@@ -48,7 +51,7 @@ def _publish_event(event_type: str, data: dict) -> None:
     r = _get_redis()
     message = {
         "event_type": event_type,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "data": json.dumps(data, default=str),
     }
     r.xadd(STREAM_KEY, message, maxlen=STREAM_MAXLEN, approximate=True)
@@ -85,8 +88,9 @@ def on_worker_ready(sender, **kwargs) -> None:  # type: ignore
 
 
 @worker_shutdown.connect
-def on_worker_shutdown(sender: celery.app.base.Celery, **kwargs) -> None:  # type: ignore
+def on_worker_shutdown(sender, **kwargs) -> None:  # type: ignore
     """Worker 离线事件。"""
+    _heartbeat_stop.set()
     _publish_event(
         "worker.offline",
         {"hostname": sender.hostname},  # type: ignore
@@ -94,16 +98,16 @@ def on_worker_shutdown(sender: celery.app.base.Celery, **kwargs) -> None:  # typ
 
 
 def _heartbeat_loop(hostname: str) -> None:
-    """周期性发送心跳事件。"""
-    while True:
-        time.sleep(HEARTBEAT_INTERVAL)
+    """周期性发送心跳事件，通过 _heartbeat_stop 支持优雅退出。"""
+    while not _heartbeat_stop.is_set():
         try:
             _publish_event(
                 "worker.heartbeat",
                 {"hostname": hostname},
             )
         except Exception:
-            pass  # 心跳失败不影响 Worker 运行
+            logger.warning("Heartbeat publish failed for %s", hostname, exc_info=True)
+        _heartbeat_stop.wait(HEARTBEAT_INTERVAL)
 
 
 # ==================== Task Signals ====================
@@ -132,19 +136,18 @@ def on_task_postrun(  # type: ignore
     state: str,
     **kw,
 ) -> None:
-    """任务执行完成事件。"""
-    event_type = "task.success" if state == "SUCCESS" else "task.failure"
+    """任务执行完成事件。仅处理 SUCCESS，失败由 on_task_failure 负责。"""
+    if state != "SUCCESS":
+        return
     logs = getattr(sender, "_logs", None)
     _publish_event(
-        event_type,
+        "task.success",
         {
             "task_id": task_id,
             "task_name": sender.name,
             "state": state,
-            "retval": retval if state == "SUCCESS" else None,
-            "runtime": sender.request.delivery_info.get("routing_key", None)
-            if hasattr(sender.request, "delivery_info")
-            else None,
+            "retval": retval,
+            "runtime": kw.get("runtime"),
             "hostname": sender.request.hostname or "",
             "logs": logs,
         },

@@ -155,6 +155,16 @@
       newQueueName.value = ""
     }
   })
+
+  // Re-fetch active/reserved tasks when worker data changes (e.g. from socket)
+  watch(
+    () => props.worker?.activeTaskCount,
+    () => {
+      if (!visible.value || !props.worker) return
+      if (activeTab.value === "active") loadActiveTasks()
+      else if (activeTab.value === "reserved") loadReservedTasks()
+    },
+  )
 </script>
 
 <template>

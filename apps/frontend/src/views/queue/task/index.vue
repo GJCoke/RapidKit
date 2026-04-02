@@ -41,8 +41,8 @@
       path: "/socket.io",
     })
 
-    socket.value?.on("task:update", () => {
-      taskStreamRef.value?.refresh()
+    socket.value?.on("task:update", (data: Api.Worker.TaskUpdateEvent) => {
+      taskStreamRef.value?.handleTaskUpdate(data)
     })
   }
 

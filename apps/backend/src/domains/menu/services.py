@@ -2,9 +2,10 @@ from sqlalchemy import ColumnElement
 from sqlmodel import col, or_
 
 from src.domains.menu.models import Menu
+from src.utils.enums import Status
 
 
-def filter_menu(status: bool | None, keyword: str) -> list[ColumnElement[bool]]:
+def filter_menu(status: "Status | None", keyword: str) -> list[ColumnElement[bool]]:
     """
     生成用于查询菜单的 SQLAlchemy 过滤条件。
 

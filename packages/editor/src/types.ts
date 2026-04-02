@@ -14,4 +14,5 @@ export interface OutputPanelProps {
   error?: string | null
   status?: OutputStatus
   runtime?: number | null
+  theme?: "vs" | "vs-dark"
 }

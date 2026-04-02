@@ -185,3 +185,5 @@ mkstream
 XREADGROUP
 xadd
 signum
+DCDCAA
+CDCFE

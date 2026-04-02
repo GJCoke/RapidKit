@@ -14,7 +14,6 @@
   "queue_dashboard": "队列概览",
   "queue_task": "任务记录",
   "queue_schedule": "定时任务",
-  "queue_worker": "Worker 管理",
   "script": "脚本管理",
   "socketio": "即时通讯",
   "socketio_chat": "聊天室",

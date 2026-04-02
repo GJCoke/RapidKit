@@ -1,5 +1,5 @@
 """
-菜单管理 API 接口。 TODO: 测试
+菜单管理 API 接口。
 
 Author : Coke
 Date   : 2025-05-18
@@ -9,8 +9,8 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from sqlmodel import col
 
+from src.common.deps import SessionDep
 from src.common.schemas.response import PaginatedResponse, Response
 from src.domains.menu.deps import MenuCrudDep
 from src.domains.menu.models import Menu
@@ -44,23 +44,36 @@ async def get_menu_list(
     return Response(data=roles)
 
 
+@router.get("/menus/tree")
+async def get_menu_tree(
+    menu_crud: MenuCrudDep,
+    session: SessionDep,
+) -> Response[list[MenuListResponse]]:
+    """获取完整菜单树（不分页）"""
+    tree = await menu_crud.get_menu_tree(session=session)
+    return Response(data=tree)
+
+
 @router.get("/pages")
 async def get_all_pages(menu_crud: MenuCrudDep) -> Response[list[str]]:
     """获取所有页面组件名称"""
+    from sqlmodel import col
+
     pages = await menu_crud.get_all(col(Menu.menu_type) == MenuType.MENU)
     return Response(data=[item.route_name for item in pages])
 
 
-@router.post("/add")
-async def add_menu(data: MenuCreate, menu_crud: MenuCrudDep):
+@router.post("/menus")
+async def add_menu(data: MenuCreate, menu_crud: MenuCrudDep) -> Response[MenuResponse]:
     """新增菜单。"""
-    return await menu_crud.create(data)
+    menu = await menu_crud.create(data)
+    return Response(data=MenuResponse.model_validate(menu))
 
 
-@router.put("/update")
+@router.put("/menus/{menu_id}")
 async def update_menu(
-    data: MenuUpdate,
     menu_id: UUID,
+    data: MenuUpdate,
     menu_crud: MenuCrudDep,
 ) -> Response[MenuResponse]:
     """更新菜单。"""
@@ -68,17 +81,15 @@ async def update_menu(
     return Response(data=MenuResponse.model_validate(menu))
 
 
-@router.delete("/delete")
+@router.delete("/menus/{menu_id}")
 async def delete_menu(menu_id: UUID, menu_crud: MenuCrudDep) -> Response[bool]:
     """删除单个菜单。"""
     await menu_crud.delete(menu_id)
     return Response(data=True)
 
 
-@router.post("/batchDelete")
+@router.delete("/menus")
 async def batch_delete_menus(data: MenuBatchRequest, menu_crud: MenuCrudDep) -> Response[bool]:
     """批量删除菜单。"""
-    # 假设 BaseSQLModelCRUD 支持批量删除，或通过循环处理
-    for menu_id in data.ids:
-        await menu_crud.remove(menu_id)  # type: ignore
+    await menu_crud.delete_all(data.ids)
     return Response(data=True)

@@ -28,7 +28,7 @@
     workerHostname: undefined,
   })
 
-  const { columns, data, loading, getData, getDataByPage, mobilePagination } = useNaivePaginatedTable({
+  const { columns, data, loading, getData, getDataByPage, pagination, mobilePagination } = useNaivePaginatedTable({
     api: () => fetchGetTaskList(searchParams),
     transform: (response) => defaultTransform(response),
     onPaginationParamsChange: (params) => {
@@ -139,8 +139,59 @@
     getDataByPage()
   }
 
-  /** expose refresh for parent to call when socket event arrives */
-  defineExpose({ refresh: getData })
+  /**
+   * Socket 增量更新：就地更新已有行状态，第一页时新任务插入顶部。
+   * 无需 HTTP 请求。
+   */
+  function handleTaskUpdate(event: Api.Worker.TaskUpdateEvent) {
+    const existing = data.value.find((row) => row.taskId === event.taskId)
+
+    if (existing) {
+      // 就地更新已有行
+      existing.status = event.status
+      if (event.workerHostname) existing.workerHostname = event.workerHostname
+      if (event.runtime) existing.runtime = event.runtime
+      if (event.status === "2") existing.startedAt = new Date().toISOString()
+      if (event.status === "3" || event.status === "4" || event.status === "6") {
+        existing.finishedAt = new Date().toISOString()
+      }
+    } else if (event.status === "2" && searchParams.page === 1) {
+      // 新任务（started），仅在第一页时插入顶部
+      // 如果有筛选条件且不匹配，跳过
+      if (searchParams.status && searchParams.status !== event.status) return
+      if (searchParams.taskName && event.taskName && !event.taskName.includes(searchParams.taskName)) return
+      if (
+        searchParams.workerHostname &&
+        event.workerHostname &&
+        !event.workerHostname.includes(searchParams.workerHostname)
+      )
+        return
+
+      data.value.unshift({
+        id: event.taskId,
+        taskId: event.taskId,
+        taskName: event.taskName || "",
+        status: event.status,
+        workerHostname: event.workerHostname || "",
+        startedAt: new Date().toISOString(),
+        finishedAt: null,
+        runtime: null,
+        retries: 0,
+        createTime: new Date().toISOString(),
+        updateTime: new Date().toISOString(),
+      } as Api.Worker.TaskListItem)
+
+      // 更新分页总数
+      pagination.itemCount = (pagination.itemCount || 0) + 1
+
+      // 保持页面条数不超过 pageSize
+      if (data.value.length > searchParams.pageSize) {
+        data.value.pop()
+      }
+    }
+  }
+
+  defineExpose({ refresh: getData, handleTaskUpdate })
 </script>
 
 <template>

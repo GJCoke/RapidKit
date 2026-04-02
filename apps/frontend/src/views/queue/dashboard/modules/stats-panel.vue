@@ -27,7 +27,11 @@
   })
 
   // ==================== Timeline Chart ====================
-  const { domRef: timelineRef, updateOptions: updateTimeline } = useEcharts(() => ({
+  const {
+    domRef: timelineRef,
+    updateOptions: updateTimeline,
+    setOptions: setTimeline,
+  } = useEcharts(() => ({
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "cross", label: { backgroundColor: "#6a7985" } },
@@ -84,7 +88,11 @@
   }))
 
   // ==================== Pie Chart ====================
-  const { domRef: pieRef, updateOptions: updatePie } = useEcharts(() => ({
+  const {
+    domRef: pieRef,
+    updateOptions: updatePie,
+    setOptions: setPie,
+  } = useEcharts(() => ({
     tooltip: { trigger: "item" },
     legend: { bottom: "1%", left: "center", itemStyle: { borderWidth: 0 } },
     series: [
@@ -104,7 +112,11 @@
   }))
 
   // ==================== Bar Chart (by task name) ====================
-  const { domRef: taskBarRef, updateOptions: updateTaskBar } = useEcharts(() => ({
+  const {
+    domRef: taskBarRef,
+    updateOptions: updateTaskBar,
+    setOptions: setTaskBar,
+  } = useEcharts(() => ({
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
     legend: {
       data: [$t("page.manage.worker.taskStatusMaps.success"), $t("page.manage.worker.taskStatusMaps.failure")],
@@ -132,7 +144,11 @@
   }))
 
   // ==================== Bar Chart (by worker) ====================
-  const { domRef: workerBarRef, updateOptions: updateWorkerBar } = useEcharts(() => ({
+  const {
+    domRef: workerBarRef,
+    updateOptions: updateWorkerBar,
+    setOptions: setWorkerBar,
+  } = useEcharts(() => ({
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
     legend: {
       data: [$t("page.manage.worker.taskStatusMaps.success"), $t("page.manage.worker.taskStatusMaps.failure")],
@@ -159,7 +175,23 @@
     ],
   }))
 
-  // ==================== Data Fetch ====================
+  // ==================== Local State for Incremental Updates ====================
+
+  /** 时间线数据（按小时桶） */
+  const timelineData = ref<{ bucket: string; success: number; failure: number }[]>([])
+
+  /** 按任务名统计 */
+  const byNameData = ref<Map<string, { success: number; failure: number }>>(new Map())
+
+  /** 按 Worker 统计 */
+  const byWorkerData = ref<Map<string, { success: number; failure: number }>>(new Map())
+
+  /** 成功任务的 runtime 累加（用于计算平均值） */
+  let runtimeSum = 0
+  let runtimeCount = 0
+
+  // ==================== Data Fetch (初始加载 / 切换天数) ====================
+
   async function loadStats() {
     loading.value = true
     const params = { days: days.value }
@@ -174,61 +206,218 @@
     // Summary
     if (!summaryRes.error) {
       summary.value = summaryRes.data
+      // 初始化 runtime 累加器
+      if (summaryRes.data.avgRuntime !== null) {
+        runtimeCount = summaryRes.data.success
+        runtimeSum = summaryRes.data.avgRuntime * runtimeCount
+      } else {
+        runtimeCount = 0
+        runtimeSum = 0
+      }
     }
 
     // Timeline
     if (!timelineRes.error) {
-      const data = timelineRes.data
-      updateTimeline((opts) => {
-        opts.xAxis.data = data.map((d) => d.timeBucket.slice(5))
-        opts.series[0].data = data.map((d) => d.success)
-        opts.series[1].data = data.map((d) => d.failure)
-        return opts
-      })
-    }
-
-    // Pie
-    if (!summaryRes.error) {
-      const s = summaryRes.data
-      updatePie((opts) => {
-        opts.series[0].data = [
-          { name: $t("page.manage.worker.taskStatusMaps.success"), value: s.success },
-          { name: $t("page.manage.worker.taskStatusMaps.failure"), value: s.failure },
-          { name: $t("page.manage.worker.taskStatusMaps.retry"), value: s.retry },
-          { name: $t("page.manage.worker.taskStatusMaps.revoked"), value: s.revoked },
-        ].filter((d) => d.value > 0)
-        return opts
-      })
+      timelineData.value = timelineRes.data.map((d) => ({
+        bucket: d.timeBucket,
+        success: d.success,
+        failure: d.failure,
+      }))
+      renderTimeline()
     }
 
     // By Name
     if (!byNameRes.error) {
-      const data = byNameRes.data
-      updateTaskBar((opts) => {
-        opts.yAxis.data = data.map((d) => d.taskName.split(".").pop() || d.taskName)
-        opts.series[0].data = data.map((d) => d.success)
-        opts.series[1].data = data.map((d) => d.failure)
-        return opts
-      })
+      byNameData.value = new Map(byNameRes.data.map((d) => [d.taskName, { success: d.success, failure: d.failure }]))
+      renderByName()
     }
 
     // By Worker
     if (!byWorkerRes.error) {
-      const data = byWorkerRes.data
-      updateWorkerBar((opts) => {
-        opts.yAxis.data = data.map((d) => d.workerHostname)
-        opts.series[0].data = data.map((d) => d.success)
-        opts.series[1].data = data.map((d) => d.failure)
-        return opts
-      })
+      byWorkerData.value = new Map(
+        byWorkerRes.data.map((d) => [d.workerHostname, { success: d.success, failure: d.failure }]),
+      )
+      renderByWorker()
     }
 
+    // Pie
+    renderPie()
+
     loading.value = false
+  }
+
+  // ==================== Incremental Update (Socket 事件驱动) ====================
+
+  /**
+   * 处理 task:update 事件，纯前端增量更新，无 HTTP 请求。
+   * 只处理终态事件（success/failure/retry/revoked），started 不计入统计。
+   */
+  function handleTaskUpdate(event: Api.Worker.TaskUpdateEvent) {
+    const { status, taskName, workerHostname, runtime } = event
+    const s = summary.value
+
+    // started 不计入统计面板
+    if (status === "2") return
+
+    // 1. Summary 卡片增量
+    s.total += 1
+    if (status === "3") {
+      s.success += 1
+      if (runtime) {
+        runtimeCount += 1
+        runtimeSum += runtime
+        s.avgRuntime = Math.round((runtimeSum / runtimeCount) * 1000) / 1000
+      }
+    } else if (status === "4") {
+      s.failure += 1
+    } else if (status === "5") {
+      s.retry += 1
+    } else if (status === "6") {
+      s.revoked += 1
+    }
+    s.successRate = s.total > 0 ? Math.round((s.success / s.total) * 10000) / 100 : 0
+
+    // 2. 时间线增量：找到当前小时桶
+    const nowBucket = formatHourBucket(new Date())
+    const bucketItem = timelineData.value.find((d) => d.bucket === nowBucket)
+    if (bucketItem) {
+      if (status === "3") bucketItem.success += 1
+      else if (status === "4") bucketItem.failure += 1
+    } else {
+      // 新的小时桶
+      timelineData.value.push({
+        bucket: nowBucket,
+        success: status === "3" ? 1 : 0,
+        failure: status === "4" ? 1 : 0,
+      })
+    }
+    renderTimeline(false)
+
+    // 3. 按任务名增量
+    if (taskName && (status === "3" || status === "4")) {
+      const existing = byNameData.value.get(taskName)
+      if (existing) {
+        if (status === "3") existing.success += 1
+        else existing.failure += 1
+      } else {
+        byNameData.value.set(taskName, {
+          success: status === "3" ? 1 : 0,
+          failure: status === "4" ? 1 : 0,
+        })
+      }
+      renderByName(false)
+    }
+
+    // 4. 按 Worker 增量
+    if (workerHostname && (status === "3" || status === "4")) {
+      const existing = byWorkerData.value.get(workerHostname)
+      if (existing) {
+        if (status === "3") existing.success += 1
+        else existing.failure += 1
+      } else {
+        byWorkerData.value.set(workerHostname, {
+          success: status === "3" ? 1 : 0,
+          failure: status === "4" ? 1 : 0,
+        })
+      }
+      renderByWorker(false)
+    }
+
+    // 5. 饼图增量
+    renderPie(false)
+  }
+
+  // ==================== Chart Render Helpers ====================
+
+  function formatHourBucket(date: Date): string {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, "0")
+    const d = String(date.getDate()).padStart(2, "0")
+    const h = String(date.getHours()).padStart(2, "0")
+    return `${y}-${m}-${d} ${h}:00`
+  }
+
+  function renderTimeline(fullRender = true) {
+    const data = timelineData.value
+    const opts = {
+      xAxis: { data: data.map((d) => d.bucket.slice(5)) },
+      series: [{ data: data.map((d) => d.success) }, { data: data.map((d) => d.failure) }],
+    }
+    if (fullRender) {
+      updateTimeline((o) => {
+        o.xAxis.data = opts.xAxis.data
+        o.series[0].data = opts.series[0].data
+        o.series[1].data = opts.series[1].data
+        return o
+      })
+    } else {
+      setTimeline(opts)
+    }
+  }
+
+  function renderPie(fullRender = true) {
+    const s = summary.value
+    const pieData = [
+      { name: $t("page.manage.worker.taskStatusMaps.success"), value: s.success },
+      { name: $t("page.manage.worker.taskStatusMaps.failure"), value: s.failure },
+      { name: $t("page.manage.worker.taskStatusMaps.retry"), value: s.retry },
+      { name: $t("page.manage.worker.taskStatusMaps.revoked"), value: s.revoked },
+    ].filter((d) => d.value > 0)
+    if (fullRender) {
+      updatePie((o) => {
+        o.series[0].data = pieData
+        return o
+      })
+    } else {
+      setPie({ series: [{ data: pieData }] })
+    }
+  }
+
+  function renderByName(fullRender = true) {
+    const sorted = [...byNameData.value.entries()]
+      .sort((a, b) => b[1].success + b[1].failure - (a[1].success + a[1].failure))
+      .slice(0, 10)
+    const opts = {
+      yAxis: { data: sorted.map(([name]) => name.split(".").pop() || name) },
+      series: [{ data: sorted.map(([, v]) => v.success) }, { data: sorted.map(([, v]) => v.failure) }],
+    }
+    if (fullRender) {
+      updateTaskBar((o) => {
+        o.yAxis.data = opts.yAxis.data
+        o.series[0].data = opts.series[0].data
+        o.series[1].data = opts.series[1].data
+        return o
+      })
+    } else {
+      setTaskBar(opts)
+    }
+  }
+
+  function renderByWorker(fullRender = true) {
+    const sorted = [...byWorkerData.value.entries()].sort(
+      (a, b) => b[1].success + b[1].failure - (a[1].success + a[1].failure),
+    )
+    const opts = {
+      yAxis: { data: sorted.map(([name]) => name) },
+      series: [{ data: sorted.map(([, v]) => v.success) }, { data: sorted.map(([, v]) => v.failure) }],
+    }
+    if (fullRender) {
+      updateWorkerBar((o) => {
+        o.yAxis.data = opts.yAxis.data
+        o.series[0].data = opts.series[0].data
+        o.series[1].data = opts.series[1].data
+        return o
+      })
+    } else {
+      setWorkerBar(opts)
+    }
   }
 
   // ==================== Watch & Init ====================
   watch(days, () => loadStats())
   loadStats()
+
+  defineExpose({ handleTaskUpdate })
 </script>
 
 <template>

@@ -149,7 +149,7 @@
     backendRouters.value.map((r) => ({
       label: `[${r.methods.join(",")}] ${r.path} — ${r.name}`,
       value: r.code,
-    }))
+    })),
   )
 
   const showLayout = computed(() => model.value.parentId === 0)

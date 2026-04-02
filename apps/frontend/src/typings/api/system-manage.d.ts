@@ -50,9 +50,7 @@ declare global {
       }>
 
       /** user search params */
-      type UserSearchParams = CommonType.RecordNullable<
-        { keyword?: string; status?: string } & CommonSearchParams
-      >
+      type UserSearchParams = CommonType.RecordNullable<{ keyword?: string; status?: string } & CommonSearchParams>
 
       /** user list */
       type UserList = Common.PaginatingQueryRecord<User>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-  import { ref, onMounted } from "vue"
+  import { ref, computed, onMounted } from "vue"
   import { useSocket } from "@/hooks/common/socket"
-  import { fetchGetAllWorkers } from "@/service/api"
+  import { fetchGetAllWorkers, fetchShutdownWorker } from "@/service/api"
+  import { $t } from "@/locales"
   import WorkerCards from "./modules/worker-cards.vue"
   import StatsPanel from "./modules/stats-panel.vue"
   import WorkerDrawer from "./modules/worker-drawer.vue"
@@ -25,12 +26,24 @@
 
   // ==================== Worker Drawer ====================
   const workerDrawerVisible = ref(false)
-  const selectedWorker = ref<Api.Worker.WorkerInfo | null>(null)
+  const selectedWorkerId = ref<string | null>(null)
+  const selectedWorker = computed(() => workers.value.find((w) => w.id === selectedWorkerId.value) || null)
 
   function handleWorkerSelect(worker: Api.Worker.WorkerInfo) {
-    selectedWorker.value = worker
+    selectedWorkerId.value = worker.id
     workerDrawerVisible.value = true
   }
+
+  async function handleShutdown(worker: Api.Worker.WorkerInfo) {
+    const { error } = await fetchShutdownWorker(worker.id)
+    if (!error) {
+      window.$message?.success($t("page.manage.worker.control.shutdownSuccess"))
+      loadWorkers()
+    }
+  }
+
+  // ==================== Stats Panel ====================
+  const statsPanelRef = ref<InstanceType<typeof StatsPanel> | null>(null)
 
   // ==================== Socket.IO ====================
   const { socket, connect } = useSocket()
@@ -52,12 +65,17 @@
           status: data.status,
           concurrency: data.concurrency,
           activeTaskCount: data.activeTaskCount,
+          processedCount: data.processedCount,
           activeQueues: data.activeQueues,
           lastHeartbeat: data.lastHeartbeat,
         }
       } else {
         loadWorkers()
       }
+    })
+
+    socket.value?.on("task:update", (data: Api.Worker.TaskUpdateEvent) => {
+      statsPanelRef.value?.handleTaskUpdate(data)
     })
   }
 
@@ -70,8 +88,8 @@
 
 <template>
   <div class="flex-col-stretch gap-16px overflow-auto">
-    <WorkerCards :workers="workers" :loading="workersLoading" @select="handleWorkerSelect" />
-    <StatsPanel />
+    <WorkerCards :workers="workers" :loading="workersLoading" @select="handleWorkerSelect" @shutdown="handleShutdown" />
+    <StatsPanel ref="statsPanelRef" />
     <WorkerDrawer v-model:visible="workerDrawerVisible" :worker="selectedWorker" @updated="loadWorkers" />
   </div>
 </template>

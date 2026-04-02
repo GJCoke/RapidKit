@@ -103,14 +103,14 @@ async def store_router_in_db(routes: list[StarletteRoute | APIRoute]) -> None:
 
         add_routes, remove_routes, update_routes = diff_api_routes(db_routes, app_routes)
 
-        if add_routes:
-            await router_db.create_all(add_routes)
-
         if remove_routes:
             await router_db.delete_all(remove_routes)
 
         if update_routes:
             await router_db.update_all(update_routes)
+
+        if add_routes:
+            await router_db.create_all(add_routes)
 
 
 def diff_api_routes(

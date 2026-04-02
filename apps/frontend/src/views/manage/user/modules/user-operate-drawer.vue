@@ -1,8 +1,9 @@
 <script setup lang="ts">
   import { computed, ref, watch } from "vue"
   import { jsonClone } from "@monorepo-example/utils"
-  import { enableStatusOptions, userGenderOptions } from "@/constants/business"
-  import { fetchGetAllRoles } from "@/service/api"
+  import JSEncrypt from "jsencrypt"
+  import { enableStatusOptions } from "@/constants/business"
+  import { fetchCreateUser, fetchGetAllRoles, fetchGetPublicKey, fetchUpdateUser } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
 
@@ -40,31 +41,47 @@
     return titles[props.operateType]
   })
 
-  type Model = Pick<
-    Api.SystemManage.User,
-    "username" | "userGender" | "nickName" | "userPhone" | "userEmail" | "userRoles" | "status"
-  >
+  type Model = {
+    username: string
+    name: string
+    email: string
+    password: string
+    roles: string[]
+    status: Api.Common.EnableStatus | null
+    isAdmin: boolean
+  }
 
   const model = ref(createDefaultModel())
 
   function createDefaultModel(): Model {
     return {
       username: "",
-      userGender: null,
-      nickName: "",
-      userPhone: "",
-      userEmail: "",
-      userRoles: [],
+      name: "",
+      email: "",
+      password: "",
+      roles: [],
       status: null,
+      isAdmin: false,
     }
   }
 
-  type RuleKey = Extract<keyof Model, "username" | "status">
+  type RuleKey = Extract<keyof Model, "username" | "name" | "status">
 
-  const rules: Record<RuleKey, App.Global.FormRule> = {
-    username: defaultRequiredRule,
-    status: defaultRequiredRule,
-  }
+  const rules = computed<Record<RuleKey, App.Global.FormRule>>(() => {
+    return {
+      username: defaultRequiredRule,
+      name: defaultRequiredRule,
+      status: defaultRequiredRule,
+    }
+  })
+
+  // password is required only on create
+  const passwordRules = computed(() => {
+    if (props.operateType === "add") {
+      return defaultRequiredRule
+    }
+    return undefined
+  })
 
   /** the enabled role options */
   const roleOptions = ref<CommonType.Option<string>[]>([])
@@ -73,20 +90,10 @@
     const { error, data } = await fetchGetAllRoles()
 
     if (!error) {
-      const options = data.map((item) => ({
+      roleOptions.value = data.map((item) => ({
         label: item.name,
         value: item.code,
       }))
-
-      // the mock data does not have the roleCode, so fill it
-      // if the real request, remove the following code
-      const userRoleOptions = model.value.userRoles.map((item) => ({
-        label: item,
-        value: item,
-      }))
-      // end
-
-      roleOptions.value = [...userRoleOptions, ...options]
     }
   }
 
@@ -94,7 +101,8 @@
     model.value = createDefaultModel()
 
     if (props.operateType === "edit" && props.rowData) {
-      Object.assign(model.value, jsonClone(props.rowData))
+      const { username, name, email, roles, status, isAdmin } = jsonClone(props.rowData)
+      Object.assign(model.value, { username, name, email, roles, status, isAdmin })
     }
   }
 
@@ -102,9 +110,46 @@
     visible.value = false
   }
 
+  async function encryptPassword(password: string): Promise<string> {
+    const { data: publicKey } = await fetchGetPublicKey()
+    const encryptor = new JSEncrypt()
+    encryptor.setPublicKey(publicKey!)
+    return encryptor.encrypt(password) || password
+  }
+
   async function handleSubmit() {
     await validate()
-    // request
+
+    if (props.operateType === "add") {
+      const encryptedPassword = await encryptPassword(model.value.password)
+      const { error } = await fetchCreateUser({
+        username: model.value.username,
+        name: model.value.name,
+        email: model.value.email,
+        password: encryptedPassword,
+        roles: model.value.roles,
+        status: model.value.status ?? undefined,
+        isAdmin: model.value.isAdmin,
+      })
+      if (error) return
+    } else {
+      const updateData: Record<string, unknown> = {
+        username: model.value.username,
+        name: model.value.name,
+        email: model.value.email,
+        roles: model.value.roles,
+        status: model.value.status ?? undefined,
+        isAdmin: model.value.isAdmin,
+      }
+
+      if (model.value.password) {
+        updateData.password = await encryptPassword(model.value.password)
+      }
+
+      const { error } = await fetchUpdateUser(props.rowData!.id, updateData)
+      if (error) return
+    }
+
     window.$message?.success($t("common.updateSuccess"))
     closeDrawer()
     emit("submitted")
@@ -126,19 +171,19 @@
         <NFormItem :label="$t('page.manage.user.username')" path="username">
           <NInput v-model:value="model.username" :placeholder="$t('page.manage.user.form.username')" />
         </NFormItem>
-        <NFormItem :label="$t('page.manage.user.userGender')" path="userGender">
-          <NRadioGroup v-model:value="model.userGender">
-            <NRadio v-for="item in userGenderOptions" :key="item.value" :value="item.value" :label="$t(item.label)" />
-          </NRadioGroup>
+        <NFormItem label="Name" path="name">
+          <NInput v-model:value="model.name" placeholder="Please enter name" />
         </NFormItem>
-        <NFormItem :label="$t('page.manage.user.nickName')" path="nickName">
-          <NInput v-model:value="model.nickName" :placeholder="$t('page.manage.user.form.nickName')" />
+        <NFormItem label="Email" path="email">
+          <NInput v-model:value="model.email" placeholder="Please enter email" />
         </NFormItem>
-        <NFormItem :label="$t('page.manage.user.userPhone')" path="userPhone">
-          <NInput v-model:value="model.userPhone" :placeholder="$t('page.manage.user.form.userPhone')" />
-        </NFormItem>
-        <NFormItem :label="$t('page.manage.user.userEmail')" path="email">
-          <NInput v-model:value="model.userEmail" :placeholder="$t('page.manage.user.form.userEmail')" />
+        <NFormItem label="Password" path="password" :rule="passwordRules">
+          <NInput
+            v-model:value="model.password"
+            type="password"
+            show-password-on="click"
+            :placeholder="operateType === 'add' ? 'Please enter password' : 'Leave empty to keep unchanged'"
+          />
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.userStatus')" path="status">
           <NRadioGroup v-model:value="model.status">
@@ -147,11 +192,14 @@
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.userRole')" path="roles">
           <NSelect
-            v-model:value="model.userRoles"
+            v-model:value="model.roles"
             multiple
             :options="roleOptions"
             :placeholder="$t('page.manage.user.form.userRole')"
           />
+        </NFormItem>
+        <NFormItem label="Admin">
+          <NSwitch v-model:value="model.isAdmin" />
         </NFormItem>
       </NForm>
       <template #footer>

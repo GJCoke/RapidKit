@@ -8,6 +8,11 @@ export function useAuth() {
       return false
     }
 
+    // Admin users have all button permissions
+    if (authStore.userInfo.isAdmin) {
+      return true
+    }
+
     if (typeof codes === "string") {
       return authStore.userInfo.buttons.includes(codes)
     }

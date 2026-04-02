@@ -74,8 +74,6 @@ class WorkerCRUD(BaseSQLModelCRUD[CeleryWorker, WorkerCreate, WorkerUpdate]):
 
     async def get_offline_workers(self, threshold: float, *, session: AsyncSession | None = None) -> list[CeleryWorker]:
         """获取心跳超时的在线 Workers。"""
-        from datetime import datetime, timedelta
-
         session = session or self.session
         cutoff = datetime.now() - timedelta(seconds=threshold)
         statement = select(self.model).filter(
@@ -84,6 +82,24 @@ class WorkerCRUD(BaseSQLModelCRUD[CeleryWorker, WorkerCreate, WorkerUpdate]):
         )
         result = await session.exec(statement)
         return list(result.all())
+
+    async def upsert_by_hostname(
+        self, hostname: str, defaults: dict, *, session: AsyncSession | None = None
+    ) -> CeleryWorker:
+        """通过 hostname 查询，存在则更新，不存在则创建。"""
+        session = session or self.session
+        statement = select(self.model).filter(col(self.model.hostname) == hostname).with_for_update()
+        result = await session.exec(statement)
+        worker = result.first()
+
+        if worker:
+            for key, value in defaults.items():
+                setattr(worker, key, value)
+        else:
+            worker = self.model(hostname=hostname, **defaults)
+            session.add(worker)
+
+        return worker
 
 
 class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskResultUpdate]):
@@ -95,6 +111,24 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
         statement = select(self.model).filter(col(self.model.task_id) == task_id)
         result = await session.exec(statement)
         return result.first()
+
+    async def upsert_by_task_id(
+        self, task_id: str, defaults: dict, *, session: AsyncSession | None = None
+    ) -> CeleryTaskResult:
+        """通过 task_id 查询，存在则更新，不存在则创建。"""
+        session = session or self.session
+        statement = select(self.model).filter(col(self.model.task_id) == task_id).with_for_update()
+        result = await session.exec(statement)
+        task = result.first()
+
+        if task:
+            for key, value in defaults.items():
+                setattr(task, key, value)
+        else:
+            task = self.model(task_id=task_id, **defaults)
+            session.add(task)
+
+        return task
 
     async def get_paginate_tasks(
         self,

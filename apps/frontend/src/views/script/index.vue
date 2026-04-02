@@ -142,6 +142,9 @@
 <template>
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <template v-if="!showEditor">
+      <NAlert type="warning" :bordered="false">
+        当前脚本执行未做任何权限限制与沙箱隔离，脚本可访问服务器上的任意资源与信息，请谨慎使用。
+      </NAlert>
       <ScriptSearch v-model:model="searchParams" @search="getDataByPage" />
       <NCard :title="$t('page.script.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
         <template #header-extra>

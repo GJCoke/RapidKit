@@ -153,15 +153,6 @@ export const generatedRoutes: GeneratedRoute[] = [{
       i18nKey: 'route.queue_task',
       icon: 'material-symbols:history-2'
     }
-  }, {
-    name: 'queue_worker',
-    path: '/queue/worker',
-    component: 'view.queue_worker',
-    meta: {
-      title: 'queue_worker',
-      i18nKey: 'route.queue_worker',
-      icon: 'fluent:tab-desktop-multiple-bottom-24-regular'
-    }
   }]
 }, {
   name: 'script',

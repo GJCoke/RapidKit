@@ -130,9 +130,11 @@ def setup_router(app: FastAPI) -> None:
     from src.domains.auth import api as auth
     from src.domains.menu import api as manage
     from src.domains.role import api as roles
+    from src.domains.route import api as frontend_route
     from src.domains.router import api as router
     from src.domains.schedule import api as schedule
     from src.domains.script import api as script
+    from src.domains.user import api as user
     from src.domains.worker import api as worker
 
     v1_router = APIRouter(prefix=settings.API_PREFIX_V1)
@@ -140,6 +142,8 @@ def setup_router(app: FastAPI) -> None:
     v1_router.include_router(router.router)
     v1_router.include_router(roles.router)
     v1_router.include_router(manage.router)
+    v1_router.include_router(user.router)
+    v1_router.include_router(frontend_route.router)
     v1_router.include_router(script.router)
     if settings.ENABLE_CELERY_MONITOR:
         v1_router.include_router(worker.router)

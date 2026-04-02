@@ -32,7 +32,6 @@ declare module "@elegant-router/types" {
     "queue_dashboard": "/queue/dashboard";
     "queue_schedule": "/queue/schedule";
     "queue_task": "/queue/task";
-    "queue_worker": "/queue/worker";
     "script": "/script";
     "socketio": "/socketio";
     "socketio_chat": "/socketio/chat";
@@ -108,7 +107,6 @@ declare module "@elegant-router/types" {
     | "queue_dashboard"
     | "queue_schedule"
     | "queue_task"
-    | "queue_worker"
     | "script"
     | "socketio_chat"
     | "socketio_debug"

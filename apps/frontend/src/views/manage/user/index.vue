@@ -97,7 +97,12 @@
         title: "Admin",
         align: "center",
         width: 80,
-        render: (row) => (row.isAdmin ? <NTag type="error" size="small">Admin</NTag> : null),
+        render: (row) =>
+          row.isAdmin ? (
+            <NTag type="error" size="small">
+              Admin
+            </NTag>
+          ) : null,
       },
       {
         key: "operate",
@@ -129,16 +134,8 @@
     ],
   })
 
-  const {
-    drawerVisible,
-    operateType,
-    editingData,
-    handleAdd,
-    handleEdit,
-    checkedRowKeys,
-    onBatchDeleted,
-    onDeleted,
-  } = useTableOperate(data, "id", getData)
+  const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys, onBatchDeleted, onDeleted } =
+    useTableOperate(data, "id", getData)
 
   async function handleBatchDelete() {
     const { error } = await fetchBatchDeleteUsers(checkedRowKeys.value as string[])

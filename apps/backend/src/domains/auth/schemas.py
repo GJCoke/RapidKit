@@ -40,6 +40,7 @@ class UserSchema(BaseModel):
     name: str
     email: EmailStr
     username: str
+    is_admin: bool = False
     roles: list[str] = []
     buttons: list[str] = []
 
@@ -51,7 +52,6 @@ class UserInfoResponse(UserSchema, ResponseSchema):
 class UserCreate(UserSchema, BaseRequest):
     """创建用户请求数据结构。"""
 
-    is_admin: bool = False
     password: str
 
 

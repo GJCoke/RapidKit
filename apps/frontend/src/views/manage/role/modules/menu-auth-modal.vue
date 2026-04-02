@@ -1,6 +1,11 @@
 <script setup lang="ts">
   import { computed, shallowRef, watch } from "vue"
-  import { fetchGetAllPages, fetchGetMenuTree } from "@/service/api"
+  import {
+    fetchGetAllPages,
+    fetchGetMenuTree,
+    fetchGetRolePermissions,
+    fetchUpdateRouterPermissions,
+  } from "@/service/api"
   import { $t } from "@/locales"
 
   defineOptions({
@@ -27,14 +32,11 @@
   const home = shallowRef("")
 
   async function getHome() {
-    console.log(props.roleId)
-
+    // Home route is determined by the route module, not stored per role
     home.value = "home"
   }
 
   async function updateHome(val: string) {
-    // request
-
     home.value = val
   }
 
@@ -67,17 +69,20 @@
     }
   }
 
-  const checks = shallowRef<number[]>([])
+  const checks = shallowRef<string[]>([])
 
   async function getChecks() {
-    console.log(props.roleId)
-    // request
-    checks.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+    const { error, data } = await fetchGetRolePermissions(props.roleId)
+
+    if (!error) {
+      checks.value = data.routerPermissions || []
+    }
   }
 
-  function handleSubmit() {
-    console.log(checks.value, props.roleId)
-    // request
+  async function handleSubmit() {
+    const { error } = await fetchUpdateRouterPermissions(props.roleId, checks.value)
+
+    if (error) return
 
     window.$message?.success?.($t("common.modifySuccess"))
 
@@ -106,12 +111,15 @@
     </div>
     <NTree
       v-model:checked-keys="checks"
-      :data="tree"
-      key-field="id"
+      :data="tree as any"
+      key-field="routeName"
+      label-field="menuName"
+      children-field="children"
       checkable
       expand-on-click
       virtual-scroll
       block-line
+      cascade
       class="h-280px"
     />
     <template #footer>

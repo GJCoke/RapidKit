@@ -7,13 +7,6 @@ export const enableStatusRecord: Record<Api.Common.EnableStatus, I18nFullKey> = 
 
 export const enableStatusOptions = transformRecordToOption(enableStatusRecord)
 
-export const userGenderRecord: Record<Api.SystemManage.UserGender, I18nFullKey> = {
-  "1": "page.manage.user.gender.male",
-  "2": "page.manage.user.gender.female",
-}
-
-export const userGenderOptions = transformRecordToOption(userGenderRecord)
-
 export const menuTypeRecord: Record<Api.SystemManage.MenuType, I18nFullKey> = {
   "1": "page.manage.menu.type.directory",
   "2": "page.manage.menu.type.menu",

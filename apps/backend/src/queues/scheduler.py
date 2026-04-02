@@ -19,7 +19,15 @@ from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.queues.celery import Celery
-from src.queues.schedule import PeriodicTask
+from src.queues.models import TaskType
+from src.queues.schedule import CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
+
+# TaskType.model 返回的是 models.py 的基类，select() 需要 SQLModel 表类
+_SCHEDULE_MODEL_MAP: dict[TaskType, type[IntervalSchedule] | type[CrontabSchedule] | type[SolarSchedule]] = {
+    TaskType.INTERVAL: IntervalSchedule,
+    TaskType.CRONTAB: CrontabSchedule,
+    TaskType.SOLAR: SolarSchedule,
+}
 
 logger = get_logger("celery.queues.scheduler")
 
@@ -32,7 +40,6 @@ class Scheduler(_Scheduler):
     """自定义调度器。"""
 
     Entry = ScheduleEntry
-    _store: dict[str, ScheduleEntry] = {}
     refresh_interval: float
     last_updated: datetime
 
@@ -48,6 +55,7 @@ class Scheduler(_Scheduler):
         sync_every_tasks: int | None = None,
         **kwargs: dict[str, Any],
     ) -> None:
+        self._store: dict[str, ScheduleEntry] = {}
         super().__init__(
             app=app,
             schedule=schedule,
@@ -58,7 +66,7 @@ class Scheduler(_Scheduler):
             **kwargs,
         )
         self.refresh_interval = refresh_interval or self.app.conf.get("refresh_interval")
-        logger.info(f"Synchronize database tasks every {self.refresh_interval} seconds.")
+        logger.info("Synchronize database tasks every %s seconds.", self.refresh_interval)
         self.last_updated = datetime.now(UTC)
 
     @abstractmethod
@@ -77,8 +85,11 @@ class Scheduler(_Scheduler):
         celery_beat = self.get_database_schedule()
 
         if asyncio.iscoroutine(celery_beat):
-            loop = asyncio.get_event_loop()
-            celery_beat = loop.run_until_complete(celery_beat)
+            loop = getattr(self, "_loop", None)
+            if loop:
+                celery_beat = loop.run_until_complete(celery_beat)
+            else:
+                celery_beat = asyncio.run(celery_beat)
 
         celery_beat.update(self.app.conf.beat_schedule)
         return celery_beat
@@ -119,7 +130,7 @@ class Scheduler(_Scheduler):
 
     schedule = property(get_schedule, set_schedule)  # type: ignore
 
-    def tick(self, *args: Any, **kwargs: Any) -> None:
+    def tick(self, *args: Any, **kwargs: Any) -> float:
         """
         每次心跳时调用，用于定期刷新周期性任务。
 
@@ -137,7 +148,7 @@ class Scheduler(_Scheduler):
             self.setup_schedule()
             self.last_updated = now
 
-        super().tick(*args, **kwargs)
+        return super().tick(*args, **kwargs)
 
 
 class AsyncDatabaseScheduler(Scheduler):
@@ -150,9 +161,15 @@ class AsyncDatabaseScheduler(Scheduler):
         database_url = app.conf.get("database_url")
         if database_url is None:
             raise ValueError("Database URL must be configured.")
+        self._loop = asyncio.new_event_loop()
         async_engine = create_async_engine(database_url)
         self.AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
         super().__init__(app, **kwargs)
+
+    def close(self) -> None:
+        super().close()
+        if self._loop and not self._loop.is_closed():
+            self._loop.close()
 
     async def get_database_schedule(self) -> dict[str, ScheduleEntry]:
         """
@@ -164,11 +181,14 @@ class AsyncDatabaseScheduler(Scheduler):
         async with self.AsyncSessionLocal() as session:
             _tasks = await session.exec(select(PeriodicTask).filter(col(PeriodicTask.enabled).is_(True)))
             tasks: Sequence[PeriodicTask] = _tasks.all()
-
             celery_beat = {}
             for task in tasks:
+                schedule_model = _SCHEDULE_MODEL_MAP.get(task.task_type)
+                if not schedule_model:
+                    logger.warning("Unknown task type: %s for task %s", task.task_type, task.name)
+                    continue
                 _schedule_info = await session.exec(
-                    select(task.task_type.model).filter(col(task.task_type.model.id) == task.schedule_id)
+                    select(schedule_model).filter(col(schedule_model.id) == task.schedule_id)
                 )
                 schedule_info = _schedule_info.first()
                 if schedule_info:
@@ -181,7 +201,5 @@ class AsyncDatabaseScheduler(Scheduler):
                         options=task.options,
                     )
 
-            logger.info(
-                f"Database scheduled tasks({len(celery_beat)}): {', '.join([name for name in celery_beat.keys()])}"
-            )
+            logger.info("Database scheduled tasks(%d): %s", len(celery_beat), ", ".join(celery_beat.keys()))
             return celery_beat

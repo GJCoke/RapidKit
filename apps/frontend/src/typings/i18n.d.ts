@@ -47,15 +47,9 @@ declare namespace I18nKeys {
     | "yesOrNo.no"
     | "yesOrNo.yes"
 
-  type datatable =
-    | "itemCount"
+  type datatable = "itemCount"
 
-  type dropdown =
-    | "closeAll"
-    | "closeCurrent"
-    | "closeLeft"
-    | "closeOther"
-    | "closeRight"
+  type dropdown = "closeAll" | "closeCurrent" | "closeLeft" | "closeOther" | "closeRight"
 
   type form =
     | "code.invalid"
@@ -157,6 +151,7 @@ declare namespace I18nKeys {
     | "manage.menu.form.href"
     | "manage.menu.form.i18nKey"
     | "manage.menu.form.icon"
+    | "manage.menu.form.interface"
     | "manage.menu.form.keepAlive"
     | "manage.menu.form.layout"
     | "manage.menu.form.localIcon"
@@ -180,6 +175,7 @@ declare namespace I18nKeys {
     | "manage.menu.iconType.local"
     | "manage.menu.iconTypeTitle"
     | "manage.menu.id"
+    | "manage.menu.interface"
     | "manage.menu.keepAlive"
     | "manage.menu.layout"
     | "manage.menu.localIcon"
@@ -204,6 +200,7 @@ declare namespace I18nKeys {
     | "manage.role.form.roleDesc"
     | "manage.role.form.roleName"
     | "manage.role.form.roleStatus"
+    | "manage.role.interfaceAuth"
     | "manage.role.menuAuth"
     | "manage.role.roleCode"
     | "manage.role.roleDesc"
@@ -438,13 +435,7 @@ declare namespace I18nKeys {
     | "socketio.instrument.username"
     | "socketio.instrument.usernamePlaceholder"
 
-  type request =
-    | "logout"
-    | "logoutMsg"
-    | "logoutWithModal"
-    | "logoutWithModalMsg"
-    | "refreshToken"
-    | "tokenExpired"
+  type request = "logout" | "logoutMsg" | "logoutWithModal" | "logoutWithModalMsg" | "refreshToken" | "tokenExpired"
 
   type route =
     | "403"
@@ -462,19 +453,13 @@ declare namespace I18nKeys {
     | "queue_dashboard"
     | "queue_schedule"
     | "queue_task"
-    | "queue_worker"
     | "script"
     | "socketio"
     | "socketio_chat"
     | "socketio_debug"
     | "socketio_instrument"
 
-  type system =
-    | "title"
-    | "updateCancel"
-    | "updateConfirm"
-    | "updateContent"
-    | "updateTitle"
+  type system = "title" | "updateCancel" | "updateConfirm" | "updateContent" | "updateTitle"
 
   type theme =
     | "appearance.colourWeakness"
@@ -579,7 +564,6 @@ declare namespace I18nKeys {
     | "tabs.layout"
     | "tabs.preset"
     | "themeDrawerTitle"
-
 }
 type I18nFullKey =
   | `common.${I18nKeys.common}`

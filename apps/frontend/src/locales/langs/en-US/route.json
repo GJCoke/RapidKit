@@ -14,7 +14,6 @@
   "queue_dashboard": "Dashboard",
   "queue_task": "Task History",
   "queue_schedule": "Scheduled Tasks",
-  "queue_worker": "Worker Manage",
   "script": "Script Manage",
   "socketio": "Instant Messaging",
   "socketio_chat": "Chat Room",

@@ -122,6 +122,7 @@ declare global {
         activeTaskCount: number
         activeQueues: string[]
         lastHeartbeat: string
+        processedCount: number
       }
 
       /** task stats query params */

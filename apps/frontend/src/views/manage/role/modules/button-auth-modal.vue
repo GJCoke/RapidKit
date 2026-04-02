@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { computed, shallowRef } from "vue"
+  import { computed, shallowRef, watch } from "vue"
+  import { fetchGetMenuTree, fetchGetRolePermissions, fetchUpdateButtonPermissions } from "@/service/api"
   import { $t } from "@/locales"
 
   defineOptions({
@@ -24,7 +25,7 @@
   const title = computed(() => $t("common.edit") + $t("page.manage.role.buttonAuth"))
 
   type ButtonConfig = {
-    id: number
+    id: string
     label: string
     code: string
   }
@@ -32,32 +33,50 @@
   const tree = shallowRef<ButtonConfig[]>([])
 
   async function getAllButtons() {
-    // request
-    tree.value = [
-      { id: 1, label: "button1", code: "code1" },
-      { id: 2, label: "button2", code: "code2" },
-      { id: 3, label: "button3", code: "code3" },
-      { id: 4, label: "button4", code: "code4" },
-      { id: 5, label: "button5", code: "code5" },
-      { id: 6, label: "button6", code: "code6" },
-      { id: 7, label: "button7", code: "code7" },
-      { id: 8, label: "button8", code: "code8" },
-      { id: 9, label: "button9", code: "code9" },
-      { id: 10, label: "button10", code: "code10" },
-    ]
+    const { error, data } = await fetchGetMenuTree()
+
+    if (!error) {
+      // Extract buttons from all menus in the tree
+      const buttons: ButtonConfig[] = []
+
+      function extractButtons(menus: Api.SystemManage.MenuTree[]) {
+        for (const menu of menus) {
+          // MenuTree doesn't have buttons directly, but the menu data from the tree endpoint does
+          const menuData = menu as unknown as { buttons?: { code: string; desc: string }[] }
+          if (menuData.buttons) {
+            for (const btn of menuData.buttons) {
+              buttons.push({
+                id: btn.code,
+                label: btn.desc,
+                code: btn.code,
+              })
+            }
+          }
+          if (menu.children) {
+            extractButtons(menu.children)
+          }
+        }
+      }
+
+      extractButtons(data)
+      tree.value = buttons
+    }
   }
 
-  const checks = shallowRef<number[]>([])
+  const checks = shallowRef<string[]>([])
 
   async function getChecks() {
-    console.log(props.roleId)
-    // request
-    checks.value = [1, 2, 3, 4, 5]
+    const { error, data } = await fetchGetRolePermissions(props.roleId)
+
+    if (!error) {
+      checks.value = data.buttonPermissions || []
+    }
   }
 
-  function handleSubmit() {
-    console.log(checks.value, props.roleId)
-    // request
+  async function handleSubmit() {
+    const { error } = await fetchUpdateButtonPermissions(props.roleId, checks.value)
+
+    if (error) return
 
     window.$message?.success?.($t("common.modifySuccess"))
 
@@ -69,8 +88,11 @@
     getChecks()
   }
 
-  // init
-  init()
+  watch(visible, (val) => {
+    if (val) {
+      init()
+    }
+  })
 </script>
 
 <template>
