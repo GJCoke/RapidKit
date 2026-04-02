@@ -23,12 +23,28 @@ from src.utils.uuid7 import uuid8
 USERNAME = "admin"
 PASSWORD = "123456"
 
+ALL_BUTTON_PERMISSIONS = [
+    "manage_user:add",
+    "manage_user:edit",
+    "manage_user:delete",
+    "manage_role:add",
+    "manage_role:edit",
+    "manage_role:delete",
+    "manage_role:menuAuth",
+    "manage_role:buttonAuth",
+    "manage_role:interfaceAuth",
+    "manage_menu:add",
+    "manage_menu:edit",
+    "manage_menu:delete",
+]
+
 roles: list[RoleCreate] = [
     RoleCreate(
         name="admin",
         description="Administrator",
         code="ADMIN",
         interface_permissions=["GET:/api/v1/router/backend"],
+        button_permissions=ALL_BUTTON_PERMISSIONS,
     ),
 ]
 
@@ -103,6 +119,19 @@ async def create_menus(session: AsyncSession) -> None:
         component="view.manage_user",
         icon="ic:round-manage-accounts",
         i18n_key="route.manage_user",
+        buttons=[
+            {"code": "manage_user:add", "desc": "新增用户"},
+            {"code": "manage_user:edit", "desc": "编辑用户"},
+            {"code": "manage_user:delete", "desc": "删除用户"},
+        ],
+        interfaces=[
+            "GET:/api/v1/users",
+            "GET:/api/v1/users/{user_id}",
+            "POST:/api/v1/users",
+            "PUT:/api/v1/users/{user_id}",
+            "DELETE:/api/v1/users/{user_id}",
+            "DELETE:/api/v1/users",
+        ],
     )
 
     # 2.2 角色管理
@@ -117,6 +146,26 @@ async def create_menus(session: AsyncSession) -> None:
         component="view.manage_role",
         icon="carbon:user-role",
         i18n_key="route.manage_role",
+        buttons=[
+            {"code": "manage_role:add", "desc": "新增角色"},
+            {"code": "manage_role:edit", "desc": "编辑角色"},
+            {"code": "manage_role:delete", "desc": "删除角色"},
+            {"code": "manage_role:menuAuth", "desc": "菜单权限"},
+            {"code": "manage_role:buttonAuth", "desc": "按钮权限"},
+            {"code": "manage_role:interfaceAuth", "desc": "接口权限"},
+        ],
+        interfaces=[
+            "GET:/api/v1/roles",
+            "GET:/api/v1/roles/all",
+            "POST:/api/v1/roles",
+            "PUT:/api/v1/roles/{role_id}",
+            "DELETE:/api/v1/roles/{role_id}",
+            "DELETE:/api/v1/roles",
+            "GET:/api/v1/roles/{role_id}/permissions",
+            "PUT:/api/v1/roles/{role_id}/permissions/router",
+            "PUT:/api/v1/roles/{role_id}/permissions/button",
+            "PUT:/api/v1/roles/{role_id}/permissions/interface",
+        ],
     )
 
     # 2.3 菜单管理
@@ -131,6 +180,20 @@ async def create_menus(session: AsyncSession) -> None:
         component="view.manage_menu",
         icon="material-symbols:menu-book",
         i18n_key="route.manage_menu",
+        buttons=[
+            {"code": "manage_menu:add", "desc": "新增菜单"},
+            {"code": "manage_menu:edit", "desc": "编辑菜单"},
+            {"code": "manage_menu:delete", "desc": "删除菜单"},
+        ],
+        interfaces=[
+            "GET:/api/v1/manage/menus",
+            "POST:/api/v1/manage/menus",
+            "PUT:/api/v1/manage/menus/{menu_id}",
+            "DELETE:/api/v1/manage/menus/{menu_id}",
+            "DELETE:/api/v1/manage/menus",
+            "GET:/api/v1/manage/menus/tree",
+            "GET:/api/v1/manage/menus/pages",
+        ],
     )
 
     socketio_id = uuid8()
@@ -191,6 +254,81 @@ async def create_menus(session: AsyncSession) -> None:
         i18n_key="route.socketio_instrument",
     )
 
+    queue_id = uuid8()
+
+    # 4. 任务队列 (目录)
+    queue = Menu(
+        id=queue_id,
+        menu_name="任务队列",
+        menu_type=MenuType.DIRECTORY,
+        order=7,
+        route_name="queue",
+        route_path="/queue",
+        component="layout.base",
+        icon="material-symbols:queue-play-next-outline",
+        icon_type=MenuIconType.ICONIFY,
+        i18n_key="route.queue",
+    )
+
+    # 4.1 仪表盘
+    queue_dashboard = Menu(
+        id=uuid8(),
+        parent_id=queue_id,
+        menu_name="仪表盘",
+        menu_type=MenuType.MENU,
+        order=1,
+        route_name="queue_dashboard",
+        route_path="/queue/dashboard",
+        component="view.queue_dashboard",
+        icon="material-symbols:dashboard-outline-rounded",
+        icon_type=MenuIconType.ICONIFY,
+        i18n_key="route.queue_dashboard",
+    )
+
+    # 4.2 定时任务
+    queue_schedule = Menu(
+        id=uuid8(),
+        parent_id=queue_id,
+        menu_name="定时任务",
+        menu_type=MenuType.MENU,
+        order=2,
+        route_name="queue_schedule",
+        route_path="/queue/schedule",
+        component="view.queue_schedule",
+        icon="material-symbols:alarm-smart-wake-outline",
+        icon_type=MenuIconType.ICONIFY,
+        i18n_key="route.queue_schedule",
+    )
+
+    # 4.3 任务历史
+    queue_task = Menu(
+        id=uuid8(),
+        parent_id=queue_id,
+        menu_name="任务历史",
+        menu_type=MenuType.MENU,
+        order=3,
+        route_name="queue_task",
+        route_path="/queue/task",
+        component="view.queue_task",
+        icon="material-symbols:history-2",
+        icon_type=MenuIconType.ICONIFY,
+        i18n_key="route.queue_task",
+    )
+
+    # 5. 脚本管理
+    script = Menu(
+        id=uuid8(),
+        menu_name="脚本管理",
+        menu_type=MenuType.MENU,
+        order=12,
+        route_name="script",
+        route_path="/script",
+        component="layout.base$view.script",
+        icon="streamline-ultimate:programming-browser-1-bold",
+        icon_type=MenuIconType.ICONIFY,
+        i18n_key="route.script",
+    )
+
     session.add_all(
         [
             home,
@@ -202,6 +340,11 @@ async def create_menus(session: AsyncSession) -> None:
             socketio_chat,
             socketio_debug,
             socketio_instrument,
+            queue,
+            queue_dashboard,
+            queue_schedule,
+            queue_task,
+            script,
         ]
     )
     await session.commit()
