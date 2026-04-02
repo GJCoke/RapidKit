@@ -35,38 +35,34 @@ declare global {
       /** all role */
       type AllRole = Pick<Role, "id" | "name" | "code">
 
-      /**
-       * user gender
-       *
-       * - "1": "male"
-       * - "2": "female"
-       */
-      type UserGender = "1" | "2"
-
       /** user */
       type User = Common.CommonRecord<{
         /** user name */
         username: string
-        /** user gender */
-        userGender: UserGender | null
-        /** user nick name */
-        nickName: string
-        /** user phone */
-        userPhone: string
+        /** display name */
+        name: string
         /** user email */
-        userEmail: string
+        email: string
         /** user role code collection */
-        userRoles: string[]
+        roles: string[]
+        /** is admin */
+        isAdmin: boolean
       }>
 
       /** user search params */
       type UserSearchParams = CommonType.RecordNullable<
-        Pick<Api.SystemManage.User, "username" | "userGender" | "nickName" | "userPhone" | "userEmail" | "status"> &
-          CommonSearchParams
+        { keyword?: string; status?: string } & CommonSearchParams
       >
 
       /** user list */
       type UserList = Common.PaginatingQueryRecord<User>
+
+      /** role permissions response */
+      type RolePermissions = {
+        routerPermissions: string[]
+        buttonPermissions: string[]
+        interfacePermissions: string[]
+      }
 
       /**
        * menu type
@@ -133,6 +129,8 @@ declare global {
         iconType: IconType
         /** buttons */
         buttons?: MenuButton[] | null
+        /** bound interface permission codes */
+        interfaces?: string[] | null
         /** children menu */
         children?: Menu[] | null
       }> &
@@ -142,11 +140,22 @@ declare global {
       type MenuList = Common.PaginatingQueryRecord<Menu>
 
       type MenuTree = {
-        id: number
-        label: string
-        pId: number
-        children?: MenuTree[]
+        id: string
+        menuName: string
+        routeName: string
+        children?: MenuTree[] | null
+        buttons?: MenuButton[] | null
+        interfaces?: string[] | null
       }
+
+      /** backend router from manage_routers table */
+      type BackendRouter = Common.CommonRecord<{
+        name: string
+        description: string | null
+        path: string
+        methods: string[]
+        code: string
+      }>
     }
   }
 }
