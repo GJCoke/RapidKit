@@ -44,3 +44,4 @@ class Menu(SQLModel, table=True):
     fixed_index_in_tab: int | None = Field(default=None, description="在页签中的固定次序")
     query: list[Query] = Field(default=[], sa_column=Column(JSON), description="路由参数")
     buttons: list[Button] = Field(default=[], sa_column=Column(JSON), description="按钮权限")
+    interfaces: list[str] = Field(default=[], sa_column=Column(JSON), description="绑定的接口权限码")

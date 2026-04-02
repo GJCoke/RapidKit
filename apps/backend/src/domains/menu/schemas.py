@@ -46,6 +46,7 @@ class MenuSchema(BaseModel):
     fixed_index_in_tab: int | None = Field(None, description="固定页签次序")
     query: list[Query] = Field([], description="路由参数")
     buttons: list[Button] = Field([], description="按钮权限")
+    interfaces: list[str] = Field([], description="绑定的接口权限码列表")
 
 
 class MenuResponse(MenuSchema, ResponseSchema):
@@ -53,7 +54,7 @@ class MenuResponse(MenuSchema, ResponseSchema):
 
 
 class MenuListResponse(MenuResponse):
-    children: list["MenuListResponse"] = []
+    children: list["MenuListResponse"] | None = None
 
 
 class MenuCreate(MenuSchema, BaseRequest):
@@ -77,7 +78,7 @@ class MenuQueriesSchema(BaseModel):
     """菜单查询数据结构。"""
 
     keyword: str = ""
-    status: bool | None = None
+    status: Status | None = None
 
 
 class MenuPageQuery(MenuQueriesSchema, PaginatedRequest):
