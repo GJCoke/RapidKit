@@ -64,30 +64,19 @@ export function fetchGetRolePermissions(id: string) {
   })
 }
 
-/** update role router permissions */
-export function fetchUpdateRouterPermissions(id: string, permissions: string[]) {
+/** batch update role permissions (router + button + interface) */
+export function fetchUpdateRolePermissions(
+  id: string,
+  data: {
+    routerPermissions: string[]
+    buttonPermissions: string[]
+    interfacePermissions: string[]
+  },
+) {
   return request<boolean>({
-    url: `/roles/${id}/permissions/router`,
+    url: `/roles/${id}/permissions`,
     method: "put",
-    data: { permissions },
-  })
-}
-
-/** update role button permissions */
-export function fetchUpdateButtonPermissions(id: string, permissions: string[]) {
-  return request<boolean>({
-    url: `/roles/${id}/permissions/button`,
-    method: "put",
-    data: { permissions },
-  })
-}
-
-/** update role interface permissions */
-export function fetchUpdateInterfacePermissions(id: string, permissions: string[]) {
-  return request<boolean>({
-    url: `/roles/${id}/permissions/interface`,
-    method: "put",
-    data: { permissions },
+    data,
   })
 }
 

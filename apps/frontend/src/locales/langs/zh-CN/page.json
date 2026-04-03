@@ -156,6 +156,7 @@
         "roleStatus": "请选择角色状态"
       },
       "menuAuth": "菜单权限",
+      "permissionConfig": "权限配置",
       "roleCode": "角色编码",
       "roleDesc": "角色描述",
       "roleName": "角色名称",
@@ -256,8 +257,8 @@
       },
       "control": {
         "ping": "Ping",
-        "pingSuccess": "Worker 可达",
-        "pingFailed": "Worker 不可达",
+        "pingSuccess": "Ping 成功",
+        "pingFailed": "Ping 失败",
         "shutdown": "关闭 Worker",
         "shutdownConfirm": "确定要关闭该 Worker 吗？此操作不可逆。",
         "shutdownSuccess": "关闭指令已发送",
@@ -325,6 +326,7 @@
     "editScript": "编辑脚本",
     "scriptStatus": "状态",
     "editCode": "编辑代码",
+    "securityWarning": "当前脚本执行未做任何权限限制与沙箱隔离，脚本可访问服务器上的任意资源与信息，请谨慎使用。",
     "backToList": "返回列表",
     "execute": "运行",
     "save": "保存",

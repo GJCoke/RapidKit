@@ -154,16 +154,15 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
 
     const staticRoute = createStaticRoutes()
 
-    if (authRouteMode.value === "static") {
-      addConstantRoutes(staticRoute.constantRoutes)
-    } else {
+    // 始终先加载静态常量路由（login、404 等关键路由），确保路由可用
+    addConstantRoutes(staticRoute.constantRoutes)
+
+    if (authRouteMode.value !== "static") {
       const { data, error } = await fetchGetConstantRoutes()
 
       if (!error) {
+        // 合并后端返回的常量路由（addConstantRoutes 内部按 name 去重）
         addConstantRoutes(data)
-      } else {
-        // if fetch constant routes failed, use static constant routes
-        addConstantRoutes(staticRoute.constantRoutes)
       }
     }
 

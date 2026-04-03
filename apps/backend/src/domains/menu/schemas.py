@@ -38,7 +38,7 @@ class MenuSchema(BaseModel):
     status: Status = Field(Status.ON, description="状态")
     hide_in_menu: bool = Field(False, description="是否隐藏")
     parent_id: UUID | None = Field(None, description="父级ID")
-    i18n_key: str | None = Field(None, description="国际化Key")
+    i18n_key: str | None = Field(None, alias="i18nKey", description="国际化Key")
     keep_alive: bool = Field(False, description="是否缓存")
     constant: bool = Field(False, description="是否常量路由")
     href: str | None = Field(None, description="外链")

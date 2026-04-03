@@ -130,8 +130,13 @@ def diff_api_routes(
             - removed_routes: 数据库中有但应用中没有的路由 ID。
             - modified_routes: 数据库和应用中都存在但有差异的路由（包含变更字段及路由 ID）。
     """
-    old_router = {item.path: item for item in db_routes}
-    new_router = {item.path: item for item in app_routes}
+
+    def route_key(r: Any) -> str:
+        methods = ",".join(sorted(r.methods)) if r.methods else ""
+        return f"{methods}:{r.path}"
+
+    old_router = {route_key(item): item for item in db_routes}
+    new_router = {route_key(item): item for item in app_routes}
 
     added_routes = []
     removed_routes = []

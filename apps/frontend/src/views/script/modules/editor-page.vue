@@ -5,6 +5,7 @@
   import { useThemeStore } from "@/store/modules/theme"
   import { $t } from "@/locales"
   import { fetchExecuteScript, fetchGetScriptDetail, fetchUpdateScript } from "@/service/api"
+  import { useAuth } from "@/hooks/business/auth"
 
   defineOptions({
     name: "EditorPage",
@@ -23,6 +24,7 @@
   const emit = defineEmits<Emits>()
 
   const themeStore = useThemeStore()
+  const { hasAuth } = useAuth()
   const editorTheme = computed(() => (themeStore.darkMode ? "vs-dark" : "vs"))
 
   const scriptData = ref<Api.Script.ScriptDetail | null>(null)
@@ -121,13 +123,19 @@
         </template>
 
         <div class="ml-auto flex items-center gap-8px">
-          <NButton size="small" :loading="saving" @click="handleSave">
+          <NButton v-if="hasAuth('script:edit')" size="small" :loading="saving" @click="handleSave">
             <template #icon>
               <icon-ic-round-save class="text-icon" />
             </template>
             {{ $t("page.script.save") }}
           </NButton>
-          <NButton type="primary" size="small" :loading="execStatus === 'running'" @click="handleRun">
+          <NButton
+            v-if="hasAuth('script:execute')"
+            type="primary"
+            size="small"
+            :loading="execStatus === 'running'"
+            @click="handleRun"
+          >
             <template #icon>
               <icon-ic-round-play-arrow class="text-icon" />
             </template>

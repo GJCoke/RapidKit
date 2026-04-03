@@ -159,14 +159,7 @@
     <UserSearch v-model:model="searchParams" @search="getDataByPage" />
     <NCard :title="$t('page.manage.user.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
       <template #header-extra>
-        <TableHeaderOperation
-          v-model:columns="columnChecks"
-          :disabled-delete="checkedRowKeys.length === 0"
-          :loading="loading"
-          @add="handleAdd"
-          @delete="handleBatchDelete"
-          @refresh="getData"
-        >
+        <TableHeaderOperation v-model:columns="columnChecks" :loading="loading" @refresh="getData">
           <NButton v-if="hasAuth('manage_user:add')" size="small" ghost type="primary" @click="handleAdd">
             <template #icon>
               <icon-ic-round-plus class="text-icon" />

@@ -55,14 +55,16 @@ class RoleBatchBody(BatchRequest):
     """批量角色操作数据结构。"""
 
 
-class PermissionUpdateBody(BaseRequest):
-    """权限更新请求数据结构。"""
-
-    permissions: list[str]
-
-
 class RolePermissionsResponse(BaseModel):
     """角色权限响应数据结构。"""
+
+    router_permissions: list[str] = []
+    button_permissions: list[str] = []
+    interface_permissions: list[str] = []
+
+
+class RolePermissionsUpdateBody(BaseRequest):
+    """批量权限更新请求数据结构。"""
 
     router_permissions: list[str] = []
     button_permissions: list[str] = []
@@ -73,3 +75,4 @@ class UserPermissionCache(BaseModel):
     """Redis 中存储的用户权限缓存数据结构。"""
 
     permissions: list[str] = []
+    buttons: list[str] = []

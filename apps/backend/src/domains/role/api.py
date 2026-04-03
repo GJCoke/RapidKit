@@ -14,12 +14,12 @@ from src.domains.auth.deps import UserDBDep
 from src.domains.role.deps import RoleCrudDep, verify_user_permission
 from src.domains.role.models import Role
 from src.domains.role.schemas import (
-    PermissionUpdateBody,
     RoleAllQuery,
     RoleBatchBody,
     RoleCreate,
     RolePageQuery,
     RolePermissionsResponse,
+    RolePermissionsUpdateBody,
     RoleResponse,
     RoleUpdate,
 )
@@ -118,6 +118,42 @@ async def get_role_permissions(
     )
 
 
+@router.put("/{role_id}/permissions")
+async def update_role_permissions(
+    role_id: UUID,
+    body: RolePermissionsUpdateBody,
+    role_crud: RoleCrudDep,
+    redis: RedisDep,
+    session: SessionDep,
+) -> Response[bool]:
+    """
+    批量更新角色的所有权限（路由、按钮、接口）。\f
+
+    Args:
+        role_id: 角色 ID。
+        body: 包含三种权限列表的请求体。
+        role_crud: 角色 CRUD 依赖。
+        redis: Redis 依赖，用于缓存失效。
+        session: 数据库会话。
+
+    Returns:
+        更新成功则为 True。
+    """
+    from src.domains.user.services import invalidate_users_by_role_code
+
+    role = await role_crud.get(role_id, nullable=False)
+    await role_crud.update_by_id(
+        role_id,
+        {
+            "router_permissions": body.router_permissions,
+            "button_permissions": body.button_permissions,
+            "interface_permissions": body.interface_permissions,
+        },
+    )
+    await invalidate_users_by_role_code(redis, role.code, session)
+    return Response(data=True)
+
+
 @router.post("")
 async def create_role(body: RoleCreate, role_crud: RoleCrudDep) -> Response[RoleResponse]:
     """
@@ -151,77 +187,6 @@ async def update_role(role_id: UUID, body: RoleUpdate, role_crud: RoleCrudDep) -
 
     role = await role_crud.update_by_id(role_id, body)
     return Response(data=RoleResponse.model_validate(role))
-
-
-@router.put("/{role_id}/permissions/router")
-async def update_router_permissions(
-    role_id: UUID,
-    body: PermissionUpdateBody,
-    role_crud: RoleCrudDep,
-) -> Response[bool]:
-    """
-    更新角色的路由权限。\f
-
-    Args:
-        role_id: 角色 ID。
-        body: 权限列表。
-        role_crud: 角色 CRUD 依赖。
-
-    Returns:
-        更新成功则为 True。
-    """
-    await role_crud.update_by_id(role_id, {"router_permissions": body.permissions})
-    return Response(data=True)
-
-
-@router.put("/{role_id}/permissions/button")
-async def update_button_permissions(
-    role_id: UUID,
-    body: PermissionUpdateBody,
-    role_crud: RoleCrudDep,
-) -> Response[bool]:
-    """
-    更新角色的按钮权限。\f
-
-    Args:
-        role_id: 角色 ID。
-        body: 权限列表。
-        role_crud: 角色 CRUD 依赖。
-
-    Returns:
-        更新成功则为 True。
-    """
-    await role_crud.update_by_id(role_id, {"button_permissions": body.permissions})
-    return Response(data=True)
-
-
-@router.put("/{role_id}/permissions/interface")
-async def update_interface_permissions(
-    role_id: UUID,
-    body: PermissionUpdateBody,
-    role_crud: RoleCrudDep,
-    redis: RedisDep,
-    session: SessionDep,
-) -> Response[bool]:
-    """
-    更新角色的接口权限（触发缓存失效）。\f
-
-    Args:
-        role_id: 角色 ID。
-        body: 权限列表。
-        role_crud: 角色 CRUD 依赖。
-        redis: Redis 依赖，用于缓存失效。
-        session: 数据库会话，用于查找受影响的用户。
-
-    Returns:
-        更新成功则为 True。
-    """
-    from src.domains.user.services import invalidate_users_by_role_code
-
-    role = await role_crud.get(role_id, nullable=False)
-    await role_crud.update_by_id(role_id, {"interface_permissions": body.permissions})
-    await invalidate_users_by_role_code(redis, role.code, session)
-    return Response(data=True)
 
 
 @router.delete("")

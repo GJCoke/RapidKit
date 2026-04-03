@@ -208,7 +208,11 @@ export interface paths {
          * @description 获取角色的所有权限。
          */
         get: operations["get_role_permissions_api_v1_roles__role_id__permissions_get"];
-        put?: never;
+        /**
+         * Update Role Permissions
+         * @description 批量更新角色的所有权限（路由、按钮、接口）。
+         */
+        put: operations["update_role_permissions_api_v1_roles__role_id__permissions_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -235,66 +239,6 @@ export interface paths {
          * @description 根据 ID 删除单个角色。
          */
         delete: operations["delete_role_api_v1_roles__role_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/roles/{role_id}/permissions/router": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Router Permissions
-         * @description 更新角色的路由权限。
-         */
-        put: operations["update_router_permissions_api_v1_roles__role_id__permissions_router_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/roles/{role_id}/permissions/button": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Button Permissions
-         * @description 更新角色的按钮权限。
-         */
-        put: operations["update_button_permissions_api_v1_roles__role_id__permissions_button_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/roles/{role_id}/permissions/interface": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Interface Permissions
-         * @description 更新角色的接口权限（触发缓存失效）。
-         */
-        put: operations["update_interface_permissions_api_v1_roles__role_id__permissions_interface_put"];
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -448,7 +392,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/route/getConstantRoutes": {
+    "/api/v1/route/constant": {
         parameters: {
             query?: never;
             header?: never;
@@ -458,8 +402,10 @@ export interface paths {
         /**
          * Get Constant Routes Api
          * @description 获取常量路由（公共路由）。
+         *
+         *     该接口无需认证，因为常量路由（login、404 等）在用户登录前就需要加载。
          */
-        get: operations["get_constant_routes_api_api_v1_route_getConstantRoutes_get"];
+        get: operations["get_constant_routes_api_api_v1_route_constant_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -468,7 +414,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/route/getUserRoutes": {
+    "/api/v1/route/user": {
         parameters: {
             query?: never;
             header?: never;
@@ -479,7 +425,7 @@ export interface paths {
          * Get User Routes Api
          * @description 获取当前用户的授权路由。
          */
-        get: operations["get_user_routes_api_api_v1_route_getUserRoutes_get"];
+        get: operations["get_user_routes_api_api_v1_route_user_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -488,7 +434,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/route/isRouteExist": {
+    "/api/v1/route/exist": {
         parameters: {
             query?: never;
             header?: never;
@@ -499,7 +445,7 @@ export interface paths {
          * Is Route Exist
          * @description 检查路由名是否存在。
          */
-        get: operations["is_route_exist_api_v1_route_isRouteExist_get"];
+        get: operations["is_route_exist_api_v1_route_exist_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1311,7 +1257,7 @@ export interface components {
              * I18Nkey
              * @description 国际化Key
              */
-            i18NKey?: string | null;
+            i18nKey?: string | null;
             /**
              * Keepalive
              * @description 是否缓存
@@ -1442,7 +1388,7 @@ export interface components {
              * I18Nkey
              * @description 国际化Key
              */
-            i18NKey?: string | null;
+            i18nKey?: string | null;
             /**
              * Keepalive
              * @description 是否缓存
@@ -1573,7 +1519,7 @@ export interface components {
              * I18Nkey
              * @description 国际化Key
              */
-            i18NKey?: string | null;
+            i18nKey?: string | null;
             /**
              * Keepalive
              * @description 是否缓存
@@ -1709,7 +1655,7 @@ export interface components {
              * I18Nkey
              * @description 国际化Key
              */
-            i18NKey?: string | null;
+            i18nKey?: string | null;
             /**
              * Keepalive
              * @description 是否缓存
@@ -2096,14 +2042,6 @@ export interface components {
             } | null;
             interval?: components["schemas"]["IntervalScheduleCreate"] | null;
             crontab?: components["schemas"]["CrontabScheduleCreate"] | null;
-        };
-        /**
-         * PermissionUpdateBody
-         * @description 权限更新请求数据结构。
-         */
-        PermissionUpdateBody: {
-            /** Permissions */
-            permissions: string[];
         };
         /**
          * PoolResizeRequest
@@ -2817,6 +2755,27 @@ export interface components {
             interfacePermissions: string[];
         };
         /**
+         * RolePermissionsUpdateBody
+         * @description 批量权限更新请求数据结构。
+         */
+        RolePermissionsUpdateBody: {
+            /**
+             * Routerpermissions
+             * @default []
+             */
+            routerPermissions: string[];
+            /**
+             * Buttonpermissions
+             * @default []
+             */
+            buttonPermissions: string[];
+            /**
+             * Interfacepermissions
+             * @default []
+             */
+            interfacePermissions: string[];
+        };
+        /**
          * RoleResponse
          * @description 角色响应数据结构。
          */
@@ -2897,7 +2856,7 @@ export interface components {
             /** Title */
             title: string;
             /** I18Nkey */
-            i18NKey?: string | null;
+            i18nKey?: string | null;
             /** Icon */
             icon?: string | null;
             /** Localicon */
@@ -3921,6 +3880,41 @@ export interface operations {
             };
         };
     };
+    update_role_permissions_api_v1_roles__role_id__permissions_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RolePermissionsUpdateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_role_api_v1_roles__role_id__put: {
         parameters: {
             query?: never;
@@ -3966,111 +3960,6 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_router_permissions_api_v1_roles__role_id__permissions_router_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                role_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PermissionUpdateBody"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_button_permissions_api_v1_roles__role_id__permissions_button_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                role_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PermissionUpdateBody"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_interface_permissions_api_v1_roles__role_id__permissions_interface_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                role_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PermissionUpdateBody"];
-            };
-        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -4499,7 +4388,7 @@ export interface operations {
             };
         };
     };
-    get_constant_routes_api_api_v1_route_getConstantRoutes_get: {
+    get_constant_routes_api_api_v1_route_constant_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4519,7 +4408,7 @@ export interface operations {
             };
         };
     };
-    get_user_routes_api_api_v1_route_getUserRoutes_get: {
+    get_user_routes_api_api_v1_route_user_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4539,7 +4428,7 @@ export interface operations {
             };
         };
     };
-    is_route_exist_api_v1_route_isRouteExist_get: {
+    is_route_exist_api_v1_route_exist_get: {
         parameters: {
             query: {
                 routeName: string;

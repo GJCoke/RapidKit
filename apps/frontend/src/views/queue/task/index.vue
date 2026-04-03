@@ -2,6 +2,7 @@
   import { ref, onMounted } from "vue"
   import { useSocket } from "@/hooks/common/socket"
   import { $t } from "@/locales"
+  import { useAuth } from "@/hooks/business/auth"
   import TaskStream from "./modules/task-stream.vue"
   import TaskDrawer from "./modules/task-drawer.vue"
   import TriggerModal from "./modules/trigger-modal.vue"
@@ -9,6 +10,8 @@
   defineOptions({
     name: "QueueTask",
   })
+
+  const { hasAuth } = useAuth()
 
   // ==================== Task Drawer ====================
   const taskDrawerVisible = ref(false)
@@ -56,7 +59,7 @@
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <TaskStream ref="taskStreamRef" @select="handleTaskSelect">
       <template #header-extra>
-        <NButton type="primary" size="small" @click="triggerModalVisible = true">
+        <NButton v-if="hasAuth('queue_task:trigger')" type="primary" size="small" @click="triggerModalVisible = true">
           <template #icon>
             <icon-ic-round-play-arrow class="text-icon" />
           </template>

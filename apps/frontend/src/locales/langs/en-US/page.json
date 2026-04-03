@@ -156,6 +156,7 @@
         "roleStatus": "Please select role status"
       },
       "menuAuth": "Menu Auth",
+      "permissionConfig": "Permission Config",
       "roleCode": "Role Code",
       "roleDesc": "Role Description",
       "roleName": "Role Name",
@@ -325,6 +326,7 @@
     "editScript": "Edit Script",
     "scriptStatus": "Status",
     "editCode": "Edit Code",
+    "securityWarning": "Script execution currently has no permission restrictions or sandbox isolation. Scripts can access any resources and information on the server. Please use with caution.",
     "backToList": "Back to List",
     "execute": "Run",
     "save": "Save",

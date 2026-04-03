@@ -96,7 +96,7 @@ def setup_logging() -> None:
                 "format": default_formatter,
                 "filter": lambda record: request_id_filter(record),
             }
-        ]  # ty:ignore[invalid-argument-type]
+        ]
     )
 
 

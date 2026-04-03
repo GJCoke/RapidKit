@@ -155,7 +155,7 @@ async def login_swagger(form: OAuth2Form, auth: AuthCrudDep) -> OAuth2TokenRespo
 
 
 @router.get("/user/info")
-async def get_user_info(user: UserDBDep) -> Response[UserInfoResponse]:
+async def get_user_info(user: UserDBDep, redis: RedisDep, role_crud: RoleCrudDep) -> Response[UserInfoResponse]:
     """
     检索当前的用户信息。
 
@@ -163,8 +163,18 @@ async def get_user_info(user: UserDBDep) -> Response[UserInfoResponse]:
 
     Args:
         user: 依赖，从数据库解析当前用户。
+        redis: Redis 依赖。
+        role_crud: 角色 CRUD 依赖。
 
     Returns:
         一个标准化响应，不含用户详情。
     """
-    return Response(data=UserInfoResponse.model_validate(user))
+    from src.domains.role.deps import get_user_permission_cache
+
+    user_data = UserInfoResponse.model_validate(user)
+
+    if not user.is_admin:
+        cache = await get_user_permission_cache(user, redis, role_crud)
+        user_data.buttons = cache.buttons
+
+    return Response(data=user_data)

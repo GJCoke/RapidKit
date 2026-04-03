@@ -390,7 +390,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
             await session.rollback()
             raise AppException(StatusCode.ALREADY_EXISTS)
 
-        return create_in  # type: ignore
+        return create_in
 
     async def create_all(
         self,
@@ -516,7 +516,7 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
                     raise AppException(StatusCode.MISSING_REQUIRED_FIELD)
 
                 statement = update(self.model).where(col(self.model.id) == _id).values(**update_info)
-                result = await session.exec(statement)  # type: ignore
+                result = await session.exec(statement)
                 if result.rowcount == 0:
                     raise AppException(StatusCode.RESOURCE_NOT_FOUND)
 
@@ -568,5 +568,5 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
 
         session = session or self.session
         statement = delete(self.model).filter(col(self.model.id).in_(ids))
-        await session.exec(statement)  # type: ignore
+        await session.exec(statement)
         await self.commit(auto_commit=auto_commit)

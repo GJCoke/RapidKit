@@ -54,14 +54,14 @@ def _publish_event(event_type: str, data: dict) -> None:
         "timestamp": datetime.now(UTC).isoformat(),
         "data": json.dumps(data, default=str),
     }
-    r.xadd(STREAM_KEY, message, maxlen=STREAM_MAXLEN, approximate=True)
+    r.xadd(STREAM_KEY, message, maxlen=STREAM_MAXLEN, approximate=True)  # ty: ignore[invalid-argument-type]
 
 
 # ==================== Worker Signals ====================
 
 
 @worker_ready.connect
-def on_worker_ready(sender, **kwargs) -> None:  # type: ignore
+def on_worker_ready(sender, **kwargs) -> None:
     """Worker 上线事件。sender 是 Consumer 实例。"""
     worker = sender.controller  # Consumer.controller -> Worker
     hostname = worker.hostname
@@ -88,12 +88,12 @@ def on_worker_ready(sender, **kwargs) -> None:  # type: ignore
 
 
 @worker_shutdown.connect
-def on_worker_shutdown(sender, **kwargs) -> None:  # type: ignore
+def on_worker_shutdown(sender, **kwargs) -> None:
     """Worker 离线事件。"""
     _heartbeat_stop.set()
     _publish_event(
         "worker.offline",
-        {"hostname": sender.hostname},  # type: ignore
+        {"hostname": sender.hostname},
     )
 
 
@@ -114,7 +114,7 @@ def _heartbeat_loop(hostname: str) -> None:
 
 
 @task_prerun.connect
-def on_task_prerun(sender: celery.app.task.Task, task_id: str, args: tuple, kwargs: dict, **kw) -> None:  # type: ignore
+def on_task_prerun(sender: celery.app.task.Task, task_id: str, args: tuple, kwargs: dict, **kw) -> None:
     """任务开始执行事件。"""
     _publish_event(
         "task.started",
@@ -129,7 +129,7 @@ def on_task_prerun(sender: celery.app.task.Task, task_id: str, args: tuple, kwar
 
 
 @task_postrun.connect
-def on_task_postrun(  # type: ignore
+def on_task_postrun(
     sender: celery.app.task.Task,
     task_id: str,
     retval: object,
@@ -155,7 +155,7 @@ def on_task_postrun(  # type: ignore
 
 
 @task_failure.connect
-def on_task_failure(  # type: ignore
+def on_task_failure(
     sender: celery.app.task.Task,
     task_id: str,
     exception: Exception,
@@ -187,7 +187,7 @@ def on_task_failure(  # type: ignore
 
 
 @task_retry.connect
-def on_task_retry(sender: celery.app.task.Task, request: object, reason: object, **kw) -> None:  # type: ignore
+def on_task_retry(sender: celery.app.task.Task, request: object, reason: object, **kw) -> None:
     """任务重试事件。"""
     _publish_event(
         "task.retry",
@@ -208,7 +208,7 @@ def on_task_revoked(
     signum: object,
     expired: bool,
     **kw,
-) -> None:  # type: ignore
+) -> None:
     """任务撤销事件。"""
     # task_revoked 信号中 request 参数携带正确的 task id，sender 是 Task 类而非实例
     task_id = getattr(request, "id", None) or (

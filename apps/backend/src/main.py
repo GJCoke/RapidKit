@@ -44,22 +44,22 @@ def setup_middlewares(app: FastAPI) -> None:
 
     中间件的注册机制为 先进后出。
     """
-    app.add_middleware(StateMiddleware)  # type: ignore
-    app.add_middleware(SlowAPIMiddleware)  # type: ignore
-    app.add_middleware(I18nMiddleware)  # type: ignore
+    app.add_middleware(StateMiddleware)
+    app.add_middleware(SlowAPIMiddleware)
+    app.add_middleware(I18nMiddleware)
     app.add_middleware(
-        ContextMiddleware,  # type: ignore
+        ContextMiddleware,
         plugins=(NanoIdPlugin(),),
     )
     app.add_middleware(
-        CORSMiddleware,  # type: ignore
+        CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
         allow_origin_regex=settings.CORS_ORIGINS_REGEX,
         allow_credentials=True,
         allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
         allow_headers=settings.CORS_HEADERS,
     )
-    app.add_middleware(LoggerMiddleware)  # type: ignore
+    app.add_middleware(LoggerMiddleware)
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
@@ -86,6 +86,21 @@ def setup_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=AppException(StatusCode.VALIDATION_ERROR, data=details).dump(),
+        )
+
+    @app.exception_handler(AppException)
+    async def handle_app_exception(request: Request, exc: AppException) -> JSONResponse:
+        """应用业务异常处理，使用业务状态码。"""
+        logger.warning(
+            '"{method} {path}" AppException[{code}]: {message}',
+            method=request.method,
+            path=request.url.path,
+            code=exc.code,
+            message=exc.message,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=exc.dump(),
         )
 
     @app.exception_handler(HTTPException)

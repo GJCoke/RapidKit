@@ -55,12 +55,12 @@ async def create_user_permission_cache(
     codes: list[str],
     redis: AsyncRedisClient,
     role_crud: RoleCRUD,
-) -> list[str]:
+) -> UserPermissionCache:
     """
     根据角色编码在 Redis 中创建并缓存用户权限。
 
     会先删除用户已有的权限缓存，
-    然后获取所有角色对应的权限并存入 Redis，设置过期时间。
+    然后获取所有角色对应的接口权限和按钮权限并存入 Redis，设置过期时间。
 
     Args:
         user_id: 用户唯一标识。
@@ -69,21 +69,20 @@ async def create_user_permission_cache(
         role_crud: 用于查询角色信息的 CRUD 实例。
 
     Returns:
-        list[str]: 权限编码列表。
+        UserPermissionCache: 包含接口权限和按钮权限的缓存对象。
     """
     redis_key = permission_structure.format(user_id=user_id)
     await redis.delete(redis_key)
 
     roles = await role_crud.get_role_by_codes(codes)
-    user_permission_list = [permission for role_info in roles for permission in role_info.interface_permissions]
-    if user_permission_list:
-        await redis.set(
-            redis_key,
-            UserPermissionCache(permissions=user_permission_list),
-            ex=auth_settings.ACCESS_TOKEN_EXP,
-        )
+    permissions = [p for role_info in roles for p in role_info.interface_permissions]
+    buttons = list({b for role_info in roles for b in (role_info.button_permissions or [])})
 
-    return user_permission_list
+    cache = UserPermissionCache(permissions=permissions, buttons=buttons)
+    if permissions or buttons:
+        await redis.set(redis_key, cache, ex=auth_settings.ACCESS_TOKEN_EXP)
+
+    return cache
 
 
 async def verify_user_permission(user: UserDBDep, route: RequestRouterDep, redis: RedisDep, role: RoleCrudDep) -> User:
@@ -106,18 +105,36 @@ async def verify_user_permission(user: UserDBDep, route: RequestRouterDep, redis
         User: 用户模型。
     """
     if not user.is_admin:
-        redis_key = permission_structure.format(user_id=user.id)
-        cache = await redis.get(redis_key, response_model=UserPermissionCache)
-        if cache:
-            user_permission_list = cache.permissions
-        else:
-            user_permission_list = await create_user_permission_cache(user.id, user.roles, redis, role)
+        cache = await get_user_permission_cache(user, redis, role)
 
         route_key = f"{':'.join(route.methods)}:{route.path}"
-        if route_key not in user_permission_list:
+        if route_key not in cache.permissions:
             raise AppException(StatusCode.ROLE_PERMISSION_DENIED)
 
     return user
+
+
+async def get_user_permission_cache(
+    user: User,
+    redis: AsyncRedisClient,
+    role_crud: RoleCRUD,
+) -> UserPermissionCache:
+    """
+    获取用户权限缓存，优先从 Redis 读取，缓存未命中则从数据库重建。
+
+    Args:
+        user: 用户对象。
+        redis: Redis 客户端。
+        role_crud: 角色 CRUD 实例。
+
+    Returns:
+        UserPermissionCache: 包含接口权限和按钮权限的缓存对象。
+    """
+    redis_key = permission_structure.format(user_id=user.id)
+    cache = await redis.get(redis_key, response_model=UserPermissionCache)
+    if cache:
+        return cache
+    return await create_user_permission_cache(user.id, user.roles, redis, role_crud)
 
 
 VerifyPermissionDep = Annotated[

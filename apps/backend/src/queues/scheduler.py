@@ -128,7 +128,7 @@ class Scheduler(_Scheduler):
         super().close()
         self._store.clear()
 
-    schedule = property(get_schedule, set_schedule)  # type: ignore
+    schedule = property(get_schedule, set_schedule)
 
     def tick(self, *args: Any, **kwargs: Any) -> float:
         """

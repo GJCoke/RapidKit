@@ -110,7 +110,10 @@ def pool_grow(hostname: str, n: int = 1) -> None:
         AppException: 操作失败时抛出。
     """
     try:
-        celery_app.control.pool_grow(n, destination=[hostname])
+        reply = celery_app.control.pool_grow(n, destination=[hostname], reply=True, timeout=5)
+        _check_pool_reply(reply, hostname, "pool_grow")
+    except AppException:
+        raise
     except Exception:
         logger.exception("Failed to pool_grow worker: {hostname}", hostname=hostname)
         raise AppException(StatusCode.WORKER_CONTROL_FAILED)
@@ -128,9 +131,37 @@ def pool_shrink(hostname: str, n: int = 1) -> None:
         AppException: 操作失败时抛出。
     """
     try:
-        celery_app.control.pool_shrink(n, destination=[hostname])
+        reply = celery_app.control.pool_shrink(n, destination=[hostname], reply=True, timeout=5)
+        _check_pool_reply(reply, hostname, "pool_shrink")
+    except AppException:
+        raise
     except Exception:
         logger.exception("Failed to pool_shrink worker: {hostname}", hostname=hostname)
+        raise AppException(StatusCode.WORKER_CONTROL_FAILED)
+
+
+def _check_pool_reply(reply: list | None, hostname: str, action: str) -> None:
+    """
+    检查 pool_grow/pool_shrink 的响应。
+
+    Celery control 命令在 reply=True 时返回 [{hostname: result}]。
+    如果 worker 不支持（如 solo pool）或未响应，会返回空列表或 error。
+
+    Args:
+        reply: Celery control 命令的响应。
+        hostname: Worker 主机名。
+        action: 操作名称（用于日志）。
+
+    Raises:
+        AppException: Worker 未响应或返回错误时抛出。
+    """
+    if not reply:
+        logger.warning("No reply from worker %s for %s, worker may not support pool resize", hostname, action)
+        raise AppException(StatusCode.WORKER_CONTROL_FAILED)
+
+    result = reply[0].get(hostname, {})
+    if isinstance(result, dict) and "error" in result:
+        logger.warning("Worker %s rejected %s: %s", hostname, action, result["error"])
         raise AppException(StatusCode.WORKER_CONTROL_FAILED)
 
 

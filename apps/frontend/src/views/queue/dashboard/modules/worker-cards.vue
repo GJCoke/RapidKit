@@ -2,6 +2,7 @@
   import { NPopconfirm } from "naive-ui"
   import { workerStatusRecord } from "@/constants/business"
   import { $t } from "@/locales"
+  import { useAuth } from "@/hooks/business/auth"
 
   defineOptions({
     name: "WorkerCards",
@@ -19,6 +20,7 @@
 
   const props = defineProps<Props>()
   const emit = defineEmits<Emits>()
+  const { hasAuth } = useAuth()
 
   function handleClick(worker: Api.Worker.WorkerInfo) {
     emit("select", worker)
@@ -46,7 +48,10 @@
                 <NTag :type="worker.status === '1' ? 'success' : 'warning'" size="small">
                   {{ $t(workerStatusRecord[worker.status]) }}
                 </NTag>
-                <NPopconfirm @positive-click.stop="emit('shutdown', worker)">
+                <NPopconfirm
+                  v-if="hasAuth('queue_dashboard:workerControl')"
+                  @positive-click.stop="emit('shutdown', worker)"
+                >
                   <template #trigger>
                     <NButton size="tiny" type="error" quaternary :disabled="worker.status !== '1'" @click.stop>
                       <template #icon>

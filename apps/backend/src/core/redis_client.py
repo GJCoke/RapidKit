@@ -35,7 +35,7 @@ class AsyncRedisClient(Redis):
         """
         if isinstance(value, BaseModel):
             value = value.model_dump_json()
-        return await super().set(name, value, *args, **kwargs)  # ty: ignore[invalid-await]
+        return await super().set(name, value, *args, **kwargs)
 
     async def get(self, name: str, *, response_model: type[T] | None = None) -> Any:
         """
@@ -48,7 +48,7 @@ class AsyncRedisClient(Redis):
         Returns:
             指定 response_model 时返回模型实例或 None；否则返回原始字符串或 None。
         """
-        data = await super().get(name)  # ty: ignore[invalid-await]
+        data = await super().get(name)
         if data is None or response_model is None:
             return data
         return response_model.model_validate_json(data)

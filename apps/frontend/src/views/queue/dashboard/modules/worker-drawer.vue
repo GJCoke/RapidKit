@@ -2,6 +2,7 @@
   import { computed, ref, watch } from "vue"
   import { workerStatusRecord } from "@/constants/business"
   import { $t } from "@/locales"
+  import { useAuth } from "@/hooks/business/auth"
   import {
     fetchPingWorker,
     fetchPoolGrow,
@@ -15,6 +16,8 @@
   defineOptions({
     name: "WorkerDrawer",
   })
+
+  const { hasAuth } = useAuth()
 
   interface Props {
     worker: Api.Worker.WorkerInfo | null
@@ -219,7 +222,11 @@
           </NTabPane>
 
           <!-- 控制面板 Tab -->
-          <NTabPane name="control" :tab="$t('page.manage.worker.control.poolControl')">
+          <NTabPane
+            v-if="hasAuth('queue_dashboard:workerControl')"
+            name="control"
+            :tab="$t('page.manage.worker.control.poolControl')"
+          >
             <!-- Ping -->
             <div class="mb-16px">
               <NButton :loading="pingLoading" :disabled="!isOnline" @click="handlePing">

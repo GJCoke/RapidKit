@@ -30,7 +30,7 @@ class RouterCRUD(BaseSQLModelCRUD[InterfaceRouter, FastAPIRouterCreate, FastAPIR
         session = session or self.session
 
         statement = delete(self.model)
-        await session.exec(statement)  # type: ignore
+        await session.exec(statement)
         await self.commit()
 
     async def create_app_routers(

@@ -173,7 +173,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             ),
         ).filter(self._time_filter(days))
 
-        result = (await session.exec(statement)).one()  # type: ignore
+        result = (await session.exec(statement)).one()
         total = result.total or 0
         success = result.success or 0
         return TaskStatsSummary(
@@ -202,7 +202,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             .order_by(bucket)
         )
 
-        results = (await session.exec(statement)).all()  # type: ignore
+        results = (await session.exec(statement)).all()
         return [
             TaskStatsTimeline(
                 time_bucket=row.time_bucket.strftime("%Y-%m-%d %H:%M") if row.time_bucket else "",
@@ -235,7 +235,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             .limit(limit)
         )
 
-        results = (await session.exec(statement)).all()  # type: ignore
+        results = (await session.exec(statement)).all()  # ty: ignore[no-matching-overload]
         return [
             TaskStatsByName(
                 task_name=row.task_name,
@@ -265,7 +265,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             .order_by(func.count().desc())
         )
 
-        results = (await session.exec(statement)).all()  # type: ignore
+        results = (await session.exec(statement)).all()  # ty: ignore[no-matching-overload]
         return [
             TaskStatsByWorker(
                 worker_hostname=row.worker_hostname,

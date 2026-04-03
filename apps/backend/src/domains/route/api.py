@@ -26,16 +26,16 @@ router = APIRouter(
 )
 
 
-@router.get("/getConstantRoutes")
+@router.get("/constant")
 async def get_constant_routes_api(
-    user: UserDBDep,
     session: SessionDep,
 ) -> Response[list[MenuRouteResponse]]:
     """
-    获取常量路由（公共路由）。\f
+    获取常量路由（公共路由）。
+
+    该接口无需认证，因为常量路由（login、404 等）在用户登录前就需要加载。\f
 
     Args:
-        user: 当前认证用户（仅用于鉴权）。
         session: 数据库会话。
 
     Returns:
@@ -45,7 +45,7 @@ async def get_constant_routes_api(
     return Response(data=routes)
 
 
-@router.get("/getUserRoutes")
+@router.get("/user")
 async def get_user_routes_api(
     user: UserDBDep,
     session: SessionDep,
@@ -66,7 +66,7 @@ async def get_user_routes_api(
     return Response(data=result)
 
 
-@router.get("/isRouteExist")
+@router.get("/exist")
 async def is_route_exist(
     user: UserDBDep,
     session: SessionDep,

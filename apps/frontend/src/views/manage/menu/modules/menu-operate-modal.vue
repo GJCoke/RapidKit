@@ -1,6 +1,7 @@
 <script setup lang="tsx">
   import { computed, ref, watch } from "vue"
-  import type { SelectOption } from "naive-ui"
+  import type { SelectOption, SelectRenderLabel, SelectRenderTag } from "naive-ui"
+  import { NTag } from "naive-ui"
   import { enableStatusOptions, menuIconTypeOptions, menuTypeOptions } from "@/constants/business"
   import { fetchCreateMenu, fetchGetBackendRouters, fetchUpdateMenu } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
@@ -145,12 +146,54 @@
     }
   }
 
+  const methodColorMap: Record<string, string> = {
+    GET: "info",
+    POST: "success",
+    PUT: "warning",
+    DELETE: "error",
+    PATCH: "warning",
+  }
+
   const routerOptions = computed(() =>
     backendRouters.value.map((r) => ({
       label: `[${r.methods.join(",")}] ${r.path} — ${r.name}`,
       value: r.code,
+      methods: r.methods,
+      path: r.path,
+      name: r.name,
     })),
   )
+
+  const renderRouterLabel: SelectRenderLabel = (option) => {
+    const { methods, path, name } = option as SelectOption & { methods: string[]; path: string; name: string }
+    const method = methods?.[0] || "GET"
+    const color = methodColorMap[method] || "default"
+    return (
+      <div class="flex items-center gap-8px">
+        <NTag
+          size="small"
+          type={color as NaiveUI.ThemeColor}
+          style="font-family: monospace; min-width: 60px; justify-content: center"
+        >
+          {methods?.join(",")}
+        </NTag>
+        <span>
+          {path} — <span style="color: var(--text-color-3)">{name}</span>
+        </span>
+      </div>
+    )
+  }
+
+  const renderRouterTag: SelectRenderTag = ({ option, handleClose }) => {
+    const { methods, path } = option as SelectOption & { methods: string[]; path: string }
+    const method = methods?.[0] || "GET"
+    const color = methodColorMap[method] || "default"
+    return (
+      <NTag size="small" type={color as NaiveUI.ThemeColor} closable onClose={handleClose}>
+        {methods?.join(",")} {path}
+      </NTag>
+    )
+  }
 
   const showLayout = computed(() => model.value.parentId === 0)
 
@@ -468,6 +511,8 @@
               multiple
               filterable
               :options="routerOptions"
+              :render-label="renderRouterLabel"
+              :render-tag="renderRouterTag"
               :placeholder="$t('page.manage.menu.form.interface')"
             />
           </NFormItemGi>

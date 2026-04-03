@@ -7,6 +7,8 @@ Date   : 2026-04-02
 
 from __future__ import annotations
 
+from pydantic import Field
+
 from src.common.schemas import BaseModel
 
 
@@ -14,7 +16,7 @@ class RouteMeta(BaseModel):
     """路由元信息，对应前端 ElegantConstRoute 的 meta 字段。"""
 
     title: str
-    i18n_key: str | None = None
+    i18n_key: str | None = Field(None, serialization_alias="i18nKey")
     icon: str | None = None
     local_icon: str | None = None
     order: int = 0

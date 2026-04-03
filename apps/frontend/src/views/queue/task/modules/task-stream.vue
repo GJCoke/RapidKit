@@ -8,6 +8,7 @@
   import { translateOptions } from "@/utils/common"
   import { taskStatusOptions } from "@/constants/business"
   import { $t } from "@/locales"
+  import { useAuth } from "@/hooks/business/auth"
 
   defineOptions({
     name: "TaskStream",
@@ -18,6 +19,7 @@
   }
 
   const emit = defineEmits<Emits>()
+  const { hasAuth } = useAuth()
   const appStore = useAppStore()
 
   const searchParams: Api.Worker.TaskSearchParams = reactive({
@@ -102,7 +104,7 @@
             <NButton type="primary" ghost size="small" onClick={() => emit("select", row.taskId)}>
               {$t("common.detail")}
             </NButton>
-            {(row.status === "1" || row.status === "2") && (
+            {hasAuth("queue_task:revoke") && (row.status === "1" || row.status === "2") && (
               <NPopconfirm onPositiveClick={() => handleRevoke(row.taskId)}>
                 {{
                   default: () => $t("page.manage.worker.revokeConfirm"),

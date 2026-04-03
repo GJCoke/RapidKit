@@ -7,9 +7,7 @@
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
   import { useAuth } from "@/hooks/business/auth"
-  import MenuAuthModal from "./menu-auth-modal.vue"
-  import ButtonAuthModal from "./button-auth-modal.vue"
-  import InterfaceAuthModal from "./interface-auth-modal.vue"
+  import PermissionModal from "./permission-modal.vue"
 
   defineOptions({
     name: "RoleOperateDrawer",
@@ -36,9 +34,7 @@
 
   const { formRef, validate, restoreValidation } = useNaiveForm()
   const { defaultRequiredRule } = useFormRules()
-  const { bool: menuAuthVisible, setTrue: openMenuAuthModal } = useBoolean()
-  const { bool: buttonAuthVisible, setTrue: openButtonAuthModal } = useBoolean()
-  const { bool: interfaceAuthVisible, setTrue: openInterfaceAuthModal } = useBoolean()
+  const { bool: permissionVisible, setTrue: openPermissionModal } = useBoolean()
   const { hasAuth } = useAuth()
 
   const title = computed(() => {
@@ -130,18 +126,10 @@
         </NFormItem>
       </NForm>
       <NSpace v-if="isEdit">
-        <NButton v-if="hasAuth('manage_role:menuAuth')" @click="openMenuAuthModal">
-          {{ $t("page.manage.role.menuAuth") }}
+        <NButton v-if="hasAuth('manage_role:permission')" @click="openPermissionModal">
+          {{ $t("page.manage.role.permissionConfig") }}
         </NButton>
-        <MenuAuthModal v-model:visible="menuAuthVisible" :role-id="roleId" />
-        <NButton v-if="hasAuth('manage_role:buttonAuth')" @click="openButtonAuthModal">
-          {{ $t("page.manage.role.buttonAuth") }}
-        </NButton>
-        <ButtonAuthModal v-model:visible="buttonAuthVisible" :role-id="roleId" />
-        <NButton v-if="hasAuth('manage_role:interfaceAuth')" @click="openInterfaceAuthModal">
-          {{ $t("page.manage.role.interfaceAuth") }}
-        </NButton>
-        <InterfaceAuthModal v-model:visible="interfaceAuthVisible" :role-id="roleId" />
+        <PermissionModal v-model:visible="permissionVisible" :role-id="roleId" />
       </NSpace>
       <template #footer>
         <NSpace :size="16">

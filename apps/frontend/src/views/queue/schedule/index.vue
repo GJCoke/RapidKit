@@ -5,6 +5,7 @@
   import { useAppStore } from "@/store/modules/app"
   import { defaultTransform, useNaivePaginatedTable, useTableOperate } from "@/hooks/common/table"
   import { $t } from "@/locales"
+  import { useAuth } from "@/hooks/business/auth"
   import ScheduleOperateDrawer from "./modules/schedule-operate-drawer.vue"
   import ScheduleSearch from "./modules/schedule-search.vue"
 
@@ -13,6 +14,7 @@
   })
 
   const appStore = useAppStore()
+  const { hasAuth } = useAuth()
 
   const searchParams: Api.Worker.PeriodicTaskSearchParams = reactive({
     page: 1,
@@ -90,7 +92,13 @@
         title: $t("page.manage.worker.schedule.enabled"),
         align: "center",
         width: 100,
-        render: (row) => <NSwitch value={row.enabled} onUpdateValue={() => handleToggle(row.id)} />,
+        render: (row) => (
+          <NSwitch
+            value={row.enabled}
+            disabled={!hasAuth("queue_schedule:edit")}
+            onUpdateValue={() => handleToggle(row.id)}
+          />
+        ),
       },
       {
         key: "operate",
@@ -99,19 +107,23 @@
         width: 130,
         render: (row) => (
           <div class="flex-center gap-8px">
-            <NButton type="primary" ghost size="small" onClick={() => edit(row.id)}>
-              {$t("common.edit")}
-            </NButton>
-            <NPopconfirm onPositiveClick={() => handleDelete(row.id)}>
-              {{
-                default: () => $t("page.manage.worker.schedule.deleteConfirm"),
-                trigger: () => (
-                  <NButton type="error" ghost size="small">
-                    {$t("common.delete")}
-                  </NButton>
-                ),
-              }}
-            </NPopconfirm>
+            {hasAuth("queue_schedule:edit") && (
+              <NButton type="primary" ghost size="small" onClick={() => edit(row.id)}>
+                {$t("common.edit")}
+              </NButton>
+            )}
+            {hasAuth("queue_schedule:delete") && (
+              <NPopconfirm onPositiveClick={() => handleDelete(row.id)}>
+                {{
+                  default: () => $t("page.manage.worker.schedule.deleteConfirm"),
+                  trigger: () => (
+                    <NButton type="error" ghost size="small">
+                      {$t("common.delete")}
+                    </NButton>
+                  ),
+                }}
+              </NPopconfirm>
+            )}
           </div>
         ),
       },
@@ -155,8 +167,8 @@
       class="card-wrapper sm:flex-1-hidden"
     >
       <template #header-extra>
-        <TableHeaderOperation v-model:columns="columnChecks" :loading="loading" @add="handleAdd" @refresh="getData">
-          <NButton size="small" ghost type="primary" @click="handleAdd">
+        <TableHeaderOperation v-model:columns="columnChecks" :loading="loading" @refresh="getData">
+          <NButton v-if="hasAuth('queue_schedule:add')" size="small" ghost type="primary" @click="handleAdd">
             <template #icon>
               <icon-ic-round-plus class="text-icon" />
             </template>
