@@ -1,0 +1,13 @@
+.git
+.venv
+**/node_modules
+**/dist
+**/.turbo
+**/logs
+**/*.log
+.claude
+docs
+*.md
+.env
+.env.*
+apps/desktop
