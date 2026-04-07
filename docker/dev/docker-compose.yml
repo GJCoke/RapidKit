@@ -1,0 +1,63 @@
+name: monorepo-dev
+
+services:
+  postgresql:
+    image: bitnami/postgresql
+    container_name: monorepo-postgresql
+    ports:
+      - "35432:5432"
+    environment:
+      - POSTGRESQL_USERNAME=root
+      - POSTGRESQL_PASSWORD=123456
+      - POSTGRESQL_DATABASE=client
+    volumes:
+      - pg-data:/bitnami/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d client"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: monorepo-redis
+    ports:
+      - "36379:6379"
+    command: redis-server --requirepass 123456
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "123456", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: monorepo-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=root
+      - MINIO_ROOT_PASSWORD=12345678
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pg-data:
+  redis-data:
+  minio-data:
+
+networks:
+  default:
+    name: monorepo-network
