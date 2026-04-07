@@ -4,15 +4,15 @@
 // Read more: https://github.com/soybeanjs/elegant-router
 
 import type { RouteComponent } from "vue-router";
-import type { LastLevelRouteKey, RouteLayout } from "@elegant-router/types"
+import type { LastLevelRouteKey, RouteLayout } from "@elegant-router/types";
 
-import BaseLayout from "@/layouts/base-layout/index.vue"
-import BlankLayout from "@/layouts/blank-layout/index.vue"
+import BaseLayout from "@/layouts/base-layout/index.vue";
+import BlankLayout from "@/layouts/blank-layout/index.vue";
 
 export const layouts: Record<RouteLayout, RouteComponent | (() => Promise<RouteComponent>)> = {
   base: BaseLayout,
   blank: BlankLayout,
-}
+};
 
 export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<RouteComponent>)> = {
   403: () => import("@/views/_builtin/403/index.vue"),
@@ -32,4 +32,4 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   socketio_chat: () => import("@/views/socketio/chat/index.vue"),
   socketio_debug: () => import("@/views/socketio/debug/index.vue"),
   socketio_instrument: () => import("@/views/socketio/instrument/index.vue"),
-}
+};

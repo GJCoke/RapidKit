@@ -31,6 +31,6 @@
     "@monorepo-example/utils": "workspace:*"
   },
   "devDependencies": {
-    "@vueuse/core": "^14.0.0"
+    "@vueuse/core": "^14.2.1"
   }
 }

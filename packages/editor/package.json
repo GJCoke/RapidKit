@@ -27,7 +27,7 @@
     "dist"
   ],
   "dependencies": {
-    "monaco-editor": "^0.52.2"
+    "monaco-editor": "^0.55.1"
   },
   "peerDependencies": {
     "vue": ">=3.0.0"

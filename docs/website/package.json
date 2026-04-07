@@ -10,6 +10,6 @@
   },
   "devDependencies": {
     "vitepress": "2.0.0-alpha.15",
-    "vitepress-plugin-tabs": "^0.7.3"
+    "vitepress-plugin-tabs": "^0.8.0"
   }
 }

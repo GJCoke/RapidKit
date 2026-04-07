@@ -29,12 +29,12 @@
     "dist"
   ],
   "dependencies": {
-    "axios": "^1.13.2",
+    "@monorepo-example/utils": "workspace:*",
+    "axios": "^1.14.0",
     "axios-retry": "^4.5.0",
-    "qs": "^6.14.0",
-    "@monorepo-example/utils": "workspace:*"
+    "qs": "^6.15.0"
   },
   "devDependencies": {
-    "@types/qs": "^6.14.0"
+    "@types/qs": "^6.15.0"
   }
 }

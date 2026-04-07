@@ -270,9 +270,9 @@ async def create_menus(session: AsyncSession) -> None:
         icon="ic:round-manage-accounts",
         i18n_key="route.manage_user",
         buttons=[
-            Button(code="manage_user:add", desc="新增用户"),
-            Button(code="manage_user:edit", desc="编辑用户"),
-            Button(code="manage_user:delete", desc="删除用户"),
+            Button(code="manage_user:add", desc="新增用户").model_dump(),
+            Button(code="manage_user:edit", desc="编辑用户").model_dump(),
+            Button(code="manage_user:delete", desc="删除用户").model_dump(),
         ],
         interfaces=[
             "GET:/api/v1/users",
@@ -297,10 +297,10 @@ async def create_menus(session: AsyncSession) -> None:
         icon="carbon:user-role",
         i18n_key="route.manage_role",
         buttons=[
-            Button(code="manage_role:add", desc="新增角色"),
-            Button(code="manage_role:edit", desc="编辑角色"),
-            Button(code="manage_role:delete", desc="删除角色"),
-            Button(code="manage_role:permission", desc="权限配置"),
+            Button(code="manage_role:add", desc="新增角色").model_dump(),
+            Button(code="manage_role:edit", desc="编辑角色").model_dump(),
+            Button(code="manage_role:delete", desc="删除角色").model_dump(),
+            Button(code="manage_role:permission", desc="权限配置").model_dump(),
         ],
         interfaces=[
             "GET:/api/v1/roles",
@@ -327,9 +327,9 @@ async def create_menus(session: AsyncSession) -> None:
         icon="material-symbols:menu-book",
         i18n_key="route.manage_menu",
         buttons=[
-            Button(code="manage_menu:add", desc="新增菜单"),
-            Button(code="manage_menu:edit", desc="编辑菜单"),
-            Button(code="manage_menu:delete", desc="删除菜单"),
+            Button(code="manage_menu:add", desc="新增菜单").model_dump(),
+            Button(code="manage_menu:edit", desc="编辑菜单").model_dump(),
+            Button(code="manage_menu:delete", desc="删除菜单").model_dump(),
         ],
         interfaces=[
             "GET:/api/v1/manage/menus",
@@ -430,7 +430,7 @@ async def create_menus(session: AsyncSession) -> None:
         icon_type=MenuIconType.ICONIFY,
         i18n_key="route.queue_dashboard",
         buttons=[
-            Button(code="queue_dashboard:workerControl", desc="Worker 控制"),
+            Button(code="queue_dashboard:workerControl", desc="Worker 控制").model_dump(),
         ],
         interfaces=[
             "GET:/api/v1/workers",
@@ -461,9 +461,9 @@ async def create_menus(session: AsyncSession) -> None:
         icon_type=MenuIconType.ICONIFY,
         i18n_key="route.queue_schedule",
         buttons=[
-            Button(code="queue_schedule:add", desc="新增定时任务"),
-            Button(code="queue_schedule:edit", desc="编辑定时任务"),
-            Button(code="queue_schedule:delete", desc="删除定时任务"),
+            Button(code="queue_schedule:add", desc="新增定时任务").model_dump(),
+            Button(code="queue_schedule:edit", desc="编辑定时任务").model_dump(),
+            Button(code="queue_schedule:delete", desc="删除定时任务").model_dump(),
         ],
         interfaces=[
             "GET:/api/v1/schedules",
@@ -489,8 +489,8 @@ async def create_menus(session: AsyncSession) -> None:
         icon_type=MenuIconType.ICONIFY,
         i18n_key="route.queue_task",
         buttons=[
-            Button(code="queue_task:trigger", desc="手动触发任务"),
-            Button(code="queue_task:revoke", desc="撤销任务"),
+            Button(code="queue_task:trigger", desc="手动触发任务").model_dump(),
+            Button(code="queue_task:revoke", desc="撤销任务").model_dump(),
         ],
         interfaces=[
             "GET:/api/v1/tasks",
@@ -518,10 +518,10 @@ async def create_menus(session: AsyncSession) -> None:
         icon_type=MenuIconType.ICONIFY,
         i18n_key="route.script",
         buttons=[
-            Button(code="script:add", desc="新增脚本"),
-            Button(code="script:edit", desc="编辑脚本"),
-            Button(code="script:delete", desc="删除脚本"),
-            Button(code="script:execute", desc="执行脚本"),
+            Button(code="script:add", desc="新增脚本").model_dump(),
+            Button(code="script:edit", desc="编辑脚本").model_dump(),
+            Button(code="script:delete", desc="删除脚本").model_dump(),
+            Button(code="script:execute", desc="执行脚本").model_dump(),
         ],
         interfaces=[
             "GET:/api/v1/scripts",

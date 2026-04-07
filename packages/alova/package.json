@@ -29,8 +29,8 @@
     "dist"
   ],
   "dependencies": {
-    "@alova/mock": "2.0.17",
+    "@alova/mock": "2.0.20",
     "@monorepo-example/utils": "workspace:*",
-    "alova": "3.3.4"
+    "alova": "3.5.1"
   }
 }
