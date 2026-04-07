@@ -6,7 +6,6 @@
     "types": ["vite/client", "node", "unplugin-icons/types/vue", "naive-ui/volar"],
     "jsx": "preserve", // Vue JSX 支持
     "jsxImportSource": "vue",
-    "baseUrl": ".",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
