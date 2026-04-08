@@ -1,30 +1,34 @@
 ---
-# https://vitepress.dev/reference/default-theme-home-page
 layout: home
 
 hero:
   image: "/logo.svg"
-  name: "Monorepo"
-  text: "示例工程"
-  tagline: TypeScript & Python Monorepo 示例工程
+  name: "Monorepo Example"
+  text: "全栈 Monorepo 项目模板"
+  tagline: Vue 3 + FastAPI, TypeScript + Python, 前后端统一管理
   actions:
     - theme: brand
-      text: 开始
+      text: 快速开始
       link: /guide/quickstart
     - theme: alt
-      text: 介绍
-      link: /guide/
-    - theme: alt
-      text: 在 GitHub 上查看
+      text: GitHub
       link: https://github.com/GJCoke/monorepo-example
 
 features:
-  - title: 统一代码库
-    details: 在单一仓库中管理多个包和服务，提升协作效率和代码一致性。
-  - title: TypeScript 与 Python 支持
-    details: 同时支持 TypeScript 和 Python，方便跨语言开发与互操作。
-  - title: 集中依赖管理
-    details: 跨包共享依赖，减少重复，轻松维护版本一致性。
-  - title: 自动化 CI/CD
-    details: 为所有包提供自动化测试、代码检查和部署流水线。
+  - title: Monorepo 架构
+    details: pnpm workspace + Turborepo + uv，前后端、共享包、文档站统一管理，依赖拓扑自动编排。
+  - title: 全栈技术栈
+    details: Vue 3 + FastAPI，TypeScript + Python 双语言协同，共享类型定义，OpenAPI 自动生成前端类型。
+  - title: RBAC 权限体系
+    details: 三级权限控制（路由/接口/按钮），动态菜单，JWT 双 Token 认证，RSA 加密传输。
+  - title: 实时通信
+    details: Socket.IO 双向通信，多命名空间隔离，Redis 适配器支持多实例广播，JWT 连接认证。
+  - title: 任务队列
+    details: Celery 异步任务 + Beat 定时调度 + Worker 实时监控，Redis Stream 事件消费，WebSocket 状态推送。
+  - title: 容器化部署
+    details: Docker 多阶段构建，开发/生产双模式 Compose，dock CLI 一键管理，支持 Docker 和 Podman。
+  - title: 开发体验
+    details: ESLint + Ruff + Prettier 代码格式化，Husky + lint-staged 提交检查，Changesets 版本管理。
+  - title: 国际化
+    details: 前端 Vue I18n + 后端 Babel，类型安全的 i18n key 自动生成，中间件自动语言检测。
 ---
