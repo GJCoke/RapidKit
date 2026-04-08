@@ -1,11 +1,11 @@
 <script setup lang="ts">
   import { computed, ref, watch } from "vue"
-  import { jsonClone } from "@monorepo-example/utils"
-  import JSEncrypt from "jsencrypt"
+  import { jsonClone, rsaEncrypt } from "@monorepo-example/utils"
   import { enableStatusOptions } from "@/constants/business"
   import { fetchCreateUser, fetchGetAllRoles, fetchGetPublicKey, fetchUpdateUser } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
+  import { useAuthStore } from "@/store/modules/auth"
 
   defineOptions({
     name: "UserOperateDrawer",
@@ -32,6 +32,7 @@
 
   const { formRef, validate, restoreValidation } = useNaiveForm()
   const { defaultRequiredRule } = useFormRules()
+  const authStore = useAuthStore()
 
   const title = computed(() => {
     const titles: Record<NaiveUI.TableOperateType, string> = {
@@ -112,9 +113,7 @@
 
   async function encryptPassword(password: string): Promise<string> {
     const { data: publicKey } = await fetchGetPublicKey()
-    const encryptor = new JSEncrypt()
-    encryptor.setPublicKey(publicKey!)
-    return encryptor.encrypt(password) || password
+    return rsaEncrypt(publicKey!, password)
   }
 
   async function handleSubmit() {
@@ -171,18 +170,20 @@
         <NFormItem :label="$t('page.manage.user.username')" path="username">
           <NInput v-model:value="model.username" :placeholder="$t('page.manage.user.form.username')" />
         </NFormItem>
-        <NFormItem label="Name" path="name">
-          <NInput v-model:value="model.name" placeholder="Please enter name" />
+        <NFormItem :label="$t('page.manage.user.name')" path="name">
+          <NInput v-model:value="model.name" :placeholder="$t('page.manage.user.form.name')" />
         </NFormItem>
-        <NFormItem label="Email" path="email">
-          <NInput v-model:value="model.email" placeholder="Please enter email" />
+        <NFormItem :label="$t('page.manage.user.userEmail')" path="email">
+          <NInput v-model:value="model.email" :placeholder="$t('page.manage.user.form.userEmail')" />
         </NFormItem>
-        <NFormItem label="Password" path="password" :rule="passwordRules">
+        <NFormItem :label="$t('page.manage.user.password')" path="password" :rule="passwordRules">
           <NInput
             v-model:value="model.password"
             type="password"
             show-password-on="click"
-            :placeholder="operateType === 'add' ? 'Please enter password' : 'Leave empty to keep unchanged'"
+            :placeholder="
+              operateType === 'add' ? $t('page.manage.user.form.password') : $t('page.manage.user.form.passwordEdit')
+            "
           />
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.userStatus')" path="status">
@@ -198,7 +199,7 @@
             :placeholder="$t('page.manage.user.form.userRole')"
           />
         </NFormItem>
-        <NFormItem label="Admin">
+        <NFormItem v-if="authStore.userInfo.isAdmin" :label="$t('page.manage.user.isAdmin')">
           <NSwitch v-model:value="model.isAdmin" />
         </NFormItem>
       </NForm>

@@ -61,8 +61,8 @@ RSA_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n..."
 
 完整的认证流程如下：
 
-1. 用户提交登录请求，密码经 RSA 公钥加密传输
-2. 服务端使用 RSA 私钥解密密码
+1. 用户提交登录请求，密码经 RSA-OAEP (SHA-256) 公钥加密传输
+2. 服务端使用 RSA 私钥（OAEP padding）解密密码
 3. 使用 bcrypt 校验密码是否正确
 4. 校验通过后签发 Access Token + Refresh Token
 5. 前端在后续请求的 `Authorization: Bearer <access_token>` 头中携带 Access Token
@@ -171,7 +171,7 @@ async def delete_user(user: VerifyPermissionDep, user_id: UUID):
 登录过程分为密码加密、接口调用、Token 存储和用户信息获取四个步骤：
 
 1. **获取 RSA 公钥**：调用 `GET /api/v1/auth/keys/public` 获取服务端 RSA 公钥
-2. **RSA 加密密码**：使用 `jsencrypt` 库对用户密码进行 RSA 公钥加密
+2. **RSA-OAEP 加密密码**：使用 Web Crypto API 对用户密码进行 RSA-OAEP (SHA-256) 加密
 3. **提交登录请求**：调用 `POST /api/v1/auth/login`，传递用户名和加密后的密码
 4. **存储 Token**：将返回的 `accessToken` 和 `refreshToken` 存入 localStorage
 5. **获取用户信息**：调用 `GET /api/v1/auth/user/info` 获取用户详细信息
@@ -184,12 +184,10 @@ async function login(username: string, password: string, redirect = true) {
   // 1. 获取 RSA 公钥
   const { data: publicKey } = await fetchGetPublicKey()
 
-  // 2. RSA 加密密码
-  const encryptor = new JSEncrypt()
-  encryptor.setPublicKey(publicKey!)
+  // 2. RSA-OAEP (SHA-256) 加密密码
   const { data: loginToken, error } = await fetchLogin({
     username,
-    password: encryptor.encrypt(password) || password,
+    password: await rsaEncrypt(publicKey!, password),
   })
 
   // 3. 存储 Token 并获取用户信息

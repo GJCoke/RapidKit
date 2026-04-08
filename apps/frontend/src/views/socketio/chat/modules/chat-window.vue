@@ -20,7 +20,7 @@
 
   const { socket, isConnected, connect } = useSocket()
 
-  const url = new URL(import.meta.env.VITE_SERVICE_BASE_URL)
+  const url = new URL(import.meta.env.VITE_SERVICE_BASE_URL, window.location.origin)
 
   const initSocket = () => {
     const instance = connect({

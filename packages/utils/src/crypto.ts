@@ -25,3 +25,24 @@ export class Crypto<T extends object> {
     }
   }
 }
+
+export async function rsaEncrypt(publicKeyPem: string, plaintext: string): Promise<string> {
+  const pemBody = publicKeyPem
+    .replace(/-----BEGIN PUBLIC KEY-----/, "")
+    .replace(/-----END PUBLIC KEY-----/, "")
+    .replace(/\s/g, "")
+  const binaryDer = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0))
+
+  const publicKey = await crypto.subtle.importKey(
+    "spki",
+    binaryDer.buffer,
+    { name: "RSA-OAEP", hash: "SHA-256" },
+    false,
+    ["encrypt"],
+  )
+
+  const encoded = new TextEncoder().encode(plaintext)
+  const encrypted = await crypto.subtle.encrypt("RSA-OAEP", publicKey, encoded)
+
+  return btoa(String.fromCharCode(...new Uint8Array(encrypted)))
+}

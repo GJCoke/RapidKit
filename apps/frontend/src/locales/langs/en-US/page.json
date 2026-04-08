@@ -167,7 +167,10 @@
       "addUser": "Add User",
       "editUser": "Edit User",
       "form": {
+        "name": "Please enter name",
         "nickName": "Please enter nick name",
+        "password": "Please enter password",
+        "passwordEdit": "Leave empty to keep unchanged",
         "userEmail": "Please enter email",
         "userGender": "Please select gender",
         "userPhone": "Please enter phone number",
@@ -179,7 +182,10 @@
         "female": "Female",
         "male": "Male"
       },
+      "isAdmin": "Admin",
+      "name": "Name",
       "nickName": "Nick Name",
+      "password": "Password",
       "title": "User List",
       "userEmail": "Email",
       "userGender": "Gender",

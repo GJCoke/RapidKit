@@ -1,7 +1,8 @@
 # 技术栈概览
 
 ::: info
-本项目前端基于 [Soybean Admin](https://github.com/soybeanjs/soybean-admin) 开发。基础功能和约定请参考 [Soybean Admin 文档](https://docs.soybeanjs.cn/zh/)。
+本项目前端基于 [Soybean Admin](https://github.com/soybeanjs/soybean-admin)
+开发。基础功能和约定请参考 [Soybean Admin 文档](https://docs.soybeanjs.cn/zh/)。
 :::
 
 ## 核心技术栈
@@ -121,13 +122,13 @@ declare global {
 
 ## 其他关键依赖
 
-| 依赖                 | 说明                               |
-| -------------------- | ---------------------------------- |
-| `jsencrypt`          | RSA 加密，用于登录密码加密传输     |
-| `nprogress`          | 页面加载进度条                     |
-| `dayjs`              | 轻量日期处理库                     |
-| `socket.io-client`   | WebSocket 客户端，用于实时数据推送 |
-| `simplebar-vue`      | 自定义滚动条组件                   |
-| `vue-draggable-plus` | 拖拽排序组件                       |
-| `clipboard`          | 剪贴板操作                         |
-| `tailwind-merge`     | Tailwind CSS 类名合并工具          |
+| 依赖                 | 说明                                          |
+| -------------------- | --------------------------------------------- |
+| Web Crypto API       | RSA-OAEP (SHA-256) 加密，用于登录密码加密传输 |
+| `nprogress`          | 页面加载进度条                                |
+| `dayjs`              | 轻量日期处理库                                |
+| `socket.io-client`   | WebSocket 客户端，用于实时数据推送            |
+| `simplebar-vue`      | 自定义滚动条组件                              |
+| `vue-draggable-plus` | 拖拽排序组件                                  |
+| `clipboard`          | 剪贴板操作                                    |
+| `tailwind-merge`     | Tailwind CSS 类名合并工具                     |

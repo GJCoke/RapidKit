@@ -19,7 +19,7 @@ from uuid import UUID
 
 import bcrypt
 from authlib.jose import jwt
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey, generate_private_key
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes, PublicKeyTypes
@@ -216,7 +216,11 @@ def encrypt_message(public_key: RSAPublicKey, message: str) -> str:
     """
     encrypted_message = public_key.encrypt(
         message.encode("utf-8"),
-        padding.PKCS1v15(),
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None,
+        ),
     )
 
     return base64.b64encode(encrypted_message).decode("utf-8")
@@ -235,7 +239,11 @@ def decrypt_message(private_key: RSAPrivateKey, encrypted_message: str) -> str:
     """
     decrypted_message = private_key.decrypt(
         base64.b64decode(encrypted_message),
-        padding.PKCS1v15(),
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None,
+        ),
     )
     return decrypted_message.decode("utf-8")
 

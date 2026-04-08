@@ -23,7 +23,7 @@
   const allEvents = ref<AggregatedEvent[]>([])
   const events = ref<EventLog[]>([])
 
-  const url = new URL(import.meta.env.VITE_SERVICE_BASE_URL)
+  const url = new URL(import.meta.env.VITE_SERVICE_BASE_URL, window.location.origin)
   const config = reactive({
     url: url.origin || window.location.origin,
     path: "/socket.io",

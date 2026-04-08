@@ -31,7 +31,7 @@ Auth Store 是最核心的状态模块，管理用户的认证生命周期。
   │
   ├── 1. fetchGetPublicKey() → 获取 RSA 公钥
   │
-  ├── 2. JSEncrypt 加密密码
+  ├── 2. Web Crypto API RSA-OAEP (SHA-256) 加密密码
   │
   ├── 3. fetchLogin({ username, password }) → 调用登录 API
   │

@@ -16,7 +16,7 @@
   defineOptions({ name: "SocketIoDebug" })
 
   const message = useMessage()
-  const url = new URL(import.meta.env.VITE_SERVICE_BASE_URL || window.location.origin)
+  const url = new URL(import.meta.env.VITE_SERVICE_BASE_URL || window.location.origin, window.location.origin)
 
   const config = reactive({
     url: url.origin,

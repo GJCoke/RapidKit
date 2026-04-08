@@ -77,17 +77,22 @@ async def get_user(
 @router.post("")
 async def create_user(
     body: UserManageCreate,
+    current_user: VerifyPermissionDep,
     user_crud: UserManageCrudDep,
 ) -> Response[UserManageResponse]:
     """创建新用户。\f
 
     Args:
         body: 用户创建数据（密码为 RSA 加密）。
+        current_user: 当前认证用户（用于权限隔离）。
         user_crud: 用户 CRUD 依赖。
 
     Returns:
         新创建的用户。
     """
+    if not current_user.is_admin:
+        body.is_admin = False
+
     hashed_password = process_password(body.password)
     create_data = body.model_dump()
     create_data["password"] = hashed_password
@@ -99,6 +104,7 @@ async def create_user(
 async def update_user(
     user_id: UUID,
     body: UserManageUpdate,
+    current_user: VerifyPermissionDep,
     user_crud: UserManageCrudDep,
     redis: RedisDep,
 ) -> Response[UserManageResponse]:
@@ -107,6 +113,7 @@ async def update_user(
     Args:
         user_id: 用户 ID。
         body: 用户更新数据（密码可选，RSA 加密）。
+        current_user: 当前认证用户（用于权限隔离）。
         user_crud: 用户 CRUD 依赖。
         redis: Redis 依赖，用于缓存失效。
 
@@ -114,6 +121,9 @@ async def update_user(
         更新后的用户。
     """
     update_data = body.model_dump(exclude_unset=True)
+
+    if not current_user.is_admin:
+        update_data.pop("is_admin", None)
 
     # 处理密码字段
     if "password" in update_data:

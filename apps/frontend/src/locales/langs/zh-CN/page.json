@@ -167,7 +167,10 @@
       "addUser": "新增用户",
       "editUser": "编辑用户",
       "form": {
+        "name": "请输入姓名",
         "nickName": "请输入昵称",
+        "password": "请输入密码",
+        "passwordEdit": "留空则不修改",
         "userEmail": "请输入邮箱",
         "userGender": "请选择性别",
         "userPhone": "请输入手机号",
@@ -179,7 +182,10 @@
         "female": "女",
         "male": "男"
       },
+      "isAdmin": "管理员",
+      "name": "姓名",
       "nickName": "昵称",
+      "password": "密码",
       "title": "用户列表",
       "userEmail": "邮箱",
       "userGender": "性别",

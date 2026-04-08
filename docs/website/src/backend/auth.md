@@ -61,8 +61,8 @@ RSA_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n..."
 
 完整的认证流程如下：
 
-1. 用户提交登录请求，密码经 RSA 公钥加密传输
-2. 服务端使用 RSA 私钥解密密码
+1. 用户提交登录请求，密码经 RSA-OAEP (SHA-256) 公钥加密传输
+2. 服务端使用 RSA 私钥（OAEP padding）解密密码
 3. 使用 bcrypt 校验密码是否正确
 4. 校验通过后签发 Access Token + Refresh Token
 5. 前端在后续请求的 `Authorization: Bearer <access_token>` 头中携带 Access Token

@@ -36,7 +36,7 @@
   const { socket, connect } = useSocket()
 
   function setupSocket() {
-    const baseUrl = import.meta.env.VITE_SERVICE_BASE_URL?.replace("/api/v1", "")
+    const baseUrl = new URL(import.meta.env.VITE_SERVICE_BASE_URL || "", window.location.origin).origin
 
     connect({
       url: baseUrl,

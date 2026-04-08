@@ -93,18 +93,6 @@
         },
       },
       {
-        key: "isAdmin",
-        title: "Admin",
-        align: "center",
-        width: 80,
-        render: (row) =>
-          row.isAdmin ? (
-            <NTag type="error" size="small">
-              Admin
-            </NTag>
-          ) : null,
-      },
-      {
         key: "operate",
         title: $t("common.operate"),
         align: "center",

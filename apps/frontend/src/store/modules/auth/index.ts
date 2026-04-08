@@ -2,7 +2,7 @@ import { computed, reactive, ref } from "vue"
 import { useRoute } from "vue-router"
 import { defineStore } from "pinia"
 import { useLoading } from "@monorepo-example/hooks"
-import JSEncrypt from "jsencrypt"
+import { rsaEncrypt } from "@monorepo-example/utils"
 import { fetchGetPublicKey, fetchGetUserInfo, fetchLogin } from "@/service/api"
 import { useRouterPush } from "@/hooks/common/router"
 import { localStg } from "@/utils/storage"
@@ -107,11 +107,9 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
     const { data: publicKey } = await fetchGetPublicKey()
 
-    const encryptor = new JSEncrypt()
-    encryptor.setPublicKey(publicKey!)
     const { data: loginToken, error } = await fetchLogin({
       username,
-      password: encryptor.encrypt(password) || password,
+      password: await rsaEncrypt(publicKey!, password),
     })
 
     if (!error) {
