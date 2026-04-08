@@ -161,3 +161,152 @@ async def get_profile(user: UserDBDep):
 async def delete_user(user: VerifyPermissionDep, user_id: UUID):
     ...
 ```
+
+## 前端认证流程
+
+前端认证基于 Pinia auth store 实现，完整覆盖登录、Token 管理、路由守卫和自动刷新。
+
+### 登录流程
+
+登录过程分为密码加密、接口调用、Token 存储和用户信息获取四个步骤：
+
+1. **获取 RSA 公钥**：调用 `GET /api/v1/auth/keys/public` 获取服务端 RSA 公钥
+2. **RSA 加密密码**：使用 `jsencrypt` 库对用户密码进行 RSA 公钥加密
+3. **提交登录请求**：调用 `POST /api/v1/auth/login`，传递用户名和加密后的密码
+4. **存储 Token**：将返回的 `accessToken` 和 `refreshToken` 存入 localStorage
+5. **获取用户信息**：调用 `GET /api/v1/auth/user/info` 获取用户详细信息
+6. **初始化权限路由**：根据用户角色初始化前端路由和菜单
+
+核心代码在 `src/store/modules/auth/index.ts`：
+
+```typescript
+async function login(username: string, password: string, redirect = true) {
+  // 1. 获取 RSA 公钥
+  const { data: publicKey } = await fetchGetPublicKey()
+
+  // 2. RSA 加密密码
+  const encryptor = new JSEncrypt()
+  encryptor.setPublicKey(publicKey!)
+  const { data: loginToken, error } = await fetchLogin({
+    username,
+    password: encryptor.encrypt(password) || password,
+  })
+
+  // 3. 存储 Token 并获取用户信息
+  if (!error) {
+    const pass = await loginByToken(loginToken)
+    if (pass) {
+      await redirectFromLogin(redirect)
+    }
+  }
+}
+```
+
+### Token 存储
+
+Token 存储在 localStorage 中，key 带有 `VITE_STORAGE_PREFIX` 前缀（默认 `SOY_`）以隔离不同项目的存储：
+
+| 存储 Key               | 说明                                 |
+| ---------------------- | ------------------------------------ |
+| `{prefix}token`        | Access Token，用于 API 请求认证      |
+| `{prefix}refreshToken` | Refresh Token，用于刷新 Access Token |
+
+Token 的读写通过 `localStg` 工具函数封装，位于 `src/store/modules/auth/shared.ts`：
+
+```typescript
+export function getToken() {
+  return localStg.get("token") || ""
+}
+
+export function clearAuthStorage() {
+  localStg.remove("token")
+  localStg.remove("refreshToken")
+}
+```
+
+### Auth Store 状态流
+
+auth store 管理完整的认证状态，核心流程为：
+
+```
+login()
+  → fetchLogin() 获取 Token
+    → loginByToken() 存储 Token
+      → getUserInfo() 获取用户信息
+        → routeStore.initAuthRoute() 初始化权限路由
+```
+
+store 对外暴露的关键状态：
+
+| 属性/方法        | 说明                                        |
+| ---------------- | ------------------------------------------- |
+| `token`          | 当前 Access Token                           |
+| `userInfo`       | 当前用户信息（id、name、roles、buttons 等） |
+| `isLogin`        | 是否已登录（基于 token 是否存在判断）       |
+| `isStaticSuper`  | 静态路由模式下是否为超级角色                |
+| `login()`        | 执行登录                                    |
+| `resetStore()`   | 重置认证状态（登出）                        |
+| `initUserInfo()` | 初始化用户信息（页面刷新时调用）            |
+
+### 路由守卫
+
+路由守卫定义在 `src/router/guard/route.ts`，在每次路由跳转前执行认证和权限校验：
+
+```
+路由跳转触发
+  → initRoute()          初始化路由（首次访问时）
+    → 检查 token 是否存在
+      → 无 token：跳转登录页（常量路由除外）
+      → 有 token：初始化权限路由 (initAuthRoute)
+  → 权限校验
+    → 已登录访问登录页：重定向到首页
+    → 无需登录的页面：直接放行
+    → 未登录：重定向到登录页（携带 redirect 参数）
+    → 已登录但无权限：跳转 403 页面
+    → 正常放行
+```
+
+关键逻辑：
+
+```typescript
+const isLogin = Boolean(localStg.get("token"))
+const needLogin = !to.meta.constant
+const routeRoles = to.meta.roles || []
+
+const hasRole = authStore.userInfo.roles.some((role) => routeRoles.includes(role))
+const hasAuth = authStore.isStaticSuper || !routeRoles.length || hasRole
+```
+
+:::info
+路由分为两类：**常量路由**（`meta.constant = true`）无需登录即可访问，如登录页、404 页面；**权限路由**需要登录且满足角色要求才可访问。
+:::
+
+### Token 自动刷新
+
+当 API 请求返回 Token 过期码（`9999`/`9998`/`3333`）时，前端自动使用 Refresh Token 换取新的 Token 对，并重试原请求：
+
+```typescript
+async function handleRefreshToken() {
+  const rToken = localStg.get("refreshToken") || ""
+  const { error, data } = await fetchRefreshToken(rToken)
+  if (!error) {
+    localStg.set("token", data.accessToken)
+    localStg.set("refreshToken", data.refreshToken)
+    return true
+  }
+  resetStore() // 刷新失败则登出
+  return false
+}
+```
+
+刷新机制使用 Promise 共享模式：多个并发请求同时触发过期时，只发起一次刷新请求，所有请求等待同一个 Promise 结果后统一重试。
+
+### 登出
+
+登出通过 `resetStore()` 方法实现：
+
+1. 记录当前用户 ID（用于下次登录时比对是否切换用户）
+2. 清除 localStorage 中的 Token
+3. 重置 auth store 状态
+4. 跳转到登录页面
+5. 清理标签页缓存和路由状态

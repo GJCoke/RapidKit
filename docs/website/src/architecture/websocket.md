@@ -140,3 +140,157 @@ if settings.ENVIRONMENT.is_debug:
 :::danger
 Admin UI 仅在调试环境（`ENVIRONMENT.is_debug`）下启用。生产环境请确保修改默认密码或关闭该功能。
 :::
+
+## 前端连接
+
+前端通过 `socket.io-client` 库与后端 Socket.IO 服务建立实时连接，封装为 Vue Composable `useSocket`，提供响应式的连接状态和生命周期管理。
+
+### useSocket Hook
+
+`useSocket` 定义在 `src/hooks/common/socket.ts`，核心功能：
+
+```typescript
+import { io, type Socket } from "socket.io-client"
+
+export function useSocket(): Result {
+  const socket = ref<Socket | null>(null)
+  const isConnected = ref(false)
+  const isConnecting = ref(false)
+
+  const connect = (options: Options): Socket | undefined => {
+    const instance = io(socketUrl, {
+      path: "/socket.io",
+      auth,
+      transports: ["websocket", "polling"],
+      ...ioOptions,
+    })
+
+    instance.on("connect", () => {
+      isConnected.value = true
+    })
+    instance.on("disconnect", () => {
+      isConnected.value = false
+    })
+    instance.on("connect_error", (err) => {
+      onError?.(err)
+    })
+
+    socket.value = instance
+    return instance
+  }
+
+  const disconnect = () => {
+    socket.value?.disconnect()
+    socket.value = null
+  }
+
+  // 组件卸载时自动断开连接
+  onUnmounted(() => disconnect())
+
+  return { socket, isConnected, isConnecting, connect, disconnect }
+}
+```
+
+返回值说明：
+
+| 属性           | 类型                  | 说明           |
+| -------------- | --------------------- | -------------- |
+| `socket`       | `Ref<Socket \| null>` | Socket.IO 实例 |
+| `isConnected`  | `Ref<boolean>`        | 是否已连接     |
+| `isConnecting` | `Ref<boolean>`        | 是否正在连接中 |
+| `connect()`    | `Function`            | 建立连接       |
+| `disconnect()` | `Function`            | 断开连接       |
+
+### 连接配置
+
+`connect` 方法接受以下配置项：
+
+```typescript
+interface Options {
+  url: string // 服务端地址
+  path?: string // Socket.IO 路径，默认 "/socket.io"
+  auth?: any // 认证参数（如 JWT Token）
+  namespace?: string // 命名空间，默认 "/"
+  ioOptions?: Partial<ManagerOptions & SocketOptions> // 透传选项
+  onConnect?: () => void
+  onDisconnect?: (reason: Socket.DisconnectReason) => void
+  onError?: (err: Error) => void
+}
+```
+
+### 命名空间使用
+
+前端按业务场景连接不同的命名空间：
+
+| 命名空间  | 使用场景                     | 认证方式                  |
+| --------- | ---------------------------- | ------------------------- |
+| `/`       | 默认连接、在线状态           | JWT Token（`auth` 参数）  |
+| `/chat`   | 聊天室功能                   | 用户名（`auth.username`） |
+| `/worker` | Celery Worker 状态、任务更新 | 无（内部服务）            |
+
+聊天室连接示例（`views/socketio/chat/`）：
+
+```typescript
+const instance = connect({
+  url: url.origin,
+  namespace: "/chat",
+  auth: { username: props.username },
+  ioOptions: {
+    query: { group: props.group },
+  },
+  onConnect: () => socket.value?.emit("join", props.group),
+})
+```
+
+Worker 状态连接示例（`views/queue/dashboard/`）：
+
+```typescript
+connect({
+  url: baseUrl,
+  namespace: "/worker",
+  path: "/socket.io",
+})
+
+socket.value?.on("worker:status", (data: Api.Worker.WorkerStatusEvent) => {
+  // 更新 Worker 状态
+})
+
+socket.value?.on("task:update", (data: Api.Worker.TaskUpdateEvent) => {
+  // 更新任务状态
+})
+```
+
+### 传输与重连
+
+Socket.IO 客户端配置了双传输模式：
+
+```typescript
+transports: ["websocket", "polling"]
+```
+
+优先使用 WebSocket 协议，连接失败时自动降级为 HTTP 长轮询。Socket.IO 内置了自动重连机制，默认行为：
+
+- 连接断开后立即尝试重连
+- 采用指数退避策略，重连间隔逐步增大
+- `connect_error` 事件在每次重连失败时触发，可用于错误提示
+
+### 组件中的事件监听
+
+组件通过 `socket.value?.on()` 监听服务端推送的事件。`useSocket` 在 `onUnmounted` 时自动调用 `disconnect()`，确保组件销毁后不会产生内存泄漏或无效事件监听。
+
+典型使用模式：
+
+```typescript
+const { socket, connect } = useSocket()
+
+onMounted(() => {
+  connect({ url: baseUrl, namespace: "/worker" })
+
+  socket.value?.on("worker:status", handleWorkerStatus)
+  socket.value?.on("task:update", handleTaskUpdate)
+})
+```
+
+:::tip
+`useSocket` 的生命周期与组件绑定。如果需要全局持久连接（跨页面保持），应在 App 级组件或 Pinia store 中管理 Socket 实例。
+:::
