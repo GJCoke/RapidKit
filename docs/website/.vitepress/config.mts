@@ -1,11 +1,10 @@
 import { defineConfig } from "vitepress"
 import { tabsMarkdownPlugin } from "vitepress-plugin-tabs"
 
-// https://vitepress.dev/reference/site-config
 export default defineConfig({
   srcDir: "src",
   title: "Monorepo Example",
-  description: "A monorepo example docs.",
+  description: "TypeScript & Python Monorepo 全栈项目文档",
   lang: "zh-CN",
   lastUpdated: true,
   vite: {
@@ -20,159 +19,123 @@ export default defineConfig({
       lang: "zh-CN",
       themeConfig: {
         nav: [
-          { text: "指引", link: "/guide/", activeMatch: "^/guide/" },
-          { text: "前端", link: "/frontend/", activeMatch: "^/frontend/" },
-          { text: "桌面端", link: "/desktop/", activeMatch: "^/desktop/" },
-          { text: "后端", link: "/backend/", activeMatch: "^/backend/" },
-          { text: "教程", link: "/tutorial/podman-source", activeMatch: "^/tutorial/" },
-          { text: "更新日志", link: "/changelog/backend-CHANGELOG", activeMatch: "^/changelog/" },
+          { text: "快速开始", link: "/guide/introduction", activeMatch: "^/guide/" },
+          { text: "架构", link: "/architecture/overview", activeMatch: "^/architecture/" },
+          { text: "前端", link: "/frontend/tech-stack", activeMatch: "^/frontend/" },
+          { text: "后端", link: "/backend/tech-stack", activeMatch: "^/backend/" },
+          { text: "部署", link: "/deploy/docker", activeMatch: "^/deploy/" },
+          { text: "更多", items: [
+            { text: "桌面端", link: "/desktop/overview" },
+            { text: "开发规范", link: "/standards/code-style" },
+            { text: "工具教程", link: "/tutorial/podman-source" },
+            { text: "共享包", link: "/packages/utils" },
+            { text: "更新日志", link: "/changelog/backend-CHANGELOG" },
+          ]},
         ],
         sidebar: {
           "/guide/": [
             {
-              text: "项目概述",
+              text: "快速开始",
               items: [
-                { text: "项目介绍", link: "/guide/" },
+                { text: "项目介绍", link: "/guide/introduction" },
                 { text: "快速开始", link: "/guide/quickstart" },
+                { text: "目录结构", link: "/guide/directory" },
               ],
             },
+          ],
+          "/architecture/": [
             {
-              text: "项目结构与架构设计",
+              text: "架构与设计",
               items: [
-                { text: "目录结构概览", link: "/guide/overview" },
-                { text: "架构设计", link: "/guide/design" },
+                { text: "整体架构", link: "/architecture/overview" },
+                { text: "前后端通信", link: "/architecture/api" },
+                { text: "认证与权限", link: "/architecture/auth" },
+                { text: "实时通信", link: "/architecture/websocket" },
               ],
-            },
-            {
-              text: "静态检查工具",
-              items: [
-                { text: "ESLint 配置与使用", link: "/guide/eslint" },
-                { text: "Mypy 配置与使用", link: "/guide/mypy" },
-                { text: "TypeScript 检查", link: "/guide/tsc" },
-                { text: "拼写检查工具", link: "/guide/spellcheck" },
-              ],
-            },
-            {
-              text: "格式化工具",
-              items: [
-                { text: "Prettier 配置与使用", link: "/guide/prettier" },
-                { text: "Ruff 配置与使用", link: "/guide/ruff" },
-              ],
-            },
-            {
-              text: "Git 提交规范",
-              items: [
-                { text: "Husky 提交钩子配置", link: "/guide/husky" },
-                { text: "Lint-staged 配置", link: "/guide/lint-staged" },
-                { text: "Commitlint 提交信息规范", link: "/guide/commitlint" },
-              ],
-            },
-            {
-              text: "更新日志",
-              items: [
-                { text: "Changesets 是什么", link: "/guide/changeset" },
-                { text: "Changesets 使用", link: "/guide/changelog" },
-              ],
-            },
-            {
-              text: "类型生成",
-              items: [
-                { text: "API 类型自动生成", link: "/guide/openapi-types" },
-                { text: "I18n 类型自动生成", link: "/guide/i18n-types" },
-              ],
-            },
-            {
-              text: "部署",
-              items: [{ text: "部署", link: "/guide/deployment" }],
             },
           ],
           "/frontend/": [
             {
-              text: "开始",
+              text: "前端开发",
               items: [
-                { text: "前端概览", link: "/frontend/overview" },
-                { text: "技术栈", link: "/frontend/tech-stack" },
-                { text: "API Service", link: "/frontend/api-service" },
-                { text: "i18n", link: "/frontend/i18n" },
-                { text: "UI 结构", link: "/frontend/ui" },
-                { text: "构建", link: "/frontend/build" },
-                { text: "Vite 插件", link: "/frontend/vite-plugins" },
+                { text: "技术栈概览", link: "/frontend/tech-stack" },
+                { text: "路由与菜单", link: "/frontend/routing" },
+                { text: "状态管理", link: "/frontend/state" },
+                { text: "请求服务", link: "/frontend/api-service" },
+                { text: "国际化", link: "/frontend/i18n" },
+                { text: "UI 组件与主题", link: "/frontend/ui" },
+                { text: "构建与 Vite 插件", link: "/frontend/build" },
               ],
             },
           ],
           "/backend/": [
             {
-              text: "项目概述",
+              text: "后端开发",
               items: [
-                { text: "项目介绍", link: "/backend/" },
+                { text: "技术栈概览", link: "/backend/tech-stack" },
                 { text: "快速开始", link: "/backend/quickstart" },
-              ],
-            },
-            {
-              text: "项目结构与架构设计",
-              items: [
-                { text: "目录结构概览", link: "/backend/overview" },
-                { text: "架构设计", link: "/backend/architecture" },
-              ],
-            },
-            {
-              text: "核心模块说明",
-              items: [
-                { text: "数据库与依赖注入", link: "/backend/database" },
-                { text: "WebSocket 服务", link: "/backend/websocket" },
-                { text: "异步任务调度 (Celery)", link: "/backend/celery" },
-                { text: "用户认证与授权", link: "/backend/auth" },
-                { text: "工具链与代码质量", link: "/backend/toolchain" },
-              ],
-            },
-            {
-              text: "ORM 模型",
-              items: [{ text: "模型定义", link: "/backend/pydantic-models" }],
-            },
-            {
-              text: "开发规范",
-              items: [
-                { text: "代码风格与格式化", link: "/guide/code-style" },
-                { text: "静态检查工具使用", link: "/guide/static-check" },
-              ],
-            },
-            {
-              text: "测试与部署",
-              items: [
-                { text: "单元测试与覆盖率", link: "/guide/testing" },
-                { text: "CI/CD 工作流", link: "/guide/ci" },
-                { text: "部署指南", link: "/guide/deployment" },
+                { text: "领域架构", link: "/backend/architecture" },
+                { text: "数据库与 ORM", link: "/backend/database" },
+                { text: "中间件", link: "/backend/middleware" },
+                { text: "错误处理与状态码", link: "/backend/error-handling" },
+                { text: "国际化", link: "/backend/i18n" },
+                { text: "日志系统", link: "/backend/logging" },
+                { text: "Pydantic 模型规范", link: "/backend/pydantic" },
+                { text: "定时任务调度", link: "/backend/schedule" },
+                { text: "Celery 任务队列", link: "/backend/celery" },
+                { text: "工具链", link: "/backend/toolchain" },
               ],
             },
           ],
           "/desktop/": [
             {
-              text: "Python",
+              text: "桌面端",
               items: [
-                { text: "Electron 概览", link: "/desktop/overview" },
-                { text: "Preload", link: "/desktop/preload" },
-                { text: "IPC 机制", link: "/desktop/ipc" },
-                { text: "打包", link: "/desktop/packaging" },
+                { text: "概述", link: "/desktop/overview" },
+              ],
+            },
+          ],
+          "/deploy/": [
+            {
+              text: "部署运维",
+              items: [
+                { text: "Docker 容器化", link: "/deploy/docker" },
+                { text: "dock CLI 工具", link: "/deploy/dock-cli" },
+                { text: "Nginx / Caddy 配置", link: "/deploy/proxy" },
+              ],
+            },
+          ],
+          "/standards/": [
+            {
+              text: "开发规范",
+              items: [
+                { text: "代码风格", link: "/standards/code-style" },
+                { text: "Git 提交规范", link: "/standards/git" },
+                { text: "静态检查", link: "/standards/static-check" },
+                { text: "测试", link: "/standards/testing" },
               ],
             },
           ],
           "/tutorial/": [
             {
-              text: "容器工具",
-              items: [{ text: "Podman 国内源", link: "/tutorial/podman-source" }],
-            },
-            {
-              text: "包管理",
+              text: "工具教程",
               items: [
-                { text: "uv 管理工具", link: "/tutorial/uv" },
-                { text: "pnpm 管理工具", link: "/tutorial/pnpm" },
+                { text: "Podman 使用指南", link: "/tutorial/podman-source" },
+                { text: "uv 包管理器", link: "/tutorial/uv" },
+                { text: "pnpm 工作区", link: "/tutorial/pnpm" },
+                { text: "VS Code 配置", link: "/tutorial/vscode-extensions" },
               ],
             },
+          ],
+          "/packages/": [
             {
-              text: "VSCode",
+              text: "共享包参考",
               items: [
-                { text: "推荐插件", link: "/tutorial/vscode-extensions" },
-                { text: "隐藏目录", link: "/tutorial/hide-folder" },
+                { text: "@monorepo-example/utils", link: "/packages/utils" },
+                { text: "@monorepo-example/hooks", link: "/packages/hooks" },
+                { text: "@monorepo-example/axios", link: "/packages/axios" },
+                { text: "@monorepo-example/editor", link: "/packages/editor" },
+                { text: "@monorepo-example/color", link: "/packages/color" },
               ],
             },
           ],
@@ -207,24 +170,9 @@ export default defineConfig({
       link: "/en/",
       themeConfig: {
         nav: [
-          { text: "Guide", link: "/en/" },
-          { text: "Frontend", link: "/en/frontend/home" },
-          { text: "Desktop", link: "/en/desktop/home" },
-          { text: "Backend", link: "/en/backend/i18n" },
-          { text: "Tutorial", link: "/en/tutorial/", activeMatch: "^/tutorial/" },
-          { text: "Changelog", link: "/changelog/backend-CHANGELOG", activeMatch: "^/changelog/" },
+          { text: "Home", link: "/en/" },
         ],
-        sidebar: {
-          "/en/backend/": [
-            {
-              text: "Python",
-              items: [
-                { text: "i18n", link: "/en/backend/i18n" },
-                { text: "Getting Started", link: "/en/backend/examples" },
-              ],
-            },
-          ],
-        },
+        sidebar: {},
       },
     },
   },
