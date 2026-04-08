@@ -46,7 +46,7 @@ monorepo-example/
 | `desktop/`  | 跨平台桌面客户端，复用前端代码并扩展系统级能力               | Electron, Vue 3                    |
 
 ::: info 提示
-各应用的详细目录结构请参阅对应的开发文档：[前端开发](/frontend/)、[后端开发](/backend/)。
+各应用的详细目录结构请参阅对应的开发文档：[前端开发](/frontend/tech-stack)、[后端开发](/backend/tech-stack)。
 :::
 
 ## 共享包目录 (packages/)

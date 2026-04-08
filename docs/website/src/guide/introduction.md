@@ -63,5 +63,5 @@
 - [快速开始](./quickstart.md) -- 环境准备、依赖安装、项目启动
 - [目录结构](./directory.md) -- Monorepo 仓库目录说明
 - [架构设计](./design.md) -- 整体架构、设计原则与技术链路
-- [前端开发](/frontend/) -- Vue 3 前端应用开发指南
-- [后端开发](/backend/) -- FastAPI 后端服务开发指南
+- [前端开发](/frontend/tech-stack) -- Vue 3 前端应用开发指南
+- [后端开发](/backend/tech-stack) -- FastAPI 后端服务开发指南
