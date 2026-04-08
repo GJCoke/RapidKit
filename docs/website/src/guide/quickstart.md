@@ -195,3 +195,90 @@ pnpm dev:website
 ```
 
 :::
+
+## Celery 任务队列启动
+
+项目使用 Celery 作为异步任务队列，支持后台任务处理、定时调度和 Worker 监控。
+
+### 前置条件
+
+::: warning 注意
+启动 Celery 前，请确保以下服务已就绪：
+
+- **Redis** 已启动并可访问 -- Celery 使用 Redis 作为消息代理 (Broker) 和结果后端 (Backend)
+- **PostgreSQL** 已启动 -- Beat 调度器使用数据库存储定时任务配置
+- 后端 `.env` 文件中的数据库与 Redis 连接信息已正确配置
+  :::
+
+### 环境变量配置
+
+在 `apps/backend/.env` 文件中确认以下配置项：
+
+```dotenv
+# Redis 连接配置 (Celery 使用独立的 Redis 数据库)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_ROOT_PASSWORD=your_password
+CELERY_REDIS_DATABASE=1
+
+# 启用 Celery 监控功能 (Worker 事件消费、状态监控、管理 API)
+ENABLE_CELERY_MONITOR=true
+```
+
+::: info 说明
+Celery 的 Broker 和 Backend 均使用 Redis，连接地址由 `CELERY_REDIS_URL` 属性自动生成，格式为 `redis://:password@host:port/database`。其中 `CELERY_REDIS_DATABASE` 默认为 `1`，与主应用 Redis 数据库 (默认 `0`) 隔离。
+:::
+
+### 启动 Worker
+
+Worker 负责执行异步任务。在 `apps/backend/` 目录下运行：
+
+```bash
+uv run celery -A src.queues.app worker -l info
+```
+
+### 启动 Beat 调度器
+
+Beat 负责按计划发送定时任务。项目使用自定义的 `AsyncDatabaseScheduler`，将定时任务配置存储在 PostgreSQL 中：
+
+```bash
+uv run celery -A src.queues.app beat -S src.queues.scheduler:AsyncDatabaseScheduler -l info
+```
+
+::: tip 提示
+开发阶段可以将 Worker 和 Beat 分别在两个终端窗口中运行，方便查看各自的日志输出。
+:::
+
+### 常见问题
+
+#### Redis 连接被拒绝
+
+```
+[ERROR] consumer: Cannot connect to redis://localhost:6379/1: Connection refused.
+```
+
+请检查 Redis 服务是否已启动：
+
+```bash
+redis-cli ping  # 应返回 PONG
+```
+
+如果使用 Docker 运行 Redis，确认容器已启动且端口映射正确：
+
+```bash
+docker compose -f docker-compose.dev.yaml up -d redis
+```
+
+#### Broker URL 不匹配
+
+如果 Worker 启动后无法接收任务，请确认 `.env` 中的 Redis 连接参数与实际 Redis 服务一致。Celery 的 Broker URL 由以下环境变量共同决定：
+
+- `REDIS_SCHEME` -- 协议，默认 `redis`
+- `REDIS_HOST` -- 地址
+- `REDIS_PORT` -- 端口，默认 `6379`
+- `REDIS_ROOT_PASSWORD` -- 密码
+- `CELERY_REDIS_DATABASE` -- 数据库编号，默认 `1`
+
+#### 监控功能未生效
+
+如果启动 Worker 后在前端看不到 Worker 状态信息，请确认 `ENABLE_CELERY_MONITOR=true` 已在 `.env` 中设置。该选项控制是否加载事件消费和 Worker 监控模块。
