@@ -229,6 +229,7 @@ env.bak/
 venv.bak/
 .env.pytest
 apps/backend/.env
+docker/prod/.env.prod
 
 # Spyder / Rope / MyPy / Ruff
 .spyderproject
@@ -270,3 +271,4 @@ backup.dump.gz
 #####################################################################
 
 .superpowers/
+/docs/superpowers/

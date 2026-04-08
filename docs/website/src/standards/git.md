@@ -20,7 +20,7 @@ pnpm precommit
 ### commit-msg
 
 ```bash
-pnpm lint:commit -- "$1"
+pnpm check:commit -- "$1"
 ```
 
 执行 **CommitLint** 校验提交信息格式。如果校验失败，Hook 会自动从备份恢复暂存区内容，避免 lint-staged 的修改导致暂存区丢失。
@@ -32,7 +32,7 @@ pnpm lint:commit -- "$1"
 ### pre-push
 
 ```bash
-pnpm typecheck
+pnpm check:types
 ```
 
 推送前执行 **TypeScript 类型检查**（通过 Turborepo 并行检查所有子项目），阻止类型错误的代码推送到远程。

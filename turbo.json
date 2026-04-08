@@ -15,16 +15,13 @@
       "cache": false
     },
     "typecheck": {
-      "cache": false,
       "dependsOn": ["^typecheck"]
     },
-    "lint:format": {
-      "cache": false,
-      "dependsOn": ["^lint:format"]
+    "format": {
+      "dependsOn": ["^format"]
     },
-    "lint:lint": {
-      "cache": false,
-      "dependsOn": ["^lint:lint"]
+    "lint": {
+      "dependsOn": ["^lint"]
     }
   }
 }

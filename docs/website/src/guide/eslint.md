@@ -87,13 +87,13 @@ scripts/
 ## 执行 ESLint 检查
 
 ```bash
-pnpm lint:lint
+pnpm check:lint
 ```
 
 或指定单独的应用：
 
 ```bash
-pnpm lint:lint -F @monorepo-exmaple/frontend
+pnpm lint -F @monorepo-exmaple/frontend
 ```
 
 ## 在 VSCode 中启用ESLint

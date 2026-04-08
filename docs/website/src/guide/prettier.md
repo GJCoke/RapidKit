@@ -21,13 +21,13 @@
 手动格式化所有项目文件：
 
 ```bash
-pnpm lint:format
+pnpm check:format
 ```
 
 指定单独的应用：
 
 ```bash
-pnpm lint:format -F @monorepo-exmaple/frontend
+pnpm format -F @monorepo-exmaple/frontend
 ```
 
 检查（不修改）代码格式：

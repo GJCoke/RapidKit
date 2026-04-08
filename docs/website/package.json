@@ -2,8 +2,8 @@
   "name": "@monorepo-example/website",
   "version": "1.0.1",
   "scripts": {
-    "lint:format": "prettier --write \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
-    "lint:lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
+    "format": "prettier --write --ignore-path ../../.prettierignore \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
+    "lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview"

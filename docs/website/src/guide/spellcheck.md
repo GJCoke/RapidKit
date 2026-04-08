@@ -48,7 +48,7 @@
 执行拼写检查：
 
 ```bash
-pnpm lint:spellcheck
+pnpm check:spell
 ```
 
 - 会扫描所有文件，排除 `ignorePaths` 中指定的路径

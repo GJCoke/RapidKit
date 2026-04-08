@@ -28,7 +28,7 @@ uv run ruff format src
 Monorepo 统一命令：
 
 ```bash
-pnpm --filter backend lint:format
+pnpm --filter backend format
 ```
 
 ### 配置
@@ -56,7 +56,7 @@ uv run mypy src
 Monorepo 统一命令：
 
 ```bash
-pnpm --filter backend lint:lint
+pnpm --filter backend lint
 ```
 
 ### 配置
@@ -148,13 +148,13 @@ uv run coverage report
 
 Monorepo 通过 pnpm scripts 统一调用后端工具链命令：
 
-| pnpm 命令                           | 底层命令                                                | 说明           |
-| ----------------------------------- | ------------------------------------------------------- | -------------- |
-| `pnpm --filter backend lint:format` | `uv run ruff check --fix src && uv run ruff format src` | Lint + Format  |
-| `pnpm --filter backend lint:lint`   | `uv run mypy src`                                       | mypy 类型检查  |
-| `pnpm --filter backend typecheck`   | `uv run ty check src`                                   | ty 类型检查    |
-| `pnpm --filter backend dev`         | `uv run uvicorn ...`                                    | 启动开发服务器 |
+| pnpm 命令                         | 底层命令                                                | 说明           |
+| --------------------------------- | ------------------------------------------------------- | -------------- |
+| `pnpm --filter backend format`    | `uv run ruff check --fix src && uv run ruff format src` | Lint + Format  |
+| `pnpm --filter backend lint`      | `uv run mypy src`                                       | mypy 类型检查  |
+| `pnpm --filter backend typecheck` | `uv run ty check src`                                   | ty 类型检查    |
+| `pnpm --filter backend dev`       | `uv run uvicorn ...`                                    | 启动开发服务器 |
 
 :::warning
-提交代码前建议依次运行 `lint:format`、`lint:lint` 和 `typecheck`，确保代码风格和类型安全性。
+提交代码前建议依次运行 `format`、`lint` 和 `typecheck`，确保代码风格和类型安全性。
 :::

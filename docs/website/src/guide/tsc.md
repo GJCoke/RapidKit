@@ -50,9 +50,8 @@ pnpm typecheck -F @monorepo-exmaple/frontend
 
 - 支持并行执行，加速大型 Monorepo 项目类型检查
 
-```bash
-pnpm typecheck
-```
+````bash
+pnpm check:types```
 
 ## VSCode 集成
 
@@ -75,3 +74,4 @@ pnpm typecheck
 - 配合 ESLint/Prettier 形成完整静态分析与代码质量保障
 
 此文档可作为团队开发规范，确保 Monorepo 项目在多子项目、多包场景下的 TypeScript 类型检查统一和高效。
+````

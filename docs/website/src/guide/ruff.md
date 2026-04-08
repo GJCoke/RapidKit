@@ -37,7 +37,7 @@
   == pnpm
 
 ```bash
-pnpm lint:format -F @monorepo-exmaple/backend
+pnpm format -F @monorepo-exmaple/backend
 ```
 
 == ruff

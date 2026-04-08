@@ -1,7 +1,13 @@
 # ============================================================
+# Configurable registry sources (override via --build-arg or env file)
+# ============================================================
+ARG REGISTRY_PREFIX=""
+ARG UV_IMAGE=ghcr.io/astral-sh/uv:latest
+
+# ============================================================
 # Stage 1: base — shared foundation for dev and prod
 # ============================================================
-FROM python:3.14-slim AS base
+FROM ${REGISTRY_PREFIX}python:3.14-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -11,7 +17,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+COPY --from=${UV_IMAGE} /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
@@ -47,6 +53,7 @@ RUN uv sync --no-dev --frozen --project apps/backend
 COPY apps/backend/src apps/backend/src
 COPY apps/backend/scripts apps/backend/scripts
 COPY apps/backend/alembic.ini apps/backend/alembic.ini
+COPY apps/backend/alembic apps/backend/alembic
 
 # Create non-root user
 RUN groupadd -r app && useradd -r -g app -d /app app \

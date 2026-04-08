@@ -152,14 +152,14 @@ Turborepo 会自动识别 `@monorepo-example/axios`、`@monorepo-example/hooks` 
 
 ## 构建命令
 
-| 命令               | 说明                                        |
-| ------------------ | ------------------------------------------- |
-| `pnpm dev`         | 启动开发服务器（默认 test 模式，端口 9527） |
-| `pnpm build`       | 构建生产版本（默认 test 模式）              |
-| `pnpm preview`     | 预览构建结果（端口 9725）                   |
-| `pnpm typecheck`   | TypeScript 类型检查（vue-tsc）              |
-| `pnpm lint:format` | Prettier 格式化                             |
-| `pnpm lint:lint`   | ESLint 检查并修复                           |
+| 命令             | 说明                                        |
+| ---------------- | ------------------------------------------- |
+| `pnpm dev`       | 启动开发服务器（默认 test 模式，端口 9527） |
+| `pnpm build`     | 构建生产版本（默认 test 模式）              |
+| `pnpm preview`   | 预览构建结果（端口 9725）                   |
+| `pnpm typecheck` | TypeScript 类型检查（vue-tsc）              |
+| `pnpm format`    | Prettier 格式化                             |
+| `pnpm lint`      | ESLint 检查并修复                           |
 
 ::: warning
 默认 `pnpm build` 使用 `--mode test`。如需构建生产版本，请使用 `vite build --mode prod` 加载 `.env.prod` 配置。

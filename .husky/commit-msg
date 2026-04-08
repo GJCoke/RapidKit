@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-pnpm lint:commit -- "$1"
+pnpm check:commit -- "$1"
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ] && [ -f .git/staged-backup.patch ]; then

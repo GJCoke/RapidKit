@@ -30,7 +30,7 @@
   == pnpm
 
 ```bash
-pnpm lint:lint -F @monorepo-exmaple/backend
+pnpm lint -F @monorepo-exmaple/backend
 ```
 
 == mypy

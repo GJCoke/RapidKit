@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "lint:format": "prettier --write \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
-    "lint:lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
+    "format": "prettier --write --ignore-path ../../.prettierignore \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
+    "lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
     "dev": "vite",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit"

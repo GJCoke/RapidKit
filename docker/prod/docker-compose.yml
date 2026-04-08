@@ -5,15 +5,12 @@ services:
 
   postgresql:
     image: bitnami/postgresql
-    container_name: monorepo-postgresql
-    environment:
-      - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME:-root}
-      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
-      - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE:-client}
+    container_name: monorepo-prod-postgresql
+    env_file: .env.prod
     volumes:
-      - pg-data:/bitnami/postgresql
+      - prod-pg-data:/bitnami/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRESQL_USERNAME:-root} -d ${POSTGRESQL_DATABASE:-client}"]
+      test: ["CMD-SHELL", "pg_isready -U root -d client"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,12 +18,13 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: monorepo-redis
-    command: redis-server --requirepass ${REDIS_ROOT_PASSWORD}
+    container_name: monorepo-prod-redis
+    env_file: .env.prod
+    command: ["sh", "-c", "redis-server --requirepass $$REDIS_ROOT_PASSWORD"]
     volumes:
-      - redis-data:/data
+      - prod-redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_ROOT_PASSWORD}", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_ROOT_PASSWORD ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,13 +32,11 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: monorepo-minio
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-root}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    container_name: monorepo-prod-minio
+    env_file: .env.prod
     command: server /data --console-address ":9001"
     volumes:
-      - minio-data:/data
+      - prod-minio-data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
@@ -55,7 +51,10 @@ services:
       context: ../..
       dockerfile: docker/backend/Dockerfile
       target: prod
-    container_name: monorepo-backend-api
+      args:
+        REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
+        UV_IMAGE: ${UV_IMAGE:-ghcr.io/astral-sh/uv:latest}
+    container_name: monorepo-prod-backend-api
     env_file: .env.prod
     depends_on:
       postgresql:
@@ -77,7 +76,10 @@ services:
       context: ../..
       dockerfile: docker/backend/Dockerfile
       target: prod
-    container_name: monorepo-celery-worker
+      args:
+        REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
+        UV_IMAGE: ${UV_IMAGE:-ghcr.io/astral-sh/uv:latest}
+    container_name: monorepo-prod-celery-worker
     command: uv run celery -A src.queues.app worker -l info
     env_file: .env.prod
     depends_on:
@@ -92,7 +94,10 @@ services:
       context: ../..
       dockerfile: docker/backend/Dockerfile
       target: prod
-    container_name: monorepo-celery-beat
+      args:
+        REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
+        UV_IMAGE: ${UV_IMAGE:-ghcr.io/astral-sh/uv:latest}
+    container_name: monorepo-prod-celery-beat
     command: uv run celery -A src.queues.app beat -S src.queues.scheduler:AsyncDatabaseScheduler -l info
     env_file: .env.prod
     depends_on:
@@ -108,19 +113,22 @@ services:
     build:
       context: ../..
       dockerfile: docker/frontend/Dockerfile
-    container_name: monorepo-nginx
+      args:
+        REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
+    container_name: monorepo-prod-nginx
     ports:
-      - "80:80"
+      - "18080:80"
     depends_on:
       backend-api:
         condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  pg-data:
-  redis-data:
-  minio-data:
+  prod-pg-data:
+  prod-redis-data:
+  prod-minio-data:
 
 networks:
   default:
-    name: monorepo-network
+    name: monorepo-prod-network

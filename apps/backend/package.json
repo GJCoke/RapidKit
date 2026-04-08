@@ -3,8 +3,7 @@
   "version": "1.0.1",
   "scripts": {
     "postinstall": "uv sync",
-    "lint:format": "uv run ruff check --fix src && uv run ruff format src",
-    "lint:lint": "echo 'TODO skip'",
+    "format": "uv run ruff check --fix src && uv run ruff format src",
     "typecheck": "uv run ty check src",
     "dev": "uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 16000"
   },
