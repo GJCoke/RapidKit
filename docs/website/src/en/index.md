@@ -1,30 +1,34 @@
 ---
-# https://vitepress.dev/reference/default-theme-home-page
 layout: home
 
 hero:
   image: "/logo.svg"
-  name: "Monorepo"
-  text: "Example Project"
-  tagline: "A TypeScript & Python Monorepo Example"
+  name: "Monorepo Example"
+  text: "Full-Stack Monorepo Template"
+  tagline: Vue 3 + FastAPI, TypeScript + Python, unified monorepo management
   actions:
     - theme: brand
-      text: Start
-      link: /markdown-examples
+      text: Get Started
+      link: /guide/quickstart
     - theme: alt
-      text: Introduction
-      link: /api-examples
-    - theme: alt
-      text: View on GitHub
+      text: GitHub
       link: https://github.com/GJCoke/monorepo-example
 
 features:
-  - title: Unified Codebase
-    details: Manage multiple packages and services in a single repository for better collaboration and consistency.
-  - title: TypeScript & Python Support
-    details: Leverage both TypeScript and Python in one project, allowing cross-language development and interoperability.
-  - title: Centralized Dependency Management
-    details: Share dependencies across packages, reduce duplication, and maintain version consistency effortlessly.
-  - title: Streamlined CI/CD
-    details: Automated testing, linting, and deployment pipelines for all packages within the monorepo.
+  - title: Monorepo Architecture
+    details: pnpm workspace + Turborepo + uv. Frontend, backend, shared packages, and docs unified in one repository.
+  - title: Full-Stack Tech Stack
+    details: Vue 3 + FastAPI, TypeScript + Python. Shared type definitions with automatic OpenAPI type generation.
+  - title: RBAC Permission System
+    details: Three-tier access control (route/API/button), dynamic menus, JWT dual-token auth, RSA encrypted transport.
+  - title: Real-time Communication
+    details: Socket.IO bidirectional communication, multi-namespace isolation, Redis adapter for multi-instance broadcasting.
+  - title: Task Queue
+    details: Celery async tasks + Beat scheduling + Worker monitoring, Redis Stream event consumption, WebSocket status push.
+  - title: Containerized Deployment
+    details: Docker multi-stage builds, dev/prod dual-mode Compose, dock CLI for one-click management, Docker and Podman support.
+  - title: Developer Experience
+    details: ESLint + Ruff + Prettier formatting, Husky + lint-staged commit checks, Changesets version management.
+  - title: Internationalization
+    details: Frontend Vue I18n + Backend Babel, type-safe i18n key auto-generation, middleware auto language detection.
 ---
