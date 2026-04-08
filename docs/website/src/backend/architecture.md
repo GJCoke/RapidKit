@@ -12,9 +12,14 @@ src/
 ├── common/            # 公共层：基类模型、通用 CRUD、共享依赖、通用 Schema
 ├── domains/           # 业务领域层：每个领域自包含一套完整的业务逻辑
 │   ├── auth/          #   认证领域
-│   ├── role/          #   角色领域
 │   ├── menu/          #   菜单领域
-│   └── router/        #   接口路由领域
+│   ├── role/          #   角色领域
+│   ├── route/         #   前端路由同步
+│   ├── router/        #   接口路由领域
+│   ├── schedule/      #   定时任务调度
+│   ├── script/        #   脚本管理与执行
+│   ├── user/          #   用户管理
+│   └── worker/        #   Celery Worker 监控
 ├── sio/               # Socket.IO 实时通信
 ├── middlewares/        # HTTP 中间件
 ├── queues/            # Celery 任务队列（含调度模型 schedule.py）
@@ -29,16 +34,19 @@ src/
 
 存放与业务无关的底层基础设施，整个应用都依赖此层，但此层不依赖任何业务代码。
 
-| 文件              | 职责                                   |
-| ----------------- | -------------------------------------- |
-| `config.py`       | 应用配置（Settings、环境变量）         |
-| `database.py`     | 数据库引擎、会话工厂、Redis 管理器     |
-| `exceptions.py`   | 全局异常定义                           |
-| `status_codes.py` | 业务状态码枚举                         |
-| `lifecycle.py`    | 应用生命周期事件（startup / shutdown） |
-| `redis_client.py` | Redis 异步客户端封装                   |
-| `log.py`          | 日志配置                               |
-| `limiter.py`      | 速率限制                               |
+| 文件              | 职责                                              |
+| ----------------- | ------------------------------------------------- |
+| `config.py`       | 应用配置（Settings、环境变量）                    |
+| `database.py`     | 数据库引擎、会话工厂、Redis 管理器                |
+| `exceptions.py`   | 全局异常定义                                      |
+| `status_codes.py` | 业务状态码枚举                                    |
+| `lifecycle.py`    | 应用生命周期事件（startup / shutdown）            |
+| `redis_client.py` | Redis 异步客户端封装                              |
+| `log.py`          | 日志配置                                          |
+| `limiter.py`      | 速率限制                                          |
+| `context.py`      | 请求上下文（TypedContext 封装 starlette-context） |
+| `environment.py`  | 环境枚举（LOCAL/STAGING/TESTING/PRODUCTION）      |
+| `path.py`         | 路径常量（BASE_PATH、LOG_PATH）                   |
 
 ### 2. `common/` — 公共层
 
@@ -48,7 +56,7 @@ src/
 common/
 ├── models.py          # SQLModel 基类（UUID7 主键、create_time、update_time）
 ├── crud.py            # BaseSQLModelCRUD[Model, Create, Update] 泛型基类
-├── deps.py            # SessionDep、RedisDep 等共享依赖
+├── deps.py            # 共享依赖：SessionDep、RedisDep、check_debug
 └── schemas/
     ├── base.py        # BaseModel（camelCase 别名生成）
     ├── request.py     # BaseRequest（分页请求基类）
@@ -78,12 +86,17 @@ domains/<domain>/
 
 #### 当前领域
 
-| 领域     | 说明                          | 核心模型          |
-| -------- | ----------------------------- | ----------------- |
-| `auth`   | 用户认证（登录、注册、Token） | `User`            |
-| `role`   | 角色管理与权限校验            | `Role`            |
-| `menu`   | 系统菜单与按钮权限            | `Menu`            |
-| `router` | 接口路由（用于动态权限控制）  | `InterfaceRouter` |
+| 领域       | 说明                           | 核心模型          |
+| ---------- | ------------------------------ | ----------------- |
+| `auth`     | 用户认证（登录、注册、Token）  | `User`            |
+| `role`     | 角色管理与权限校验             | `Role`            |
+| `menu`     | 系统菜单与按钮权限             | `Menu`            |
+| `route`    | 前端路由同步（动态路由数据源） | —                 |
+| `router`   | 接口路由（用于动态权限控制）   | `InterfaceRouter` |
+| `schedule` | Celery 定时任务管理            | `PeriodicTask`    |
+| `script`   | 脚本管理与在线执行             | `Script`          |
+| `user`     | 用户 CRUD 管理                 | `User`            |
+| `worker`   | Celery Worker 实时监控         | `Worker`          |
 
 ## 依赖关系规则
 

@@ -35,10 +35,13 @@ src/
 ├── common/            # 公共层：基类模型、通用 CRUD、共享依赖
 ├── domains/           # 业务领域层
 │   ├── auth/          #   认证与用户
-│   ├── role/          #   角色管理
 │   ├── menu/          #   菜单管理
+│   ├── role/          #   角色管理
+│   ├── route/         #   前端路由同步
 │   ├── router/        #   接口路由（动态权限注册）
+│   ├── schedule/      #   定时任务调度
 │   ├── script/        #   脚本管理与执行
+│   ├── user/          #   用户管理
 │   └── worker/        #   Celery Worker 监控
 ├── sio/               # Socket.IO 实时通信
 ├── middlewares/        # HTTP 中间件
