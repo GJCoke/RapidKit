@@ -1,4 +1,4 @@
-import { createLocalforage, createStorage } from "@monorepo-example/utils"
+import { createLocalforage, createStorage } from "@rapidkit/utils"
 
 const storagePrefix = import.meta.env.VITE_STORAGE_PREFIX || ""
 

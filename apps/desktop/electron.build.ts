@@ -1,8 +1,8 @@
 import { build, Platform, type Configuration } from "electron-builder"
 
 const config: Configuration = {
-  appId: "com.example.monorepo",
-  productName: "monorepo-example",
+  appId: "com.rapidkit.monorepo",
+  productName: "rapidkit",
   directories: {
     buildResources: "public",
     output: "release/v${version}-${platform}",

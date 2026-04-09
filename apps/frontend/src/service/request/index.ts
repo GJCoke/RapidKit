@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { AxiosResponse } from "@monorepo-example/axios"
-import { BACKEND_ERROR_CODE, createFlatRequest, createRequest } from "@monorepo-example/axios"
+import type { AxiosResponse } from "@rapidkit/axios"
+import { BACKEND_ERROR_CODE, createFlatRequest, createRequest } from "@rapidkit/axios"
 import { useAuthStore } from "@/store/modules/auth"
 import { localStg } from "@/utils/storage"
 import { getServiceBaseURL } from "@/utils/service"

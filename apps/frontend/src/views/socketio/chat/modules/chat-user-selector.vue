@@ -18,7 +18,7 @@
     join: [instance: ChatInstance]
   }>()
 
-  const selectedGroup = ref("Public")
+  const selectedGroup = ref("Nobis-Home")
 
   const availableUsers = [
     { name: "Doraemon", img: Doraemon },
@@ -87,7 +87,7 @@
           v-model:value="selectedGroup"
           size="medium"
           :options="
-            ['Public', 'VIP', 'Test'].map((v) => ({
+            ['Nobis-Home', 'Secret-Base', 'School', 'Doraemon-Fans'].map((v) => ({
               label: $t(('page.socketio.chat.rooms.' + v) as I18nFullKey),
               value: v,
             }))

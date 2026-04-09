@@ -9,6 +9,8 @@ ARG UV_IMAGE=ghcr.io/astral-sh/uv:latest
 # ============================================================
 FROM ${REGISTRY_PREFIX}python:3.14-slim AS base
 
+ARG UV_IMAGE
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=utf-8

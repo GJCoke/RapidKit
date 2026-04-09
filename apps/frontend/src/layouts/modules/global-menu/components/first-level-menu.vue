@@ -2,7 +2,7 @@
   import { computed } from "vue"
   import { createReusableTemplate } from "@vueuse/core"
   import { SimpleScrollbar } from "@/materials"
-  import { transformColorWithOpacity } from "@monorepo-example/color"
+  import { transformColorWithOpacity } from "@rapidkit/color"
   import type { RouteKey } from "@elegant-router/types"
 
   defineOptions({

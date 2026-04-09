@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { toRaw } from "vue"
-  import { jsonClone } from "@monorepo-example/utils"
+  import { jsonClone } from "@rapidkit/utils"
   import { enableStatusOptions } from "@/constants/business"
   import { useNaiveForm } from "@/hooks/common/form"
   import { translateOptions } from "@/utils/common"

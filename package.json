@@ -1,5 +1,5 @@
 {
-  "name": "monorepo-example",
+  "name": "rapidkit",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -16,10 +16,13 @@
     "precommit": "lint-staged",
     "clean:workspace": "tsx ./scripts/clean-workspace.ts",
     "sync:version": "changeset version && tsx ./scripts/sync-changelogs.ts",
-    "dev:frontend": "turbo build --filter !@monorepo-example/frontend && turbo watch dev --filter @monorepo-example/frontend",
-    "dev:desktop": "turbo build --filter !@monorepo-example/desktop && turbo watch dev --filter @monorepo-example/desktop",
-    "dev:backend": "pnpm --filter @monorepo-example/backend dev",
-    "dev:website": "turbo dev --filter @monorepo-example/website"
+    "dev:frontend": "turbo build --filter !@rapidkit/frontend && turbo watch dev --filter @rapidkit/frontend",
+    "dev:desktop": "turbo build --filter !@rapidkit/desktop && turbo watch dev --filter @rapidkit/desktop",
+    "dev:backend": "pnpm --filter @rapidkit/backend dev",
+    "dev:worker": "pnpm --filter @rapidkit/backend worker",
+    "dev:beater": "pnpm --filter @rapidkit/backend beater",
+    "dev:website": "turbo dev --filter @rapidkit/website",
+    "rapidkit": "tsx packages/cli/src/index.ts"
   },
   "config": {
     "commitizen": {

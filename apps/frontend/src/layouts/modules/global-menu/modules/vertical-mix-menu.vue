@@ -2,7 +2,7 @@
   import { computed, ref, watch } from "vue"
   import { useRoute } from "vue-router"
   import { SimpleScrollbar } from "@/materials"
-  import { useBoolean } from "@monorepo-example/hooks"
+  import { useBoolean } from "@rapidkit/hooks"
   import type { RouteKey } from "@elegant-router/types"
   import { GLOBAL_SIDER_MENU_ID } from "@/constants/app"
   import { useAppStore } from "@/store/modules/app"

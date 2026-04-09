@@ -1,0 +1,15 @@
+{
+  "name": "@rapidkit/website",
+  "version": "1.0.1",
+  "scripts": {
+    "format": "prettier --write --ignore-path ../../.prettierignore \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
+    "lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "2.0.0-alpha.15",
+    "vitepress-plugin-tabs": "^0.8.0"
+  }
+}

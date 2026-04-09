@@ -6,7 +6,7 @@ declare namespace NaiveUI {
   type DataTableExpandColumn<T> = import("naive-ui").DataTableExpandColumn<T>
   type DataTableSelectionColumn<T> = import("naive-ui").DataTableSelectionColumn<T>
   type TableColumnGroup<T> = import("naive-ui/es/data-table/src/interface").TableColumnGroup<T>
-  type TableColumnCheck = import("@monorepo-example/hooks").TableColumnCheck
+  type TableColumnCheck = import("@rapidkit/hooks").TableColumnCheck
 
   type SetTableColumnKey<C, T> = Omit<C, "key"> & { key: keyof T | (string & {}) }
 

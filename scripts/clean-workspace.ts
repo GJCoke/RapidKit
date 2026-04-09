@@ -3,7 +3,7 @@ import fs from "fs"
 import path from "path"
 
 // 要删除的目录列表，可以扩展
-const dirsToDelete = ["node_modules", "dist", "build", "coverage", ".venv", ".turbo"]
+const dirsToDelete = ["node_modules", "dist", "build", "coverage", ".venv", ".turbo", ".pnpm-lock.yaml", "uv.lock"]
 
 // 获取 workspace 子包路径
 function getWorkspacePackages(): string[] {

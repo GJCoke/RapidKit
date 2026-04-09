@@ -1,0 +1,22 @@
+{
+  "name": "@rapidkit/cli",
+  "version": "1.0.0",
+  "description": "Flux — Monorepo development workflow CLI",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "format": "prettier --write --ignore-path ../../.prettierignore \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
+    "lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
+    "dev": "tsx ../builder/cli.ts --dev",
+    "build": "tsx ../builder/cli.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "citty": "^0.1.6",
+    "@clack/prompts": "^0.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "typescript": "^6.0.2"
+  }
+}

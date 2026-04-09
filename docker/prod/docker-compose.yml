@@ -1,16 +1,16 @@
-name: monorepo-prod
+name: rapidkit-prod
 
 services:
   # ==================== Infrastructure ====================
 
   postgresql:
     image: bitnami/postgresql
-    container_name: monorepo-prod-postgresql
+    container_name: rapidkit-prod-postgresql
     env_file: .env.prod
     volumes:
       - prod-pg-data:/bitnami/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root -d client"]
+      test: [ "CMD-SHELL", "pg_isready -U root -d client" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -18,13 +18,13 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: monorepo-prod-redis
+    container_name: rapidkit-prod-redis
     env_file: .env.prod
-    command: ["sh", "-c", "redis-server --requirepass $$REDIS_ROOT_PASSWORD"]
+    command: [ "sh", "-c", "redis-server --requirepass $$REDIS_ROOT_PASSWORD" ]
     volumes:
       - prod-redis-data:/data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a $$REDIS_ROOT_PASSWORD ping"]
+      test: [ "CMD-SHELL", "redis-cli -a $$REDIS_ROOT_PASSWORD ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,13 +32,13 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: monorepo-prod-minio
+    container_name: rapidkit-prod-minio
     env_file: .env.prod
     command: server /data --console-address ":9001"
     volumes:
       - prod-minio-data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -54,7 +54,7 @@ services:
       args:
         REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
         UV_IMAGE: ${UV_IMAGE:-ghcr.io/astral-sh/uv:latest}
-    container_name: monorepo-prod-backend-api
+    container_name: rapidkit-prod-backend-api
     env_file: .env.prod
     depends_on:
       postgresql:
@@ -64,7 +64,7 @@ services:
       minio:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('localhost',8006),2); s.close()"]
+      test: [ "CMD", "python", "-c", "import socket; s=socket.create_connection(('localhost',8006),2); s.close()" ]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -79,7 +79,7 @@ services:
       args:
         REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
         UV_IMAGE: ${UV_IMAGE:-ghcr.io/astral-sh/uv:latest}
-    container_name: monorepo-prod-celery-worker
+    container_name: rapidkit-prod-celery-worker
     command: uv run celery -A src.queues.app worker -l info
     env_file: .env.prod
     depends_on:
@@ -97,7 +97,7 @@ services:
       args:
         REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
         UV_IMAGE: ${UV_IMAGE:-ghcr.io/astral-sh/uv:latest}
-    container_name: monorepo-prod-celery-beat
+    container_name: rapidkit-prod-celery-beat
     command: uv run celery -A src.queues.app beat -S src.queues.scheduler:AsyncDatabaseScheduler -l info
     env_file: .env.prod
     depends_on:
@@ -116,7 +116,7 @@ services:
       args:
         REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
-    container_name: monorepo-prod-nginx
+    container_name: rapidkit-prod-nginx
     ports:
       - "18080:80"
     depends_on:
@@ -131,4 +131,4 @@ volumes:
 
 networks:
   default:
-    name: monorepo-prod-network
+    name: rapidkit-prod-network

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import { useBoolean } from "@monorepo-example/hooks"
+  import { useBoolean } from "@rapidkit/hooks"
   import { $t } from "@/locales"
   import SearchModal from "./components/search-modal.vue"
 

@@ -1,6 +1,6 @@
 import { ref } from "vue"
 import type { Ref } from "vue"
-import { createFlatRequest } from "@monorepo-example/axios"
+import { createFlatRequest } from "@rapidkit/axios"
 import type {
   AxiosError,
   CreateAxiosDefaults,
@@ -9,7 +9,7 @@ import type {
   RequestInstanceCommon,
   RequestOption,
   ResponseType,
-} from "@monorepo-example/axios"
+} from "@rapidkit/axios"
 import useLoading from "./use-loading"
 
 export type HookRequestInstanceResponseSuccessData<ApiData> = {

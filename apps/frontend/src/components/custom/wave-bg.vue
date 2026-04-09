@@ -1,6 +1,6 @@
 <script lang="ts" setup>
   import { computed } from "vue"
-  import { getPaletteColorByNumber } from "@monorepo-example/color"
+  import { getPaletteColorByNumber } from "@rapidkit/color"
 
   defineOptions({ name: "WaveBg" })
 

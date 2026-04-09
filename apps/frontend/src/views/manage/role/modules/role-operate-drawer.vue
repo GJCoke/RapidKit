@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from "vue"
-  import { jsonClone } from "@monorepo-example/utils"
-  import { useBoolean } from "@monorepo-example/hooks"
+  import { jsonClone } from "@rapidkit/utils"
+  import { useBoolean } from "@rapidkit/hooks"
   import { enableStatusOptions } from "@/constants/business"
   import { fetchCreateRole, fetchUpdateRole } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"

@@ -174,7 +174,7 @@ export interface AdminLayoutProps
    * @example
    *   use the default id by import
    *   ```ts
-   *   import { adminLayoutScrollElId } from '@monorepo-example/vue-materials';
+   *   import { adminLayoutScrollElId } from '@rapidkit/vue-materials';
    *   ```
    *
    * @default

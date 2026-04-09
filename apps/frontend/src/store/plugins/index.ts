@@ -1,5 +1,5 @@
 import type { PiniaPluginContext } from "pinia"
-import { jsonClone } from "@monorepo-example/utils"
+import { jsonClone } from "@rapidkit/utils"
 import { SetupStoreId } from "@/enum"
 
 /**

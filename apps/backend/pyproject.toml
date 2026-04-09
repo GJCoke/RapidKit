@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "monorepo-example-backend"
+name = "rapidkit-backend"
 authors = [
     { name = "Coke", email = "jock74608@gmail.com" }
 ]

@@ -1,5 +1,5 @@
 {
-  "name": "@monorepo-example/utils",
+  "name": "@rapidkit/utils",
   "version": "1.0.1",
   "description": "",
   "module": "./dist/index.esm.js",

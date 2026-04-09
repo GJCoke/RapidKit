@@ -2,7 +2,7 @@
 declare namespace App {
   /** Theme namespace */
   namespace Theme {
-    type ColorPaletteNumber = import("@monorepo-example/color").ColorPaletteNumber
+    type ColorPaletteNumber = import("@rapidkit/color").ColorPaletteNumber
 
     /** Theme setting */
     interface ThemeSetting {

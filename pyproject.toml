@@ -1,10 +1,10 @@
 [project]
-name = "monorepo-example"
+name = "rapidkit"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = ["monorepo-example-backend"]
+dependencies = ["rapidkit-backend"]
 
 [dependency-groups]
 dev = [
@@ -14,7 +14,7 @@ dev = [
 ]
 
 [tool.uv.sources]
-monorepo-example-backend = { workspace = true }
+rapidkit-backend = { workspace = true }
 
 [tool.uv.workspace]
 members = [

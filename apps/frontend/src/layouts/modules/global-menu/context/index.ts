@@ -1,6 +1,6 @@
 import { computed, ref, watch } from "vue"
 import { useRoute } from "vue-router"
-import { useContext } from "@monorepo-example/hooks"
+import { useContext } from "@rapidkit/hooks"
 import type { RouteKey } from "@elegant-router/types"
 import { useRouteStore } from "@/store/modules/route"
 import { useRouterPush } from "@/hooks/common/router"

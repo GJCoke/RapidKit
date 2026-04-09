@@ -9,11 +9,11 @@
     "message": "Message",
     "projectCount": "Project Count",
     "projectNews": {
-      "desc1": "Soybean created the open source project soybean-admin on May 28, 2021!",
+      "desc1": "RapidKit created the open source project soybean-admin on May 28, 2021!",
       "desc2": "Yanbowe submitted a bug to soybean-admin, the multi-tab bar will not adapt.",
-      "desc3": "Soybean is ready to do sufficient preparation for the release of soybean-admin!",
-      "desc4": "Soybean is busy writing project documentation for soybean-admin!",
-      "desc5": "Soybean just wrote some of the workbench pages casually, and it was enough to see!",
+      "desc3": "RapidKit is ready to do sufficient preparation for the release of soybean-admin!",
+      "desc4": "RapidKit is busy writing project documentation for soybean-admin!",
+      "desc5": "RapidKit just wrote some of the workbench pages casually, and it was enough to see!",
       "moreNews": "More News",
       "title": "Project News"
     },
@@ -435,10 +435,10 @@
         "Suneo": "Suneo"
       },
       "rooms": {
-        "Public": "Public",
-        "VIP": "VIP",
-        "Test": "Test",
-        "Doraemon-Fans": "Doraemon-Fans"
+        "Nobis-Home": "Nobi's Home",
+        "Secret-Base": "Secret Base",
+        "School": "Tsukimidai Elementary",
+        "Doraemon-Fans": "Doraemon Fans"
       }
     }
   }

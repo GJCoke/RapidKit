@@ -1,7 +1,7 @@
 {
-  "name": "@monorepo-example/editor",
+  "name": "@rapidkit/editor",
   "version": "1.0.0",
-  "description": "Monaco Editor Vue component for monorepo-example",
+  "description": "Monaco Editor Vue component for rapidkit",
   "type": "module",
   "module": "./dist/index.esm.js",
   "types": "./dist/index.d.ts",

@@ -2,7 +2,7 @@
   import { reactive, ref } from "vue"
   import type { Ref } from "vue"
   import { NButton, NPopconfirm, NTag } from "naive-ui"
-  import { useBoolean } from "@monorepo-example/hooks"
+  import { useBoolean } from "@rapidkit/hooks"
   import { yesOrNoRecord } from "@/constants/common"
   import { enableStatusRecord, menuTypeRecord } from "@/constants/business"
   import { fetchBatchDeleteMenus, fetchDeleteMenu, fetchGetAllPages, fetchGetMenuList } from "@/service/api"

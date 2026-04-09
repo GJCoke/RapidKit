@@ -1,5 +1,5 @@
 {
-  "name": "@monorepo-example/color",
+  "name": "@rapidkit/color",
   "version": "1.0.1",
   "description": "",
   "type": "module",
@@ -29,7 +29,7 @@
     "dist"
   ],
   "dependencies": {
-    "@monorepo-example/utils": "workspace:*",
+    "@rapidkit/utils": "workspace:*",
     "colord": "2.9.3"
   }
 }

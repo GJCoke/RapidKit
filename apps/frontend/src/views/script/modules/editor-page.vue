@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, computed, watch } from "vue"
-  import { MonacoEditor, OutputPanel } from "@monorepo-example/editor"
-  import type { OutputStatus } from "@monorepo-example/editor"
+  import { MonacoEditor, OutputPanel } from "@rapidkit/editor"
+  import type { OutputStatus } from "@rapidkit/editor"
   import { useThemeStore } from "@/store/modules/theme"
   import { $t } from "@/locales"
   import { fetchExecuteScript, fetchGetScriptDetail, fetchUpdateScript } from "@/service/api"

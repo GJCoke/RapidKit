@@ -9,7 +9,7 @@ interface WorkspacePackage {
   private?: boolean
 }
 
-const OUTPUT_DIR = path.resolve("docs/website/src/changelog")
+const OUTPUT_DIR = path.resolve("apps/website/src/changelog")
 
 function getWorkspacePackages(): WorkspacePackage[] {
   try {

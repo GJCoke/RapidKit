@@ -1,5 +1,5 @@
 import { computed } from "vue"
-import { useCountDown, useLoading } from "@monorepo-example/hooks"
+import { useCountDown, useLoading } from "@rapidkit/hooks"
 import { REG_PHONE } from "@/constants/reg"
 import { $t } from "@/locales"
 

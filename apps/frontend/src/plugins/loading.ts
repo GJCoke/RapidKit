@@ -1,5 +1,5 @@
 // @unocss-include
-import { getRgb } from "@monorepo-example/color"
+import { getRgb } from "@rapidkit/color"
 import { DARK_CLASS } from "@/constants/app"
 import { localStg } from "@/utils/storage"
 import { toggleHtmlClass } from "@/utils/common"

@@ -1,5 +1,5 @@
 {
-  "name": "@monorepo-example/hooks",
+  "name": "@rapidkit/hooks",
   "version": "1.0.1",
   "description": "",
   "type": "module",
@@ -27,8 +27,8 @@
     "dist"
   ],
   "dependencies": {
-    "@monorepo-example/axios": "workspace:*",
-    "@monorepo-example/utils": "workspace:*"
+    "@rapidkit/axios": "workspace:*",
+    "@rapidkit/utils": "workspace:*"
   },
   "devDependencies": {
     "@vueuse/core": "^14.2.1"

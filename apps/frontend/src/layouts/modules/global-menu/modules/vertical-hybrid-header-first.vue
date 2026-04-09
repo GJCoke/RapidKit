@@ -3,7 +3,7 @@
   import { useRoute } from "vue-router"
   import type { RouteKey } from "@elegant-router/types"
   import { SimpleScrollbar } from "@/materials"
-  import { useBoolean } from "@monorepo-example/hooks"
+  import { useBoolean } from "@rapidkit/hooks"
   import { GLOBAL_HEADER_MENU_ID, GLOBAL_SIDER_MENU_ID } from "@/constants/app"
   import { useAppStore } from "@/store/modules/app"
   import { useThemeStore } from "@/store/modules/theme"

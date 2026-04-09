@@ -1,5 +1,5 @@
 {
-  "name": "@monorepo-example/alova",
+  "name": "@rapidkit/alova",
   "version": "1.0.1",
   "description": "",
   "type": "module",
@@ -30,7 +30,7 @@
   ],
   "dependencies": {
     "@alova/mock": "2.0.20",
-    "@monorepo-example/utils": "workspace:*",
+    "@rapidkit/utils": "workspace:*",
     "alova": "3.5.1"
   }
 }

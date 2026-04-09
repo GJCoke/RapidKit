@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, watch } from "vue"
-  import { jsonClone, rsaEncrypt } from "@monorepo-example/utils"
+  import { jsonClone, rsaEncrypt } from "@rapidkit/utils"
   import { enableStatusOptions } from "@/constants/business"
   import { fetchCreateUser, fetchGetAllRoles, fetchGetPublicKey, fetchUpdateUser } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"

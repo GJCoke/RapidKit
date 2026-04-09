@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, watch } from "vue"
-  import { jsonClone } from "@monorepo-example/utils"
+  import { jsonClone } from "@rapidkit/utils"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
   import { fetchCreateSchedule, fetchGetRegisteredTasks, fetchUpdateSchedule } from "@/service/api/worker"

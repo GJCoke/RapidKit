@@ -10,7 +10,7 @@ import { inject, provide } from "vue"
  *
  *   // context.ts
  *   import { ref } from 'vue';
- *   import { useContext } from '@monorepo-example/hooks';
+ *   import { useContext } from '@rapidkit/hooks';
  *
  *   export const [provideDemoContext, useDemoContext] = useContext('demo', () => {
  *     const count = ref(0);

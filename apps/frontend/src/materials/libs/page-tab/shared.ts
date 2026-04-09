@@ -1,4 +1,4 @@
-import { addColorAlpha, transformColorWithOpacity } from "@monorepo-example/color"
+import { addColorAlpha, transformColorWithOpacity } from "@rapidkit/color"
 import type { PageTabCssVars, PageTabCssVarsProps } from "../../types"
 
 /** The active color of the tab */
