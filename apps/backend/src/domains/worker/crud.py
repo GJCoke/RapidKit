@@ -173,17 +173,17 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             ),
         ).filter(self._time_filter(days))
 
-        result = (await session.exec(statement)).one()
-        total = result.total or 0
-        success = result.success or 0
+        result = (await session.execute(statement)).mappings().one()
+        total = result["total"] or 0
+        success = result["success"] or 0
         return TaskStatsSummary(
             total=total,
             success=success,
-            failure=result.failure or 0,
-            retry=result.retry or 0,
-            revoked=result.revoked or 0,
+            failure=result["failure"] or 0,
+            retry=result["retry"] or 0,
+            revoked=result["revoked"] or 0,
             success_rate=round(success / total * 100, 2) if total > 0 else 0.0,
-            avg_runtime=round(result.avg_runtime, 3) if result.avg_runtime is not None else None,
+            avg_runtime=round(result["avg_runtime"], 3) if result["avg_runtime"] is not None else None,
         )
 
     async def get_stats_timeline(self, days: int, *, session: AsyncSession | None = None) -> list[TaskStatsTimeline]:
@@ -202,13 +202,13 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             .order_by(bucket)
         )
 
-        results = (await session.exec(statement)).all()
+        results = (await session.execute(statement)).mappings().all()
         return [
             TaskStatsTimeline(
-                time_bucket=row.time_bucket.strftime("%Y-%m-%d %H:%M") if row.time_bucket else "",
-                total=row.total,
-                success=row.success,
-                failure=row.failure,
+                time_bucket=row["time_bucket"].strftime("%Y-%m-%d %H:%M") if row["time_bucket"] else "",
+                total=row["total"],
+                success=row["success"],
+                failure=row["failure"],
             )
             for row in results
         ]
