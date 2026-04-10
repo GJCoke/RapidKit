@@ -7,6 +7,9 @@ export default defineConfig({
     description: "TypeScript & Python Monorepo 全栈项目文档",
     lang: "zh-CN",
     lastUpdated: true,
+    head: [
+        ["link", {rel: "icon", type: "image/svg+xml", href: "/logo.svg"}],
+    ],
     vite: {
         server: {
             host: "0.0.0.0",

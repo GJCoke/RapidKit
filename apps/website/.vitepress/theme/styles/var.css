@@ -1,11 +1,21 @@
 :root {
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(30deg, #00d4ff 0%, #00ffaa 50%, #b967ff 100%);
-  --vp-button-brand-border: #747bff;
-  --vp-button-brand-bg: #646cff;
-  --vp-button-brand-hover-bg: #747bff;
-  --vp-button-brand-active-bg: #646cff;
+  /* Brand colors — controls nav hover, active, links, search highlight, sidebar, etc. */
+  --vp-c-brand-1: #4361EE;
+  --vp-c-brand-2: #5A7BF5;
+  --vp-c-brand-3: #6C8AFF;
+  --vp-c-brand-soft: rgba(67, 97, 238, 0.14);
 
-  --vp-home-hero-image-background-image: linear-gradient(120deg, #00d4ff 0%, #00ffaa 50%, #b967ff 100%);
+  /* Home hero */
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(30deg, #2EC4B6 0%, #4361EE 50%, #3730A3 100%);
+  --vp-home-hero-image-background-image: linear-gradient(120deg, #2EC4B6 0%, #4361EE 50%, #3730A3 100%);
   --vp-home-hero-image-filter: blur(300px);
+
+  /* Brand button */
+  --vp-button-brand-border: #4361EE;
+  --vp-button-brand-bg: #4361EE;
+  --vp-button-brand-hover-border: #5A7BF5;
+  --vp-button-brand-hover-bg: #5A7BF5;
+  --vp-button-brand-active-border: #3730A3;
+  --vp-button-brand-active-bg: #3730A3;
 }

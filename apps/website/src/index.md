@@ -5,7 +5,7 @@ hero:
   image: "/logo.svg"
   name: "RapidKit"
   text: "全栈 Monorepo 模板"
-  tagline: Vue 3 + FastAPI, TypeScript + Python, 前后端统一管理
+  tagline: Vue 3 + FastAPI, TypeScript + Python, 多端统一管理
   actions:
     - theme: brand
       text: 快速开始
