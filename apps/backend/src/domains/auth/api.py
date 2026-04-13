@@ -71,6 +71,11 @@ async def login(
         redis=redis,
         user_agent=user_agent,
     )
+
+    from src.domains.system.services import ActivityService
+
+    ActivityService.log_activity_fire_and_forget(event_type="user_login", params={"name": body.username})
+
     return Response(data=token)
 
 

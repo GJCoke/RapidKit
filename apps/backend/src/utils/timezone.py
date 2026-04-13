@@ -1,3 +1,12 @@
+"""
+时区工具。
+
+提供全局 TimeZone 单例，统一管理时区转换与格式化。
+
+Author : Coke
+Date   : 2025-04-12
+"""
+
 import zoneinfo
 from datetime import UTC, datetime
 from datetime import timezone as datetime_timezone
@@ -5,83 +14,124 @@ from datetime import timezone as datetime_timezone
 
 class TimeZone:
     """
-    时区转换器类。
+    时区转换器。
+
+    通过全局单例 ``timezone`` 统一项目内所有时区操作，
+    避免各模块分散使用 ``datetime.now()`` / ``ZoneInfo`` 导致不一致。
     """
 
-    format_str: str
+    def __init__(self, tz: str = "UTC", fmt: str = "%Y-%m-%d %H:%M:%S") -> None:
+        self.tz_info = zoneinfo.ZoneInfo(tz)
+        self.fmt = fmt
 
-    def __init__(self, timezone: str, format_str: str = "%Y-%m-%d %H:%M:%S") -> None:
-        """
-        初始化时区转换器。
-        """
-        self.tz_info = zoneinfo.ZoneInfo(timezone)
-        self.format_str = format_str
+    # ------------------------------------------------------------------
+    # 获取当前时间
+    # ------------------------------------------------------------------
 
     def now(self) -> datetime:
         """
-        获取当前时区时间。
+        获取当前 naive UTC 时间（兼容 TIMESTAMP WITHOUT TIME ZONE 列）。
 
         Returns:
-            当前时区的 datetime 对象。
+            不含 tzinfo 的 UTC datetime，可直接写入 Postgres。
+        """
+        return datetime.now(UTC).replace(tzinfo=None)
+
+    def now_local(self) -> datetime:
+        """
+        获取当前配置时区的 aware datetime。
+
+        Returns:
+            带 tzinfo 的本地时间。
         """
         return datetime.now(self.tz_info)
 
-    def utc_now(self) -> datetime:
-        """
-        获取当前 UTC 时间。
+    # ------------------------------------------------------------------
+    # 转换
+    # ------------------------------------------------------------------
 
-        Returns:
-            当前 UTC 的 datetime 对象。
+    def to_local(self, dt: datetime) -> datetime:
         """
-        return datetime.now(UTC)
+        将 datetime 转换为配置时区。
 
-    def from_datetime(self, t: datetime) -> datetime:
-        """
-        将 datetime 对象转换为当前时区时间。
+        如果传入 naive datetime，默认视为 UTC。
 
         Args:
-            t: 需要转换的 datetime 对象。
+            dt: 需要转换的 datetime 对象。
 
         Returns:
-            转换后的当前时区 datetime 对象。
+            转换后的带时区 datetime。
         """
-        return t.astimezone(self.tz_info)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime_timezone.utc)
+        return dt.astimezone(self.tz_info)
+
+    @staticmethod
+    def to_utc(dt: datetime | int) -> datetime:
+        """
+        将 datetime 或时间戳转换为 UTC。
+
+        Args:
+            dt: datetime 对象或 Unix 时间戳。
+
+        Returns:
+            UTC 时区的 datetime 对象。
+        """
+        if isinstance(dt, datetime):
+            return dt.astimezone(datetime_timezone.utc)
+        return datetime.fromtimestamp(dt, tz=datetime_timezone.utc)
+
+    # ------------------------------------------------------------------
+    # 格式化
+    # ------------------------------------------------------------------
+
+    def f_datetime(self, dt: datetime) -> str:
+        """
+        将 datetime 转为配置时区后，按配置格式输出字符串。
+
+        Args:
+            dt: 需要格式化的 datetime（naive 视为 UTC）。
+
+        Returns:
+            格式化后的时间字符串。
+        """
+        return self.to_local(dt).strftime(self.fmt)
+
+    def f_time(self, dt: datetime) -> str:
+        """
+        将 datetime 转为配置时区后，仅输出 HH:MM:SS。
+
+        Args:
+            dt: 需要格式化的 datetime。
+
+        Returns:
+            HH:MM:SS 格式字符串。
+        """
+        return self.to_local(dt).strftime("%H:%M:%S")
 
     def from_str(self, t_str: str) -> datetime:
         """
-        将时间字符串转换为当前时区的 datetime 对象。
+        将时间字符串按配置格式解析为配置时区的 datetime。
 
         Args:
             t_str: 时间字符串。
 
         Returns:
-            转换后的当前时区 datetime 对象。
+            带配置时区信息的 datetime 对象。
         """
-        return datetime.strptime(t_str, self.format_str).replace(tzinfo=self.tz_info)
+        return datetime.strptime(t_str, self.fmt).replace(tzinfo=self.tz_info)
 
-    def to_str(self, t: datetime) -> str:
-        """
-        将 datetime 对象转换为指定格式的时间字符串。
 
-        Args:
-            t: datetime 对象。
+# ------------------------------------------------------------------
+# 全局单例 —— 在 settings 初始化后创建
+# ------------------------------------------------------------------
 
-        Returns:
-            格式化后的时间字符串。
-        """
-        return t.strftime(self.format_str)
 
-    @staticmethod
-    def to_utc(t: datetime | int) -> datetime:
-        """
-        将 datetime 对象或时间戳转换为 UTC 时区时间。
+def _create_timezone() -> TimeZone:
+    from src.core.config import settings
 
-        Args:
-            t: 需要转换的 datetime 对象或时间戳。
+    return TimeZone(tz=settings.DATETIME_TIMEZONE, fmt=settings.DATETIME_FORMAT)
 
-        Returns:
-            UTC 时区的 datetime 对象。
-        """
-        if isinstance(t, datetime):
-            return t.astimezone(datetime_timezone.utc)
-        return datetime.fromtimestamp(t, tz=datetime_timezone.utc)
+
+# 延迟初始化，模块首次被 import 时创建
+timezone = _create_timezone()

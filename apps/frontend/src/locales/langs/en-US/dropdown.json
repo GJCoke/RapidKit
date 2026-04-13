@@ -1,5 +1,7 @@
 {
   "closeAll": "Close All",
+  "pin": "Pin Tab",
+  "unpin": "Unpin Tab",
   "closeCurrent": "Close Current",
   "closeLeft": "Close Left",
   "closeOther": "Close Other",

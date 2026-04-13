@@ -42,10 +42,8 @@
   async function handleSubmit() {
     if (!taskName.value) return
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let args: any[] = []
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let kwargs: Record<string, any> = {}
+    let args: unknown[]
+    let kwargs: Record<string, unknown>
 
     try {
       args = JSON.parse(argsStr.value)

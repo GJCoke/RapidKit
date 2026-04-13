@@ -5,7 +5,6 @@ Author : Coke
 Date   : 2025-03-12
 """
 
-from datetime import datetime
 from typing import Any, Generic, TypeVar
 from uuid import UUID
 
@@ -15,6 +14,7 @@ from src.core.status_codes import StatusCode
 from src.locales.i18n import is_i18n_key, t
 
 from .base import BaseModel
+from .types import LocalDatetime
 
 T = TypeVar("T")
 
@@ -28,23 +28,8 @@ class BaseResponse(BaseModel):
 class BaseSchema(BaseResponse):
     id: UUID
 
-    create_time: datetime = Field(examples=["2024-07-31 16:07:34"])
-    update_time: datetime = Field(examples=["2024-07-31 16:07:34"])
-
-    @field_serializer("create_time", "update_time")
-    def serialize_datetime(self, value: datetime) -> str:
-        """
-        Pydantic 用于 datetime 字段的序列化方法。
-
-        序列化为 GMT 字符串格式。
-
-        Args:
-            value: 要序列化的 datetime 值
-
-        Returns:
-            GMT 格式字符串
-        """
-        return value.strftime("%Y-%m-%d %H:%M:%S")
+    create_time: LocalDatetime = Field(examples=["2024-07-31 16:07:34"])
+    update_time: LocalDatetime = Field(examples=["2024-07-31 16:07:34"])
 
 
 class ResponseSchema(BaseSchema):

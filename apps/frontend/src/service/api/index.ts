@@ -1,4 +1,6 @@
 export * from "./auth"
+export * from "./dashboard"
+export * from "./monitoring"
 export * from "./route"
 export * from "./script"
 export * from "./system-manage"

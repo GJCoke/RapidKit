@@ -81,6 +81,10 @@ async def connect(sid: SID, auth: AccessToken, db_user: AuthCrudDep, redis: Redi
     await redis.set(user_sid_structure.format(user_id=user_id), sid)
     await redis.sadd(online_users_structure, user_id)
 
+    # 推送在线用户数到 Dashboard
+    count = await redis.scard(online_users_structure) or 0  # ty: ignore[invalid-await]
+    await socket.emit("dashboard:online_users", {"count": count}, namespace="/dashboard")
+
     return None
 
 
@@ -97,3 +101,7 @@ async def disconnect(sid: SID, redis: RedisDep) -> None:
     await redis.delete(sid_user_structure.format(sid=sid))
     await redis.delete(user_sid_structure.format(user_id=user.id))
     await redis.srem(online_users_structure, user.id)  # ty: ignore[invalid-await]
+
+    # 推送在线用户数到 Dashboard
+    count = await redis.scard(online_users_structure) or 0  # ty: ignore[invalid-await]
+    await socket.emit("dashboard:online_users", {"count": count}, namespace="/dashboard")

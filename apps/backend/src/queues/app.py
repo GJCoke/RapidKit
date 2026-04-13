@@ -11,7 +11,14 @@ from src.queues.celery import Celery
 REDIS_URL = str(settings.CELERY_REDIS_URL)
 DATABASE_URL = str(settings.ASYNC_DATABASE_POSTGRESQL_URL)
 app = Celery("celery_app", broker=REDIS_URL, backend=REDIS_URL)
-app.conf.update({"timezone": settings.DATETIME_TIMEZONE, "database_url": DATABASE_URL, "refresh_interval": 60})
+app.conf.update(
+    {
+        "timezone": settings.DATETIME_TIMEZONE,
+        "enable_utc": True,
+        "database_url": DATABASE_URL,
+        "refresh_interval": 60,
+    }
+)
 
 app.autodiscover_tasks(["src.queues.tasks"])
 

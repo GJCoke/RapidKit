@@ -28,6 +28,8 @@ declare module "@elegant-router/types" {
     "manage_role": "/manage/role";
     "manage_user": "/manage/user";
     "manage_user-detail": "/manage/user-detail/:id";
+    "monitoring": "/monitoring";
+    "monitoring_api": "/monitoring/api";
     "queue": "/queue";
     "queue_dashboard": "/queue/dashboard";
     "queue_schedule": "/queue/schedule";
@@ -75,6 +77,7 @@ declare module "@elegant-router/types" {
     | "iframe-page"
     | "login"
     | "manage"
+    | "monitoring"
     | "queue"
     | "script"
     | "socketio"
@@ -104,6 +107,7 @@ declare module "@elegant-router/types" {
     | "manage_role"
     | "manage_user-detail"
     | "manage_user"
+    | "monitoring_api"
     | "queue_dashboard"
     | "queue_schedule"
     | "queue_task"

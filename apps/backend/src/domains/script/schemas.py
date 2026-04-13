@@ -5,14 +5,13 @@ Author  : Claude
 Date    : 2026-03-31
 """
 
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import Field
 
 from src.common.schemas import BaseModel, BaseRequest
 from src.common.schemas.request import BatchRequest, PaginatedRequest
-from src.common.schemas.response import BaseSchema, ResponseSchema
+from src.common.schemas.response import BaseSchema, LocalDatetime, ResponseSchema
 from src.utils.enums import Status
 
 # ==================== Script Schemas ====================
@@ -39,8 +38,8 @@ class ScriptListResponse(BaseSchema):
     description: str
     language: str
     status: Status
-    create_time: datetime
-    update_time: datetime
+    create_time: LocalDatetime
+    update_time: LocalDatetime
 
 
 class ScriptCreate(ScriptSchema, BaseRequest):

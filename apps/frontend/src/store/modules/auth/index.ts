@@ -10,7 +10,7 @@ import { SetupStoreId } from "@/enum"
 import { $t } from "@/locales"
 import { useRouteStore } from "../route"
 import { useTabStore } from "../tab"
-import { clearAuthStorage, getToken } from "./shared"
+import { clearAuthStorage, connectGlobalSocket, disconnectGlobalSocket, getToken } from "./shared"
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const route = useRoute()
@@ -20,7 +20,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const { toLogin, redirectFromLogin } = useRouterPush(false)
   const { loading: loginLoading, startLoading, endLoading } = useLoading()
 
-  const token = ref(getToken())
+  const token = ref("")
 
   const userInfo: Api.Auth.UserInfo = reactive({
     id: "",
@@ -48,6 +48,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   async function resetStore() {
     recordUserId()
 
+    disconnectGlobalSocket()
     clearAuthStorage()
 
     authStore.$reset()
@@ -149,6 +150,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
     if (pass) {
       token.value = loginToken.accessToken
+      connectGlobalSocket()
 
       return true
     }
@@ -170,13 +172,16 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   async function initUserInfo() {
-    const hasToken = getToken()
+    const maybeToken = getToken()
 
-    if (hasToken) {
+    if (maybeToken) {
+      token.value = maybeToken
       const pass = await getUserInfo()
 
       if (!pass) {
         resetStore()
+      } else {
+        connectGlobalSocket()
       }
     }
   }

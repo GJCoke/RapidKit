@@ -25,4 +25,9 @@ export const $t = i18n.global.t as I18n.$T
 
 export function setLocale(locale: I18n.LangType) {
   i18n.global.locale.value = locale
+  document?.querySelector("html")?.setAttribute("lang", locale)
+}
+
+export function getLocale(): I18n.LangType {
+  return i18n.global.locale.value as I18n.LangType
 }

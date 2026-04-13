@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 from typing import Any, Literal, TypeAlias
 
 from fastapi_sio_di import SID
@@ -7,6 +6,7 @@ from fastapi_sio_di import SID
 from src.common.schemas import BaseModel
 from src.core.log import logger
 from src.sio.app import socket
+from src.utils.timezone import timezone
 
 MessageType: TypeAlias = Literal["text", "image", "video", "audio", "file", "system"]
 
@@ -83,7 +83,7 @@ async def on_join(sid: SID, group: str) -> None:
         sender="System",
         content=I18nContent(key="page.socketio.chat.userJoined", params={"username": username, "group": group}),
         avatar="/src/assets/imgs/avatar_system.jpg",
-        time=datetime.now().strftime("%H:%M:%S"),
+        time=timezone.f_time(timezone.now_local()),
     )
 
     # 广播给房间内的所有人
@@ -109,7 +109,7 @@ async def on_message(sid: SID, data: MessageEvent) -> None:
         sender=sender,
         content=content,
         avatar=data.avatar,
-        time=datetime.now().strftime("%H:%M:%S"),
+        time=timezone.f_time(timezone.now_local()),
     )
 
     # 广播给该组内的所有人（包括发送者自己）
@@ -134,7 +134,7 @@ async def on_disconnect(sid: SID) -> None:
             sender="System",
             content=I18nContent(key="page.socketio.chat.userLeft", params={"username": username, "group": group}),
             avatar="/src/assets/imgs/avatar_system.jpg",
-            time=datetime.now().strftime("%H:%M:%S"),
+            time=timezone.f_time(timezone.now_local()),
         )
 
         await socket.emit("message", notification, room=group, namespace="/chat")

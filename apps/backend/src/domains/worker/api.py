@@ -5,6 +5,7 @@ Author  : Claude
 Date    : 2026-03-30
 """
 
+from datetime import date
 from typing import Annotated
 from uuid import UUID
 
@@ -236,9 +237,12 @@ async def get_task_stats_summary(
 async def get_task_stats_timeline(
     crud: TaskResultCrudDep,
     days: int = Query(7, ge=1, le=90),
+    start: date | None = Query(None, description="开始日期"),
+    end: date | None = Query(None, description="结束日期"),
+    granularity: str = Query("hour", description="粒度: hour | day"),
 ) -> Response[list[TaskStatsTimeline]]:
-    """获取任务吞吐量时间线（按小时分桶）。"""
-    data = await crud.get_stats_timeline(days)
+    """获取任务吞吐量时间线，支持自定义日期范围和粒度。"""
+    data = await crud.get_stats_timeline(days, start=start, end=end, granularity=granularity)
     return Response(data=data)
 
 

@@ -11,6 +11,7 @@ from sqlmodel import JSON, Column, Field, Text
 
 from src.common.models import SQLModel
 from src.utils.enums import TaskStatus, WorkerStatus
+from src.utils.timezone import timezone
 
 
 class CeleryWorker(SQLModel, table=True):
@@ -26,7 +27,7 @@ class CeleryWorker(SQLModel, table=True):
     active_task_count: int = Field(0, description="当前正在执行的任务数")
     load_average: dict = Field(default={}, sa_column=Column(JSON), description="系统负载信息")
     software_info: dict = Field(default={}, sa_column=Column(JSON), description="Celery 版本、Python 版本等")
-    last_heartbeat: datetime = Field(default_factory=datetime.now, description="最后一次心跳时间")
+    last_heartbeat: datetime = Field(default_factory=timezone.now, description="最后一次心跳时间")
 
 
 class CeleryTaskResult(SQLModel, table=True):

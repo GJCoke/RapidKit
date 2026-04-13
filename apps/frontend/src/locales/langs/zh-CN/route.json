@@ -6,6 +6,8 @@
   "iframe-page": "外链页面",
   "login": "登录",
   "manage": "系统管理",
+  "monitoring": "监控中心",
+  "monitoring_api": "API 监控",
   "manage_menu": "菜单管理",
   "manage_role": "角色管理",
   "manage_user": "用户管理",

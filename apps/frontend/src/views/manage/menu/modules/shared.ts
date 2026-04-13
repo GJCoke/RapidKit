@@ -3,13 +3,10 @@ const VIEW_PREFIX = "view."
 const FIRST_LEVEL_ROUTE_COMPONENT_SPLIT = "$"
 
 export function getLayoutAndPage(component?: string | null) {
-  let layout = ""
-  let page = ""
-
   const [layoutOrPage = "", pageItem = ""] = component?.split(FIRST_LEVEL_ROUTE_COMPONENT_SPLIT) || []
 
-  layout = getLayout(layoutOrPage)
-  page = getPage(pageItem || layoutOrPage)
+  const layout = getLayout(layoutOrPage)
+  const page = getPage(pageItem || layoutOrPage)
 
   return { layout, page }
 }

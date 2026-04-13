@@ -7,6 +7,8 @@ Author : Coke
 Date   : 2025-03-10
 """
 
+import asyncio
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,10 +28,26 @@ from src.middlewares.context import ContextMiddleware
 from src.middlewares.i18n import I18nMiddleware
 from src.middlewares.limiter import SlowAPIMiddleware
 from src.middlewares.logger import LoggerMiddleware
+from src.middlewares.metrics import MetricsMiddleware
 from src.middlewares.state import StateMiddleware
 from src.sio.app import socket_app
 from src.utils.nanoid import NanoIdPlugin
+from src.utils.timezone import timezone
 from src.utils.utils import format_validation_errors
+
+
+async def _increment_biz_error() -> None:
+    """将业务异常计数写入 Redis（fire-and-forget）。"""
+    try:
+        from src.core.database import RedisManager
+
+        redis = RedisManager.client()
+        hour_bucket = timezone.now().strftime("%Y%m%d_%H")
+        key = f"metrics:errors:biz:{hour_bucket}"
+        await redis.hincrby(key, "count", 1)  # ty: ignore[invalid-await]
+        await redis.expire(key, 7200)
+    except Exception:
+        logger.debug("Failed to increment biz error count", exc_info=True)
 
 
 def setup_logging_config() -> None:
@@ -45,6 +63,7 @@ def setup_middlewares(app: FastAPI) -> None:
     中间件的注册机制为 先进后出。
     """
     app.add_middleware(StateMiddleware)
+    app.add_middleware(MetricsMiddleware)
     app.add_middleware(SlowAPIMiddleware)
     app.add_middleware(I18nMiddleware)
     app.add_middleware(
@@ -98,6 +117,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
             code=exc.code,
             message=exc.message,
         )
+        asyncio.create_task(_increment_biz_error())
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=exc.dump(),
@@ -144,11 +164,13 @@ def setup_router(app: FastAPI) -> None:
     from src.core.config import settings
     from src.domains.auth import api as auth
     from src.domains.menu import api as manage
+    from src.domains.monitoring import api as monitoring
     from src.domains.role import api as roles
     from src.domains.route import api as frontend_route
     from src.domains.router import api as router
     from src.domains.schedule import api as schedule
     from src.domains.script import api as script
+    from src.domains.system import api as system
     from src.domains.user import api as user
     from src.domains.worker import api as worker
 
@@ -160,6 +182,8 @@ def setup_router(app: FastAPI) -> None:
     v1_router.include_router(user.router)
     v1_router.include_router(frontend_route.router)
     v1_router.include_router(script.router)
+    v1_router.include_router(system.router)
+    v1_router.include_router(monitoring.router)
     if settings.ENABLE_CELERY_MONITOR:
         v1_router.include_router(worker.router)
         v1_router.include_router(worker.task_router)

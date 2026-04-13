@@ -5,14 +5,13 @@ Author  : Claude
 Date    : 2026-03-30
 """
 
-from datetime import datetime
 from typing import Any
 
 from pydantic import Field
 
 from src.common.schemas import BaseModel, BaseRequest
 from src.common.schemas.request import PaginatedRequest
-from src.common.schemas.response import BaseSchema
+from src.common.schemas.response import BaseSchema, LocalDatetime
 from src.utils.enums import TaskStatus, WorkerStatus
 
 # ==================== Worker Schemas ====================
@@ -29,7 +28,7 @@ class WorkerSchema(BaseModel):
     active_task_count: int = 0
     load_average: dict = {}
     software_info: dict = {}
-    last_heartbeat: datetime | None = None
+    last_heartbeat: LocalDatetime | None = None
 
 
 class WorkerCreate(WorkerSchema, BaseRequest):
@@ -60,8 +59,8 @@ class TaskResultSchema(BaseModel):
     exception: str | None = None
     traceback: str | None = None
     logs: str | None = None
-    started_at: datetime | None = None
-    finished_at: datetime | None = None
+    started_at: LocalDatetime | None = None
+    finished_at: LocalDatetime | None = None
     runtime: float | None = None
     retries: int = 0
 
@@ -85,8 +84,8 @@ class TaskListResponse(BaseSchema):
     task_name: str
     status: TaskStatus
     worker_hostname: str = ""
-    started_at: datetime | None = None
-    finished_at: datetime | None = None
+    started_at: LocalDatetime | None = None
+    finished_at: LocalDatetime | None = None
     runtime: float | None = None
     retries: int = 0
 
@@ -194,7 +193,7 @@ class TaskStatsSummary(BaseModel):
 class TaskStatsTimeline(BaseModel):
     """时间线数据点。"""
 
-    time_bucket: str
+    time_bucket: LocalDatetime
     total: int
     success: int
     failure: int

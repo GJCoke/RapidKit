@@ -11,6 +11,7 @@ from uuid import UUID
 from sqlmodel import Field
 from sqlmodel import SQLModel as _SQLModel
 
+from src.utils.timezone import timezone
 from src.utils.uuid7 import uuid7
 
 
@@ -29,9 +30,9 @@ class SQLModel(_SQLModel):
         nullable=False,
         description="唯一ID",
     )
-    create_time: datetime = Field(default_factory=datetime.now, description="创建时间")
+    create_time: datetime = Field(default_factory=timezone.now, description="创建时间")
     update_time: datetime = Field(
-        default_factory=datetime.now,
-        sa_column_kwargs={"onupdate": datetime.now},
+        default_factory=timezone.now,
+        sa_column_kwargs={"onupdate": timezone.now},
         description="更新时间",
     )

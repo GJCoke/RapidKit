@@ -2,6 +2,7 @@
   import { ref, watch } from "vue"
   import { useRoute } from "vue-router"
   import { SimpleScrollbar } from "@/materials"
+  import type { RouteKey } from "@elegant-router/types"
   import { GLOBAL_HEADER_MENU_ID, GLOBAL_SIDER_MENU_ID } from "@/constants/app"
   import { useAppStore } from "@/store/modules/app"
   import { useThemeStore } from "@/store/modules/theme"
@@ -18,11 +19,26 @@
   const themeStore = useThemeStore()
   const routeStore = useRouteStore()
   const { routerPushByKeyWithMetaQuery } = useRouterPush()
-  const { firstLevelMenus, secondLevelMenus, activeFirstLevelMenuKey, handleSelectFirstLevelMenu } =
-    useMixMenuContext("TopHybridHeaderFirst")
+  const {
+    firstLevelMenus,
+    secondLevelMenus,
+    activeFirstLevelMenuKey,
+    handleSelectFirstLevelMenu,
+    activeDeepestLevelMenuKey,
+  } = useMixMenuContext("TopHybridHeaderFirst")
   const { selectedKey } = useMenu()
 
   const expandedKeys = ref<string[]>([])
+
+  /**
+   * Handle first level menu select
+   * @param key RouteKey
+   */
+  function handleSelectMenu(key: RouteKey) {
+    handleSelectFirstLevelMenu(key)
+    // if there are second level menus, select the deepest one by default
+    activeDeepestLevelMenuKey()
+  }
 
   function updateExpandedKeys() {
     if (appStore.siderCollapse || !selectedKey.value) {
@@ -49,7 +65,7 @@
       :options="firstLevelMenus"
       :indent="18"
       responsive
-      @update:value="handleSelectFirstLevelMenu"
+      @update:value="handleSelectMenu"
     />
   </Teleport>
   <Teleport :to="`#${GLOBAL_SIDER_MENU_ID}`">

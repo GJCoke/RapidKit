@@ -6,7 +6,5 @@ export function getBuildTime() {
   dayjs.extend(utc)
   dayjs.extend(timezone)
 
-  const buildTime = dayjs.tz(Date.now(), "Asia/Shanghai").format("YYYY-MM-DD HH:mm:ss")
-
-  return buildTime
+  return dayjs.tz(Date.now(), "Asia/Shanghai").format("YYYY-MM-DD HH:mm:ss")
 }

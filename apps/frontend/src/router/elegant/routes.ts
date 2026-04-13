@@ -117,6 +117,23 @@ export const generatedRoutes: GeneratedRoute[] = [{
     }
   }]
 }, {
+  name: 'monitoring',
+  path: '/monitoring',
+  component: 'layout.base',
+  meta: {
+    title: 'monitoring',
+    i18nKey: 'route.monitoring'
+  },
+  children: [{
+    name: 'monitoring_api',
+    path: '/monitoring/api',
+    component: 'view.monitoring_api',
+    meta: {
+      title: 'monitoring_api',
+      i18nKey: 'route.monitoring_api'
+    }
+  }]
+}, {
   name: 'queue',
   path: '/queue',
   component: 'layout.base',

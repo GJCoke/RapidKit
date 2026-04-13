@@ -10,9 +10,7 @@ from loguru import logger as ruLogger
 from src.core.config import settings
 from src.core.path import LOG_PATH
 from src.utils.nanoid import get_request_nanoid
-from src.utils.timezone import TimeZone
-
-timezone = TimeZone(settings.DATETIME_TIMEZONE, settings.DATETIME_FORMAT)
+from src.utils.timezone import timezone
 
 
 class InterceptHandler(logging.Handler):

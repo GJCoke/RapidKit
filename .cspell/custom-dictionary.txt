@@ -192,3 +192,4 @@ rapidkit
 citty
 Nobis
 Tsukimidai
+naiveui

@@ -127,6 +127,8 @@
       "collapsedWidth": "Sider Collapsed Width",
       "inverted": "Dark Sider",
       "mixChildMenuWidth": "Mix Child Menu Width",
+      "autoSelectFirstMenu": "Auto Select First Submenu",
+      "autoSelectFirstMenuTip": "When a first-level menu is clicked, the first submenu is automatically selected and navigated to the deepest level",
       "mixCollapsedWidth": "Mix Sider Collapse Width",
       "mixWidth": "Mix Sider Width",
       "title": "Sider Settings",

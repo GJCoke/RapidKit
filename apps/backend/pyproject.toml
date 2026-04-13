@@ -46,6 +46,7 @@ dependencies = [
     "loguru>=0.7.3",
     "slowapi>=0.1.9",
     "fastapi-sio-di>=0.4",
+    "psutil>=7.0.0,<8.0",
 ]
 
 [dependency-groups]

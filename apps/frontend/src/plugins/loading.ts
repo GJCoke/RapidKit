@@ -1,17 +1,24 @@
 // @unocss-include
-import { getRgb } from "@rapidkit/color"
+import { getColorPalette, getRgb } from "@rapidkit/color"
 import { DARK_CLASS } from "@/constants/app"
 import { localStg } from "@/utils/storage"
 import { toggleHtmlClass } from "@/utils/common"
-import systemLogo from "@/assets/svg-icon/logo.svg?raw"
+import systemLogoUrl from "@/assets/svg-icon/logo-loading.svg?url"
 import { $t } from "@/locales"
 
 export function setupLoading() {
   const themeColor = localStg.get("themeColor") || "#646cff"
   const darkMode = localStg.get("darkMode") || false
+  const palette = getColorPalette(themeColor)
   const { r, g, b } = getRgb(themeColor)
 
   const primaryColor = `--primary-color: ${r} ${g} ${b}`
+
+  const svgCssVars = Array.from(palette.entries())
+    .map(([key, value]) => `--logo-color-${key}: ${value}`)
+    .join(";")
+
+  const cssVars = `${primaryColor}; ${svgCssVars}`
 
   if (darkMode) {
     toggleHtmlClass(DARK_CLASS).add()
@@ -24,7 +31,7 @@ export function setupLoading() {
     "right-0 bottom-0 animate-delay-1500",
   ]
 
-  const logoWithClass = systemLogo.replace("<svg", `<svg class="size-128px text-primary"`)
+  const logoWithClass = `<img src="${systemLogoUrl}" class="size-128px" alt="loading" />`
 
   const dot = loadingClasses
     .map((item) => {
@@ -33,13 +40,8 @@ export function setupLoading() {
     .join("\n")
 
   const loading = `
-<div class="fixed-center flex-col bg-layout" style="${primaryColor}">
+<div class="fixed-center flex-col bg-layout" style="${cssVars}">
   ${logoWithClass}
-  <div class="w-56px h-56px my-36px">
-    <div class="relative h-full animate-spin">
-      ${dot}
-    </div>
-  </div>
   <h2 class="text-28px font-500 text-primary">${$t("system.title")}</h2>
 </div>`
 

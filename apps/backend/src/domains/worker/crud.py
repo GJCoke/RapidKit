@@ -5,7 +5,7 @@ Author  : Claude
 Date    : 2026-03-30
 """
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import case, func
 from sqlalchemy import select as sa_select
@@ -30,6 +30,7 @@ from src.domains.worker.schemas import (
     WorkerUpdate,
 )
 from src.utils.enums import TaskStatus, WorkerStatus
+from src.utils.timezone import timezone
 
 
 class WorkerCRUD(BaseSQLModelCRUD[CeleryWorker, WorkerCreate, WorkerUpdate]):
@@ -75,7 +76,7 @@ class WorkerCRUD(BaseSQLModelCRUD[CeleryWorker, WorkerCreate, WorkerUpdate]):
     async def get_offline_workers(self, threshold: float, *, session: AsyncSession | None = None) -> list[CeleryWorker]:
         """获取心跳超时的在线 Workers。"""
         session = session or self.session
-        cutoff = datetime.now() - timedelta(seconds=threshold)
+        cutoff = timezone.now() - timedelta(seconds=threshold)
         statement = select(self.model).filter(
             col(self.model.status) == WorkerStatus.ONLINE,
             col(self.model.last_heartbeat) < cutoff,
@@ -156,7 +157,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
 
     def _time_filter(self, days: int):
         """生成时间范围过滤条件。"""
-        cutoff = datetime.now() - timedelta(days=days)
+        cutoff = timezone.now() - timedelta(days=days)
         return col(self.model.create_time) >= cutoff
 
     async def get_stats_summary(self, days: int, *, session: AsyncSession | None = None) -> TaskStatsSummary:
@@ -173,7 +174,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             ),
         ).filter(self._time_filter(days))
 
-        result = (await session.execute(statement)).mappings().one()
+        result = (await session.execute(statement)).mappings().one()  # ty: ignore[deprecated]
         total = result["total"] or 0
         success = result["success"] or 0
         return TaskStatsSummary(
@@ -186,26 +187,43 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             avg_runtime=round(result["avg_runtime"], 3) if result["avg_runtime"] is not None else None,
         )
 
-    async def get_stats_timeline(self, days: int, *, session: AsyncSession | None = None) -> list[TaskStatsTimeline]:
-        """按小时分桶的任务吞吐量时间线。"""
+    async def get_stats_timeline(
+        self,
+        days: int,
+        *,
+        start: date | None = None,
+        end: date | None = None,
+        granularity: str = "hour",
+        session: AsyncSession | None = None,
+    ) -> list[TaskStatsTimeline]:
+        """按时间分桶的任务吞吐量时间线，支持自定义日期范围和粒度。"""
         session = session or self.session
-        bucket = func.date_trunc("hour", col(self.model.create_time)).label("time_bucket")
-        statement = (
-            select(
-                bucket,
-                func.count().label("total"),
-                func.count(case((col(self.model.status) == TaskStatus.SUCCESS, 1))).label("success"),
-                func.count(case((col(self.model.status) == TaskStatus.FAILURE, 1))).label("failure"),
-            )
-            .filter(self._time_filter(days))
-            .group_by(bucket)
-            .order_by(bucket)
+        trunc_unit = "hour" if granularity == "hour" else "day"
+        bucket = func.date_trunc(trunc_unit, col(self.model.create_time)).label("time_bucket")
+
+        statement = select(
+            bucket,
+            func.count().label("total"),
+            func.count(case((col(self.model.status) == TaskStatus.SUCCESS, 1))).label("success"),
+            func.count(case((col(self.model.status) == TaskStatus.FAILURE, 1))).label("failure"),
         )
 
-        results = (await session.execute(statement)).mappings().all()
+        if start and end:
+            start_dt = datetime.combine(start, datetime.min.time())
+            end_dt = datetime.combine(end + timedelta(days=1), datetime.min.time())
+            statement = statement.filter(
+                col(self.model.create_time) >= start_dt,
+                col(self.model.create_time) < end_dt,
+            )
+        else:
+            statement = statement.filter(self._time_filter(days))
+
+        statement = statement.group_by(bucket).order_by(bucket)
+
+        results = (await session.execute(statement)).mappings().all()  # ty: ignore[deprecated]
         return [
             TaskStatsTimeline(
-                time_bucket=row["time_bucket"].strftime("%Y-%m-%d %H:%M") if row["time_bucket"] else "",
+                time_bucket=row["time_bucket"],
                 total=row["total"],
                 success=row["success"],
                 failure=row["failure"],

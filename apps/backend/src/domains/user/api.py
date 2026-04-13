@@ -5,6 +5,7 @@ Author : Coke
 Date   : 2026-04-02
 """
 
+from datetime import date
 from typing import Annotated
 from uuid import UUID
 
@@ -15,6 +16,7 @@ from src.common.schemas.response import PaginatedResponse, Response
 from src.core.exceptions import AppException
 from src.core.status_codes import StatusCode
 from src.domains.role.deps import VerifyPermissionDep, verify_user_permission
+from src.domains.system.schemas import UserActivityTrend, UserStatsSummary
 from src.domains.user.deps import UserManageCrudDep
 from src.domains.user.schemas import (
     UserManageBatchBody,
@@ -35,6 +37,36 @@ router = APIRouter(
     tags=["User"],
     dependencies=[Depends(verify_user_permission)],
 )
+
+
+@router.get("/stats/summary", summary="用户统计摘要")
+async def get_user_stats_summary(
+    user_crud: UserManageCrudDep,
+    redis: RedisDep,
+) -> Response[UserStatsSummary]:
+    """获取用户总数、今日新增、昨日新增和在线用户数。"""
+    summary = await user_crud.get_user_count_summary()
+    online_count = await redis.scard("online_users") or 0  # ty: ignore[invalid-await]
+    return Response(
+        data=UserStatsSummary(
+            total=summary["total"],
+            today_new=summary["today_new"],
+            yesterday_new=summary["yesterday_new"],
+            online_count=online_count,
+        )
+    )
+
+
+@router.get("/stats/trend", summary="用户活跃趋势")
+async def get_user_stats_trend(
+    user_crud: UserManageCrudDep,
+    start: date = Query(..., description="开始日期"),
+    end: date = Query(..., description="结束日期"),
+    granularity: str = Query("day", description="粒度: hour | day"),
+) -> Response[list[UserActivityTrend]]:
+    """获取用户注册趋势数据。"""
+    data = await user_crud.get_user_activity_trend(start, end, granularity)
+    return Response(data=[UserActivityTrend(**item) for item in data])
 
 
 @router.get("")

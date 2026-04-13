@@ -1,11 +1,7 @@
-import { defineConfig } from "@unocss/vite"
-import transformerDirectives from "@unocss/transformer-directives"
-import transformerVariantGroup from "@unocss/transformer-variant-group"
-import presetWind3 from "@unocss/preset-wind3"
-import type { Theme } from "@unocss/preset-uno"
+import { defineConfig, transformerDirectives, transformerVariantGroup, presetWind3 } from "unocss"
 import { themeVars } from "./src/theme/vars"
 
-export default defineConfig<Theme>({
+export default defineConfig({
   content: {
     pipeline: {
       exclude: ["node_modules", "dist"],

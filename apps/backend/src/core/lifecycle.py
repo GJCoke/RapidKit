@@ -17,9 +17,12 @@ from starlette.routing import BaseRoute as StarletteRoute
 from src.core.config import settings
 from src.core.database import AsyncSessionLocal, RedisManager
 from src.core.log import logger
+from src.domains.monitoring.aggregator import aggregate_api_metrics_loop
+from src.domains.monitoring.push import push_api_stats_loop
 from src.domains.router.crud import RouterCRUD
 from src.domains.router.models import InterfaceRouter
 from src.domains.router.schemas import FastAPIRouterCreate
+from src.domains.system.push import push_error_stats_loop, push_resources_loop
 from src.locales.watch import watch_locale_files
 from src.queues.consumer import check_worker_offline, consume_events
 
@@ -39,6 +42,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     RedisManager.connect()
 
+    # Dashboard 定时推送
+    from src.sio.app import socket
+
+    resources_task = asyncio.create_task(push_resources_loop(socket))
+    error_stats_task = asyncio.create_task(push_error_stats_loop(socket))
+    aggregator_task = asyncio.create_task(aggregate_api_metrics_loop())
+    api_stats_task = asyncio.create_task(push_api_stats_loop(socket))
+
     consumer_task = None
     offline_checker_task = None
     if settings.ENABLE_CELERY_MONITOR:
@@ -53,6 +64,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     yield
 
+    resources_task.cancel()
+    error_stats_task.cancel()
+    aggregator_task.cancel()
+    api_stats_task.cancel()
     if consumer_task:
         consumer_task.cancel()
     if offline_checker_task:

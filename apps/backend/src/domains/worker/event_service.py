@@ -7,15 +7,17 @@ Author  : Claude
 Date    : 2026-04-02
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from fastapi_sio_di import AsyncServer
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.core.log import logger
+from src.domains.system.services import ActivityService
 from src.domains.worker.crud import TaskResultCRUD, WorkerCRUD
 from src.domains.worker.models import CeleryTaskResult, CeleryWorker
 from src.utils.enums import TaskStatus, WorkerStatus
+from src.utils.timezone import timezone
 
 # 任务终态：已到达终态的任务不再被其他事件覆盖
 _TERMINAL_STATES = {TaskStatus.SUCCESS, TaskStatus.FAILURE, TaskStatus.REVOKED}
@@ -28,26 +30,25 @@ class EventService:
         self.session = session
         self.worker_crud = WorkerCRUD(CeleryWorker, session=session)
         self.task_crud = TaskResultCRUD(CeleryTaskResult, session=session)
+        self.activity_service = ActivityService(session=session, sio=sio)
         self.sio = sio
 
     # ==================== Socket.IO Helpers ====================
 
     async def _emit_worker_status(self, worker: CeleryWorker) -> None:
         """推送 Worker 状态到前端。"""
+        payload = {
+            "hostname": worker.hostname,
+            "status": worker.status,
+            "concurrency": worker.concurrency,
+            "activeTaskCount": worker.active_task_count or 0,
+            "activeQueues": worker.active_queues or [],
+            "lastHeartbeat": worker.last_heartbeat.isoformat() if worker.last_heartbeat else "",
+            "processedCount": worker.processed_count or 0,
+        }
         try:
-            await self.sio.emit(
-                "worker:status",
-                {
-                    "hostname": worker.hostname,
-                    "status": worker.status,
-                    "concurrency": worker.concurrency,
-                    "activeTaskCount": worker.active_task_count or 0,
-                    "activeQueues": worker.active_queues or [],
-                    "lastHeartbeat": worker.last_heartbeat.isoformat() if worker.last_heartbeat else "",
-                    "processedCount": worker.processed_count or 0,
-                },
-                namespace="/worker",
-            )
+            await self.sio.emit("worker:status", payload, namespace="/worker")
+            await self.sio.emit("dashboard:worker_status", payload, namespace="/dashboard")
         except Exception:
             logger.warning("Failed to emit worker:status for {hostname}", hostname=worker.hostname)
 
@@ -62,6 +63,15 @@ class EventService:
                 **extra,
             }
             await self.sio.emit("task:update", payload, namespace="/worker")
+
+            # 终态任务推送到 Dashboard
+            if task.status in _TERMINAL_STATES:
+                dashboard_payload = {
+                    **payload,
+                    "runtime": task.runtime,
+                    "finishedAt": task.finished_at.isoformat() if task.finished_at else "",
+                }
+                await self.sio.emit("dashboard:task_completed", dashboard_payload, namespace="/dashboard")
         except Exception:
             logger.warning("Failed to emit task:update for {task_id}", task_id=task.task_id)
 
@@ -69,7 +79,7 @@ class EventService:
 
     async def handle_worker_online(self, data: dict) -> None:
         """处理 Worker 上线事件。"""
-        now = datetime.now()
+        now = timezone.now()
         worker = await self.worker_crud.upsert_by_hostname(
             data["hostname"],
             {
@@ -82,6 +92,7 @@ class EventService:
         )
         await self.session.flush()
         await self._emit_worker_status(worker)
+        await self.activity_service.log_activity(event_type="worker_online", params={"name": data["hostname"]})
 
     async def handle_worker_offline(self, data: dict) -> None:
         """处理 Worker 离线事件。"""
@@ -90,16 +101,17 @@ class EventService:
             return
         worker.status = WorkerStatus.OFFLINE
         worker.active_task_count = 0
-        worker.update_time = datetime.now()
+        worker.update_time = timezone.now()
         await self.session.flush()
         await self._emit_worker_status(worker)
+        await self.activity_service.log_activity(event_type="worker_offline", params={"name": data["hostname"]})
 
     async def handle_worker_heartbeat(self, data: dict) -> None:
         """处理 Worker 心跳事件。"""
         worker = await self.worker_crud.get_by_hostname(data["hostname"])
         if not worker:
             return
-        now = datetime.now()
+        now = timezone.now()
         worker.last_heartbeat = now
         worker.update_time = now
         if worker.status == WorkerStatus.OFFLINE:
@@ -111,7 +123,7 @@ class EventService:
 
     async def handle_task_started(self, data: dict) -> None:
         """处理任务开始事件。"""
-        now = datetime.now()
+        now = timezone.now()
         task = await self.task_crud.upsert_by_task_id(
             data["task_id"],
             {
@@ -137,7 +149,7 @@ class EventService:
     async def handle_task_success(self, data: dict) -> None:
         """处理任务成功事件。"""
         task = await self.task_crud.get_by_task_id(data["task_id"])
-        now = datetime.now()
+        now = timezone.now()
 
         if task:
             if task.status in _TERMINAL_STATES:
@@ -171,11 +183,12 @@ class EventService:
         await self._emit_task_update(task, runtime=task.runtime)
         if worker:
             await self._emit_worker_status(worker)
+        await self.activity_service.log_activity(event_type="task_success", params={"name": task.task_name})
 
     async def handle_task_failure(self, data: dict) -> None:
         """处理任务失败事件。"""
         task = await self.task_crud.get_by_task_id(data["task_id"])
-        now = datetime.now()
+        now = timezone.now()
 
         if task:
             if task.status in _TERMINAL_STATES:
@@ -211,6 +224,11 @@ class EventService:
         await self._emit_task_update(task, exception=data.get("exception", ""))
         if worker:
             await self._emit_worker_status(worker)
+        await self.activity_service.log_activity(
+            event_type="task_failure",
+            params={"name": task.task_name},
+            detail=data.get("exception", ""),
+        )
 
     async def handle_task_retry(self, data: dict) -> None:
         """处理任务重试事件。"""
@@ -219,7 +237,7 @@ class EventService:
             return
         task.status = TaskStatus.RETRY
         task.retries = (task.retries or 0) + 1
-        task.update_time = datetime.now()
+        task.update_time = timezone.now()
         await self.session.flush()
         await self._emit_task_update(task)
 
@@ -228,7 +246,7 @@ class EventService:
         task = await self.task_crud.get_by_task_id(data["task_id"])
         if not task:
             return
-        now = datetime.now()
+        now = timezone.now()
         task.status = TaskStatus.REVOKED
         task.finished_at = now
         task.update_time = now
@@ -243,7 +261,7 @@ class EventService:
         for worker in stale_workers:
             worker.status = WorkerStatus.OFFLINE
             worker.active_task_count = 0
-            worker.update_time = datetime.now()
+            worker.update_time = timezone.now()
             logger.info("Worker '{hostname}' marked as OFFLINE (heartbeat timeout)", hostname=worker.hostname)
             await self._emit_worker_status(worker)
 

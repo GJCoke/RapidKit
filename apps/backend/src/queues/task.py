@@ -24,6 +24,8 @@ from celery.result import AsyncResult
 from kombu import Connection, Producer
 from typing_extensions import Annotated, Doc
 
+from src.utils.timezone import timezone as tz
+
 
 class Task(_Task):
     """
@@ -265,12 +267,7 @@ class Task(_Task):
         # For more parameter types, please refer to the official Celery documentation.
 
         if not ignore_warning:
-            if (
-                countdown is not None
-                and countdown > 3600
-                or eta is not None
-                and eta > datetime.now() + timedelta(hours=1)
-            ):
+            if countdown is not None and countdown > 3600 or eta is not None and eta > tz.now() + timedelta(hours=1):
                 warnings.warn(
                     "The recommended maximum duration for countdown is no more than 1 hour. If a task needs to "
                     "be delayed for longer than that, it's advisable to use scheduled task mechanisms such as "
