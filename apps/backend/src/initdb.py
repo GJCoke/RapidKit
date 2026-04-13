@@ -83,6 +83,12 @@ GUEST_INTERFACE_PERMISSIONS = [
     "GET:/api/v1/scripts",
     "GET:/api/v1/scripts/{script_id}",
     "GET:/api/v1/scripts/{script_id}/executions",
+    # 监控中心 (只读)
+    "GET:/api/v1/system/stats/api/overview",
+    "GET:/api/v1/system/stats/api/top",
+    "GET:/api/v1/system/stats/api/distribution",
+    "GET:/api/v1/system/stats/api/trend",
+    "GET:/api/v1/system/stats/api/list",
 ]
 
 roles: list[RoleCreate] = [
@@ -111,6 +117,8 @@ roles: list[RoleCreate] = [
             "queue_dashboard",
             "queue_schedule",
             "queue_task",
+            "monitoring",
+            "monitoring_api",
         ],
         interface_permissions=GUEST_INTERFACE_PERMISSIONS,
         button_permissions=[],
@@ -535,6 +543,44 @@ async def create_menus(session: AsyncSession) -> None:
         ],
     )
 
+    monitoring_id = uuid8()
+
+    # 6. 监控中心 (目录)
+    monitoring = Menu(
+        id=monitoring_id,
+        menu_name="监控中心",
+        menu_type=MenuType.DIRECTORY,
+        order=8,
+        route_name="monitoring",
+        route_path="/monitoring",
+        component="layout.base",
+        icon="material-symbols:monitoring",
+        icon_type=MenuIconType.ICONIFY,
+        i18n_key="route.monitoring",
+    )
+
+    # 6.1 API 监控
+    monitoring_api = Menu(
+        id=uuid8(),
+        parent_id=monitoring_id,
+        menu_name="API 监控",
+        menu_type=MenuType.MENU,
+        order=1,
+        route_name="monitoring_api",
+        route_path="/monitoring/api",
+        component="view.monitoring_api",
+        icon="material-symbols:api-rounded",
+        icon_type=MenuIconType.ICONIFY,
+        i18n_key="route.monitoring_api",
+        interfaces=[
+            "GET:/api/v1/system/stats/api/overview",
+            "GET:/api/v1/system/stats/api/top",
+            "GET:/api/v1/system/stats/api/distribution",
+            "GET:/api/v1/system/stats/api/trend",
+            "GET:/api/v1/system/stats/api/list",
+        ],
+    )
+
     session.add_all(
         [
             # 常量路由
@@ -558,6 +604,8 @@ async def create_menus(session: AsyncSession) -> None:
             queue_schedule,
             queue_task,
             script,
+            monitoring,
+            monitoring_api,
         ]
     )
     await session.commit()
