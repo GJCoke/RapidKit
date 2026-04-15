@@ -9,14 +9,18 @@
     "lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
     "dev": "tsx ../builder/cli.ts --dev",
     "build": "tsx ../builder/cli.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "citty": "^0.1.6",
-    "@clack/prompts": "^0.10.0"
+    "@clack/prompts": "^0.10.0",
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@types/node": "^25.5.2",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^3.1.2"
   }
 }

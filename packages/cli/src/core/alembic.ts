@@ -20,7 +20,8 @@ export function buildMigrateArgs(plugin: Plugin, message: string): string[] {
   if (plugin.hasMigrations) {
     args.push(`--head=${plugin.name}@head`)
   } else {
-    args.push(`--branch-label=${plugin.name}`)
+    // --head=base forces down_revision=None, creating a truly independent branch
+    args.push(`--branch-label=${plugin.name}`, `--head=base`)
   }
 
   args.push(`--version-path=${plugin.versionPath}`)
@@ -52,12 +53,12 @@ export function parseHeads(output: string): Map<string, string> {
   for (const line of output.split("\n")) {
     const trimmed = line.trim()
     if (!trimmed) continue
-    const match = trimmed.match(/^(\w+)\s+\((\w+)\)\s+\(head\)/)
+    const match = trimmed.match(/^([0-9a-f]{12,})\s+\((\w+)\)\s+\(head\)/)
     if (match) {
       heads.set(match[2], match[1])
       continue
     }
-    const mainMatch = trimmed.match(/^(\w+)\s+\(head\)/)
+    const mainMatch = trimmed.match(/^([0-9a-f]{12,})\s+\(head\)/)
     if (mainMatch) {
       heads.set("main", mainMatch[1])
     }
@@ -73,7 +74,8 @@ export function parseCurrent(output: string): Set<string> {
   for (const line of output.split("\n")) {
     const trimmed = line.trim()
     if (!trimmed) continue
-    const match = trimmed.match(/^(\w+)/)
+    // Alembic revision IDs are 12-char hex strings, e.g. "a1b2c3d4e5f6 (head)"
+    const match = trimmed.match(/^([0-9a-f]{12,})\b/)
     if (match) current.add(match[1])
   }
   return current

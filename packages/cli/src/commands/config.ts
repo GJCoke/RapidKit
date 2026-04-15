@@ -1,8 +1,8 @@
 import { defineCommand } from "citty"
 import { select, isCancel, log } from "@clack/prompts"
-import { loadConfig, mergeConfig } from "../core/config"
-import type { RapidKitConfig } from "../core/config"
-import { t } from "../core/i18n"
+import { loadConfig, mergeConfig } from "../infra/config"
+import type { RapidKitConfig } from "../infra/config"
+import { t } from "../infra/i18n"
 import { FluxError } from "../errors"
 
 const VALID_KEYS: Record<string, string[]> = {

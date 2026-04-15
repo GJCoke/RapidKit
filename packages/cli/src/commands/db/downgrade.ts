@@ -1,35 +1,30 @@
-import { defineCommand } from "citty"
 import { confirm, select, isCancel, log } from "@clack/prompts"
-import { resolve } from "node:path"
-import { getContext } from "../../context"
-import { t } from "../../core/i18n"
-import { createTaskRunner } from "../../core/runner"
-import { buildDowngradeArgs } from "../../core/alembic"
-import { syncAlembicConfig, findPlugin, discoverPlugins } from "../../core/plugins"
-import { BACKEND_DIR } from "../../constants"
+import { t } from "../../infra/i18n"
+import * as alembicService from "../../services/alembic.service"
+import { syncAlembicConfig, findPlugin, discoverPlugins } from "../../services/plugin.service"
+import { defineFluxCommand } from "../_shared"
 
-export const downgrade = defineCommand({
-  meta: { name: "downgrade", description: "Roll back migrations" },
+export const downgrade = defineFluxCommand({
+  meta: { description: t("db.downgrade.title") },
   args: {
     plugin: { type: "string", description: "Plugin name", required: false },
     steps: { type: "string", description: "Number of steps to roll back", required: false },
   },
-  run: async ({ args }) => {
-    const ctx = getContext()
-    const steps = args.steps ? parseInt(args.steps, 10) : 1
+  async run({ runner, args }) {
+    const steps = args.steps ? parseInt(args.steps as string, 10) : 1
 
     let pluginName: string
 
     if (args.plugin) {
-      const plugin = findPlugin(args.plugin)
+      const plugin = findPlugin(args.plugin as string)
       if (!plugin) {
         const available = discoverPlugins()
           .map((p) => p.name)
           .join(", ")
-        log.error(t("db.migrate.pluginNotFound", { plugin: args.plugin, available }))
+        log.error(t("db.migrate.pluginNotFound", { plugin: args.plugin as string, available }))
         return
       }
-      pluginName = args.plugin
+      pluginName = args.plugin as string
     } else {
       const plugins = discoverPlugins().filter((p) => p.hasMigrations)
       if (plugins.length === 0) {
@@ -52,17 +47,10 @@ export const downgrade = defineCommand({
 
     if (isCancel(shouldProceed) || !shouldProceed) return
 
-    const runner = createTaskRunner({ title: t("db.downgrade.title"), ctx })
-
     runner.exec({ label: t("db.migrate.syncing") }, () => {
       syncAlembicConfig()
     })
 
-    const alembicArgs = buildDowngradeArgs(pluginName, steps)
-    const backendDir = resolve(ctx.cwd, BACKEND_DIR)
-
-    await runner.run({ label: t("db.downgrade.running", { plugin: pluginName }), cwd: backendDir }, "uv", alembicArgs)
-
-    runner.done()
+    await alembicService.downgrade(runner, t("db.downgrade.running", { plugin: pluginName }), pluginName, steps)
   },
 })

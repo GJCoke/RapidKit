@@ -2,7 +2,7 @@
 import { defineCommand, runMain, runCommand } from "citty"
 import { select, isCancel, log } from "@clack/prompts"
 import { createContext } from "./context"
-import { t, type MessageKey } from "./core/i18n"
+import { t, type MessageKey } from "./infra/i18n"
 import { FluxError } from "./errors"
 import { dev } from "./commands/dev"
 import { prod } from "./commands/prod"

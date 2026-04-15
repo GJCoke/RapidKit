@@ -1,11 +1,14 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs"
 import { resolve } from "node:path"
+import { z } from "zod"
 
-export interface RapidKitConfig {
-  runtime?: "docker" | "podman"
-  region?: "china" | "global"
-  locale?: "zh-CN" | "en-US"
-}
+export const RapidKitConfigSchema = z.object({
+  runtime: z.enum(["docker", "podman"]).optional(),
+  region: z.enum(["china", "global"]).optional(),
+  locale: z.enum(["zh-CN", "en-US"]).optional(),
+})
+
+export type RapidKitConfig = z.infer<typeof RapidKitConfigSchema>
 
 const CONFIG_FILENAME = ".rapidkit.local.json"
 
@@ -16,7 +19,8 @@ export function getConfigPath(): string {
 export function loadConfig(): RapidKitConfig {
   const configPath = getConfigPath()
   if (!existsSync(configPath)) return {}
-  return JSON.parse(readFileSync(configPath, "utf-8")) as RapidKitConfig
+  const raw = JSON.parse(readFileSync(configPath, "utf-8"))
+  return RapidKitConfigSchema.parse(raw)
 }
 
 export function saveConfig(config: RapidKitConfig): void {

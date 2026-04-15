@@ -1,6 +1,6 @@
 import { defineCommand } from "citty"
 import { text, confirm, isCancel, log, note } from "@clack/prompts"
-import { t } from "../core/i18n"
+import { t } from "../infra/i18n"
 import { FluxError } from "../errors"
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs"
 import { resolve, join } from "node:path"

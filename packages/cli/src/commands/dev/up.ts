@@ -1,22 +1,35 @@
-import { defineCommand } from "citty"
-import { getContext } from "../../context"
-import { t } from "../../core/i18n"
-import { createTaskRunner } from "../../core/runner"
-import { buildComposeCommand } from "../../core/compose"
-import { initDatabase } from "../../core/database"
+import { confirm, isCancel, log } from "@clack/prompts"
+import { t } from "../../infra/i18n"
+import { buildComposeCommand } from "../../infra/compose"
+import { hasCommand } from "../../infra/runner"
 import { DEV_COMPOSE } from "../../constants"
+import { defineFluxCommand } from "../_shared"
+import * as databaseService from "../../services/database.service"
+import * as migrationService from "../../services/migration.service"
 
-export const up = defineCommand({
-  meta: { name: "up", description: "Start dev infrastructure" },
-  run: async () => {
-    const ctx = getContext()
-    const runner = createTaskRunner({ title: t("dev.up.title"), ctx })
-
+export const up = defineFluxCommand({
+  meta: { description: t("dev.up.title") },
+  async run({ ctx, runner }) {
     const cmd = buildComposeCommand(ctx, DEV_COMPOSE, ["up", "-d"])
     await runner.run({ label: t("dev.up.starting") }, cmd.cmd, cmd.args)
 
-    await initDatabase(runner)
+    // Database initialization (UI in command layer)
+    const shouldInit = await confirm({ message: t("db.confirm") })
+    if (isCancel(shouldInit) || !shouldInit) return
 
-    runner.done()
+    if (!hasCommand("uv")) {
+      log.warn(t("db.pythonNotFound"))
+      return
+    }
+
+    // Auto-detect and generate migrations
+    const { plugins } = migrationService.detectChanges(runner)
+    const actionable = plugins.filter((p) => p.status !== "up_to_date")
+    if (actionable.length > 0) {
+      await migrationService.generateForPlugins(runner, actionable)
+    }
+
+    await databaseService.upgrade(runner)
+    await databaseService.seed(runner)
   },
 })

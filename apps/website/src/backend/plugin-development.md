@@ -116,7 +116,6 @@ from .models import Notification
 当需要类型注解但不想在运行时导入（避免循环导入或引入重型依赖）时：
 
 ```python
-from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

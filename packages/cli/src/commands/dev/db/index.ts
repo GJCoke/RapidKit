@@ -1,6 +1,6 @@
 import { defineCommand, runCommand } from "citty"
 import { select, isCancel, log } from "@clack/prompts"
-import { t, type MessageKey } from "../../../core/i18n"
+import { t, type MessageKey } from "../../../infra/i18n"
 import { reset } from "./reset"
 
 const subs = { reset }

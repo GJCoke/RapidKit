@@ -1,28 +1,23 @@
-import { defineCommand } from "citty"
-import { resolve } from "node:path"
-import { getContext } from "../../context"
-import { t } from "../../core/i18n"
-import { createTaskRunner } from "../../core/runner"
-import { buildUpgradeArgs } from "../../core/alembic"
-import { syncAlembicConfig, findPlugin, discoverPlugins } from "../../core/plugins"
-import { BACKEND_DIR } from "../../constants"
+import { t } from "../../infra/i18n"
+import * as alembicService from "../../services/alembic.service"
+import { syncAlembicConfig, findPlugin, discoverPlugins } from "../../services/plugin.service"
+import { defineFluxCommand } from "../_shared"
 
-export const upgrade = defineCommand({
-  meta: { name: "upgrade", description: "Run migrations" },
+export const upgrade = defineFluxCommand({
+  meta: { description: t("db.upgrade.title") },
   args: {
     plugin: { type: "string", description: "Plugin name", required: false },
   },
-  run: async ({ args }) => {
-    const ctx = getContext()
-    const runner = createTaskRunner({ title: t("db.upgrade.title"), ctx })
+  async run({ runner, args }) {
+    const pluginName = args.plugin as string | undefined
 
-    if (args.plugin) {
-      const plugin = findPlugin(args.plugin)
+    if (pluginName) {
+      const plugin = findPlugin(pluginName)
       if (!plugin) {
         const available = discoverPlugins()
           .map((p) => p.name)
           .join(", ")
-        throw new Error(t("db.migrate.pluginNotFound", { plugin: args.plugin, available }))
+        throw new Error(t("db.migrate.pluginNotFound", { plugin: pluginName, available }))
       }
     }
 
@@ -30,12 +25,8 @@ export const upgrade = defineCommand({
       syncAlembicConfig()
     })
 
-    const alembicArgs = buildUpgradeArgs(args.plugin)
-    const label = args.plugin ? t("db.upgrade.runningPlugin", { plugin: args.plugin }) : t("db.upgrade.running")
+    const label = pluginName ? t("db.upgrade.runningPlugin", { plugin: pluginName }) : t("db.upgrade.running")
 
-    const backendDir = resolve(ctx.cwd, BACKEND_DIR)
-    await runner.run({ label, cwd: backendDir }, "uv", alembicArgs)
-
-    runner.done()
+    await alembicService.upgrade(runner, label, pluginName)
   },
 })

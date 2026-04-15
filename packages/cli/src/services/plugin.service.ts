@@ -10,9 +10,6 @@ export interface Plugin {
   hasMigrations: boolean
 }
 
-/**
- * Scan apps/backend/plugins/ for directories with migrations/versions/.
- */
 export function discoverPlugins(): Plugin[] {
   const ctx = getContext()
   const pluginsRoot = resolve(ctx.cwd, PLUGINS_DIR)
@@ -34,11 +31,11 @@ export function discoverPlugins(): Plugin[] {
     })
 }
 
-/**
- * Ensure alembic.ini version_locations includes all discovered plugins.
- * Returns true if changes were made.
- */
-export function syncAlembicIni(): boolean {
+export function findPlugin(name: string): Plugin | undefined {
+  return discoverPlugins().find((p) => p.name === name)
+}
+
+function syncAlembicIni(): boolean {
   const ctx = getContext()
   const iniPath = resolve(ctx.cwd, ALEMBIC_INI)
   const plugins = discoverPlugins()
@@ -47,7 +44,7 @@ export function syncAlembicIni(): boolean {
   const match = content.match(/^version_locations\s*=\s*(.+(?:\n\s+.+)*)$/m)
   if (!match) return false
 
-  const rawValue = match[1].replace(/\n\s+/g, "").replace(/#.*$/, "") // strip inline comments
+  const rawValue = match[1].replace(/\n\s+/g, "").replace(/#.*$/, "")
   const existingPaths = rawValue
     .split(":")
     .map((p) => p.trim())
@@ -70,11 +67,7 @@ export function syncAlembicIni(): boolean {
   return changed
 }
 
-/**
- * Ensure alembic/env.py PLUGIN_MODULES includes all discovered plugins.
- * Returns true if changes were made.
- */
-export function syncAlembicEnv(): boolean {
+function syncAlembicEnv(): boolean {
   const ctx = getContext()
   const envPath = resolve(ctx.cwd, ALEMBIC_ENV)
   const plugins = discoverPlugins()
@@ -109,18 +102,8 @@ export function syncAlembicEnv(): boolean {
   return changed
 }
 
-/**
- * Run both sync operations. Returns true if any changes were made.
- */
 export function syncAlembicConfig(): boolean {
   const iniChanged = syncAlembicIni()
   const envChanged = syncAlembicEnv()
   return iniChanged || envChanged
-}
-
-/**
- * Validate a plugin name exists. Returns the Plugin or undefined.
- */
-export function findPlugin(name: string): Plugin | undefined {
-  return discoverPlugins().find((p) => p.name === name)
 }

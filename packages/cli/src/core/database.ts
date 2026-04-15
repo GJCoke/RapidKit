@@ -1,41 +1,17 @@
 import { confirm, isCancel, log, password } from "@clack/prompts"
 import { resolve } from "node:path"
 import { readdirSync, readFileSync, unlinkSync } from "node:fs"
-import { execCommand, hasCommand, type TaskRunner } from "./runner"
-import { buildComposeCommand, buildComposeRunCommand } from "./compose"
-import { t } from "./i18n"
+import { hasCommand, type TaskRunner } from "../infra/runner"
+import { buildComposeCommand, buildComposeRunCommand } from "../infra/compose"
+import { t } from "../infra/i18n"
 import { FluxError } from "../errors"
 import { getContext, type FluxContext } from "../context"
 import { BACKEND_DIR, DEV_COMPOSE, MIGRATION_DIR } from "../constants"
+import { detectChanges, generateMigrations } from "./migration"
 
 interface InitDatabaseOptions {
   doubleConfirm?: boolean
   compose?: { file: string; service: string }
-}
-
-function hasMigrationFiles(): boolean {
-  const cwd = getContext().cwd
-  const dir = resolve(cwd, MIGRATION_DIR)
-  try {
-    const files = readdirSync(dir)
-    return files.some((f) => f.endsWith(".py") && f !== "__init__.py")
-  } catch {
-    return false
-  }
-}
-
-export function ensureMigrationFiles(runner: TaskRunner): void {
-  if (hasMigrationFiles()) return
-
-  if (!hasCommand("uv")) {
-    log.warn(t("db.pythonNotFound"))
-    return
-  }
-
-  const cwd = resolve(getContext().cwd, BACKEND_DIR)
-  runner.exec({ label: t("db.generating") }, () => {
-    execCommand('uv run alembic revision --autogenerate -m "init"', { cwd })
-  })
 }
 
 export async function initDatabase(runner: TaskRunner, options?: InitDatabaseOptions): Promise<void> {
@@ -52,7 +28,7 @@ export async function initDatabase(runner: TaskRunner, options?: InitDatabaseOpt
   if (options?.compose) {
     const { file, service } = options.compose
 
-    const migrate = buildComposeRunCommand(ctx, file, service, ["uv", "run", "alembic", "upgrade", "head"])
+    const migrate = buildComposeRunCommand(ctx, file, service, ["uv", "run", "alembic", "upgrade", "heads"])
     await runner.run({ label: t("db.migrating") }, migrate.cmd, migrate.args)
 
     const seed = buildComposeRunCommand(ctx, file, service, ["uv", "run", "python", "src/initdb.py"])
@@ -63,17 +39,15 @@ export async function initDatabase(runner: TaskRunner, options?: InitDatabaseOpt
       return
     }
 
-    ensureMigrationFiles(runner)
+    // Detect changes and auto-generate migrations for plugins that need them
+    const plugins = detectChanges(runner)
+    await generateMigrations({ runner, plugins, mode: "auto" })
 
     const cwd = resolve(ctx.cwd, BACKEND_DIR)
 
-    runner.exec({ label: t("db.migrating") }, () => {
-      execCommand("uv run alembic upgrade head", { cwd })
-    })
+    await runner.run({ label: t("db.migrating"), cwd }, "uv", ["run", "alembic", "upgrade", "heads"])
 
-    runner.exec({ label: t("db.seeding") }, () => {
-      execCommand("uv run python src/initdb.py", { cwd })
-    })
+    await runner.run({ label: t("db.seeding"), cwd }, "uv", ["run", "python", "src/initdb.py"])
   }
 }
 
@@ -128,7 +102,7 @@ export async function resetDatabase(runner: TaskRunner, ctx: FluxContext): Promi
 /**
  * 重新生成 migration + upgrade + seed（在 resetDatabase 之后调用）
  */
-export function rebuildDatabase(runner: TaskRunner): void {
+export async function rebuildDatabase(runner: TaskRunner): Promise<void> {
   if (!hasCommand("uv")) {
     log.warn(t("db.pythonNotFound"))
     return
@@ -136,13 +110,9 @@ export function rebuildDatabase(runner: TaskRunner): void {
 
   const cwd = resolve(getContext().cwd, BACKEND_DIR)
 
-  runner.exec({ label: t("db.migrating") }, () => {
-    execCommand("uv run alembic upgrade head", { cwd })
-  })
+  await runner.run({ label: t("db.migrating"), cwd }, "uv", ["run", "alembic", "upgrade", "heads"])
 
-  runner.exec({ label: t("db.seeding") }, () => {
-    execCommand("uv run python src/initdb.py", { cwd })
-  })
+  await runner.run({ label: t("db.seeding"), cwd }, "uv", ["run", "python", "src/initdb.py"])
 }
 
 /**

@@ -1,26 +1,20 @@
 import { select, isCancel } from "@clack/prompts"
-import { execSync } from "node:child_process"
-import { loadConfig, mergeConfig } from "./core/config"
-import { setLocale } from "./core/i18n"
+import { z } from "zod"
+import { loadConfig, mergeConfig } from "./infra/config"
+import { setLocale } from "./infra/i18n"
+import { hasCommand } from "./infra/runner"
 import { FluxError } from "./errors"
 
-export interface FluxContext {
-  runtime: "docker" | "podman"
-  region: "china" | "global"
-  locale: "zh-CN" | "en-US"
-  cwd: string
-}
+export const FluxContextSchema = z.object({
+  runtime: z.enum(["docker", "podman"]),
+  region: z.enum(["china", "global"]),
+  locale: z.enum(["zh-CN", "en-US"]),
+  cwd: z.string(),
+})
+
+export type FluxContext = z.infer<typeof FluxContextSchema>
 
 let ctx: FluxContext | undefined
-
-function hasCommand(cmd: string): boolean {
-  try {
-    execSync(`which ${cmd}`, { stdio: "ignore" })
-    return true
-  } catch {
-    return false
-  }
-}
 
 function resolveRuntime(override?: string): "docker" | "podman" {
   if (override) {
