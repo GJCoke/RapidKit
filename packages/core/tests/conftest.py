@@ -1,0 +1,26 @@
+"""
+Core 包测试 conftest — 提供最小环境变量以使 Config 可实例化。
+"""
+
+import os
+
+# 在任何模块导入 rapidkit_core.config 之前设置最小环境变量
+_ENV_DEFAULTS = {
+    "POSTGRESQL_ASYNC_SCHEME": "postgresql+asyncpg",
+    "POSTGRESQL_SYNC_SCHEME": "postgresql+psycopg",
+    "POSTGRESQL_USERNAME": "test",
+    "POSTGRESQL_PASSWORD": "test",
+    "POSTGRESQL_HOST": "localhost",
+    "POSTGRESQL_PORT": "5432",
+    "POSTGRESQL_DATABASE": "test",
+    "REDIS_ROOT_PASSWORD": "test",
+    "REDIS_HOST": "localhost",
+    "MINIO_ROOT_USER": "test",
+    "MINIO_ROOT_PASSWORD": "test1234",
+    "CORS_ORIGINS": '["*"]',
+    "CORS_HEADERS": '["*"]',
+    "ENVIRONMENT": "TESTING",
+}
+
+for key, value in _ENV_DEFAULTS.items():
+    os.environ.setdefault(key, value)

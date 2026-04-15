@@ -1,5 +1,5 @@
 ---
-name: frontend-design
+name: rapidkit-design
 description: Create distinctive, production-grade frontend interfaces for the RapidKit project. Use this skill when the user asks to build web components, pages, or applications within the Vue 3 + NaiveUI + UnoCSS tech stack. Generates creative, polished code that follows project conventions and avoids generic AI aesthetics.
 license: Complete terms in LICENSE.txt
 ---
@@ -421,6 +421,11 @@ MyServiceDep = Annotated[MyService, Depends()]
 - PREFER UnoCSS arbitrary values (`text-13px`, `gap-16px`) over Tailwind named sizes for pixel-precise control
 - PREFER `<SvgIcon icon="carbon:xxx" />` for icons
 - PREFER `flex-col-stretch`, `flex-center`, and other project shortcuts over raw flex utilities
+
+### Git Rules
+
+- NEVER run `git add` or `git commit` — leave all version control operations to the user
+- NEVER stage or commit files automatically after generating code
 
 ### Backend Rules
 

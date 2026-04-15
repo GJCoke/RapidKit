@@ -8,8 +8,8 @@ Date    : 2026-03-30
 from typing import Literal
 
 from fastapi_sio_di import SID
+from rapidkit_core.log import logger
 
-from src.core.log import logger
 from src.sio.app import socket
 
 

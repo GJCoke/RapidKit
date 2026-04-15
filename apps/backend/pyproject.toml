@@ -11,6 +11,18 @@ description = "Async-FastAPI-MultiDB is an asynchronous FastAPI template project
 requires-python = ">= 3.14"
 version = "0.1.0"
 dependencies = [
+    # Core & Common packages
+    "rapidkit-core",
+    "rapidkit-common",
+    # Plugins
+    "rapidkit-plugin-script",
+    "rapidkit-plugin-monitoring",
+    "rapidkit-plugin-system",
+    "rapidkit-plugin-worker",
+    "rapidkit-plugin-schedule",
+    "rapidkit-plugin-menu",
+    "rapidkit-plugin-auth",
+    "rapidkit-plugin-user",
     # Server
     "fastapi>=0.135.3,<1.0",
     "uvicorn>=0.44.0,<1.0",
@@ -60,6 +72,18 @@ dev = [
     "asgi-lifespan>=2.1.0,<3.0",
     "ty>=0.0.29",
 ]
+
+[tool.uv.sources]
+rapidkit-core = { workspace = true }
+rapidkit-common = { workspace = true }
+rapidkit-plugin-script = { workspace = true }
+rapidkit-plugin-monitoring = { workspace = true }
+rapidkit-plugin-system = { workspace = true }
+rapidkit-plugin-worker = { workspace = true }
+rapidkit-plugin-schedule = { workspace = true }
+rapidkit-plugin-menu = { workspace = true }
+rapidkit-plugin-auth = { workspace = true }
+rapidkit-plugin-user = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 include = ["src/"]

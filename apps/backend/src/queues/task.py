@@ -12,7 +12,7 @@ import io
 import sys
 import warnings
 from datetime import datetime, timedelta
-from typing import Any, Iterable
+from typing import Any, Iterable, get_type_hints
 
 from celery import Task as _Task
 
@@ -22,9 +22,8 @@ from celery.app.routes import Router
 from celery.canvas import Signature
 from celery.result import AsyncResult
 from kombu import Connection, Producer
+from rapidkit_core.timezone import timezone as tz
 from typing_extensions import Annotated, Doc
-
-from src.utils.timezone import timezone as tz
 
 
 class Task(_Task):
@@ -276,41 +275,118 @@ class Task(_Task):
                     RuntimeWarning,
                 )
 
-        return super().apply_async(
-            args=args,
-            kwargs=kwargs,
-            countdown=countdown,
-            eta=eta,
-            expires=expires,
-            task_id=task_id,
-            retry=retry,
-            retry_policy=retry_policy,
-            queue=queue,
-            priority=priority,
-            producer=producer,
-            connection=connection,
-            link=link,
-            link_error=link_error,
-            chain=chain,
-            shadow=shadow,
-            router=router,
-            add_to_parent=add_to_parent,
-            group_id=group_id,
-            group_index=group_index,
-            reply_to=reply_to,
-            time_limit=time_limit,
-            soft_time_limit=soft_time_limit,
-            root_id=root_id,
-            parent_id=parent_id,
-            route_name=route_name,
-            **options,
-        )
+        # 若任务函数含 DI 参数（TaskRedis / TaskSession），跳过 Celery 的签名校验，
+        # 因为这些参数由 __call__ 中的 _resolve_deps() 在 Worker 侧注入，不会通过 apply_async 传递。
+        has_di = bool(self._resolve_deps_hints())
+        if has_di:
+            orig_typing = self.typing
+            self.typing = False
+
+        try:
+            return super().apply_async(
+                args=args,
+                kwargs=kwargs,
+                countdown=countdown,
+                eta=eta,
+                expires=expires,
+                task_id=task_id,
+                retry=retry,
+                retry_policy=retry_policy,
+                queue=queue,
+                priority=priority,
+                producer=producer,
+                connection=connection,
+                link=link,
+                link_error=link_error,
+                chain=chain,
+                shadow=shadow,
+                router=router,
+                add_to_parent=add_to_parent,
+                group_id=group_id,
+                group_index=group_index,
+                reply_to=reply_to,
+                time_limit=time_limit,
+                soft_time_limit=soft_time_limit,
+                root_id=root_id,
+                parent_id=parent_id,
+                route_name=route_name,
+                **options,
+            )
+        finally:
+            if has_di:
+                self.typing = orig_typing
+
+    def _resolve_deps_hints(self) -> dict[str, type]:
+        """返回 run() 中属于 DI 类型的参数名与类型映射（不创建资源）。"""
+        from src.queues.deps import TaskRedis, TaskSession
+
+        try:
+            hints = get_type_hints(self.run)
+        except Exception:
+            return {}
+
+        return {name: hint for name, hint in hints.items() if name != "return" and hint in (TaskRedis, TaskSession)}
+
+    def _resolve_deps(self) -> dict[str, Any]:
+        """
+        根据 run() 的类型注解，按需创建 Redis / DB 资源。
+
+        Returns:
+            需要注入到 run() 的关键字参数字典。
+        """
+        from src.queues.deps import TaskRedis, TaskSession
+
+        di_hints = self._resolve_deps_hints()
+        if not di_hints:
+            return {}
+
+        deps: dict[str, Any] = {}
+
+        for name, hint in di_hints.items():
+            if hint is TaskRedis:
+                from rapidkit_core.config import settings
+                from redis.asyncio import Redis as AsyncRedis
+
+                deps[name] = AsyncRedis.from_url(str(settings.REDIS_URL), decode_responses=True)
+            elif hint is TaskSession:
+                from rapidkit_core.config import settings
+                from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+                from sqlmodel.ext.asyncio.session import AsyncSession
+
+                engine = create_async_engine(str(settings.ASYNC_DATABASE_POSTGRESQL_URL))
+                deps[name] = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+        return deps
+
+    async def _cleanup_deps(self, deps: dict[str, Any]) -> None:
+        """清理 _resolve_deps 创建的资源。"""
+        from src.queues.deps import TaskRedis, TaskSession
+
+        try:
+            hints = get_type_hints(self.run)
+        except Exception:
+            return
+
+        for name, hint in hints.items():
+            if name == "return":
+                continue
+            resource = deps.get(name)
+            if resource is None:
+                continue
+            if hint is TaskRedis:
+                await resource.aclose()
+            elif hint is TaskSession:
+                # async_sessionmaker 持有 engine 引用
+                engine = resource.kw.get("bind")
+                if engine:
+                    await engine.dispose()
 
     def __call__(self, *args: tuple[Any], **kwargs: dict[str, Any]) -> Any:
         """
         执行任务，支持同步和异步 run 方法。
 
         若 run() 返回协程，则自动检测当前事件循环并运行。
+        对于 async 任务，根据类型注解按需注入 Redis / DB 资源。
 
         Args:
             *args: 传递给任务的参数。
@@ -332,17 +408,31 @@ class Task(_Task):
         sys.stdout = captured
 
         try:
-            # 调用原始 run() 方法。
+            # 先检查是否需要注入资源依赖。
+            deps = self._resolve_deps()
+
+            if deps:
+                # 有依赖：直接带资源参数调用 run()，不做无参的首次调用。
+                async def _run_with_deps() -> Any:
+                    try:
+                        return await self.run(*args, **kwargs, **deps)
+                    finally:
+                        await self._cleanup_deps(deps)
+
+                try:
+                    loop = asyncio.get_running_loop()
+                    return loop.run_until_complete(_run_with_deps())
+                except RuntimeError:
+                    return asyncio.run(_run_with_deps())
+
+            # 无依赖：调用原始 run() 方法。
             result = self.run(*args, **kwargs)
             # 检查返回值是否为协程。
             if asyncio.iscoroutine(result):
                 try:
-                    # 获取当前事件循环。
                     loop = asyncio.get_running_loop()
                     return loop.run_until_complete(result)
-
                 except RuntimeError:
-                    # 若无事件循环则新建。
                     return asyncio.run(result)
 
             # 非协程直接返回

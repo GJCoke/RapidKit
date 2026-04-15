@@ -148,7 +148,7 @@ export function rebuildDatabase(runner: TaskRunner): void {
 /**
  * 从后端 .env 文件读取数据库用户名和库名
  */
-function readDbCredentials(envPath: string): { user: string; database: string; password: string } {
+export function readDbCredentials(envPath: string): { user: string; database: string; password: string } {
   let user = "root"
   let database = "client"
   let pwd = ""

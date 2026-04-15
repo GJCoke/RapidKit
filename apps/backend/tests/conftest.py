@@ -110,9 +110,10 @@ async def client(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[AsyncClient]:
     Yields:
         AsyncClient: The client to send requests to the FastAPI application.
     """
-    from src.core import database, lifecycle
-    from src.core.config import settings
-    from src.domains.role.deps import verify_user_permission
+    from rapidkit_core import database
+    from rapidkit_core.config import settings
+    from plugin_auth.role.deps import verify_user_permission
+    from plugin_auth.router import sync
     from src.main import app
 
     monkeypatch.setattr(database, "ASYNC_DATABASE_URL", pytest_settings.SQL_DATABASE_URL)
@@ -121,7 +122,7 @@ async def client(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[AsyncClient]:
     async def async_none(*_args: Any, **_kwargs: Any) -> None:
         return None
 
-    monkeypatch.setattr(lifecycle, "store_router_in_db", async_none)
+    monkeypatch.setattr(sync, "store_router_in_db", async_none)
 
     app.dependency_overrides[verify_user_permission] = lambda: None  # type: ignore
 

@@ -13,16 +13,20 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from rapidkit_common.schemas.response import Response as SchemaResponse
+from rapidkit_common.utils import format_validation_errors
+from rapidkit_core.auth_config import app_configs
+from rapidkit_core.config import settings
+from rapidkit_core.exceptions import AppException
+from rapidkit_core.limiter import RateLimiterService
+from rapidkit_core.log import logger, set_custom_logfile, setup_logging
+from rapidkit_core.nanoid import NanoIdPlugin
+from rapidkit_core.status_codes import StatusCode
+from rapidkit_core.timezone import timezone
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException
 
-from src.common.schemas.response import Response as SchemaResponse
-from src.core.config import app_configs, settings
-from src.core.exceptions import AppException
-from src.core.lifecycle import lifespan
-from src.core.limiter import RateLimiterService
-from src.core.log import logger, set_custom_logfile, setup_logging
-from src.core.status_codes import StatusCode
+from src.lifecycle import lifespan
 from src.locales.i18n import is_i18n_key, t
 from src.middlewares.context import ContextMiddleware
 from src.middlewares.i18n import I18nMiddleware
@@ -31,15 +35,12 @@ from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.metrics import MetricsMiddleware
 from src.middlewares.state import StateMiddleware
 from src.sio.app import socket_app
-from src.utils.nanoid import NanoIdPlugin
-from src.utils.timezone import timezone
-from src.utils.utils import format_validation_errors
 
 
 async def _increment_biz_error() -> None:
     """将业务异常计数写入 Redis（fire-and-forget）。"""
     try:
-        from src.core.database import RedisManager
+        from rapidkit_core.database import RedisManager
 
         redis = RedisManager.client()
         hour_bucket = timezone.now().strftime("%Y%m%d_%H")
@@ -160,44 +161,71 @@ def setup_exception_handlers(app: FastAPI) -> None:
 def setup_router(app: FastAPI) -> None:
     """配置应用路由。"""
     from fastapi import APIRouter
-
-    from src.core.config import settings
-    from src.domains.auth import api as auth
-    from src.domains.menu import api as manage
-    from src.domains.monitoring import api as monitoring
-    from src.domains.role import api as roles
-    from src.domains.route import api as frontend_route
-    from src.domains.router import api as router
-    from src.domains.schedule import api as schedule
-    from src.domains.script import api as script
-    from src.domains.system import api as system
-    from src.domains.user import api as user
-    from src.domains.worker import api as worker
+    from rapidkit_core.config import settings
 
     v1_router = APIRouter(prefix=settings.API_PREFIX_V1)
-    v1_router.include_router(auth.router)
-    v1_router.include_router(router.router)
-    v1_router.include_router(roles.router)
-    v1_router.include_router(manage.router)
-    v1_router.include_router(user.router)
-    v1_router.include_router(frontend_route.router)
-    v1_router.include_router(script.router)
-    v1_router.include_router(system.router)
-    v1_router.include_router(monitoring.router)
-    if settings.ENABLE_CELERY_MONITOR:
-        v1_router.include_router(worker.router)
-        v1_router.include_router(worker.task_router)
-        v1_router.include_router(schedule.router)
+
+    # 注册插件路由
+    for plugin in getattr(app.state, "plugins", []):
+        if plugin.router is not None:
+            v1_router.include_router(plugin.router)
 
     app.include_router(v1_router)
 
 
 def create_app() -> FastAPI:
     """创建并配置 FastAPI 应用。"""
+    # 注册 i18n 翻译函数到 rapidkit-core
+    from rapidkit_core.i18n import set_translator
+
+    from src.locales.i18n import is_i18n_key as actual_is_key
+    from src.locales.i18n import t as actual_t
+
+    set_translator(lambda s: actual_t(s), actual_is_key)
+
     setup_logging_config()
 
+    # 加载插件（Phase 3 填充 PLUGIN_MODULES）
+    from rapidkit_core.loader import discover_and_load_plugins
+
+    PLUGIN_MODULES: list[str] = [
+        "plugin_auth",
+        "plugin_script",
+        "plugin_monitoring",
+        "plugin_system",
+        "plugin_menu",
+        "plugin_user",
+    ]
+
+    if settings.ENABLE_CELERY_MONITOR:
+        PLUGIN_MODULES.append("plugin_worker")
+        PLUGIN_MODULES.append("plugin_schedule")
+
     app = FastAPI(**app_configs, lifespan=lifespan)
+
+    if PLUGIN_MODULES:
+        plugins = discover_and_load_plugins(PLUGIN_MODULES)
+        app.state.plugins = plugins
+    else:
+        app.state.plugins = []
+
+    # 注册 auth 插件的 dependency_overrides
+    from plugin_auth import setup_dependency_overrides
+
+    setup_dependency_overrides(app)
+
     app.mount("/socket.io", socket_app)
+
+    # 将 socket 挂到 app.state，供插件 on_startup 回调使用
+    from src.sio.app import socket
+
+    app.state.socket = socket
+
+    # 将 celery_app 挂到 app.state，供 plugin_worker 使用
+    if settings.ENABLE_CELERY_MONITOR:
+        from src.queues.app import app as celery_app
+
+        app.state.celery_app = celery_app
 
     # 初始化速率限制服务
     limiter = RateLimiterService.init_limiter()

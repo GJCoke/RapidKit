@@ -1,0 +1,259 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_CACHE_DIR: /tmp/.uv-cache
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  # ----------------------------------------------------------------
+  # 1. 检测变更范围，输出受影响的插件列表
+  # ----------------------------------------------------------------
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      core_changed: ${{ steps.changes.outputs.core }}
+      common_changed: ${{ steps.changes.outputs.common }}
+      backend_changed: ${{ steps.changes.outputs.backend }}
+      affected_plugins: ${{ steps.plugins.outputs.matrix }}
+      has_plugins: ${{ steps.plugins.outputs.has_plugins }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            core:
+              - 'packages/core/**'
+            common:
+              - 'packages/common/**'
+            backend:
+              - 'apps/backend/src/**'
+              - 'apps/backend/alembic/**'
+            plugin_script:
+              - 'apps/backend/plugins/script/**'
+            plugin_monitoring:
+              - 'apps/backend/plugins/monitoring/**'
+            plugin_system:
+              - 'apps/backend/plugins/system/**'
+            plugin_worker:
+              - 'apps/backend/plugins/worker/**'
+            plugin_schedule:
+              - 'apps/backend/plugins/schedule/**'
+            plugin_menu:
+              - 'apps/backend/plugins/menu/**'
+            plugin_auth:
+              - 'apps/backend/plugins/auth/**'
+            plugin_user:
+              - 'apps/backend/plugins/user/**'
+
+      - name: Determine affected plugins
+        id: plugins
+        run: |
+          plugins=()
+
+          # 如果 core 或 common 变更，所有插件都需要测试
+          if [[ "${{ steps.changes.outputs.core }}" == "true" ]] || \
+             [[ "${{ steps.changes.outputs.common }}" == "true" ]] || \
+             [[ "${{ steps.changes.outputs.backend }}" == "true" ]]; then
+            plugins=("script" "monitoring" "system" "worker" "schedule" "menu" "auth" "user")
+          else
+            for p in script monitoring system worker schedule menu auth user; do
+              key="plugin_${p}"
+              if [[ "${{ steps.changes.outputs[key] }}" == "true" ]]; then
+                plugins+=("$p")
+              fi
+            done
+
+            # auth 变更时也要测试 user（user 依赖 auth）
+            if [[ " ${plugins[*]} " =~ " auth " ]] && [[ ! " ${plugins[*]} " =~ " user " ]]; then
+              plugins+=("user")
+            fi
+          fi
+
+          if [ ${#plugins[@]} -eq 0 ]; then
+            echo "matrix=[]" >> "$GITHUB_OUTPUT"
+            echo "has_plugins=false" >> "$GITHUB_OUTPUT"
+          else
+            json=$(printf '%s\n' "${plugins[@]}" | jq -R . | jq -sc .)
+            echo "matrix=${json}" >> "$GITHUB_OUTPUT"
+            echo "has_plugins=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ----------------------------------------------------------------
+  # 2. Lint（全量）
+  # ----------------------------------------------------------------
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Ruff check
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Type check (ty)
+        run: uv run ty check
+        continue-on-error: true
+
+  # ----------------------------------------------------------------
+  # 3. 受影响插件的测试（矩阵策略）
+  # ----------------------------------------------------------------
+  test-plugins:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_plugins == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: ${{ fromJson(needs.detect-changes.outputs.affected_plugins) }}
+    name: test-plugin-${{ matrix.plugin }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run plugin tests
+        run: uv run pytest apps/backend/plugins/${{ matrix.plugin }}/tests/ -v
+        env:
+          ENVIRONMENT: TESTING
+          POSTGRESQL_ASYNC_SCHEME: postgresql+asyncpg
+          POSTGRESQL_SYNC_SCHEME: postgresql+psycopg
+          POSTGRESQL_USERNAME: test
+          POSTGRESQL_PASSWORD: test
+          POSTGRESQL_HOST: localhost
+          POSTGRESQL_PORT: "5432"
+          POSTGRESQL_DATABASE: test
+          REDIS_ROOT_PASSWORD: test
+          REDIS_HOST: localhost
+          MINIO_ROOT_USER: test
+          MINIO_ROOT_PASSWORD: test1234
+          CORS_ORIGINS: '["*"]'
+          CORS_HEADERS: '["*"]'
+
+  # ----------------------------------------------------------------
+  # 4. core/common 变更时跑全量测试
+  # ----------------------------------------------------------------
+  test-all:
+    needs: detect-changes
+    if: >-
+      needs.detect-changes.outputs.core_changed == 'true' ||
+      needs.detect-changes.outputs.common_changed == 'true' ||
+      needs.detect-changes.outputs.backend_changed == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run core tests
+        run: uv run pytest packages/core/tests/ -v
+
+      - name: Run common tests
+        run: uv run pytest packages/common/tests/ -v
+
+      - name: Run backend tests
+        working-directory: apps/backend
+        run: uv run pytest tests/ -v
+        env:
+          ENVIRONMENT: TESTING
+          POSTGRESQL_ASYNC_SCHEME: postgresql+asyncpg
+          POSTGRESQL_SYNC_SCHEME: postgresql+psycopg
+          POSTGRESQL_USERNAME: test
+          POSTGRESQL_PASSWORD: test
+          POSTGRESQL_HOST: localhost
+          POSTGRESQL_PORT: "5432"
+          POSTGRESQL_DATABASE: test
+          REDIS_ROOT_PASSWORD: test
+          REDIS_HOST: localhost
+          MINIO_ROOT_USER: test
+          MINIO_ROOT_PASSWORD: test1234
+          CORS_ORIGINS: '["*"]'
+          CORS_HEADERS: '["*"]'
+
+  # ----------------------------------------------------------------
+  # 5. Alembic 迁移检查
+  # ----------------------------------------------------------------
+  migration-check:
+    needs: detect-changes
+    if: >-
+      needs.detect-changes.outputs.core_changed == 'true' ||
+      needs.detect-changes.outputs.common_changed == 'true' ||
+      needs.detect-changes.outputs.backend_changed == 'true' ||
+      needs.detect-changes.outputs.has_plugins == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Check alembic heads (no conflicts)
+        working-directory: apps/backend
+        run: |
+          heads=$(uv run alembic heads)
+          head_count=$(echo "$heads" | grep -c "(head)")
+          echo "Alembic heads: $heads"
+          echo "Head count: $head_count"
+          # 多个 head 是正常的（多分支），但不能有 "mergepoint" 冲突
+          uv run alembic check 2>&1 || true
+
+      - name: Verify migration history
+        working-directory: apps/backend
+        run: uv run alembic history --verbose

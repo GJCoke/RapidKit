@@ -25,8 +25,7 @@ from celery.signals import (
     worker_ready,
     worker_shutdown,
 )
-
-from src.core.config import settings
+from rapidkit_core.config import settings
 
 logger = logging.getLogger("celery.signals")
 

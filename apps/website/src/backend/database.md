@@ -120,9 +120,9 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
 使用示例（领域 CRUD 继承）：
 
 ```python
-from src.common.crud import BaseSQLModelCRUD
-from src.domains.role.models import Role
-from src.domains.role.schemas import CreateRole, UpdateRole
+from rapidkit_common.crud import BaseSQLModelCRUD
+from plugin_auth.role.models import Role
+from plugin_auth.role.schemas import CreateRole, UpdateRole
 
 
 class RoleCRUD(BaseSQLModelCRUD[Role, CreateRole, UpdateRole]):
@@ -132,67 +132,75 @@ class RoleCRUD(BaseSQLModelCRUD[Role, CreateRole, UpdateRole]):
 
 ## Alembic 迁移
 
-### 配置
+### 多分支迁移策略
 
-迁移工具使用 Alembic，配置文件为项目根目录下的 `alembic.ini`，迁移环境在 `alembic/env.py`。
+项目采用 Alembic 多分支迁移策略，每个插件维护独立的迁移分支。迁移文件分别存放在：
 
-所有模型必须在 `src/domains/__init__.py` 中导出，Alembic 才能自动发现并生成迁移脚本：
+- `alembic/versions/` — 基线迁移（初始 schema）
+- `plugins/<name>/migrations/versions/` — 各插件的独立迁移
 
-```python
-# src/domains/__init__.py
-from src.domains.auth.models import User
-from src.domains.menu.models import Menu
-from src.domains.role.models import Role
-from src.domains.router.models import InterfaceRouter
-from src.domains.script.models import Script, ScriptExecution
-from src.domains.worker.models import CeleryTaskResult, CeleryWorker
-
-__all__ = ["User", "Role", "Menu", "InterfaceRouter", "CeleryWorker", "CeleryTaskResult", "Script", "ScriptExecution"]
-```
+`alembic/env.py` 通过调用各插件的 `register()` 函数动态发现模型，无需手动维护模型导出列表。
 
 ### 常用命令
 
-| 命令                                        | 说明             |
-| ------------------------------------------- | ---------------- |
-| `alembic revision --autogenerate -m "desc"` | 自动生成迁移脚本 |
-| `alembic upgrade head`                      | 升级到最新版本   |
-| `alembic downgrade -1`                      | 回退一个版本     |
-| `alembic history`                           | 查看迁移历史     |
+| 命令                            | 说明                 |
+| ------------------------------- | -------------------- |
+| `alembic upgrade heads`         | 升级所有分支到最新   |
+| `alembic upgrade <plugin>@head` | 升级指定插件分支     |
+| `alembic downgrade <plugin>@-1` | 回退指定插件一个版本 |
+| `alembic heads`                 | 查看所有分支的 head  |
+| `alembic history`               | 查看迁移历史         |
+
+### 为插件生成迁移
+
+```bash
+# 首次迁移（创建分支）
+uv run alembic revision --autogenerate \
+  --branch-label=notification \
+  -m "add notification table" \
+  --version-path plugins/notification/migrations/versions/
+
+# 后续迁移（追加到已有分支）
+uv run alembic revision --autogenerate \
+  --head=notification@head \
+  -m "add read_at column" \
+  --version-path plugins/notification/migrations/versions/
+```
 
 :::warning
-每个新增模型都必须在 `src/domains/__init__.py` 中导出，否则 Alembic 无法检测到表结构变更。
+新增插件时，需要在 `alembic.ini` 的 `version_locations` 和 `alembic/env.py` 的 `PLUGIN_MODULES` 中注册，否则 Alembic 无法发现该插件的模型和迁移文件。
 :::
 
 ## 添加新模型
 
-1. **创建模型文件** -- 在对应领域目录下新建 `models.py`：
+1. **在插件中创建模型**：
 
 ```python
-# src/domains/example/models.py
+# plugins/notification/src/plugin_notification/models.py
 from sqlmodel import Field
-from src.common.models import SQLModel
+from rapidkit_common.models import SQLModel
 
-
-class Example(SQLModel, table=True):
-    __tablename__ = "examples"
-
-    name: str = Field(..., max_length=100, description="名称")
+class Notification(SQLModel, table=True):
+    __tablename__ = "notifications"
+    title: str = Field(max_length=200, description="通知标题")
+    content: str = Field(description="通知内容")
 ```
 
-2. **导出模型** -- 在 `src/domains/__init__.py` 中添加导入：
+2. **在 register() 中注册模型**：
 
 ```python
-from src.domains.example.models import Example
+return PluginManifest(
+    name="notification",
+    models=[Notification],  # 确保包含所有模型类
+    ...
+)
 ```
 
-3. **生成迁移脚本**：
+3. **生成并应用迁移**：
 
 ```bash
-alembic revision --autogenerate -m "add example table"
-```
-
-4. **应用迁移**：
-
-```bash
-alembic upgrade head
+uv run alembic revision --autogenerate --branch-label=notification \
+  -m "add notification table" \
+  --version-path plugins/notification/migrations/versions/
+uv run alembic upgrade heads
 ```

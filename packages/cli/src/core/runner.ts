@@ -24,6 +24,7 @@ export interface StepOptions {
   maxLines?: number
   keepOutput?: boolean
   env?: Record<string, string>
+  cwd?: string
 }
 
 export interface TaskRunner {
@@ -66,7 +67,7 @@ export function createTaskRunner(options: TaskRunnerOptions): TaskRunner {
     return new Promise<void>((resolve, reject) => {
       const child = spawn(cmd, args, {
         stdio: ["inherit", "pipe", "pipe"],
-        cwd: options.ctx.cwd,
+        cwd: step.cwd ?? options.ctx.cwd,
         env: step.env ? { ...process.env, ...step.env } : undefined,
       })
 

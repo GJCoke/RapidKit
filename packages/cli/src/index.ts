@@ -8,8 +8,10 @@ import { dev } from "./commands/dev"
 import { prod } from "./commands/prod"
 import { clean } from "./commands/clean"
 import { config } from "./commands/config"
+import { createPlugin } from "./commands/create-plugin"
+import { db } from "./commands/db"
 
-const domains = { dev, prod, clean, config }
+const domains = { dev, prod, clean, config, "create-plugin": createPlugin, db }
 
 type DomainKey = keyof typeof domains
 
@@ -18,6 +20,8 @@ const domainLabels: Record<DomainKey, () => string> = {
   prod: () => t("prod.description"),
   clean: () => t("clean.description"),
   config: () => t("config.description"),
+  "create-plugin": () => t("createPlugin.description"),
+  db: () => t("db.description"),
 }
 
 async function runWithSubMenu(domainName: string, domain: any): Promise<void> {
@@ -52,7 +56,7 @@ async function runWithSubMenu(domainName: string, domain: any): Promise<void> {
 }
 
 const main = defineCommand({
-  meta: { name: "flux", version: "1.0.0", description: "Flux \u2014 Monorepo development workflow CLI" },
+  meta: { name: "rapidkit", version: "1.0.0", description: "Rapidkit Monorepo development workflow CLI" },
   args: {
     runtime: { type: "string", description: "Container runtime override (docker or podman)" },
     region: { type: "string", description: "Registry region override (china or global)" },

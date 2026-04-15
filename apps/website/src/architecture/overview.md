@@ -10,8 +10,14 @@ rapidkit/
 ├── apps/                          # 应用层
 │   ├── frontend/                  # Vue 3 前端应用 (Soybean Admin)
 │   ├── backend/                   # FastAPI 后端服务 (Python)
+│   │   ├── src/                   #   应用入口、中间件、Socket.IO
+│   │   ├── plugins/               #   业务插件（独立 uv workspace 包）
+│   │   └── alembic/               #   数据库迁移（多分支）
 │   └── desktop/                   # Electron 桌面客户端
 ├── packages/                      # 共享包层
+│   ├── core/                      # rapidkit-core（后端基础设施）
+│   ├── common/                    # rapidkit-common（后端公共层）
+│   ├── cli/                       # RapidKit CLI（rapidkit 命令行工具）
 │   ├── utils/                     # 通用工具函数
 │   ├── axios/                     # HTTP 请求封装
 │   ├── hooks/                     # Vue Composition API Hooks

@@ -1,9 +1,9 @@
 from pathlib import Path
 
+from rapidkit_core.config import settings
+from rapidkit_core.context import ctx
 from starlette_context.errors import ContextDoesNotExistError
 
-from src.core.config import settings
-from src.core.context import ctx
 from src.locales.types import I18nKey
 from src.locales.utils import load_and_flatten_locales
 

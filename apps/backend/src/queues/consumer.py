@@ -11,12 +11,10 @@ import asyncio
 import json
 from datetime import timedelta
 
+from plugin_worker.event_service import EventService
+from rapidkit_core.database import AsyncSessionLocal, RedisManager
+from rapidkit_core.log import logger
 from redis.asyncio import Redis
-
-from src.core.database import AsyncSessionLocal, RedisManager
-from src.core.log import logger
-from src.domains.worker.event_service import EventService
-from src.sio.app import socket
 
 STREAM_KEY = "celery:events"
 CONSUMER_GROUP = "fastapi-consumers"
@@ -47,7 +45,7 @@ async def _ensure_consumer_group(redis: Redis) -> None:
         pass
 
 
-async def consume_events() -> None:
+async def consume_events(sio: object) -> None:
     """
     主消费循环：从 Redis Stream 读取事件，委托 EventService 处理。
 
@@ -87,7 +85,7 @@ async def consume_events() -> None:
                     if handler_name:
                         try:
                             async with AsyncSessionLocal() as session:
-                                service = EventService(session=session, sio=socket)
+                                service = EventService(session=session, sio=sio)
                                 await getattr(service, handler_name)(data)
                                 await session.commit()
                         except Exception:
@@ -109,7 +107,7 @@ async def consume_events() -> None:
             await asyncio.sleep(5)
 
 
-async def check_worker_offline() -> None:
+async def check_worker_offline(sio: object) -> None:
     """
     定时检测 Worker 离线。
 
@@ -122,7 +120,7 @@ async def check_worker_offline() -> None:
             await asyncio.sleep(OFFLINE_CHECK_INTERVAL)
 
             async with AsyncSessionLocal() as session:
-                service = EventService(session=session, sio=socket)
+                service = EventService(session=session, sio=sio)
                 await service.check_offline_workers(HEARTBEAT_TIMEOUT)
                 await session.commit()
 

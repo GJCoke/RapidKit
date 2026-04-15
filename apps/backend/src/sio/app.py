@@ -7,9 +7,8 @@ from importlib import util
 from pathlib import Path
 
 from fastapi_sio_di import AsyncServer
+from rapidkit_core.config import settings
 from socketio import ASGIApp, AsyncRedisManager
-
-from src.core.config import settings
 
 
 def auto_register_events() -> None:

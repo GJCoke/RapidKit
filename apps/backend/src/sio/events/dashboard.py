@@ -6,8 +6,8 @@ Date   : 2026-04-10
 """
 
 from fastapi_sio_di import SID
+from rapidkit_common.deps import RedisDep
 
-from src.common.deps import RedisDep
 from src.sio.app import socket
 
 

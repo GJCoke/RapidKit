@@ -158,3 +158,29 @@ Monorepo 通过 pnpm scripts 统一调用后端工具链命令：
 :::warning
 提交代码前建议依次运行 `format`、`lint` 和 `typecheck`，确保代码风格和类型安全性。
 :::
+
+## 插件脚手架（rapidkit create-plugin）
+
+RapidKit CLI 提供 `create-plugin` 命令，一键生成符合规范的插件骨架：
+
+```bash
+rapidkit create-plugin
+# 或直接指定名称
+rapidkit create-plugin --name notification
+```
+
+生成的文件包括：
+
+| 文件                            | 说明                                                           |
+| ------------------------------- | -------------------------------------------------------------- |
+| `pyproject.toml`                | 插件包配置，声明对 `rapidkit-core` 和 `rapidkit-common` 的依赖 |
+| `src/plugin_<name>/__init__.py` | `register()` 入口，返回 `PluginManifest`                       |
+| `src/plugin_<name>/api.py`      | FastAPI 路由模板                                               |
+| `src/plugin_<name>/schemas.py`  | Pydantic Schema 模板                                           |
+| `src/plugin_<name>/services.py` | 业务逻辑模板                                                   |
+| `src/plugin_<name>/crud.py`     | CRUD 操作模板                                                  |
+| `tests/conftest.py`             | 测试配置                                                       |
+| `tests/test_register.py`        | 注册测试（含跨插件导入检查）                                   |
+| `migrations/versions/`          | Alembic 迁移目录                                               |
+
+生成后仍需手动完成注册步骤（添加工作区依赖、注册到插件列表、配置迁移路径），详见 [插件开发指南](./plugin-development.md#注册新插件)。

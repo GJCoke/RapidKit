@@ -88,7 +88,7 @@ export async function createContext(args: { runtime?: string; region?: string })
  */
 export function getContext(): FluxContext {
   if (!ctx) {
-    // Lazy init for direct subcommand invocation (e.g., `flux dev up`)
+    // Lazy init for direct subcommand invocation (e.g., `rapidkit dev up`)
     const config = loadConfig()
     const runtime = resolveRuntime(undefined)
     const region = resolveRegion(undefined)

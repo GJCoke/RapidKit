@@ -1,0 +1,21 @@
+# RapidKit CODEOWNERS
+# 每个插件由对应团队负责，core/common 由基础设施团队把关。
+
+# 基础设施
+packages/core/                          @rapidkit/infra-team
+packages/common/                        @rapidkit/infra-team
+apps/backend/src/                       @rapidkit/infra-team
+apps/backend/alembic/                   @rapidkit/infra-team
+
+# 插件
+apps/backend/plugins/auth/              @rapidkit/auth-team
+apps/backend/plugins/user/              @rapidkit/auth-team
+apps/backend/plugins/menu/              @rapidkit/menu-team
+apps/backend/plugins/script/            @rapidkit/script-team
+apps/backend/plugins/monitoring/        @rapidkit/monitoring-team
+apps/backend/plugins/system/            @rapidkit/system-team
+apps/backend/plugins/worker/            @rapidkit/worker-team
+apps/backend/plugins/schedule/          @rapidkit/worker-team
+
+# CI/CD
+.github/                                @rapidkit/infra-team

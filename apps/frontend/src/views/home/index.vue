@@ -10,7 +10,7 @@
   import TrendCharts from "./modules/trend-charts.vue"
   import ActivityFeed from "./modules/activity-feed.vue"
 
-  defineOptions({ name: "Home" })
+  defineOptions({ name: "HomeDashboard" })
 
   const dashboard = useDashboard()
 

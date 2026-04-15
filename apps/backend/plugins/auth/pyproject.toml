@@ -1,0 +1,21 @@
+[project]
+name = "rapidkit-plugin-auth"
+version = "0.1.0"
+description = "RapidKit authentication, role & router management plugin"
+requires-python = ">=3.14"
+dependencies = [
+    "rapidkit-core",
+    "rapidkit-common",
+    "authlib",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/plugin_auth"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"

@@ -14,13 +14,13 @@ from celery.beat import ScheduleEntry as _ScheduleEntry
 from celery.beat import Scheduler as _Scheduler
 from celery.utils.log import get_logger
 from kombu import Producer
+from plugin_schedule.models import CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
+from plugin_schedule.schedule_types import TaskType
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.queues.celery import Celery
-from src.queues.models import TaskType
-from src.queues.schedule import CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
 
 # TaskType.model 返回的是 models.py 的基类，select() 需要 SQLModel 表类
 _SCHEDULE_MODEL_MAP: dict[TaskType, type[IntervalSchedule] | type[CrontabSchedule] | type[SolarSchedule]] = {

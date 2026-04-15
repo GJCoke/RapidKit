@@ -1,7 +1,7 @@
 from fastapi_sio_di import SID
+from rapidkit_common.deps import RedisDep
+from rapidkit_common.schemas import BaseModel
 
-from src.common.deps import RedisDep
-from src.common.schemas import BaseModel
 from src.sio.app import socket
 
 

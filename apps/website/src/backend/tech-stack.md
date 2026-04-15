@@ -19,7 +19,7 @@
 
 ## 核心特性
 
-- **领域驱动混合架构** — 按业务领域组织代码，公共基础设施下沉到 `common/` 和 `core/`
+- **插件化架构** — 业务代码以独立 workspace 包组织，基础设施抽取到 `rapidkit-core` 和 `rapidkit-common`
 - **RBAC 三级权限** — 路由权限、接口权限、按钮权限，控制前后端全链路访问
 - **双语国际化** — 基于 Babel 的中英文支持，中间件自动识别语言偏好
 - **WebSocket 实时推送** — python-socketio 挂载为 ASGI 中间件，支持多命名空间
@@ -30,28 +30,26 @@
 ## 项目结构
 
 ```
-src/
-├── core/              # 基础设施层：配置、数据库、异常、日志
-├── common/            # 公共层：基类模型、通用 CRUD、共享依赖
-├── domains/           # 业务领域层
-│   ├── auth/          #   认证与用户
-│   ├── menu/          #   菜单管理
-│   ├── role/          #   角色管理
-│   ├── route/         #   前端路由同步
-│   ├── router/        #   接口路由（动态权限注册）
-│   ├── schedule/      #   定时任务调度
-│   ├── script/        #   脚本管理与执行
-│   ├── user/          #   用户管理
-│   └── worker/        #   Celery Worker 监控
-├── sio/               # Socket.IO 实时通信
-├── middlewares/        # HTTP 中间件
-├── queues/            # Celery 任务队列
-├── locales/           # 国际化资源
-├── utils/             # 工具函数
-└── main.py            # 应用入口
+rapidkit/
+├── packages/
+│   ├── core/              # rapidkit-core（基础设施）
+│   └── common/            # rapidkit-common（公共层）
+├── apps/backend/
+│   ├── src/               # 应用入口、中间件、Socket.IO、Celery 队列
+│   ├── plugins/           # 业务插件（每个是独立的 uv workspace 包）
+│   │   ├── auth/          #   认证 + 角色 + 接口路由
+│   │   ├── user/          #   用户管理
+│   │   ├── menu/          #   菜单 + 前端路由
+│   │   ├── script/        #   脚本管理与执行
+│   │   ├── monitoring/    #   API 监控
+│   │   ├── system/        #   系统活动日志
+│   │   ├── worker/        #   Celery Worker 监控
+│   │   └── schedule/      #   定时任务调度
+│   ├── alembic/           # 数据库迁移
+│   └── tests/             # 集成测试
 ```
 
-每个 domain 目录包含 `api.py`（路由）、`models.py`（数据模型）、`schemas.py`（请求/响应 Schema）、`crud.py`（数据操作）、`deps.py`（依赖注入）、`services.py`（业务逻辑）。
+每个插件包含 `api.py`（路由）、`models.py`（数据模型）、`schemas.py`（请求/响应 Schema）、`crud.py`（数据操作）、`deps.py`（依赖注入）、`services.py`（业务逻辑）。
 
 更多架构细节参见 [架构说明](./architecture.md)。
 

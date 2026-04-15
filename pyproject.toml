@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = ["rapidkit-backend"]
+dependencies = ["rapidkit-backend", "rapidkit-core", "rapidkit-common", "rapidkit-plugin-script", "rapidkit-plugin-monitoring", "rapidkit-plugin-system", "rapidkit-plugin-worker", "rapidkit-plugin-schedule", "rapidkit-plugin-menu", "rapidkit-plugin-auth", "rapidkit-plugin-user"]
 
 [dependency-groups]
 dev = [
@@ -15,10 +15,23 @@ dev = [
 
 [tool.uv.sources]
 rapidkit-backend = { workspace = true }
+rapidkit-core = { workspace = true }
+rapidkit-common = { workspace = true }
+rapidkit-plugin-script = { workspace = true }
+rapidkit-plugin-monitoring = { workspace = true }
+rapidkit-plugin-system = { workspace = true }
+rapidkit-plugin-worker = { workspace = true }
+rapidkit-plugin-schedule = { workspace = true }
+rapidkit-plugin-menu = { workspace = true }
+rapidkit-plugin-auth = { workspace = true }
+rapidkit-plugin-user = { workspace = true }
 
 [tool.uv.workspace]
 members = [
-    "apps/backend"
+    "apps/backend",
+    "apps/backend/plugins/*",
+    "packages/core",
+    "packages/common",
 ]
 
 [tool.ty.src]

@@ -7,15 +7,15 @@ from typing import Literal
 
 from authlib.jose.errors import ExpiredTokenError, JoseError
 from fastapi_sio_di import SID
+from plugin_auth.auth.deps import AuthCrudDep
+from rapidkit_common.deps import RedisDep
+from rapidkit_common.schemas import BaseModel
+from rapidkit_core.auth_config import auth_settings
+from rapidkit_core.exceptions import AppException
+from rapidkit_core.security import decode_token
+from rapidkit_core.status_codes import StatusCode
 
-from src.common.deps import RedisDep
-from src.common.schemas import BaseModel
-from src.core.config import auth_settings
-from src.core.exceptions import AppException
-from src.core.status_codes import StatusCode
-from src.domains.auth.deps import AuthCrudDep
 from src.sio.app import socket
-from src.utils.security import decode_token
 
 user_sid_structure = "user:<{user_id}>:sid"
 sid_user_structure = "sid:<{sid}>:user"

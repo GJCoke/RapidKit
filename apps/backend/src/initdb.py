@@ -7,19 +7,18 @@ Date    : 2025-04-18
 
 import asyncio
 
+from plugin_auth.auth.models import User
+from plugin_auth.auth.schemas import UserCreate
+from plugin_auth.role.models import Role
+from plugin_auth.role.schemas import RoleCreate
+from plugin_menu.models import Menu
+from plugin_menu.schemas import Button
+from rapidkit_common.enums import MenuIconType, MenuType
+from rapidkit_core.database import AsyncSessionLocal
+from rapidkit_core.security import hash_password
+from rapidkit_core.uuid7 import uuid8
 from sqlmodel import delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
-
-from src.core.database import AsyncSessionLocal
-from src.domains.auth.models import User
-from src.domains.auth.schemas import UserCreate
-from src.domains.menu.models import Menu
-from src.domains.menu.schemas import Button
-from src.domains.role.models import Role
-from src.domains.role.schemas import RoleCreate
-from src.utils.enums import MenuIconType, MenuType
-from src.utils.security import hash_password
-from src.utils.uuid7 import uuid8
 
 USERNAME = "admin"
 PASSWORD = "123456"

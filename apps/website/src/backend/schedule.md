@@ -1,6 +1,10 @@
 # 定时任务调度
 
-本项目通过 Celery Beat 实现定时任务调度，将任务配置持久化到 PostgreSQL 数据库，并提供完整的 CRUD API 进行管理。
+定时任务调度作为独立插件 `plugin_schedule` 实现，通过 Celery Beat 将任务配置持久化到 PostgreSQL 数据库，并提供完整的 CRUD API 进行管理。
+
+:::info 条件加载
+`plugin_schedule` 和 `plugin_worker` 仅在环境变量 `ENABLE_CELERY_MONITOR=true` 时注册。未启用时，相关路由和模型不会加载。
+:::
 
 ## 架构概览
 
@@ -10,6 +14,8 @@
 - **PeriodicTask 模型**：定时任务的数据库持久化
 - **AsyncDatabaseScheduler**：从 PostgreSQL 读取任务配置的自定义调度器
 - **REST API**：通过 HTTP 接口管理定时任务的完整生命周期
+
+插件源码位于 `apps/backend/plugins/schedule/`，迁移文件在 `plugins/schedule/migrations/versions/`。
 
 ## 调度类型
 

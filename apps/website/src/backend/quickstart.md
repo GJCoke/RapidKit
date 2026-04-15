@@ -184,10 +184,10 @@ uv sync --dev  # 包含开发依赖（推荐）
 ## 数据库迁移
 
 ```bash
-uv run alembic upgrade head
+uv run alembic upgrade heads
 ```
 
-[Alembic](https://alembic.sqlalchemy.org/) 是 SQLAlchemy 的数据库迁移工具。`upgrade head` 会将数据库 Schema 迁移到最新版本。
+[Alembic](https://alembic.sqlalchemy.org/) 是 SQLAlchemy 的数据库迁移工具。项目采用多分支迁移策略，每个插件维护独立的迁移分支，`upgrade heads`（注意复数）会将所有分支迁移到最新版本。
 
 ## 初始化数据（可选）
 
@@ -220,12 +220,12 @@ pnpm run dev:backend
 
 ## 常用命令速查
 
-| 命令                                               | 说明           |
-| -------------------------------------------------- | -------------- |
-| `pnpm run dev:backend`                             | 启动开发服务器 |
-| `uv run alembic upgrade head`                      | 应用数据库迁移 |
-| `uv run alembic revision --autogenerate -m "desc"` | 生成迁移       |
-| `uv run ruff check --fix src`                      | Lint 检查      |
-| `uv run ruff format src`                           | 代码格式化     |
-| `uv run ty check src`                              | 类型检查       |
-| `uv run pytest`                                    | 运行测试       |
+| 命令                                               | 说明             |
+| -------------------------------------------------- | ---------------- |
+| `pnpm run dev:backend`                             | 启动开发服务器   |
+| `uv run alembic upgrade heads`                     | 应用所有分支迁移 |
+| `uv run alembic revision --autogenerate -m "desc"` | 生成迁移         |
+| `uv run ruff check --fix src`                      | Lint 检查        |
+| `uv run ruff format src`                           | 代码格式化       |
+| `uv run ty check src`                              | 类型检查         |
+| `uv run pytest`                                    | 运行测试         |

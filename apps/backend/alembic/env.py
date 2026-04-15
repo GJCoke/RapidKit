@@ -1,13 +1,37 @@
 import asyncio
+import importlib
 from logging.config import fileConfig
 
 from alembic import context  # type: ignore
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
-from src.core.config import settings
-from src.domains import *  # noqa: F403
-from src.queues.schedule import *  # noqa: F403
+
+from rapidkit_core.config import settings
+
+# ---------------------------------------------------------------------------
+# 通过插件 register() 动态发现所有 SQLModel 模型，使其注册到 SQLModel.metadata 上。
+# 这样 Alembic autogenerate 就能检测到所有表的变更。
+# ---------------------------------------------------------------------------
+PLUGIN_MODULES: list[str] = [
+    "plugin_auth",
+    "plugin_script",
+    "plugin_monitoring",
+    "plugin_system",
+    "plugin_menu",
+    "plugin_worker",
+    "plugin_schedule",
+]
+
+for _mod_name in PLUGIN_MODULES:
+    try:
+        _mod = importlib.import_module(_mod_name)
+        _mod.register()  # 触发模型导入 → 注册到 SQLModel.metadata
+    except Exception:
+        pass  # 可选插件可能不可用
+
+# Celery schedule 表模型（由 plugin_schedule 管理）
+from plugin_schedule.models import *  # noqa: F403
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

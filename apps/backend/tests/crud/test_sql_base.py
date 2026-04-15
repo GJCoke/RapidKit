@@ -11,10 +11,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Field, col, delete
 from sqlmodel import SQLModel as _SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.common.crud import BaseSQLModelCRUD
-from src.common.models import SQLModel
-from src.common.schemas import BaseRequest, BaseResponse
-from src.core.exceptions import AppException
+from rapidkit_common.crud import BaseSQLModelCRUD
+from rapidkit_common.models import SQLModel
+from rapidkit_common.schemas import BaseRequest, BaseResponse
+from rapidkit_core.exceptions import AppException
 
 from tests.conftest import engine
 from tests.utils import random_lowercase, random_uuid

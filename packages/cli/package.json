@@ -1,7 +1,7 @@
 {
   "name": "@rapidkit/cli",
   "version": "1.0.0",
-  "description": "Flux — Monorepo development workflow CLI",
+  "description": "Rapidkit — Monorepo development workflow CLI",
   "private": true,
   "type": "module",
   "scripts": {

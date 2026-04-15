@@ -5,7 +5,13 @@ Author  : Coke
 Date    : 2025-04-10
 """
 
-from src.core.config import settings
+# autodiscover_tasks 默认只查找 tasks.py，用 pkgutil 扫描所有子模块
+import pkgutil
+
+from celery.schedules import crontab
+from rapidkit_core.config import settings
+
+import src.queues.tasks as _tasks_pkg
 from src.queues.celery import Celery
 
 REDIS_URL = str(settings.CELERY_REDIS_URL)
@@ -20,7 +26,19 @@ app.conf.update(
     }
 )
 
-app.autodiscover_tasks(["src.queues.tasks"])
+app.conf.beat_schedule = {
+    "aggregate-api-metrics": {
+        "task": "aggregate_api_metrics",
+        "schedule": 60.0,
+    },
+    "cleanup-old-api-metrics": {
+        "task": "cleanup_old_api_metrics",
+        "schedule": crontab(hour=3, minute=0),
+    },
+}
+
+for _info in pkgutil.iter_modules(_tasks_pkg.__path__):
+    app.autodiscover_tasks(["src.queues.tasks"], related_name=_info.name)
 
 # 导入信号处理器，确保 Worker 启动时注册
 if settings.ENABLE_CELERY_MONITOR:
