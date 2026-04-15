@@ -21,7 +21,7 @@ async def _startup(app: FastAPI) -> None:
     _tasks.append(asyncio.create_task(push_error_stats_loop(socket)))
 
 
-async def _shutdown(app: FastAPI) -> None:
+async def _shutdown(_app: FastAPI) -> None:
     for t in _tasks:
         t.cancel()
     _tasks.clear()

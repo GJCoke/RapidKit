@@ -8,14 +8,18 @@ Author  : Claude
 Date    : 2026-04-14
 """
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from rapidkit_core.plugin import PluginManifest
 
+if TYPE_CHECKING:
+    from fastapi import FastAPI
 
-def setup_dependency_overrides(app: Any) -> None:
+
+def setup_dependency_overrides(app: FastAPI) -> None:
     """注册 dependency_overrides，替换 rapidkit_common.auth 中的占位函数。"""
     from rapidkit_common.auth import _get_current_user_placeholder, _verify_user_permission_placeholder
+
     from plugin_auth.auth.deps import get_current_user_form_db
     from plugin_auth.role.deps import verify_user_permission
 
