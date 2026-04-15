@@ -8,6 +8,7 @@ Date   : 2026-04-14
 import importlib
 from collections import deque
 
+from rapidkit_core.events import event_bus
 from rapidkit_core.log import logger
 from rapidkit_core.plugin import PluginManifest
 
@@ -42,9 +43,7 @@ def topological_sort(manifests: list[PluginManifest]) -> list[PluginManifest]:
     for m in manifests:
         for dep in m.dependencies:
             if dep not in name_map:
-                raise PluginLoadError(
-                    f"Plugin '{m.name}' depends on '{dep}', but '{dep}' is not registered."
-                )
+                raise PluginLoadError(f"Plugin '{m.name}' depends on '{dep}', but '{dep}' is not registered.")
             adjacency[dep].append(m.name)
             in_degree[m.name] += 1
 
@@ -102,7 +101,7 @@ def discover_and_load_plugins(module_names: list[str]) -> list[PluginManifest]:
             manifests.append(manifest)
             logger.info(f"Plugin '{manifest.name}' v{manifest.version} registered.")
         except Exception as e:
-            logger.error(f"Failed to load plugin '{module_name}': {e}")
+            logger.error("Failed to load plugin '{module_name}': {error}", module_name=module_name, error=e)
             # 判断是否能跳过：如果插件已经在 manifests 中且 required=False 可跳过
             # 但这里还没拿到 manifest，所以默认当作必要插件处理
             raise PluginLoadError(f"Failed to load plugin '{module_name}': {e}") from e
@@ -110,8 +109,6 @@ def discover_and_load_plugins(module_names: list[str]) -> list[PluginManifest]:
     sorted_manifests = topological_sort(manifests)
 
     # 按拓扑顺序注册事件监听器
-    from rapidkit_core.events import event_bus
-
     for manifest in sorted_manifests:
         for event_name, handler in manifest.event_listeners:
             event_bus.on(event_name, handler)

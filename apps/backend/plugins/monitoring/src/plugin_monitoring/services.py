@@ -5,11 +5,15 @@ Author : Coke
 Date   : 2026-04-13
 """
 
+import re
+from collections import defaultdict
 from datetime import datetime, timedelta
 
+from rapidkit_core.redis_client import AsyncRedisClient
+from rapidkit_core.timezone import timezone
+from sqlmodel import col, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from rapidkit_core.redis_client import AsyncRedisClient
 from plugin_monitoring.crud import ApiMetricsCRUD
 from plugin_monitoring.models import ApiMetricsHourly
 from plugin_monitoring.schemas import (
@@ -19,7 +23,6 @@ from plugin_monitoring.schemas import (
     ApiTopItem,
     ApiTrendPoint,
 )
-from rapidkit_core.timezone import timezone
 
 
 def _parse_range(range_str: str, start_str: str | None, end_str: str | None) -> tuple[datetime, datetime]:
@@ -166,9 +169,6 @@ class ApiMetricsService:
         """获取请求量趋势（按小时桶汇总所有端点）。"""
         start_dt, end_dt = _parse_range(range_str, start, end)
 
-        from sqlalchemy import func
-        from sqlmodel import col, select
-
         sum_req = func.sum(ApiMetricsHourly.request_count).label("request_count")
         sum_err = func.sum(ApiMetricsHourly.error_count).label("error_count")
 
@@ -183,7 +183,7 @@ class ApiMetricsService:
             .group_by(col(ApiMetricsHourly.time_bucket))
             .order_by(col(ApiMetricsHourly.time_bucket))
         )
-        result = await self.session.exec(stmt)  # ty: ignore[no-matching-overload]
+        result = await self.session.exec(stmt)
         rows = list(result.all())
 
         return [
@@ -240,9 +240,6 @@ class ApiMetricsService:
 
     async def get_realtime_stats(self) -> dict:
         """从 Redis 获取实时 API 统计数据（用于 Socket.IO 推送）。"""
-        import re
-        from collections import defaultdict
-
         pattern = re.compile(r"^metrics:api:(\d{8}_\d{4}):(\w+):(.+)$")
         grouped: dict[tuple[str, str], dict] = defaultdict(lambda: {"count": 0, "errors": 0})
 

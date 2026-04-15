@@ -5,7 +5,6 @@ Author : Coke
 Date   : 2026-04-14
 """
 
-import asyncio
 import inspect
 from typing import Any, Callable
 
@@ -56,13 +55,14 @@ class EventBus:
             try:
                 if inspect.iscoroutinefunction(handler):
                     logger.warning(
-                        f"Async handler {handler.__name__} skipped in sync emit for event '{event}'. "
+                        f"Async handler {getattr(handler, '__name__', repr(handler))} "
+                        f"skipped in sync emit for event '{event}'. "
                         f"Use async_emit() instead."
                     )
                     continue
                 handler(data)
             except Exception:
-                logger.exception(f"Error in handler {handler.__name__} for event '{event}'")
+                logger.exception(f"Error in handler {getattr(handler, '__name__', repr(handler))} for event '{event}'")
 
     async def async_emit(self, event: str, data: Any = None, *, source: str | None = None) -> None:
         """
@@ -82,7 +82,7 @@ class EventBus:
                 else:
                     handler(data)
             except Exception:
-                logger.exception(f"Error in handler {handler.__name__} for event '{event}'")
+                logger.exception(f"Error in handler {getattr(handler, '__name__', repr(handler))} for event '{event}'")
 
 
 # 全局单例

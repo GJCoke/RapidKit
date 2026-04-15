@@ -396,6 +396,19 @@ DATETIME_FORMAT=%Y-%m-%d %H:%M:%S
 
 ## Rules
 
+### Logging Rules
+
+- ALWAYS use `from rapidkit_core.log import logger` — NEVER use `logging.getLogger()`
+- ALWAYS use Loguru `{}` named params — NEVER use f-string or printf `%s` in log messages
+- ALWAYS prefix service-layer logs with `[PluginName]` domain tag (e.g., `[Auth]`, `[Script]`, `[User]`)
+- ALWAYS include `user_id` in security-sensitive log messages (login, permission changes, user deletion)
+- ALWAYS log state changes (create/update/delete) at INFO or WARNING level
+- NEVER log query/read operations (too noisy, handled by LoggerMiddleware at API level)
+- NEVER log sensitive data (passwords, tokens, PII) in plain text
+- PREFER WARNING for security events (login failure, permission changes, user disable/delete)
+- PREFER INFO for normal business events (login success, task created, script executed)
+- PREFER DEBUG for internal diagnostics (cache miss, retry, fallback path taken)
+
 ### Backend Rules
 
 - NEVER define query parameters as raw `Query()` in API endpoints — always use schema classes with `Annotated[Schema, Query(...)]`

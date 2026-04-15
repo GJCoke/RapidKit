@@ -1,11 +1,9 @@
-import logging
 import os
 
+from rapidkit_core.log import logger
 from watchfiles import awatch
 
 from src.locales.utils import gen_literal_from_dict, load_and_flatten_locales, load_language_namespace, write_py_file
-
-logger = logging.getLogger(__name__)
 
 
 async def watch_locale_files():
@@ -24,7 +22,7 @@ async def watch_locale_files():
     types_path = os.path.join(base_path, "types.py")
 
     async for changes in awatch(lang_path):
-        logger.debug("i18n file change:", changes)
+        logger.debug("i18n file change: {changes}", changes=changes)
 
         locales_data = load_and_flatten_locales(lang_path)
         namespaces = load_language_namespace(lang_path)

@@ -10,10 +10,11 @@ Date   : 2026-04-13
 import re
 from collections import defaultdict
 
+from rapidkit_core.log import logger
+from rapidkit_core.timezone import timezone
 from redis.asyncio import Redis as AsyncRedis
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from rapidkit_core.log import logger
 from plugin_monitoring.crud import ApiMetricsCRUD
 from plugin_monitoring.models import ApiMetricsHourly
 
@@ -33,7 +34,7 @@ async def _collect_minute_keys(redis: AsyncRedis) -> dict[tuple[str, str], dict]
         lambda: {"count": 0, "errors": 0, "total_ms": 0.0, "rt_keys": []}
     )
 
-    cursor = "0"
+    cursor: int = 0
     while True:
         cursor, keys = await redis.scan(cursor=cursor, match="metrics:api:*", count=200)
         for key in keys:
@@ -43,7 +44,7 @@ async def _collect_minute_keys(redis: AsyncRedis) -> dict[tuple[str, str], dict]
             if not m:
                 continue
             minute_bucket, method, path = m.group(1), m.group(2), m.group(3)
-            data = await redis.hgetall(key)
+            data = await redis.hgetall(key)  # type: ignore[misc]  # ty: ignore[invalid-await]
             if not data:
                 continue
 
@@ -90,8 +91,6 @@ async def aggregate_once(redis: AsyncRedis, session_factory: async_sessionmaker)
     if not grouped:
         return
 
-    from rapidkit_core.timezone import timezone
-
     now = timezone.now()
     time_bucket = now.replace(minute=0, second=0, microsecond=0)
 
@@ -120,4 +119,4 @@ async def cleanup_old_metrics(session_factory: async_sessionmaker, days: int = 7
         crud = ApiMetricsCRUD(ApiMetricsHourly, session=session)
         deleted = await crud.cleanup_old(days=days)
         if deleted:
-            logger.info(f"Cleaned up {deleted} expired API metrics rows.")
+            logger.info("Cleaned up {deleted} expired API metrics rows.", deleted=deleted)

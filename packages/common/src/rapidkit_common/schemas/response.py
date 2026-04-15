@@ -9,7 +9,6 @@ from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_serializer
-
 from rapidkit_core.i18n import is_i18n_key, t
 from rapidkit_core.status_codes import StatusCode
 
@@ -78,7 +77,7 @@ class Response(BaseResponse, Generic[T]):
         # 判断是否为 i18n key（包含 "."，如 "common.response.success"）
         # 虽然 t() 未找到 key 时也会返回原始值，但通过先检查 "." 可以避免不必要的翻译字典查询，提高效率
         # 特别是在大量错误响应场景下，这个简单的字符串检查比翻译查询更快
-        return t(value) if is_i18n_key(value) else value  # ty:ignore[invalid-argument-type]
+        return t(value) if is_i18n_key(value) else value
 
 
 class PaginatedResponse(BaseResponse, Generic[T]):

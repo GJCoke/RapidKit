@@ -25,6 +25,7 @@ from rapidkit_core.status_codes import StatusCode
 from rapidkit_core.timezone import timezone
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException
+from starlette_context import context
 
 from src.lifecycle import lifespan
 from src.locales.i18n import is_i18n_key, t
@@ -51,6 +52,16 @@ async def _increment_biz_error() -> None:
         logger.debug("Failed to increment biz error count", exc_info=True)
 
 
+def _get_request_user(request: Request) -> str:
+    """从请求上下文中提取 user_id 用于异常日志。"""
+    if context.exists():
+        user_id = context.get("user_id")
+        if user_id:
+            return str(user_id)
+
+    return "-"
+
+
 def setup_logging_config() -> None:
     """初始化日志配置。"""
     setup_logging()
@@ -67,6 +78,7 @@ def setup_middlewares(app: FastAPI) -> None:
     app.add_middleware(MetricsMiddleware)
     app.add_middleware(SlowAPIMiddleware)
     app.add_middleware(I18nMiddleware)
+    app.add_middleware(LoggerMiddleware)
     app.add_middleware(
         ContextMiddleware,
         plugins=(NanoIdPlugin(),),
@@ -79,7 +91,6 @@ def setup_middlewares(app: FastAPI) -> None:
         allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
         allow_headers=settings.CORS_HEADERS,
     )
-    app.add_middleware(LoggerMiddleware)
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
@@ -98,7 +109,8 @@ def setup_exception_handlers(app: FastAPI) -> None:
         """捕获参数校验异常并处理其结构。"""
         details = format_validation_errors(exc)
         logger.warning(
-            '"{method} {path}" RequestValidationError: {details}',
+            '{user} "{method} {path}" RequestValidationError: {details}',
+            user=_get_request_user(request),
             method=request.method,
             path=request.url.path,
             details=details,
@@ -112,7 +124,8 @@ def setup_exception_handlers(app: FastAPI) -> None:
     async def handle_app_exception(request: Request, exc: AppException) -> JSONResponse:
         """应用业务异常处理，使用业务状态码。"""
         logger.warning(
-            '"{method} {path}" AppException[{code}]: {message}',
+            '{user} "{method} {path}" AppException[{code}]: {message}',
+            user=_get_request_user(request),
             method=request.method,
             path=request.url.path,
             code=exc.code,
@@ -128,7 +141,8 @@ def setup_exception_handlers(app: FastAPI) -> None:
     async def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
         """HTTP 异常自定义处理。"""
         logger.error(
-            '"{method} {path}" {status_code} HTTPException: {detail}',
+            '{user} "{method} {path}" {status_code} HTTPException: {detail}',
+            user=_get_request_user(request),
             method=request.method,
             path=request.url.path,
             status_code=exc.status_code,
@@ -146,7 +160,8 @@ def setup_exception_handlers(app: FastAPI) -> None:
     async def handle_server_errors(request: Request, exc: Exception) -> JSONResponse:
         """捕获所有非预期异常并返回 500 状态码。"""
         logger.exception(
-            '"{method} {path}" {status_code} ServerException: {detail}',
+            '{user} "{method} {path}" {status_code} ServerException: {detail}',
+            user=_get_request_user(request),
             method=request.method,
             path=request.url.path,
             status_code=int(StatusCode.INTERNAL_SERVER_ERROR),

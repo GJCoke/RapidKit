@@ -8,12 +8,18 @@ Date   : 2026-04-10
 import time
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlmodel import func, select
-
+from plugin_auth.role.models import Role
+from plugin_auth.router.models import InterfaceRouter
+from plugin_menu.models import Menu
+from plugin_script.models import Script
 from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import Response
+from rapidkit_core.config import settings
+from sqlmodel import func, select
+
 from plugin_system.deps import ActivityLogCrudDep
+from plugin_system.push import _RESOURCE_KEY_PREFIX
 from plugin_system.schemas import (
     ActivityResponse,
     BusinessSummary,
@@ -39,7 +45,6 @@ async def get_resource_stats(
     instance: str | None = Query(None, description="实例 hostname，不传返回所有实例 + 汇总"),
 ) -> Response[MultiResourceStats]:
     """获取服务器资源，支持多实例汇总和按实例查询。"""
-    from plugin_system.push import _RESOURCE_KEY_PREFIX
 
     if instance:
         data = await redis.hgetall(f"{_RESOURCE_KEY_PREFIX}{instance}")
@@ -99,7 +104,7 @@ async def get_health_stats(request: Request, redis: RedisDep) -> Response[Health
         socket = request.app.state.socket
         rooms = socket.manager.rooms.get("/", {})
         ws_connections = len(rooms.get(None, set()))
-    except Exception:
+    except AttributeError:
         ws_connections = 0
 
     return Response(
@@ -127,10 +132,6 @@ async def get_infrastructure_health(session: SessionDep, redis: RedisDep) -> Res
 @router.get("/stats/business", summary="业务数据汇总")
 async def get_business_summary(session: SessionDep) -> Response[BusinessSummary]:
     """获取各业务模块的数据总量。"""
-    from plugin_menu.models import Menu
-    from plugin_auth.role.models import Role
-    from plugin_auth.router.models import InterfaceRouter
-    from plugin_script.models import Script
 
     roles = (await session.exec(select(func.count()).select_from(Role))).one()
     menus = (await session.exec(select(func.count()).select_from(Menu))).one()
@@ -139,8 +140,6 @@ async def get_business_summary(session: SessionDep) -> Response[BusinessSummary]
 
     schedules = 0
     try:
-        from rapidkit_core.config import settings
-
         if settings.ENABLE_CELERY_MONITOR:
             from plugin_schedule.models import PeriodicTask
 
@@ -180,7 +179,7 @@ async def _check_pg(session: SessionDep) -> ServiceHealth:
         from sqlalchemy.pool import QueuePool
 
         engine = session.get_bind()
-        pool = engine.pool
+        pool = engine.pool  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
         assert isinstance(pool, QueuePool)
         pool_info = {
             "pool_size": pool.size(),
@@ -197,7 +196,7 @@ async def _check_redis(redis: RedisDep) -> ServiceHealth:
     """检查 Redis 连接健康。"""
     try:
         start = time.time()
-        await redis.ping()
+        await redis.ping()  # type: ignore[misc]  # ty: ignore[invalid-await]
         latency = round((time.time() - start) * 1000, 2)
 
         info = await redis.info("memory")
@@ -220,8 +219,6 @@ async def _check_redis(redis: RedisDep) -> ServiceHealth:
 def _check_minio() -> ServiceHealth:
     """检查 MinIO 连接健康。"""
     try:
-        from rapidkit_core.config import settings
-
         start = time.time()
         client = __import__("minio").Minio(
             "localhost:9000",

@@ -12,10 +12,10 @@ from typing import Any, Coroutine, Sequence
 
 from celery.beat import ScheduleEntry as _ScheduleEntry
 from celery.beat import Scheduler as _Scheduler
-from celery.utils.log import get_logger
 from kombu import Producer
 from plugin_schedule.models import CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
 from plugin_schedule.schedule_types import TaskType
+from rapidkit_core.log import logger
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -28,8 +28,6 @@ _SCHEDULE_MODEL_MAP: dict[TaskType, type[IntervalSchedule] | type[CrontabSchedul
     TaskType.CRONTAB: CrontabSchedule,
     TaskType.SOLAR: SolarSchedule,
 }
-
-logger = get_logger("celery.queues.scheduler")
 
 
 class ScheduleEntry(_ScheduleEntry):
@@ -66,7 +64,7 @@ class Scheduler(_Scheduler):
             **kwargs,
         )
         self.refresh_interval = refresh_interval or self.app.conf.get("refresh_interval")
-        logger.info("Synchronize database tasks every %s seconds.", self.refresh_interval)
+        logger.info("Synchronize database tasks every {interval} seconds.", interval=self.refresh_interval)
         self.last_updated = datetime.now(UTC)
 
     @abstractmethod
@@ -185,7 +183,11 @@ class AsyncDatabaseScheduler(Scheduler):
             for task in tasks:
                 schedule_model = _SCHEDULE_MODEL_MAP.get(task.task_type)
                 if not schedule_model:
-                    logger.warning("Unknown task type: %s for task %s", task.task_type, task.name)
+                    logger.warning(
+                        "Unknown task type: {task_type} for task {task_name}",
+                        task_type=task.task_type,
+                        task_name=task.name,
+                    )
                     continue
                 _schedule_info = await session.exec(
                     select(schedule_model).filter(col(schedule_model.id) == task.schedule_id)
@@ -201,5 +203,9 @@ class AsyncDatabaseScheduler(Scheduler):
                         options=task.options,
                     )
 
-            logger.info("Database scheduled tasks(%d): %s", len(celery_beat), ", ".join(celery_beat.keys()))
+            logger.info(
+                "Database scheduled tasks({count}): {tasks}",
+                count=len(celery_beat),
+                tasks=", ".join(celery_beat.keys()),
+            )
             return celery_beat

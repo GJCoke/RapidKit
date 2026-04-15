@@ -9,12 +9,14 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-
 from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_core.exceptions import AppException
+from rapidkit_core.log import logger
 from rapidkit_core.status_codes import StatusCode
+
 from plugin_schedule.deps import PeriodicTaskCrudDep
+from plugin_schedule.schedule_types import TaskType
 from plugin_schedule.schemas import (
     PeriodicTaskCreate,
     PeriodicTaskListResponse,
@@ -22,7 +24,6 @@ from plugin_schedule.schemas import (
     PeriodicTaskResponse,
     PeriodicTaskUpdate,
 )
-from plugin_schedule.schedule_types import TaskType
 
 router = APIRouter(
     prefix="/schedules",
@@ -75,6 +76,7 @@ async def create_schedule(
     task_data = body.model_dump(exclude={"interval", "crontab"})
     task_data["schedule_id"] = schedule.id
     task = await crud.create(task_data)
+    logger.info("[Schedule] Task created: {task_name}", task_name=body.task)
 
     # 返回带调度详情的响应
     result = await crud.get_with_schedule(task.id)
@@ -101,6 +103,8 @@ async def update_schedule(
     if task_data:
         await crud.update(task, task_data)
 
+    logger.info("[Schedule] Task updated: {schedule_id}", schedule_id=schedule_id)
+
     result = await crud.get_with_schedule(schedule_id)
     return Response(data=result)
 
@@ -113,6 +117,11 @@ async def toggle_schedule(
     """启用/禁用定时任务。"""
     task = await crud.get(schedule_id, nullable=False)
     await crud.update(task, {"enabled": not task.enabled})
+    logger.info(
+        "[Schedule] Task toggled: {task_name} enabled={enabled}",
+        task_name=task.name,
+        enabled=not task.enabled,
+    )
 
     result = await crud.get_with_schedule(schedule_id)
     return Response(data=result)
@@ -134,4 +143,5 @@ async def delete_schedule(
 
     # 删除 PeriodicTask
     await crud.delete(schedule_id)
+    logger.info("[Schedule] Task deleted: {task_name}", task_name=task.name)
     return Response(data=True)

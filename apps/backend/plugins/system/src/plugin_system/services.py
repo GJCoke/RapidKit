@@ -7,13 +7,14 @@ Date   : 2026-04-10
 
 import asyncio
 from datetime import timedelta
-
-from sqlmodel.ext.asyncio.session import AsyncSession
+from typing import Any
 
 from rapidkit_core.database import AsyncSessionLocal
 from rapidkit_core.log import logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_core.timezone import timezone
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from plugin_system.crud import ActivityLogCRUD
 from plugin_system.models import ActivityLog
 
@@ -21,7 +22,7 @@ from plugin_system.models import ActivityLog
 class ActivityService:
     """系统活动日志服务。"""
 
-    def __init__(self, session: AsyncSession, sio: object | None = None) -> None:
+    def __init__(self, session: AsyncSession, sio: "Any | None" = None) -> None:
         self.session = session
         self.sio = sio
         self.crud = ActivityLogCRUD(ActivityLog, session=session)
@@ -58,7 +59,7 @@ class ActivityService:
         params: dict | None = None,
         detail: str | None = None,
         source_ip: str | None = None,
-        sio: object | None = None,
+        sio: Any | None = None,
     ) -> None:
         """在后台创建活动日志（用于中间件/异常处理器等非 DI 上下文）。"""
 
@@ -90,7 +91,7 @@ class MetricsService:
         total = 0
         for i in range(minutes):
             bucket = (now - timedelta(minutes=i)).strftime("%Y%m%d_%H%M")
-            count = await self.redis.hget(f"metrics:qps:{bucket}", "count")
+            count = await self.redis.hget(f"metrics:qps:{bucket}", "count")  # ty: ignore[invalid-await]
             if count:
                 total += int(count)
         return round(total / (minutes * 60), 2) if minutes > 0 else 0
@@ -122,8 +123,8 @@ class MetricsService:
         biz_errors = 0
         for i in range(hours):
             bucket = (now - timedelta(hours=i)).strftime("%Y%m%d_%H")
-            count_5xx = await self.redis.hget(f"metrics:errors:5xx:{bucket}", "count")
-            count_biz = await self.redis.hget(f"metrics:errors:biz:{bucket}", "count")
+            count_5xx = await self.redis.hget(f"metrics:errors:5xx:{bucket}", "count")  # ty: ignore[invalid-await]
+            count_biz = await self.redis.hget(f"metrics:errors:biz:{bucket}", "count")  # ty: ignore[invalid-await]
             if count_5xx:
                 http_5xx += int(count_5xx)
             if count_biz:
@@ -136,7 +137,7 @@ class MetricsService:
         total = 0
         for i in range(hours * 60):
             bucket = (now - timedelta(minutes=i)).strftime("%Y%m%d_%H%M")
-            count = await self.redis.hget(f"metrics:qps:{bucket}", "count")
+            count = await self.redis.hget(f"metrics:qps:{bucket}", "count")  # ty: ignore[invalid-await]
             if count:
                 total += int(count)
         return total
@@ -147,8 +148,8 @@ class MetricsService:
         sparkline: list[float] = []
         for i in range(23, -1, -1):
             bucket = (now - timedelta(hours=i)).strftime("%Y%m%d_%H")
-            count_5xx = await self.redis.hget(f"metrics:errors:5xx:{bucket}", "count")
-            count_biz = await self.redis.hget(f"metrics:errors:biz:{bucket}", "count")
+            count_5xx = await self.redis.hget(f"metrics:errors:5xx:{bucket}", "count")  # ty: ignore[invalid-await]
+            count_biz = await self.redis.hget(f"metrics:errors:biz:{bucket}", "count")  # ty: ignore[invalid-await]
             total = (int(count_5xx) if count_5xx else 0) + (int(count_biz) if count_biz else 0)
             sparkline.append(float(total))
         return sparkline

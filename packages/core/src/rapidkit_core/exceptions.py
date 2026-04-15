@@ -55,7 +55,7 @@ class AppException(BaseHTTPException):
         else:
             raise TypeError(f"The status code must be a StatusCode enum or integer; it cannot be: {type(code)}")
 
-        self.message = message or t(description)  # type: ignore
+        self.message = message or t(description)
         self.data = data
 
         super().__init__(

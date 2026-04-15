@@ -16,6 +16,7 @@ from plugin_worker.event_service import EventService
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
 from rapidkit_core.log import logger
 from redis.asyncio import Redis
+from redis.exceptions import ResponseError
 
 if TYPE_CHECKING:
     from fastapi_sio_di import AsyncServer
@@ -45,8 +46,8 @@ async def _ensure_consumer_group(redis: Redis) -> None:
     try:
         await redis.xgroup_create(STREAM_KEY, CONSUMER_GROUP, id="0", mkstream=True)
         logger.info("Created consumer group '{group}' for stream '{stream}'", group=CONSUMER_GROUP, stream=STREAM_KEY)
-    except Exception:
-        pass
+    except ResponseError:
+        pass  # BUSYGROUP: 消费者组已存在
 
 
 async def consume_events(sio: "AsyncServer") -> None:

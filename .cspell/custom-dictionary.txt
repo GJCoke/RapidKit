@@ -199,3 +199,8 @@ testdb
 mydb
 tname
 pname
+hincrby
+scard
+hget
+zrangebyscore
+checkedin

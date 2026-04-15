@@ -322,7 +322,7 @@ class Task(_Task):
 
         try:
             hints = get_type_hints(self.run)
-        except Exception:
+        except TypeError, NameError, AttributeError:
             return {}
 
         return {name: hint for name, hint in hints.items() if name != "return" and hint in (TaskRedis, TaskSession)}
@@ -364,7 +364,7 @@ class Task(_Task):
 
         try:
             hints = get_type_hints(self.run)
-        except Exception:
+        except TypeError, NameError, AttributeError:
             return
 
         for name, hint in hints.items():

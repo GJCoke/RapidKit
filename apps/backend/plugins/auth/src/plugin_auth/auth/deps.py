@@ -8,17 +8,18 @@ Date   : 2025-04-17
 from authlib.jose.errors import ExpiredTokenError, JoseError
 from fastapi import Depends, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from typing_extensions import Annotated, Doc
-
 from rapidkit_common.deps import RedisDep, SessionDep
+from rapidkit_core.auth_config import auth_settings
 from rapidkit_core.config import settings
+from rapidkit_core.context import ctx
 from rapidkit_core.exceptions import AppException
 from rapidkit_core.log import logger
+from rapidkit_core.security import AccessJWT, RefreshJWT, decode_token
 from rapidkit_core.status_codes import StatusCode
+from typing_extensions import Annotated, Doc
+
 from plugin_auth.auth.crud import UserCRUD
 from plugin_auth.auth.models import User
-from rapidkit_core.auth_config import auth_settings
-from rapidkit_core.security import AccessJWT, RefreshJWT, decode_token
 
 __all__ = [
     "OAuth2Form",
@@ -77,6 +78,8 @@ def parse_access_jwt_user(token: HeaderAccessTokenDep) -> AccessJWT:
         raise AppException(StatusCode.TOKEN_EXPIRED)
     except JoseError:
         raise AppException(StatusCode.TOKEN_INVALID)
+
+    ctx.user_id = user.sub
     return user
 
 
@@ -93,10 +96,10 @@ def parse_refresh_jwt_user(
 
     if user.agent != user_agent:
         logger.warning(
-            "User-Agent mismatch detected: original request User-Agent '%s'"
-            " does not match refresh token User-Agent '%s'.",
-            user_agent,
-            user.agent,
+            "User-Agent mismatch detected: original request User-Agent '{request_agent}'"
+            " does not match refresh token User-Agent '{token_agent}'.",
+            request_agent=user_agent,
+            token_agent=user.agent,
         )
         raise AppException(StatusCode.BAD_REQUEST)
     return user

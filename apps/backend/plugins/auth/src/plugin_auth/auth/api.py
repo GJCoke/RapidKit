@@ -6,10 +6,14 @@ Date   : 2025-03-11
 """
 
 from fastapi import APIRouter, Depends, Request
-
 from rapidkit_common.deps import RedisDep, check_debug
 from rapidkit_common.schemas.response import Response
 from rapidkit_core.auth_config import auth_settings
+from rapidkit_core.events import event_bus
+from rapidkit_core.log import logger
+from rapidkit_core.security import AccessJWT
+from rapidkit_core.uuid7 import uuid8
+
 from plugin_auth.auth.deps import (
     AuthCrudDep,
     HeaderUserAgentDep,
@@ -27,9 +31,7 @@ from plugin_auth.auth.schemas import (
     UserInfoResponse,
 )
 from plugin_auth.auth.services import create_access_token, refresh_user_token, user_login
-from plugin_auth.role.deps import RoleCrudDep, permission_structure
-from rapidkit_core.security import AccessJWT
-from rapidkit_core.uuid7 import uuid8
+from plugin_auth.role.deps import RoleCrudDep, get_user_permission_cache, permission_structure
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -59,13 +61,15 @@ async def login(
         user_agent=user_agent,
     )
 
-    from rapidkit_core.events import event_bus
-
-    event_bus.emit("activity.log", {
-        "event_type": "user_login",
-        "params": {"name": body.username},
-        "sio": request.app.state.socket,
-    }, source="auth")
+    event_bus.emit(
+        "activity.log",
+        {
+            "event_type": "user_login",
+            "params": {"name": body.username},
+            "sio": request.app.state.socket,
+        },
+        source="auth",
+    )
 
     return Response(data=token)
 
@@ -81,6 +85,7 @@ async def logout(auth: UserAccessJWTDep, redis: RedisDep) -> Response[bool]:
     if await redis.exists(permission_key):
         await redis.delete(permission_key)
 
+    logger.info("[Auth] User {user_id} logged out", user_id=auth.sub)
     return Response(data=True)
 
 
@@ -116,8 +121,6 @@ async def login_swagger(form: OAuth2Form, auth: AuthCrudDep) -> OAuth2TokenRespo
 @router.get("/user/info")
 async def get_user_info(user: UserDBDep, redis: RedisDep, role_crud: RoleCrudDep) -> Response[UserInfoResponse]:
     """检索当前的用户信息。"""
-    from plugin_auth.role.deps import get_user_permission_cache
-
     user_data = UserInfoResponse.model_validate(user)
 
     if not user.is_admin:

@@ -10,13 +10,15 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-
+from plugin_auth.role.deps import VerifyPermissionDep
+from plugin_system.schemas import UserActivityTrend, UserStatsSummary
 from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.deps import RedisDep
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_core.exceptions import AppException
+from rapidkit_core.log import logger
 from rapidkit_core.status_codes import StatusCode
-from plugin_auth.role.deps import VerifyPermissionDep
+
 from plugin_user.deps import UserManageCrudDep
 from plugin_user.schemas import (
     UserManageBatchBody,
@@ -31,8 +33,6 @@ from plugin_user.services import (
     invalidate_user_session,
     process_password,
 )
-
-from plugin_system.schemas import UserActivityTrend, UserStatsSummary
 
 router = APIRouter(
     prefix="/users",
@@ -106,6 +106,7 @@ async def create_user(
     create_data = body.model_dump()
     create_data["password"] = hashed_password
     user = await user_crud.create(create_data, validate=False)
+    logger.info("[User] User created: {user_id} by {operator}", user_id=user.id, operator=current_user.id)
     return Response(data=UserManageResponse.model_validate(user))
 
 
@@ -135,6 +136,7 @@ async def update_user(
             await invalidate_user_permission_cache(redis, user_id)
 
     user = await user_crud.update_by_id(user_id, update_data)
+    logger.info("[User] User updated: {user_id}", user_id=user_id)
     return Response(data=UserManageResponse.model_validate(user))
 
 
@@ -154,6 +156,7 @@ async def delete_user(
         raise AppException(StatusCode.BAD_REQUEST)
 
     await user_crud.delete(user_id)
+    logger.warning("[User] User deleted: {user_id} by {operator}", user_id=user_id, operator=current_user.id)
     await invalidate_user_session(redis, user_id)
     return Response(data=True)
 
@@ -174,6 +177,11 @@ async def batch_delete_users(
             raise AppException(StatusCode.BAD_REQUEST)
 
     await user_crud.delete_all(body.ids)
+    logger.warning(
+        "[User] Users batch deleted: {count} users by {operator}",
+        count=len(body.ids),
+        operator=current_user.id,
+    )
 
     for uid in body.ids:
         await invalidate_user_session(redis, uid)

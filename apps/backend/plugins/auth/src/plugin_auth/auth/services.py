@@ -12,15 +12,16 @@ from rapidkit_core.auth_config import auth_settings
 from rapidkit_core.exceptions import AppException
 from rapidkit_core.log import logger
 from rapidkit_core.redis_client import AsyncRedisClient
+from rapidkit_core.security import AccessJWT, RefreshJWT, check_password, create_token, decrypt_message
 from rapidkit_core.status_codes import StatusCode
+from rapidkit_core.uuid7 import uuid8
+
 from plugin_auth.auth.crud import UserCRUD
 from plugin_auth.auth.deps import refresh_structure
 from plugin_auth.auth.models import User
 from plugin_auth.auth.schemas import RefreshTokenCache, TokenResponse
 from plugin_auth.role.crud import RoleCRUD
 from plugin_auth.role.deps import create_user_permission_cache
-from rapidkit_core.security import AccessJWT, RefreshJWT, check_password, create_token, decrypt_message
-from rapidkit_core.uuid7 import uuid8
 
 
 def create_access_token(user: AccessJWT) -> str:
@@ -45,7 +46,7 @@ def decrypt_password(rsa_password: str) -> str:
     try:
         password = decrypt_message(auth_settings.RSA_PRIVATE_KEY, rsa_password)
     except Exception:
-        logger.exception("Failed to decrypt password.", exc_info=True)
+        logger.exception("[Auth] Failed to decrypt password.")
         raise AppException(StatusCode.AUTHENTICATION_FAILED)
     return password
 
@@ -95,6 +96,7 @@ async def refresh_user_token(
 
     token = await create_user_token(user.id, user.username, redis, user_agent)
     await create_user_permission_cache(user.id, user.roles, redis, role_crud)
+    logger.info("[Auth] Token refreshed for user {user_id}", user_id=user.id)
     return token
 
 
@@ -112,9 +114,10 @@ async def user_login(
     decrypted_password = decrypt_password(password)
 
     if not check_password(decrypted_password, user_info.password):
-        logger.debug("Invalid password for user %s", username)
+        logger.warning("[Auth] Login failed for {username}: invalid password", username=username)
         raise AppException(StatusCode.AUTHENTICATION_FAILED)
 
     token = await create_user_token(user_info.id, user_info.name, redis, user_agent)
     await create_user_permission_cache(user_info.id, user_info.roles, redis, role_crud)
+    logger.info("[Auth] Login success for user {user_id}", user_id=user_info.id)
     return token

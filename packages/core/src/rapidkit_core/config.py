@@ -148,6 +148,8 @@ class Config(BaseSettings):
         "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</> | <lvl>{level: <8}</> | <cyan>{request_id}</> | <lvl>{message}</>"
     )
 
+    SLOW_REQUEST_THRESHOLD_MS: int = Field(3000, description="慢请求告警阈值（毫秒）")
+
     # I18n settings
     DEFAULT_LANGUAGE: LANGUAGE_TYPE = "zh-CN"
 

@@ -9,6 +9,7 @@ Date    : 2025-04-10
 import pkgutil
 
 from celery.schedules import crontab
+from celery.signals import worker_process_init
 from rapidkit_core.config import settings
 
 import src.queues.tasks as _tasks_pkg
@@ -43,3 +44,12 @@ for _info in pkgutil.iter_modules(_tasks_pkg.__path__):
 # 导入信号处理器，确保 Worker 启动时注册
 if settings.ENABLE_CELERY_MONITOR:
     import src.queues.signals  # noqa: F401, E402
+
+
+@worker_process_init.connect
+def init_worker_logging(**kwargs):
+    """在 Celery worker 进程中初始化 Loguru 日志管道。"""
+    from rapidkit_core.log import set_custom_logfile, setup_logging
+
+    setup_logging()
+    set_custom_logfile()

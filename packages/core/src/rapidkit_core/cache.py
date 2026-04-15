@@ -5,6 +5,11 @@ Author : Coke
 Date   : 2026-04-14
 """
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rapidkit_core.redis_client import AsyncRedisClient
+
 
 class PluginCacheManager:
     """
@@ -35,7 +40,7 @@ class PluginCacheManager:
         """
         return self._prefix + ":".join(parts)
 
-    async def invalidate_all(self, redis_client: object) -> int:
+    async def invalidate_all(self, redis_client: "AsyncRedisClient") -> int:
         """
         清除本插件的所有缓存键。
 
@@ -46,7 +51,7 @@ class PluginCacheManager:
             删除的键数量。
         """
         pattern = f"{self._prefix}*"
-        keys = await redis_client.keys(pattern)  # type: ignore[attr-defined]
+        keys = await redis_client.keys(pattern)
         if keys:
-            return await redis_client.delete(*keys)  # type: ignore[attr-defined]
+            return await redis_client.delete(*keys)
         return 0

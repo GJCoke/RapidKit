@@ -8,9 +8,9 @@ Date    : 2026-03-30
 """
 
 import json
-import logging
 import platform
 import threading
+import traceback as tb_module
 from datetime import UTC, datetime
 
 import celery
@@ -26,8 +26,7 @@ from celery.signals import (
     worker_shutdown,
 )
 from rapidkit_core.config import settings
-
-logger = logging.getLogger("celery.signals")
+from rapidkit_core.log import logger
 
 STREAM_KEY = "celery:events"
 STREAM_MAXLEN = 10000
@@ -105,7 +104,7 @@ def _heartbeat_loop(hostname: str) -> None:
                 {"hostname": hostname},
             )
         except Exception:
-            logger.warning("Heartbeat publish failed for %s", hostname, exc_info=True)
+            logger.warning("Heartbeat publish failed for {hostname}", hostname=hostname, exc_info=True)
         _heartbeat_stop.wait(HEARTBEAT_INTERVAL)
 
 
@@ -162,8 +161,6 @@ def on_task_failure(
     **kw,
 ) -> None:
     """任务失败事件（补充详细的异常和堆栈信息）。"""
-    import traceback as tb_module
-
     tb_str = ""
     if traceback is not None:
         try:

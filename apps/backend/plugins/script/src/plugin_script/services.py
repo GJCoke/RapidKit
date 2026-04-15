@@ -9,13 +9,13 @@ import asyncio
 import time
 from typing import Any
 
-from sqlalchemy import ColumnElement
-from sqlmodel import col, or_
-
 from rapidkit_common.enums import Status
 from rapidkit_core.config import settings
 from rapidkit_core.exceptions import AppException
+from rapidkit_core.log import logger
 from rapidkit_core.status_codes import StatusCode
+from sqlalchemy import ColumnElement
+from sqlmodel import col, or_
 
 from plugin_script.models import Script
 
@@ -82,12 +82,24 @@ async def execute_code(language: str, code: str) -> dict[str, Any]:
         process.kill()
         await process.wait()
         elapsed = time.monotonic() - start
+        logger.warning(
+            "[Script] Code execution timed out: language={language} timeout={timeout}s",
+            language=language,
+            timeout=timeout,
+        )
         return {
             "stdout": None,
             "stderr": f"Execution timed out after {timeout}s",
             "exit_code": -1,
             "runtime": round(elapsed, 3),
         }
+
+    logger.info(
+        "[Script] Code executed: language={language} exit_code={exit_code} runtime={runtime}s",
+        language=language,
+        exit_code=exit_code,
+        runtime=round(elapsed, 3),
+    )
 
     stdout = stdout_bytes.decode("utf-8", errors="replace")[:max_output] if stdout_bytes else None
     stderr = stderr_bytes.decode("utf-8", errors="replace")[:max_output] if stderr_bytes else None

@@ -7,15 +7,15 @@ Date    : 2026-03-30
 
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import case, func
+from rapidkit_common.crud import BaseSQLModelCRUD
+from rapidkit_common.enums import TaskStatus, WorkerStatus
+from rapidkit_common.schemas.response import PaginatedResponse
+from rapidkit_core.timezone import timezone
+from sqlalchemy import case
 from sqlalchemy import select as sa_select
-from sqlmodel import col, select
+from sqlmodel import col, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from rapidkit_common.crud import BaseSQLModelCRUD
-from rapidkit_common.schemas.response import PaginatedResponse
-from rapidkit_common.enums import TaskStatus, WorkerStatus
-from rapidkit_core.timezone import timezone
 from plugin_worker.models import CeleryTaskResult, CeleryWorker
 from plugin_worker.schemas import (
     TaskListResponse,
@@ -151,7 +151,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
                 "avg_runtime"
             ),
         ).filter(self._time_filter(days))
-        result = (await session.execute(statement)).mappings().one()
+        result = (await session.exec(statement)).mappings().one()  # type: ignore[union-attr]  # ty: ignore[no-matching-overload]
         total = result["total"] or 0
         success = result["success"] or 0
         return TaskStatsSummary(
@@ -192,7 +192,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
         else:
             statement = statement.filter(self._time_filter(days))
         statement = statement.group_by(bucket).order_by(bucket)
-        results = (await session.execute(statement)).mappings().all()
+        results = (await session.exec(statement)).mappings().all()  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
         return [
             TaskStatsTimeline(
                 time_bucket=row["time_bucket"],
@@ -223,7 +223,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             .order_by(total_col.desc())
             .limit(limit)
         )
-        results = (await session.exec(statement)).all()
+        results = (await session.exec(statement)).all()  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
         return [
             TaskStatsByName(
                 task_name=row.task_name,
@@ -251,7 +251,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             .group_by(col(self.model.worker_hostname))
             .order_by(func.count().desc())
         )
-        results = (await session.exec(statement)).all()
+        results = (await session.exec(statement)).all()  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
         return [
             TaskStatsByWorker(
                 worker_hostname=row.worker_hostname,

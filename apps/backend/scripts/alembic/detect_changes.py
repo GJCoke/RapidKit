@@ -5,8 +5,6 @@ Usage: uv run python scripts/alembic/detect_changes.py
 Output: JSON to stdout with per-plugin change details.
 """
 
-from __future__ import annotations
-
 import importlib
 import json
 import logging

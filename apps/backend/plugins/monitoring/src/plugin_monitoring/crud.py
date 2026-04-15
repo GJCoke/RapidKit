@@ -7,13 +7,14 @@ Date   : 2026-04-13
 
 from datetime import datetime, timedelta
 
-from sqlalchemy import case, func, text
-from sqlalchemy import select as sa_select
-from sqlalchemy.dialects.postgresql import insert
-from sqlmodel import col, delete, select
-
 from rapidkit_common.crud import BaseSQLModelCRUD
 from rapidkit_common.schemas.base import BaseModel
+from rapidkit_core.timezone import timezone
+from sqlalchemy import case, text
+from sqlalchemy import select as sa_select
+from sqlalchemy.dialects.postgresql import insert
+from sqlmodel import col, delete, func, select
+
 from plugin_monitoring.models import ApiMetricsHourly
 
 
@@ -94,7 +95,7 @@ class ApiMetricsCRUD(BaseSQLModelCRUD[ApiMetricsHourly, BaseModel, BaseModel]):
             .where(col(ApiMetricsHourly.time_bucket) < end)
             .group_by(ApiMetricsHourly.method, ApiMetricsHourly.path)
         )
-        result = await self.session.exec(stmt)  # ty: ignore[no-matching-overload]
+        result = await self.session.exec(stmt)
         return list(result.all())
 
     async def get_trend(
@@ -118,8 +119,6 @@ class ApiMetricsCRUD(BaseSQLModelCRUD[ApiMetricsHourly, BaseModel, BaseModel]):
 
     async def cleanup_old(self, days: int = 7) -> int:
         """删除超过 N 天的历史数据，返回删除条数。"""
-        from rapidkit_core.timezone import timezone
-
         cutoff = timezone.now() - timedelta(days=days)
         stmt = delete(ApiMetricsHourly).where(col(ApiMetricsHourly.time_bucket) < cutoff)
         result = await self.session.exec(stmt)  # type: ignore[arg-type]

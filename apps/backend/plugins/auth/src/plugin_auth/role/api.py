@@ -7,9 +7,12 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import PaginatedResponse, Response
+from rapidkit_core.events import event_bus
+from rapidkit_core.log import logger
+from sqlmodel import col
+
 from plugin_auth.auth.deps import UserDBDep
 from plugin_auth.role.deps import RoleCrudDep, verify_user_permission
 from plugin_auth.role.models import Role
@@ -44,8 +47,6 @@ async def get_roles(
 
 @router.get("/mine")
 async def get_my_roles(role_crud: RoleCrudDep, user: UserDBDep) -> Response[list[RoleResponse]]:
-    from sqlmodel import col
-
     roles = await role_crud.get_all(col(Role.code).in_(user.roles), serializer=RoleResponse)
     return Response(data=roles)
 
@@ -83,7 +84,6 @@ async def update_role_permissions(
     redis: RedisDep,
     session: SessionDep,
 ) -> Response[bool]:
-    from rapidkit_core.events import event_bus
 
     role = await role_crud.get(role_id, nullable=False)
     await role_crud.update_by_id(
@@ -94,15 +94,27 @@ async def update_role_permissions(
             "interface_permissions": body.interface_permissions,
         },
     )
-    await event_bus.async_emit("role.permissions_changed", {
-        "redis": redis, "role_code": role.code, "session": session,
-    }, source="auth")
+    logger.warning(
+        "[Auth] Role permissions updated: role={role_code} by role_id={role_id}",
+        role_code=role.code,
+        role_id=role_id,
+    )
+    await event_bus.async_emit(
+        "role.permissions_changed",
+        {
+            "redis": redis,
+            "role_code": role.code,
+            "session": session,
+        },
+        source="auth",
+    )
     return Response(data=True)
 
 
 @router.post("")
 async def create_role(body: RoleCreate, role_crud: RoleCrudDep) -> Response[RoleResponse]:
     role = await role_crud.create(body)
+    logger.info("[Auth] Role created: {role_code}", role_code=body.code)
     return Response(data=RoleResponse.model_validate(role))
 
 
@@ -119,17 +131,23 @@ async def batch_delete_role(
     redis: RedisDep,
     session: SessionDep,
 ) -> Response[bool]:
-    from rapidkit_core.events import event_bus
 
     roles = await role_crud.get_by_ids(query.ids)
     role_codes = [r.code for r in roles]
 
     await role_crud.delete_all(query.ids)
+    logger.warning("[Auth] Roles batch deleted: {role_codes}", role_codes=role_codes)
 
     for code in role_codes:
-        await event_bus.async_emit("role.permissions_changed", {
-            "redis": redis, "role_code": code, "session": session,
-        }, source="auth")
+        await event_bus.async_emit(
+            "role.permissions_changed",
+            {
+                "redis": redis,
+                "role_code": code,
+                "session": session,
+            },
+            source="auth",
+        )
 
     return Response(data=True)
 
@@ -141,12 +159,18 @@ async def delete_role(
     redis: RedisDep,
     session: SessionDep,
 ) -> Response[bool]:
-    from rapidkit_core.events import event_bus
 
     role = await role_crud.get(role_id, nullable=False)
     await role_crud.delete(role_id)
-    await event_bus.async_emit("role.permissions_changed", {
-        "redis": redis, "role_code": role.code, "session": session,
-    }, source="auth")
+    logger.warning("[Auth] Role deleted: {role_code}", role_code=role.code)
+    await event_bus.async_emit(
+        "role.permissions_changed",
+        {
+            "redis": redis,
+            "role_code": role.code,
+            "session": session,
+        },
+        source="auth",
+    )
 
     return Response(data=True)
