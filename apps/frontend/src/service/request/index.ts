@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* oxlint-disable @typescript-eslint/no-explicit-any */
 import type { AxiosResponse } from "@rapidkit/axios"
 import { BACKEND_ERROR_CODE, createFlatRequest, createRequest } from "@rapidkit/axios"
 import { useAuthStore } from "@/store/modules/auth"

@@ -19,9 +19,9 @@
       case "running":
         return "Running..."
       case "success":
-        return props.runtime != null ? `Done in ${props.runtime.toFixed(2)}s` : "Done"
+        return props.runtime !== null ? `Done in ${props.runtime.toFixed(2)}s` : "Done"
       case "error":
-        return props.runtime != null ? `Failed in ${props.runtime.toFixed(2)}s` : "Failed"
+        return props.runtime !== null ? `Failed in ${props.runtime.toFixed(2)}s` : "Failed"
       default:
         return ""
     }

@@ -4,7 +4,7 @@ export type MessageType = "text" | "image" | "video" | "audio" | "system" | "fil
 // 国际化内容结构
 export interface I18nContent {
   key: string // 翻译 key, 如 "chat.user_joined"
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescript-eslint/no-explicit-any
   params?: Record<string, any> // 翻译参数, 如 { username: 'Doraemon' }
 }
 
@@ -22,7 +22,7 @@ interface BaseMessage {
   time: string
   isSelf: boolean
   avatar?: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescript-eslint/no-explicit-any
   extra?: Record<string, any>
 }
 

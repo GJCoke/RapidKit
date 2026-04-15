@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* oxlint-disable @typescript-eslint/no-explicit-any */
 import type { AlovaGenerics, AlovaOptions, AlovaRequestAdapter, Method, ResponseCompleteHandler } from "alova"
 
 export type CustomAlovaConfig<AG extends AlovaGenerics> = Omit<

@@ -16,7 +16,7 @@ type Transform<ResponseData, ApiData, Pagination extends boolean> = (
   response: ResponseData,
 ) => GetApiData<ApiData, Pagination>
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 export type TableColumnCheckTitle = string | ((...args: any) => VNodeChild)
 
 export type TableColumnCheck = {

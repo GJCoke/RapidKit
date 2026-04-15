@@ -2,19 +2,26 @@
   "name": "@rapidkit/color",
   "version": "1.0.1",
   "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "module": "./dist/index.esm.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "format": "prettier --write --ignore-path ../../.prettierignore \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
+    "format": "oxfmt",
+    "lint": "oxlint --fix",
     "dev": "tsx ../builder/cli.ts --dev",
     "build": "tsx ../builder/cli.ts",
     "typecheck": "tsc --noEmit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "@rapidkit/utils": "workspace:*",
+    "colord": "2.9.3"
+  },
   "packageManager": "pnpm@10.20.0",
   "buildOptions": {
     "type": "ts",
@@ -24,12 +31,5 @@
       "cjs",
       "iife"
     ]
-  },
-  "files": [
-    "dist"
-  ],
-  "dependencies": {
-    "@rapidkit/utils": "workspace:*",
-    "colord": "2.9.3"
   }
 }

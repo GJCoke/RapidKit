@@ -10,14 +10,14 @@
     event?: string
     tagType?: ExtractPropTypes<typeof tagProps>["type"]
     type: string
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescript-eslint/no-explicit-any
     data?: any
   }
 
   defineOptions({ name: "SocketIoDebug" })
   defineProps<Props>()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescript-eslint/no-explicit-any
   const formatArgs = (args: any) => {
     try {
       if (typeof args === "string") return args

@@ -36,7 +36,7 @@
     return new Date(time).toLocaleString()
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescript-eslint/no-explicit-any
   function formatJson(value: any) {
     if (!value) return "-"
     try {

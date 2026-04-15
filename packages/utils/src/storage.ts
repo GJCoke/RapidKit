@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* oxlint-disable @typescript-eslint/no-explicit-any */
 import localforage from "localforage"
 /** TODO: 这里有一个问题, 只能在浏览器环境中使用这个库 */
 /** The storage type */

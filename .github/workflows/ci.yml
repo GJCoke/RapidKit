@@ -98,11 +98,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Python toolchain
       - uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: uv sync --frozen
 
       - name: Ruff check
@@ -114,6 +115,20 @@ jobs:
       - name: Type check (ty)
         run: uv run ty check
         continue-on-error: true
+
+      # JS/TS toolchain
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".node-version"
+          cache: pnpm
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Oxlint
+        run: npx oxlint
 
   # ----------------------------------------------------------------
   # 3. 受影响插件的测试（矩阵策略）

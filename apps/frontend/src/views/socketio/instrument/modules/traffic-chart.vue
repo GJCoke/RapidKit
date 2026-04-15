@@ -24,10 +24,10 @@
     tooltip: {
       trigger: "axis",
       axisPointer: { type: "shadow" },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line @typescript-eslint/no-explicit-any
       formatter: (params: any) => {
         let res = params[0].name
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // oxlint-disable-next-line @typescript-eslint/no-explicit-any
         params.forEach((p: any) => {
           const val = p.value >= 1024 ? (p.value / 1024).toFixed(2) + " KB" : p.value + " B"
           res += `<br/>${p.marker}${p.seriesName}: <b>${val}</b>`
@@ -101,7 +101,7 @@
             data: chartData.value.sent,
           },
         ],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // oxlint-disable-next-line @typescript-eslint/no-explicit-any
       } as any)
     },
     { deep: true },

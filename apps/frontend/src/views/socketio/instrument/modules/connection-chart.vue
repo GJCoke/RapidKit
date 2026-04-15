@@ -84,7 +84,7 @@
           { data: sortedTs.map((t) => groups.get(t)!.conn) },
           { data: sortedTs.map((t) => groups.get(t)!.disc) },
         ],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // oxlint-disable-next-line @typescript-eslint/no-explicit-any
       } as any)
     },
     { deep: true },

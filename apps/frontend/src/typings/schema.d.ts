@@ -36,8 +36,6 @@ export interface paths {
         /**
          * Login
          * @description 用户登录端点。
-         *
-         *     该端点验证用户的凭证，解密密码，需验证数据库，并在成功时返回访问令牌和刷新令牌。
          */
         post: operations["login_api_v1_auth_login_post"];
         delete?: never;
@@ -96,30 +94,8 @@ export interface paths {
         /**
          * Get User Info
          * @description 检索当前的用户信息。
-         *
-         *     该端点在验证令牌和从数据库检索了完整记录后需出有详细信息。
          */
         get: operations["get_user_info_api_v1_auth_user_info_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/router/backend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Router
-         * @description 该端点从数据库检索所有路由并在响应中返回。
-         */
-        get: operations["get_router_api_v1_router_backend_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -135,21 +111,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Roles
-         * @description 获取分页的角色列表。
-         */
+        /** Get Roles */
         get: operations["get_roles_api_v1_roles_get"];
         put?: never;
-        /**
-         * Create Role
-         * @description 创建一个新角色。
-         */
+        /** Create Role */
         post: operations["create_role_api_v1_roles_post"];
-        /**
-         * Batch Delete Role
-         * @description 根据 ID 列表删除多个角色。
-         */
+        /** Batch Delete Role */
         delete: operations["batch_delete_role_api_v1_roles_delete"];
         options?: never;
         head?: never;
@@ -163,10 +130,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get My Roles
-         * @description 获取分配给当前用户的角色。
-         */
+        /** Get My Roles */
         get: operations["get_my_roles_api_v1_roles_mine_get"];
         put?: never;
         post?: never;
@@ -183,10 +147,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get All Roles
-         * @description 获取不带分页的完整角色列表。
-         */
+        /** Get All Roles */
         get: operations["get_all_roles_api_v1_roles_all_get"];
         put?: never;
         post?: never;
@@ -203,15 +164,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Role Permissions
-         * @description 获取角色的所有权限。
-         */
+        /** Get Role Permissions */
         get: operations["get_role_permissions_api_v1_roles__role_id__permissions_get"];
-        /**
-         * Update Role Permissions
-         * @description 批量更新角色的所有权限（路由、按钮、接口）。
-         */
+        /** Update Role Permissions */
         put: operations["update_role_permissions_api_v1_roles__role_id__permissions_put"];
         post?: never;
         delete?: never;
@@ -228,224 +183,25 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /**
-         * Update Role
-         * @description 根据 ID 更新角色。
-         */
+        /** Update Role */
         put: operations["update_role_api_v1_roles__role_id__put"];
         post?: never;
-        /**
-         * Delete Role
-         * @description 根据 ID 删除单个角色。
-         */
+        /** Delete Role */
         delete: operations["delete_role_api_v1_roles__role_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/manage/menus": {
+    "/api/v1/router/backend": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Menu List
-         * @description 获取菜单列表（支持分页）
-         */
-        get: operations["get_menu_list_api_v1_manage_menus_get"];
-        put?: never;
-        /**
-         * Add Menu
-         * @description 新增菜单。
-         */
-        post: operations["add_menu_api_v1_manage_menus_post"];
-        /**
-         * Batch Delete Menus
-         * @description 批量删除菜单。
-         */
-        delete: operations["batch_delete_menus_api_v1_manage_menus_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/manage/menus/tree": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Menu Tree
-         * @description 获取完整菜单树（不分页）
-         */
-        get: operations["get_menu_tree_api_v1_manage_menus_tree_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/manage/pages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get All Pages
-         * @description 获取所有页面组件名称
-         */
-        get: operations["get_all_pages_api_v1_manage_pages_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/manage/menus/{menu_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Menu
-         * @description 更新菜单。
-         */
-        put: operations["update_menu_api_v1_manage_menus__menu_id__put"];
-        post?: never;
-        /**
-         * Delete Menu
-         * @description 删除单个菜单。
-         */
-        delete: operations["delete_menu_api_v1_manage_menus__menu_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Users
-         * @description 获取分页的用户列表。
-         */
-        get: operations["get_users_api_v1_users_get"];
-        put?: never;
-        /**
-         * Create User
-         * @description 创建新用户。
-         */
-        post: operations["create_user_api_v1_users_post"];
-        /**
-         * Batch Delete Users
-         * @description 批量删除用户。
-         */
-        delete: operations["batch_delete_users_api_v1_users_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/users/{user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get User
-         * @description 获取单个用户详情。
-         */
-        get: operations["get_user_api_v1_users__user_id__get"];
-        /**
-         * Update User
-         * @description 更新用户信息。
-         */
-        put: operations["update_user_api_v1_users__user_id__put"];
-        post?: never;
-        /**
-         * Delete User
-         * @description 删除单个用户。
-         */
-        delete: operations["delete_user_api_v1_users__user_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/route/constant": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Constant Routes Api
-         * @description 获取常量路由（公共路由）。
-         *
-         *     该接口无需认证，因为常量路由（login、404 等）在用户登录前就需要加载。
-         */
-        get: operations["get_constant_routes_api_api_v1_route_constant_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/route/user": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get User Routes Api
-         * @description 获取当前用户的授权路由。
-         */
-        get: operations["get_user_routes_api_api_v1_route_user_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/route/exist": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Is Route Exist
-         * @description 检查路由名是否存在。
-         */
-        get: operations["is_route_exist_api_v1_route_exist_get"];
+        /** Get Router */
+        get: operations["get_router_api_v1_router_backend_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -550,7 +306,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/workers": {
+    "/api/v1/system/stats/api/overview": {
         parameters: {
             query?: never;
             header?: never;
@@ -558,9 +314,106 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Workers
-         * @description 分页查询 Worker 列表，支持 status/hostname 筛选。
+         * API 监控概览
+         * @description 获取总请求数、总失败数、平均错误率、最忙接口。
          */
+        get: operations["get_api_overview_api_v1_system_stats_api_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/stats/api/top": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * API Top N 排行
+         * @description 按请求量/失败量/响应时间排序的 Top N。
+         */
+        get: operations["get_api_top_api_v1_system_stats_api_top_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/stats/api/distribution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * API 请求占比分布
+         * @description 获取请求占比（Top 8 + 其他），用于饼图。
+         */
+        get: operations["get_api_distribution_api_v1_system_stats_api_distribution_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/stats/api/trend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * API 请求量趋势
+         * @description 获取按小时的请求量/失败量趋势数据。
+         */
+        get: operations["get_api_trend_api_v1_system_stats_api_trend_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/stats/api/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * API 明细列表
+         * @description 获取 API 明细分页列表，支持搜索和排序。
+         */
+        get: operations["get_api_list_api_v1_system_stats_api_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Workers */
         get: operations["get_workers_api_v1_workers_get"];
         put?: never;
         post?: never;
@@ -577,10 +430,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get All Workers
-         * @description 获取所有 Worker（不分页，用于概览卡片）。
-         */
+        /** Get All Workers */
         get: operations["get_all_workers_api_v1_workers_all_get"];
         put?: never;
         post?: never;
@@ -597,10 +447,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Worker
-         * @description 获取单个 Worker 详情。
-         */
+        /** Get Worker */
         get: operations["get_worker_api_v1_workers__worker_id__get"];
         put?: never;
         post?: never;
@@ -619,10 +466,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Ping Worker Endpoint
-         * @description Ping Worker 检查是否可达。
-         */
+        /** Ping Worker Endpoint */
         post: operations["ping_worker_endpoint_api_v1_workers__worker_id__ping_post"];
         delete?: never;
         options?: never;
@@ -639,10 +483,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Shutdown Worker Endpoint
-         * @description 优雅关闭 Worker。
-         */
+        /** Shutdown Worker Endpoint */
         post: operations["shutdown_worker_endpoint_api_v1_workers__worker_id__shutdown_post"];
         delete?: never;
         options?: never;
@@ -659,10 +500,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Pool Grow Endpoint
-         * @description 扩容 Worker Pool。
-         */
+        /** Pool Grow Endpoint */
         post: operations["pool_grow_endpoint_api_v1_workers__worker_id__pool_grow_post"];
         delete?: never;
         options?: never;
@@ -679,10 +517,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Pool Shrink Endpoint
-         * @description 缩容 Worker Pool。
-         */
+        /** Pool Shrink Endpoint */
         post: operations["pool_shrink_endpoint_api_v1_workers__worker_id__pool_shrink_post"];
         delete?: never;
         options?: never;
@@ -699,10 +534,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Add Queue Endpoint
-         * @description 让 Worker 监听新队列。
-         */
+        /** Add Queue Endpoint */
         post: operations["add_queue_endpoint_api_v1_workers__worker_id__queues_add_post"];
         delete?: never;
         options?: never;
@@ -719,10 +551,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Cancel Queue Endpoint
-         * @description 让 Worker 停止监听队列。
-         */
+        /** Cancel Queue Endpoint */
         post: operations["cancel_queue_endpoint_api_v1_workers__worker_id__queues_cancel_post"];
         delete?: never;
         options?: never;
@@ -737,10 +566,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Active Tasks Endpoint
-         * @description 查看 Worker 正在执行的任务。
-         */
+        /** Get Active Tasks Endpoint */
         get: operations["get_active_tasks_endpoint_api_v1_workers__worker_id__tasks_active_get"];
         put?: never;
         post?: never;
@@ -757,10 +583,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Reserved Tasks Endpoint
-         * @description 查看 Worker 预取的待执行任务。
-         */
+        /** Get Reserved Tasks Endpoint */
         get: operations["get_reserved_tasks_endpoint_api_v1_workers__worker_id__tasks_reserved_get"];
         put?: never;
         post?: never;
@@ -777,10 +600,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Tasks
-         * @description 分页查询任务历史，支持 status/task_name/worker_hostname 筛选。
-         */
+        /** Get Tasks */
         get: operations["get_tasks_api_v1_tasks_get"];
         put?: never;
         post?: never;
@@ -797,10 +617,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Task Stats Summary
-         * @description 获取任务统计概览。
-         */
+        /** Get Task Stats Summary */
         get: operations["get_task_stats_summary_api_v1_tasks_stats_summary_get"];
         put?: never;
         post?: never;
@@ -817,10 +634,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Task Stats Timeline
-         * @description 获取任务吞吐量时间线（按小时分桶）。
-         */
+        /** Get Task Stats Timeline */
         get: operations["get_task_stats_timeline_api_v1_tasks_stats_timeline_get"];
         put?: never;
         post?: never;
@@ -837,10 +651,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Task Stats By Name
-         * @description 按任务名称统计 Top 10。
-         */
+        /** Get Task Stats By Name */
         get: operations["get_task_stats_by_name_api_v1_tasks_stats_by_name_get"];
         put?: never;
         post?: never;
@@ -857,10 +668,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Task Stats By Worker
-         * @description 按 Worker 统计。
-         */
+        /** Get Task Stats By Worker */
         get: operations["get_task_stats_by_worker_api_v1_tasks_stats_by_worker_get"];
         put?: never;
         post?: never;
@@ -877,10 +685,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Registered Task List
-         * @description 获取所有已注册的 Celery 任务列表。
-         */
+        /** Get Registered Task List */
         get: operations["get_registered_task_list_api_v1_tasks_registered_get"];
         put?: never;
         post?: never;
@@ -897,10 +702,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Task
-         * @description 获取单个任务详情（含 traceback）。
-         */
+        /** Get Task */
         get: operations["get_task_api_v1_tasks__task_id__get"];
         put?: never;
         post?: never;
@@ -919,10 +721,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Trigger Task Endpoint
-         * @description 手动触发任务。
-         */
+        /** Trigger Task Endpoint */
         post: operations["trigger_task_endpoint_api_v1_tasks_trigger_post"];
         delete?: never;
         options?: never;
@@ -939,10 +738,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Revoke Task Endpoint
-         * @description 撤销任务。
-         */
+        /** Revoke Task Endpoint */
         post: operations["revoke_task_endpoint_api_v1_tasks__task_id__revoke_post"];
         delete?: never;
         options?: never;
@@ -1022,6 +818,374 @@ export interface paths {
         patch: operations["toggle_schedule_api_v1_schedules__schedule_id__toggle_patch"];
         trace?: never;
     };
+    "/api/v1/manage/menus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Menu List
+         * @description 获取菜单列表（支持分页）
+         */
+        get: operations["get_menu_list_api_v1_manage_menus_get"];
+        put?: never;
+        /**
+         * Add Menu
+         * @description 新增菜单。
+         */
+        post: operations["add_menu_api_v1_manage_menus_post"];
+        /**
+         * Batch Delete Menus
+         * @description 批量删除菜单。
+         */
+        delete: operations["batch_delete_menus_api_v1_manage_menus_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/menus/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Menu Tree
+         * @description 获取完整菜单树（不分页）
+         */
+        get: operations["get_menu_tree_api_v1_manage_menus_tree_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get All Pages
+         * @description 获取所有页面组件名称
+         */
+        get: operations["get_all_pages_api_v1_manage_pages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/menus/{menu_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Menu
+         * @description 更新菜单。
+         */
+        put: operations["update_menu_api_v1_manage_menus__menu_id__put"];
+        post?: never;
+        /**
+         * Delete Menu
+         * @description 删除单个菜单。
+         */
+        delete: operations["delete_menu_api_v1_manage_menus__menu_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/route/constant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Constant Routes Api
+         * @description 获取常量路由（公共路由）。
+         */
+        get: operations["get_constant_routes_api_api_v1_route_constant_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/route/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User Routes Api
+         * @description 获取当前用户的授权路由。
+         */
+        get: operations["get_user_routes_api_api_v1_route_user_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/route/exist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Is Route Exist
+         * @description 检查路由名是否存在。
+         */
+        get: operations["is_route_exist_api_v1_route_exist_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/stats/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 服务器资源统计
+         * @description 获取服务器资源，支持多实例汇总和按实例查询。
+         */
+        get: operations["get_resource_stats_api_v1_system_stats_resources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/stats/errors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 错误统计
+         * @description 获取 HTTP 5xx 和业务异常统计。
+         */
+        get: operations["get_error_stats_api_v1_system_stats_errors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/stats/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 应用健康统计
+         * @description 获取 QPS、响应时间 P50/P95 和错误计数。
+         */
+        get: operations["get_health_stats_api_v1_system_stats_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/stats/infrastructure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 基础设施健康状态
+         * @description 检查 PostgreSQL、Redis、MinIO 的健康状态。
+         */
+        get: operations["get_infrastructure_health_api_v1_system_stats_infrastructure_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/stats/business": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 业务数据汇总
+         * @description 获取各业务模块的数据总量。
+         */
+        get: operations["get_business_summary_api_v1_system_stats_business_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 最近系统活动
+         * @description 获取最近 15 条系统活动日志。
+         */
+        get: operations["get_activities_api_v1_system_activities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/stats/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 用户统计摘要
+         * @description 获取用户总数、今日新增、昨日新增和在线用户数。
+         */
+        get: operations["get_user_stats_summary_api_v1_users_stats_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/stats/trend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 用户活跃趋势
+         * @description 获取用户注册趋势数据。
+         */
+        get: operations["get_user_stats_trend_api_v1_users_stats_trend_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Users
+         * @description 获取分页的用户列表。
+         */
+        get: operations["get_users_api_v1_users_get"];
+        put?: never;
+        /**
+         * Create User
+         * @description 创建新用户。
+         */
+        post: operations["create_user_api_v1_users_post"];
+        /**
+         * Batch Delete Users
+         * @description 批量删除用户。
+         */
+        delete: operations["batch_delete_users_api_v1_users_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User
+         * @description 获取单个用户详情。
+         */
+        get: operations["get_user_api_v1_users__user_id__get"];
+        /**
+         * Update User
+         * @description 更新用户信息。
+         */
+        put: operations["update_user_api_v1_users__user_id__put"];
+        post?: never;
+        /**
+         * Delete User
+         * @description 删除单个用户。
+         */
+        delete: operations["delete_user_api_v1_users__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1050,6 +1214,210 @@ export interface components {
             /** Timestart */
             timeStart?: number | null;
         };
+        /**
+         * ActivityResponse
+         * @description 活动日志响应。
+         */
+        ActivityResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /** Eventtype */
+            eventType: string;
+            /**
+             * Params
+             * @default {}
+             */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Detail */
+            detail?: string | null;
+            /** Sourceip */
+            sourceIp?: string | null;
+        };
+        /**
+         * ApiDistributionItem
+         * @description API 请求占比分布条目。
+         */
+        ApiDistributionItem: {
+            /** Path */
+            path: string;
+            /** Method */
+            method: string;
+            /**
+             * Requestcount
+             * @default 0
+             */
+            requestCount: number;
+            /**
+             * Percentage
+             * @default 0
+             */
+            percentage: number;
+        };
+        /**
+         * ApiListItem
+         * @description API 明细列表条目。
+         */
+        ApiListItem: {
+            /** Path */
+            path: string;
+            /** Method */
+            method: string;
+            /**
+             * Requestcount
+             * @default 0
+             */
+            requestCount: number;
+            /**
+             * Errorcount
+             * @default 0
+             */
+            errorCount: number;
+            /**
+             * Errorrate
+             * @default 0
+             */
+            errorRate: number;
+            /**
+             * Avgms
+             * @default 0
+             */
+            avgMs: number;
+            /**
+             * P95Ms
+             * @default 0
+             */
+            p95Ms: number;
+        };
+        /**
+         * ApiOverviewResponse
+         * @description API 监控概览。
+         */
+        ApiOverviewResponse: {
+            /**
+             * Totalrequests
+             * @description 总请求数
+             * @default 0
+             */
+            totalRequests: number;
+            /**
+             * Totalerrors
+             * @description 总失败数
+             * @default 0
+             */
+            totalErrors: number;
+            /**
+             * Avgerrorrate
+             * @description 平均错误率(%)
+             * @default 0
+             */
+            avgErrorRate: number;
+            /**
+             * Avgms
+             * @description 平均响应时间(ms)
+             * @default 0
+             */
+            avgMs: number;
+            /**
+             * Busiestpath
+             * @description 最忙接口路径
+             */
+            busiestPath?: string | null;
+            /**
+             * Busiestmethod
+             * @description 最忙接口方法
+             */
+            busiestMethod?: string | null;
+            /**
+             * Busiestcount
+             * @description 最忙接口请求数
+             * @default 0
+             */
+            busiestCount: number;
+        };
+        /**
+         * ApiTopItem
+         * @description API 排行条目。
+         */
+        ApiTopItem: {
+            /** Path */
+            path: string;
+            /** Method */
+            method: string;
+            /**
+             * Requestcount
+             * @default 0
+             */
+            requestCount: number;
+            /**
+             * Errorcount
+             * @default 0
+             */
+            errorCount: number;
+            /**
+             * Errorrate
+             * @default 0
+             */
+            errorRate: number;
+            /**
+             * Avgms
+             * @default 0
+             */
+            avgMs: number;
+            /**
+             * P95Ms
+             * @default 0
+             */
+            p95Ms: number;
+        };
+        /**
+         * ApiTrendPoint
+         * @description API 趋势数据点。
+         */
+        ApiTrendPoint: {
+            /** Timebucket */
+            timeBucket: string;
+            /**
+             * Requestcount
+             * @default 0
+             */
+            requestCount: number;
+            /**
+             * Errorcount
+             * @default 0
+             */
+            errorCount: number;
+        };
+        /**
+         * BusinessSummary
+         * @description 业务数据汇总。
+         */
+        BusinessSummary: {
+            /** Roles */
+            roles: number;
+            /** Menus */
+            menus: number;
+            /** Routers */
+            routers: number;
+            /** Scripts */
+            scripts: number;
+            /** Schedules */
+            schedules: number;
+        };
         /** Button */
         Button: {
             /** Code */
@@ -1057,10 +1425,7 @@ export interface components {
             /** Desc */
             desc: string;
         };
-        /**
-         * CrontabScheduleCreate
-         * @description 创建 Crontab 调度。
-         */
+        /** CrontabScheduleCreate */
         CrontabScheduleCreate: {
             /**
              * Minute
@@ -1093,10 +1458,7 @@ export interface components {
              */
             monthOfYear: string;
         };
-        /**
-         * CrontabScheduleResponse
-         * @description Crontab 调度响应。
-         */
+        /** CrontabScheduleResponse */
         CrontabScheduleResponse: {
             /** Minute */
             minute: string;
@@ -1108,6 +1470,22 @@ export interface components {
             dayOfMonth: string;
             /** Monthofyear */
             monthOfYear: string;
+        };
+        /**
+         * ErrorStats
+         * @description 错误统计。
+         */
+        ErrorStats: {
+            /** Http5Xxcount */
+            http5XxCount: number;
+            /** Bizerrorcount */
+            bizErrorCount: number;
+            /** Totalrequests */
+            totalRequests: number;
+            /** Errorrate */
+            errorRate: number;
+            /** Sparkline24H */
+            sparkline24H: number[];
         };
         /**
          * FastAPIRouterResponse
@@ -1137,10 +1515,7 @@ export interface components {
             path: string;
             /** Methods */
             methods: string[];
-            /**
-             * Code
-             * @description 角色接口权限编码。
-             */
+            /** Code */
             readonly code: string;
         };
         /** HTTPValidationError */
@@ -1149,9 +1524,59 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
-         * IntervalScheduleCreate
-         * @description 创建间隔调度。
+         * HealthStats
+         * @description 应用健康统计。
          */
+        HealthStats: {
+            /** Qps */
+            qps: number;
+            /** P50Ms */
+            p50Ms: number;
+            /** P95Ms */
+            p95Ms: number;
+            /** Http5Xx1H */
+            http5Xx1H: number;
+            /** Bizerrors1H */
+            bizErrors1H: number;
+            /** Wsconnections */
+            wsConnections: number;
+        };
+        /**
+         * InfrastructureHealth
+         * @description 基础设施健康状态。
+         */
+        InfrastructureHealth: {
+            pg: components["schemas"]["ServiceHealth"];
+            redis: components["schemas"]["ServiceHealth"];
+            minio: components["schemas"]["ServiceHealth"];
+        };
+        /**
+         * InstanceResourceStats
+         * @description 单实例资源统计（带 hostname 标识）。
+         */
+        InstanceResourceStats: {
+            /** Cpupercent */
+            cpuPercent: number;
+            /** Memoryused */
+            memoryUsed: number;
+            /** Memorytotal */
+            memoryTotal: number;
+            /** Memorypercent */
+            memoryPercent: number;
+            /** Diskused */
+            diskUsed: number;
+            /** Disktotal */
+            diskTotal: number;
+            /** Diskpercent */
+            diskPercent: number;
+            /** Netsent */
+            netSent: number;
+            /** Netrecv */
+            netRecv: number;
+            /** Hostname */
+            hostname: string;
+        };
+        /** IntervalScheduleCreate */
         IntervalScheduleCreate: {
             /**
              * Every
@@ -1161,10 +1586,7 @@ export interface components {
             /** @description 间隔周期单位 */
             period: components["schemas"]["Period"];
         };
-        /**
-         * IntervalScheduleResponse
-         * @description 间隔调度响应。
-         */
+        /** IntervalScheduleResponse */
         IntervalScheduleResponse: {
             /** Every */
             every: number;
@@ -1703,6 +2125,38 @@ export interface components {
              */
             interfaces: string[];
         };
+        /**
+         * MultiResourceStats
+         * @description 多实例资源统计汇总。
+         */
+        MultiResourceStats: {
+            /** Instances */
+            instances: components["schemas"]["InstanceResourceStats"][];
+            summary: components["schemas"]["InstanceResourceStats"];
+        };
+        /** PaginatedResponse[ApiListItem] */
+        PaginatedResponse_ApiListItem_: {
+            /**
+             * Page
+             * @description 页码。
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @description 每页条数。
+             */
+            pageSize: number;
+            /**
+             * Total
+             * @description 总条数。
+             */
+            total: number;
+            /**
+             * Records
+             * @description 记录列表。
+             */
+            records: components["schemas"]["ApiListItem"][];
+        };
         /** PaginatedResponse[MenuListResponse] */
         PaginatedResponse_MenuListResponse_: {
             /**
@@ -1893,10 +2347,7 @@ export interface components {
          * @enum {string}
          */
         Period: "weeks" | "days" | "hours" | "minutes" | "seconds" | "milliseconds" | "microseconds";
-        /**
-         * PeriodicTaskCreate
-         * @description 创建定时任务。
-         */
+        /** PeriodicTaskCreate */
         PeriodicTaskCreate: {
             /**
              * Name
@@ -1941,10 +2392,7 @@ export interface components {
             /** @description Crontab 调度配置 */
             crontab?: components["schemas"]["CrontabScheduleCreate"] | null;
         };
-        /**
-         * PeriodicTaskListResponse
-         * @description 定时任务列表响应（不含 args/kwargs）。
-         */
+        /** PeriodicTaskListResponse */
         PeriodicTaskListResponse: {
             /**
              * Id
@@ -1978,10 +2426,7 @@ export interface components {
             interval?: components["schemas"]["IntervalScheduleResponse"] | null;
             crontab?: components["schemas"]["CrontabScheduleResponse"] | null;
         };
-        /**
-         * PeriodicTaskResponse
-         * @description 定时任务响应。
-         */
+        /** PeriodicTaskResponse */
         PeriodicTaskResponse: {
             /**
              * Id
@@ -2021,10 +2466,7 @@ export interface components {
             interval?: components["schemas"]["IntervalScheduleResponse"] | null;
             crontab?: components["schemas"]["CrontabScheduleResponse"] | null;
         };
-        /**
-         * PeriodicTaskUpdate
-         * @description 更新定时任务。
-         */
+        /** PeriodicTaskUpdate */
         PeriodicTaskUpdate: {
             /** Name */
             name?: string | null;
@@ -2081,6 +2523,86 @@ export interface components {
             /** Tasks */
             tasks: string[];
         };
+        /** Response[ApiOverviewResponse] */
+        Response_ApiOverviewResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["ApiOverviewResponse"] | null;
+        };
+        /** Response[BusinessSummary] */
+        Response_BusinessSummary_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["BusinessSummary"] | null;
+        };
+        /** Response[ErrorStats] */
+        Response_ErrorStats_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["ErrorStats"] | null;
+        };
+        /** Response[HealthStats] */
+        Response_HealthStats_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["HealthStats"] | null;
+        };
+        /** Response[InfrastructureHealth] */
+        Response_InfrastructureHealth_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["InfrastructureHealth"] | null;
+        };
         /** Response[MenuResponse] */
         Response_MenuResponse_: {
             /**
@@ -2096,6 +2618,38 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["MenuResponse"] | null;
+        };
+        /** Response[MultiResourceStats] */
+        Response_MultiResourceStats_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["MultiResourceStats"] | null;
+        };
+        /** Response[PaginatedResponse[ApiListItem]] */
+        Response_PaginatedResponse_ApiListItem__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PaginatedResponse_ApiListItem_"] | null;
         };
         /** Response[PaginatedResponse[MenuListResponse]] */
         Response_PaginatedResponse_MenuListResponse__: {
@@ -2433,6 +2987,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["UserRouteResponse"] | null;
         };
+        /** Response[UserStatsSummary] */
+        Response_UserStatsSummary_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["UserStatsSummary"] | null;
+        };
         /** Response[WorkerControlResponse] */
         Response_WorkerControlResponse_: {
             /**
@@ -2502,6 +3072,82 @@ export interface components {
              * @description 响应数据。
              */
             data?: components["schemas"]["ActiveTaskInfo"][] | null;
+        };
+        /** Response[list[ActivityResponse]] */
+        Response_list_ActivityResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["ActivityResponse"][] | null;
+        };
+        /** Response[list[ApiDistributionItem]] */
+        Response_list_ApiDistributionItem__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["ApiDistributionItem"][] | null;
+        };
+        /** Response[list[ApiTopItem]] */
+        Response_list_ApiTopItem__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["ApiTopItem"][] | null;
+        };
+        /** Response[list[ApiTrendPoint]] */
+        Response_list_ApiTrendPoint__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["ApiTrendPoint"][] | null;
         };
         /** Response[list[FastAPIRouterResponse]] */
         Response_list_FastAPIRouterResponse__: {
@@ -2635,6 +3281,25 @@ export interface components {
              * @description 响应数据。
              */
             data?: components["schemas"]["TaskStatsTimeline"][] | null;
+        };
+        /** Response[list[UserActivityTrend]] */
+        Response_list_UserActivityTrend__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["UserActivityTrend"][] | null;
         };
         /** Response[list[WorkerResponse]] */
         Response_list_WorkerResponse__: {
@@ -3073,6 +3738,20 @@ export interface components {
             status: components["schemas"]["Status"];
         };
         /**
+         * ServiceHealth
+         * @description 单个服务健康状态。
+         */
+        ServiceHealth: {
+            /** Status */
+            status: string;
+            /** Latencyms */
+            latencyMs: number;
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
          * Status
          * @enum {string}
          */
@@ -3305,6 +3984,16 @@ export interface components {
             taskId: string;
         };
         /**
+         * UserActivityTrend
+         * @description 用户活跃趋势。
+         */
+        UserActivityTrend: {
+            /** Timebucket */
+            timeBucket: string;
+            /** Newusers */
+            newUsers: number;
+        };
+        /**
          * UserInfoResponse
          * @description 用户信息响应数据结构。
          */
@@ -3453,6 +4142,20 @@ export interface components {
             routes: components["schemas"]["MenuRouteResponse"][];
             /** Home */
             home: string;
+        };
+        /**
+         * UserStatsSummary
+         * @description 用户统计摘要。
+         */
+        UserStatsSummary: {
+            /** Total */
+            total: number;
+            /** Todaynew */
+            todayNew: number;
+            /** Yesterdaynew */
+            yesterdayNew: number;
+            /** Onlinecount */
+            onlineCount: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -3675,26 +4378,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_UserInfoResponse_"];
-                };
-            };
-        };
-    };
-    get_router_api_v1_router_backend_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_FastAPIRouterResponse__"];
                 };
             };
         };
@@ -3985,109 +4668,7 @@ export interface operations {
             };
         };
     };
-    get_menu_list_api_v1_manage_menus_get: {
-        parameters: {
-            query?: {
-                /** @description 当前页码。 */
-                page?: number;
-                /** @description 每页条数。 */
-                pageSize?: number;
-                keyword?: string;
-                status?: components["schemas"]["Status"] | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_MenuListResponse__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_menu_api_v1_manage_menus_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MenuCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_MenuResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    batch_delete_menus_api_v1_manage_menus_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MenuBatchRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_menu_tree_api_v1_manage_menus_tree_get: {
+    get_router_api_v1_router_backend_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4102,363 +4683,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_list_MenuListResponse__"];
-                };
-            };
-        };
-    };
-    get_all_pages_api_v1_manage_pages_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_str__"];
-                };
-            };
-        };
-    };
-    update_menu_api_v1_manage_menus__menu_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                menu_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MenuUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_MenuResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_menu_api_v1_manage_menus__menu_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                menu_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_users_api_v1_users_get: {
-        parameters: {
-            query?: {
-                /** @description 当前页码。 */
-                page?: number;
-                /** @description 每页条数。 */
-                pageSize?: number;
-                keyword?: string;
-                status?: components["schemas"]["Status"] | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_UserManageResponse__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_user_api_v1_users_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserManageCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_UserManageResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    batch_delete_users_api_v1_users_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserManageBatchBody"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_user_api_v1_users__user_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_UserManageResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_user_api_v1_users__user_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserManageUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_UserManageResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_user_api_v1_users__user_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_constant_routes_api_api_v1_route_constant_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_MenuRouteResponse__"];
-                };
-            };
-        };
-    };
-    get_user_routes_api_api_v1_route_user_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_UserRouteResponse_"];
-                };
-            };
-        };
-    };
-    is_route_exist_api_v1_route_exist_get: {
-        parameters: {
-            query: {
-                routeName: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["Response_list_FastAPIRouterResponse__"];
                 };
             };
         };
@@ -4719,6 +4944,200 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_PaginatedResponse_ScriptExecutionResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_overview_api_v1_system_stats_api_overview_get: {
+        parameters: {
+            query?: {
+                /** @description 时间范围: 1h / 6h / 24h / 7d */
+                range?: string;
+                /** @description 自定义开始时间 */
+                start?: string | null;
+                /** @description 自定义结束时间 */
+                end?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_ApiOverviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_top_api_v1_system_stats_api_top_get: {
+        parameters: {
+            query?: {
+                /** @description 时间范围: 1h / 6h / 24h / 7d */
+                range?: string;
+                /** @description 自定义开始时间 */
+                start?: string | null;
+                /** @description 自定义结束时间 */
+                end?: string | null;
+                /** @description 排序字段: requests/errors/avg_ms/p95_ms */
+                sortBy?: string;
+                /** @description 返回条数 */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_ApiTopItem__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_distribution_api_v1_system_stats_api_distribution_get: {
+        parameters: {
+            query?: {
+                /** @description 时间范围: 1h / 6h / 24h / 7d */
+                range?: string;
+                /** @description 自定义开始时间 */
+                start?: string | null;
+                /** @description 自定义结束时间 */
+                end?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_ApiDistributionItem__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_trend_api_v1_system_stats_api_trend_get: {
+        parameters: {
+            query?: {
+                /** @description 时间范围: 1h / 6h / 24h / 7d */
+                range?: string;
+                /** @description 自定义开始时间 */
+                start?: string | null;
+                /** @description 自定义结束时间 */
+                end?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_ApiTrendPoint__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_list_api_v1_system_stats_api_list_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                /** @description 时间范围: 1h / 6h / 24h / 7d */
+                range?: string;
+                /** @description 自定义开始时间 */
+                start?: string | null;
+                /** @description 自定义结束时间 */
+                end?: string | null;
+                /** @description 模糊搜索路径 */
+                keyword?: string | null;
+                /** @description 排序字段 */
+                sortBy?: string;
+                /** @description 排序方向 */
+                sortOrder?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_ApiListItem__"];
                 };
             };
             /** @description Validation Error */
@@ -5160,6 +5579,9 @@ export interface operations {
         parameters: {
             query?: {
                 days?: number;
+                start?: string | null;
+                end?: string | null;
+                granularity?: string;
             };
             header?: never;
             path?: never;
@@ -5550,6 +5972,672 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_PeriodicTaskResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_menu_list_api_v1_manage_menus_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                keyword?: string;
+                status?: components["schemas"]["Status"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_MenuListResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_menu_api_v1_manage_menus_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_MenuResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_delete_menus_api_v1_manage_menus_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_menu_tree_api_v1_manage_menus_tree_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_MenuListResponse__"];
+                };
+            };
+        };
+    };
+    get_all_pages_api_v1_manage_pages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_str__"];
+                };
+            };
+        };
+    };
+    update_menu_api_v1_manage_menus__menu_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                menu_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_MenuResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_menu_api_v1_manage_menus__menu_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                menu_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_constant_routes_api_api_v1_route_constant_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_MenuRouteResponse__"];
+                };
+            };
+        };
+    };
+    get_user_routes_api_api_v1_route_user_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_UserRouteResponse_"];
+                };
+            };
+        };
+    };
+    is_route_exist_api_v1_route_exist_get: {
+        parameters: {
+            query: {
+                routeName: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_resource_stats_api_v1_system_stats_resources_get: {
+        parameters: {
+            query?: {
+                /** @description 实例 hostname，不传返回所有实例 + 汇总 */
+                instance?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_MultiResourceStats_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_error_stats_api_v1_system_stats_errors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_ErrorStats_"];
+                };
+            };
+        };
+    };
+    get_health_stats_api_v1_system_stats_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_HealthStats_"];
+                };
+            };
+        };
+    };
+    get_infrastructure_health_api_v1_system_stats_infrastructure_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_InfrastructureHealth_"];
+                };
+            };
+        };
+    };
+    get_business_summary_api_v1_system_stats_business_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_BusinessSummary_"];
+                };
+            };
+        };
+    };
+    get_activities_api_v1_system_activities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_ActivityResponse__"];
+                };
+            };
+        };
+    };
+    get_user_stats_summary_api_v1_users_stats_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_UserStatsSummary_"];
+                };
+            };
+        };
+    };
+    get_user_stats_trend_api_v1_users_stats_trend_get: {
+        parameters: {
+            query: {
+                /** @description 开始日期 */
+                start: string;
+                /** @description 结束日期 */
+                end: string;
+                /** @description 粒度: hour | day */
+                granularity?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_UserActivityTrend__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_users_api_v1_users_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                keyword?: string;
+                status?: components["schemas"]["Status"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_UserManageResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_user_api_v1_users_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserManageCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_UserManageResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_delete_users_api_v1_users_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserManageBatchBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_api_v1_users__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_UserManageResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user_api_v1_users__user_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserManageUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_UserManageResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_user_api_v1_users__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
                 };
             };
             /** @description Validation Error */

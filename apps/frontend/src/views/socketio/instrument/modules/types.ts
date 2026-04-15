@@ -39,7 +39,7 @@ export interface ServerStats {
 export interface EventLog {
   type: "R" | "S" | "CONN" | "DISC"
   event: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescript-eslint/no-explicit-any
   args: any
   time: string
   nsp: string

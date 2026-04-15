@@ -92,7 +92,7 @@
 
     // 绑定业务监听
     sio.on("all_sockets", (data: ClientDetail[]) => {
-      clients.value = [...data.map(formatClient)]
+      clients.value = data.map(formatClient)
       const historyMap = new Map()
       ;[...connectedHistory.value, ...data.map(formatClient)].forEach((item) => historyMap.set(item.id, item))
       connectedHistory.value = Array.from(historyMap.values()).reverse()
@@ -125,7 +125,7 @@
       events.value.unshift({ type: "DISC", event: "Disconnected", args: reason, time, nsp, sid })
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescript-eslint/no-explicit-any
     sio.on("event_received", (nsp: string, sid: string, packet: any[], time: string) => {
       events.value.unshift({
         type: "R",
@@ -138,7 +138,7 @@
       if (events.value.length > 100) events.value.pop()
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescript-eslint/no-explicit-any
     sio.on("event_sent", (nsp: string, sid: string, packet: any[], time: string) => {
       events.value.unshift({
         type: "S",

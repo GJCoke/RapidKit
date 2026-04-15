@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* oxlint-disable @typescript-eslint/no-explicit-any */
 import { defineCommand, runMain, runCommand } from "citty"
 import { select, isCancel, log } from "@clack/prompts"
 import { createContext } from "./context"

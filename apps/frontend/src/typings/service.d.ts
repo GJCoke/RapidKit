@@ -65,7 +65,7 @@ declare namespace Service {
     responses: { 200: infer R }
   }
     ? R extends { content: { "application/json": infer JSON } }
-      ? JSON extends { data?: infer D | null }
+      ? JSON extends { data?: (infer D) | null }
         ? D
         : JSON
       : never

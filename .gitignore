@@ -119,7 +119,7 @@ common/autoinstallers/*/.npmrc
 ################################################################################
 
 # RapidKit CLI local config
-.rapidkit.local.json
+.rapidkitrc.local.json
 
 # dotenv
 .env.local

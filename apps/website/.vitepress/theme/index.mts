@@ -1,5 +1,5 @@
 import DefaultTheme from "vitepress/theme"
-import { enhanceAppWithTabs } from 'vitepress-plugin-tabs/client'
+import { enhanceAppWithTabs } from "vitepress-plugin-tabs/client"
 // @ts-expect-error ...
 import "./styles/index.css"
 

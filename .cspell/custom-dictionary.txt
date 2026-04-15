@@ -189,6 +189,7 @@ DCDCAA
 CDCFE
 OAEP
 rapidkit
+rapidkitrc
 citty
 Nobis
 Tsukimidai
@@ -204,3 +205,5 @@ scard
 hget
 zrangebyscore
 checkedin
+oxlint
+oxfmt

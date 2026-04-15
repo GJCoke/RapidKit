@@ -10,7 +10,7 @@ export const RapidKitConfigSchema = z.object({
 
 export type RapidKitConfig = z.infer<typeof RapidKitConfigSchema>
 
-const CONFIG_FILENAME = ".rapidkit.local.json"
+const CONFIG_FILENAME = ".rapidkitrc.local.json"
 
 export function getConfigPath(): string {
   return resolve(process.cwd(), CONFIG_FILENAME)

@@ -2,8 +2,8 @@
   "name": "@rapidkit/website",
   "version": "1.0.1",
   "scripts": {
-    "format": "prettier --write --ignore-path ../../.prettierignore \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
+    "format": "oxfmt",
+    "lint": "oxlint --fix",
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview"

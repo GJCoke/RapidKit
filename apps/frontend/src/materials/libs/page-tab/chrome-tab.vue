@@ -11,7 +11,7 @@
 
   const style = styleModule
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescript-eslint/no-explicit-any
   type SlotFn = (props?: Record<string, unknown>) => any
 
   type Slots = {

@@ -1,5 +1,6 @@
 {
-  "*.{ts,tsx,js,jsx,vue,md}": ["prettier --write", "eslint --flag unstable_native_nodejs_ts_config --fix"],
+  "*.{ts,tsx,js,jsx,vue,md}": ["oxlint --fix"],
+  "*.{js,ts,mjs,cjs,json,jsx,tsx,css,less,scss,vue,html,md}": ["oxfmt"],
   "*.{js,ts,mjs,cjs,json,jsx,tsx,css,less,scss,vue,html,md,py}": ["pnpm check:spell"],
   "*.py": ["uv run ruff format", "uv run ruff check --fix", "uv run ty check"]
 }

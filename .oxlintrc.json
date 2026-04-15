@@ -1,0 +1,27 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error"
+  },
+  "plugins": ["typescript", "unicorn", "oxc"],
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/release/**",
+    "**node_modules/**",
+    "scripts/**",
+    "**/*.d.ts",
+    "**/.venv/**",
+    "*.log",
+    "*.md",
+    "**/.vitepress/cache/**",
+    "apps/frontend/src/router/elegant/imports.ts"
+  ],
+  "rules": {
+    "no-var": "error",
+    "eqeqeq": "error",
+    "prefer-const": "error",
+    "no-empty": "off",
+    "no-undef": "off",
+    "no-unused-vars": "off"
+  }
+}

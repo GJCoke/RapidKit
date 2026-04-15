@@ -4,7 +4,7 @@ import { io, type Socket, type ManagerOptions, type SocketOptions } from "socket
 export interface Options {
   url: string
   path?: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescript-eslint/no-explicit-any
   auth?: any
   namespace?: string
   ioOptions?: Partial<ManagerOptions & SocketOptions>

@@ -1,12 +1,12 @@
 {
   "name": "@rapidkit/frontend",
-  "private": true,
   "version": "1.3.0",
+  "private": true,
   "description": "fork soybean v2.1.0",
   "type": "module",
   "scripts": {
-    "format": "prettier --write --ignore-path ../../.prettierignore \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
+    "format": "oxfmt",
+    "lint": "oxlint --fix",
     "dev": "vite --mode test",
     "build": "vite build --mode test",
     "typecheck": "vue-tsc --noEmit",
@@ -49,14 +49,13 @@
     "kolorist": "^1.8.0",
     "sass": "^1.99.0",
     "typescript": "~6.0.2",
+    "unocss": "^66.6.6",
     "unplugin-icons": "^23.0.1",
     "unplugin-vue-components": "^32.0.0",
     "vite": "^8.0.5",
     "vite-plugin-progress": "^0.0.7",
     "vite-plugin-svg-icons": "^2.0.1",
     "vite-plugin-vue-devtools": "^8.1.1",
-    "unocss": "^66.6.6",
-    "vue-eslint-parser": "^10.4.0",
     "vue-tsc": "^3.2.6"
   }
 }

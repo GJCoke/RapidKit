@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* oxlint-disable @typescript-eslint/no-explicit-any */
 import type { Ref, ShallowRef } from "vue"
 import { computed, effectScope, onScopeDispose, reactive, shallowRef, watch } from "vue"
 import type { PaginationProps } from "naive-ui"

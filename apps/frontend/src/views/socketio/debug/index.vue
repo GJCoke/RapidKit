@@ -34,7 +34,7 @@
 
   const logs = ref<LogItem[]>([])
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescript-eslint/no-explicit-any
   const addLog = (type: LogItem["type"], content: any, event?: string) => {
     logs.value.unshift({
       type,

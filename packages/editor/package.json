@@ -2,19 +2,28 @@
   "name": "@rapidkit/editor",
   "version": "1.0.0",
   "description": "Monaco Editor Vue component for rapidkit",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "module": "./dist/index.esm.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "format": "prettier --write --ignore-path ../../.prettierignore \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config --fix",
+    "format": "oxfmt",
+    "lint": "oxlint --fix",
     "dev": "tsx ../builder/cli.ts --dev",
     "build": "tsx ../builder/cli.ts",
     "typecheck": "tsc --noEmit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "monaco-editor": "^0.55.1"
+  },
+  "peerDependencies": {
+    "vue": ">=3.0.0"
+  },
   "packageManager": "pnpm@10.20.0",
   "buildOptions": {
     "type": "vue",
@@ -22,14 +31,5 @@
     "formats": [
       "esm"
     ]
-  },
-  "files": [
-    "dist"
-  ],
-  "dependencies": {
-    "monaco-editor": "^0.55.1"
-  },
-  "peerDependencies": {
-    "vue": ">=3.0.0"
   }
 }
