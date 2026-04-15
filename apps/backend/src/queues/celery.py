@@ -5,7 +5,7 @@ Author  : Coke
 Date    : 2025-04-10
 """
 
-from typing import Any
+from typing import Any, Callable
 
 from celery import Celery as _Celery
 from typing_extensions import Annotated, Doc
@@ -307,7 +307,7 @@ class Celery(_Celery):
                 """
             ),
         ],
-    ) -> type[Task]:
+    ) -> Callable[..., Task]:
         # Added common parameters and corresponding annotations for Celery tasks, and by
         # default inherited from the Task class to support async def asynchronous function execution.
         return super().task(

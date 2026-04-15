@@ -5,10 +5,7 @@ Author : Coke
 Date   : 2026-04-02
 """
 
-from __future__ import annotations
-
 from pydantic import Field
-
 from rapidkit_common.schemas import BaseModel
 
 

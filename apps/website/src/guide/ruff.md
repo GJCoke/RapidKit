@@ -10,7 +10,7 @@
 节点。关键配置如下：
 
 - **line-length**: 120，最大行长度
-- **target-version**: `"py312"`，目标 Python 版本
+- **target-version**: `"py314"`，目标 Python 版本
 - **indent-width**: 4，缩进空格数
 
 ### Lint 配置 `[tool.ruff.lint]`

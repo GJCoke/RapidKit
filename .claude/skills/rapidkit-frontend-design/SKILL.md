@@ -1,5 +1,5 @@
 ---
-name: rapidkit-design
+name: rapidkit-frontend-design
 description: Create distinctive, production-grade frontend interfaces for the RapidKit project. Use this skill when the user asks to build web components, pages, or applications within the Vue 3 + NaiveUI + UnoCSS tech stack. Generates creative, polished code that follows project conventions and avoids generic AI aesthetics.
 license: Complete terms in LICENSE.txt
 ---
@@ -9,7 +9,7 @@ All generated code MUST follow the project's tech stack, conventions, and stylin
 
 ## Project Architecture
 
-RapidKit is a **pnpm + Turborepo monorepo**:
+RapidKit is a **pnpm + Turborepo** monorepo with **uv workspace** for Python packages:
 
 ```
 rapidkit/
@@ -20,11 +20,15 @@ rapidkit/
 │   └── website/           # Documentation site
 ├── packages/
 │   ├── axios/             # HTTP client wrapper (@rapidkit/axios)
+│   ├── alova/             # Alova HTTP client (@rapidkit/alova)
 │   ├── hooks/             # Shared Vue composables (@rapidkit/hooks)
 │   ├── utils/             # Shared utilities (@rapidkit/utils)
-│   ├── color/             # Color palette utilities
-│   ├── editor/            # Editor component
-│   └── ...
+│   ├── color/             # Color palette utilities (@rapidkit/color)
+│   ├── editor/            # Editor component (@rapidkit/editor)
+│   ├── builder/           # Build tooling (@rapidkit/builder)
+│   ├── cli/               # CLI tool (@rapidkit/cli)
+│   ├── common/            # Python shared package (rapidkit-common)
+│   └── core/              # Python core package (rapidkit-core)
 ```
 
 ### Frontend Directory Structure
@@ -36,8 +40,11 @@ apps/frontend/src/
 │   ├── common/            # Base shared components (app-provider, system-logo, dark-mode-container...)
 │   ├── advanced/          # Complex reusable components (table-column-setting, table-header-operation...)
 │   └── custom/            # Domain-specific components (svg-icon, button-icon, socket-connect-card...)
+├── constants/             # App-level constants
+├── enum/                  # Enum definitions
 ├── hooks/                 # App-level composables
 ├── locales/               # i18n (en-US, zh-CN)
+├── materials/             # Material resources
 ├── plugins/               # Plugin initialization
 ├── router/                # File-based routing via @elegant-router/vue
 ├── service/               # API layer
@@ -177,13 +184,16 @@ UnoCSS is configured with:
 - `flex-col-center` = `flex-center flex-col`
 - `flex-col-stretch` = `flex-col items-stretch`
 - `i-flex-center`, `i-flex-x-center`, `i-flex-y-center` (inline-flex variants)
+- `i-flex-col`, `i-flex-col-center`, `i-flex-col-stretch` (inline-flex column variants)
 - `flex-1-hidden` = `flex-1 overflow-hidden`
 
 **Position shortcuts:**
 
 - `absolute-lt`, `absolute-rt`, `absolute-lb`, `absolute-rb` (corner positioning)
+- `absolute-tl`, `absolute-tr`, `absolute-bl`, `absolute-br` (corner aliases)
 - `absolute-center` = `absolute left-0 top-0 flex-center size-full`
 - `fixed-lt`, `fixed-rt`, `fixed-lb`, `fixed-rb`, `fixed-center`
+- `fixed-tl`, `fixed-tr`, `fixed-bl`, `fixed-br` (fixed corner aliases)
 
 **Text shortcuts:**
 
@@ -211,6 +221,23 @@ Additional theme colors: `nprogress`, `container`, `layout`, `inverted`, `base-t
 - Success: `#2EC4B6`
 - Warning: `#F4A62A`
 - Error: `#EF476F`
+
+### Layout Dimensions
+
+Default layout token values from `theme/settings.ts`:
+
+- Header height: `56px`
+- Tab height: `44px`
+- Sider width: `220px`
+- Sider collapsed width: `64px`
+- Default layout mode: `vertical`
+- Default scroll mode: `content`
+
+### Box Shadow Tokens
+
+Available via `theme/vars.ts`:
+
+- `shadow-header`, `shadow-sider`, `shadow-tab`
 
 ### Icon Font Sizes
 
@@ -289,124 +316,6 @@ Focus on:
 - **Spatial Composition**: Card-based layouts with consistent `gap-16px`. NGrid for responsive multi-column layouts. Generous padding inside cards (`px-12px py-8px`).
 - **Data Density**: Admin dashboards should be information-rich. Use `tabular-nums` for numeric data. Compact but readable list items. Smart use of tags, badges, and status indicators.
 
-## Backend Architecture
-
-### Directory Structure
-
-```
-apps/backend/src/
-├── common/
-│   ├── crud.py              # BaseSQLModelCRUD base class
-│   └── schemas/
-│       ├── base.py          # BaseModel (camelCase alias via to_camel)
-│       ├── types.py         # LocalDatetime 等公共类型
-│       ├── request.py       # BaseRequest, PaginatedRequest, BatchRequest, etc.
-│       └── response.py      # Response[T], PaginatedResponse[T]
-├── core/
-│   ├── config.py            # Settings
-│   ├── database.py          # AsyncSessionLocal, RedisManager
-│   ├── lifecycle.py         # FastAPI lifespan (startup/shutdown tasks)
-│   └── redis_client.py      # AsyncRedisClient
-├── domains/
-│   └── <module>/
-│       ├── models.py        # SQLModel ORM models
-│       ├── schemas.py       # Pydantic request/response schemas
-│       ├── crud.py          # CRUD operations
-│       ├── services.py      # Business logic
-│       ├── api.py           # FastAPI router endpoints
-│       └── deps.py          # Annotated dependencies
-├── middlewares/              # ASGI middlewares
-├── sio/                     # Socket.IO server + events
-└── main.py                  # FastAPI app + router registration
-```
-
-### BaseModel & Alias Convention
-
-`src/common/schemas/base.py` defines a `BaseModel` with:
-
-```python
-model_config = ConfigDict(
-    alias_generator=AliasGenerator(alias=to_camel),
-    populate_by_name=True,
-)
-```
-
-This means **all schemas inheriting BaseModel automatically convert snake_case fields to camelCase aliases**. The frontend sends/receives camelCase, the backend uses snake_case internally.
-
-### Request Schema Pattern (CRITICAL)
-
-**NEVER define query parameters as raw `Query()` arguments in API endpoints.** Always define a schema class inheriting from `BaseRequest` or `PaginatedRequest`, then use `Annotated[SchemaClass, Query(...)]`.
-
-**Why:** Raw `Query()` parameters use snake_case names by default. The frontend sends camelCase (e.g., `pageSize`, `sortBy`). Without the BaseModel alias generator, these parameters silently fall back to defaults.
-
-**Wrong:**
-
-```python
-@router.get("/items")
-async def get_items(
-    page: int = Query(1),
-    page_size: int = Query(10),          # Frontend sends pageSize → ignored!
-    sort_by: str = Query("name"),        # Frontend sends sortBy → ignored!
-):
-```
-
-**Correct:**
-
-```python
-# schemas.py
-class ItemListQuery(PaginatedRequest):
-    sort_by: str = Field("name")         # Auto-aliased to sortBy
-
-# api.py
-@router.get("/items")
-async def get_items(
-    query: Annotated[ItemListQuery, Query(...)],   # camelCase auto-mapped
-):
-```
-
-**Available base classes:**
-
-- `BaseRequest` — base for all request schemas (inherits BaseModel with camelCase alias)
-- `PaginatedRequest(BaseRequest)` — adds `page` and `page_size` fields
-- `BatchRequest(BaseRequest)` — adds `ids: list[UUID]`
-
-### Response Pattern
-
-All API endpoints return `Response[T]` or `PaginatedResponse[T]`:
-
-```python
-from src.common.schemas.response import Response, PaginatedResponse
-
-@router.get("/items")
-async def get_items() -> Response[list[ItemSchema]]:
-    return Response(data=items)
-
-@router.get("/items/paged")
-async def get_items_paged() -> Response[PaginatedResponse[ItemSchema]]:
-    return Response(data=PaginatedResponse(records=items, total=100, page=1, page_size=10))
-```
-
-### ORM Model Pattern
-
-```python
-from sqlmodel import Field, SQLModel
-from src.common.models import TimestampMixin, UUIDModel
-
-class MyModel(UUIDModel, TimestampMixin, SQLModel, table=True):
-    __tablename__ = "my_table"
-    name: str = Field(max_length=100, nullable=False)
-```
-
-### Dependency Injection Pattern
-
-```python
-# deps.py
-from typing import Annotated
-from fastapi import Depends
-
-MyServiceDep = Annotated[MyService, Depends()]
-```
-
 ## Rules
 
 ### Frontend Rules
@@ -426,55 +335,3 @@ MyServiceDep = Annotated[MyService, Depends()]
 
 - NEVER run `git add` or `git commit` — leave all version control operations to the user
 - NEVER stage or commit files automatically after generating code
-
-### Backend Rules
-
-- NEVER define query parameters as raw `Query()` in API endpoints — always use schema classes with `Annotated[Schema, Query(...)]`
-- NEVER bypass the BaseModel alias convention — all request/response schemas must inherit from `BaseModel` / `BaseRequest` / `PaginatedRequest`
-- ALWAYS use `Response[T]` envelope for API responses
-- ALWAYS follow the domain directory structure: `models.py`, `schemas.py`, `crud.py`, `services.py`, `api.py`, `deps.py`
-- ALWAYS use `Annotated[Dep, Depends()]` pattern for dependency injection
-- PREFER `PaginatedRequest` as base for any paginated query schema
-
-### Timezone Rules
-
-The project uses a **naive UTC storage + automatic local-timezone response** pattern. A global `timezone` singleton (`src/utils/timezone.py`) and the `LocalDatetime` annotated type (`src/common/schemas/types.py`) handle all timezone conversion automatically — no manual conversion code should ever appear in business logic.
-
-**How it works:**
-
-| Scenario                            | Approach                                                                                                                     |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Writing time to DB                  | `timezone.now()` — returns a naive UTC `datetime` compatible with `TIMESTAMP WITHOUT TIME ZONE` columns                      |
-| Datetime fields in response schemas | Use the `LocalDatetime` type — Pydantic's `PlainSerializer` auto-converts to the configured timezone string on serialization |
-| Aggregated `time_bucket` fields     | Define as `LocalDatetime` in the schema; pass the raw `datetime` from DB directly — never call `strftime()` manually         |
-| Socket.IO push timestamps           | Use `timezone.f_time()` or `timezone.f_datetime()` (these are the only places manual formatting is acceptable)               |
-
-**Imports and usage:**
-
-```python
-# Model / CRUD layer — getting current time
-from src.utils.timezone import timezone
-now = timezone.now()  # naive UTC datetime
-
-# Schema layer — response datetime fields
-from src.common.schemas.types import LocalDatetime
-
-class MyResponse(BaseSchema):
-    create_time: LocalDatetime    # auto-serialized to "2026-04-13 18:00:00" (configured tz)
-    some_timestamp: LocalDatetime # same — any datetime field in responses uses this type
-    time_bucket: LocalDatetime    # aggregation buckets too — never use `str` for time fields
-```
-
-**Rules:**
-
-- NEVER manually call `timezone.to_local().strftime()` to format response data in CRUD/Service layers
-- NEVER use bare `datetime` as a field type in response schemas — always use `LocalDatetime`
-- NEVER define time fields as `str` and format them manually in CRUD/Service code
-- NEVER use `datetime.now()` or `datetime.utcnow()` — always use `timezone.now()`
-
-**Configuration (`.env`):**
-
-```
-DATETIME_TIMEZONE=Asia/Shanghai
-DATETIME_FORMAT=%Y-%m-%d %H:%M:%S
-```

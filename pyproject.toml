@@ -45,7 +45,7 @@ invalid-method-override = "ignore"
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "py314"
 indent-width = 4
 
 # Directories or files that do not need to be checked.

@@ -10,11 +10,15 @@ Date    : 2026-04-02
 import asyncio
 import json
 from datetime import timedelta
+from typing import TYPE_CHECKING
 
 from plugin_worker.event_service import EventService
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
 from rapidkit_core.log import logger
 from redis.asyncio import Redis
+
+if TYPE_CHECKING:
+    from fastapi_sio_di import AsyncServer
 
 STREAM_KEY = "celery:events"
 CONSUMER_GROUP = "fastapi-consumers"
@@ -45,7 +49,7 @@ async def _ensure_consumer_group(redis: Redis) -> None:
         pass
 
 
-async def consume_events(sio: object) -> None:
+async def consume_events(sio: "AsyncServer") -> None:
     """
     主消费循环：从 Redis Stream 读取事件，委托 EventService 处理。
 
@@ -107,7 +111,7 @@ async def consume_events(sio: object) -> None:
             await asyncio.sleep(5)
 
 
-async def check_worker_offline(sio: object) -> None:
+async def check_worker_offline(sio: "AsyncServer") -> None:
     """
     定时检测 Worker 离线。
 

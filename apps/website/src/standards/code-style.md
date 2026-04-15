@@ -79,7 +79,7 @@ black。配置位于根目录 `pyproject.toml` 的 `[tool.ruff]` 段。
 | 配置项           | 值    | 说明                  |
 | ---------------- | ----- | --------------------- |
 | `line-length`    | 120   | 最大行长度            |
-| `target-version` | py312 | 目标 Python 版本      |
+| `target-version` | py314 | 目标 Python 版本      |
 | `indent-width`   | 4     | 缩进空格数            |
 | `max-complexity` | 10    | McCabe 循环复杂度上限 |
 

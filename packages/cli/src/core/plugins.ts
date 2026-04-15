@@ -24,9 +24,7 @@ export function discoverPlugins(): Plugin[] {
     .filter((d) => existsSync(join(pluginsRoot, d.name, "migrations", "versions")))
     .map((d) => {
       const versionsDir = join(pluginsRoot, d.name, "migrations", "versions")
-      const files = readdirSync(versionsDir).filter(
-        (f) => f.endsWith(".py") && f !== "__init__.py",
-      )
+      const files = readdirSync(versionsDir).filter((f) => f.endsWith(".py") && f !== "__init__.py")
       return {
         name: d.name,
         module: `plugin_${d.name}`,
@@ -50,7 +48,10 @@ export function syncAlembicIni(): boolean {
   if (!match) return false
 
   const rawValue = match[1].replace(/\n\s+/g, "")
-  const existingPaths = rawValue.split(/[:\n]/).map((p) => p.trim()).filter(Boolean)
+  const existingPaths = rawValue
+    .split(/[:\n]/)
+    .map((p) => p.trim())
+    .filter(Boolean)
 
   let changed = false
   for (const plugin of plugins) {
@@ -62,10 +63,7 @@ export function syncAlembicIni(): boolean {
 
   if (changed) {
     const newValue = existingPaths.join(":")
-    content = content.replace(
-      /^(version_locations\s*=\s*)(.+(?:\n\s+.+)*)$/m,
-      `$1${newValue}`,
-    )
+    content = content.replace(/^(version_locations\s*=\s*)(.+(?:\n\s+.+)*)$/m, `$1${newValue}`)
     writeFileSync(iniPath, content, "utf-8")
   }
 
@@ -83,9 +81,7 @@ export function syncAlembicEnv(): boolean {
 
   let content = readFileSync(envPath, "utf-8")
 
-  const listMatch = content.match(
-    /PLUGIN_MODULES:\s*list\[str\]\s*=\s*\[([\s\S]*?)\]/,
-  )
+  const listMatch = content.match(/PLUGIN_MODULES:\s*list\[str\]\s*=\s*\[([\s\S]*?)\]/)
   if (!listMatch) return false
 
   const existingModules = listMatch[1]

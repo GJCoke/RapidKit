@@ -4,4 +4,20 @@
 # If commit-msg (commitlint) fails later, the backup enables auto-restore
 git diff --cached --binary > .git/staged-backup.patch 2>/dev/null
 
+# Backup unstaged working tree changes (protect against lint-staged stash failures)
+git diff --binary > .git/unstaged-backup.patch 2>/dev/null
+
 pnpm precommit
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+  # lint-staged failed, restore unstaged changes if lost
+  if [ -s .git/unstaged-backup.patch ]; then
+    git apply .git/unstaged-backup.patch 2>/dev/null
+  fi
+  rm -f .git/unstaged-backup.patch
+  rm -f .git/staged-backup.patch
+  exit $EXIT_CODE
+fi
+
+rm -f .git/unstaged-backup.patch

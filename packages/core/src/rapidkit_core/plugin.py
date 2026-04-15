@@ -5,8 +5,6 @@ Author : Coke
 Date   : 2026-04-14
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Coroutine

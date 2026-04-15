@@ -8,8 +8,6 @@ Author : Coke
 Date   : 2026-04-02
 """
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -17,12 +15,12 @@ if TYPE_CHECKING:
     from plugin_auth.auth.models import User
     from plugin_auth.role.crud import RoleCRUD
 
+from rapidkit_common.enums import MenuIconType, Status
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_menu.models import Menu
 from plugin_menu.route_schemas import MenuRouteResponse, RouteMeta, UserRouteResponse
-from rapidkit_common.enums import MenuIconType, Status
 
 
 def menu_to_route(menu: Menu) -> MenuRouteResponse:
@@ -141,6 +139,7 @@ async def get_user_routes(
 
     home = "home"
     if routes:
+
         def find_first_leaf(route_list: list[MenuRouteResponse]) -> str | None:
             for r in route_list:
                 if r.children:

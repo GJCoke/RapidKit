@@ -5,16 +5,13 @@ Author : Coke
 Date   : 2026-04-14
 """
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from fastapi.routing import APIRoute
+from rapidkit_core.database import AsyncSessionLocal
 from starlette.routing import BaseRoute as StarletteRoute
 
-from rapidkit_core.database import AsyncSessionLocal
-from rapidkit_core.log import logger
 from plugin_auth.router.crud import RouterCRUD
 from plugin_auth.router.models import InterfaceRouter
 from plugin_auth.router.schemas import FastAPIRouterCreate

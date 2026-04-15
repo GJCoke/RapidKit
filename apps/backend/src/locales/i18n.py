@@ -32,7 +32,7 @@ class I18n:
         """
         try:
             return ctx.language
-        except (AttributeError, LookupError, ContextDoesNotExistError):
+        except AttributeError, LookupError, ContextDoesNotExistError:
             return settings.DEFAULT_LANGUAGE
 
     @current_language.setter
