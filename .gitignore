@@ -233,6 +233,7 @@ venv.bak/
 .env.pytest
 apps/backend/.env
 docker/prod/.env.prod
+!uv.lock
 
 # Spyder / Rope / MyPy / Ruff
 .spyderproject
