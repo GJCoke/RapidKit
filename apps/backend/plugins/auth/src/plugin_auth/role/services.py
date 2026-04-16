@@ -3,11 +3,11 @@ Author  : Coke
 Date    : 2025-04-30
 """
 
+from rapidkit_common.enums import Status
 from sqlalchemy import ColumnElement
 from sqlmodel import col, or_
 
 from plugin_auth.role.models import Role
-from rapidkit_common.enums import Status
 
 
 def filter_role(status: Status | None, keyword: str) -> list[ColumnElement[bool]]:

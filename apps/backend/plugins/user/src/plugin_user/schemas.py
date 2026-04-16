@@ -5,9 +5,9 @@ Author : Coke
 Date   : 2026-04-02
 """
 
+from rapidkit_common.enums import Status
 from rapidkit_common.schemas import BaseModel, BaseRequest, ResponseSchema
 from rapidkit_common.schemas.request import BatchRequest, PaginatedRequest
-from rapidkit_common.enums import Status
 
 
 class UserManageSchema(BaseModel):

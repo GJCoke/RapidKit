@@ -6,9 +6,9 @@ Date   : 2026-04-13
 """
 
 from fastapi import Depends
+from rapidkit_common.deps import RedisDep, SessionDep
 from typing_extensions import Annotated, Doc
 
-from rapidkit_common.deps import RedisDep, SessionDep
 from plugin_monitoring.services import ApiMetricsService
 
 

@@ -12,8 +12,8 @@ from minio import Minio
 from minio.datatypes import Bucket, Object
 from minio.error import S3Error
 from minio.helpers import ObjectWriteResult
-
 from pydantic import BaseModel
+
 from rapidkit_core.constants import MB
 
 

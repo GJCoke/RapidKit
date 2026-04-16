@@ -32,8 +32,13 @@ class UUID(uuid.UUID):
     ) -> None:
         if int is None or [hex, bytes, bytes_le, fields].count(None) != 4:
             super().__init__(
-                hex=hex, bytes=bytes, bytes_le=bytes_le, fields=fields,
-                int=int, version=version, is_safe=is_safe,
+                hex=hex,
+                bytes=bytes,
+                bytes_le=bytes_le,
+                fields=fields,
+                int=int,
+                version=version,
+                is_safe=is_safe,
             )
             return
         if not 0 <= int < 1 << 128:

@@ -7,11 +7,11 @@ Date    : 2025-04-18
 
 from uuid import UUID
 
+from rapidkit_common.enums import MenuIconType, MenuType, Status
+from rapidkit_common.models import SQLModel
 from sqlmodel import JSON, Column, Field
 
-from rapidkit_common.models import SQLModel
 from plugin_menu.schemas import Button, Query
-from rapidkit_common.enums import MenuIconType, MenuType, Status
 
 
 class Menu(SQLModel, table=True):

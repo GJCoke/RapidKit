@@ -5,9 +5,9 @@ Date    : 2025-04-24
 
 from uuid import UUID
 
+from rapidkit_common.enums import Status
 from rapidkit_common.schemas import BaseModel, BaseRequest, ResponseSchema
 from rapidkit_common.schemas.request import BatchRequest, PaginatedRequest
-from rapidkit_common.enums import Status
 
 
 class RoleSchema(BaseModel):

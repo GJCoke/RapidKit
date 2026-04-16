@@ -7,7 +7,6 @@ Date   : 2025-03-13
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import EmailStr
-
 from rapidkit_common.schemas import BaseModel, BaseRequest, BaseResponse, ResponseSchema
 
 

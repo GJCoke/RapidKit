@@ -2,7 +2,7 @@
 
 from rapidkit_core.plugin import PluginManifest
 
-from plugin_worker.models import CeleryWorker, CeleryTaskResult
+from plugin_worker.models import CeleryTaskResult, CeleryWorker
 
 
 def register() -> PluginManifest:

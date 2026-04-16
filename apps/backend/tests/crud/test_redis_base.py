@@ -10,8 +10,8 @@ import random
 import pytest
 import pytest_asyncio
 from pydantic import BaseModel
-from redis.asyncio import Redis
 from rapidkit_core.redis_client import AsyncRedisClient
+from redis.asyncio import Redis
 
 from tests.utils import random_lowercase, random_uppercase
 

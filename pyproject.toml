@@ -4,7 +4,19 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = ["rapidkit-backend", "rapidkit-core", "rapidkit-common", "rapidkit-plugin-script", "rapidkit-plugin-monitoring", "rapidkit-plugin-system", "rapidkit-plugin-worker", "rapidkit-plugin-schedule", "rapidkit-plugin-menu", "rapidkit-plugin-auth", "rapidkit-plugin-user"]
+dependencies = [
+    "rapidkit-backend",
+    "rapidkit-core",
+    "rapidkit-common",
+    "rapidkit-plugin-script",
+    "rapidkit-plugin-monitoring",
+    "rapidkit-plugin-system",
+    "rapidkit-plugin-worker",
+    "rapidkit-plugin-schedule",
+    "rapidkit-plugin-menu",
+    "rapidkit-plugin-auth",
+    "rapidkit-plugin-user",
+]
 
 [dependency-groups]
 dev = [
@@ -88,7 +100,7 @@ select = [
     "W",
     "I001",
 ]
-ignore = []
+ignore = ["E501"]
 per-file-ignores = { }
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 

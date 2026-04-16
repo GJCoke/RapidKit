@@ -22,13 +22,13 @@ class TestCommonImports:
         assert BaseSQLModelCRUD is not None
 
     def test_import_deps(self):
-        from rapidkit_common.deps import SessionDep, RedisDep
+        from rapidkit_common.deps import RedisDep, SessionDep
 
         assert SessionDep is not None
         assert RedisDep is not None
 
     def test_import_schemas_response(self):
-        from rapidkit_common.schemas.response import Response, PaginatedResponse
+        from rapidkit_common.schemas.response import PaginatedResponse, Response
 
         assert Response is not None
         assert PaginatedResponse is not None

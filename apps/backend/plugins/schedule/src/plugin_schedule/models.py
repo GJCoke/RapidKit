@@ -7,9 +7,9 @@ Date   : 2025-05-12
 
 from typing import Any
 
+from rapidkit_common.models import SQLModel
 from sqlmodel import JSON, Column, Field
 
-from rapidkit_common.models import SQLModel
 from plugin_schedule.schedule_types import CrontabSchedule as _CrontabSchedule
 from plugin_schedule.schedule_types import IntervalSchedule as _IntervalSchedule
 from plugin_schedule.schedule_types import Options

@@ -9,10 +9,10 @@ from typing import Any
 from uuid import UUID
 
 from pydantic import Field
-
 from rapidkit_common.schemas import BaseModel, BaseRequest
 from rapidkit_common.schemas.request import PaginatedRequest
 from rapidkit_common.schemas.response import BaseResponse, BaseSchema
+
 from plugin_schedule.schedule_types import Period, TaskType
 
 

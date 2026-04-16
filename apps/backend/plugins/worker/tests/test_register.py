@@ -13,7 +13,7 @@ class TestWorkerRegister:
 
     def test_models_are_correct(self):
         from plugin_worker import register
-        from plugin_worker.models import CeleryWorker, CeleryTaskResult
+        from plugin_worker.models import CeleryTaskResult, CeleryWorker
 
         m = register()
         assert CeleryWorker in m.models

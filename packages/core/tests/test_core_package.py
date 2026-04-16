@@ -40,7 +40,7 @@ class TestCoreImports:
         assert logger is not None
 
     def test_import_i18n(self):
-        from rapidkit_core.i18n import set_translator, t, is_i18n_key
+        from rapidkit_core.i18n import is_i18n_key, t
 
         # 默认 translator 返回原始值
         assert t("hello") == "hello"

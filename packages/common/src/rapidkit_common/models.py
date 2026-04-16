@@ -8,11 +8,10 @@ Date   : 2025-03-24
 from datetime import datetime
 from uuid import UUID
 
-from sqlmodel import Field
-from sqlmodel import SQLModel as _SQLModel
-
 from rapidkit_core.timezone import timezone
 from rapidkit_core.uuid7 import uuid7
+from sqlmodel import Field
+from sqlmodel import SQLModel as _SQLModel
 
 
 class SQLModel(_SQLModel):

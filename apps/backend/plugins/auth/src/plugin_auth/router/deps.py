@@ -5,11 +5,11 @@ Date    : 2025-04-23
 
 from fastapi import Depends, Request
 from fastapi.routing import APIRoute
-from typing_extensions import Annotated, Doc
-
 from rapidkit_common.deps import SessionDep
 from rapidkit_core.exceptions import AppException
 from rapidkit_core.status_codes import StatusCode
+from typing_extensions import Annotated, Doc
+
 from plugin_auth.router.crud import RouterCRUD
 from plugin_auth.router.models import InterfaceRouter
 

@@ -10,8 +10,17 @@ Date   : 2026-04-14
 
 from typing import Callable
 
-_translate: Callable[[str], str] = lambda s: s
-_is_i18n_key: Callable[[str], bool] = lambda s: "." in s
+
+def _default_translate(s: str) -> str:
+    return s
+
+
+def _default_is_i18n_key(s: str) -> bool:
+    return "." in s
+
+
+_translate: Callable[[str], str] = _default_translate
+_is_i18n_key: Callable[[str], bool] = _default_is_i18n_key
 
 
 def set_translator(

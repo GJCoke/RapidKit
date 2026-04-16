@@ -6,9 +6,8 @@ Date    : 2026-03-31
 """
 
 from fastapi import Depends
-from typing_extensions import Annotated, Doc
-
 from rapidkit_common.deps import SessionDep
+from typing_extensions import Annotated, Doc
 
 from plugin_script.crud import ScriptCRUD, ScriptExecutionCRUD
 from plugin_script.models import Script, ScriptExecution

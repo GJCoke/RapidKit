@@ -5,11 +5,11 @@ Author : Coke
 Date   : 2025-05-18
 """
 
+from rapidkit_common.enums import Status
 from sqlalchemy import ColumnElement
 from sqlmodel import col, or_
 
 from plugin_menu.models import Menu
-from rapidkit_common.enums import Status
 
 
 def filter_menu(status: "Status | None", keyword: str) -> list[ColumnElement[bool]]:

@@ -6,14 +6,13 @@ Date   : 2025-03-29
 """
 
 from fastapi import Depends
-from sqlmodel.ext.asyncio.session import AsyncSession
-from typing_extensions import Annotated, Doc
-
 from rapidkit_core.config import settings
 from rapidkit_core.database import RedisManager, get_async_session
 from rapidkit_core.exceptions import AppException
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_core.status_codes import StatusCode
+from sqlmodel.ext.asyncio.session import AsyncSession
+from typing_extensions import Annotated, Doc
 
 __all__ = [
     "SessionDep",

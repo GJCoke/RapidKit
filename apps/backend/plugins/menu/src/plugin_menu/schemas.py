@@ -8,10 +8,9 @@ Date   : 2025-05-18
 from uuid import UUID
 
 from pydantic import Field
-
+from rapidkit_common.enums import MenuIconType, MenuType, Status
 from rapidkit_common.schemas import BaseModel, BaseRequest, ResponseSchema
 from rapidkit_common.schemas.request import PaginatedRequest
-from rapidkit_common.enums import MenuIconType, MenuType, Status
 
 
 class Query(BaseModel):

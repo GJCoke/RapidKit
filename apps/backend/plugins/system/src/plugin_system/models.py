@@ -5,9 +5,8 @@ Author : Coke
 Date   : 2026-04-10
 """
 
-from sqlmodel import JSON, Column, Field
-
 from rapidkit_common.models import SQLModel
+from sqlmodel import JSON, Column, Field
 
 
 class ActivityLog(SQLModel, table=True):

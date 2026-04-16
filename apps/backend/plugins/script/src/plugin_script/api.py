@@ -9,10 +9,9 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from sqlmodel import col
-
 from rapidkit_common.auth import UserDBDep, verify_user_permission
 from rapidkit_common.schemas.response import PaginatedResponse, Response
+from sqlmodel import col
 
 from plugin_script.deps import ScriptCrudDep, ScriptExecCrudDep
 from plugin_script.models import ScriptExecution

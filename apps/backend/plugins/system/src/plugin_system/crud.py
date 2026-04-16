@@ -5,10 +5,10 @@ Author : Coke
 Date   : 2026-04-10
 """
 
-from sqlmodel import col, select
-
 from rapidkit_common.crud import BaseSQLModelCRUD
 from rapidkit_common.schemas.base import BaseModel
+from sqlmodel import col, select
+
 from plugin_system.models import ActivityLog
 
 

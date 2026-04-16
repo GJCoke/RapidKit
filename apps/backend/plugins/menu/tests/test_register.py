@@ -6,7 +6,6 @@ from pathlib import Path
 
 
 class TestMenuRegister(unittest.TestCase):
-
     def test_register_returns_manifest(self):
         from plugin_menu import register
 

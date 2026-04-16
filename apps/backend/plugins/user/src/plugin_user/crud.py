@@ -7,12 +7,12 @@ Date   : 2026-04-02
 
 from datetime import date, datetime, timedelta
 
+from plugin_auth.auth.models import User
+from rapidkit_common.crud import BaseSQLModelCRUD
+from rapidkit_core.timezone import timezone
 from sqlmodel import col, func, select
 
-from rapidkit_common.crud import BaseSQLModelCRUD
-from plugin_auth.auth.models import User
 from plugin_user.schemas import UserManageCreate, UserManageUpdate
-from rapidkit_core.timezone import timezone
 
 
 class UserManageCRUD(BaseSQLModelCRUD[User, UserManageCreate, UserManageUpdate]):

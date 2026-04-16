@@ -33,8 +33,12 @@ class AsyncRedisClient(Redis):
         return response_model.model_validate_json(data)
 
     async def hset(
-        self, name: str, key: str | None = None, value: str | None = None,
-        mapping: Any = None, items: list | None = None,
+        self,
+        name: str,
+        key: str | None = None,
+        value: str | None = None,
+        mapping: Any = None,
+        items: list | None = None,
     ) -> int:
         if isinstance(mapping, BaseModel):
             mapping = {k: str(v) if not isinstance(v, str) else v for k, v in mapping.model_dump().items()}

@@ -10,11 +10,11 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
-
 from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_core.exceptions import AppException
 from rapidkit_core.status_codes import StatusCode
+
 from plugin_worker.deps import TaskResultCrudDep, WorkerCrudDep
 from plugin_worker.schemas import (
     ActiveTaskInfo,
@@ -79,7 +79,11 @@ async def get_worker(worker_id: UUID, crud: WorkerCrudDep) -> Response[WorkerRes
 
 
 @router.post("/{worker_id}/ping")
-async def ping_worker_endpoint(request: Request, worker_id: UUID, crud: WorkerCrudDep) -> Response[WorkerControlResponse]:
+async def ping_worker_endpoint(
+    request: Request,
+    worker_id: UUID,
+    crud: WorkerCrudDep,
+) -> Response[WorkerControlResponse]:
     celery_app = request.app.state.celery_app
     worker = await crud.get(worker_id, nullable=False)
     reachable = ping_worker(celery_app, worker.hostname)
@@ -92,7 +96,11 @@ async def ping_worker_endpoint(request: Request, worker_id: UUID, crud: WorkerCr
 
 
 @router.post("/{worker_id}/shutdown")
-async def shutdown_worker_endpoint(request: Request, worker_id: UUID, crud: WorkerCrudDep) -> Response[WorkerControlResponse]:
+async def shutdown_worker_endpoint(
+    request: Request,
+    worker_id: UUID,
+    crud: WorkerCrudDep,
+) -> Response[WorkerControlResponse]:
     celery_app = request.app.state.celery_app
     worker = await crud.get(worker_id, nullable=False)
     shutdown_worker(celery_app, worker.hostname)
@@ -140,7 +148,11 @@ async def cancel_queue_endpoint(
 
 
 @router.get("/{worker_id}/tasks/active")
-async def get_active_tasks_endpoint(request: Request, worker_id: UUID, crud: WorkerCrudDep) -> Response[list[ActiveTaskInfo]]:
+async def get_active_tasks_endpoint(
+    request: Request,
+    worker_id: UUID,
+    crud: WorkerCrudDep,
+) -> Response[list[ActiveTaskInfo]]:
     celery_app = request.app.state.celery_app
     worker = await crud.get(worker_id, nullable=False)
     tasks = get_active_tasks(celery_app, worker.hostname)
@@ -159,7 +171,11 @@ async def get_active_tasks_endpoint(request: Request, worker_id: UUID, crud: Wor
 
 
 @router.get("/{worker_id}/tasks/reserved")
-async def get_reserved_tasks_endpoint(request: Request, worker_id: UUID, crud: WorkerCrudDep) -> Response[list[ActiveTaskInfo]]:
+async def get_reserved_tasks_endpoint(
+    request: Request,
+    worker_id: UUID,
+    crud: WorkerCrudDep,
+) -> Response[list[ActiveTaskInfo]]:
     celery_app = request.app.state.celery_app
     worker = await crud.get(worker_id, nullable=False)
     tasks = get_reserved_tasks(celery_app, worker.hostname)
@@ -213,7 +229,8 @@ async def get_task_stats_timeline(
 
 @task_router.get("/stats/by-name")
 async def get_task_stats_by_name(
-    crud: TaskResultCrudDep, days: int = Query(7, ge=1, le=90)
+    crud: TaskResultCrudDep,
+    days: int = Query(7, ge=1, le=90),
 ) -> Response[list[TaskStatsByName]]:
     data = await crud.get_stats_by_name(days)
     return Response(data=data)
@@ -221,7 +238,8 @@ async def get_task_stats_by_name(
 
 @task_router.get("/stats/by-worker")
 async def get_task_stats_by_worker(
-    crud: TaskResultCrudDep, days: int = Query(7, ge=1, le=90)
+    crud: TaskResultCrudDep,
+    days: int = Query(7, ge=1, le=90),
 ) -> Response[list[TaskStatsByWorker]]:
     data = await crud.get_stats_by_worker(days)
     return Response(data=data)
@@ -244,7 +262,8 @@ async def get_task(task_id: str, crud: TaskResultCrudDep) -> Response[TaskRespon
 
 @task_router.post("/trigger")
 async def trigger_task_endpoint(
-    request: Request, body: TriggerTaskRequest, crud: TaskResultCrudDep
+    request: Request,
+    body: TriggerTaskRequest,
 ) -> Response[TriggerTaskResponse]:
     celery_app = request.app.state.celery_app
     data = await trigger_task(celery_app, body.task_name, body.args, body.kwargs)

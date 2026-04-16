@@ -6,7 +6,6 @@ from pathlib import Path
 
 
 class TestAuthRegister(unittest.TestCase):
-
     def test_register_returns_manifest(self):
         from plugin_auth import register
 

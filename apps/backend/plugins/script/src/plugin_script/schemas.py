@@ -8,7 +8,6 @@ Date    : 2026-03-31
 from uuid import UUID
 
 from pydantic import Field
-
 from rapidkit_common.enums import Status
 from rapidkit_common.schemas import BaseModel, BaseRequest
 from rapidkit_common.schemas.request import BatchRequest, PaginatedRequest

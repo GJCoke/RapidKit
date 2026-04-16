@@ -7,11 +7,13 @@ Date    : 2026-04-01
 
 from uuid import UUID
 
+from rapidkit_common.crud import BaseSQLModelCRUD
+from rapidkit_common.schemas.response import PaginatedResponse
 from sqlmodel import col
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from rapidkit_common.crud import BaseSQLModelCRUD
-from rapidkit_common.schemas.response import PaginatedResponse
+from plugin_schedule.models import CrontabSchedule, IntervalSchedule, PeriodicTask
+from plugin_schedule.schedule_types import TaskType
 from plugin_schedule.schemas import (
     CrontabScheduleCreate,
     CrontabScheduleResponse,
@@ -23,8 +25,6 @@ from plugin_schedule.schemas import (
     PeriodicTaskResponse,
     PeriodicTaskUpdate,
 )
-from plugin_schedule.schedule_types import TaskType
-from plugin_schedule.models import CrontabSchedule, IntervalSchedule, PeriodicTask
 
 
 class IntervalScheduleCRUD(BaseSQLModelCRUD[IntervalSchedule, IntervalScheduleCreate, IntervalScheduleCreate]):
@@ -36,7 +36,6 @@ class CrontabScheduleCRUD(BaseSQLModelCRUD[CrontabSchedule, CrontabScheduleCreat
 
 
 class PeriodicTaskCRUD(BaseSQLModelCRUD[PeriodicTask, PeriodicTaskCreate, PeriodicTaskUpdate]):
-
     def __init__(
         self,
         model: type[PeriodicTask],
@@ -80,9 +79,7 @@ class PeriodicTaskCRUD(BaseSQLModelCRUD[PeriodicTask, PeriodicTaskCreate, Period
             await self._fill_schedule_detail(item, session=session)
         return result
 
-    async def get_with_schedule(
-        self, _id: UUID, *, session: AsyncSession | None = None
-    ) -> PeriodicTaskResponse | None:
+    async def get_with_schedule(self, _id: UUID, *, session: AsyncSession | None = None) -> PeriodicTaskResponse | None:
         task = await self.get(_id, session=session)
         if not task:
             return None

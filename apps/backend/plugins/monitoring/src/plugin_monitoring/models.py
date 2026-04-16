@@ -9,9 +9,8 @@ Date   : 2026-04-13
 
 from datetime import datetime
 
-from sqlmodel import Field, Index
-
 from rapidkit_common.models import SQLModel
+from sqlmodel import Field, Index
 
 
 class ApiMetricsHourly(SQLModel, table=True):

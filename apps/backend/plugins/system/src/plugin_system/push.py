@@ -10,9 +10,9 @@ import socket as _socket
 
 import psutil
 from fastapi_sio_di import AsyncServer
-
 from rapidkit_core.database import RedisManager
 from rapidkit_core.log import logger
+
 from plugin_system.services import MetricsService
 
 HOSTNAME = _socket.gethostname()

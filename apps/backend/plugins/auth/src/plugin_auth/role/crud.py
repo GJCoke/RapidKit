@@ -5,10 +5,10 @@ Author  : Coke
 Date    : 2025-04-24
 """
 
+from rapidkit_common.crud import BaseSQLModelCRUD
 from sqlmodel import col
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from rapidkit_common.crud import BaseSQLModelCRUD
 from plugin_auth.role.models import Role
 from plugin_auth.role.schemas import RoleCreate, RoleUpdate
 

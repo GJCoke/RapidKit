@@ -16,9 +16,9 @@ from typing import Any
 
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from pydantic import Secret, field_validator, model_validator
+
 from rapidkit_core.config import BaseSettings, ConfigError, settings
 from rapidkit_core.constants import DAYS, WEEKS
-
 from rapidkit_core.security import AccessSecret, RefreshSecret, generate_rsa_key_pair, load_private_key, serialize_key
 
 

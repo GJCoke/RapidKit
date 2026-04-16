@@ -6,13 +6,13 @@ Date    : 2025-04-24
 from uuid import UUID
 
 from fastapi import Depends
-from typing_extensions import Annotated, Doc
-
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_core.auth_config import auth_settings
 from rapidkit_core.exceptions import AppException
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_core.status_codes import StatusCode
+from typing_extensions import Annotated, Doc
+
 from plugin_auth.auth.deps import UserDBDep
 from plugin_auth.auth.models import User
 from plugin_auth.role.crud import RoleCRUD

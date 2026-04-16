@@ -7,11 +7,10 @@ Date    : 2026-03-30
 
 from datetime import datetime
 
-from sqlmodel import JSON, Column, Field, Text
-
-from rapidkit_common.models import SQLModel
 from rapidkit_common.enums import TaskStatus, WorkerStatus
+from rapidkit_common.models import SQLModel
 from rapidkit_core.timezone import timezone
+from sqlmodel import JSON, Column, Field, Text
 
 
 class CeleryWorker(SQLModel, table=True):

@@ -5,12 +5,12 @@ Author : Coke
 Date   : 2025-05-18
 """
 
+from rapidkit_common.crud import BaseSQLModelCRUD
+from rapidkit_common.schemas.response import PaginatedResponse
 from sqlalchemy import ColumnExpressionArgument
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from rapidkit_common.crud import BaseSQLModelCRUD
-from rapidkit_common.schemas.response import PaginatedResponse
 from plugin_menu.models import Menu
 from plugin_menu.schemas import MenuCreate, MenuListResponse, MenuUpdate
 

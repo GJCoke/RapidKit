@@ -5,12 +5,12 @@ Author : Coke
 Date   : 2025-04-18
 """
 
-from sqlmodel import col, select
-from sqlmodel.ext.asyncio.session import AsyncSession
-
 from rapidkit_common.crud import BaseSQLModelCRUD
 from rapidkit_core.exceptions import AppException
 from rapidkit_core.status_codes import StatusCode
+from sqlmodel import col, select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from plugin_auth.auth.models import User
 from plugin_auth.auth.schemas import UserCreate, UserUpdate
 

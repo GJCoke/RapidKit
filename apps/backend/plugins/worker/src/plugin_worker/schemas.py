@@ -8,11 +8,10 @@ Date    : 2026-03-30
 from typing import Any
 
 from pydantic import Field
-
+from rapidkit_common.enums import TaskStatus, WorkerStatus
 from rapidkit_common.schemas import BaseModel, BaseRequest
 from rapidkit_common.schemas.request import PaginatedRequest
 from rapidkit_common.schemas.response import BaseSchema, LocalDatetime
-from rapidkit_common.enums import TaskStatus, WorkerStatus
 
 # ==================== Worker Schemas ====================
 

@@ -73,10 +73,10 @@ async def test_login(client: AsyncClient, rsa_public_key: RSAPublicKey, redis: R
         client (AsyncClient): The HTTP client used to interact with the FastAPI app.
         rsa_public_key (RSAPublicKey): The public RSA key used for encrypting the password.
     """
-    from rapidkit_core.auth_config import auth_settings
-    from rapidkit_core.security import decode_token, encrypt_message
     from plugin_auth.auth.deps import refresh_structure
     from plugin_auth.auth.schemas import TokenResponse, UserInfoResponse
+    from rapidkit_core.auth_config import auth_settings
+    from rapidkit_core.security import decode_token, encrypt_message
     from src.initdb import PASSWORD, USERNAME
 
     response = await client.post(

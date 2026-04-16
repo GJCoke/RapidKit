@@ -110,10 +110,10 @@ async def client(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[AsyncClient]:
     Yields:
         AsyncClient: The client to send requests to the FastAPI application.
     """
-    from rapidkit_core import database
-    from rapidkit_core.config import settings
     from plugin_auth.role.deps import verify_user_permission
     from plugin_auth.router import sync
+    from rapidkit_core import database
+    from rapidkit_core.config import settings
     from src.main import app
 
     monkeypatch.setattr(database, "ASYNC_DATABASE_URL", pytest_settings.SQL_DATABASE_URL)

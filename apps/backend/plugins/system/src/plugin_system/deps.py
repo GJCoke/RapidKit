@@ -6,9 +6,9 @@ Date   : 2026-04-10
 """
 
 from fastapi import Depends
+from rapidkit_common.deps import SessionDep
 from typing_extensions import Annotated, Doc
 
-from rapidkit_common.deps import SessionDep
 from plugin_system.crud import ActivityLogCRUD
 from plugin_system.models import ActivityLog
 

@@ -8,16 +8,15 @@ Date   : 2026-04-02
 """
 
 from fastapi import APIRouter, Query
-from sqlmodel import col, select
-
+from plugin_auth.role.deps import RoleCrudDep
 from rapidkit_common.auth import UserDBDep
 from rapidkit_common.deps import SessionDep
 from rapidkit_common.schemas.response import Response
+from sqlmodel import col, select
+
 from plugin_menu.models import Menu
 from plugin_menu.route_schemas import MenuRouteResponse, UserRouteResponse
 from plugin_menu.route_services import get_constant_routes, get_user_routes
-
-from plugin_auth.role.deps import RoleCrudDep
 
 router = APIRouter(
     prefix="/route",

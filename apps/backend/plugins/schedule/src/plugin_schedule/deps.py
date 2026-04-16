@@ -6,9 +6,9 @@ Date    : 2026-04-01
 """
 
 from fastapi import Depends
+from rapidkit_common.deps import SessionDep
 from typing_extensions import Annotated, Doc
 
-from rapidkit_common.deps import SessionDep
 from plugin_schedule.crud import PeriodicTaskCRUD
 from plugin_schedule.models import PeriodicTask
 

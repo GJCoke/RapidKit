@@ -6,9 +6,9 @@ Date    : 2026-03-30
 """
 
 from fastapi import Depends
+from rapidkit_common.deps import SessionDep
 from typing_extensions import Annotated, Doc
 
-from rapidkit_common.deps import SessionDep
 from plugin_worker.crud import TaskResultCRUD, WorkerCRUD
 from plugin_worker.models import CeleryTaskResult, CeleryWorker
 

@@ -7,10 +7,10 @@ Date   : 2025-04-22
 
 from typing import Any
 
+from rapidkit_common.crud import BaseSQLModelCRUD
 from sqlmodel import delete
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from rapidkit_common.crud import BaseSQLModelCRUD
 from plugin_auth.router.models import InterfaceRouter
 from plugin_auth.router.schemas import FastAPIRouterCreate, FastAPIRouterUpdate
 

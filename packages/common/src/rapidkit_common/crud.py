@@ -11,6 +11,8 @@ from typing import Any, Generic, Literal, Sequence, TypeVar, cast, overload
 from uuid import UUID
 
 from pydantic import BaseModel as PydanticBaseModel
+from rapidkit_core.exceptions import AppException
+from rapidkit_core.status_codes import StatusCode
 from sqlalchemy import ColumnExpressionArgument
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.sql import ColumnElement
@@ -20,8 +22,6 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from rapidkit_common.models import SQLModel as _SQLModel
 from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.response import PaginatedResponse
-from rapidkit_core.exceptions import AppException
-from rapidkit_core.status_codes import StatusCode
 
 SQLModel = TypeVar("SQLModel", bound=_SQLModel)
 CreateSchema = TypeVar("CreateSchema", bound=BaseModel)

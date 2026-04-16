@@ -7,10 +7,9 @@ Date    : 2026-03-31
 
 from uuid import UUID
 
-from sqlmodel import Column, Field, Text
-
 from rapidkit_common.enums import Status
 from rapidkit_common.models import SQLModel
+from sqlmodel import Column, Field, Text
 
 
 class Script(SQLModel, table=True):

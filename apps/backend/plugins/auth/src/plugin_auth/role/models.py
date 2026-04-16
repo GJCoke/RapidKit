@@ -5,10 +5,9 @@ Author  : Coke
 Date    : 2025-04-18
 """
 
-from sqlmodel import JSON, Column, Field
-
-from rapidkit_common.models import SQLModel
 from rapidkit_common.enums import Status
+from rapidkit_common.models import SQLModel
+from sqlmodel import JSON, Column, Field
 
 
 class Role(SQLModel, table=True):

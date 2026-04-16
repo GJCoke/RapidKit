@@ -5,9 +5,8 @@ Author  : Coke
 Date    : 2025-04-18
 """
 
-from sqlmodel import JSON, Column, Field
-
 from rapidkit_common.models import SQLModel
+from sqlmodel import JSON, Column, Field
 
 
 class InterfaceRouter(SQLModel, table=True):

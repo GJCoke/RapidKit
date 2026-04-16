@@ -6,7 +6,6 @@ from pathlib import Path
 
 
 class TestScheduleRegister(unittest.TestCase):
-
     def test_register_returns_manifest(self):
         from plugin_schedule import register
 

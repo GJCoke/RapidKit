@@ -10,7 +10,6 @@ from rapidkit_core.plugin import PluginManifest
 
 def register() -> PluginManifest:
     from plugin_schedule.api import router
-
     from plugin_schedule.models import CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
 
     return PluginManifest(

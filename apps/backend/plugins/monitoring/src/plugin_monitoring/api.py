@@ -10,9 +10,9 @@ Date   : 2026-04-13
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-
 from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.schemas.response import PaginatedResponse, Response
+
 from plugin_monitoring.deps import ApiMetricsServiceDep
 from plugin_monitoring.schemas import (
     ApiDistributionItem,

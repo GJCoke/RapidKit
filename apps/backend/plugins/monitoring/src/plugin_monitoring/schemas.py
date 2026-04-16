@@ -6,7 +6,6 @@ Date   : 2026-04-13
 """
 
 from pydantic import Field
-
 from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.request import BaseRequest, PaginatedRequest
 from rapidkit_common.schemas.types import LocalDatetime

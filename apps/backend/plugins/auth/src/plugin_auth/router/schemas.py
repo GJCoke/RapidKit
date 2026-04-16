@@ -6,7 +6,6 @@ Date    : 2025-04-22
 from uuid import UUID
 
 from pydantic import computed_field
-
 from rapidkit_common.schemas import BaseModel, BaseRequest, ResponseSchema
 
 
