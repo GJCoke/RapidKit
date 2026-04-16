@@ -21,3 +21,5 @@ _ENV_DEFAULTS = {
 
 for key, value in _ENV_DEFAULTS.items():
     os.environ.setdefault(key, value)
+
+from tests.testing.fixtures import *  # noqa: E402, F401, F403

@@ -1,4 +1,4 @@
-"""plugin_schedule 测试 conftest。"""
+"""plugin_schedule test conftest."""
 
 import os
 
@@ -17,7 +17,10 @@ _ENV_DEFAULTS = {
     "CORS_ORIGINS": '["*"]',
     "CORS_HEADERS": '["*"]',
     "ENVIRONMENT": "TESTING",
+    "ENABLE_CELERY_MONITOR": "true",
 }
 
 for key, value in _ENV_DEFAULTS.items():
     os.environ.setdefault(key, value)
+
+from tests.testing.fixtures import *  # noqa: E402, F401, F403
