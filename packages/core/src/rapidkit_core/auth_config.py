@@ -150,7 +150,7 @@ class AuthConfig(BaseSettings):
 
 auth_settings = AuthConfig()  # type: ignore
 
-app_configs: dict[str, Any] = {"title": "FastAPI MultiDB"}
+app_configs: dict[str, Any] = {"title": "RapidKit"}
 
 # Disable the OpenAPI documentation in non-debug environments
 if not settings.ENVIRONMENT.is_debug:

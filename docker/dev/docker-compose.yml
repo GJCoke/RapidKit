@@ -2,7 +2,7 @@ name: rapidkit-dev
 
 services:
   postgresql:
-    image: ${REGISTRY_PREFIX:+${REGISTRY_PREFIX}/}bitnami/postgresql
+    image: ${REGISTRY_PREFIX:-}bitnami/postgresql
     container_name: rapidkit-dev-postgresql
     ports:
       - "35432:5432"
@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: ${REGISTRY_PREFIX:+${REGISTRY_PREFIX}/}redis:7-alpine
+    image: ${REGISTRY_PREFIX:-}redis:7-alpine
     container_name: rapidkit-dev-redis
     ports:
       - "36379:6379"
@@ -35,7 +35,7 @@ services:
     restart: unless-stopped
 
   minio:
-    image: ${REGISTRY_PREFIX:+${REGISTRY_PREFIX}/}minio/minio:latest
+    image: ${REGISTRY_PREFIX:-}minio/minio:latest
     container_name: rapidkit-dev-minio
     ports:
       - "9000:9000"

@@ -4,7 +4,7 @@ services:
   # ==================== Infrastructure ====================
 
   postgresql:
-    image: ${REGISTRY_PREFIX:+${REGISTRY_PREFIX}/}bitnami/postgresql
+    image: ${REGISTRY_PREFIX:-}bitnami/postgresql
     container_name: rapidkit-prod-postgresql
     env_file: .env.prod
     volumes:
@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: ${REGISTRY_PREFIX:+${REGISTRY_PREFIX}/}redis:7-alpine
+    image: ${REGISTRY_PREFIX:-}redis:7-alpine
     container_name: rapidkit-prod-redis
     env_file: .env.prod
     command: [ "sh", "-c", "redis-server --requirepass $$REDIS_ROOT_PASSWORD" ]
@@ -31,7 +31,7 @@ services:
     restart: unless-stopped
 
   minio:
-    image: ${REGISTRY_PREFIX:+${REGISTRY_PREFIX}/}minio/minio:latest
+    image: ${REGISTRY_PREFIX:-}minio/minio:latest
     container_name: rapidkit-prod-minio
     env_file: .env.prod
     command: server /data --console-address ":9001"
