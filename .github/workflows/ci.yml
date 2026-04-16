@@ -60,6 +60,17 @@ jobs:
       - name: Determine affected plugins
         id: plugins
         run: |
+          declare -A PLUGIN_OUTPUTS=(
+            ["plugin_script"]="${{ steps.changes.outputs.plugin_script }}"
+            ["plugin_monitoring"]="${{ steps.changes.outputs.plugin_monitoring }}"
+            ["plugin_system"]="${{ steps.changes.outputs.plugin_system }}"
+            ["plugin_worker"]="${{ steps.changes.outputs.plugin_worker }}"
+            ["plugin_schedule"]="${{ steps.changes.outputs.plugin_schedule }}"
+            ["plugin_menu"]="${{ steps.changes.outputs.plugin_menu }}"
+            ["plugin_auth"]="${{ steps.changes.outputs.plugin_auth }}"
+            ["plugin_user"]="${{ steps.changes.outputs.plugin_user }}"
+          )
+
           plugins=()
 
           # 如果 core 或 common 变更，所有插件都需要测试
@@ -69,8 +80,8 @@ jobs:
             plugins=("script" "monitoring" "system" "worker" "schedule" "menu" "auth" "user")
           else
             for p in script monitoring system worker schedule menu auth user; do
-              key="plugin_${p}"
-              if [[ "${{ steps.changes.outputs[key] }}" == "true" ]]; then
+              val="${PLUGIN_OUTPUTS["plugin_${p}"]}"
+              if [[ "$val" == "true" ]]; then
                 plugins+=("$p")
               fi
             done
