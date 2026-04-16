@@ -33,7 +33,7 @@ class TestSystemRegister:
         import ast
         from pathlib import Path
 
-        allowed = {"plugin_system", "plugin_menu", "plugin_auth", "plugin_script"}
+        allowed = {"plugin_system", "plugin_menu", "plugin_auth", "plugin_script", "plugin_schedule"}
         plugin_src = Path(__file__).parent.parent / "src" / "plugin_system"
         violations = []
 

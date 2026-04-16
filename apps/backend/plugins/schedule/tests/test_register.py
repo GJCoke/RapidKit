@@ -27,12 +27,13 @@ class TestScheduleRegister(unittest.TestCase):
         assert "/schedules" in routes or "/schedules/" in routes
         assert "/schedules/{schedule_id}" in routes
 
-    def test_models_empty(self):
-        """schedule 插件使用 src.queues.schedule 中的 model，自身不定义 model。"""
+    def test_models_registered(self):
+        """schedule 插件注册了 4 个调度相关 model。"""
         from plugin_schedule import register
 
         m = register()
-        assert m.models == []
+        model_names = {cls.__name__ for cls in m.models}
+        assert model_names == {"IntervalSchedule", "CrontabSchedule", "SolarSchedule", "PeriodicTask"}
 
     def test_no_cross_plugin_imports(self):
         plugin_src = Path(__file__).resolve().parent.parent / "src" / "plugin_schedule"
