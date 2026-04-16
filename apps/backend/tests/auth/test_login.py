@@ -53,7 +53,7 @@ async def test_public_key(client: AsyncClient) -> None:
     response = await client.get("/auth/keys/public")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["code"] == status.HTTP_200_OK
+    assert response.json()["code"] == 0
 
     pem = response.json()["data"]
     public_key = load_public_pem(pem)
@@ -84,7 +84,7 @@ async def test_login(client: AsyncClient, rsa_public_key: RSAPublicKey, redis: R
         json={"username": USERNAME, "password": encrypt_message(rsa_public_key, PASSWORD)},
     )
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["code"] == status.HTTP_200_OK
+    assert response.json()["code"] == 0
     token_response = TokenResponse.model_validate(response.json()["data"])
     access_token = decode_token(token_response.access_token, auth_settings.ACCESS_TOKEN_KEY)
     refresh_token = decode_token(token_response.refresh_token, auth_settings.REFRESH_TOKEN_KEY)
@@ -93,7 +93,7 @@ async def test_login(client: AsyncClient, rsa_public_key: RSAPublicKey, redis: R
         "/auth/user/info", headers={"Authorization": f"Bearer {token_response.access_token}"}
     )
     assert user_response.status_code == status.HTTP_200_OK
-    assert user_response.json()["code"] == status.HTTP_200_OK
+    assert user_response.json()["code"] == 0
     user_info = UserInfoResponse.model_validate(user_response.json()["data"])
 
     redis_key = refresh_structure.format(user_id=user_info.id, jti=access_token.jti)

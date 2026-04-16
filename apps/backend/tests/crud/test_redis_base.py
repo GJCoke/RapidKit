@@ -81,6 +81,14 @@ class SampleModel(BaseModel):
     age: int
     tags: list[str] = []
 
+    def __hash__(self) -> int:
+        return hash((self.name, self.age))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SampleModel):
+            return NotImplemented
+        return self.name == other.name and self.age == other.age
+
 
 @pytest.mark.asyncio
 async def test_set_get_pydantic_model(redis_client: AsyncRedisClient) -> None:
@@ -166,7 +174,7 @@ async def test_sadd_smembers_pydantic_models(redis_client: AsyncRedisClient) -> 
     m2 = SampleModel(name="b", age=2)
     await redis_client.sadd(random_key, m1, m2)
     result = await redis_client.smembers(random_key, response_model=SampleModel)
-    assert {r.name for r in result} == {"a", "b"}
+    assert {r.name for r in list[result]} == {"a", "b"}
 
 
 @pytest.mark.asyncio

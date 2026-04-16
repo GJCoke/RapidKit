@@ -11,6 +11,7 @@ from rapidkit_common.crud import BaseSQLModelCRUD
 from rapidkit_common.models import SQLModel
 from rapidkit_common.schemas import BaseRequest, BaseResponse
 from rapidkit_core.exceptions import AppException
+from rapidkit_core.status_codes import StatusCode
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Field, col, delete
 from sqlmodel import SQLModel as _SQLModel
@@ -91,7 +92,7 @@ async def test_create_with_schema_not_validate(crud: CRUD) -> None:
     name = random_lowercase()
     with pytest.raises(AppException) as exc:
         await crud.create(PyUserCreate(name=name), validate=False)  # type: ignore
-    assert "Expected type" in str(exc.value)
+    assert exc.value.code == StatusCode.VALIDATION_ERROR.code
 
 
 @pytest.mark.asyncio
@@ -221,7 +222,7 @@ async def test_get_by_invalid_id_returns_none(crud: CRUD) -> None:
 async def test_get_by_invalid_id_with_nullable_false_raises(crud: CRUD) -> None:
     with pytest.raises(AppException) as exc:
         await crud.get(random_uuid(), nullable=False)
-    assert "not found" in str(exc.value)
+    assert exc.value.code == StatusCode.RESOURCE_NOT_FOUND.code
 
 
 @pytest.mark.asyncio
