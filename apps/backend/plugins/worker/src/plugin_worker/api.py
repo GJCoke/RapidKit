@@ -40,6 +40,7 @@ from plugin_worker.services import (
     get_active_tasks,
     get_registered_tasks,
     get_reserved_tasks,
+    parse_task_info_list,
     ping_worker,
     pool_grow,
     pool_shrink,
@@ -156,18 +157,7 @@ async def get_active_tasks_endpoint(
     celery_app = request.app.state.celery_app
     worker = await crud.get(worker_id, nullable=False)
     tasks = get_active_tasks(celery_app, worker.hostname)
-    result = [
-        ActiveTaskInfo(
-            id=t.get("id", ""),
-            name=t.get("name", ""),
-            args=str(t.get("args", "")),
-            kwargs=str(t.get("kwargs", "")),
-            worker_pid=t.get("worker_pid"),
-            time_start=t.get("time_start"),
-        )
-        for t in tasks
-    ]
-    return Response(data=result)
+    return Response(data=parse_task_info_list(tasks))
 
 
 @router.get("/{worker_id}/tasks/reserved")
@@ -179,18 +169,7 @@ async def get_reserved_tasks_endpoint(
     celery_app = request.app.state.celery_app
     worker = await crud.get(worker_id, nullable=False)
     tasks = get_reserved_tasks(celery_app, worker.hostname)
-    result = [
-        ActiveTaskInfo(
-            id=t.get("id", ""),
-            name=t.get("name", ""),
-            args=str(t.get("args", "")),
-            kwargs=str(t.get("kwargs", "")),
-            worker_pid=t.get("worker_pid"),
-            time_start=t.get("time_start"),
-        )
-        for t in tasks
-    ]
-    return Response(data=result)
+    return Response(data=parse_task_info_list(tasks))
 
 
 # ==================== Task Routes ====================

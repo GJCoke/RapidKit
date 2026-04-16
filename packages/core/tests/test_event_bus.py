@@ -1,86 +1,218 @@
 """EventBus 测试。"""
 
+import asyncio
+from dataclasses import dataclass
+from typing import ClassVar
+
 import pytest
+from rapidkit_core.events import Event, EventBus
 
 
-class TestEventBus:
-    def test_emit_calls_all_handlers(self):
-        from rapidkit_core.events import EventBus
+@dataclass
+class FakeEvent(Event):
+    event_name: ClassVar[str] = "test.fake"
+    value: str = ""
 
+
+@dataclass
+class AnotherEvent(Event):
+    event_name: ClassVar[str] = "test.another"
+    value: str = ""
+
+
+@pytest.fixture(autouse=True)
+def _reset_bus():
+    """每个测试前重置单例，测试后恢复。"""
+    EventBus._reset()
+    bus = EventBus()
+    yield bus
+    EventBus._reset()
+    # 恢复全局 event_bus 单例
+    import rapidkit_core.events as mod
+
+    mod.event_bus = EventBus()
+
+
+class TestSingleton:
+    def test_second_init_raises(self):
+        with pytest.raises(RuntimeError, match="singleton"):
+            EventBus()
+
+    def test_reset_allows_recreation(self):
+        EventBus._reset()
         bus = EventBus()
+        assert bus is not None
+
+
+class TestEmit:
+    def test_emit_calls_all_handlers(self, _reset_bus):
+        bus = _reset_bus
         results = []
-        bus.on("test.event", lambda data: results.append(f"h1:{data}"))
-        bus.on("test.event", lambda data: results.append(f"h2:{data}"))
-        bus.emit("test.event", "payload")
+        bus.on(FakeEvent, lambda e: results.append(f"h1:{e.value}"))
+        bus.on(FakeEvent, lambda e: results.append(f"h2:{e.value}"))
+        bus.emit(FakeEvent(value="payload"))
         assert results == ["h1:payload", "h2:payload"]
 
-    def test_handler_exception_does_not_affect_others(self):
-        from rapidkit_core.events import EventBus
-
-        bus = EventBus()
+    def test_handler_exception_does_not_affect_others(self, _reset_bus):
+        bus = _reset_bus
         results = []
 
-        def bad_handler(data):
+        def bad_handler(e):
             raise ValueError("boom")
 
-        bus.on("test.event", bad_handler)
-        bus.on("test.event", lambda data: results.append("ok"))
-        bus.emit("test.event", "x")
+        bus.on(FakeEvent, bad_handler)
+        bus.on(FakeEvent, lambda e: results.append("ok"))
+        bus.emit(FakeEvent(value="x"))
         assert results == ["ok"]
 
-    def test_no_subscribers_no_error(self):
-        from rapidkit_core.events import EventBus
+    def test_no_subscribers_no_error(self, _reset_bus):
+        bus = _reset_bus
+        bus.emit(FakeEvent(value="data"))  # should not raise
 
-        bus = EventBus()
-        bus.emit("nonexistent.event", "data")  # should not raise
-
-    def test_allowed_sources_filter(self):
-        from rapidkit_core.events import EventBus
-
-        bus = EventBus()
+    def test_allowed_sources_filter(self, _reset_bus):
+        bus = _reset_bus
         results = []
-        bus.on("test.event", lambda data: results.append(data), allowed_sources=["plugin_a"])
-        bus.emit("test.event", "from_a", source="plugin_a")
-        bus.emit("test.event", "from_b", source="plugin_b")
+        bus.on(FakeEvent, lambda e: results.append(e.value), allowed_sources=["plugin_a"])
+        bus.emit(FakeEvent(value="from_a"), source="plugin_a")
+        bus.emit(FakeEvent(value="from_b"), source="plugin_b")
         assert results == ["from_a"]
 
-    def test_allowed_sources_none_accepts_all(self):
-        from rapidkit_core.events import EventBus
-
-        bus = EventBus()
+    def test_allowed_sources_none_accepts_all(self, _reset_bus):
+        bus = _reset_bus
         results = []
-        bus.on("test.event", lambda data: results.append(data))
-        bus.emit("test.event", "a", source="x")
-        bus.emit("test.event", "b", source="y")
+        bus.on(FakeEvent, lambda e: results.append(e.value))
+        bus.emit(FakeEvent(value="a"), source="x")
+        bus.emit(FakeEvent(value="b"), source="y")
         assert results == ["a", "b"]
 
-    @pytest.mark.asyncio
-    async def test_async_handler(self):
-        from rapidkit_core.events import EventBus
-
-        bus = EventBus()
+    def test_sync_emit_skips_async_handler(self, _reset_bus):
+        bus = _reset_bus
         results = []
 
-        async def async_handler(data):
-            results.append(f"async:{data}")
+        async def async_handler(e):
+            results.append("should_not_run")
 
-        bus.on("test.event", async_handler)
-        await bus.async_emit("test.event", "payload")
+        bus.on(FakeEvent, async_handler)
+        bus.on(FakeEvent, lambda e: results.append("sync"))
+        bus.emit(FakeEvent(value="x"))
+        assert results == ["sync"]
+
+    def test_different_event_types_isolated(self, _reset_bus):
+        bus = _reset_bus
+        results = []
+        bus.on(FakeEvent, lambda e: results.append("fake"))
+        bus.on(AnotherEvent, lambda e: results.append("another"))
+        bus.emit(FakeEvent(value="x"))
+        assert results == ["fake"]
+
+
+class TestAsyncEmit:
+    @pytest.mark.asyncio
+    async def test_async_handler(self, _reset_bus):
+        bus = _reset_bus
+        results = []
+
+        async def async_handler(e):
+            results.append(f"async:{e.value}")
+
+        bus.on(FakeEvent, async_handler)
+        await bus.async_emit(FakeEvent(value="payload"))
         assert results == ["async:payload"]
 
     @pytest.mark.asyncio
-    async def test_async_emit_mixed_handlers(self):
-        from rapidkit_core.events import EventBus
-
-        bus = EventBus()
+    async def test_async_emit_mixed_handlers(self, _reset_bus):
+        bus = _reset_bus
         results = []
 
-        bus.on("test.event", lambda data: results.append(f"sync:{data}"))
+        bus.on(FakeEvent, lambda e: results.append(f"sync:{e.value}"))
 
-        async def async_handler(data):
-            results.append(f"async:{data}")
+        async def async_handler(e):
+            results.append(f"async:{e.value}")
 
-        bus.on("test.event", async_handler)
-        await bus.async_emit("test.event", "x")
+        bus.on(FakeEvent, async_handler)
+        await bus.async_emit(FakeEvent(value="x"))
         assert "sync:x" in results
         assert "async:x" in results
+
+    @pytest.mark.asyncio
+    async def test_concurrent_execution_same_priority(self, _reset_bus):
+        bus = _reset_bus
+        order = []
+
+        async def slow_handler(e):
+            await asyncio.sleep(0.05)
+            order.append("slow")
+
+        async def fast_handler(e):
+            order.append("fast")
+
+        bus.on(FakeEvent, slow_handler, priority=0)
+        bus.on(FakeEvent, fast_handler, priority=0)
+        await bus.async_emit(FakeEvent(value="x"))
+        # fast 应该先完成（并发执行）
+        assert order == ["fast", "slow"]
+
+    @pytest.mark.asyncio
+    async def test_priority_ordering(self, _reset_bus):
+        bus = _reset_bus
+        order = []
+
+        bus.on(FakeEvent, lambda e: order.append("low"), priority=10)
+        bus.on(FakeEvent, lambda e: order.append("high"), priority=-10)
+        bus.on(FakeEvent, lambda e: order.append("default"), priority=0)
+        await bus.async_emit(FakeEvent(value="x"))
+        assert order == ["high", "default", "low"]
+
+
+class TestPattern:
+    def test_pattern_match(self, _reset_bus):
+        bus = _reset_bus
+        results = []
+        bus.on_pattern("test.*", lambda e: results.append(e.value))
+        bus.emit(FakeEvent(value="matched"))
+        assert results == ["matched"]
+
+    def test_pattern_no_match(self, _reset_bus):
+        bus = _reset_bus
+        results = []
+        bus.on_pattern("other.*", lambda e: results.append(e.value))
+        bus.emit(FakeEvent(value="nope"))
+        assert results == []
+
+    def test_wildcard_all(self, _reset_bus):
+        bus = _reset_bus
+        results = []
+        bus.on_pattern("*", lambda e: results.append(type(e).__name__))
+        bus.emit(FakeEvent(value="a"))
+        bus.emit(AnotherEvent(value="b"))
+        assert results == ["FakeEvent", "AnotherEvent"]
+
+
+class TestFireAndForget:
+    @pytest.mark.asyncio
+    async def test_fire_and_forget_executes(self, _reset_bus):
+        bus = _reset_bus
+        results = []
+
+        async def handler(e):
+            results.append(e.value)
+
+        bus.on(FakeEvent, handler)
+        bus.fire_and_forget(FakeEvent(value="ff"))
+        await bus.shutdown(timeout=2.0)
+        assert results == ["ff"]
+
+    @pytest.mark.asyncio
+    async def test_shutdown_waits_for_pending(self, _reset_bus):
+        bus = _reset_bus
+        results = []
+
+        async def slow_handler(e):
+            await asyncio.sleep(0.1)
+            results.append("done")
+
+        bus.on(FakeEvent, slow_handler)
+        bus.fire_and_forget(FakeEvent(value="x"))
+        assert results == []
+        await bus.shutdown(timeout=2.0)
+        assert results == ["done"]

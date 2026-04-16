@@ -7,9 +7,8 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import PaginatedResponse, Response
-from rapidkit_core.events import event_bus
+from rapidkit_core.events import RolePermissionsChangedEvent, event_bus
 from rapidkit_core.log import logger
 from sqlmodel import col
 
@@ -81,8 +80,6 @@ async def update_role_permissions(
     role_id: UUID,
     body: RolePermissionsUpdateBody,
     role_crud: RoleCrudDep,
-    redis: RedisDep,
-    session: SessionDep,
 ) -> Response[bool]:
 
     role = await role_crud.get(role_id, nullable=False)
@@ -100,12 +97,7 @@ async def update_role_permissions(
         role_id=role_id,
     )
     await event_bus.async_emit(
-        "role.permissions_changed",
-        {
-            "redis": redis,
-            "role_code": role.code,
-            "session": session,
-        },
+        RolePermissionsChangedEvent(role_code=role.code),
         source="auth",
     )
     return Response(data=True)
@@ -128,8 +120,6 @@ async def update_role(role_id: UUID, body: RoleUpdate, role_crud: RoleCrudDep) -
 async def batch_delete_role(
     query: RoleBatchBody,
     role_crud: RoleCrudDep,
-    redis: RedisDep,
-    session: SessionDep,
 ) -> Response[bool]:
 
     roles = await role_crud.get_by_ids(query.ids)
@@ -140,12 +130,7 @@ async def batch_delete_role(
 
     for code in role_codes:
         await event_bus.async_emit(
-            "role.permissions_changed",
-            {
-                "redis": redis,
-                "role_code": code,
-                "session": session,
-            },
+            RolePermissionsChangedEvent(role_code=code),
             source="auth",
         )
 
@@ -156,20 +141,13 @@ async def batch_delete_role(
 async def delete_role(
     role_id: UUID,
     role_crud: RoleCrudDep,
-    redis: RedisDep,
-    session: SessionDep,
 ) -> Response[bool]:
 
     role = await role_crud.get(role_id, nullable=False)
     await role_crud.delete(role_id)
     logger.warning("[Auth] Role deleted: {role_code}", role_code=role.code)
     await event_bus.async_emit(
-        "role.permissions_changed",
-        {
-            "redis": redis,
-            "role_code": role.code,
-            "session": session,
-        },
+        RolePermissionsChangedEvent(role_code=role.code),
         source="auth",
     )
 

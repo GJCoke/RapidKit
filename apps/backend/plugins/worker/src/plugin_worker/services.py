@@ -10,7 +10,7 @@ from rapidkit_core.exceptions import AppException
 from rapidkit_core.log import logger
 from rapidkit_core.status_codes import StatusCode
 
-from plugin_worker.schemas import TriggerTaskResponse
+from plugin_worker.schemas import ActiveTaskInfo, TriggerTaskResponse
 
 
 def get_registered_tasks(celery_app: Celery) -> list[str]:
@@ -124,6 +124,21 @@ def get_reserved_tasks(celery_app: Celery, hostname: str) -> list[dict]:
     except Exception:
         logger.exception("Failed to get reserved tasks: {hostname}", hostname=hostname)
         return []
+
+
+def parse_task_info_list(tasks: list[dict]) -> list[ActiveTaskInfo]:
+    """将 Celery inspect 返回的原始 dict 列表转为 ActiveTaskInfo 列表。"""
+    return [
+        ActiveTaskInfo(
+            id=t.get("id", ""),
+            name=t.get("name", ""),
+            args=str(t.get("args", "")),
+            kwargs=str(t.get("kwargs", "")),
+            worker_pid=t.get("worker_pid"),
+            time_start=t.get("time_start"),
+        )
+        for t in tasks
+    ]
 
 
 def revoke_task(celery_app: Celery, task_id: str, *, terminate: bool = False) -> None:

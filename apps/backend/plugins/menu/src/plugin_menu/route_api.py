@@ -46,7 +46,6 @@ async def get_user_routes_api(
 
 @router.get("/exist")
 async def is_route_exist(
-    user: UserDBDep,
     session: SessionDep,
     route_name: str = Query(alias="routeName"),
 ) -> Response[bool]:

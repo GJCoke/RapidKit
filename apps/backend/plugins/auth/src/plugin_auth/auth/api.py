@@ -5,11 +5,11 @@ Author : Coke
 Date   : 2025-03-11
 """
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from rapidkit_common.deps import RedisDep, check_debug
 from rapidkit_common.schemas.response import Response
 from rapidkit_core.auth_config import auth_settings
-from rapidkit_core.events import event_bus
+from rapidkit_core.events import ActivityLogEvent, event_bus
 from rapidkit_core.log import logger
 from rapidkit_core.security import AccessJWT
 from rapidkit_core.uuid7 import uuid8
@@ -44,7 +44,6 @@ async def get_public_key() -> Response[str]:
 
 @router.post("/login")
 async def login(
-    request: Request,
     body: LoginRequest,
     auth: AuthCrudDep,
     role: RoleCrudDep,
@@ -61,13 +60,8 @@ async def login(
         user_agent=user_agent,
     )
 
-    event_bus.emit(
-        "activity.log",
-        {
-            "event_type": "user_login",
-            "params": {"name": body.username},
-            "sio": request.app.state.socket,
-        },
+    event_bus.fire_and_forget(
+        ActivityLogEvent(event_type="user_login", params={"name": body.username}),
         source="auth",
     )
 

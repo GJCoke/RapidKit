@@ -7,7 +7,9 @@ Date   : 2026-04-14
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Coroutine
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Union
+
+from rapidkit_core.events import Event
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -61,8 +63,10 @@ class PluginManifest:
     on_startup: list[Callable[[FastAPI], Coroutine[Any, Any, None]]] = field(default_factory=list)
     on_shutdown: list[Callable[[FastAPI], Coroutine[Any, Any, None]]] = field(default_factory=list)
 
-    # 事件监听器：(event_name, handler) 列表
-    event_listeners: list[tuple[str, Callable]] = field(default_factory=list)
+    # 事件监听器：(EventType, handler) 或 (EventType, handler, priority) 列表
+    event_listeners: list[Union[tuple[type[Event], Callable], tuple[type[Event], Callable, int]]] = field(
+        default_factory=list
+    )
 
     # 健康检查回调
     health_check: Callable[[], Coroutine[Any, Any, HealthStatus]] | None = None

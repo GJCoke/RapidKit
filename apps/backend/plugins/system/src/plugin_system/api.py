@@ -30,7 +30,13 @@ from plugin_system.schemas import (
     MultiResourceStats,
     ServiceHealth,
 )
-from plugin_system.services import MetricsService
+from plugin_system.services import (
+    get_error_counts,
+    get_error_sparkline_24h,
+    get_qps,
+    get_response_time_percentiles,
+    get_total_requests,
+)
 
 router = APIRouter(
     prefix="/system",
@@ -72,10 +78,9 @@ async def get_resource_stats(
 @router.get("/stats/errors", summary="错误统计")
 async def get_error_stats(redis: RedisDep) -> Response[ErrorStats]:
     """获取 HTTP 5xx 和业务异常统计。"""
-    metrics = MetricsService(redis)
-    http_5xx, biz_errors = await metrics.get_error_counts(hours=1)
-    total_requests = await metrics.get_total_requests(hours=1)
-    sparkline = await metrics.get_error_sparkline_24h()
+    http_5xx, biz_errors = await get_error_counts(redis, hours=1)
+    total_requests = await get_total_requests(redis, hours=1)
+    sparkline = await get_error_sparkline_24h(redis)
 
     error_rate = 0.0
     if total_requests > 0:
@@ -95,10 +100,9 @@ async def get_error_stats(redis: RedisDep) -> Response[ErrorStats]:
 @router.get("/stats/health", summary="应用健康统计")
 async def get_health_stats(request: Request, redis: RedisDep) -> Response[HealthStats]:
     """获取 QPS、响应时间 P50/P95 和错误计数。"""
-    metrics = MetricsService(redis)
-    qps = await metrics.get_qps()
-    p50, p95 = await metrics.get_response_time_percentiles()
-    http_5xx, biz_errors = await metrics.get_error_counts(hours=1)
+    qps = await get_qps(redis)
+    p50, p95 = await get_response_time_percentiles(redis)
+    http_5xx, biz_errors = await get_error_counts(redis, hours=1)
 
     try:
         socket = request.app.state.socket

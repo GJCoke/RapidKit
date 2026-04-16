@@ -5,14 +5,19 @@ Author  : Claude
 Date    : 2026-04-14
 """
 
+from rapidkit_core.events import RolePermissionsChangedEvent
 from rapidkit_core.plugin import PluginManifest
 
 
-async def _on_role_permissions_changed(data: dict) -> None:
+async def _on_role_permissions_changed(event: RolePermissionsChangedEvent) -> None:
     """事件总线 role.permissions_changed 监听器。"""
+    from rapidkit_core.database import AsyncSessionLocal, RedisManager
+
     from plugin_user.services import invalidate_users_by_role_code
 
-    await invalidate_users_by_role_code(data["redis"], data["role_code"], data["session"])
+    redis = RedisManager.client()
+    async with AsyncSessionLocal() as session:
+        await invalidate_users_by_role_code(redis, event.role_code, session)
 
 
 def register() -> PluginManifest:
@@ -24,5 +29,5 @@ def register() -> PluginManifest:
         router=router,
         models=[],
         dependencies=["auth", "system"],
-        event_listeners=[("role.permissions_changed", _on_role_permissions_changed)],
+        event_listeners=[(RolePermissionsChangedEvent, _on_role_permissions_changed)],
     )

@@ -11,7 +11,7 @@ from fastapi_sio_di import AsyncServer
 from rapidkit_core.database import RedisManager
 from rapidkit_core.log import logger
 
-from plugin_monitoring.services import ApiMetricsService
+from plugin_monitoring.services import get_realtime_stats
 
 
 async def push_api_stats_loop(sio: AsyncServer) -> None:
@@ -22,8 +22,7 @@ async def push_api_stats_loop(sio: AsyncServer) -> None:
     while True:
         try:
             redis = RedisManager.client()
-            service = ApiMetricsService(redis=redis, session=None)  # ty: ignore[invalid-argument-type]
-            stats = await service.get_realtime_stats()
+            stats = await get_realtime_stats(redis)
 
             curr_total = stats["totalRequests"]
             curr_errors = stats.get("totalErrors", 0)

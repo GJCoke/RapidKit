@@ -53,6 +53,7 @@ def filter_script(
 
 async def execute_code(language: str, code: str) -> dict[str, Any]:
     """在子进程中执行代码并捕获输出。"""
+
     cmd = _LANGUAGE_COMMANDS.get(language)
     if not cmd:
         raise AppException(StatusCode.BAD_REQUEST)
@@ -61,6 +62,8 @@ async def execute_code(language: str, code: str) -> dict[str, Any]:
     max_output = settings.SCRIPT_EXEC_MAX_OUTPUT
 
     start = time.monotonic()
+
+    process = None
 
     try:
         process = await asyncio.create_subprocess_exec(
@@ -79,8 +82,10 @@ async def execute_code(language: str, code: str) -> dict[str, Any]:
         exit_code = process.returncode or 0
 
     except asyncio.TimeoutError:
-        process.kill()
-        await process.wait()
+        if process:
+            process.kill()
+            await process.wait()
+
         elapsed = time.monotonic() - start
         logger.warning(
             "[Script] Code execution timed out: language={language} timeout={timeout}s",

@@ -7,8 +7,9 @@ Date   : 2026-04-14
 
 import importlib
 from collections import deque
+from typing import Callable, overload
 
-from rapidkit_core.events import event_bus
+from rapidkit_core.events import Event, event_bus
 from rapidkit_core.log import logger
 from rapidkit_core.plugin import PluginManifest
 
@@ -110,7 +111,19 @@ def discover_and_load_plugins(module_names: list[str]) -> list[PluginManifest]:
 
     # 按拓扑顺序注册事件监听器
     for manifest in sorted_manifests:
-        for event_name, handler in manifest.event_listeners:
-            event_bus.on(event_name, handler)
+        for entry in manifest.event_listeners:
+            _register_event_listener(entry)
 
     return sorted_manifests
+
+
+@overload
+def _register_event_listener(entry: tuple[type[Event], Callable]) -> None: ...
+@overload
+def _register_event_listener(entry: tuple[type[Event], Callable, int]) -> None: ...
+def _register_event_listener(entry: tuple[type[Event], Callable] | tuple[type[Event], Callable, int]) -> None:
+    """注册单个事件监听器，支持 2-tuple 和 3-tuple 格式。"""
+    event_type: type[Event] = entry[0]
+    handler: Callable = entry[1]
+    priority: int = entry[2] if len(entry) == 3 else 0  # ty: ignore[index-out-of-bounds]
+    event_bus.on(event_type, handler, priority=priority)

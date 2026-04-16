@@ -11,7 +11,7 @@ from datetime import timedelta
 
 from fastapi_sio_di import AsyncServer
 from rapidkit_common.enums import TaskStatus, WorkerStatus
-from rapidkit_core.events import event_bus
+from rapidkit_core.events import ActivityLogEvent, event_bus
 from rapidkit_core.log import logger
 from rapidkit_core.timezone import timezone
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -34,14 +34,8 @@ class EventService:
 
     def _log_activity(self, event_type: str, params: dict | None = None, detail: str | None = None) -> None:
         """通过事件总线记录活动日志（fire-and-forget）。"""
-        event_bus.emit(
-            "activity.log",
-            {
-                "event_type": event_type,
-                "params": params,
-                "detail": detail,
-                "sio": self.sio,
-            },
+        event_bus.fire_and_forget(
+            ActivityLogEvent(event_type=event_type, params=params, detail=detail),
             source="worker",
         )
 

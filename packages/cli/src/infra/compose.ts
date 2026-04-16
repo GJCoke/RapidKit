@@ -1,7 +1,6 @@
 import { execSync, spawn as nodeSpawn, type ChildProcess } from "node:child_process"
 import { resolve } from "node:path"
 import type { FluxContext } from "../context"
-import { FluxError } from "../errors"
 import { hasCommand } from "./runner"
 
 export interface ComposeCommand {

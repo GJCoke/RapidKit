@@ -13,7 +13,7 @@ from fastapi_sio_di import AsyncServer
 from rapidkit_core.database import RedisManager
 from rapidkit_core.log import logger
 
-from plugin_system.services import MetricsService
+from plugin_system.services import get_error_counts, get_total_requests
 
 HOSTNAME = _socket.gethostname()
 _RESOURCE_KEY_PREFIX = "sys:resources:"
@@ -67,9 +67,8 @@ async def push_error_stats_loop(sio: AsyncServer) -> None:
     while True:
         try:
             redis = RedisManager.client()
-            metrics = MetricsService(redis)
-            http_5xx, biz_errors = await metrics.get_error_counts(hours=1)
-            total = await metrics.get_total_requests(hours=1)
+            http_5xx, biz_errors = await get_error_counts(redis, hours=1)
+            total = await get_total_requests(redis, hours=1)
             error_rate = round((http_5xx + biz_errors) / total * 100, 2) if total > 0 else 0.0
 
             await sio.emit(
