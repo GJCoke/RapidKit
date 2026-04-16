@@ -60,16 +60,15 @@ jobs:
       - name: Determine affected plugins
         id: plugins
         run: |
-          declare -A PLUGIN_OUTPUTS=(
-            ["plugin_script"]="${{ steps.changes.outputs.plugin_script }}"
-            ["plugin_monitoring"]="${{ steps.changes.outputs.plugin_monitoring }}"
-            ["plugin_system"]="${{ steps.changes.outputs.plugin_system }}"
-            ["plugin_worker"]="${{ steps.changes.outputs.plugin_worker }}"
-            ["plugin_schedule"]="${{ steps.changes.outputs.plugin_schedule }}"
-            ["plugin_menu"]="${{ steps.changes.outputs.plugin_menu }}"
-            ["plugin_auth"]="${{ steps.changes.outputs.plugin_auth }}"
-            ["plugin_user"]="${{ steps.changes.outputs.plugin_user }}"
-          )
+          declare -A PLUGIN_OUTPUTS
+          PLUGIN_OUTPUTS["plugin_script"]="${{ steps.changes.outputs.plugin_script }}"
+          PLUGIN_OUTPUTS["plugin_monitoring"]="${{ steps.changes.outputs.plugin_monitoring }}"
+          PLUGIN_OUTPUTS["plugin_system"]="${{ steps.changes.outputs.plugin_system }}"
+          PLUGIN_OUTPUTS["plugin_worker"]="${{ steps.changes.outputs.plugin_worker }}"
+          PLUGIN_OUTPUTS["plugin_schedule"]="${{ steps.changes.outputs.plugin_schedule }}"
+          PLUGIN_OUTPUTS["plugin_menu"]="${{ steps.changes.outputs.plugin_menu }}"
+          PLUGIN_OUTPUTS["plugin_auth"]="${{ steps.changes.outputs.plugin_auth }}"
+          PLUGIN_OUTPUTS["plugin_user"]="${{ steps.changes.outputs.plugin_user }}"
 
           plugins=()
 
@@ -289,8 +288,8 @@ jobs:
           CORS_ORIGINS: '["*"]'
           CORS_HEADERS: '["*"]'
         run: |
-          heads=$(uv run alembic heads)
-          head_count=$(echo "$heads" | grep -c "(head)")
+          heads=$(uv run alembic heads 2>&1) || { echo "$heads"; exit 1; }
+          head_count=$(echo "$heads" | grep -c "(head)") || true
           echo "Alembic heads: $heads"
           echo "Head count: $head_count"
           # 多个 head 是正常的（多分支），但不能有 "mergepoint" 冲突
