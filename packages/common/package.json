@@ -1,0 +1,11 @@
+{
+  "name": "@rapidkit/common",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rapidkit — Monorepo backend common",
+  "scripts": {
+    "postinstall": "uv sync",
+    "format": "uv run ruff check --fix src && uv run ruff format src",
+    "typecheck": "uv run ty check src"
+  }
+}
