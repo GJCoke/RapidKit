@@ -186,7 +186,8 @@ jobs:
         run: uv sync --frozen
 
       - name: Run plugin tests
-        run: uv run pytest apps/backend/plugins/${{ matrix.plugin }}/tests/ -v
+        working-directory: apps/backend
+        run: uv run pytest plugins/${{ matrix.plugin }}/tests/ -v
         env:
           ENVIRONMENT: TESTING
           POSTGRESQL_ASYNC_SCHEME: postgresql+asyncpg
