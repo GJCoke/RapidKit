@@ -17,7 +17,7 @@ from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import Response
 from rapidkit_core.config import settings
 from rapidkit_core.events import event_bus
-from rapidkit_core.plugin import HealthStatus, PluginManifest, PluginMeta
+from rapidkit_core.plugin import HealthStatus, PluginMeta
 from sqlalchemy.pool import QueuePool
 from sqlmodel import func, select
 
@@ -37,7 +37,6 @@ from plugin_system.schemas import (
     PluginDependencyGraph,
     PluginEdge,
     PluginErrorResponse,
-    PluginHealthStatus,
     PluginNode,
     PluginStatusItem,
     ServiceHealth,
@@ -147,37 +146,18 @@ async def get_infrastructure_health(session: SessionDep, redis: RedisDep) -> Res
 
 @router.get("/health", summary="聚合健康状态")
 async def get_aggregated_health(
-    request: Request,
     session: SessionDep,
     redis: RedisDep,
 ) -> Response[AggregatedHealth]:
-    """聚合所有插件健康检查和基础设施状态。"""
+    """聚合基础设施健康状态。"""
 
-    plugins: list[PluginManifest] = getattr(request.app.state, "plugins", [])
-
-    # 收集插件健康状态
-    plugin_statuses: dict[str, PluginHealthStatus] = {}
-    for plugin in plugins:
-        if plugin.health_check is not None:
-            try:
-                status = await plugin.health_check()
-                plugin_statuses[plugin.name] = PluginHealthStatus(status=status.value)
-            except Exception as e:
-                plugin_statuses[plugin.name] = PluginHealthStatus(
-                    status=HealthStatus.UNHEALTHY.value,
-                    detail=str(e),
-                )
-        else:
-            plugin_statuses[plugin.name] = PluginHealthStatus(status=HealthStatus.HEALTHY.value)
-
-    # 基础设施状态
     pg_health = await _check_pg(session)
     redis_health = await _check_redis(redis)
     minio_health = _check_minio()
     infra = InfrastructureHealth(pg=pg_health, redis=redis_health, minio=minio_health)
 
     # 推导整体状态
-    all_statuses = [ps.status for ps in plugin_statuses.values()]
+    all_statuses: list[str] = []
     for svc in [infra.pg, infra.redis, infra.minio]:
         if svc.status == "down":
             all_statuses.append(HealthStatus.UNHEALTHY.value)
@@ -196,7 +176,6 @@ async def get_aggregated_health(
     return Response(
         data=AggregatedHealth(
             status=overall,
-            plugins=plugin_statuses,
             infrastructure=infra,
         )
     )
@@ -252,13 +231,6 @@ async def get_plugin_status(request: Request) -> Response[list[PluginStatusItem]
     # 已加载的插件
     for plugin in plugins:
         meta = plugin_meta.get(plugin.name)
-        health = None
-        if plugin.health_check is not None:
-            try:
-                health = (await plugin.health_check()).value
-            except Exception:
-                health = HealthStatus.UNHEALTHY.value
-
         dep_names = [d if isinstance(d, str) else d.name for d in plugin.dependencies]
 
         items.append(
@@ -270,7 +242,6 @@ async def get_plugin_status(request: Request) -> Response[list[PluginStatusItem]
                 dependencies=dep_names,
                 load_time_ms=meta.register_ms if meta else None,
                 startup_time_ms=meta.startup_ms if meta else None,
-                health=health,
             )
         )
 

@@ -70,7 +70,6 @@ export default {
   "createPlugin.featuresPrompt": "Select optional features",
   "createPlugin.featureDeps": "Plugin dependencies — declare dependencies on other plugins",
   "createPlugin.featureEvents": "Event listeners — subscribe to EventBus events",
-  "createPlugin.featureHealth": "Health check — expose plugin health status",
   "createPlugin.featureMiddleware": "Middleware — declare custom middleware",
   "createPlugin.depsPrompt": "Enter dependency plugin names (comma-separated, e.g. auth,system)",
   "createPlugin.depsInvalid": "Plugin names must contain only lowercase letters, digits, and underscores",

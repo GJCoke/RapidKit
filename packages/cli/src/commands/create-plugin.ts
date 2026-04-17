@@ -72,7 +72,6 @@ export const createPlugin = defineCommand({
       options: [
         { value: "deps", label: t("createPlugin.featureDeps") },
         { value: "events", label: t("createPlugin.featureEvents") },
-        { value: "health", label: t("createPlugin.featureHealth") },
         { value: "middleware", label: t("createPlugin.featureMiddleware") },
       ],
       required: false,
@@ -85,7 +84,6 @@ export const createPlugin = defineCommand({
     const features: PluginFeatures = {
       dependencies: [],
       eventListeners: selected.includes("events"),
-      healthCheck: selected.includes("health"),
       middleware: selected.includes("middleware"),
     }
 

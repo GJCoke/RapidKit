@@ -113,7 +113,6 @@ def register() -> PluginManifest:
         event_listeners=[
             (MyEvent, on_my_event),
         ],
-        health_check=check_health,
         dependency_overrides={
             placeholder_dep: real_dep,
         },
@@ -137,7 +136,6 @@ def register() -> PluginManifest:
 | `on_startup`           | `list[Callable]`                            | Async startup callbacks `(app: FastAPI) -> None`                                     |
 | `on_shutdown`          | `list[Callable]`                            | Async shutdown callbacks `(app: FastAPI) -> None`                                    |
 | `event_listeners`      | `list[tuple[type[Event], Callable[, int]]]` | Typed event listeners; optional third element is priority (lower = first, default 0) |
-| `health_check`         | `Callable \| None`                          | Async health check returning dict or `HealthStatus`                                  |
 | `dependency_overrides` | `dict[Callable, Callable]`                  | FastAPI dependency overrides (same as `app.dependency_overrides`)                    |
 | `middlewares`          | `list[MiddlewareDef]`                       | Plugin middlewares; `order` controls position (lower = closer to request entry)      |
 

@@ -69,7 +69,6 @@ export default {
   "createPlugin.featuresPrompt": "选择需要的可选特性",
   "createPlugin.featureDeps": "插件依赖 — 声明对其他插件的依赖关系",
   "createPlugin.featureEvents": "事件监听 — 订阅 EventBus 事件",
-  "createPlugin.featureHealth": "健康检查 — 暴露插件健康状态",
   "createPlugin.featureMiddleware": "中间件 — 声明自定义中间件",
   "createPlugin.depsPrompt": "输入依赖的插件名（逗号分隔，如 auth,system）",
   "createPlugin.depsInvalid": "插件名只能包含小写字母、数字和下划线",

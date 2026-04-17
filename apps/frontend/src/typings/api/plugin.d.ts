@@ -2,8 +2,6 @@ declare global {
   namespace Api {
     namespace Plugin {
       type Status = "loaded" | "disabled" | "failed" | "degraded"
-      type HealthStatus = "healthy" | "degraded" | "unhealthy"
-
       type PluginError = {
         phase: string
         message: string
@@ -18,7 +16,6 @@ declare global {
         dependencies: string[] | null
         loadTimeMs: number | null
         startupTimeMs: number | null
-        health: HealthStatus | null
         error?: PluginError
       }
 

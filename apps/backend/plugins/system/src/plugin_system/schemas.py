@@ -95,21 +95,13 @@ class InfrastructureHealth(BaseModel):
     minio: ServiceHealth
 
 
-# ========== 插件健康聚合 ==========
-
-
-class PluginHealthStatus(BaseModel):
-    """单个插件的健康状态。"""
-
-    status: str  # healthy / degraded / unhealthy
-    detail: str | None = None
+# ========== 聚合健康 ==========
 
 
 class AggregatedHealth(BaseModel):
-    """聚合健康状态响应。"""
+    """聚合健康状态响应（仅基础设施）。"""
 
     status: str  # healthy / degraded / unhealthy
-    plugins: dict[str, PluginHealthStatus]
     infrastructure: InfrastructureHealth
 
 
@@ -166,7 +158,6 @@ class PluginStatusItem(BaseModel):
     dependencies: list[str] | None = None
     load_time_ms: float | None = None
     startup_time_ms: float | None = None
-    health: str | None = None
     error: PluginErrorResponse | None = None
 
 

@@ -124,9 +124,6 @@ class PluginManifest:
         default_factory=list
     )
 
-    # 健康检查回调
-    health_check: Callable[[], Coroutine[Any, Any, HealthStatus]] | None = None
-
     # FastAPI dependency_overrides（语义与 app.dependency_overrides 一致）
     dependency_overrides: dict[Callable, Callable] = field(default_factory=dict)
 

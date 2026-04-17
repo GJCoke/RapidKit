@@ -62,7 +62,7 @@ describe("generateInitPy", () => {
   const minimal: PluginFeatures = {
     dependencies: [],
     eventListeners: false,
-    healthCheck: false,
+
     middleware: false,
   }
 
@@ -72,7 +72,6 @@ describe("generateInitPy", () => {
     expect(result).toContain('name="foo"')
     expect(result).toContain("dependencies=[]")
     expect(result).not.toContain("event_listeners")
-    expect(result).not.toContain("health_check")
     expect(result).not.toContain("middlewares")
   })
 
@@ -89,13 +88,6 @@ describe("generateInitPy", () => {
     expect(result).toContain("from plugin_foo.events import FooEvent, on_foo_event")
   })
 
-  it("includes health_check when enabled", () => {
-    const features: PluginFeatures = { ...minimal, healthCheck: true }
-    const result = generateInitPy("foo", features)
-    expect(result).toContain("health_check=check_health")
-    expect(result).toContain("async def check_health()")
-  })
-
   it("includes middlewares when enabled", () => {
     const features: PluginFeatures = { ...minimal, middleware: true }
     const result = generateInitPy("foo", features)
@@ -108,12 +100,11 @@ describe("generateInitPy", () => {
     const features: PluginFeatures = {
       dependencies: ["auth"],
       eventListeners: true,
-      healthCheck: true,
+
       middleware: true,
     }
     const result = generateInitPy("foo", features)
     expect(result).toContain("event_listeners")
-    expect(result).toContain("health_check")
     expect(result).toContain("middlewares")
     expect(result).toContain('dependencies=["auth"]')
   })
@@ -143,11 +134,10 @@ describe("generateMiddlewarePy", () => {
 })
 
 describe("generateApiPy", () => {
-  it("generates router with health endpoint", () => {
+  it("generates router", () => {
     const result = generateApiPy("foo")
     expect(result).toContain('prefix="/foo"')
     expect(result).toContain('tags=["foo"]')
-    expect(result).toContain("async def health()")
   })
 })
 
@@ -155,7 +145,7 @@ describe("generateTestRegister", () => {
   const minimal: PluginFeatures = {
     dependencies: [],
     eventListeners: false,
-    healthCheck: false,
+
     middleware: false,
   }
 
@@ -170,12 +160,6 @@ describe("generateTestRegister", () => {
     const result = generateTestRegister("foo", features)
     expect(result).toContain('"plugin_auth"')
     expect(result).toContain('"plugin_system"')
-  })
-
-  it("includes health_check test when enabled", () => {
-    const features: PluginFeatures = { ...minimal, healthCheck: true }
-    const result = generateTestRegister("foo", features)
-    expect(result).toContain("test_health_check_exists")
   })
 
   it("includes event_listeners test when enabled", () => {

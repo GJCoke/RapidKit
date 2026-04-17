@@ -119,7 +119,6 @@
       "name": "Name",
       "version": "Version",
       "status": "Status",
-      "health": "Health",
       "registerTime": "Register",
       "startupTime": "Startup",
       "dependencies": "Dependencies",

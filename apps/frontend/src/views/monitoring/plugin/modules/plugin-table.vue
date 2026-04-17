@@ -18,12 +18,6 @@
     degraded: "warning",
   }
 
-  const healthColor: Record<string, string> = {
-    healthy: "var(--success-color)",
-    degraded: "var(--warning-color)",
-    unhealthy: "var(--error-color)",
-  }
-
   function renderExpand(row: Api.Plugin.StatusItem) {
     if (row.status === "loaded") {
       const deps = row.dependencies ?? []
@@ -110,15 +104,6 @@
           {$t(`page.monitoring.plugin.status_${row.status}`)}
         </NTag>
       ),
-    },
-    {
-      title: $t("page.monitoring.plugin.health"),
-      key: "health",
-      width: 90,
-      render: (row) => {
-        if (!row.health) return <span class="text-[var(--text-color-4)]">-</span>
-        return <span style={{ color: healthColor[row.health] }}>{row.health}</span>
-      },
     },
     {
       title: $t("page.monitoring.plugin.registerTime"),

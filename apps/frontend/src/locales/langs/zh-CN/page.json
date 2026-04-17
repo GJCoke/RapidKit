@@ -119,7 +119,6 @@
       "name": "名称",
       "version": "版本",
       "status": "状态",
-      "health": "健康",
       "registerTime": "注册耗时",
       "startupTime": "启动耗时",
       "dependencies": "依赖",

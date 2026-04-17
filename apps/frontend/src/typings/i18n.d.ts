@@ -438,7 +438,6 @@ declare namespace I18nKeys {
     | "monitoring.plugin.eventStats"
     | "monitoring.plugin.failed"
     | "monitoring.plugin.handlerErrors"
-    | "monitoring.plugin.health"
     | "monitoring.plugin.loaded"
     | "monitoring.plugin.name"
     | "monitoring.plugin.noDeadLetters"

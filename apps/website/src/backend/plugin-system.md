@@ -113,7 +113,6 @@ def register() -> PluginManifest:
         on_startup=[init_resources],
         on_shutdown=[cleanup_resources],
         event_listeners=[(MyEvent, on_my_event, 0)],
-        health_check=check_health,
         dependency_overrides={placeholder_fn: real_fn},
         middlewares=[MiddlewareDef(cls=MyMiddleware, kwargs={}, order=10)],
     )
@@ -133,7 +132,6 @@ def register() -> PluginManifest:
 | `on_startup`           | `list[Callable[[FastAPI], Coroutine]]` | `[]`   | 应用启动时的异步回调                          |
 | `on_shutdown`          | `list[Callable[[FastAPI], Coroutine]]` | `[]`   | 应用关闭时的异步回调                          |
 | `event_listeners`      | `list[tuple]`                          | `[]`   | 事件监听器 `(EventType, handler[, priority])` |
-| `health_check`         | `Callable \| None`                     | `None` | 异步健康检查回调                              |
 | `dependency_overrides` | `dict[Callable, Callable]`             | `{}`   | FastAPI 依赖注入覆盖                          |
 | `middlewares`          | `list[MiddlewareDef]`                  | `[]`   | 插件中间件声明                                |
 
@@ -575,28 +573,6 @@ plugin_metrics 加载失败
 - `required=True` 的插件依赖了失败插件 → `PluginLoadError` 阻止启动
 - 所有错误信息通过 `PluginLoadResult.errors` 结构化返回
 
-### 健康检查
-
-```python
-async def check_health() -> dict:
-    """返回插件健康状态。"""
-    try:
-        await some_dependency.ping()
-        return {"status": "healthy", "latency_ms": 2.1}
-    except Exception as e:
-        return {"status": "unhealthy", "error": str(e)}
-
-
-def register() -> PluginManifest:
-    return PluginManifest(
-        name="hello",
-        version="0.1.0",
-        health_check=check_health,
-    )
-```
-
-通过 `GET /api/v1/system/health` 聚合查询所有插件和基础设施的健康状态。任一插件 unhealthy 则整体状态为 unhealthy。
-
 ### 可观测性
 
 框架自动采集插件运行指标：
@@ -780,7 +756,6 @@ uv run pytest apps/backend/tests/ -v
 - [ ] 声明权限标识（`permissions`）
 - [ ] 实现生命周期回调（`on_startup` / `on_shutdown`）
 - [ ] 定义事件和监听器（`event_listeners`）
-- [ ] 实现健康检查（`health_check`）
 - [ ] 声明中间件（`middlewares`）
 - [ ] 声明依赖注入覆盖（`dependency_overrides`）
 - [ ] 编写注册测试 + 跨插件导入检查

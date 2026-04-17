@@ -4,7 +4,6 @@ import { join } from "node:path"
 export interface PluginFeatures {
   dependencies: string[]
   eventListeners: boolean
-  healthCheck: boolean
   middleware: boolean
 }
 
@@ -52,17 +51,6 @@ export function generateInitPy(name: string, features: PluginFeatures): string {
     imports.push(`from ${moduleName}.middleware import ${pascal}Middleware`)
   }
 
-  // Build health check function
-  let healthCheckDef = ""
-  if (features.healthCheck) {
-    healthCheckDef = `
-
-async def check_health() -> dict:
-    """插件健康检查。"""
-    return {"status": "healthy"}
-`
-  }
-
   // Build PluginManifest fields
   const deps = features.dependencies.length > 0 ? `[${features.dependencies.map((d) => `"${d}"`).join(", ")}]` : "[]"
 
@@ -80,10 +68,6 @@ async def check_health() -> dict:
     fields.push(`        ],`)
   }
 
-  if (features.healthCheck) {
-    fields.push(`        health_check=check_health,`)
-  }
-
   if (features.middleware) {
     fields.push(`        middlewares=[`)
     fields.push(`            MiddlewareDef(cls=${pascal}Middleware, kwargs={}, order=0),`)
@@ -98,7 +82,7 @@ Date   : ${new Date().toISOString().split("T")[0]}
 """
 
 ${imports.join("\n")}
-${healthCheckDef}
+
 
 def register() -> PluginManifest:
     """Register the ${name} plugin."""
@@ -159,12 +143,6 @@ ${name} plugin API routes.
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/${name}", tags=["${name}"])
-
-
-@router.get("/health")
-async def health() -> dict[str, str]:
-    """Health check for the ${name} plugin."""
-    return {"status": "ok", "plugin": "${name}"}
 `
 }
 
@@ -220,15 +198,6 @@ export function generateTestRegister(name: string, features: PluginFeatures): st
   // Build conditional tests
   const conditionalTests: string[] = []
 
-  if (features.healthCheck) {
-    conditionalTests.push(`
-    def test_health_check_exists(self):
-        from ${moduleName} import register
-
-        m = register()
-        assert m.health_check is not None`)
-  }
-
   if (features.eventListeners) {
     conditionalTests.push(`
     def test_event_listeners_registered(self):
@@ -268,12 +237,6 @@ class Test${pascal}Register(unittest.TestCase):
         m = register()
         assert m.router is not None
 
-    def test_router_has_health_route(self):
-        from ${moduleName} import register
-
-        m = register()
-        routes = [r.path for r in m.router.routes]
-        assert "/${name}/health" in routes
 ${conditionalTests.join("\n")}
 
     def test_no_cross_plugin_imports(self):
