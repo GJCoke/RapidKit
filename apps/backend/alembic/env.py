@@ -20,7 +20,6 @@ PLUGIN_MODULES: list[str] = [
     "plugin_menu",
     "plugin_worker",
     "plugin_schedule",
-    "plugin_notification",
 ]
 
 for _mod_name in PLUGIN_MODULES:

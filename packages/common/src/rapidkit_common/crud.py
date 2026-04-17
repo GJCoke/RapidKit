@@ -76,15 +76,15 @@ class BaseSQLModelCRUD(Generic[SQLModel, CreateSchema, UpdateSchema]):
             raise RuntimeError("Session is not initialized.")
         return self._session
 
-    async def commit(self, auto_commit: bool = True) -> None:
+    async def commit(self, auto_commit: bool | None = None) -> None:
         """
         提交当前事务。
 
         Args:
-            auto_commit: 是否自动提交事务，默认 True。
+            auto_commit: 是否自动提交事务。None 时使用实例级默认值。
         """
-        auto_commit = auto_commit or self.auto_commit
-        if auto_commit:
+        should_commit = auto_commit if auto_commit is not None else self.auto_commit
+        if should_commit:
             await self.session.commit()
 
     @overload

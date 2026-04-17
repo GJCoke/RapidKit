@@ -55,23 +55,19 @@ def shutdown_worker(celery_app: Celery, hostname: str) -> None:
 def pool_grow(celery_app: Celery, hostname: str, n: int = 1) -> None:
     try:
         reply = celery_app.control.pool_grow(n, destination=[hostname], reply=True, timeout=5)
-        _check_pool_reply(reply, hostname, "pool_grow")
-    except AppException:
-        raise
     except Exception:
         logger.exception("Failed to pool_grow worker: {hostname}", hostname=hostname)
         raise AppException(StatusCode.WORKER_CONTROL_FAILED)
+    _check_pool_reply(reply, hostname, "pool_grow")
 
 
 def pool_shrink(celery_app: Celery, hostname: str, n: int = 1) -> None:
     try:
         reply = celery_app.control.pool_shrink(n, destination=[hostname], reply=True, timeout=5)
-        _check_pool_reply(reply, hostname, "pool_shrink")
-    except AppException:
-        raise
     except Exception:
         logger.exception("Failed to pool_shrink worker: {hostname}", hostname=hostname)
         raise AppException(StatusCode.WORKER_CONTROL_FAILED)
+    _check_pool_reply(reply, hostname, "pool_shrink")
 
 
 def _check_pool_reply(reply: list | None, hostname: str, action: str) -> None:
