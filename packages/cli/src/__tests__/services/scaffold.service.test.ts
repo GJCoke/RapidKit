@@ -191,7 +191,7 @@ describe("scaffoldPlugin", () => {
     const opts: ScaffoldOptions = {
       name: "foo",
       description: "The foo plugin",
-      features: { dependencies: [], eventListeners: false, healthCheck: false, middleware: false },
+      features: { dependencies: [], eventListeners: false, middleware: false },
     }
     scaffoldPlugin(tempDir, opts)
 
@@ -220,7 +220,7 @@ describe("scaffoldPlugin", () => {
     const opts: ScaffoldOptions = {
       name: "foo",
       description: "The foo plugin",
-      features: { dependencies: [], eventListeners: true, healthCheck: false, middleware: false },
+      features: { dependencies: [], eventListeners: true, middleware: false },
     }
     scaffoldPlugin(tempDir, opts)
 
@@ -233,7 +233,7 @@ describe("scaffoldPlugin", () => {
     const opts: ScaffoldOptions = {
       name: "foo",
       description: "The foo plugin",
-      features: { dependencies: [], eventListeners: false, healthCheck: false, middleware: true },
+      features: { dependencies: [], eventListeners: false, middleware: true },
     }
     scaffoldPlugin(tempDir, opts)
 
