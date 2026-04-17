@@ -173,6 +173,21 @@ cp .env.example .env
 使用裸机安装时，需要将 `POSTGRESQL_HOST` 改为 `127.0.0.1`，`REDIS_HOST` 改为 `127.0.0.1`。
 :::
 
+## 插件配置（可选）
+
+`apps/backend/plugins.toml` 控制插件的启用和禁用：
+
+```toml
+[plugins]
+auth = true
+worker = "${ENABLE_CELERY_MONITOR:false}"
+schedule = "${ENABLE_CELERY_MONITOR:false}"
+```
+
+未列出的插件默认启用。支持 `${ENV_VAR:default}` 环境变量展开。
+
+详细说明参见 [插件系统 - 插件发现机制](./plugin-system.md#插件发现机制)。
+
 ## 安装 Python 依赖
 
 ```bash

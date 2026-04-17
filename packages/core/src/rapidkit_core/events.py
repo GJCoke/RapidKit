@@ -9,7 +9,9 @@ Date   : 2026-04-14
 
 import asyncio
 import inspect
+from collections import deque
 from dataclasses import dataclass
+from datetime import datetime
 from fnmatch import fnmatch
 from itertools import groupby
 from typing import Callable, ClassVar
@@ -22,6 +24,15 @@ class Event:
     """事件基类。所有事件必须继承此类并定义 event_name。"""
 
     event_name: ClassVar[str]
+
+
+@dataclass
+class DeadLetter:
+    """未被任何 handler 处理的事件记录。"""
+
+    event_name: str
+    timestamp: datetime
+    source: str | None = None
 
 
 @dataclass
@@ -77,6 +88,18 @@ class EventBus:
         self._handlers: dict[type[Event], list[_HandlerEntry]] = {}
         self._pattern_handlers: list[_PatternEntry] = []
         self._pending_tasks: set[asyncio.Task] = set()
+        self._dead_letters: deque[DeadLetter] = deque(maxlen=100)
+        self._handler_errors: dict[str, int] = {}
+
+    @property
+    def dead_letters(self) -> list[DeadLetter]:
+        """返回死信记录列表（最多 100 条）。"""
+        return list(self._dead_letters)
+
+    @property
+    def handler_errors(self) -> dict[str, int]:
+        """返回 handler 错误计数 {event_name: count}。"""
+        return dict(self._handler_errors)
 
     # ==================== 注册 ====================
 
@@ -121,19 +144,23 @@ class EventBus:
         同优先级按注册顺序执行（sync 无法并发）。
         """
         entries = self._collect_handlers(event, source)
+        if not entries:
+            self._dead_letters.append(DeadLetter(event_name=event.event_name, timestamp=datetime.now(), source=source))
+            return
         for entry_handler, _ in entries:
             try:
                 if inspect.iscoroutinefunction(entry_handler):
                     logger.warning(
-                        "Async handler %s skipped in sync emit for event '%s'. Use async_emit() instead.",
+                        "Async handler {} skipped in sync emit for event '{}'. Use async_emit() instead.",
                         getattr(entry_handler, "__name__", repr(entry_handler)),
                         event.event_name,
                     )
                     continue
                 entry_handler(event)
             except Exception:
+                self._handler_errors[event.event_name] = self._handler_errors.get(event.event_name, 0) + 1
                 logger.exception(
-                    "Error in handler %s for event '%s'",
+                    "Error in handler {} for event '{}'",
                     getattr(entry_handler, "__name__", repr(entry_handler)),
                     event.event_name,
                 )
@@ -144,6 +171,7 @@ class EventBus:
         """
         entries = self._collect_handlers(event, source)
         if not entries:
+            self._dead_letters.append(DeadLetter(event_name=event.event_name, timestamp=datetime.now(), source=source))
             return
 
         sorted_entries = sorted(entries, key=lambda e: e[1])
@@ -182,8 +210,7 @@ class EventBus:
 
         return result
 
-    @staticmethod
-    async def _call_handler(handler: Callable, event: Event) -> None:
+    async def _call_handler(self, handler: Callable, event: Event) -> None:
         """安全调用单个 handler，异常不传播。"""
         try:
             if inspect.iscoroutinefunction(handler):
@@ -191,8 +218,9 @@ class EventBus:
             else:
                 handler(event)
         except Exception:
+            self._handler_errors[event.event_name] = self._handler_errors.get(event.event_name, 0) + 1
             logger.exception(
-                "Error in handler %s for event '%s'",
+                "Error in handler {} for event '{}'",
                 getattr(handler, "__name__", repr(handler)),
                 event.event_name,
             )

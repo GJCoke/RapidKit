@@ -80,7 +80,6 @@ export default defineConfig({
                 { text: "快速开始", link: "/backend/quickstart" },
                 { text: "架构概览", link: "/backend/architecture" },
                 { text: "插件系统", link: "/backend/plugin-system" },
-                { text: "插件开发", link: "/backend/plugin-development" },
                 { text: "数据库与 ORM", link: "/backend/database" },
                 { text: "中间件", link: "/backend/middleware" },
                 { text: "错误处理与状态码", link: "/backend/error-handling" },

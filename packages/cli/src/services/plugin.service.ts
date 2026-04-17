@@ -10,9 +10,9 @@ export interface Plugin {
   hasMigrations: boolean
 }
 
-export function discoverPlugins(): Plugin[] {
-  const ctx = getContext()
-  const pluginsRoot = resolve(ctx.cwd, PLUGINS_DIR)
+export function discoverPlugins(cwdOverride?: string): Plugin[] {
+  const cwd = cwdOverride ?? getContext().cwd
+  const pluginsRoot = resolve(cwd, PLUGINS_DIR)
 
   if (!existsSync(pluginsRoot)) return []
 
@@ -31,14 +31,14 @@ export function discoverPlugins(): Plugin[] {
     })
 }
 
-export function findPlugin(name: string): Plugin | undefined {
-  return discoverPlugins().find((p) => p.name === name)
+export function findPlugin(name: string, cwdOverride?: string): Plugin | undefined {
+  return discoverPlugins(cwdOverride).find((p) => p.name === name)
 }
 
-function syncAlembicIni(): boolean {
-  const ctx = getContext()
-  const iniPath = resolve(ctx.cwd, ALEMBIC_INI)
-  const plugins = discoverPlugins()
+function syncAlembicIni(cwdOverride?: string): boolean {
+  const cwd = cwdOverride ?? getContext().cwd
+  const iniPath = resolve(cwd, ALEMBIC_INI)
+  const plugins = discoverPlugins(cwdOverride)
 
   let content = readFileSync(iniPath, "utf-8")
   const match = content.match(/^version_locations\s*=\s*(.+(?:\n\s+.+)*)$/m)
@@ -67,10 +67,10 @@ function syncAlembicIni(): boolean {
   return changed
 }
 
-function syncAlembicEnv(): boolean {
-  const ctx = getContext()
-  const envPath = resolve(ctx.cwd, ALEMBIC_ENV)
-  const plugins = discoverPlugins()
+function syncAlembicEnv(cwdOverride?: string): boolean {
+  const cwd = cwdOverride ?? getContext().cwd
+  const envPath = resolve(cwd, ALEMBIC_ENV)
+  const plugins = discoverPlugins(cwdOverride)
 
   let content = readFileSync(envPath, "utf-8")
 
@@ -102,8 +102,8 @@ function syncAlembicEnv(): boolean {
   return changed
 }
 
-export function syncAlembicConfig(): boolean {
-  const iniChanged = syncAlembicIni()
-  const envChanged = syncAlembicEnv()
+export function syncAlembicConfig(cwdOverride?: string): boolean {
+  const iniChanged = syncAlembicIni(cwdOverride)
+  const envChanged = syncAlembicEnv(cwdOverride)
   return iniChanged || envChanged
 }

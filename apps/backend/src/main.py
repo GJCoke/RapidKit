@@ -8,6 +8,7 @@ Date   : 2025-03-10
 """
 
 import asyncio
+from pathlib import Path
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -73,7 +74,14 @@ def setup_middlewares(app: FastAPI) -> None:
     配置应用中间件。
 
     中间件的注册机制为 先进后出。
+    插件中间件在全局中间件之前注册，全局中间件更靠近请求入口。
     """
+    # 插件中间件（按 order 排序挂载）
+    from rapidkit_core.loader import mount_plugin_middlewares
+
+    mount_plugin_middlewares(app, getattr(app.state, "plugins", []))
+
+    # 全局中间件（基础设施层，最靠近请求入口）
     app.add_middleware(StateMiddleware)
     app.add_middleware(MetricsMiddleware)
     app.add_middleware(SlowAPIMiddleware)
@@ -200,34 +208,20 @@ def create_app() -> FastAPI:
 
     setup_logging_config()
 
-    # 加载插件（Phase 3 填充 PLUGIN_MODULES）
+    # 加载插件 — entry points 自动发现 + plugins.toml 配置
     from rapidkit_core.loader import discover_and_load_plugins
-
-    PLUGIN_MODULES: list[str] = [
-        "plugin_auth",
-        "plugin_script",
-        "plugin_monitoring",
-        "plugin_system",
-        "plugin_menu",
-        "plugin_user",
-    ]
-
-    if settings.ENABLE_CELERY_MONITOR:
-        PLUGIN_MODULES.append("plugin_worker")
-        PLUGIN_MODULES.append("plugin_schedule")
 
     app = FastAPI(**app_configs, lifespan=lifespan)
 
-    if PLUGIN_MODULES:
-        plugins = discover_and_load_plugins(PLUGIN_MODULES)
-        app.state.plugins = plugins
-    else:
-        app.state.plugins = []
+    result = discover_and_load_plugins(config_path=Path(__file__).resolve().parent.parent / "plugins.toml")
+    app.state.plugins = result.plugins
+    app.state.plugin_load_result = result
+    app.state.plugin_meta = result.meta
 
-    # 注册 auth 插件的 dependency_overrides
-    from plugin_auth import setup_dependency_overrides
+    # 按拓扑序应用插件声明的 dependency_overrides
+    from rapidkit_core.loader import apply_dependency_overrides
 
-    setup_dependency_overrides(app)
+    apply_dependency_overrides(app, result.plugins)
 
     app.mount("/socket.io", socket_app)
 

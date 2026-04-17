@@ -89,66 +89,105 @@ plugins/<name>/
 Every plugin exports a `register()` function that returns a `PluginManifest`:
 
 ```python
-from rapidkit_core.plugin import PluginManifest
+from rapidkit_core.plugin import MiddlewareDef, PluginManifest
+
+from plugin_my.events import MyEvent, on_my_event
+from plugin_my.middleware import MyMiddleware
+
+
+async def check_health() -> dict:
+    return {"status": "healthy"}
+
 
 def register() -> PluginManifest:
+    from plugin_my.api import router
+
     return PluginManifest(
         name="my_plugin",
         version="0.1.0",
-        router=router,                    # APIRouter instance
-        models=[MyModel],                 # SQLModel table classes
-        dependencies=["auth"],            # Other plugins this depends on
-        on_startup=[startup_callback],    # async def callback(app: FastAPI)
-        on_shutdown=[shutdown_callback],  # async def callback(app: FastAPI)
-        event_listeners=[("user.created", on_user_created)],
+        router=router,
+        models=[MyModel],
+        dependencies=["auth"],
+        on_startup=[startup_callback],
+        on_shutdown=[shutdown_callback],
+        event_listeners=[
+            (MyEvent, on_my_event),
+        ],
+        health_check=check_health,
+        dependency_overrides={
+            placeholder_dep: real_dep,
+        },
+        middlewares=[
+            MiddlewareDef(cls=MyMiddleware, kwargs={}, order=0),
+        ],
     )
 ```
 
 **PluginManifest fields:**
 
-| Field             | Type                         | Description                                       |
-| ----------------- | ---------------------------- | ------------------------------------------------- |
-| `name`            | `str`                        | Unique plugin name                                |
-| `version`         | `str`                        | Semver version                                    |
-| `router`          | `APIRouter \| None`          | FastAPI router to mount                           |
-| `models`          | `list[type]`                 | SQLModel table classes                            |
-| `dependencies`    | `list[str]`                  | Names of required plugins (topological sort)      |
-| `permissions`     | `list[PermissionDef]`        | Permission definitions                            |
-| `required`        | `bool`                       | Whether plugin failure is fatal (default `True`)  |
-| `on_startup`      | `list[Callable]`             | Async startup callbacks `(app: FastAPI) -> None`  |
-| `on_shutdown`     | `list[Callable]`             | Async shutdown callbacks `(app: FastAPI) -> None` |
-| `event_listeners` | `list[tuple[str, Callable]]` | Event bus listeners                               |
-| `health_check`    | `Callable \| None`           | Async health check returning `HealthStatus`       |
+| Field                  | Type                                        | Description                                                                          |
+| ---------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `name`                 | `str`                                       | Unique plugin name                                                                   |
+| `version`              | `str`                                       | Semver version                                                                       |
+| `router`               | `APIRouter \| None`                         | FastAPI router to mount                                                              |
+| `models`               | `list[type]`                                | SQLModel table classes                                                               |
+| `dependencies`         | `list[str \| PluginDependency]`             | Required plugins; supports version constraints via `PluginDependency`                |
+| `permissions`          | `list[PermissionDef]`                       | Permission definitions                                                               |
+| `required`             | `bool`                                      | Whether plugin failure is fatal (default `True`)                                     |
+| `on_startup`           | `list[Callable]`                            | Async startup callbacks `(app: FastAPI) -> None`                                     |
+| `on_shutdown`          | `list[Callable]`                            | Async shutdown callbacks `(app: FastAPI) -> None`                                    |
+| `event_listeners`      | `list[tuple[type[Event], Callable[, int]]]` | Typed event listeners; optional third element is priority (lower = first, default 0) |
+| `health_check`         | `Callable \| None`                          | Async health check returning dict or `HealthStatus`                                  |
+| `dependency_overrides` | `dict[Callable, Callable]`                  | FastAPI dependency overrides (same as `app.dependency_overrides`)                    |
+| `middlewares`          | `list[MiddlewareDef]`                       | Plugin middlewares; `order` controls position (lower = closer to request entry)      |
 
-### Plugin Loading
+### Plugin Discovery & Loading
 
-Plugins are loaded in `main.py` via:
+Plugins are discovered via **Python entry points** and configured via `plugins.toml`:
+
+**1. Entry Point declaration** (`pyproject.toml`):
+
+```toml
+[project.entry-points."rapidkit.plugins"]
+my_plugin = "plugin_my:register"
+```
+
+**2. Plugin configuration** (`apps/backend/plugins.toml`):
+
+```toml
+[plugins.worker]
+enabled = "${ENABLE_CELERY_MONITOR:false}"   # Environment variable with default
+
+[plugins.debug]
+enabled = false                               # Statically disabled
+```
+
+Plugins not listed in `plugins.toml` are **enabled by default**.
+
+**3. Loading flow** (`main.py`):
 
 ```python
 from rapidkit_core.loader import discover_and_load_plugins
 
-PLUGIN_MODULES = [
-    "plugin_auth", "plugin_script", "plugin_monitoring",
-    "plugin_system", "plugin_menu", "plugin_user",
-]
-
-plugins = discover_and_load_plugins(PLUGIN_MODULES)
+result = discover_and_load_plugins(config_path=Path(__file__).resolve().parent.parent / "plugins.toml")
+app.state.plugins = result.plugins           # Successfully loaded (topologically sorted)
+app.state.plugin_load_result = result        # Full result (plugins + disabled + errors + meta)
 ```
 
-Loading process: `importlib.import_module()` -> `register()` -> **Kahn topological sort** (respects `dependencies`) -> register event listeners.
+Loading process: `importlib.metadata.entry_points(group="rapidkit.plugins")` → `plugins.toml` filter → `register()` → version check (PEP 440) → **Kahn topological sort** → register event listeners → apply dependency overrides → mount middlewares.
 
 ### Existing Plugins
 
-| Plugin              | Package                      | Sub-domains            |
-| ------------------- | ---------------------------- | ---------------------- |
-| `plugin-auth`       | `rapidkit-plugin-auth`       | auth, role, router     |
-| `plugin-user`       | `rapidkit-plugin-user`       | user (depends on auth) |
-| `plugin-script`     | `rapidkit-plugin-script`     | script                 |
-| `plugin-monitoring` | `rapidkit-plugin-monitoring` | monitoring             |
-| `plugin-system`     | `rapidkit-plugin-system`     | system                 |
-| `plugin-worker`     | `rapidkit-plugin-worker`     | worker                 |
-| `plugin-menu`       | `rapidkit-plugin-menu`       | menu                   |
-| `plugin-schedule`   | `rapidkit-plugin-schedule`   | schedule               |
+| Plugin              | Package                      | Sub-domains            | Notes                                                         |
+| ------------------- | ---------------------------- | ---------------------- | ------------------------------------------------------------- |
+| `plugin-auth`       | `rapidkit-plugin-auth`       | auth, role, router     |                                                               |
+| `plugin-user`       | `rapidkit-plugin-user`       | user (depends on auth) |                                                               |
+| `plugin-script`     | `rapidkit-plugin-script`     | script                 |                                                               |
+| `plugin-monitoring` | `rapidkit-plugin-monitoring` | monitoring             |                                                               |
+| `plugin-system`     | `rapidkit-plugin-system`     | system                 | Exposes `/system/plugins`, `/system/events`, `/system/health` |
+| `plugin-worker`     | `rapidkit-plugin-worker`     | worker, task           | `plugins.toml`: `${ENABLE_CELERY_MONITOR}`                    |
+| `plugin-menu`       | `rapidkit-plugin-menu`       | menu                   |                                                               |
+| `plugin-schedule`   | `rapidkit-plugin-schedule`   | schedule               | `plugins.toml`: `${ENABLE_CELERY_MONITOR}`                    |
 
 ## Core Patterns
 
@@ -165,8 +204,9 @@ from rapidkit_core.status_codes import StatusCode
 from rapidkit_core.uuid7 import uuid7
 from rapidkit_core.nanoid import nanoid
 from rapidkit_core.security import ...
-from rapidkit_core.events import event_bus
+from rapidkit_core.events import Event, event_bus
 from rapidkit_core.context import ...
+from rapidkit_core.plugin import MiddlewareDef, PluginDependency, PluginManifest
 
 # Common business layer
 from rapidkit_common.models import SQLModel
@@ -417,9 +457,11 @@ DATETIME_FORMAT=%Y-%m-%d %H:%M:%S
 - NEVER use `datetime.now()` or `datetime.utcnow()` — always use `timezone.now()`
 - NEVER manually call `timezone.to_local().strftime()` in CRUD/Service layers for response data
 - NEVER use bare `datetime` as a field type in response schemas — always use `LocalDatetime`
+- NEVER use `from` or `import` inside function bodies unless necessary to break circular imports (e.g. `register()` importing `router` from `api.py`). All imports belong at the module top level.
 - ALWAYS use `Response[T]` envelope for API responses
 - ALWAYS follow the plugin directory structure: `__init__.py` (register), then domain dirs with `models.py`, `schemas.py`, `crud.py`, `services.py`, `api.py`, `deps.py`
 - ALWAYS declare inter-plugin dependencies in `PluginManifest.dependencies`
+- ALWAYS declare entry points in `pyproject.toml` under `[project.entry-points."rapidkit.plugins"]`
 - ALWAYS use `Annotated[Dep, Depends()]` pattern for dependency injection
 - ALWAYS import from `rapidkit_core` and `rapidkit_common` — never from old `src.common` or `src.core` paths
 - PREFER `PaginatedRequest` as base for any paginated query schema

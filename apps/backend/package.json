@@ -5,12 +5,12 @@
     "postinstall": "uv sync",
     "format": "uv run ruff check --fix src && uv run ruff format src",
     "typecheck": "uv run ty check src",
-    "dev": "uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 16000",
+    "dev": "HOST=0.0.0.0 PORT=16000 bash scripts/run-dev.sh",
     "worker": "uv run celery -A \"src.queues.app\" worker -l info",
     "beater": "uv run celery -A \"src.queues.app\" beat -S \"src.queues.scheduler:AsyncDatabaseScheduler\" -l info"
   },
   "engines": {
-    "python": ">=3.14.0",
-    "pip": ">=25.0.1"
+    "pip": ">=25.0.1",
+    "python": ">=3.14.0"
   }
 }

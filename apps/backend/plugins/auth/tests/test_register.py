@@ -67,7 +67,8 @@ class TestAuthRegister(unittest.TestCase):
                         violations.append(f"{py_file.name}: {node.module}")
         assert violations == [], f"Cross-plugin imports found: {violations}"
 
-    def test_setup_dependency_overrides_callable(self):
-        from plugin_auth import setup_dependency_overrides
+    def test_dependency_overrides_in_manifest(self):
+        from plugin_auth import register
 
-        assert callable(setup_dependency_overrides)
+        m = register()
+        assert len(m.dependency_overrides) == 2

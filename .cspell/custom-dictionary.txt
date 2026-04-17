@@ -209,3 +209,4 @@ oxlint
 oxfmt
 ircular
 sess
+delenv

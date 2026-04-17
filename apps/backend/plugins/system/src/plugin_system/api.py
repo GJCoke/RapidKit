@@ -16,18 +16,27 @@ from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import Response
 from rapidkit_core.config import settings
+from rapidkit_core.events import event_bus
+from rapidkit_core.plugin import HealthStatus, PluginManifest, PluginMeta
+from sqlalchemy.pool import QueuePool
 from sqlmodel import func, select
 
 from plugin_system.deps import ActivityLogCrudDep
 from plugin_system.push import _RESOURCE_KEY_PREFIX
 from plugin_system.schemas import (
     ActivityResponse,
+    AggregatedHealth,
     BusinessSummary,
+    DeadLetterResponse,
     ErrorStats,
+    EventBusStats,
     HealthStats,
     InfrastructureHealth,
     InstanceResourceStats,
     MultiResourceStats,
+    PluginErrorResponse,
+    PluginHealthStatus,
+    PluginStatusItem,
     ServiceHealth,
 )
 from plugin_system.services import (
@@ -133,6 +142,63 @@ async def get_infrastructure_health(session: SessionDep, redis: RedisDep) -> Res
     return Response(data=InfrastructureHealth(pg=pg_health, redis=redis_health, minio=minio_health))
 
 
+@router.get("/health", summary="聚合健康状态")
+async def get_aggregated_health(
+    request: Request,
+    session: SessionDep,
+    redis: RedisDep,
+) -> Response[AggregatedHealth]:
+    """聚合所有插件健康检查和基础设施状态。"""
+
+    plugins: list[PluginManifest] = getattr(request.app.state, "plugins", [])
+
+    # 收集插件健康状态
+    plugin_statuses: dict[str, PluginHealthStatus] = {}
+    for plugin in plugins:
+        if plugin.health_check is not None:
+            try:
+                status = await plugin.health_check()
+                plugin_statuses[plugin.name] = PluginHealthStatus(status=status.value)
+            except Exception as e:
+                plugin_statuses[plugin.name] = PluginHealthStatus(
+                    status=HealthStatus.UNHEALTHY.value,
+                    detail=str(e),
+                )
+        else:
+            plugin_statuses[plugin.name] = PluginHealthStatus(status=HealthStatus.HEALTHY.value)
+
+    # 基础设施状态
+    pg_health = await _check_pg(session)
+    redis_health = await _check_redis(redis)
+    minio_health = _check_minio()
+    infra = InfrastructureHealth(pg=pg_health, redis=redis_health, minio=minio_health)
+
+    # 推导整体状态
+    all_statuses = [ps.status for ps in plugin_statuses.values()]
+    for svc in [infra.pg, infra.redis, infra.minio]:
+        if svc.status == "down":
+            all_statuses.append(HealthStatus.UNHEALTHY.value)
+        elif svc.status == "degraded":
+            all_statuses.append(HealthStatus.DEGRADED.value)
+        else:
+            all_statuses.append(HealthStatus.HEALTHY.value)
+
+    if HealthStatus.UNHEALTHY.value in all_statuses:
+        overall = HealthStatus.UNHEALTHY.value
+    elif HealthStatus.DEGRADED.value in all_statuses:
+        overall = HealthStatus.DEGRADED.value
+    else:
+        overall = HealthStatus.HEALTHY.value
+
+    return Response(
+        data=AggregatedHealth(
+            status=overall,
+            plugins=plugin_statuses,
+            infrastructure=infra,
+        )
+    )
+
+
 @router.get("/stats/business", summary="业务数据汇总")
 async def get_business_summary(session: SessionDep) -> Response[BusinessSummary]:
     """获取各业务模块的数据总量。"""
@@ -170,6 +236,85 @@ async def get_activities(crud: ActivityLogCrudDep) -> Response[list[ActivityResp
     return Response(data=data)
 
 
+@router.get("/plugins", summary="插件状态列表")
+async def get_plugin_status(request: Request) -> Response[list[PluginStatusItem]]:
+    """返回所有插件的加载状态、版本、耗时和健康信息。"""
+
+    plugins = getattr(request.app.state, "plugins", [])
+    load_result = getattr(request.app.state, "plugin_load_result", None)
+    plugin_meta: dict[str, PluginMeta] = getattr(request.app.state, "plugin_meta", {})
+
+    items: list[PluginStatusItem] = []
+
+    # 已加载的插件
+    for plugin in plugins:
+        meta = plugin_meta.get(plugin.name)
+        health = None
+        if plugin.health_check is not None:
+            try:
+                health = (await plugin.health_check()).value
+            except Exception:
+                health = HealthStatus.UNHEALTHY.value
+
+        dep_names = [d if isinstance(d, str) else d.name for d in plugin.dependencies]
+
+        items.append(
+            PluginStatusItem(
+                name=plugin.name,
+                version=plugin.version,
+                status=meta.status if meta else "loaded",
+                required=plugin.required,
+                dependencies=dep_names,
+                load_time_ms=meta.register_ms if meta else None,
+                startup_time_ms=meta.startup_ms if meta else None,
+                health=health,
+            )
+        )
+
+    if load_result:
+        # 禁用的插件
+        for name in load_result.disabled:
+            items.append(PluginStatusItem(name=name, status="disabled"))
+
+        # 失败的插件
+        for name, error in load_result.errors.items():
+            items.append(
+                PluginStatusItem(
+                    name=name,
+                    status="failed",
+                    error=PluginErrorResponse(
+                        phase=error.phase,
+                        message=error.message,
+                        caused_by=error.caused_by,
+                    ),
+                )
+            )
+
+    return Response(data=items)
+
+
+@router.get("/events", summary="EventBus 统计")
+async def get_event_bus_stats() -> Response[EventBusStats]:
+    """返回 EventBus 的死信记录和 handler 错误统计。"""
+
+    dead_letters = [
+        DeadLetterResponse(
+            event_name=dl.event_name,
+            timestamp=dl.timestamp.isoformat(),
+            source=dl.source,
+        )
+        for dl in event_bus.dead_letters
+    ]
+
+    return Response(
+        data=EventBusStats(
+            handler_errors=event_bus.handler_errors,
+            dead_letters=dead_letters,
+            dead_letter_count=len(dead_letters),
+        )
+    )
+
+
 # ==================== 内部辅助函数 ====================
 
 
@@ -179,8 +324,6 @@ async def _check_pg(session: SessionDep) -> ServiceHealth:
         start = time.time()
         await session.exec(select(func.now()))
         latency = round((time.time() - start) * 1000, 2)
-
-        from sqlalchemy.pool import QueuePool
 
         engine = session.get_bind()
         pool = engine.pool  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]

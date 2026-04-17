@@ -6,6 +6,7 @@ Date   : 2025-03-17
 """
 
 import asyncio
+import time
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -42,10 +43,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         offline_checker_task = asyncio.create_task(check_worker_offline(socket))
         logger.info("Celery monitor enabled.")
 
-    # 执行插件 on_startup 回调
+    # 执行插件 on_startup 回调（追踪耗时）
+    plugin_meta = getattr(app.state, "plugin_meta", {})
     for plugin in getattr(app.state, "plugins", []):
+        t0 = time.perf_counter()
         for cb in plugin.on_startup:
             await cb(app)
+        startup_ms = (time.perf_counter() - t0) * 1000
+        if plugin.name in plugin_meta:
+            plugin_meta[plugin.name].startup_ms = round(startup_ms, 2)
 
     logger.info("Application startup complete.")
 

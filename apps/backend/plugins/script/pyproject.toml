@@ -8,6 +8,9 @@ dependencies = [
     "rapidkit-common",
 ]
 
+[project.entry-points."rapidkit.plugins"]
+script = "plugin_script:register"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

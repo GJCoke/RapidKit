@@ -9,6 +9,7 @@ rapidkit/
 ├── apps/                    # 应用层：可独立运行的应用
 │   ├── frontend/            # Vue 3 前端应用
 │   ├── backend/             # FastAPI 后端服务
+│   │   ├── plugins.toml     # 插件启用/禁用配置
 │   └── desktop/             # Electron 桌面客户端
 ├── packages/                # 共享层：多应用复用的功能模块
 │   ├── utils/               # 通用工具函数库

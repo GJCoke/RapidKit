@@ -1,0 +1,11 @@
+# apps/backend/plugins.toml
+#
+# 插件启用/禁用配置。
+# 未在此文件中列出的已发现插件默认启用。
+# 支持环境变量: enabled = "${ENV_VAR:default}"
+
+[plugins.worker]
+enabled = "${ENABLE_CELERY_MONITOR:true}"
+
+[plugins.schedule]
+enabled = "${ENABLE_CELERY_MONITOR:true}"

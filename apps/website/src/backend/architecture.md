@@ -118,7 +118,9 @@ def register() -> PluginManifest:
     )
 ```
 
-应用启动时，`main.py` 通过 `discover_and_load_plugins()` 加载所有插件，拓扑排序解析依赖顺序，自动注册路由到 `/api/v1/`。
+应用启动时，`discover_and_load_plugins()` 通过 Python Entry Points 自动发现所有已安装的插件，拓扑排序解析依赖顺序，自动注册路由到 `/api/v1/`。插件的启停通过 `plugins.toml` 配置文件控制。
+
+详细说明参见 [插件系统](./plugin-system.md)。
 
 ## 依赖关系规则
 
@@ -156,28 +158,32 @@ plugin_auth/role/api.py           # router.get("") → get_roles()
 
 ## 跨插件通信
 
-插件间通过 **EventBus** 松耦合通信，避免直接依赖：
+插件间通过类型化 **EventBus** 松耦合通信，避免直接依赖：
 
 ```python
-# 发布事件（plugin_auth）
-from rapidkit_core.events import event_bus
-await event_bus.emit("auth.login", {"user_id": user.id})
+from rapidkit_core.events import Event, event_bus
 
-# 订阅事件（plugin_system）
-@event_bus.on("auth.login", source="auth")
-async def on_user_login(data: dict) -> None:
-    await ActivityService.log(data["user_id"], "login")
+
+# 定义事件
+class UserLoginEvent(Event):
+    user_id: int
+    username: str
+
+
+# 发布事件（plugin_auth）
+await event_bus.async_emit(UserLoginEvent(user_id=user.id, username=user.name))
+
+
+# 订阅事件（plugin_system，通过 PluginManifest.event_listeners 声明）
+def on_user_login(event: UserLoginEvent) -> None:
+    ActivityService.log(event.user_id, "login")
 ```
+
+详细用法参见 [插件系统 - 事件总线](./plugin-system.md#事件总线-eventbus)。
 
 ## 如何新增插件
 
-使用 CLI 脚手架命令快速创建：
-
-```bash
-rapidkit create-plugin --name notification
-```
-
-详细步骤参见 [插件开发指南](./plugin-development.md)。
+详细步骤参见 [插件系统 - 插件开发清单](./plugin-system.md#插件开发清单)。
 
 ## 技术栈速览
 

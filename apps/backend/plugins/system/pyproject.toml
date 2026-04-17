@@ -9,6 +9,9 @@ dependencies = [
     "psutil>=7.0.0,<8.0",
 ]
 
+[project.entry-points."rapidkit.plugins"]
+system = "plugin_system:register"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

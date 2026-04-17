@@ -23,6 +23,22 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
 
+## Convention Discovery
+
+Before writing tasks, identify which project design skills apply to this plan based on the spec's tech stack and the files involved:
+
+- **Backend** (Python / FastAPI / SQLModel / Celery / Socketio) → Read and follow `rapidkit-backend-design` skill
+- **Frontend** (Vue / TypeScript / NaiveUI / UnoCSS) → Read and follow `rapidkit-frontend-design` skill
+- **CLI** (TypeScript) → Read and follow `rapidkit-cli-design` skill
+
+**Process:**
+
+1. Determine which layers this plan touches (backend, frontend, CLI, or multiple)
+2. For each layer, scan the corresponding design skill file to load project conventions, import paths, patterns, and rules
+3. All code blocks in the plan MUST conform to these conventions — no exceptions
+
+If a plan spans multiple layers (e.g., a new API endpoint + frontend page), load ALL relevant design skills and follow each in its respective code blocks.
+
 ## File Structure
 
 Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in.
@@ -97,13 +113,6 @@ def function(input):
 
 Run: `pytest tests/path/test.py::test_name -v`
 Expected: PASS
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add tests/path/test.py src/path/file.py
-git commit -m "feat: add specific feature"
-```
 ````
 
 ## No Placeholders

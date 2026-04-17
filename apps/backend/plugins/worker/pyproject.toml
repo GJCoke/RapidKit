@@ -10,6 +10,9 @@ dependencies = [
     "fastapi-sio-di>=0.4",
 ]
 
+[project.entry-points."rapidkit.plugins"]
+worker = "plugin_worker:register"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

@@ -95,6 +95,24 @@ class InfrastructureHealth(BaseModel):
     minio: ServiceHealth
 
 
+# ========== 插件健康聚合 ==========
+
+
+class PluginHealthStatus(BaseModel):
+    """单个插件的健康状态。"""
+
+    status: str  # healthy / degraded / unhealthy
+    detail: str | None = None
+
+
+class AggregatedHealth(BaseModel):
+    """聚合健康状态响应。"""
+
+    status: str  # healthy / degraded / unhealthy
+    plugins: dict[str, PluginHealthStatus]
+    infrastructure: InfrastructureHealth
+
+
 # ========== 业务汇总 ==========
 
 
@@ -125,3 +143,47 @@ class UserActivityTrend(BaseModel):
 
     time_bucket: LocalDatetime
     new_users: int
+
+
+# ========== 插件状态 ==========
+
+
+class PluginErrorResponse(BaseModel):
+    """插件加载错误。"""
+
+    phase: str
+    message: str
+    caused_by: str | None = None
+
+
+class PluginStatusItem(BaseModel):
+    """单个插件的状态信息。"""
+
+    name: str
+    version: str | None = None
+    status: str  # loaded / disabled / failed / degraded
+    required: bool | None = None
+    dependencies: list[str] | None = None
+    load_time_ms: float | None = None
+    startup_time_ms: float | None = None
+    health: str | None = None
+    error: PluginErrorResponse | None = None
+
+
+# ========== EventBus 可观测性 ==========
+
+
+class DeadLetterResponse(BaseModel):
+    """死信事件记录。"""
+
+    event_name: str
+    timestamp: str
+    source: str | None = None
+
+
+class EventBusStats(BaseModel):
+    """EventBus 统计信息。"""
+
+    handler_errors: dict[str, int]
+    dead_letters: list[DeadLetterResponse]
+    dead_letter_count: int

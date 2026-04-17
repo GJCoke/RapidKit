@@ -216,3 +216,69 @@ class TestFireAndForget:
         assert results == []
         await bus.shutdown(timeout=2.0)
         assert results == ["done"]
+
+
+class TestDeadLetters:
+    def test_emit_without_handler_records_dead_letter(self, _reset_bus):
+        bus = _reset_bus
+        bus.emit(FakeEvent(value="orphan"))
+        assert len(bus.dead_letters) == 1
+        assert bus.dead_letters[0].event_name == "test.fake"
+
+    @pytest.mark.asyncio
+    async def test_async_emit_without_handler_records_dead_letter(self, _reset_bus):
+        bus = _reset_bus
+        await bus.async_emit(FakeEvent(value="orphan"))
+        assert len(bus.dead_letters) == 1
+
+    def test_dead_letters_ring_buffer_max_100(self, _reset_bus):
+        bus = _reset_bus
+        for i in range(120):
+            bus.emit(FakeEvent(value=str(i)))
+        assert len(bus.dead_letters) == 100
+
+    def test_emit_with_handler_no_dead_letter(self, _reset_bus):
+        bus = _reset_bus
+        bus.on(FakeEvent, lambda e: None)
+        bus.emit(FakeEvent(value="handled"))
+        assert len(bus.dead_letters) == 0
+
+
+class TestHandlerErrorStats:
+    def test_handler_error_increments_counter(self, _reset_bus):
+        bus = _reset_bus
+
+        def bad_handler(e):
+            raise ValueError("boom")
+
+        bus.on(FakeEvent, bad_handler)
+        bus.emit(FakeEvent(value="x"))
+        assert bus.handler_errors.get("test.fake", 0) == 1
+
+    def test_multiple_errors_accumulate(self, _reset_bus):
+        bus = _reset_bus
+
+        def bad_handler(e):
+            raise ValueError("boom")
+
+        bus.on(FakeEvent, bad_handler)
+        bus.emit(FakeEvent(value="x"))
+        bus.emit(FakeEvent(value="y"))
+        assert bus.handler_errors["test.fake"] == 2
+
+    @pytest.mark.asyncio
+    async def test_async_handler_error_increments_counter(self, _reset_bus):
+        bus = _reset_bus
+
+        async def bad_handler(e):
+            raise ValueError("boom")
+
+        bus.on(FakeEvent, bad_handler)
+        await bus.async_emit(FakeEvent(value="x"))
+        assert bus.handler_errors.get("test.fake", 0) == 1
+
+    def test_no_errors_empty_dict(self, _reset_bus):
+        bus = _reset_bus
+        bus.on(FakeEvent, lambda e: None)
+        bus.emit(FakeEvent(value="ok"))
+        assert bus.handler_errors == {}

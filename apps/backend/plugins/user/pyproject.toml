@@ -9,6 +9,9 @@ dependencies = [
     "rapidkit-plugin-auth",
 ]
 
+[project.entry-points."rapidkit.plugins"]
+user = "plugin_user:register"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
