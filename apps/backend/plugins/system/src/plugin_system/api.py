@@ -34,8 +34,11 @@ from plugin_system.schemas import (
     InfrastructureHealth,
     InstanceResourceStats,
     MultiResourceStats,
+    PluginDependencyGraph,
+    PluginEdge,
     PluginErrorResponse,
     PluginHealthStatus,
+    PluginNode,
     PluginStatusItem,
     ServiceHealth,
 )
@@ -291,6 +294,42 @@ async def get_plugin_status(request: Request) -> Response[list[PluginStatusItem]
             )
 
     return Response(data=items)
+
+
+@router.get("/plugins/dependencies", summary="插件依赖关系图")
+async def get_plugin_dependencies(request: Request) -> Response[PluginDependencyGraph]:
+    """返回插件依赖关系图的节点和边，用于前端可视化。"""
+
+    plugins = getattr(request.app.state, "plugins", [])
+    load_result = getattr(request.app.state, "plugin_load_result", None)
+    plugin_meta: dict[str, PluginMeta] = getattr(request.app.state, "plugin_meta", {})
+
+    nodes: list[PluginNode] = []
+    edges: list[PluginEdge] = []
+
+    # 已加载的插件
+    for plugin in plugins:
+        meta = plugin_meta.get(plugin.name)
+        nodes.append(
+            PluginNode(
+                name=plugin.name,
+                version=plugin.version,
+                status=meta.status if meta else "loaded",
+                required=plugin.required,
+            )
+        )
+        for dep in plugin.dependencies:
+            dep_name = dep if isinstance(dep, str) else dep.name
+            edges.append(PluginEdge(source=plugin.name, target=dep_name))
+
+    if load_result:
+        for name in load_result.disabled:
+            nodes.append(PluginNode(name=name, status="disabled", required=False))
+
+        for name, error in load_result.errors.items():
+            nodes.append(PluginNode(name=name, status="failed", required=False))
+
+    return Response(data=PluginDependencyGraph(nodes=nodes, edges=edges))
 
 
 @router.get("/events", summary="EventBus 统计")

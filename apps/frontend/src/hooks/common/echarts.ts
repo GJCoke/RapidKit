@@ -1,10 +1,20 @@
 import { computed, effectScope, nextTick, onScopeDispose, shallowRef, watch } from "vue"
 import { useElementSize } from "@vueuse/core"
 import * as echarts from "echarts/core"
-import { BarChart, GaugeChart, LineChart, PictorialBarChart, PieChart, RadarChart, ScatterChart } from "echarts/charts"
+import {
+  BarChart,
+  GaugeChart,
+  GraphChart,
+  LineChart,
+  PictorialBarChart,
+  PieChart,
+  RadarChart,
+  ScatterChart,
+} from "echarts/charts"
 import type {
   BarSeriesOption,
   GaugeSeriesOption,
+  GraphSeriesOption,
   LineSeriesOption,
   PictorialBarSeriesOption,
   PieSeriesOption,
@@ -40,6 +50,7 @@ export type ECOption = echarts.ComposeOption<
   | PictorialBarSeriesOption
   | RadarSeriesOption
   | GaugeSeriesOption
+  | GraphSeriesOption
   | TitleComponentOption
   | LegendComponentOption
   | TooltipComponentOption
@@ -61,6 +72,7 @@ echarts.use([
   PieChart,
   ScatterChart,
   PictorialBarChart,
+  GraphChart,
   RadarChart,
   GaugeChart,
   LabelLayout,

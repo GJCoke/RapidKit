@@ -88,6 +88,10 @@ GUEST_INTERFACE_PERMISSIONS = [
     "GET:/api/v1/system/stats/api/distribution",
     "GET:/api/v1/system/stats/api/trend",
     "GET:/api/v1/system/stats/api/list",
+    # 插件管理 (只读)
+    "GET:/api/v1/system/plugins",
+    "GET:/api/v1/system/plugins/dependencies",
+    "GET:/api/v1/system/events",
 ]
 
 roles: list[RoleCreate] = [
@@ -118,6 +122,7 @@ roles: list[RoleCreate] = [
             "queue_task",
             "monitoring",
             "monitoring_api",
+            "monitoring_plugin",
         ],
         interface_permissions=GUEST_INTERFACE_PERMISSIONS,
         button_permissions=[],
@@ -568,7 +573,7 @@ async def create_menus(session: AsyncSession) -> None:
         route_name="monitoring_api",
         route_path="/monitoring/api",
         component="view.monitoring_api",
-        icon="material-symbols:api-rounded",
+        icon="streamline-ultimate:coding-apps-website-web-dev-api-cloud",
         icon_type=MenuIconType.ICONIFY,
         i18n_key="route.monitoring_api",
         interfaces=[
@@ -577,6 +582,26 @@ async def create_menus(session: AsyncSession) -> None:
             "GET:/api/v1/system/stats/api/distribution",
             "GET:/api/v1/system/stats/api/trend",
             "GET:/api/v1/system/stats/api/list",
+        ],
+    )
+
+    # 6.2 插件管理
+    monitoring_plugin = Menu(
+        id=uuid8(),
+        parent_id=monitoring_id,
+        menu_name="插件管理",
+        menu_type=MenuType.MENU,
+        order=2,
+        route_name="monitoring_plugin",
+        route_path="/monitoring/plugin",
+        component="view.monitoring_plugin",
+        icon="clarity:plugin-outline-badged",
+        icon_type=MenuIconType.ICONIFY,
+        i18n_key="route.monitoring_plugin",
+        interfaces=[
+            "GET:/api/v1/system/plugins",
+            "GET:/api/v1/system/plugins/dependencies",
+            "GET:/api/v1/system/events",
         ],
     )
 
@@ -605,6 +630,7 @@ async def create_menus(session: AsyncSession) -> None:
             script,
             monitoring,
             monitoring_api,
+            monitoring_plugin,
         ]
     )
     await session.commit()

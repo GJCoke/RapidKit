@@ -11,10 +11,15 @@ Date   : 2026-04-14
 from typing import Any
 
 from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
 from typing_extensions import Annotated, Doc
 
+_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login/swagger", auto_error=False)
 
-async def _verify_user_permission_placeholder() -> Any:
+
+async def _verify_user_permission_placeholder(
+    _token: str = Depends(_oauth2_scheme),
+) -> Any:
     """占位：由 auth 插件在启动时替换为真实实现。"""
     raise RuntimeError(
         "verify_user_permission has not been initialized. "
@@ -22,7 +27,9 @@ async def _verify_user_permission_placeholder() -> Any:
     )
 
 
-async def _get_current_user_placeholder() -> Any:
+async def _get_current_user_placeholder(
+    _token: str = Depends(_oauth2_scheme),
+) -> Any:
     """占位：由 auth 插件在启动时替换为真实实现。"""
     raise RuntimeError(
         "get_current_user has not been initialized. "

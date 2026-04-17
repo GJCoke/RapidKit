@@ -187,3 +187,29 @@ class EventBusStats(BaseModel):
     handler_errors: dict[str, int]
     dead_letters: list[DeadLetterResponse]
     dead_letter_count: int
+
+
+# ========== 插件依赖图 ==========
+
+
+class PluginNode(BaseModel):
+    """依赖图中的插件节点。"""
+
+    name: str
+    version: str | None = None
+    status: str  # loaded / disabled / failed
+    required: bool = True
+
+
+class PluginEdge(BaseModel):
+    """依赖图中的边（source 依赖 target）。"""
+
+    source: str
+    target: str
+
+
+class PluginDependencyGraph(BaseModel):
+    """插件依赖关系图。"""
+
+    nodes: list[PluginNode]
+    edges: list[PluginEdge]

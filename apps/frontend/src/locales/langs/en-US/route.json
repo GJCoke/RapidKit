@@ -8,6 +8,7 @@
   "manage": "System Manage",
   "monitoring": "Monitoring",
   "monitoring_api": "API Monitoring",
+  "monitoring_plugin": "Plugin Monitoring",
   "manage_menu": "Menu Manage",
   "manage_role": "Role Manage",
   "manage_user": "User Manage",

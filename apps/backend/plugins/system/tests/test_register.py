@@ -27,6 +27,7 @@ class TestSystemRegister:
         assert "/system/stats/errors" in routes
         assert "/system/stats/health" in routes
         assert "/system/activities" in routes
+        assert "/system/plugins/dependencies" in routes
 
     def test_no_cross_plugin_imports(self):
         """plugin_system 允许导入 plugin_menu、plugin_auth、plugin_script（声明依赖）。"""

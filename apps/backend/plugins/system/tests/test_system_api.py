@@ -101,3 +101,38 @@ class TestActivityLog:
         body = resp.json()
         assert body["code"] == 0
         assert isinstance(body["data"], list)
+
+
+class TestPluginDependencies:
+    async def test_get_dependencies(self, client: AsyncClient, init, auth_headers: dict):
+        resp = await client.get("/system/plugins/dependencies", headers=auth_headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        data = body["data"]
+        assert "nodes" in data
+        assert "edges" in data
+        assert isinstance(data["nodes"], list)
+        assert isinstance(data["edges"], list)
+        # At least the system plugin should be present
+        node_names = [n["name"] for n in data["nodes"]]
+        assert "system" in node_names
+
+    async def test_dependencies_have_edges_for_system(self, client: AsyncClient, init, auth_headers: dict):
+        resp = await client.get("/system/plugins/dependencies", headers=auth_headers)
+        body = resp.json()
+        data = body["data"]
+        # system plugin depends on auth, menu, script
+        system_edges = [e for e in data["edges"] if e["source"] == "system"]
+        target_names = {e["target"] for e in system_edges}
+        assert "auth" in target_names
+        assert "menu" in target_names
+        assert "script" in target_names
+
+    async def test_nodes_have_required_fields(self, client: AsyncClient, init, auth_headers: dict):
+        resp = await client.get("/system/plugins/dependencies", headers=auth_headers)
+        body = resp.json()
+        for node in body["data"]["nodes"]:
+            assert "name" in node
+            assert "status" in node
+            assert node["status"] in ("loaded", "disabled", "failed", "degraded")

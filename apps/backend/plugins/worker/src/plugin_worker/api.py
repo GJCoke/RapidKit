@@ -174,7 +174,7 @@ async def get_reserved_tasks_endpoint(
 
 # ==================== Task Routes ====================
 
-task_router = APIRouter(prefix="/tasks", tags=["Task"])
+task_router = APIRouter(prefix="/tasks", tags=["Task"], dependencies=[Depends(verify_user_permission)])
 
 
 @task_router.get("")
