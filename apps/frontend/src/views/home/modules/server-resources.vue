@@ -79,16 +79,25 @@
     }
   }
 
-  const { domRef: cpuRef, setOptions: setCpu } = useEcharts(() => gaugeOption("CPU", 0))
-  const { domRef: memRef, setOptions: setMem } = useEcharts(() => gaugeOption($t("page.home.dashboard.memory"), 0))
-  const { domRef: diskRef, setOptions: setDisk } = useEcharts(() => gaugeOption($t("page.home.dashboard.disk"), 0))
+  const { domRef: cpuRef, updateOptions: setCpu } = useEcharts(() => gaugeOption("CPU", 0))
+  const { domRef: memRef, updateOptions: setMem } = useEcharts(() => gaugeOption($t("page.home.dashboard.memory"), 0))
+  const { domRef: diskRef, updateOptions: setDisk } = useEcharts(() => gaugeOption($t("page.home.dashboard.disk"), 0))
 
   watch(
     () => props.resources,
     (r) => {
-      setCpu(gaugeOption("CPU", r.cpuPercent))
-      setMem(gaugeOption($t("page.home.dashboard.memory"), r.memoryPercent))
-      setDisk(gaugeOption($t("page.home.dashboard.disk"), r.diskPercent))
+      setCpu((opts) => {
+        opts.series = gaugeOption("CPU", r.cpuPercent).series
+        return opts
+      })
+      setMem((opts) => {
+        opts.series = gaugeOption($t("page.home.dashboard.memory"), r.memoryPercent).series
+        return opts
+      })
+      setDisk((opts) => {
+        opts.series = gaugeOption($t("page.home.dashboard.disk"), r.diskPercent).series
+        return opts
+      })
     },
     { deep: true },
   )

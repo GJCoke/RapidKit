@@ -4,7 +4,7 @@ from rapidkit_core.config import settings
 from rapidkit_core.context import ctx
 from starlette_context.errors import ContextDoesNotExistError
 
-from src.locales.types import I18nKey
+from src.locales.types import LANGUAGE_TYPE, I18nKey
 from src.locales.utils import load_and_flatten_locales
 
 
@@ -36,7 +36,7 @@ class I18n:
             return settings.DEFAULT_LANGUAGE
 
     @current_language.setter
-    def current_language(self, language: str) -> None:
+    def current_language(self, language: LANGUAGE_TYPE) -> None:
         """
         设置上下文中的当前语言。
 
@@ -45,11 +45,12 @@ class I18n:
         """
         ctx.language = language
 
-    def t(self, key: I18nKey, language: str | None = None, **kwargs) -> str:
+    def t(self, key: I18nKey, language: LANGUAGE_TYPE | None = None, **kwargs) -> str:
         """
         基于当前语言设置获取和格式化本地化字符串。
 
         Args:
+            language: 语言
             key: 要查找的本地化键。
             **kwargs: 用于格式化字符串的附加关键字参数。
 
@@ -59,6 +60,7 @@ class I18n:
         data = self.locales.get(language or self.current_language, {})
         return data.get(key, key).format(**kwargs)
 
+    @staticmethod
     def is_i18n_key(value: str) -> bool:
         """
         判断给定的值是否为 i18n 翻译键。

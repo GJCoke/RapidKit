@@ -7,7 +7,7 @@ Date   : 2026-04-02
 
 from uuid import UUID
 
-from plugin_auth.auth.deps import refresh_structure
+from plugin_auth.auth.deps import refresh_structure, user_structure
 from plugin_auth.auth.models import User
 from plugin_auth.auth.services import decrypt_password
 from plugin_auth.role.deps import permission_structure
@@ -27,11 +27,12 @@ def filter_user(status: Status | None, keyword: str) -> list[ColumnElement[bool]
         filters.append(col(User.status) == status)
 
     if keyword:
+        escaped = keyword.replace("%", r"\%").replace("_", r"\_")
         filters.append(
             or_(
-                col(User.name).like(f"%{keyword}%"),
-                col(User.username).like(f"%{keyword}%"),
-                col(User.email).like(f"%{keyword}%"),
+                col(User.name).like(f"%{escaped}%"),
+                col(User.username).like(f"%{escaped}%"),
+                col(User.email).like(f"%{escaped}%"),
             )
         )
 
@@ -42,6 +43,12 @@ def process_password(rsa_password: str) -> bytes:
     """解密 RSA 加密的密码并生成 bcrypt 哈希。"""
     decrypted = decrypt_password(rsa_password)
     return hash_password(decrypted)
+
+
+async def invalidate_user_cache(redis: AsyncRedisClient, user_id: UUID) -> None:
+    """清除指定用户的信息缓存。"""
+    redis_key = user_structure.format(user_id=user_id)
+    await redis.delete(redis_key)
 
 
 async def invalidate_user_permission_cache(redis: AsyncRedisClient, user_id: UUID) -> None:
@@ -65,8 +72,6 @@ async def invalidate_users_by_role_code(
     session: AsyncSession,
 ) -> None:
     """根据角色编码查找所有拥有该角色的用户，并清除其权限缓存。"""
-    result = await session.exec(select(User))
-    users = result.all()
-    for user in users:
-        if role_code in (user.roles or []):
-            await invalidate_user_permission_cache(redis, user.id)
+    result = await session.exec(select(User.id).where(col(User.roles).contains(role_code)))
+    for user_id in result.all():
+        await invalidate_user_permission_cache(redis, user_id)

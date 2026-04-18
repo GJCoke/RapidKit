@@ -28,8 +28,8 @@ class EventService:
 
     def __init__(self, session: AsyncSession, sio: AsyncServer) -> None:
         self.session = session
-        self.worker_crud = WorkerCRUD(CeleryWorker, session=session)
-        self.task_crud = TaskResultCRUD(CeleryTaskResult, session=session)
+        self.worker_crud = WorkerCRUD(session)
+        self.task_crud = TaskResultCRUD(session)
         self.sio = sio
 
     def _log_activity(self, event_type: str, params: dict | None = None, detail: str | None = None) -> None:

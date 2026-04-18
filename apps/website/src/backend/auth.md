@@ -131,23 +131,61 @@ async def verify_user_permission(user: UserDBDep, route: RequestRouterDep, redis
     return user
 ```
 
+## 用户信息缓存
+
+`get_current_user_form_db` 依赖使用 Redis 缓存避免每次请求都查库：
+
+| 配置项    | 值                           |
+| --------- | ---------------------------- |
+| Redis Key | `auth:user:<{user_id}>`      |
+| TTL       | 与 Access Token 过期时间一致 |
+| 序列化    | JSON（排除 `password` 字段） |
+
+**读取流程：**
+
+1. 解析 Access Token 获取 `user_id`
+2. 查 Redis 缓存 → 命中：反序列化返回
+3. 缓存 miss → 查数据库 → 写入 Redis（排除密码）→ 返回
+
+**失效时机：**
+
+- 更新用户信息（`update_user`）
+- 删除用户（`delete_user`）
+- 批量删除用户（`batch_delete_users`）
+
+:::info
+登录流程（`user_login` → `crud.get_by_username()`）不经过此缓存，始终从数据库读取最新数据。
+:::
+
+## 类型协议（UserProtocol）
+
+`rapidkit_common.auth` 定义了 `UserProtocol` 协议类型，提供 `User` 模型的最小接口：
+
+```python
+class UserProtocol(Protocol):
+    id: UUID
+    is_admin: bool
+    roles: list[str]
+```
+
+其他插件通过 `UserDBDep`（类型为 `UserProtocol`）获取当前用户，无需直接依赖 `plugin_auth` 的 `User` 模型。这实现了类型安全的跨插件解耦。
+
 ## 依赖注入
 
 项目提供多个认证相关的 FastAPI 依赖项，按需选用：
 
-| 依赖                  | 说明                                                |
-| --------------------- | --------------------------------------------------- |
-| `UserAccessJWTDep`    | 仅解析 Access Token，返回 JWT payload（不查数据库） |
-| `UserDBDep`           | 解析 Token 后查数据库，返回完整 `User` 模型         |
-| `UserRefreshDep`      | 校验 Refresh Token（Redis + DB），用于 Token 刷新   |
-| `VerifyPermissionDep` | 完整权限校验，含 RBAC 接口权限判断                  |
-| `AuthCrudDep`         | 注入 `UserCRUD` 实例                                |
+| 依赖                  | 说明                                                         |
+| --------------------- | ------------------------------------------------------------ |
+| `UserAccessJWTDep`    | 仅解析 Access Token，返回 JWT payload（不查数据库）          |
+| `UserDBDep`           | 解析 Token 后查 Redis/数据库，返回 `UserProtocol` 类型       |
+| `UserRefreshDep`      | 校验 Refresh Token（Redis + DB），用于 Token 刷新            |
+| `VerifyPermissionDep` | 完整权限校验，含 RBAC 接口权限判断，返回 `UserProtocol` 类型 |
+| `AuthCrudDep`         | 注入 `UserCRUD` 实例                                         |
 
 在路由中使用：
 
 ```python
-from src.domains.auth.deps import UserDBDep
-from src.domains.role.deps import VerifyPermissionDep
+from rapidkit_common.auth import UserDBDep, VerifyPermissionDep
 
 
 # 仅需登录认证

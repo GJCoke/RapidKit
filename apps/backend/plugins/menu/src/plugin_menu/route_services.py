@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from plugin_auth.auth.models import User
     from plugin_auth.role.crud import RoleCRUD
+    from rapidkit_common.auth import UserProtocol
 
 from rapidkit_common.enums import MenuIconType, Status
 from sqlmodel import col, select
@@ -97,7 +97,7 @@ async def get_constant_routes(session: AsyncSession) -> list[MenuRouteResponse]:
 
 
 async def get_user_routes(
-    user: User,
+    user: "UserProtocol",
     session: AsyncSession,
     role_crud: RoleCRUD,
 ) -> UserRouteResponse:

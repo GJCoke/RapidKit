@@ -5,36 +5,34 @@ Author : Coke
 Date   : 2025-05-18
 """
 
-from rapidkit_common.crud import BaseSQLModelCRUD
+from rapidkit_common.crud import BaseCRUD
 from rapidkit_common.schemas.response import PaginatedResponse
 from sqlalchemy import ColumnExpressionArgument
 from sqlmodel import col, select
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_menu.models import Menu
-from plugin_menu.schemas import MenuCreate, MenuListResponse, MenuUpdate
+from plugin_menu.schemas import MenuListResponse
 
 
-class MenuCRUD(BaseSQLModelCRUD[Menu, MenuCreate, MenuUpdate]):
+class MenuCRUD(BaseCRUD[Menu]):
     """基于 SQLAlchemy 的菜单 CRUD 操作。"""
+
+    model = Menu
 
     async def get_menu_paginated_tree(
         self,
         *args: ColumnExpressionArgument[bool],
         page: int = 1,
         page_size: int = 10,
-        session: AsyncSession | None = None,
     ) -> PaginatedResponse[MenuListResponse]:
         """获取分页的菜单树（按根节点分页）"""
-        session = session or self.session
 
         root_pagination = await self.get_paginate(
             *args,
             page=page,
             size=page_size,
             order_by=col(self.model.order),
-            serializer=MenuListResponse,
-            session=session,
+            schema=MenuListResponse,
         )
 
         if not root_pagination.records:
@@ -42,8 +40,7 @@ class MenuCRUD(BaseSQLModelCRUD[Menu, MenuCreate, MenuUpdate]):
 
         all_menus = await self.get_all(
             order_by=col(self.model.order),
-            session=session,
-            serializer=MenuListResponse,
+            schema=MenuListResponse,
         )
 
         menu_map = {menu.id: menu for menu in all_menus}
@@ -61,12 +58,11 @@ class MenuCRUD(BaseSQLModelCRUD[Menu, MenuCreate, MenuUpdate]):
 
         return root_pagination
 
-    async def get_menu_tree(self, *, session: AsyncSession) -> list[MenuListResponse]:
+    async def get_menu_tree(self) -> list[MenuListResponse]:
         """获取整个菜单树"""
-        session = session or self.session
 
         statement = select(Menu).order_by(col(Menu.order))
-        result = await session.exec(statement)
+        result = await self.session.exec(statement)
         response = result.all()
 
         menu_list = [MenuListResponse.model_validate(m) for m in response]

@@ -7,6 +7,8 @@
 
 import re
 
+_PASSWORD_PATTERN = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,20}$")
+
 
 def is_valid_password(value: str) -> bool:
     """
@@ -19,5 +21,4 @@ def is_valid_password(value: str) -> bool:
     - 可包含字母、数字和特殊字符：@$!%*?&
     - 长度为8到20个字符
     """
-    password_pattern = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,20}$")
-    return bool(re.match(password_pattern, value))
+    return bool(_PASSWORD_PATTERN.match(value))

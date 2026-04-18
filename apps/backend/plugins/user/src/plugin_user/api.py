@@ -29,6 +29,7 @@ from plugin_user.schemas import (
 )
 from plugin_user.services import (
     filter_user,
+    invalidate_user_cache,
     invalidate_user_permission_cache,
     invalidate_user_session,
     process_password,
@@ -78,7 +79,7 @@ async def get_users(
 ) -> Response[PaginatedResponse[UserManageResponse]]:
     """获取分页的用户列表。"""
     filters = filter_user(query.status, query.keyword)
-    users = await user_crud.get_paginate(*filters, page=query.page, size=query.page_size, serializer=UserManageResponse)
+    users = await user_crud.get_paginate(*filters, page=query.page, size=query.page_size, schema=UserManageResponse)
     return Response(data=users)
 
 
@@ -105,7 +106,7 @@ async def create_user(
     hashed_password = process_password(body.password)
     create_data = body.model_dump()
     create_data["password"] = hashed_password
-    user = await user_crud.create(create_data, validate=False)
+    user = await user_crud.create(create_data)
     logger.info("[User] User created: {user_id} by {operator}", user_id=user.id, operator=current_user.id)
     return Response(data=UserManageResponse.model_validate(user))
 
@@ -131,11 +132,12 @@ async def update_user(
             del update_data["password"]
 
     if "roles" in update_data:
-        current_user = await user_crud.get(user_id, nullable=False)
-        if set(update_data["roles"]) != set(current_user.roles or []):
+        target_user = await user_crud.get(user_id, nullable=False)
+        if set(update_data["roles"]) != set(target_user.roles or []):
             await invalidate_user_permission_cache(redis, user_id)
 
     user = await user_crud.update_by_id(user_id, update_data)
+    await invalidate_user_cache(redis, user_id)
     logger.info("[User] User updated: {user_id}", user_id=user_id)
     return Response(data=UserManageResponse.model_validate(user))
 
@@ -157,6 +159,7 @@ async def delete_user(
 
     await user_crud.delete(user_id)
     logger.warning("[User] User deleted: {user_id} by {operator}", user_id=user_id, operator=current_user.id)
+    await invalidate_user_cache(redis, user_id)
     await invalidate_user_session(redis, user_id)
     return Response(data=True)
 
@@ -184,6 +187,7 @@ async def batch_delete_users(
     )
 
     for uid in body.ids:
+        await invalidate_user_cache(redis, uid)
         await invalidate_user_session(redis, uid)
 
     return Response(data=True)

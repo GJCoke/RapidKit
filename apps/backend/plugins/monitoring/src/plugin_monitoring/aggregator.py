@@ -16,7 +16,6 @@ from redis.asyncio import Redis as AsyncRedis
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from plugin_monitoring.crud import ApiMetricsCRUD
-from plugin_monitoring.models import ApiMetricsHourly
 
 # Redis key 模式
 _QPS_PATTERN = re.compile(r"^metrics:api:(\d{8}_\d{4}):(\w+):(.+)$")
@@ -95,7 +94,7 @@ async def aggregate_once(redis: AsyncRedis, session_factory: async_sessionmaker)
     time_bucket = now.replace(minute=0, second=0, microsecond=0)
 
     async with session_factory() as session:
-        crud = ApiMetricsCRUD(ApiMetricsHourly, session=session)
+        crud = ApiMetricsCRUD(session)
 
         for (method, path), data in grouped.items():
             count = data["count"]
@@ -112,11 +111,14 @@ async def aggregate_once(redis: AsyncRedis, session_factory: async_sessionmaker)
                 p95_ms=p95_ms,
             )
 
+        await session.commit()
+
 
 async def cleanup_old_metrics(session_factory: async_sessionmaker, days: int = 7) -> None:
     """清理过期的 API 指标归档数据。"""
     async with session_factory() as session:
-        crud = ApiMetricsCRUD(ApiMetricsHourly, session=session)
+        crud = ApiMetricsCRUD(session)
         deleted = await crud.cleanup_old(days=days)
+        await session.commit()
         if deleted:
             logger.info("Cleaned up {deleted} expired API metrics rows.", deleted=deleted)

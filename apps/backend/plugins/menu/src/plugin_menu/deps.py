@@ -10,11 +10,10 @@ from rapidkit_common.deps import SessionDep
 from typing_extensions import Annotated, Doc
 
 from plugin_menu.crud import MenuCRUD
-from plugin_menu.models import Menu
 
 
 async def get_menu_crud(session: SessionDep) -> MenuCRUD:
-    return MenuCRUD(Menu, session=session)
+    return MenuCRUD(session)
 
 
 MenuCrudDep = Annotated[

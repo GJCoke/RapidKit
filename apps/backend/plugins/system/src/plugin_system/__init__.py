@@ -46,6 +46,7 @@ async def _on_activity_event(event: ActivityLogEvent) -> None:
             source_ip=event.source_ip,
             sio=_sio,
         )
+        await session.commit()
 
 
 def register() -> PluginManifest:

@@ -12,7 +12,8 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI
 from rapidkit_core.config import settings
-from rapidkit_core.database import RedisManager
+from rapidkit_core.database import RedisManager, async_engine, sync_engine
+from rapidkit_core.events import event_bus
 from rapidkit_core.log import logger
 
 from src.locales.watch import watch_locale_files
@@ -33,6 +34,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         watch_task = asyncio.create_task(watch_locale_files())
 
     RedisManager.connect()
+    await event_bus.start_subscriber()
 
     consumer_task = None
     offline_checker_task = None
@@ -69,6 +71,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if watch_task:
         watch_task.cancel()
 
+    await event_bus.shutdown()
     await RedisManager.clear()
+    await async_engine.dispose()
+    sync_engine.dispose()
 
     logger.info("Application shutdown complete.")

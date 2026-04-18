@@ -11,7 +11,6 @@ from rapidkit_core.status_codes import StatusCode
 from typing_extensions import Annotated, Doc
 
 from plugin_auth.router.crud import RouterCRUD
-from plugin_auth.router.models import InterfaceRouter
 
 
 async def get_request_router(request: Request) -> APIRoute:
@@ -22,7 +21,7 @@ async def get_request_router(request: Request) -> APIRoute:
 
 
 async def get_router_crud(session: SessionDep) -> RouterCRUD:
-    return RouterCRUD(InterfaceRouter, session=session)
+    return RouterCRUD(session)
 
 
 RequestRouterDep = Annotated[

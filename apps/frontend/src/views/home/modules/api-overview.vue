@@ -12,7 +12,7 @@
   }>()
 
   // Pie chart
-  const { domRef: pieRef, setOptions: setPieChart } = useEcharts(() => ({
+  const { domRef: pieRef, updateOptions: setPieChart } = useEcharts(() => ({
     tooltip: { trigger: "item" as const, formatter: "{b}: {c} ({d}%)" },
     legend: { show: false },
     series: [
@@ -29,7 +29,7 @@
   }))
 
   // Sparkline
-  const { domRef: sparkRef, setOptions: setSparkChart } = useEcharts(() => ({
+  const { domRef: sparkRef, updateOptions: setSparkChart } = useEcharts(() => ({
     grid: { left: 0, right: 0, top: 4, bottom: 0 },
     xAxis: { type: "category" as const, show: false, data: [] as string[] },
     yAxis: { type: "value" as const, show: false },
@@ -49,15 +49,12 @@
   watch(
     () => props.distribution,
     (data) => {
-      setPieChart({
-        series: [
-          {
-            data: data.map((d) => ({
-              name: `${d.method} ${d.path}`,
-              value: d.requestCount,
-            })),
-          },
-        ],
+      setPieChart((opts) => {
+        opts.series[0].data = data.map((d) => ({
+          name: `${d.method} ${d.path}`,
+          value: d.requestCount,
+        }))
+        return opts
       })
     },
     { deep: true },
@@ -66,9 +63,10 @@
   watch(
     () => props.trend,
     (data) => {
-      setSparkChart({
-        xAxis: { data: data.map((d) => d.timeBucket) },
-        series: [{ data: data.map((d) => d.requestCount) }],
+      setSparkChart((opts) => {
+        opts.xAxis.data = data.map((d) => d.timeBucket)
+        opts.series[0].data = data.map((d) => d.requestCount)
+        return opts
       })
     },
     { deep: true },

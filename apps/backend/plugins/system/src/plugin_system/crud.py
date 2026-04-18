@@ -5,15 +5,16 @@ Author : Coke
 Date   : 2026-04-10
 """
 
-from rapidkit_common.crud import BaseSQLModelCRUD
-from rapidkit_common.schemas.base import BaseModel
+from rapidkit_common.crud import BaseCRUD
 from sqlmodel import col, select
 
 from plugin_system.models import ActivityLog
 
 
-class ActivityLogCRUD(BaseSQLModelCRUD[ActivityLog, BaseModel, BaseModel]):
+class ActivityLogCRUD(BaseCRUD[ActivityLog]):
     """活动日志 CRUD。"""
+
+    model = ActivityLog
 
     async def get_recent(self, limit: int = 15) -> list[ActivityLog]:
         """获取最近的活动日志。"""

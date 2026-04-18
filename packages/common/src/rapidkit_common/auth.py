@@ -8,18 +8,28 @@ Author : Coke
 Date   : 2026-04-14
 """
 
-from typing import Any
+from typing import Protocol
+from uuid import UUID
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from typing_extensions import Annotated, Doc
+
+
+class UserProtocol(Protocol):
+    """用户模型的最小接口协议，供类型检查使用。"""
+
+    id: UUID
+    is_admin: bool
+    roles: list[str]
+
 
 _oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login/swagger", auto_error=False)
 
 
 async def _verify_user_permission_placeholder(
     _token: str = Depends(_oauth2_scheme),
-) -> Any:
+) -> UserProtocol:
     """占位：由 auth 插件在启动时替换为真实实现。"""
     raise RuntimeError(
         "verify_user_permission has not been initialized. "
@@ -29,7 +39,7 @@ async def _verify_user_permission_placeholder(
 
 async def _get_current_user_placeholder(
     _token: str = Depends(_oauth2_scheme),
-) -> Any:
+) -> UserProtocol:
     """占位：由 auth 插件在启动时替换为真实实现。"""
     raise RuntimeError(
         "get_current_user has not been initialized. "
@@ -40,7 +50,7 @@ async def _get_current_user_placeholder(
 verify_user_permission = _verify_user_permission_placeholder
 
 UserDBDep = Annotated[
-    Any,
+    UserProtocol,
     Depends(_get_current_user_placeholder),
     Doc(
         """
@@ -51,7 +61,7 @@ UserDBDep = Annotated[
 ]
 
 VerifyPermissionDep = Annotated[
-    Any,
+    UserProtocol,
     Depends(_verify_user_permission_placeholder),
     Doc(
         """

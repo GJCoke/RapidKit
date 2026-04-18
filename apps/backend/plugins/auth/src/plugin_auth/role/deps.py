@@ -16,7 +16,6 @@ from typing_extensions import Annotated, Doc
 from plugin_auth.auth.deps import UserDBDep
 from plugin_auth.auth.models import User
 from plugin_auth.role.crud import RoleCRUD
-from plugin_auth.role.models import Role
 from plugin_auth.role.schemas import UserPermissionCache
 from plugin_auth.router.deps import RequestRouterDep
 
@@ -24,7 +23,7 @@ permission_structure = "auth:permission:<{user_id}>"
 
 
 async def get_role_crud(session: SessionDep) -> RoleCRUD:
-    return RoleCRUD(Role, session=session)
+    return RoleCRUD(session)
 
 
 RoleCrudDep = Annotated[

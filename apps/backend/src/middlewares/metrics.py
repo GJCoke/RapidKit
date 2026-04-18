@@ -20,6 +20,8 @@ from rapidkit_core.log import logger
 from rapidkit_core.timezone import timezone
 from starlette.middleware.base import BaseHTTPMiddleware
 
+_background_tasks: set[asyncio.Task] = set()
+
 # Redis key TTL
 _KEY_TTL = 7200  # 全局指标 2 小时
 _EP_KEY_TTL = 120  # 按端点指标 120 秒（仅需撑到归档任务完成）
@@ -106,7 +108,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         route_path = route.path if isinstance(route, APIRoute) else None
 
         # Fire-and-forget 写入 Redis
-        asyncio.create_task(
+        task = asyncio.create_task(
             _record_metrics(
                 status_code=response.status_code,
                 duration_ms=duration_ms,
@@ -115,5 +117,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
                 method=request.method,
             )
         )
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
 
         return response

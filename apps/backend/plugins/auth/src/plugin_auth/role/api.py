@@ -40,13 +40,13 @@ async def get_roles(
     role_crud: RoleCrudDep,
 ) -> Response[PaginatedResponse[RoleResponse]]:
     filter = filter_role(query.status, query.keyword)
-    roles = await role_crud.get_paginate(*filter, page=query.page, size=query.page_size, serializer=RoleResponse)
+    roles = await role_crud.get_paginate(*filter, page=query.page, size=query.page_size, schema=RoleResponse)
     return Response(data=roles)
 
 
 @router.get("/mine")
 async def get_my_roles(role_crud: RoleCrudDep, user: UserDBDep) -> Response[list[RoleResponse]]:
-    roles = await role_crud.get_all(col(Role.code).in_(user.roles), serializer=RoleResponse)
+    roles = await role_crud.get_all(col(Role.code).in_(user.roles), schema=RoleResponse)
     return Response(data=roles)
 
 
@@ -56,7 +56,7 @@ async def get_all_roles(
     role_crud: RoleCrudDep,
 ) -> Response[list[RoleResponse]]:
     filter = filter_role(query.status, query.keyword)
-    roles = await role_crud.get_all(*filter, serializer=RoleResponse)
+    roles = await role_crud.get_all(*filter, schema=RoleResponse)
     return Response(data=roles)
 
 

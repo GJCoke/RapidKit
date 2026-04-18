@@ -6,7 +6,6 @@ Date   : 2026-04-02
 """
 
 from fastapi import Depends
-from plugin_auth.auth.models import User
 from rapidkit_common.deps import SessionDep
 from typing_extensions import Annotated, Doc
 
@@ -14,7 +13,7 @@ from plugin_user.crud import UserManageCRUD
 
 
 async def get_user_manage_crud(session: SessionDep) -> UserManageCRUD:
-    return UserManageCRUD(User, session=session)
+    return UserManageCRUD(session)
 
 
 UserManageCrudDep = Annotated[

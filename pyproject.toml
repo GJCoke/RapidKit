@@ -51,7 +51,8 @@ members = [
 [tool.ty.src]
 exclude = [
     "**/alembic/",
-    "**/tests/"
+    "**/tests/",
+    "**/migrations/",
 ]
 
 [tool.ty.rules]
@@ -92,7 +93,9 @@ exclude = [
     "site-packages",
     "venv",
     "apps/backend/src/locales/types.py",
-    "apps/backend/alembic"
+    "apps/backend/alembic",
+    "**/tests/",
+    "**/migrations/"
 ]
 
 [tool.ruff.lint]

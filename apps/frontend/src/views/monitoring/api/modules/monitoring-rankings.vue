@@ -11,7 +11,7 @@
   }>()
 
   // Horizontal bar - Top Requests
-  const { domRef: reqBarRef, setOptions: setReqBar } = useEcharts(() => ({
+  const { domRef: reqBarRef, updateOptions: setReqBar } = useEcharts(() => ({
     tooltip: { trigger: "axis" as const, axisPointer: { type: "shadow" as const } },
     grid: { left: 140, right: 24, top: 8, bottom: 8 },
     xAxis: { type: "value" as const, show: false },
@@ -34,7 +34,7 @@
   }))
 
   // Horizontal bar - Top P95
-  const { domRef: p95BarRef, setOptions: setP95Bar } = useEcharts(() => ({
+  const { domRef: p95BarRef, updateOptions: setP95Bar } = useEcharts(() => ({
     tooltip: {
       trigger: "axis" as const,
       axisPointer: { type: "shadow" as const },
@@ -63,9 +63,10 @@
   watch(
     () => props.topRequests,
     (data) => {
-      setReqBar({
-        yAxis: { data: data.map((d) => `${d.method} ${d.path}`) },
-        series: [{ data: data.map((d) => d.requestCount) }],
+      setReqBar((opts) => {
+        opts.yAxis.data = data.map((d) => `${d.method} ${d.path}`)
+        opts.series[0].data = data.map((d) => d.requestCount)
+        return opts
       })
     },
     { deep: true },
@@ -74,9 +75,10 @@
   watch(
     () => props.topP95,
     (data) => {
-      setP95Bar({
-        yAxis: { data: data.map((d) => `${d.method} ${d.path}`) },
-        series: [{ data: data.map((d) => d.p95Ms) }],
+      setP95Bar((opts) => {
+        opts.yAxis.data = data.map((d) => `${d.method} ${d.path}`)
+        opts.series[0].data = data.map((d) => d.p95Ms)
+        return opts
       })
     },
     { deep: true },

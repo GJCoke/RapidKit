@@ -208,7 +208,7 @@ from rapidkit_core.plugin import MiddlewareDef, PluginDependency, PluginManifest
 
 # Common business layer
 from rapidkit_common.models import SQLModel
-from rapidkit_common.crud import BaseSQLModelCRUD
+from rapidkit_common.crud import BaseCRUD
 from rapidkit_common.deps import SessionDep, RedisDep
 from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.request import BaseRequest, PaginatedRequest, BatchRequest, DeleteRequest, DetailsRequest, SearchRequest
@@ -238,17 +238,16 @@ class MyModel(SQLModel, table=True):
 ### CRUD Pattern
 
 ```python
-from rapidkit_common.crud import BaseSQLModelCRUD
+from rapidkit_common.crud import BaseCRUD
 from .models import MyModel
-from .schemas import MyCreateSchema, MyUpdateSchema
 
-class MyCRUD(BaseSQLModelCRUD[MyModel, MyCreateSchema, MyUpdateSchema]):
-    pass
+class MyCRUD(BaseCRUD[MyModel]):
+    model = MyModel
 ```
 
-`BaseSQLModelCRUD` provides: `get`, `get_by_ids`, `get_all`, `get_count`, `get_paginate`, `create`, `create_all`, `update`, `update_by_id`, `update_all`, `delete`, `delete_all`.
+`BaseCRUD` provides: `get`, `get_by_ids`, `get_all`, `get_count`, `get_paginate`, `get_paginate_by_cursor`, `create`, `create_all`, `update_by_id`, `update_all`, `delete`, `delete_all`, `exists`.
 
-`get_paginate` returns `PaginatedResponse[T]` and supports a `serializer` parameter for Pydantic conversion.
+Subclass must declare `model` ClassVar. Constructor takes only `session: AsyncSession`. CRUD methods only `flush()` — commit/rollback is handled by session lifecycle (FastAPI deps or `async with`). Query methods support an optional `schema` parameter for Pydantic conversion.
 
 ### Schema Patterns
 
@@ -463,7 +462,7 @@ DATETIME_FORMAT=%Y-%m-%d %H:%M:%S
 - ALWAYS use `Annotated[Dep, Depends()]` pattern for dependency injection
 - ALWAYS import from `rapidkit_core` and `rapidkit_common` — never from old `src.common` or `src.core` paths
 - PREFER `PaginatedRequest` as base for any paginated query schema
-- PREFER `BaseSQLModelCRUD` over writing raw queries
+- PREFER `BaseCRUD` over writing raw queries
 
 ### Git Rules
 

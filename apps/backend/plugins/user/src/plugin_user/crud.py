@@ -8,15 +8,15 @@ Date   : 2026-04-02
 from datetime import date, datetime, timedelta
 
 from plugin_auth.auth.models import User
-from rapidkit_common.crud import BaseSQLModelCRUD
+from rapidkit_common.crud import BaseCRUD
 from rapidkit_core.timezone import timezone
 from sqlmodel import col, func, select
 
-from plugin_user.schemas import UserManageCreate, UserManageUpdate
 
-
-class UserManageCRUD(BaseSQLModelCRUD[User, UserManageCreate, UserManageUpdate]):
+class UserManageCRUD(BaseCRUD[User]):
     """基于 SQLAlchemy 的用户管理 CRUD 操作。"""
+
+    model = User
 
     async def get_user_count_summary(self) -> dict:
         """获取用户统计摘要：总数、今日新增、昨日新增。"""

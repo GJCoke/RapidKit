@@ -41,10 +41,11 @@ def filter_script(
         filters.append(col(Script.language) == language)
 
     if keyword:
+        escaped = keyword.replace("%", r"\%").replace("_", r"\_")
         filters.append(
             or_(
-                col(Script.name).like(f"%{keyword}%"),
-                col(Script.description).like(f"%{keyword}%"),
+                col(Script.name).like(f"%{escaped}%"),
+                col(Script.description).like(f"%{escaped}%"),
             )
         )
 

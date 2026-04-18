@@ -1,7 +1,7 @@
 """
 事件总线 — 插件间解耦通信。
 
-支持类型化事件、优先级、并发执行、通配符订阅和 fire-and-forget 追踪。
+支持类型化事件、优先级、并发执行、通配符订阅、fire-and-forget 追踪和跨进程分布式广播。
 
 Author : Coke
 Date   : 2026-04-14
@@ -9,14 +9,19 @@ Date   : 2026-04-14
 
 import asyncio
 import inspect
+import json
 from collections import deque
 from dataclasses import dataclass
+from dataclasses import fields as dc_fields
 from datetime import datetime
 from fnmatch import fnmatch
 from itertools import groupby
 from typing import Callable, ClassVar
+from uuid import uuid4
 
 from rapidkit_core.log import logger
+
+DISTRIBUTED_CHANNEL = "eventbus:distributed"
 
 
 @dataclass
@@ -85,11 +90,14 @@ class EventBus:
         return instance
 
     def __init__(self) -> None:
+        self._instance_id: str = uuid4().hex
         self._handlers: dict[type[Event], list[_HandlerEntry]] = {}
         self._pattern_handlers: list[_PatternEntry] = []
         self._pending_tasks: set[asyncio.Task] = set()
         self._dead_letters: deque[DeadLetter] = deque(maxlen=100)
         self._handler_errors: dict[str, int] = {}
+        self._event_registry: dict[str, type[Event]] = {}
+        self._subscriber_task: asyncio.Task | None = None
 
     @property
     def dead_letters(self) -> list[DeadLetter]:
@@ -125,6 +133,9 @@ class EventBus:
         self._handlers[event_type].append(
             _HandlerEntry(handler=handler, priority=priority, allowed_sources=allowed_sources)
         )
+        # 自动注册到分布式事件类型表
+        if hasattr(event_type, "event_name"):
+            self._event_registry[event_type.event_name] = event_type
 
     def on_pattern(self, pattern: str, handler: Callable, *, priority: int = 0) -> None:
         """
@@ -189,11 +200,112 @@ class EventBus:
 
     async def shutdown(self, timeout: float = 5.0) -> None:
         """等待所有 pending fire-and-forget tasks 完成（带超时）。"""
+        if self._subscriber_task:
+            self._subscriber_task.cancel()
+            self._subscriber_task = None
         if self._pending_tasks:
-            logger.info("EventBus: waiting for %d pending tasks...", len(self._pending_tasks))
-            done, pending = await asyncio.wait(self._pending_tasks, timeout=timeout)
+            logger.info("EventBus: waiting for {} pending tasks...", len(self._pending_tasks))
+            done, pending = await asyncio.wait(
+                self._pending_tasks,
+                timeout=timeout,
+            )
             if pending:
-                logger.warning("EventBus: %d tasks still pending after %.1fs timeout", len(pending), timeout)
+                logger.warning(
+                    "EventBus: {} tasks still pending after {:.1f}s timeout, cancelling...",
+                    len(pending),
+                    timeout,
+                )
+                for task in pending:
+                    task.cancel()
+
+    # ==================== 分布式事件 ====================
+
+    async def distributed_emit(self, event: Event, *, source: str | None = None) -> None:
+        """
+        将事件广播到所有进程。
+
+        先在本地立即执行 handler，再通过 Redis Pub/Sub 通知其他实例。
+        其他实例的 subscriber 收到后触发本地 async_emit；发送方自身通过
+        instance_id 去重，不会二次执行。
+        """
+        await self.async_emit(event, source=source)
+
+        from rapidkit_core.database import RedisManager
+
+        payload = json.dumps(
+            {
+                "instance_id": self._instance_id,
+                "event_name": event.event_name,
+                "source": source,
+                "data": {f.name: getattr(event, f.name) for f in dc_fields(event) if f.name != "event_name"},
+            }
+        )
+        redis = RedisManager.client()
+        await redis.publish(DISTRIBUTED_CHANNEL, payload)
+
+    async def start_subscriber(self) -> None:
+        """启动 Redis Pub/Sub 订阅，收到分布式事件后触发本地 async_emit。"""
+        if self._subscriber_task is not None:
+            return
+        self._subscriber_task = asyncio.create_task(self._subscribe_loop())
+        self._pending_tasks.add(self._subscriber_task)
+        self._subscriber_task.add_done_callback(self._pending_tasks.discard)
+        logger.info("EventBus: distributed subscriber started.")
+
+    async def _subscribe_loop(self) -> None:
+        """Redis Pub/Sub 订阅循环（带指数退避重连）。"""
+        retry_interval = 1.0
+        max_interval = 30.0
+
+        while True:
+            try:
+                from rapidkit_core.database import RedisManager
+
+                redis = RedisManager.client()
+                pubsub = redis.pubsub()
+                await pubsub.subscribe(DISTRIBUTED_CHANNEL)
+                retry_interval = 1.0  # 连接成功，重置退避
+                logger.debug("EventBus: subscribed to '{}'", DISTRIBUTED_CHANNEL)
+
+                async for message in pubsub.listen():
+                    if message["type"] != "message":
+                        continue
+                    try:
+                        payload = json.loads(message["data"])
+
+                        # 跳过自身发出的消息（去重）
+                        if payload.get("instance_id") == self._instance_id:
+                            continue
+
+                        event_name = payload["event_name"]
+                        source = payload.get("source")
+                        data = payload.get("data", {})
+
+                        event_cls = self._event_registry.get(event_name)
+                        if event_cls is None:
+                            logger.debug("EventBus: no registered class for distributed event '{}'", event_name)
+                            continue
+
+                        event = event_cls(**data)
+                        await self.async_emit(event, source=source)
+                    except Exception:
+                        logger.exception("EventBus: error processing distributed event")
+
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                logger.warning(
+                    "EventBus: Pub/Sub connection lost, retrying in {interval:.0f}s...",
+                    interval=retry_interval,
+                )
+                await asyncio.sleep(retry_interval)
+                retry_interval = min(retry_interval * 2, max_interval)
+            finally:
+                try:
+                    await pubsub.unsubscribe(DISTRIBUTED_CHANNEL)
+                    await pubsub.close()
+                except Exception:
+                    pass
 
     def _collect_handlers(self, event: Event, source: str | None) -> list[tuple[Callable, int]]:
         """收集所有匹配的 handler（精确 + 通配符），返回 (handler, priority) 列表。"""

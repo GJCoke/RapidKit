@@ -11,7 +11,7 @@
   }>()
 
   // Pie chart - Distribution
-  const { domRef: pieRef, setOptions: setPieChart } = useEcharts(() => ({
+  const { domRef: pieRef, updateOptions: setPieChart } = useEcharts(() => ({
     tooltip: { trigger: "item" as const, formatter: "{b}: {c} ({d}%)" },
     legend: { type: "scroll" as const, bottom: 0, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11 } },
     series: [
@@ -29,7 +29,7 @@
   }))
 
   // Line chart - Trend
-  const { domRef: trendRef, setOptions: setTrendChart } = useEcharts(() => ({
+  const { domRef: trendRef, updateOptions: setTrendChart } = useEcharts(() => ({
     tooltip: { trigger: "axis" as const },
     legend: { bottom: 0, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11 } },
     grid: { left: 48, right: 48, top: 16, bottom: 40 },
@@ -71,8 +71,9 @@
   watch(
     () => props.distribution,
     (data) => {
-      setPieChart({
-        series: [{ data: data.map((d) => ({ name: `${d.method} ${d.path}`, value: d.requestCount })) }],
+      setPieChart((opts) => {
+        opts.series[0].data = data.map((d) => ({ name: `${d.method} ${d.path}`, value: d.requestCount }))
+        return opts
       })
     },
     { deep: true },
@@ -81,9 +82,11 @@
   watch(
     () => props.trend,
     (data) => {
-      setTrendChart({
-        xAxis: { data: data.map((d) => d.timeBucket) },
-        series: [{ data: data.map((d) => d.requestCount) }, { data: data.map((d) => d.errorCount) }],
+      setTrendChart((opts) => {
+        opts.xAxis.data = data.map((d) => d.timeBucket)
+        opts.series[0].data = data.map((d) => d.requestCount)
+        opts.series[1].data = data.map((d) => d.errorCount)
+        return opts
       })
     },
     { deep: true },

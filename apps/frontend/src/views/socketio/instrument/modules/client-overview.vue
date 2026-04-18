@@ -29,7 +29,7 @@
     })
   }
 
-  const { domRef, setOptions } = useEcharts(() => ({
+  const { domRef, updateOptions } = useEcharts(() => ({
     tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
     legend: {
       bottom: "0%",
@@ -47,7 +47,7 @@
         avoidLabelOverlap: false,
         itemStyle: { borderColor: "transparent", borderWidth: 2 },
         label: { show: false },
-        data: [],
+        data: [] as { value: number; name: string; itemStyle: { color: string } }[],
       },
     ],
   }))
@@ -55,17 +55,13 @@
   watch(
     [() => props.polling, webSocket],
     () => {
-      setOptions({
-        series: [
-          {
-            data: [
-              { value: props.polling, name: "Polling", itemStyle: { color: "#f0a020" } },
-              { value: webSocket.value, name: "WebSocket", itemStyle: { color: "#18a058" } },
-            ],
-          },
-        ],
-        // oxlint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any)
+      updateOptions((opts) => {
+        opts.series[0].data = [
+          { value: props.polling, name: "Polling", itemStyle: { color: "#f0a020" } },
+          { value: webSocket.value, name: "WebSocket", itemStyle: { color: "#18a058" } },
+        ]
+        return opts
+      })
     },
     { immediate: true },
   )

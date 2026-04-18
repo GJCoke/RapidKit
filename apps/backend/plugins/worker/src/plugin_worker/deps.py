@@ -10,15 +10,14 @@ from rapidkit_common.deps import SessionDep
 from typing_extensions import Annotated, Doc
 
 from plugin_worker.crud import TaskResultCRUD, WorkerCRUD
-from plugin_worker.models import CeleryTaskResult, CeleryWorker
 
 
 async def get_worker_crud(session: SessionDep) -> WorkerCRUD:
-    return WorkerCRUD(CeleryWorker, session=session)
+    return WorkerCRUD(session)
 
 
 async def get_task_result_crud(session: SessionDep) -> TaskResultCRUD:
-    return TaskResultCRUD(CeleryTaskResult, session=session)
+    return TaskResultCRUD(session)
 
 
 WorkerCrudDep = Annotated[

@@ -38,6 +38,8 @@ from src.middlewares.metrics import MetricsMiddleware
 from src.middlewares.state import StateMiddleware
 from src.sio.app import socket_app
 
+_background_tasks: set[asyncio.Task] = set()
+
 
 async def _increment_biz_error() -> None:
     """将业务异常计数写入 Redis（fire-and-forget）。"""
@@ -139,7 +141,9 @@ def setup_exception_handlers(app: FastAPI) -> None:
             code=exc.code,
             message=exc.message,
         )
-        asyncio.create_task(_increment_biz_error())
+        task = asyncio.create_task(_increment_biz_error())
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=exc.dump(),
@@ -175,9 +179,10 @@ def setup_exception_handlers(app: FastAPI) -> None:
             status_code=int(StatusCode.INTERNAL_SERVER_ERROR),
             detail=str(exc),
         )
+        error_data = str(exc) if settings.ENVIRONMENT.is_debug else None
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content=AppException(StatusCode.INTERNAL_SERVER_ERROR, data=str(exc)).dump(),
+            content=AppException(StatusCode.INTERNAL_SERVER_ERROR, data=error_data).dump(),
         )
 
 

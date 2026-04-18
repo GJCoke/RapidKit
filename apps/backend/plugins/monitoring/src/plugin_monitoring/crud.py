@@ -7,8 +7,7 @@ Date   : 2026-04-13
 
 from datetime import datetime, timedelta
 
-from rapidkit_common.crud import BaseSQLModelCRUD
-from rapidkit_common.schemas.base import BaseModel
+from rapidkit_common.crud import BaseCRUD
 from rapidkit_core.timezone import timezone
 from sqlalchemy import case, text
 from sqlalchemy import select as sa_select
@@ -18,8 +17,10 @@ from sqlmodel import col, delete, func, select
 from plugin_monitoring.models import ApiMetricsHourly
 
 
-class ApiMetricsCRUD(BaseSQLModelCRUD[ApiMetricsHourly, BaseModel, BaseModel]):
+class ApiMetricsCRUD(BaseCRUD[ApiMetricsHourly]):
     """API 指标归档 CRUD。"""
+
+    model = ApiMetricsHourly
 
     async def upsert_hourly(
         self,
@@ -62,7 +63,6 @@ class ApiMetricsCRUD(BaseSQLModelCRUD[ApiMetricsHourly, BaseModel, BaseModel]):
             },
         )
         await self.session.exec(stmt)  # type: ignore[arg-type]
-        await self.session.commit()
 
     async def get_aggregated(
         self,
@@ -122,5 +122,4 @@ class ApiMetricsCRUD(BaseSQLModelCRUD[ApiMetricsHourly, BaseModel, BaseModel]):
         cutoff = timezone.now() - timedelta(days=days)
         stmt = delete(ApiMetricsHourly).where(col(ApiMetricsHourly.time_bucket) < cutoff)
         result = await self.session.exec(stmt)  # type: ignore[arg-type]
-        await self.session.commit()
         return result.rowcount  # type: ignore[union-attr]

@@ -17,9 +17,9 @@ class TestCommonImports:
         assert "update_time" in SQLModel.model_fields
 
     def test_import_crud(self):
-        from rapidkit_common.crud import BaseSQLModelCRUD
+        from rapidkit_common.crud import BaseCRUD
 
-        assert BaseSQLModelCRUD is not None
+        assert BaseCRUD is not None
 
     def test_import_deps(self):
         from rapidkit_common.deps import RedisDep, SessionDep

@@ -10,12 +10,11 @@ from rapidkit_common.deps import SessionDep
 from typing_extensions import Annotated, Doc
 
 from plugin_system.crud import ActivityLogCRUD
-from plugin_system.models import ActivityLog
 
 
 async def get_activity_log_crud(session: SessionDep) -> ActivityLogCRUD:
     """提供 ActivityLogCRUD 实例。"""
-    return ActivityLogCRUD(ActivityLog, session=session)
+    return ActivityLogCRUD(session)
 
 
 ActivityLogCrudDep = Annotated[

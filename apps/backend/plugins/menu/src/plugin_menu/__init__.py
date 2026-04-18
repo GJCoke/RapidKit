@@ -5,7 +5,18 @@ Author  : Claude
 Date    : 2026-04-14
 """
 
+from rapidkit_core.events import RolePermissionsChangedEvent
 from rapidkit_core.plugin import PluginManifest
+
+
+async def _on_role_permissions_changed(event: RolePermissionsChangedEvent) -> None:
+    """角色权限变更时清除用户路由缓存。"""
+    from rapidkit_core.database import RedisManager
+
+    from plugin_menu.services import invalidate_menu_cache
+
+    redis = RedisManager.client()
+    await invalidate_menu_cache(redis)
 
 
 def register() -> PluginManifest:
@@ -25,4 +36,5 @@ def register() -> PluginManifest:
         router=combined,
         models=[Menu],
         dependencies=["auth"],
+        event_listeners=[(RolePermissionsChangedEvent, _on_role_permissions_changed)],
     )

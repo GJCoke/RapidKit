@@ -32,11 +32,13 @@ __all__ = [
     "UserDBDep",
     "AuthCrudDep",
     "refresh_structure",
+    "user_structure",
     "oauth2_scheme",
 ]
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_PREFIX_V1}/auth/login/swagger", auto_error=False)
 refresh_structure = "auth:refresh:<{user_id}>:<{jti}>"
+user_structure = "auth:user:<{user_id}>"
 
 OAuth2Form = Annotated[
     OAuth2PasswordRequestForm,
@@ -110,17 +112,28 @@ UserRefreshJWTDep = Annotated[RefreshJWT, Depends(parse_refresh_jwt_user), Doc("
 
 
 async def get_auth_crud(session: SessionDep) -> UserCRUD:
-    return UserCRUD(User, session=session)
+    return UserCRUD(session)
 
 
 AuthCrudDep = Annotated[UserCRUD, Depends(get_auth_crud), Doc("Auth CRUD instance.")]
 
 
-async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep) -> User:
-    user_info = await db_user.get(user.sub)
-    if not user_info:
-        logger.debug("No user found in the database.")
-        raise AppException(StatusCode.USER_NOT_FOUND)
+async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep, redis: RedisDep) -> User:
+    cache_key = user_structure.format(user_id=user.sub)
+    cached = await redis.get(cache_key)
+    if cached:
+        user_info = User.model_validate_json(cached)
+    else:
+        user_info = await db_user.get(user.sub)
+        if not user_info:
+            logger.debug("No user found in the database.")
+            raise AppException(StatusCode.USER_NOT_FOUND)
+        await redis.set(
+            cache_key,
+            user_info.model_dump_json(exclude={"password"}),
+            ex=auth_settings.ACCESS_TOKEN_EXP,
+        )
+
     if not user_info.status:
         logger.debug("User found but is inactive.")
         raise AppException(StatusCode.USER_DISABLED)

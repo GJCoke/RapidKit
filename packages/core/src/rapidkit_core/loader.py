@@ -261,9 +261,19 @@ def apply_dependency_overrides(app: FastAPI, plugins: list[PluginManifest]) -> N
         app: FastAPI 应用实例。
         plugins: 已拓扑排序的插件列表。
     """
+    override_sources: dict[object, str] = {}
     for plugin in plugins:
         if plugin.dependency_overrides:
-            app.dependency_overrides.update(plugin.dependency_overrides)
+            for dep, impl in plugin.dependency_overrides.items():
+                if dep in override_sources:
+                    logger.warning(
+                        "Plugin '{}' overrides dependency '{}' previously set by plugin '{}'.",
+                        plugin.name,
+                        getattr(dep, "__name__", repr(dep)),
+                        override_sources[dep],
+                    )
+                override_sources[dep] = plugin.name
+                app.dependency_overrides[dep] = impl
             logger.debug("Applied dependency_overrides from plugin '{}'.", plugin.name)
 
 

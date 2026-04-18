@@ -10,11 +10,10 @@ from rapidkit_common.deps import SessionDep
 from typing_extensions import Annotated, Doc
 
 from plugin_schedule.crud import PeriodicTaskCRUD
-from plugin_schedule.models import PeriodicTask
 
 
 async def get_periodic_task_crud(session: SessionDep) -> PeriodicTaskCRUD:
-    return PeriodicTaskCRUD(PeriodicTask, session=session)
+    return PeriodicTaskCRUD(session)
 
 
 PeriodicTaskCrudDep = Annotated[

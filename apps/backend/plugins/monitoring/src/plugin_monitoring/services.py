@@ -41,7 +41,7 @@ async def get_overview(
 ) -> ApiOverviewResponse:
     """获取 API 监控概览。"""
     start_dt, end_dt = _parse_range(range_str, start, end)
-    crud = ApiMetricsCRUD(ApiMetricsHourly, session=session)
+    crud = ApiMetricsCRUD(session)
     rows = await crud.get_aggregated(start_dt, end_dt)
 
     total_requests = 0
@@ -83,7 +83,7 @@ async def get_top(
 ) -> list[ApiTopItem]:
     """获取 Top N 排行。"""
     start_dt, end_dt = _parse_range(range_str, start, end)
-    crud = ApiMetricsCRUD(ApiMetricsHourly, session=session)
+    crud = ApiMetricsCRUD(session)
     rows = await crud.get_aggregated(start_dt, end_dt)
 
     items = []
@@ -118,7 +118,7 @@ async def get_distribution(
 ) -> list[ApiDistributionItem]:
     """获取请求占比分布（Top 8 + 其他）。"""
     start_dt, end_dt = _parse_range(range_str, start, end)
-    crud = ApiMetricsCRUD(ApiMetricsHourly, session=session)
+    crud = ApiMetricsCRUD(session)
     rows = await crud.get_aggregated(start_dt, end_dt)
 
     items = [
@@ -207,7 +207,7 @@ async def get_list(
 ) -> dict:
     """获取 API 明细列表（分页）。"""
     start_dt, end_dt = _parse_range(range_str, start, end)
-    crud = ApiMetricsCRUD(ApiMetricsHourly, session=session)
+    crud = ApiMetricsCRUD(session)
     rows = await crud.get_aggregated(start_dt, end_dt)
 
     items = []

@@ -101,7 +101,7 @@ async def update_schedule(
     # 更新 PeriodicTask 字段
     task_data = body.model_dump(exclude={"interval", "crontab"}, exclude_unset=True)
     if task_data:
-        await crud.update(task, task_data)
+        await crud.update_by_id(task.id, task_data)
 
     logger.info("[Schedule] Task updated: {schedule_id}", schedule_id=schedule_id)
 
@@ -116,7 +116,7 @@ async def toggle_schedule(
 ) -> Response[PeriodicTaskResponse]:
     """启用/禁用定时任务。"""
     task = await crud.get(schedule_id, nullable=False)
-    await crud.update(task, {"enabled": not task.enabled})
+    await crud.update_by_id(task.id, {"enabled": not task.enabled})
     logger.info(
         "[Schedule] Task toggled: {task_name} enabled={enabled}",
         task_name=task.name,

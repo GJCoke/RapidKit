@@ -27,10 +27,9 @@ async def log_activity(
     sio: AsyncServer | None = None,
 ) -> ActivityLog:
     """记录活动日志并通过 Socket.IO 推送。"""
-    crud = ActivityLogCRUD(ActivityLog, session=session)
+    crud = ActivityLogCRUD(session)
     record = await crud.create(
         {"event_type": event_type, "params": params or {}, "detail": detail, "source_ip": source_ip},
-        auto_commit=True,
     )
 
     if sio is not None:

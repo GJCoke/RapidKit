@@ -7,7 +7,7 @@ Date   : 2025-05-08
 
 import pytest
 import pytest_asyncio
-from rapidkit_common.crud import BaseSQLModelCRUD
+from rapidkit_common.crud import BaseCRUD
 from rapidkit_common.models import SQLModel
 from rapidkit_common.schemas import BaseRequest, BaseResponse
 from rapidkit_core.exceptions import AppException
@@ -17,8 +17,7 @@ from sqlmodel import Field, col, delete
 from sqlmodel import SQLModel as _SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from tests.conftest import engine
-from tests.utils import random_lowercase, random_uuid
+from tests.testing.utils import random_lowercase, random_uuid
 
 
 class PyUser(SQLModel, table=True):
@@ -38,16 +37,18 @@ class PyUserResponse(BaseResponse):
     name: str
 
 
-class CRUD(BaseSQLModelCRUD[PyUser, PyUserCreate, PyUserUpdate]):
+class CRUD(BaseCRUD[PyUser]):
     """Base CRUD."""
+
+    model = PyUser
 
 
 @pytest_asyncio.fixture
-async def crud(session: AsyncSession) -> CRUD:
-    async with engine.begin() as connection:
+async def crud(pg_engine, session: AsyncSession) -> CRUD:
+    async with pg_engine.begin() as connection:
         await connection.run_sync(_SQLModel.metadata.create_all)
 
-    return CRUD(PyUser, session=session)
+    return CRUD(session)
 
 
 @pytest_asyncio.fixture
@@ -85,14 +86,6 @@ async def test_create_with_model(crud: CRUD) -> None:
     name = random_lowercase()
     case = await crud.create(PyUser(name=name))
     assert case.name == name
-
-
-@pytest.mark.asyncio
-async def test_create_with_schema_not_validate(crud: CRUD) -> None:
-    name = random_lowercase()
-    with pytest.raises(AppException) as exc:
-        await crud.create(PyUserCreate(name=name), validate=False)  # type: ignore
-    assert exc.value.code == StatusCode.VALIDATION_ERROR.code
 
 
 @pytest.mark.asyncio
@@ -156,13 +149,6 @@ async def test_create_all_repeat(crud: CRUD) -> None:
 
 
 @pytest.mark.asyncio
-async def test_crud_session(crud: CRUD) -> None:
-    crud._session = None
-    with pytest.raises(RuntimeError):
-        await crud.get_all()
-
-
-@pytest.mark.asyncio
 async def test_get_all_returns_all_users(crud: CRUD, with_data: list[PyUser]) -> None:
     case = await crud.get_all()
     assert len(case) == len(with_data)
@@ -183,8 +169,8 @@ async def test_get_all_with_invalid_filter_returns_empty(crud: CRUD) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_all_with_serializer(crud: CRUD) -> None:
-    case = await crud.get_all(serializer=PyUserResponse)
+async def test_get_all_with_schema(crud: CRUD) -> None:
+    case = await crud.get_all(schema=PyUserResponse)
     assert isinstance(case[0], PyUserResponse)
 
 
@@ -251,8 +237,8 @@ async def test_get_by_ids_empty_list(crud: CRUD) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_by_ids_with_serializer(crud: CRUD, with_data: list[PyUser]) -> None:
-    result = await crud.get_by_ids([with_data[0].id], serializer=PyUserResponse)
+async def test_get_by_ids_with_schema(crud: CRUD, with_data: list[PyUser]) -> None:
+    result = await crud.get_by_ids([with_data[0].id], schema=PyUserResponse)
     assert isinstance(result[0], PyUserResponse)
 
 
@@ -295,42 +281,10 @@ async def test_get_paginate_size_one_returns_single(crud: CRUD) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_paginate_with_serializer(crud: CRUD, with_data: list[PyUser]) -> None:
-    page = await crud.get_paginate(serializer=PyUserResponse)
+async def test_get_paginate_with_schema(crud: CRUD, with_data: list[PyUser]) -> None:
+    page = await crud.get_paginate(schema=PyUserResponse)
     assert page.total == len(with_data)
     assert isinstance(page.records[0], PyUserResponse)
-
-
-@pytest.mark.asyncio
-async def test_update_with_dict(crud: CRUD, with_data: list[PyUser]) -> None:
-    name = random_lowercase()
-    update = await crud.update(with_data[0], {"name": name})
-    assert update.name == name
-    assert update.id == with_data[0].id
-
-
-@pytest.mark.asyncio
-async def test_update_with_schema(crud: CRUD, with_data: list[PyUser]) -> None:
-    name = random_lowercase()
-    update = await crud.update(with_data[0], PyUserUpdate(name=name))
-    assert update.name == name
-    assert update.id == with_data[0].id
-
-
-@pytest.mark.asyncio
-async def test_update_with_model_instance(crud: CRUD, with_data: list[PyUser]) -> None:
-    name = random_lowercase()
-    update_model = with_data[0]
-    update_model.name = name
-    update = await crud.update(with_data[0], update_model)
-    assert update.name == name
-    assert update.id == with_data[0].id
-
-
-@pytest.mark.asyncio
-async def test_update_invalid_field_raises(crud: CRUD, with_data: list[PyUser]) -> None:
-    with pytest.raises(ValueError):
-        await crud.update(with_data[0], {"name_test": None})
 
 
 @pytest.mark.asyncio

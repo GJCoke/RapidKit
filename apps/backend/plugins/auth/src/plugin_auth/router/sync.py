@@ -56,7 +56,7 @@ async def store_router_in_db(routes: list[StarletteRoute | APIRoute]) -> None:
         )
 
     async with AsyncSessionLocal() as session:
-        router_db = RouterCRUD(InterfaceRouter, session=session)
+        router_db = RouterCRUD(session)
         db_routes = await router_db.get_all()
 
         add_routes, remove_routes, update_routes = diff_api_routes(db_routes, app_routes)
@@ -69,6 +69,8 @@ async def store_router_in_db(routes: list[StarletteRoute | APIRoute]) -> None:
 
         if add_routes:
             await router_db.create_all(add_routes)
+
+        await session.commit()
 
 
 def diff_api_routes(

@@ -46,7 +46,7 @@ async def get_scripts(
         *filters,
         page=query.page,
         size=query.page_size,
-        serializer=ScriptListResponse,
+        schema=ScriptListResponse,
     )
     return Response(data=scripts)
 
@@ -140,6 +140,6 @@ async def get_script_executions(
         col(ScriptExecution.script_id) == script_id,
         page=query.page,
         size=query.page_size,
-        serializer=ScriptExecutionResponse,
+        schema=ScriptExecutionResponse,
     )
     return Response(data=executions)

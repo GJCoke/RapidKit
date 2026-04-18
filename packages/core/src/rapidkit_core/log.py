@@ -43,11 +43,11 @@ def default_formatter(record: dict) -> str:
     return format_str
 
 
-def request_id_filter(record: dict) -> dict:
+def request_id_filter(record: dict) -> bool:
     """请求 ID 过滤器"""
     rid = get_request_nanoid()
     record["request_id"] = rid
-    return record
+    return True
 
 
 def setup_logging() -> None:
@@ -78,8 +78,7 @@ def setup_logging() -> None:
 
 def set_custom_logfile() -> None:
     """设置自定义日志文件。"""
-    if not os.path.exists(LOG_PATH):
-        os.mkdir(LOG_PATH)
+    os.makedirs(LOG_PATH, exist_ok=True)
 
     log_access_file = LOG_PATH.joinpath(settings.LOG_ACCESS_FILENAME)
     log_error_file = LOG_PATH.joinpath(settings.LOG_ERROR_FILENAME)

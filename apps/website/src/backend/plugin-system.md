@@ -316,7 +316,7 @@ def register() -> PluginManifest:
     )
 ```
 
-覆盖按拓扑序应用 — 后加载的插件可以覆盖先加载插件的实现。
+覆盖按拓扑序应用 — 后加载的插件可以覆盖先加载插件的实现。框架会自动检测同一依赖被多个插件覆盖的情况，并在日志中输出警告，帮助排查冲突。
 
 ### app.state 共享资源
 
@@ -457,12 +457,36 @@ event_bus.on(UserCreatedEvent, on_user_created, priority=0)
 ```python
 from rapidkit_core.events import event_bus
 
-# 异步发布 — 等待所有 handler 执行完毕
+# 异步发布（仅本地进程）— 等待所有 handler 执行完毕
 await event_bus.async_emit(UserCreatedEvent(user_id=1, username="alice"))
 
-# Fire-and-forget — 不阻塞当前请求
+# Fire-and-forget（仅本地进程）— 不阻塞当前请求
 event_bus.fire_and_forget(UserCreatedEvent(user_id=1, username="alice"))
+
+# 分布式广播（所有实例）— 先本地执行，再通过 Redis Pub/Sub 通知其他进程
+await event_bus.distributed_emit(CacheInvalidatedEvent(key="config"))
 ```
+
+### 分布式事件（多实例部署）
+
+`distributed_emit` 通过 Redis Pub/Sub 将事件广播到所有部署实例，适用于需要通知多个进程的场景（如清除进程内缓存）。
+
+**工作流程：**
+
+1. 发送方先调用本地 `async_emit` 立即执行 handler
+2. 构造 JSON payload（含实例 ID），通过 Redis `PUBLISH` 广播
+3. 其他实例的 subscriber 收到后调用 `async_emit`
+4. 发送方的 subscriber 收到后，通过实例 ID 去重，跳过已执行的消息
+
+**断线重连：** subscriber 在 Redis 连接断开后自动以指数退避（1s → 2s → ... → 30s）重连。
+
+**选择依据：**
+
+| 场景                               | 推荐方式           |
+| ---------------------------------- | ------------------ |
+| 缓存目标是 Redis（所有实例共享）   | `async_emit`       |
+| 缓存目标是进程内存（各实例独立）   | `distributed_emit` |
+| 日志、通知等不需要等待结果的副作用 | `fire_and_forget`  |
 
 ### 跨插件通信模式
 
@@ -470,7 +494,8 @@ event_bus.fire_and_forget(UserCreatedEvent(user_id=1, username="alice"))
 | ------------------------- | ------------------------- | ------------------------------------------ |
 | 读取其他插件的模型/Schema | `dependencies` + 直接导入 | `from plugin_auth.auth.models import User` |
 | 触发日志、通知等副作用    | `fire_and_forget()`       | 不需要等待结果                             |
-| 缓存失效等必须等待的操作  | `async_emit()`            | 需要在响应前完成                           |
+| Redis 缓存失效            | `async_emit()`            | 仅需本地进程执行                           |
+| 进程内缓存失效            | `distributed_emit()`      | 需通知所有实例清除本地缓存                 |
 
 :::danger 未声明的跨插件导入是禁止的
 在 `dependencies` 中没有声明的插件，不允许使用 `from plugin_xxx import ...`。CI 的 AST 扫描会自动检测违规导入。
@@ -537,6 +562,41 @@ def register() -> PluginManifest:
 :::danger on_startup / on_shutdown 签名
 回调函数必须接收一个 `FastAPI` 实例作为参数。写成 `async def my_startup() -> None:` 会在启动时抛出 `TypeError`。
 :::
+
+## 插件级缓存（PluginCacheManager）
+
+`PluginCacheManager` 为每个插件提供独立的 Redis 缓存命名空间，避免跨插件 key 冲突：
+
+```python
+from rapidkit_core.cache import PluginCacheManager
+
+_cache = PluginCacheManager("menu")
+
+# 生成带命名空间的 key：plugin:menu:tree
+key = _cache.make_key("tree")
+
+# 也支持多级 key：plugin:menu:route:constant
+key = _cache.make_key("route", "constant")
+
+# 一键清除本插件所有缓存
+deleted_count = await _cache.invalidate_all(redis)
+```
+
+典型的 Cache-Aside 使用模式：
+
+```python
+async def get_cached_menu_tree(redis, session):
+    key = _cache.make_key("tree")
+    cached = await redis.get(key)
+    if cached:
+        return _adapter.validate_json(cached)
+
+    tree = await fetch_from_db(session)
+    await redis.set(key, _adapter.dump_json(tree).decode(), ex=3600)
+    return tree
+```
+
+缓存序列化统一使用 JSON 字符串（Pydantic `model_dump_json` / `TypeAdapter.dump_json`），适合"整体读取、整体失效"的场景。
 
 ## 高级特性
 

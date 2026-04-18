@@ -99,6 +99,8 @@ async def disconnect(sid: SID, redis: RedisDep) -> None:
     """
     user = await redis.hgetall(sid_user_structure.format(sid=sid), response_model=RedisUser)
     await redis.delete(sid_user_structure.format(sid=sid))
+    if not user or not user.id:
+        return
     await redis.delete(user_sid_structure.format(user_id=user.id))
     await redis.srem(online_users_structure, user.id)  # ty: ignore[invalid-await]
 

@@ -7,44 +7,38 @@ Date    : 2026-03-30
 
 from datetime import date, datetime, timedelta
 
-from rapidkit_common.crud import BaseSQLModelCRUD
+from rapidkit_common.crud import BaseCRUD
 from rapidkit_common.enums import TaskStatus, WorkerStatus
 from rapidkit_common.schemas.response import PaginatedResponse
 from rapidkit_core.timezone import timezone
 from sqlalchemy import case
 from sqlalchemy import select as sa_select
 from sqlmodel import col, func, select
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_worker.models import CeleryTaskResult, CeleryWorker
 from plugin_worker.schemas import (
     TaskListResponse,
     TaskQueryRequest,
-    TaskResultCreate,
-    TaskResultUpdate,
     TaskStatsByName,
     TaskStatsByWorker,
     TaskStatsSummary,
     TaskStatsTimeline,
-    WorkerCreate,
     WorkerQueryRequest,
     WorkerResponse,
-    WorkerUpdate,
 )
 
 
-class WorkerCRUD(BaseSQLModelCRUD[CeleryWorker, WorkerCreate, WorkerUpdate]):
+class WorkerCRUD(BaseCRUD[CeleryWorker]):
     """Celery Worker CRUD 操作。"""
 
-    async def get_by_hostname(self, hostname: str, *, session: AsyncSession | None = None) -> CeleryWorker | None:
-        session = session or self.session
+    model = CeleryWorker
+
+    async def get_by_hostname(self, hostname: str) -> CeleryWorker | None:
         statement = select(self.model).filter(col(self.model.hostname) == hostname)
-        result = await session.exec(statement)
+        result = await self.session.exec(statement)
         return result.first()
 
-    async def get_paginate_workers(
-        self, query: WorkerQueryRequest, *, session: AsyncSession | None = None
-    ) -> PaginatedResponse[WorkerResponse]:
+    async def get_paginate_workers(self, query: WorkerQueryRequest) -> PaginatedResponse[WorkerResponse]:
         filters = []
         if query.status is not None:
             filters.append(col(self.model.status) == query.status)
@@ -55,70 +49,60 @@ class WorkerCRUD(BaseSQLModelCRUD[CeleryWorker, WorkerCreate, WorkerUpdate]):
             page=query.page,
             size=query.page_size,
             order_by=col(self.model.last_heartbeat).desc(),
-            session=session,
-            serializer=WorkerResponse,
+            schema=WorkerResponse,
         )
 
-    async def get_all_workers(self, *, session: AsyncSession | None = None) -> list[WorkerResponse]:
+    async def get_all_workers(self) -> list[WorkerResponse]:
         return await self.get_all(
             order_by=col(self.model.last_heartbeat).desc(),
-            session=session,
-            serializer=WorkerResponse,
+            schema=WorkerResponse,
         )
 
-    async def get_offline_workers(self, threshold: float, *, session: AsyncSession | None = None) -> list[CeleryWorker]:
-        session = session or self.session
+    async def get_offline_workers(self, threshold: float) -> list[CeleryWorker]:
         cutoff = timezone.now() - timedelta(seconds=threshold)
         statement = select(self.model).filter(
             col(self.model.status) == WorkerStatus.ONLINE,
             col(self.model.last_heartbeat) < cutoff,
         )
-        result = await session.exec(statement)
+        result = await self.session.exec(statement)
         return list(result.all())
 
-    async def upsert_by_hostname(
-        self, hostname: str, defaults: dict, *, session: AsyncSession | None = None
-    ) -> CeleryWorker:
-        session = session or self.session
+    async def upsert_by_hostname(self, hostname: str, defaults: dict) -> CeleryWorker:
         statement = select(self.model).filter(col(self.model.hostname) == hostname).with_for_update()
-        result = await session.exec(statement)
+        result = await self.session.exec(statement)
         worker = result.first()
         if worker:
             for key, value in defaults.items():
                 setattr(worker, key, value)
         else:
             worker = self.model(hostname=hostname, **defaults)
-            session.add(worker)
+            self.session.add(worker)
         return worker
 
 
-class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskResultUpdate]):
+class TaskResultCRUD(BaseCRUD[CeleryTaskResult]):
     """Celery Task Result CRUD 操作。"""
 
-    async def get_by_task_id(self, task_id: str, *, session: AsyncSession | None = None) -> CeleryTaskResult | None:
-        session = session or self.session
+    model = CeleryTaskResult
+
+    async def get_by_task_id(self, task_id: str) -> CeleryTaskResult | None:
         statement = select(self.model).filter(col(self.model.task_id) == task_id)
-        result = await session.exec(statement)
+        result = await self.session.exec(statement)
         return result.first()
 
-    async def upsert_by_task_id(
-        self, task_id: str, defaults: dict, *, session: AsyncSession | None = None
-    ) -> CeleryTaskResult:
-        session = session or self.session
+    async def upsert_by_task_id(self, task_id: str, defaults: dict) -> CeleryTaskResult:
         statement = select(self.model).filter(col(self.model.task_id) == task_id).with_for_update()
-        result = await session.exec(statement)
+        result = await self.session.exec(statement)
         task = result.first()
         if task:
             for key, value in defaults.items():
                 setattr(task, key, value)
         else:
             task = self.model(task_id=task_id, **defaults)
-            session.add(task)
+            self.session.add(task)
         return task
 
-    async def get_paginate_tasks(
-        self, query: TaskQueryRequest, *, session: AsyncSession | None = None
-    ) -> PaginatedResponse[TaskListResponse]:
+    async def get_paginate_tasks(self, query: TaskQueryRequest) -> PaginatedResponse[TaskListResponse]:
         filters = []
         if query.status is not None:
             filters.append(col(self.model.status) == query.status)
@@ -131,16 +115,14 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             page=query.page,
             size=query.page_size,
             order_by=col(self.model.create_time).desc(),
-            session=session,
-            serializer=TaskListResponse,
+            schema=TaskListResponse,
         )
 
     def _time_filter(self, days: int):
         cutoff = timezone.now() - timedelta(days=days)
         return col(self.model.create_time) >= cutoff
 
-    async def get_stats_summary(self, days: int, *, session: AsyncSession | None = None) -> TaskStatsSummary:
-        session = session or self.session
+    async def get_stats_summary(self, days: int) -> TaskStatsSummary:
         statement = sa_select(
             func.count().label("total"),
             func.count(case((col(self.model.status) == TaskStatus.SUCCESS, 1))).label("success"),
@@ -151,7 +133,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
                 "avg_runtime"
             ),
         ).filter(self._time_filter(days))
-        result = (await session.exec(statement)).mappings().one()  # type: ignore[union-attr]  # ty: ignore[no-matching-overload]
+        result = (await self.session.exec(statement)).mappings().one()  # type: ignore[union-attr]  # ty: ignore[no-matching-overload]
         total = result["total"] or 0
         success = result["success"] or 0
         return TaskStatsSummary(
@@ -171,9 +153,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
         start: date | None = None,
         end: date | None = None,
         granularity: str = "hour",
-        session: AsyncSession | None = None,
     ) -> list[TaskStatsTimeline]:
-        session = session or self.session
         trunc_unit = "hour" if granularity == "hour" else "day"
         bucket = func.date_trunc(trunc_unit, col(self.model.create_time)).label("time_bucket")
         statement = select(
@@ -192,7 +172,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
         else:
             statement = statement.filter(self._time_filter(days))
         statement = statement.group_by(bucket).order_by(bucket)
-        results = (await session.exec(statement)).mappings().all()  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
+        results = (await self.session.exec(statement)).mappings().all()  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
         return [
             TaskStatsTimeline(
                 time_bucket=row["time_bucket"],
@@ -203,10 +183,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             for row in results
         ]
 
-    async def get_stats_by_name(
-        self, days: int, *, limit: int = 10, session: AsyncSession | None = None
-    ) -> list[TaskStatsByName]:
-        session = session or self.session
+    async def get_stats_by_name(self, days: int, *, limit: int = 10) -> list[TaskStatsByName]:
         total_col = func.count().label("total")
         statement = (
             sa_select(
@@ -223,7 +200,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             .order_by(total_col.desc())
             .limit(limit)
         )
-        results = (await session.exec(statement)).all()  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
+        results = (await self.session.exec(statement)).all()  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
         return [
             TaskStatsByName(
                 task_name=row.task_name,
@@ -235,8 +212,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             for row in results
         ]
 
-    async def get_stats_by_worker(self, days: int, *, session: AsyncSession | None = None) -> list[TaskStatsByWorker]:
-        session = session or self.session
+    async def get_stats_by_worker(self, days: int) -> list[TaskStatsByWorker]:
         statement = (
             sa_select(
                 col(self.model.worker_hostname),
@@ -251,7 +227,7 @@ class TaskResultCRUD(BaseSQLModelCRUD[CeleryTaskResult, TaskResultCreate, TaskRe
             .group_by(col(self.model.worker_hostname))
             .order_by(func.count().desc())
         )
-        results = (await session.exec(statement)).all()  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
+        results = (await self.session.exec(statement)).all()  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
         return [
             TaskStatsByWorker(
                 worker_hostname=row.worker_hostname,

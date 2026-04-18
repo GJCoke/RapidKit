@@ -21,6 +21,6 @@ def format_validation_errors(e: ValidationError | ValidationException) -> str:
     for item in e.errors():
         loc = item.get("loc", ["unknown"])
         loc_str = ".".join(str(part) for part in loc)
-        msg = str(item.get("msg", "error.")).lower()
+        msg = str(item.get("msg", "error."))
         errors.append(f"{loc_str} {msg}")
     return "; ".join(errors)

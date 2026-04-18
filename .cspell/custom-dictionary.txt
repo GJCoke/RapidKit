@@ -210,3 +210,5 @@ oxfmt
 ircular
 sess
 delenv
+zadd
+hincrbyfloat

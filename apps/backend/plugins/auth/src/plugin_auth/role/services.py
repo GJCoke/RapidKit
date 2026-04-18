@@ -17,6 +17,7 @@ def filter_role(status: Status | None, keyword: str) -> list[ColumnElement[bool]
         filter.append(col(Role.status) == status)
 
     if keyword:
-        filter.append(or_(col(Role.name).like(f"%{keyword}%"), col(Role.code).like(f"%{keyword}%")))
+        escaped = keyword.replace("%", r"\%").replace("_", r"\_")
+        filter.append(or_(col(Role.name).like(f"%{escaped}%"), col(Role.code).like(f"%{escaped}%")))
 
     return filter

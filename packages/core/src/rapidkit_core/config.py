@@ -32,10 +32,9 @@ class BaseSettings(_BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 
-class Config(BaseSettings):
-    """从环境变量加载的项目配置设置。"""
+class PostgreSQLConfigMixin(BaseSettings):
+    """PostgreSQL 数据库配置。"""
 
-    # PostgreSQL configuration settings
     POSTGRESQL_ASYNC_SCHEME: str
     POSTGRESQL_SYNC_SCHEME: str
     POSTGRESQL_USERNAME: str
@@ -66,7 +65,10 @@ class Config(BaseSettings):
             path=self.POSTGRESQL_DATABASE,
         )
 
-    # Redis configuration settings
+
+class RedisConfigMixin(BaseSettings):
+    """Redis 配置。"""
+
     REDIS_SCHEME: str = "redis"
     REDIS_MAX_CONNECTIONS: int = 10
     REDIS_ROOT_USERNAME: str = ""
@@ -86,15 +88,15 @@ class Config(BaseSettings):
             path=str(self.REDIS_DATABASE),
         )
 
+
+class CeleryConfigMixin(RedisConfigMixin):
+    """Celery 任务队列配置。"""
+
     CELERY_REDIS_DATABASE: int = Field(1, ge=0, le=15)
     ENABLE_CELERY_MONITOR: bool = Field(
         True,
         description="是否启用 Celery 任务队列管理（事件消费、Worker 监控、管理 API）",
     )
-    SCRIPT_EXEC_TIMEOUT: int = Field(30, description="脚本执行超时时间（秒）")
-    SCRIPT_EXEC_MAX_OUTPUT: int = Field(65536, description="脚本执行最大输出字节数")
-    DATETIME_TIMEZONE: str = "Asia/Shanghai"
-    DATETIME_FORMAT: str = "%Y-%m-%d %H:%M:%S"
 
     @property
     def CELERY_REDIS_URL(self) -> RedisDsn:
@@ -107,7 +109,64 @@ class Config(BaseSettings):
             path=str(self.CELERY_REDIS_DATABASE),
         )
 
-    # Minio configuration settings
+
+class ScriptConfigMixin(BaseSettings):
+    """脚本执行配置。"""
+
+    SCRIPT_EXEC_TIMEOUT: int = Field(30, description="脚本执行超时时间（秒）")
+    SCRIPT_EXEC_MAX_OUTPUT: int = Field(65536, description="脚本执行最大输出字节数")
+
+
+class LogConfigMixin(BaseSettings):
+    """日志配置。"""
+
+    LOG_LEVEL: LOG_LEVELS = "INFO"
+    LOG_FILE_ACCESS_LEVEL: LOG_LEVELS = "INFO"
+    LOG_FILE_ERROR_LEVEL: LOG_LEVELS = "WARNING"
+
+    LOG_ACCESS_FILENAME: str = "access.log"
+    LOG_ERROR_FILENAME: str = "error.log"
+
+    LOG_FORMAT: str = (
+        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</> | <lvl>{level: <8}</> | <cyan>{request_id}</> | <lvl>{message}</>"
+    )
+
+    SLOW_REQUEST_THRESHOLD_MS: int = Field(3000, description="慢请求告警阈值（毫秒）")
+
+
+class CorsConfigMixin(BaseSettings):
+    """CORS 跨域配置。"""
+
+    CORS_ORIGINS: list[str]
+    CORS_ORIGINS_REGEX: str | None = None
+    CORS_HEADERS: list[str]
+
+
+class RateLimitConfigMixin(BaseSettings):
+    """速率限制配置。"""
+
+    DEFAULT_LIMITS: list[StrOrCallableStr] = ["20/minute"]
+
+
+class SocketIOConfigMixin(BaseSettings):
+    """SocketIO 管理配置。"""
+
+    SOCKETIO_ADMIN_USERNAME: str = "admin"
+    SOCKETIO_ADMIN_PASSWORD: Secret[str] = Secret("change-me-in-production")
+
+
+class Config(
+    PostgreSQLConfigMixin,
+    CeleryConfigMixin,
+    ScriptConfigMixin,
+    LogConfigMixin,
+    CorsConfigMixin,
+    RateLimitConfigMixin,
+    SocketIOConfigMixin,
+):
+    """从环境变量加载的项目配置设置。"""
+
+    # MinIO configuration settings
     MINIO_ROOT_USER: str
     MINIO_ROOT_PASSWORD: Secret[str]
 
@@ -126,39 +185,17 @@ class Config(BaseSettings):
             )
         return environment
 
-    # Cors settings
-    CORS_ORIGINS: list[str]
-    CORS_ORIGINS_REGEX: str | None = None
-    CORS_HEADERS: list[str]
-
     API_PREFIX_V1: str = "/api/v1"
 
     # App version
     APP_VERSION: str = "0.1.0"
 
-    # Logging
-    LOG_LEVEL: LOG_LEVELS = "INFO"
-    LOG_FILE_ACCESS_LEVEL: LOG_LEVELS = "INFO"
-    LOG_FILE_ERROR_LEVEL: LOG_LEVELS = "WARNING"
-
-    LOG_ACCESS_FILENAME: str = "access.log"
-    LOG_ERROR_FILENAME: str = "error.log"
-
-    LOG_FORMAT: str = (
-        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</> | <lvl>{level: <8}</> | <cyan>{request_id}</> | <lvl>{message}</>"
-    )
-
-    SLOW_REQUEST_THRESHOLD_MS: int = Field(3000, description="慢请求告警阈值（毫秒）")
+    # Datetime settings
+    DATETIME_TIMEZONE: str = "Asia/Shanghai"
+    DATETIME_FORMAT: str = "%Y-%m-%d %H:%M:%S"
 
     # I18n settings
     DEFAULT_LANGUAGE: LANGUAGE_TYPE = "zh-CN"
-
-    # Rate limiting settings
-    DEFAULT_LIMITS: list[StrOrCallableStr] = ["20/minute"]
-
-    # Socketio Admin settings
-    SOCKETIO_ADMIN_USERNAME: str = "admin"
-    SOCKETIO_ADMIN_PASSWORD: Secret[str] = Secret("123456")
 
 
 settings = Config()  # type: ignore

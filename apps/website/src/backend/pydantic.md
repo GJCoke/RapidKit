@@ -172,7 +172,7 @@ class SQLModel(_SQLModel):
 ```python
 task_data = body.model_dump(exclude={"interval", "crontab"}, exclude_unset=True)
 if task_data:
-    await crud.update(task, task_data)
+    await crud.update_by_id(task.id, task_data)
 ```
 
 ### ORM 转换使用 model_validate

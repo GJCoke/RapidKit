@@ -44,27 +44,28 @@ rapidkit-core  ←  rapidkit-common  ←  plugin_*
 
 | 模块              | 职责                               |
 | ----------------- | ---------------------------------- |
-| `config.py`       | 应用配置（Settings、环境变量）     |
+| `config.py`       | 应用配置（Mixin 拆分，环境变量）   |
 | `database.py`     | 数据库引擎、会话工厂、Redis 管理器 |
 | `exceptions.py`   | 全局异常定义                       |
 | `status_codes.py` | 业务状态码枚举                     |
 | `log.py`          | 日志配置（Loguru）                 |
 | `plugin.py`       | PluginManifest 数据结构            |
-| `loader.py`       | 插件加载器（拓扑排序）             |
-| `events.py`       | EventBus 跨插件事件总线            |
+| `loader.py`       | 插件加载器（拓扑排序、冲突检测）   |
+| `events.py`       | EventBus 事件总线（本地 + 分布式） |
+| `cache.py`        | PluginCacheManager 插件级缓存管理  |
 | `i18n.py`         | 可插拔翻译函数                     |
 
 ### 2. `rapidkit-common` — 公共层
 
 独立的 Python 包（`packages/common/`），依赖 `rapidkit-core`。
 
-| 模块        | 职责                                        |
-| ----------- | ------------------------------------------- |
-| `models.py` | SQLModel 基类（UUID7 主键、时间戳）         |
-| `crud.py`   | `BaseSQLModelCRUD` 泛型 CRUD                |
-| `deps.py`   | 共享依赖（SessionDep、RedisDep）            |
-| `auth.py`   | 权限依赖抽象（占位 + dependency_overrides） |
-| `schemas/`  | Response、PaginatedResponse、BaseModel      |
+| 模块        | 职责                                                |
+| ----------- | --------------------------------------------------- |
+| `models.py` | SQLModel 基类（UUID7 主键、时间戳）                 |
+| `crud.py`   | `BaseCRUD` 泛型 CRUD（窗口函数分页）                |
+| `deps.py`   | 共享依赖（SessionDep、RedisDep）                    |
+| `auth.py`   | 权限依赖抽象（UserProtocol + dependency_overrides） |
+| `schemas/`  | Response、PaginatedResponse、BaseModel              |
 
 ### 3. `plugin_*` — 业务插件
 
@@ -153,12 +154,12 @@ plugin_auth/role/api.py           # router.get("") → get_roles()
     ├─→ plugin_auth/role/services.py  # filter_role()（构建过滤条件）
     └─→ plugin_auth/role/crud.py      # RoleCRUD.get_paginate()
             │
-            └─→ rapidkit_common/crud.py  # BaseSQLModelCRUD（泛型分页实现）
+            └─→ rapidkit_common/crud.py  # BaseCRUD（泛型分页实现）
 ```
 
 ## 跨插件通信
 
-插件间通过类型化 **EventBus** 松耦合通信，避免直接依赖：
+插件间通过类型化 **EventBus** 松耦合通信，避免直接依赖。支持本地和分布式两种模式：
 
 ```python
 from rapidkit_core.events import Event, event_bus
@@ -170,8 +171,11 @@ class UserLoginEvent(Event):
     username: str
 
 
-# 发布事件（plugin_auth）
+# 仅本地进程（如缓存失效目标是 Redis，无需跨进程）
 await event_bus.async_emit(UserLoginEvent(user_id=user.id, username=user.name))
+
+# 分布式广播（多实例部署时通知所有进程，如清除进程内缓存）
+await event_bus.distributed_emit(UserLoginEvent(user_id=user.id, username=user.name))
 
 
 # 订阅事件（plugin_system，通过 PluginManifest.event_listeners 声明）
@@ -180,6 +184,19 @@ def on_user_login(event: UserLoginEvent) -> None:
 ```
 
 详细用法参见 [插件系统 - 事件总线](./plugin-system.md#事件总线-eventbus)。
+
+## 缓存架构
+
+项目采用 Redis 作为缓存层，通过 `PluginCacheManager` 为每个插件提供独立的命名空间：
+
+| 缓存类型     | Key 格式                           | 说明                     |
+| ------------ | ---------------------------------- | ------------------------ |
+| 插件级缓存   | `plugin:{name}:{key}`              | 菜单树、路由、页面列表等 |
+| 用户信息缓存 | `auth:user:<{user_id}>`            | 登录用户数据（排除密码） |
+| 权限缓存     | `auth:permission:<{user_id}>`      | 用户接口权限列表         |
+| 刷新令牌     | `auth:refresh:<{user_id}>:<{jti}>` | 多设备 Refresh Token     |
+
+缓存策略统一采用 Cache-Aside 模式：读时先查 Redis，miss 时查库并回写；写操作后主动失效缓存。
 
 ## 如何新增插件
 

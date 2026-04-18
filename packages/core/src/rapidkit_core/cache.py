@@ -51,7 +51,12 @@ class PluginCacheManager:
             删除的键数量。
         """
         pattern = f"{self._prefix}*"
-        keys = await redis_client.keys(pattern)
-        if keys:
-            return await redis_client.delete(*keys)
-        return 0
+        deleted = 0
+        cursor = 0
+        while True:
+            cursor, keys = await redis_client.scan(cursor, match=pattern, count=100)
+            if keys:
+                deleted += await redis_client.delete(*keys)
+            if cursor == 0:
+                break
+        return deleted

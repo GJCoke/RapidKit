@@ -23,17 +23,22 @@ ASYNC_DATABASE_URL = str(settings.ASYNC_DATABASE_POSTGRESQL_URL)
 SYNC_DATABASE_URL = str(settings.SYNC_DATABASE_POSTGRESQL_URL)
 REDIS_URL = str(settings.REDIS_URL)
 
-async_engine = create_async_engine(ASYNC_DATABASE_URL, echo=settings.ENVIRONMENT.is_debug, pool_recycle=60)
-sync_engine = create_engine(SYNC_DATABASE_URL, echo=settings.ENVIRONMENT.is_debug, pool_recycle=60)
+async_engine = create_async_engine(ASYNC_DATABASE_URL, echo=settings.ENVIRONMENT.is_debug, pool_recycle=300)
+sync_engine = create_engine(SYNC_DATABASE_URL, echo=settings.ENVIRONMENT.is_debug, pool_recycle=300)
 
 AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
 SyncSessionLocal = sessionmaker(sync_engine, class_=Session, expire_on_commit=False)
 
 
 async def get_async_session() -> AsyncIterator[AsyncSession]:
-    """提供异步数据库会话。"""
+    """提供异步数据库会话，请求结束时自动 commit，异常时 rollback。"""
     async with AsyncSessionLocal() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 def get_sync_session() -> Iterator[Session]:
@@ -88,7 +93,7 @@ class RedisManager(BaseManager):
     @classmethod
     async def clear(cls) -> None:
         if cls._clients:
-            await asyncio.gather(*(pool.disconnect() for pool in cls._pools.values()))
+            await asyncio.gather(*(pool.disconnect() for pool in cls._pools.values()), return_exceptions=True)
             cls._pools.clear()
             cls._clients.clear()
 

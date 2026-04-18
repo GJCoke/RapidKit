@@ -105,3 +105,11 @@ class PaginatedResponse(BaseResponse, Generic[T]):
     page_size: int = Field(..., description="每页条数。")
     total: int = Field(..., description="总条数。")
     records: list[T] = Field(..., description="记录列表。")
+
+
+class CursorPaginatedResponse(BaseResponse, Generic[T]):
+    """游标分页响应结构。"""
+
+    items: list[T] = Field(..., description="记录列表。")
+    next_cursor: UUID | None = Field(None, description="下一页游标，None 表示没有更多数据。")
+    size: int = Field(..., description="每页条数。")

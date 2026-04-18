@@ -1,10 +1,10 @@
-from typing import Awaitable, Callable
+from typing import Awaitable, Callable, cast
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.locales.i18n import i18n
-from src.locales.types import languages
+from src.locales.types import LANGUAGE_TYPE, languages
 from src.locales.utils import resolve_language
 
 
@@ -25,7 +25,7 @@ class I18nMiddleware(BaseHTTPMiddleware):
         language = resolve_language(request.headers.get("accept-language"), languages)
 
         if language and i18n.current_language != language:
-            i18n.current_language = language
+            i18n.current_language = cast(LANGUAGE_TYPE, language)
 
         response = await callback(request)
         return response

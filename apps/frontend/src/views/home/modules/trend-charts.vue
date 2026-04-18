@@ -16,7 +16,7 @@
   }>()
 
   // User trend chart
-  const { domRef: userChartRef, setOptions: setUserChart } = useEcharts(() => ({
+  const { domRef: userChartRef, updateOptions: setUserChart } = useEcharts(() => ({
     tooltip: { trigger: "axis" as const },
     grid: { left: 48, right: 16, top: 24, bottom: 28 },
     xAxis: { type: "category" as const, data: [] as string[], axisLine: { show: false }, axisTick: { show: false } },
@@ -41,9 +41,10 @@
   watch(
     () => props.userTrend,
     (data) => {
-      setUserChart({
-        xAxis: { data: data.map((d) => d.timeBucket) },
-        series: [{ data: data.map((d) => d.newUsers) }],
+      setUserChart((opts) => {
+        opts.xAxis.data = data.map((d) => d.timeBucket)
+        opts.series[0].data = data.map((d) => d.newUsers)
+        return opts
       })
     },
     { deep: true },
