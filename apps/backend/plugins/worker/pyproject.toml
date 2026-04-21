@@ -7,7 +7,7 @@ dependencies = [
     "rapidkit-core",
     "rapidkit-common",
     "celery>=5.6.3,<6.0",
-    "fastapi-sio-di>=0.4",
+    "fastapi-sio-di>=0.5.3",
 ]
 
 [project.entry-points."rapidkit.plugins"]
