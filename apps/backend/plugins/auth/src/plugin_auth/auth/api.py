@@ -9,9 +9,10 @@ from fastapi import APIRouter, Depends
 from rapidkit_common.deps import RedisDep, check_debug
 from rapidkit_common.schemas.response import Response
 from rapidkit_core.auth_config import auth_settings
+from rapidkit_core.exceptions import AppException
 from rapidkit_core.log import get_plugin_logger
-from rapidkit_core.security import AccessJWT
-from rapidkit_core.uuid7 import uuid8
+from rapidkit_core.security import check_password
+from rapidkit_core.status_codes import StatusCode
 
 from plugin_auth.auth.deps import (
     AuthCrudDep,
@@ -22,6 +23,7 @@ from plugin_auth.auth.deps import (
     UserRefreshDep,
     UserRefreshJWTDep,
     refresh_structure,
+    user_structure,
 )
 from plugin_auth.auth.schemas import (
     LoginRequest,
@@ -29,8 +31,13 @@ from plugin_auth.auth.schemas import (
     TokenResponse,
     UserInfoResponse,
 )
-from plugin_auth.auth.services import create_access_token, refresh_user_token, user_login
-from plugin_auth.role.deps import RoleCrudDep, get_user_permission_cache, permission_structure
+from plugin_auth.auth.services import create_user_token, refresh_user_token, user_login
+from plugin_auth.role.deps import (
+    RoleCrudDep,
+    create_user_permission_cache,
+    get_user_permission_cache,
+    permission_structure,
+)
 
 logger = get_plugin_logger("Auth")
 
@@ -75,6 +82,10 @@ async def logout(auth: UserAccessJWTDep, redis: RedisDep) -> Response[bool]:
     if await redis.exists(permission_key):
         await redis.delete(permission_key)
 
+    user_cache_key = user_structure.format(user_id=auth.sub)
+    if await redis.exists(user_cache_key):
+        await redis.delete(user_cache_key)
+
     logger.info("User {user_id} logged out", user_id=auth.sub)
     return Response(data=True)
 
@@ -93,19 +104,21 @@ async def refresh_token(
 
 
 @router.post("/login/swagger", include_in_schema=False, dependencies=[Depends(check_debug)])
-async def login_swagger(form: OAuth2Form, auth: AuthCrudDep) -> OAuth2TokenResponse:
+async def login_swagger(
+    form: OAuth2Form,
+    auth: AuthCrudDep,
+    role: RoleCrudDep,
+    redis: RedisDep,
+    user_agent: HeaderUserAgentDep,
+) -> OAuth2TokenResponse:
     """通过 Swagger 登录验证用户并生成访问令牌。"""
     user_info = await auth.get_user_by_username(form.username)
-    token = create_access_token(
-        AccessJWT.model_validate(
-            {
-                "sub": user_info.id,
-                "name": user_info.name,
-                "jti": uuid8(),
-            }
-        )
-    )
-    return OAuth2TokenResponse(access_token=token, token_type="bearer")
+    if not check_password(form.password, user_info.password):
+        raise AppException(StatusCode.AUTHENTICATION_FAILED)
+
+    token = await create_user_token(user_info.id, user_info.name, redis, user_agent)
+    await create_user_permission_cache(user_info.id, user_info.roles, redis, role)
+    return OAuth2TokenResponse(access_token=token.access_token, token_type="bearer")
 
 
 @router.get("/user/info")

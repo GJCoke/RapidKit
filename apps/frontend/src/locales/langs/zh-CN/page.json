@@ -263,6 +263,18 @@
       },
       "menuAuth": "菜单权限",
       "permissionConfig": "权限配置",
+      "dataScope": "数据范围",
+      "dataScopeConfig": "数据范围配置",
+      "customDepartments": "自定义部门",
+      "customRules": "自定义规则",
+      "dataScopeOptions": {
+        "all": "全部数据",
+        "self": "仅本人",
+        "dept": "本部门",
+        "deptAndChildren": "本部门及子部门",
+        "customDept": "自定义部门",
+        "customRule": "自定义规则"
+      },
       "roleCode": "角色编码",
       "roleDesc": "角色描述",
       "roleName": "角色名称",
@@ -276,7 +288,9 @@
         "name": "请输入姓名",
         "nickName": "请输入昵称",
         "password": "请输入密码",
-        "passwordEdit": "留空则不修改",
+        "oldPassword": "请输入旧密码",
+        "newPassword": "请输入新密码",
+        "confirmPassword": "请再次输入新密码",
         "userEmail": "请输入邮箱",
         "userGender": "请选择性别",
         "userPhone": "请输入手机号",
@@ -292,6 +306,11 @@
       "name": "姓名",
       "nickName": "昵称",
       "password": "密码",
+      "changePassword": "修改密码",
+      "oldPassword": "旧密码",
+      "newPassword": "新密码",
+      "confirmPassword": "确认密码",
+      "passwordMismatch": "两次输入的密码不一致",
       "title": "用户列表",
       "userEmail": "邮箱",
       "userGender": "性别",
@@ -299,6 +318,71 @@
       "userRole": "用户角色",
       "userStatus": "用户状态",
       "username": "用户名"
+    },
+    "department": {
+      "title": "部门管理",
+      "addDepartment": "新增部门",
+      "editDepartment": "编辑部门",
+      "name": "部门名称",
+      "code": "部门编码",
+      "sort": "排序",
+      "status": "状态",
+      "leader": "负责人",
+      "parentDepartment": "上级部门",
+      "form": {
+        "name": "请输入部门名称",
+        "code": "请输入部门编码",
+        "sort": "请输入排序",
+        "status": "请选择状态",
+        "leader": "请选择负责人",
+        "parentDepartment": "请选择上级部门"
+      }
+    },
+    "auditDict": {
+      "title": "审计字典管理",
+      "key": "键名",
+      "category": "分类",
+      "labelZh": "中文标签",
+      "labelEn": "英文标签",
+      "categoryResource": "资源",
+      "categoryAction": "动作",
+      "addAuditDict": "新增字典",
+      "editAuditDict": "编辑字典",
+      "form": {
+        "key": "请输入键名",
+        "category": "请选择分类",
+        "labelZh": "请输入中文标签",
+        "labelEn": "请输入英文标签"
+      }
+    },
+    "dataRule": {
+      "title": "数据规则",
+      "addRule": "新增规则",
+      "editRule": "编辑规则",
+      "name": "规则名称",
+      "modelName": "目标模型",
+      "field": "目标字段",
+      "operator": "操作符",
+      "value": "值",
+      "logic": "逻辑组合",
+      "form": {
+        "name": "请输入规则名称",
+        "modelName": "请输入目标模型名",
+        "field": "请输入目标字段名",
+        "operator": "请选择操作符",
+        "value": "请输入匹配值",
+        "logic": "请选择逻辑组合"
+      },
+      "operatorOptions": {
+        "eq": "等于",
+        "ne": "不等于",
+        "gt": "大于",
+        "ge": "大于等于",
+        "lt": "小于",
+        "le": "小于等于",
+        "in": "包含",
+        "not_in": "不包含"
+      }
     },
     "worker": {
       "title": "Worker 管理",

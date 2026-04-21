@@ -79,6 +79,7 @@ declare global {
         params: Record<string, string>
         detail: string | null
         sourceIp: string | null
+        username: string | null
         createTime: string
       }
 

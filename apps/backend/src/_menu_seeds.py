@@ -140,6 +140,7 @@ def build_menus() -> list[Menu]:
         ],
         interfaces=[
             "GET:/api/v1/users",
+            "GET:/api/v1/users/all",
             "GET:/api/v1/users/{user_id}",
             "POST:/api/v1/users",
             "PUT:/api/v1/users/{user_id}",
@@ -203,6 +204,82 @@ def build_menus() -> list[Menu]:
             "DELETE:/api/v1/manage/menus",
             "GET:/api/v1/manage/menus/tree",
             "GET:/api/v1/manage/menus/pages",
+        ],
+    )
+
+    # 2.4 部门管理
+    manage_department = Menu(
+        id=uuid8(),
+        parent_id=manage_id,
+        menu_name="部门管理",
+        menu_type=MenuType.MENU,
+        order=4,
+        route_name="manage_department",
+        route_path="/manage/department",
+        component="view.manage_department",
+        icon="ic:outline-corporate-fare",
+        i18n_key="route.manage_department",
+        buttons=[
+            Button(code="manage_department:add", desc="新增部门").model_dump(),
+            Button(code="manage_department:edit", desc="编辑部门").model_dump(),
+            Button(code="manage_department:delete", desc="删除部门").model_dump(),
+        ],
+        interfaces=[
+            "GET:/api/v1/departments/tree",
+            "POST:/api/v1/departments",
+            "PUT:/api/v1/departments/{dept_id}",
+            "DELETE:/api/v1/departments/{dept_id}",
+        ],
+    )
+
+    # 2.5 数据规则
+    manage_data_rule = Menu(
+        id=uuid8(),
+        parent_id=manage_id,
+        menu_name="数据规则",
+        menu_type=MenuType.MENU,
+        order=5,
+        route_name="manage_data-rule",
+        route_path="/manage/data-rule",
+        component="view.manage_data-rule",
+        icon="ic:outline-rule",
+        i18n_key="route.manage_data-rule",
+        buttons=[
+            Button(code="manage_data-rule:add", desc="新增数据规则").model_dump(),
+            Button(code="manage_data-rule:edit", desc="编辑数据规则").model_dump(),
+            Button(code="manage_data-rule:delete", desc="删除数据规则").model_dump(),
+        ],
+        interfaces=[
+            "GET:/api/v1/data-rules",
+            "GET:/api/v1/data-rules/all",
+            "POST:/api/v1/data-rules",
+            "PUT:/api/v1/data-rules/{rule_id}",
+            "DELETE:/api/v1/data-rules/{rule_id}",
+        ],
+    )
+
+    # 2.6 审计字典
+    manage_audit_dict = Menu(
+        id=uuid8(),
+        parent_id=manage_id,
+        menu_name="审计字典",
+        menu_type=MenuType.MENU,
+        order=6,
+        route_name="manage_audit-dict",
+        route_path="/manage/audit-dict",
+        component="view.manage_audit-dict",
+        icon="carbon:catalog",
+        i18n_key="route.manage_audit-dict",
+        buttons=[
+            Button(code="manage_audit-dict:add", desc="新增审计字典").model_dump(),
+            Button(code="manage_audit-dict:edit", desc="编辑审计字典").model_dump(),
+            Button(code="manage_audit-dict:delete", desc="删除审计字典").model_dump(),
+        ],
+        interfaces=[
+            "GET:/api/v1/system/audit-dict",
+            "POST:/api/v1/system/audit-dict",
+            "PUT:/api/v1/system/audit-dict/{item_id}",
+            "DELETE:/api/v1/system/audit-dict/{item_id}",
         ],
     )
 
@@ -470,6 +547,9 @@ def build_menus() -> list[Menu]:
         manage_user,
         manage_role,
         manage_menu,
+        manage_department,
+        manage_data_rule,
+        manage_audit_dict,
         socketio,
         socketio_chat,
         socketio_debug,

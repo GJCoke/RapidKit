@@ -67,6 +67,7 @@ class StatusCode(Enum):
     RESOURCE_PERMISSION_DENIED = (4007, "common.response.resourcePermissionDenied")
     USER_DISABLED = (4008, "common.response.userDisabled")
     TOKEN_REFRESH_FAILED = (4009, "common.response.tokenRefreshFailed")
+    ACCOUNT_LOCKED = (4010, "common.response.accountLocked")
 
     # ==================== 资源不存在 (5XXX) ====================
     USER_NOT_FOUND = (5001, "common.response.userNotFound")

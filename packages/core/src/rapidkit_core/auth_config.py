@@ -19,7 +19,10 @@ from pydantic import Secret, field_validator, model_validator
 
 from rapidkit_core.config import BaseSettings, ConfigError, settings
 from rapidkit_core.constants import DAYS, WEEKS
+from rapidkit_core.path import BASE_PATH
 from rapidkit_core.security import AccessSecret, RefreshSecret, generate_rsa_key_pair, load_private_key, serialize_key
+
+_KEYS_DIR = BASE_PATH / ".keys"
 
 
 class AuthConfig(BaseSettings):
@@ -35,6 +38,9 @@ class AuthConfig(BaseSettings):
 
     RSA_PRIVATE_KEY: RSAPrivateKey
     RSA_PUBLIC_KEY: Secret[str]
+
+    LOGIN_MAX_ATTEMPTS: int = 5
+    LOGIN_LOCKOUT_SECONDS: int = 900  # 15 minutes
 
     # noinspection PyNestedDecorators
     @field_validator("ACCESS_TOKEN_EXP", "REFRESH_TOKEN_EXP", mode="before")
@@ -82,9 +88,24 @@ class AuthConfig(BaseSettings):
         if not rsa_private or not rsa_public:
             if settings.ENVIRONMENT.is_deployed:
                 raise ConfigError(message.format(field="RSA_PRIVATE_KEY or RSA_PUBLIC_KEY"))
-            private_key, public_key = generate_rsa_key_pair()
 
-            auth["RSA_PRIVATE_KEY"], auth["RSA_PUBLIC_KEY"] = private_key, serialize_key(public_key)
+            private_pem = _KEYS_DIR / "private.pem"
+            public_pem = _KEYS_DIR / "public.pem"
+
+            if private_pem.exists() and public_pem.exists():
+                auth["RSA_PRIVATE_KEY"] = load_private_key(private_pem.read_text())
+                auth["RSA_PUBLIC_KEY"] = public_pem.read_text()
+            else:
+                private_key, public_key = generate_rsa_key_pair()
+                private_bytes = serialize_key(private_key)
+                public_bytes = serialize_key(public_key)
+
+                auth["RSA_PRIVATE_KEY"] = private_key
+                auth["RSA_PUBLIC_KEY"] = public_bytes.decode("utf-8")
+
+                _KEYS_DIR.mkdir(parents=True, exist_ok=True)
+                private_pem.write_bytes(private_bytes)
+                public_pem.write_bytes(public_bytes)
 
         else:
             try:

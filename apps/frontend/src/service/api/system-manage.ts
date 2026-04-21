@@ -100,6 +100,7 @@ export function fetchCreateUser(data: {
   status?: string
   roles?: string[]
   isAdmin?: boolean
+  departmentId?: string
 }) {
   return request<Api.SystemManage.User>({
     url: "/users",
@@ -115,10 +116,10 @@ export function fetchUpdateUser(
     name?: string
     email?: string
     username?: string
-    password?: string
     status?: string
     roles?: string[]
     isAdmin?: boolean
+    departmentId?: string
   },
 ) {
   return request<Api.SystemManage.User>({
@@ -142,6 +143,23 @@ export function fetchBatchDeleteUsers(ids: string[]) {
     url: "/users",
     method: "delete",
     data: { ids },
+  })
+}
+
+/** change user password */
+export function fetchChangePassword(userId: string, data: Api.SystemManage.ChangePassword) {
+  return request<boolean>({
+    url: `/users/${userId}/password`,
+    method: "put",
+    data,
+  })
+}
+
+/** get all users (for select options) */
+export function fetchGetAllUsers() {
+  return request<Api.SystemManage.UserOption[]>({
+    url: "/users/all",
+    method: "get",
   })
 }
 
@@ -214,5 +232,136 @@ export function fetchGetBackendRouters() {
   return request<Api.SystemManage.BackendRouter[]>({
     url: "/router/backend",
     method: "get",
+  })
+}
+
+// ==================== Department ====================
+
+/** get department tree */
+export function fetchGetDepartmentTree() {
+  return request<Api.SystemManage.DepartmentTree[]>({
+    url: "/departments/tree",
+    method: "get",
+  })
+}
+
+/** create department */
+export function fetchCreateDepartment(data: {
+  parentId?: string | null
+  name: string
+  code: string
+  sort?: number
+  status?: Api.Common.EnableStatus
+  leaderId?: string | null
+}) {
+  return request<Api.SystemManage.Department>({
+    url: "/departments",
+    method: "post",
+    data,
+  })
+}
+
+/** update department */
+export function fetchUpdateDepartment(id: string, data: Partial<Api.SystemManage.Department>) {
+  return request<Api.SystemManage.Department>({
+    url: `/departments/${id}`,
+    method: "put",
+    data,
+  })
+}
+
+/** delete department */
+export function fetchDeleteDepartment(id: string) {
+  return request<Api.SystemManage.Department>({
+    url: `/departments/${id}`,
+    method: "delete",
+  })
+}
+
+// ==================== DataRule ====================
+
+/** get data rule list (paginated) */
+export function fetchGetDataRuleList(params?: Api.SystemManage.DataRuleSearchParams) {
+  return request<Api.SystemManage.DataRuleList>({
+    url: "/data-rules",
+    method: "get",
+    params,
+  })
+}
+
+/** get all data rules (for select options) */
+export function fetchGetAllDataRules() {
+  return request<Api.SystemManage.DataRule[]>({
+    url: "/data-rules/all",
+    method: "get",
+  })
+}
+
+/** create data rule */
+export function fetchCreateDataRule(data: {
+  name: string
+  modelName: string
+  field: string
+  operator: string
+  value: string
+  logic?: string
+}) {
+  return request<Api.SystemManage.DataRule>({
+    url: "/data-rules",
+    method: "post",
+    data,
+  })
+}
+
+/** update data rule */
+export function fetchUpdateDataRule(id: string, data: Partial<Api.SystemManage.DataRule>) {
+  return request<Api.SystemManage.DataRule>({
+    url: `/data-rules/${id}`,
+    method: "put",
+    data,
+  })
+}
+
+/** delete data rule */
+export function fetchDeleteDataRule(id: string) {
+  return request<Api.SystemManage.DataRule>({
+    url: `/data-rules/${id}`,
+    method: "delete",
+  })
+}
+
+// ==================== AuditDictionary ====================
+
+/** get all audit dictionary entries */
+export function fetchGetAuditDictList() {
+  return request<Api.SystemManage.AuditDict[]>({
+    url: "/system/audit-dict",
+    method: "get",
+  })
+}
+
+/** create audit dictionary entry */
+export function fetchCreateAuditDict(data: { key: string; category: string; labelZh: string; labelEn: string }) {
+  return request<Api.SystemManage.AuditDict>({
+    url: "/system/audit-dict",
+    method: "post",
+    data,
+  })
+}
+
+/** update audit dictionary entry */
+export function fetchUpdateAuditDict(id: string, data: Partial<Api.SystemManage.AuditDict>) {
+  return request<Api.SystemManage.AuditDict>({
+    url: `/system/audit-dict/${id}`,
+    method: "put",
+    data,
+  })
+}
+
+/** delete audit dictionary entry */
+export function fetchDeleteAuditDict(id: string) {
+  return request<boolean>({
+    url: `/system/audit-dict/${id}`,
+    method: "delete",
   })
 }

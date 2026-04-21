@@ -130,6 +130,7 @@ common/autoinstallers/*/.npmrc
 
 # PEM certs
 *.pem
+.keys/
 
 ################################################################################
 #                               Python Ignore                                  #

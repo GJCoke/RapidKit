@@ -263,6 +263,18 @@
       },
       "menuAuth": "Menu Auth",
       "permissionConfig": "Permission Config",
+      "dataScope": "Data Scope",
+      "dataScopeConfig": "Data Scope Config",
+      "customDepartments": "Custom Departments",
+      "customRules": "Custom Rules",
+      "dataScopeOptions": {
+        "all": "All Data",
+        "self": "Self Only",
+        "dept": "Own Department",
+        "deptAndChildren": "Dept & Children",
+        "customDept": "Custom Departments",
+        "customRule": "Custom Rules"
+      },
       "roleCode": "Role Code",
       "roleDesc": "Role Description",
       "roleName": "Role Name",
@@ -276,7 +288,9 @@
         "name": "Please enter name",
         "nickName": "Please enter nick name",
         "password": "Please enter password",
-        "passwordEdit": "Leave empty to keep unchanged",
+        "oldPassword": "Please enter old password",
+        "newPassword": "Please enter new password",
+        "confirmPassword": "Please confirm new password",
         "userEmail": "Please enter email",
         "userGender": "Please select gender",
         "userPhone": "Please enter phone number",
@@ -292,6 +306,11 @@
       "name": "Name",
       "nickName": "Nick Name",
       "password": "Password",
+      "changePassword": "Change Password",
+      "oldPassword": "Old Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm Password",
+      "passwordMismatch": "Passwords do not match",
       "title": "User List",
       "userEmail": "Email",
       "userGender": "Gender",
@@ -299,6 +318,71 @@
       "userRole": "User Role",
       "userStatus": "User Status",
       "username": "User Name"
+    },
+    "department": {
+      "title": "Department Manage",
+      "addDepartment": "Add Department",
+      "editDepartment": "Edit Department",
+      "name": "Name",
+      "code": "Code",
+      "sort": "Sort",
+      "status": "Status",
+      "leader": "Leader",
+      "parentDepartment": "Parent Department",
+      "form": {
+        "name": "Please enter department name",
+        "code": "Please enter department code",
+        "sort": "Please enter sort order",
+        "status": "Please select status",
+        "leader": "Please select leader",
+        "parentDepartment": "Please select parent department"
+      }
+    },
+    "auditDict": {
+      "title": "Audit Dictionary",
+      "key": "Key",
+      "category": "Category",
+      "labelZh": "Chinese Label",
+      "labelEn": "English Label",
+      "categoryResource": "Resource",
+      "categoryAction": "Action",
+      "addAuditDict": "Add Entry",
+      "editAuditDict": "Edit Entry",
+      "form": {
+        "key": "Enter key",
+        "category": "Select category",
+        "labelZh": "Enter Chinese label",
+        "labelEn": "Enter English label"
+      }
+    },
+    "dataRule": {
+      "title": "Data Rules",
+      "addRule": "Add Rule",
+      "editRule": "Edit Rule",
+      "name": "Rule Name",
+      "modelName": "Target Model",
+      "field": "Target Field",
+      "operator": "Operator",
+      "value": "Value",
+      "logic": "Logic",
+      "form": {
+        "name": "Please enter rule name",
+        "modelName": "Please enter target model",
+        "field": "Please enter target field",
+        "operator": "Please select operator",
+        "value": "Please enter value",
+        "logic": "Please select logic"
+      },
+      "operatorOptions": {
+        "eq": "Equal",
+        "ne": "Not Equal",
+        "gt": "Greater Than",
+        "ge": "Greater or Equal",
+        "lt": "Less Than",
+        "le": "Less or Equal",
+        "in": "In",
+        "not_in": "Not In"
+      }
     },
     "worker": {
       "title": "Worker Management",

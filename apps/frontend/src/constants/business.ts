@@ -46,3 +46,32 @@ export const taskStatusRecord: Record<Api.Worker.TaskStatus, I18nFullKey> = {
 }
 
 export const taskStatusOptions = transformRecordToOption(taskStatusRecord)
+
+export const dataScopeRecord: Record<Api.SystemManage.DataScopeType, I18nFullKey> = {
+  1: "page.manage.role.dataScopeOptions.all",
+  2: "page.manage.role.dataScopeOptions.self",
+  3: "page.manage.role.dataScopeOptions.dept",
+  4: "page.manage.role.dataScopeOptions.deptAndChildren",
+  5: "page.manage.role.dataScopeOptions.customDept",
+  6: "page.manage.role.dataScopeOptions.customRule",
+}
+
+export const dataScopeOptions = transformRecordToOption(dataScopeRecord)
+
+export const dataRuleOperatorRecord: Record<string, I18nFullKey> = {
+  eq: "page.manage.dataRule.operatorOptions.eq",
+  ne: "page.manage.dataRule.operatorOptions.ne",
+  gt: "page.manage.dataRule.operatorOptions.gt",
+  ge: "page.manage.dataRule.operatorOptions.ge",
+  lt: "page.manage.dataRule.operatorOptions.lt",
+  le: "page.manage.dataRule.operatorOptions.le",
+  in: "page.manage.dataRule.operatorOptions.in",
+  not_in: "page.manage.dataRule.operatorOptions.not_in",
+}
+
+export const dataRuleOperatorOptions = transformRecordToOption(dataRuleOperatorRecord)
+
+export const dataRuleLogicOptions = [
+  { label: "AND", value: "AND" },
+  { label: "OR", value: "OR" },
+]

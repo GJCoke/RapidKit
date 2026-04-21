@@ -44,6 +44,19 @@ refresh_structure = "auth:refresh:<{user_id}>:<{jti}>"
 user_structure = "auth:user:<{user_id}>"
 force_relogin_structure = "auth:force_relogin:<{user_id}>"
 
+USER_CACHE_FIELDS = {
+    "id",
+    "name",
+    "email",
+    "username",
+    "status",
+    "is_admin",
+    "roles",
+    "department_id",
+    "create_time",
+    "update_time",
+}
+
 OAuth2Form = Annotated[
     OAuth2PasswordRequestForm,
     Depends(),
@@ -77,12 +90,16 @@ HeaderUserAgentDep = Annotated[str, Depends(get_user_agent), Doc("User-Agent hea
 HeaderAccessTokenDep = Annotated[str, Depends(get_access_token), Doc("Access token header.")]
 
 
-def parse_access_jwt_user(token: HeaderAccessTokenDep) -> AccessJWT:
+async def parse_access_jwt_user(token: HeaderAccessTokenDep, redis: RedisDep) -> AccessJWT:
     try:
         user = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
     except ExpiredTokenError:
         raise AppException(StatusCode.TOKEN_EXPIRED)
     except JoseError:
+        raise AppException(StatusCode.TOKEN_INVALID)
+
+    relogin_key = force_relogin_structure.format(user_id=user.sub)
+    if await redis.exists(relogin_key):
         raise AppException(StatusCode.TOKEN_INVALID)
 
     ctx.user_id = user.sub
@@ -108,7 +125,6 @@ def parse_refresh_jwt_user(
             token_agent=user.agent,
             user_id=user.sub,
         )
-        raise AppException(StatusCode.BAD_REQUEST)
     return user
 
 
@@ -124,10 +140,6 @@ AuthCrudDep = Annotated[UserCRUD, Depends(get_auth_crud), Doc("Auth CRUD instanc
 
 
 async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep, redis: RedisDep) -> User:
-    relogin_key = force_relogin_structure.format(user_id=user.sub)
-    if await redis.exists(relogin_key):
-        raise AppException(StatusCode.TOKEN_INVALID)
-
     cache_key = user_structure.format(user_id=user.sub)
     cached = await redis.get(cache_key)
     if cached:
@@ -139,7 +151,7 @@ async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep,
             raise AppException(StatusCode.USER_NOT_FOUND)
         await redis.set(
             cache_key,
-            user_info.model_dump_json(exclude={"password"}),
+            user_info.model_dump_json(include=USER_CACHE_FIELDS),
             ex=auth_settings.ACCESS_TOKEN_EXP,
         )
 

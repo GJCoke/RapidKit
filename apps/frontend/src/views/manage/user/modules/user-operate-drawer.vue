@@ -1,8 +1,15 @@
 <script setup lang="ts">
-  import { computed, ref, watch } from "vue"
+  import { computed, ref, shallowRef, watch } from "vue"
   import { jsonClone, rsaEncrypt } from "@rapidkit/utils"
   import { enableStatusOptions } from "@/constants/business"
-  import { fetchCreateUser, fetchGetAllRoles, fetchGetPublicKey, fetchUpdateUser } from "@/service/api"
+  import type { TreeSelectOption } from "naive-ui"
+  import {
+    fetchCreateUser,
+    fetchGetAllRoles,
+    fetchGetDepartmentTree,
+    fetchGetPublicKey,
+    fetchUpdateUser,
+  } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
   import { useAuthStore } from "@/store/modules/auth"
@@ -50,6 +57,7 @@
     roles: string[]
     status: Api.Common.EnableStatus | null
     isAdmin: boolean
+    departmentId: string | null
   }
 
   const model = ref(createDefaultModel())
@@ -63,6 +71,7 @@
       roles: [],
       status: null,
       isAdmin: false,
+      departmentId: null,
     }
   }
 
@@ -76,13 +85,7 @@
     }
   })
 
-  // password is required only on create
-  const passwordRules = computed(() => {
-    if (props.operateType === "add") {
-      return defaultRequiredRule
-    }
-    return undefined
-  })
+  const passwordRequired = computed(() => (props.operateType === "add" ? defaultRequiredRule : undefined))
 
   /** the enabled role options */
   const roleOptions = ref<CommonType.Option<string>[]>([])
@@ -98,12 +101,28 @@
     }
   }
 
+  const deptTreeOptions = shallowRef<TreeSelectOption[]>([])
+
+  function buildDeptTreeSelect(departments: Api.SystemManage.DepartmentTree[]): TreeSelectOption[] {
+    return departments.map((dept) => ({
+      key: dept.id,
+      label: dept.name,
+      children: dept.children?.length ? buildDeptTreeSelect(dept.children) : undefined,
+    }))
+  }
+
+  async function loadDeptTree() {
+    const { data, error } = await fetchGetDepartmentTree()
+    if (error) return
+    deptTreeOptions.value = buildDeptTreeSelect(data)
+  }
+
   function handleInitModel() {
     model.value = createDefaultModel()
 
     if (props.operateType === "edit" && props.rowData) {
-      const { username, name, email, roles, status, isAdmin } = jsonClone(props.rowData)
-      Object.assign(model.value, { username, name, email, roles, status, isAdmin })
+      const { username, name, email, roles, status, isAdmin, departmentId } = jsonClone(props.rowData)
+      Object.assign(model.value, { username, name, email, roles, status, isAdmin, departmentId })
     }
   }
 
@@ -129,23 +148,19 @@
         roles: model.value.roles,
         status: model.value.status ?? undefined,
         isAdmin: model.value.isAdmin,
+        departmentId: model.value.departmentId ?? undefined,
       })
       if (error) return
     } else {
-      const updateData: Record<string, unknown> = {
+      const { error } = await fetchUpdateUser(props.rowData!.id!, {
         username: model.value.username,
         name: model.value.name,
         email: model.value.email,
         roles: model.value.roles,
         status: model.value.status ?? undefined,
         isAdmin: model.value.isAdmin,
-      }
-
-      if (model.value.password) {
-        updateData.password = await encryptPassword(model.value.password)
-      }
-
-      const { error } = await fetchUpdateUser(props.rowData!.id, updateData)
+        departmentId: model.value.departmentId ?? undefined,
+      })
       if (error) return
     }
 
@@ -159,6 +174,7 @@
       handleInitModel()
       restoreValidation()
       getRoleOptions()
+      loadDeptTree()
     }
   })
 </script>
@@ -176,14 +192,17 @@
         <NFormItem :label="$t('page.manage.user.userEmail')" path="email">
           <NInput v-model:value="model.email" :placeholder="$t('page.manage.user.form.userEmail')" />
         </NFormItem>
-        <NFormItem :label="$t('page.manage.user.password')" path="password" :rule="passwordRules">
+        <NFormItem
+          v-if="operateType === 'add'"
+          :label="$t('page.manage.user.password')"
+          path="password"
+          :rule="passwordRequired"
+        >
           <NInput
             v-model:value="model.password"
             type="password"
             show-password-on="click"
-            :placeholder="
-              operateType === 'add' ? $t('page.manage.user.form.password') : $t('page.manage.user.form.passwordEdit')
-            "
+            :placeholder="$t('page.manage.user.form.password')"
           />
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.userStatus')" path="status">
@@ -197,6 +216,15 @@
             multiple
             :options="roleOptions"
             :placeholder="$t('page.manage.user.form.userRole')"
+          />
+        </NFormItem>
+        <NFormItem :label="$t('page.manage.department.title')" path="departmentId">
+          <NTreeSelect
+            v-model:value="model.departmentId"
+            :options="deptTreeOptions"
+            :placeholder="$t('page.manage.department.form.parentDepartment')"
+            clearable
+            default-expand-all
           />
         </NFormItem>
         <NFormItem v-if="authStore.userInfo.isAdmin" :label="$t('page.manage.user.isAdmin')">
