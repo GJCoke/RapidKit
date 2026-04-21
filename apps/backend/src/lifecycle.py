@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from rapidkit_core.config import settings
 from rapidkit_core.database import RedisManager, async_engine, sync_engine
 from rapidkit_core.events import event_bus
+from rapidkit_core.leader_election import LeaderElection
 from rapidkit_core.log import logger
 
 from src.locales.watch import watch_locale_files
@@ -67,11 +68,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     consumer_task = None
     offline_checker_task = None
+    worker_leader: LeaderElection | None = None
     if settings.ENABLE_CELERY_MONITOR:
         RedisManager.connect(redis_url=str(settings.CELERY_REDIS_URL), pool_name="celery")
+        redis = RedisManager.client()
+        worker_leader = LeaderElection(redis, "leader:worker_offline_checker")
+        await worker_leader.start()
         socket = app.state.socket
         consumer_task = asyncio.create_task(consume_events(socket))
-        offline_checker_task = asyncio.create_task(check_worker_offline(socket))
+        offline_checker_task = asyncio.create_task(check_worker_offline(socket, worker_leader))
         logger.info("Celery monitor enabled.")
 
     # 执行插件 on_startup 回调（追踪耗时）
@@ -102,6 +107,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         consumer_task.cancel()
     if offline_checker_task:
         offline_checker_task.cancel()
+    if worker_leader:
+        await worker_leader.stop()
     if watch_task:
         watch_task.cancel()
 

@@ -3,6 +3,8 @@
 import asyncio
 from typing import TYPE_CHECKING
 
+from rapidkit_core.database import RedisManager
+from rapidkit_core.leader_election import LeaderElection
 from rapidkit_core.plugin import PluginManifest
 
 from plugin_monitoring.models import ApiMetricsHourly
@@ -11,16 +13,24 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
 
 _tasks: list[asyncio.Task] = []
+_leader: LeaderElection | None = None
 
 
 async def _startup(app: FastAPI) -> None:
+    global _leader  # noqa: PLW0603
     from plugin_monitoring.push import push_api_stats_loop
 
+    redis = RedisManager.client()
+    _leader = LeaderElection(redis, "leader:monitoring_push")
+    await _leader.start()
+
     socket = app.state.socket
-    _tasks.append(asyncio.create_task(push_api_stats_loop(socket)))
+    _tasks.append(asyncio.create_task(push_api_stats_loop(socket, _leader)))
 
 
 async def _shutdown(app: FastAPI) -> None:
+    if _leader:
+        await _leader.stop()
     for t in _tasks:
         t.cancel()
     _tasks.clear()

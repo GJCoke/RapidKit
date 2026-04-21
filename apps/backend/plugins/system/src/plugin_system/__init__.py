@@ -3,7 +3,9 @@
 import asyncio
 from typing import TYPE_CHECKING, Any
 
+from rapidkit_core.database import RedisManager
 from rapidkit_core.events import event_bus
+from rapidkit_core.leader_election import LeaderElection
 from rapidkit_core.plugin import PluginManifest
 
 from plugin_system.audit_dict.models import AuditDictionary
@@ -14,19 +16,26 @@ if TYPE_CHECKING:
 
 _tasks: list[asyncio.Task] = []
 _sio: Any | None = None
+_leader: LeaderElection | None = None
 
 
 async def _startup(app: FastAPI) -> None:
-    global _sio  # noqa: PLW0603
+    global _sio, _leader  # noqa: PLW0603
     from plugin_system.push import push_error_stats_loop, push_resources_loop
 
+    redis = RedisManager.client()
+    _leader = LeaderElection(redis, "leader:system_push")
+    await _leader.start()
+
     _sio = app.state.socket
-    _tasks.append(asyncio.create_task(push_resources_loop(_sio)))
-    _tasks.append(asyncio.create_task(push_error_stats_loop(_sio)))
+    _tasks.append(asyncio.create_task(push_resources_loop(_sio, _leader)))
+    _tasks.append(asyncio.create_task(push_error_stats_loop(_sio, _leader)))
 
 
 async def _shutdown(_app: FastAPI) -> None:
     await event_bus.shutdown()
+    if _leader:
+        await _leader.stop()
     for t in _tasks:
         t.cancel()
     _tasks.clear()

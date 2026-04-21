@@ -321,6 +321,7 @@
     },
     "department": {
       "title": "部门管理",
+      "column": "部门",
       "addDepartment": "新增部门",
       "editDepartment": "编辑部门",
       "name": "部门名称",

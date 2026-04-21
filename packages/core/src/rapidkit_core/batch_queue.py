@@ -24,6 +24,11 @@ class AsyncBatchQueue(Generic[T]):
     收集 items，当达到 ``batch_size`` 或 ``flush_interval`` 超时后，
     调用 ``handler`` 批量处理。
 
+    **Crash durability:** Items buffered in memory are lost if the process
+    crashes before flush. For audit logs this is an accepted trade-off
+    (performance vs durability). If zero-loss is required, consider writing
+    to a Redis Stream first and consuming from there.
+
     Args:
         handler: 批量处理回调，接收 ``list[T]``。
         batch_size: 触发批量处理的条目数。

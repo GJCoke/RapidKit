@@ -3,34 +3,58 @@
   import relativeTime from "dayjs/plugin/relativeTime"
   import "dayjs/locale/zh-cn"
   import { $t } from "@/locales"
+  import { useAppStore } from "@/store/modules/app"
 
   dayjs.extend(relativeTime)
 
   defineOptions({ name: "DashboardActivityFeed" })
 
-  defineProps<{
+  const props = defineProps<{
     activities: Api.Dashboard.ActivityItem[]
+    auditDict: {
+      resource: Record<string, { zh: string; en: string }>
+      action: Record<string, { zh: string; en: string }>
+    }
   }>()
+
+  const appStore = useAppStore()
 
   type TimelineType = "success" | "error" | "warning" | "info" | "default"
 
   function eventColor(eventType: string): TimelineType {
-    if (eventType === "user_login") return "info"
-    if (eventType === "task_success") return "success"
-    if (eventType === "task_failure" || eventType === "system_error") return "error"
-    if (eventType === "worker_online" || eventType === "worker_offline") return "warning"
-    if (eventType === "business_error") return "warning"
+    if (eventType === "auth.login" || eventType === "auth.logout") return "info"
+    if (eventType.endsWith(".create")) return "success"
+    if (eventType.endsWith(".delete")) return "error"
+    if (eventType.endsWith(".update")) return "warning"
     return "default"
   }
 
   function activityTitle(item: Api.Dashboard.ActivityItem) {
-    const key = `page.home.dashboard.activity.${item.eventType}` as I18nFullKey
-    const translated = $t(key, item.params)
-    return translated === key ? JSON.stringify(item.params) : translated
+    const parts = item.eventType.split(".")
+    if (parts.length < 2) return item.eventType
+
+    const [resource, action] = parts
+    const locale = appStore.locale === "zh-CN" ? "zh" : "en"
+
+    const resourceLabel = props.auditDict.resource[resource]?.[locale] ?? resource
+    const actionLabel = props.auditDict.action[action]?.[locale] ?? action
+    let operator = item.username ?? ""
+    let target = item.params?.target ?? ""
+
+    // Login has no JWT yet — target holds the username
+    if (!operator && target) {
+      operator = target
+      target = ""
+    } else if (operator === target) {
+      target = ""
+    }
+
+    return `${operator} ${actionLabel} ${resourceLabel} ${target}`.trim()
   }
 
   function relativeTimeStr(time: string) {
-    return dayjs(time).locale("zh-cn").fromNow()
+    const dayjsLocale = appStore.locale === "zh-CN" ? "zh-cn" : "en"
+    return dayjs(time).locale(dayjsLocale).fromNow()
   }
 </script>
 

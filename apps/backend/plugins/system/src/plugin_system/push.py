@@ -11,6 +11,7 @@ import socket as _socket
 import psutil
 from fastapi_sio_di import AsyncServer
 from rapidkit_core.database import RedisManager
+from rapidkit_core.leader_election import LeaderElection
 from rapidkit_core.log import get_plugin_logger
 
 from plugin_system.services import get_error_counts, get_total_requests
@@ -22,8 +23,12 @@ _RESOURCE_KEY_PREFIX = "sys:resources:"
 _RESOURCE_TTL = 60
 
 
-async def push_resources_loop(sio: AsyncServer) -> None:
-    """每 10 秒采集服务器资源，写入 Redis 并推送到 /dashboard 命名空间。"""
+async def push_resources_loop(sio: AsyncServer, leader: LeaderElection) -> None:
+    """
+    每 10 秒采集服务器资源，写入 Redis 并推送到 /dashboard 命名空间。
+
+    Redis 写入（按 hostname key）所有实例执行。Socket.IO 推送仅 leader 执行。
+    """
     psutil.cpu_percent(interval=None)
     net_prev = psutil.net_io_counters()
     await asyncio.sleep(1)
@@ -53,20 +58,27 @@ async def push_resources_loop(sio: AsyncServer) -> None:
                 "netRecv": net_recv_rate,
             }
 
+            # All instances write their own host metrics to Redis
             key = f"{_RESOURCE_KEY_PREFIX}{HOSTNAME}"
             await redis.hset(key, mapping={k: str(v) for k, v in data.items()})
             await redis.expire(key, _RESOURCE_TTL)
 
-            await sio.emit("dashboard:resources", data, namespace="/dashboard")
+            # Only leader pushes via Socket.IO to avoid duplicates
+            if leader.is_leader:
+                await sio.emit("dashboard:resources", data, namespace="/dashboard")
         except Exception:
             logger.debug("Failed to push resources", exc_info=True)
 
         await asyncio.sleep(10)
 
 
-async def push_error_stats_loop(sio: AsyncServer) -> None:
-    """每 30 秒推送错误统计数据到 /dashboard 命名空间。"""
+async def push_error_stats_loop(sio: AsyncServer, leader: LeaderElection) -> None:
+    """每 30 秒推送错误统计数据到 /dashboard 命名空间（仅 leader 实例执行）。"""
     while True:
+        if not leader.is_leader:
+            await asyncio.sleep(30)
+            continue
+
         try:
             redis = RedisManager.client()
             http_5xx, biz_errors = await get_error_counts(redis, hours=1)

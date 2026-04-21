@@ -32,7 +32,7 @@
   <NCard :bordered="false" size="small" class="card-wrapper">
     <NCollapse :default-expanded-names="['role-search']">
       <NCollapseItem :title="$t('common.search')" name="role-search">
-        <NForm :model="model" label-placement="left" :label-width="80">
+        <NForm :model="model" label-placement="left" :label-width="100">
           <NGrid responsive="screen" item-responsive>
             <NFormItemGi span="24 s:12 m:6" :label="$t('page.manage.role.roleName')" path="roleName" class="pr-24px">
               <NInput v-model:value="model.keyword" :placeholder="$t('page.manage.role.form.roleName')" />

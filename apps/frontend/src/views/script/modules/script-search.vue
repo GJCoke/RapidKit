@@ -32,7 +32,7 @@
   <NCard :bordered="false" size="small" class="card-wrapper">
     <NCollapse :default-expanded-names="['script-search']">
       <NCollapseItem :title="$t('common.search')" name="script-search">
-        <NForm :model="model" label-placement="left" :label-width="80">
+        <NForm :model="model" label-placement="left" :label-width="100">
           <NGrid responsive="screen" item-responsive>
             <NFormItemGi span="24 s:12 m:6" :label="$t('page.script.scriptName')" path="keyword" class="pr-24px">
               <NInput v-model:value="model.keyword" :placeholder="$t('page.script.form.scriptName')" />

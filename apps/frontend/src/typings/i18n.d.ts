@@ -227,6 +227,7 @@ declare namespace I18nKeys {
     | "manage.dataRule.value"
     | "manage.department.addDepartment"
     | "manage.department.code"
+    | "manage.department.column"
     | "manage.department.editDepartment"
     | "manage.department.form.code"
     | "manage.department.form.leader"

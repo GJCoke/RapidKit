@@ -2,6 +2,7 @@ import inspect
 import logging
 import os
 import re
+import socket
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -85,8 +86,12 @@ def set_custom_logfile() -> None:
     """设置自定义日志文件。"""
     os.makedirs(LOG_PATH, exist_ok=True)
 
-    log_access_file = LOG_PATH.joinpath(settings.LOG_ACCESS_FILENAME)
-    log_error_file = LOG_PATH.joinpath(settings.LOG_ERROR_FILENAME)
+    instance_suffix = f".{socket.gethostname()}.{os.getpid()}"
+    access_name = settings.LOG_ACCESS_FILENAME.replace(".log", f"{instance_suffix}.log")
+    error_name = settings.LOG_ERROR_FILENAME.replace(".log", f"{instance_suffix}.log")
+
+    log_access_file = LOG_PATH.joinpath(access_name)
+    log_error_file = LOG_PATH.joinpath(error_name)
 
     def compression(filepath: str) -> Path:
         filename = filepath.split(os.sep)[-1]

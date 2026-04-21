@@ -65,7 +65,7 @@
       </div>
       <div class="md:col-span-9 min-h-400px md:min-h-0 relative">
         <div class="h-full md:absolute md:inset-0">
-          <ActivityFeed :activities="dashboard.activities.value" />
+          <ActivityFeed :activities="dashboard.activities.value" :audit-dict="dashboard.auditDict.value" />
         </div>
       </div>
     </div>

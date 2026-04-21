@@ -5,16 +5,21 @@ Author : Coke
 Date   : 2026-04-14
 """
 
+import asyncio
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from fastapi.routing import APIRoute
-from rapidkit_core.database import AsyncSessionLocal
+from rapidkit_core.database import AsyncSessionLocal, RedisManager
+from rapidkit_core.distributed_lock import DistributedLock
+from rapidkit_core.log import get_plugin_logger
 from starlette.routing import BaseRoute as StarletteRoute
 
 from plugin_auth.router.crud import RouterCRUD
 from plugin_auth.router.models import InterfaceRouter
 from plugin_auth.router.schemas import FastAPIRouterCreate
+
+logger = get_plugin_logger("Auth")
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -55,22 +60,35 @@ async def store_router_in_db(routes: list[StarletteRoute | APIRoute]) -> None:
             )
         )
 
-    async with AsyncSessionLocal() as session:
-        router_db = RouterCRUD(session)
-        db_routes = await router_db.get_all()
+    redis = RedisManager.client()
 
-        add_routes, remove_routes, update_routes = diff_api_routes(db_routes, app_routes)
+    for attempt in range(3):
+        lock = DistributedLock(redis, "lock:route_sync", ttl=30)
+        if await lock.acquire():
+            try:
+                async with AsyncSessionLocal() as session:
+                    router_db = RouterCRUD(session)
+                    db_routes = await router_db.get_all()
 
-        if remove_routes:
-            await router_db.delete_all(remove_routes)
+                    add_routes, remove_routes, update_routes = diff_api_routes(db_routes, app_routes)
 
-        if update_routes:
-            await router_db.update_all(update_routes)
+                    if remove_routes:
+                        await router_db.delete_all(remove_routes)
 
-        if add_routes:
-            await router_db.create_all(add_routes)
+                    if update_routes:
+                        await router_db.update_all(update_routes)
 
-        await session.commit()
+                    if add_routes:
+                        await router_db.create_all(add_routes)
+
+                    await session.commit()
+            finally:
+                await lock.release()
+            return
+        logger.debug("Route sync lock busy, retrying ({}/3)...", attempt + 1)
+        await asyncio.sleep(2)
+
+    logger.warning("Route sync failed after 3 attempts — lock not acquired.")
 
 
 def diff_api_routes(

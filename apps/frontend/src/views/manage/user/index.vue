@@ -96,7 +96,7 @@
       },
       {
         key: "departmentId",
-        title: $t("page.manage.department.title"),
+        title: $t("page.manage.department.column"),
         align: "center",
         minWidth: 120,
         render: (row) => {
@@ -129,7 +129,7 @@
         key: "operate",
         title: $t("common.operate"),
         align: "center",
-        width: 200,
+        width: 220,
         render: (row) => (
           <div class="flex-center gap-8px">
             {hasAuth("manage_user:edit") && (
@@ -219,7 +219,7 @@
         :data="data"
         size="small"
         :flex-height="!appStore.isMobile"
-        :scroll-x="962"
+        :scroll-x="982"
         :loading="loading"
         remote
         :row-key="(row) => row.id"

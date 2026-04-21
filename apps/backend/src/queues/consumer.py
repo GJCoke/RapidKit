@@ -9,6 +9,8 @@ Date    : 2026-04-02
 
 import asyncio
 import json
+import os
+import socket
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
@@ -20,10 +22,11 @@ from redis.exceptions import ResponseError
 
 if TYPE_CHECKING:
     from fastapi_sio_di import AsyncServer
+    from rapidkit_core.leader_election import LeaderElection
 
 STREAM_KEY = "celery:events"
 CONSUMER_GROUP = "fastapi-consumers"
-CONSUMER_NAME = "fastapi-consumer-1"
+CONSUMER_NAME = f"consumer-{socket.gethostname()}-{os.getpid()}"
 BLOCK_MS = 5000
 HEARTBEAT_TIMEOUT = timedelta(seconds=90)
 OFFLINE_CHECK_INTERVAL = 30
@@ -112,9 +115,9 @@ async def consume_events(sio: "AsyncServer") -> None:
             await asyncio.sleep(5)
 
 
-async def check_worker_offline(sio: "AsyncServer") -> None:
+async def check_worker_offline(sio: "AsyncServer", leader: "LeaderElection | None" = None) -> None:
     """
-    定时检测 Worker 离线。
+    定时检测 Worker 离线（仅 leader 实例执行）。
 
     每 30 秒扫描一次，将心跳超过 90 秒的 Worker 标记为 OFFLINE。
     """
@@ -123,6 +126,9 @@ async def check_worker_offline(sio: "AsyncServer") -> None:
     while True:
         try:
             await asyncio.sleep(OFFLINE_CHECK_INTERVAL)
+
+            if leader and not leader.is_leader:
+                continue
 
             async with AsyncSessionLocal() as session:
                 service = EventService(session=session, sio=sio)

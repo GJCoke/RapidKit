@@ -40,7 +40,7 @@
   <NCard :bordered="false" size="small" class="card-wrapper">
     <NCollapse>
       <NCollapseItem :title="$t('common.search')" name="user-search">
-        <NForm ref="formRef" :model="model" label-placement="left" :label-width="80">
+        <NForm ref="formRef" :model="model" label-placement="left" :label-width="100">
           <NGrid responsive="screen" item-responsive>
             <NFormItemGi span="24 s:12 m:6" label="Keyword" path="keyword" class="pr-24px">
               <NInput v-model:value="model.keyword" placeholder="Search by name/username/email" />

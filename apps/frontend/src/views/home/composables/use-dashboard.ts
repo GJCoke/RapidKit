@@ -14,6 +14,7 @@ import {
   fetchUserActivityTrend,
   fetchUserStatsSummary,
   fetchGetAllWorkers,
+  fetchGetAuditDictList,
   fetchTaskStatsSummary,
 } from "@/service/api"
 
@@ -117,6 +118,11 @@ export function useDashboard() {
 
   const activities = ref<Api.Dashboard.ActivityItem[]>([])
 
+  const auditDict = ref<{
+    resource: Record<string, { zh: string; en: string }>
+    action: Record<string, { zh: string; en: string }>
+  }>({ resource: {}, action: {} })
+
   // API Monitoring data
   const apiDistribution = ref<Api.Monitoring.ApiDistributionItem[]>([])
   const apiTopFailures = ref<Api.Monitoring.ApiTopItem[]>([])
@@ -150,6 +156,7 @@ export function useDashboard() {
       loadResources(),
       loadWorkers(),
       loadActivities(),
+      loadAuditDict(),
       loadUserTrend(),
       loadApiDistribution(),
       loadApiTopFailures(),
@@ -226,6 +233,20 @@ export function useDashboard() {
     const { data, error } = await fetchActivities()
     if (!error) {
       activities.value = data
+    }
+  }
+
+  async function loadAuditDict() {
+    const { data, error } = await fetchGetAuditDictList()
+    if (!error) {
+      const resource: Record<string, { zh: string; en: string }> = {}
+      const action: Record<string, { zh: string; en: string }> = {}
+      for (const item of data) {
+        const entry = { zh: item.labelZh, en: item.labelEn }
+        if (item.category === "resource") resource[item.key] = entry
+        else if (item.category === "action") action[item.key] = entry
+      }
+      auditDict.value = { resource, action }
     }
   }
 
@@ -374,6 +395,7 @@ export function useDashboard() {
     instanceResources,
     selectedInstance,
     activities,
+    auditDict,
     userTrend,
     trendRange,
     customRange,

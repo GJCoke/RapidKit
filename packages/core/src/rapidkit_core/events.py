@@ -71,6 +71,11 @@ class EventBus:
     类型化事件总线，支持优先级、并发执行、通配符订阅和 fire-and-forget。
 
     全局单例，禁止二次实例化。使用 ``from rapidkit_core.events import event_bus``。
+
+    **Multi-instance note:** ``dead_letters`` and ``handler_errors`` are
+    per-instance counters. For a global view across all instances, aggregate
+    via external monitoring. Use ``distributed_emit()`` instead of
+    ``async_emit()`` when handlers on other instances must also be triggered.
     """
 
     _instance: ClassVar[EventBus | None] = None
