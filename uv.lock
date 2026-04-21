@@ -516,14 +516,14 @@ wheels = [
 
 [[package]]
 name = "fastapi-sio-di"
-version = "0.4.0"
+version = "0.5.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-socketio" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/61/bc/289136d977e94ec6b8e275d4955e84fb0e1a86e9b8fa9d56f09122e0f70d/fastapi_sio_di-0.4.0.tar.gz", hash = "sha256:cdc38e940fab8bacf2469f800a45521b4c78452e65ad0b63a1caaf5f2158c4fd", size = 14537, upload-time = "2026-04-03T06:50:56.205Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/bb/e8823495c12501f4457f4d5fac3bfa737dfdcbb7890c335d5a80ed8ffe4c/fastapi_sio_di-0.5.3.tar.gz", hash = "sha256:d2885b79922fbc4eddeafe6cbda7548da3ecd2c972911b8a132bf6f9e440e77f", size = 62462, upload-time = "2026-04-20T13:14:43.34Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/cf/d4b96372427a06e122f0f1a24263a89bb25237982c9f45260ed82c65302b/fastapi_sio_di-0.4.0-py3-none-any.whl", hash = "sha256:a2bb23e3da36cd499dad767af7b1759534c57d209e0078e10ba89bbf7fa9171f", size = 11170, upload-time = "2026-04-03T06:50:54.166Z" },
+    { url = "https://files.pythonhosted.org/packages/44/14/7b2d1cd6a7eeec610b285f15a38067cb4143cb5e6a19541a4558971c7e7c/fastapi_sio_di-0.5.3-py3-none-any.whl", hash = "sha256:eb3a185c856989d1bf081d1dcf7d3245afc00f1e0778d7268a302f9b19205cd2", size = 22422, upload-time = "2026-04-20T13:14:40.76Z" },
 ]
 
 [[package]]
@@ -1129,7 +1129,7 @@ requires-dist = [
     { name = "celery", specifier = ">=5.6.3,<6.0" },
     { name = "cryptography", specifier = ">=46.0.6,<47.0" },
     { name = "fastapi", specifier = ">=0.135.3,<1.0" },
-    { name = "fastapi-sio-di", specifier = ">=0.4" },
+    { name = "fastapi-sio-di", specifier = ">=0.5.3" },
     { name = "greenlet", specifier = ">=3.3.2,<4.0" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "minio", specifier = ">=7.2.18,<8.0" },
@@ -1365,7 +1365,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "celery", specifier = ">=5.6.3,<6.0" },
-    { name = "fastapi-sio-di", specifier = ">=0.4" },
+    { name = "fastapi-sio-di", specifier = ">=0.5.3" },
     { name = "rapidkit-common" },
     { name = "rapidkit-core" },
 ]

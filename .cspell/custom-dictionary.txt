@@ -212,3 +212,5 @@ sess
 delenv
 zadd
 hincrbyfloat
+redoc
+relogin

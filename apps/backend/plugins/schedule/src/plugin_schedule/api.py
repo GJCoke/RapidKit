@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, Query
 from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_core.exceptions import AppException
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.status_codes import StatusCode
 
 from plugin_schedule.deps import PeriodicTaskCrudDep
@@ -24,6 +24,8 @@ from plugin_schedule.schemas import (
     PeriodicTaskResponse,
     PeriodicTaskUpdate,
 )
+
+logger = get_plugin_logger("Schedule")
 
 router = APIRouter(
     prefix="/schedules",
@@ -76,7 +78,7 @@ async def create_schedule(
     task_data = body.model_dump(exclude={"interval", "crontab"})
     task_data["schedule_id"] = schedule.id
     task = await crud.create(task_data)
-    logger.info("[Schedule] Task created: {task_name}", task_name=body.task)
+    logger.info("Task created: {task_name}", task_name=body.task)
 
     # 返回带调度详情的响应
     result = await crud.get_with_schedule(task.id)
@@ -103,7 +105,7 @@ async def update_schedule(
     if task_data:
         await crud.update_by_id(task.id, task_data)
 
-    logger.info("[Schedule] Task updated: {schedule_id}", schedule_id=schedule_id)
+    logger.info("Task updated: {schedule_id}", schedule_id=schedule_id)
 
     result = await crud.get_with_schedule(schedule_id)
     return Response(data=result)
@@ -118,7 +120,7 @@ async def toggle_schedule(
     task = await crud.get(schedule_id, nullable=False)
     await crud.update_by_id(task.id, {"enabled": not task.enabled})
     logger.info(
-        "[Schedule] Task toggled: {task_name} enabled={enabled}",
+        "Task toggled: {task_name} enabled={enabled}",
         task_name=task.name,
         enabled=not task.enabled,
     )
@@ -143,5 +145,5 @@ async def delete_schedule(
 
     # 删除 PeriodicTask
     await crud.delete(schedule_id)
-    logger.info("[Schedule] Task deleted: {task_name}", task_name=task.name)
+    logger.info("Task deleted: {task_name}", task_name=task.name)
     return Response(data=True)

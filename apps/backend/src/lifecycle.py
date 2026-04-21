@@ -20,6 +20,17 @@ from src.locales.watch import watch_locale_files
 from src.queues.consumer import check_worker_offline, consume_events
 
 
+async def _flush_audit_batch(batch: list[dict]) -> None:
+    """批量写入审计日志到数据库。"""
+    from plugin_system.crud import ActivityLogCRUD
+    from rapidkit_core.database import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as session:
+        crud = ActivityLogCRUD(session)
+        await crud.create_all(batch)
+        await session.commit()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """
@@ -35,6 +46,24 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     RedisManager.connect()
     await event_bus.start_subscriber()
+
+    # 初始化审计批量队列
+    from rapidkit_core.batch_queue import AsyncBatchQueue
+
+    from src.middlewares import audit as audit_module
+
+    if settings.AUDIT_ENABLED:
+        audit_module.audit_queue = AsyncBatchQueue(
+            handler=_flush_audit_batch,
+            batch_size=settings.AUDIT_BATCH_SIZE,
+            flush_interval=settings.AUDIT_FLUSH_INTERVAL,
+        )
+        await audit_module.audit_queue.start()
+        logger.info(
+            "Audit batch queue started (batch_size={}, interval={}s)",
+            settings.AUDIT_BATCH_SIZE,
+            settings.AUDIT_FLUSH_INTERVAL,
+        )
 
     consumer_task = None
     offline_checker_task = None
@@ -58,6 +87,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("Application startup complete.")
 
     yield
+
+    # 关闭审计批量队列（flush 剩余记录）
+    if audit_module.audit_queue is not None:
+        await audit_module.audit_queue.shutdown()
+        logger.info("Audit batch queue shut down.")
 
     # 执行插件 on_shutdown 回调（逆序）
     for plugin in reversed(getattr(app.state, "plugins", [])):

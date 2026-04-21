@@ -24,6 +24,12 @@ declare global {
         buttonPermissions: string[]
         /** router permissions */
         routerPermissions: string[]
+        /** data scope */
+        dataScope: number
+        /** custom department ids (for dataScope=5) */
+        customDeptIds: string[]
+        /** data rule ids (for dataScope=6) */
+        dataRuleIds: string[]
       }>
 
       /** role search params */
@@ -47,10 +53,19 @@ declare global {
         roles: string[]
         /** is admin */
         isAdmin: boolean
+        /** department id */
+        departmentId: string | null
       }>
 
       /** user search params */
       type UserSearchParams = CommonType.RecordNullable<{ keyword?: string; status?: string } & CommonSearchParams>
+
+      /** user option (for select dropdowns) */
+      type UserOption = {
+        id: string
+        name: string
+        username: string
+      }
 
       /** user list */
       type UserList = Common.PaginatingQueryRecord<User>
@@ -146,7 +161,7 @@ declare global {
         interfaces?: string[] | null
       }
 
-      /** backend router from manage_routers table */
+      /** backend router from auth_routers table */
       type BackendRouter = Common.CommonRecord<{
         name: string
         description: string | null
@@ -154,6 +169,85 @@ declare global {
         methods: string[]
         code: string
       }>
+
+      /** department */
+      type Department = Common.CommonRecord<{
+        /** parent department id */
+        parentId: string | null
+        /** department name */
+        name: string
+        /** department code */
+        code: string
+        /** sort order */
+        sort: number
+        /** leader user id */
+        leaderId: string | null
+      }>
+
+      /** department tree node */
+      type DepartmentTree = Department & {
+        children: DepartmentTree[]
+      }
+
+      /** data rule */
+      type DataRule = Common.CommonRecord<{
+        /** rule name */
+        name: string
+        /** target model/table name */
+        modelName: string
+        /** target field */
+        field: string
+        /** operator (eq, ne, gt, ge, lt, le, in, not_in) */
+        operator: string
+        /** value (supports ${user_id}, ${dept_id} templates) */
+        value: string
+        /** logic combinator (AND / OR) */
+        logic: string
+      }>
+
+      /** data rule search params */
+      type DataRuleSearchParams = CommonSearchParams
+
+      /** data rule list */
+      type DataRuleList = Common.PaginatingQueryRecord<DataRule>
+
+      /**
+       * data scope enum
+       *
+       * - 1: all data
+       * - 2: self only
+       * - 3: own department
+       * - 4: department and children
+       * - 5: custom departments
+       * - 6: custom rules
+       */
+      type DataScopeType = 1 | 2 | 3 | 4 | 5 | 6
+
+      /** audit dictionary item */
+      type AuditDict = Common.CommonRecord<{
+        /** key name (e.g., user, create) */
+        key: string
+        /** category: resource or action */
+        category: string
+        /** Chinese label */
+        labelZh: string
+        /** English label */
+        labelEn: string
+      }>
+
+      /** audit dict search params */
+      type AuditDictSearchParams = CommonSearchParams & {
+        category?: string
+      }
+
+      /** audit dict list */
+      type AuditDictList = Common.PaginatingQueryRecord<AuditDict>
+
+      /** change password request */
+      type ChangePassword = {
+        oldPassword?: string
+        newPassword: string
+      }
     }
   }
 }

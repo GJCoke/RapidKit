@@ -22,6 +22,7 @@ class UserProtocol(Protocol):
     id: UUID
     is_admin: bool
     roles: list[str]
+    department_id: UUID | None
 
 
 _oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login/swagger", auto_error=False)

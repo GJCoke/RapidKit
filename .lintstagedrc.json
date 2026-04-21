@@ -1,6 +1,5 @@
 {
   "*.{ts,tsx,js,jsx,vue}": ["oxlint --fix"],
   "*.{js,ts,mjs,cjs,json,jsx,tsx,css,less,scss,vue,html,md}": ["oxfmt"],
-  "*.{js,ts,mjs,cjs,json,jsx,tsx,css,less,scss,vue,html,md,py}": ["pnpm check:spell"],
   "*.py": ["uv run ruff format", "uv run ruff check --fix", "bash -c 'uv run ty check'"]
 }

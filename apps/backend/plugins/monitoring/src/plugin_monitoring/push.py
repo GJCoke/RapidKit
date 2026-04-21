@@ -9,9 +9,11 @@ import asyncio
 
 from fastapi_sio_di import AsyncServer
 from rapidkit_core.database import RedisManager
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 
 from plugin_monitoring.services import get_realtime_stats
+
+logger = get_plugin_logger("Monitoring")
 
 
 async def push_api_stats_loop(sio: AsyncServer) -> None:

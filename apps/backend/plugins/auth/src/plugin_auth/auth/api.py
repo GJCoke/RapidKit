@@ -9,8 +9,7 @@ from fastapi import APIRouter, Depends
 from rapidkit_common.deps import RedisDep, check_debug
 from rapidkit_common.schemas.response import Response
 from rapidkit_core.auth_config import auth_settings
-from rapidkit_core.events import ActivityLogEvent, event_bus
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.security import AccessJWT
 from rapidkit_core.uuid7 import uuid8
 
@@ -32,6 +31,8 @@ from plugin_auth.auth.schemas import (
 )
 from plugin_auth.auth.services import create_access_token, refresh_user_token, user_login
 from plugin_auth.role.deps import RoleCrudDep, get_user_permission_cache, permission_structure
+
+logger = get_plugin_logger("Auth")
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -60,11 +61,6 @@ async def login(
         user_agent=user_agent,
     )
 
-    event_bus.fire_and_forget(
-        ActivityLogEvent(event_type="user_login", params={"name": body.username}),
-        source="auth",
-    )
-
     return Response(data=token)
 
 
@@ -79,7 +75,7 @@ async def logout(auth: UserAccessJWTDep, redis: RedisDep) -> Response[bool]:
     if await redis.exists(permission_key):
         await redis.delete(permission_key)
 
-    logger.info("[Auth] User {user_id} logged out", user_id=auth.sub)
+    logger.info("User {user_id} logged out", user_id=auth.sub)
     return Response(data=True)
 
 

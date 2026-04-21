@@ -88,7 +88,7 @@ Refresh Token 存储在 Redis 中，key 格式为 `auth:refresh:<user_id>:<jti>`
 
 ```python
 class Role(SQLModel, table=True):
-    __tablename__ = "manage_roles"
+    __tablename__ = "auth_roles"
 
     name: str = Field(..., unique=True, min_length=2, max_length=100, description="角色名称")
     description: str | None = Field(None, max_length=500, description="角色描述")

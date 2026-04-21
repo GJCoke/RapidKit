@@ -63,13 +63,20 @@ digraph brainstorming {
 }
 ```
 
-**The terminal state is invoking writing-plans.** Do NOT invoke frontend-design, mcp-builder, or any other implementation skill. The ONLY skill you invoke after brainstorming is writing-plans.
+**The terminal state is invoking writing-plans.** Do NOT invoke any rapidkit-\* domain skill or other implementation skill. The ONLY skill you invoke after brainstorming is writing-plans.
 
 ## The Process
 
 **Understanding the idea:**
 
 - Check out the current project state first (files, docs, recent commits)
+- After exploring the project context, identify which `rapidkit-*` domain skills are relevant to the topic being discussed. Read them to understand existing patterns before proposing approaches. Key skills:
+  - Backend plugins: `rapidkit-plugin`
+  - Frontend pages: `rapidkit-page` / `rapidkit-component`
+  - CLI: `rapidkit-cli-command`
+  - Migrations: `rapidkit-migration`
+  - Celery: `rapidkit-celery-task`
+  - Shared packages: `rapidkit-shared-pkg`
 - Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.
 - If the project is too large for a single spec, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own spec → plan → implementation cycle.
 - For appropriately-scoped projects, ask questions one at a time to refine the idea

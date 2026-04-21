@@ -12,12 +12,15 @@ from typing import Any
 from rapidkit_common.enums import Status
 from rapidkit_core.config import settings
 from rapidkit_core.exceptions import AppException
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.status_codes import StatusCode
 from sqlalchemy import ColumnElement
 from sqlmodel import col, or_
 
 from plugin_script.models import Script
+
+logger = get_plugin_logger("Script")
+
 
 _LANGUAGE_COMMANDS: dict[str, list[str]] = {
     "python": ["python3", "-c"],
@@ -89,7 +92,7 @@ async def execute_code(language: str, code: str) -> dict[str, Any]:
 
         elapsed = time.monotonic() - start
         logger.warning(
-            "[Script] Code execution timed out: language={language} timeout={timeout}s",
+            "Code execution timed out: language={language} timeout={timeout}s",
             language=language,
             timeout=timeout,
         )
@@ -101,7 +104,7 @@ async def execute_code(language: str, code: str) -> dict[str, Any]:
         }
 
     logger.info(
-        "[Script] Code executed: language={language} exit_code={exit_code} runtime={runtime}s",
+        "Code executed: language={language} exit_code={exit_code} runtime={runtime}s",
         language=language,
         exit_code=exit_code,
         runtime=round(elapsed, 3),

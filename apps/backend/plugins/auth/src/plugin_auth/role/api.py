@@ -9,10 +9,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_core.events import RolePermissionsChangedEvent, event_bus
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 from sqlmodel import col
 
-from plugin_auth.auth.deps import UserDBDep
+from plugin_auth.auth.deps import UserAccessJWTDep, UserDBDep
 from plugin_auth.role.deps import RoleCrudDep, verify_user_permission
 from plugin_auth.role.models import Role
 from plugin_auth.role.schemas import (
@@ -26,6 +26,8 @@ from plugin_auth.role.schemas import (
     RoleUpdate,
 )
 from plugin_auth.role.services import filter_role
+
+logger = get_plugin_logger("Auth")
 
 router = APIRouter(
     prefix="/roles",
@@ -80,6 +82,7 @@ async def update_role_permissions(
     role_id: UUID,
     body: RolePermissionsUpdateBody,
     role_crud: RoleCrudDep,
+    user: UserAccessJWTDep,
 ) -> Response[bool]:
 
     role = await role_crud.get(role_id, nullable=False)
@@ -92,9 +95,10 @@ async def update_role_permissions(
         },
     )
     logger.warning(
-        "[Auth] Role permissions updated: role={role_code} by role_id={role_id}",
+        "Role permissions updated: role={role_code}, role_id={role_id}, user_id={user_id}",
         role_code=role.code,
         role_id=role_id,
+        user_id=user.sub,
     )
     await event_bus.async_emit(
         RolePermissionsChangedEvent(role_code=role.code),
@@ -106,7 +110,7 @@ async def update_role_permissions(
 @router.post("")
 async def create_role(body: RoleCreate, role_crud: RoleCrudDep) -> Response[RoleResponse]:
     role = await role_crud.create(body)
-    logger.info("[Auth] Role created: {role_code}", role_code=body.code)
+    logger.info("Role created: {role_code}", role_code=body.code)
     return Response(data=RoleResponse.model_validate(role))
 
 
@@ -126,7 +130,7 @@ async def batch_delete_role(
     role_codes = [r.code for r in roles]
 
     await role_crud.delete_all(query.ids)
-    logger.warning("[Auth] Roles batch deleted: {role_codes}", role_codes=role_codes)
+    logger.warning("Roles batch deleted: {role_codes}", role_codes=role_codes)
 
     for code in role_codes:
         await event_bus.async_emit(
@@ -145,7 +149,7 @@ async def delete_role(
 
     role = await role_crud.get(role_id, nullable=False)
     await role_crud.delete(role_id)
-    logger.warning("[Auth] Role deleted: {role_code}", role_code=role.code)
+    logger.warning("Role deleted: {role_code}", role_code=role.code)
     await event_bus.async_emit(
         RolePermissionsChangedEvent(role_code=role.code),
         source="auth",

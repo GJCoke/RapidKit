@@ -183,4 +183,4 @@ rapidkit create-plugin --name notification
 | `tests/test_register.py`        | 注册测试（含跨插件导入检查）                                   |
 | `migrations/versions/`          | Alembic 迁移目录                                               |
 
-生成后仍需手动完成注册步骤（添加工作区依赖、注册到插件列表、配置迁移路径），详见 [插件开发指南](./plugin-development.md#注册新插件)。
+生成后仍需手动完成注册步骤（添加工作区依赖、注册到插件列表、配置迁移路径），详见 [插件开发指南](./plugin-system.md)。

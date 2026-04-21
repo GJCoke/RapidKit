@@ -4,8 +4,12 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from loguru import logger as ruLogger
+
+if TYPE_CHECKING:
+    from loguru import Logger
 
 from rapidkit_core.config import settings
 from rapidkit_core.nanoid import get_request_nanoid
@@ -32,6 +36,7 @@ class InterceptHandler(logging.Handler):
 
 def default_formatter(record: dict) -> str:
     """默认日志格式化程序"""
+    record["extra"].setdefault("plugin", "Core")
     record_name = record["name"] or ""
     if record_name.startswith("sqlalchemy"):
         record["message"] = re.sub(r"\s+", " ", record["message"]).strip()
@@ -118,3 +123,8 @@ def set_custom_logfile() -> None:
 
 
 logger = ruLogger
+
+
+def get_plugin_logger(plugin_name: str) -> "Logger":
+    """Return a logger instance bound with the given plugin name."""
+    return logger.bind(plugin=plugin_name)

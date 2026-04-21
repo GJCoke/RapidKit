@@ -5,6 +5,8 @@ Author : Coke
 Date   : 2026-04-10
 """
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query, Request
 from plugin_auth.role.models import Role
 from plugin_auth.router.models import InterfaceRouter
@@ -12,7 +14,7 @@ from plugin_menu.models import Menu
 from plugin_script.models import Script
 from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.deps import RedisDep, SessionDep
-from rapidkit_common.schemas.response import Response
+from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_core.config import settings
 from rapidkit_core.events import event_bus
 from rapidkit_core.plugin import HealthStatus, PluginMeta
@@ -22,6 +24,7 @@ from plugin_system.deps import ActivityLogCrudDep
 from plugin_system.health import check_minio, check_pg, check_redis
 from plugin_system.push import _RESOURCE_KEY_PREFIX
 from plugin_system.schemas import (
+    ActivityPaginatedQuery,
     ActivityResponse,
     AggregatedHealth,
     BusinessSummary,
@@ -205,6 +208,23 @@ async def get_business_summary(session: SessionDep) -> Response[BusinessSummary]
             schedules=schedules,
         )
     )
+
+
+@router.get("/activities/paginate", summary="活动日志分页查询")
+async def get_activities_paginated(
+    query: Annotated[ActivityPaginatedQuery, Query(...)],
+    crud: ActivityLogCrudDep,
+) -> Response[PaginatedResponse[ActivityResponse]]:
+    """分页查询活动日志，支持按事件类型、用户、时间范围过滤。"""
+    result = await crud.get_paginated(
+        event_type=query.event_type,
+        user_id=query.user_id,
+        start_time=query.start_time,
+        end_time=query.end_time,
+        page=query.page,
+        size=query.page_size,
+    )
+    return Response(data=result)
 
 
 @router.get("/activities", summary="最近系统活动")

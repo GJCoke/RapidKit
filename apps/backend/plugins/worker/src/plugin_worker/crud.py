@@ -11,9 +11,8 @@ from rapidkit_common.crud import BaseCRUD
 from rapidkit_common.enums import TaskStatus, WorkerStatus
 from rapidkit_common.schemas.response import PaginatedResponse
 from rapidkit_core.timezone import timezone
-from sqlalchemy import case
 from sqlalchemy import select as sa_select
-from sqlmodel import col, func, select
+from sqlmodel import case, col, func, select
 
 from plugin_worker.models import CeleryTaskResult, CeleryWorker
 from plugin_worker.schemas import (

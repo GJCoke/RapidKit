@@ -210,7 +210,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/scripts": {
+    "/api/v1/departments/tree": {
         parameters: {
             query?: never;
             header?: never;
@@ -218,55 +218,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Scripts
-         * @description 获取分页的脚本列表。
+         * 部门树
+         * @description 返回完整部门树。
          */
-        get: operations["get_scripts_api_v1_scripts_get"];
+        get: operations["get_department_tree_api_v1_departments_tree_get"];
         put?: never;
-        /**
-         * Create Script
-         * @description 创建脚本。
-         */
-        post: operations["create_script_api_v1_scripts_post"];
-        /**
-         * Batch Delete Scripts
-         * @description 批量删除脚本。
-         */
-        delete: operations["batch_delete_scripts_api_v1_scripts_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/scripts/{script_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Script
-         * @description 获取脚本详情（含 code）。
-         */
-        get: operations["get_script_api_v1_scripts__script_id__get"];
-        /**
-         * Update Script
-         * @description 更新脚本。
-         */
-        put: operations["update_script_api_v1_scripts__script_id__put"];
         post?: never;
-        /**
-         * Delete Script
-         * @description 删除单个脚本。
-         */
-        delete: operations["delete_script_api_v1_scripts__script_id__delete"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/scripts/{script_id}/execute": {
+    "/api/v1/departments": {
         parameters: {
             query?: never;
             header?: never;
@@ -276,17 +240,41 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Execute Script
-         * @description 执行脚本并记录审计日志。
+         * 创建部门
+         * @description 创建新部门。
          */
-        post: operations["execute_script_api_v1_scripts__script_id__execute_post"];
+        post: operations["create_department_api_v1_departments_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/scripts/{script_id}/executions": {
+    "/api/v1/departments/{dept_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 更新部门
+         * @description 更新部门信息。
+         */
+        put: operations["update_department_api_v1_departments__dept_id__put"];
+        post?: never;
+        /**
+         * 删除部门
+         * @description 删除部门（需检查子部门）。
+         */
+        delete: operations["delete_department_api_v1_departments__dept_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-rules/all": {
         parameters: {
             query?: never;
             header?: never;
@@ -294,16 +282,136 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Script Executions
-         * @description 获取脚本执行历史（分页）。
+         * 全部数据规则
+         * @description 获取全部数据规则（不分页，用于下拉选项）。
          */
-        get: operations["get_script_executions_api_v1_scripts__script_id__executions_get"];
+        get: operations["get_all_data_rules_api_v1_data_rules_all_get"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 数据规则分页列表
+         * @description 分页查询数据规则。
+         */
+        get: operations["get_data_rules_api_v1_data_rules_get"];
+        put?: never;
+        /**
+         * 创建数据规则
+         * @description 创建新数据规则。
+         */
+        post: operations["create_data_rule_api_v1_data_rules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 更新数据规则
+         * @description 更新数据规则。
+         */
+        put: operations["update_data_rule_api_v1_data_rules__rule_id__put"];
+        post?: never;
+        /**
+         * 删除数据规则
+         * @description 删除数据规则。
+         */
+        delete: operations["delete_data_rule_api_v1_data_rules__rule_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Schedules
+         * @description 分页查询定时任务列表。
+         */
+        get: operations["get_schedules_api_v1_schedules_get"];
+        put?: never;
+        /**
+         * Create Schedule
+         * @description 创建定时任务。
+         */
+        post: operations["create_schedule_api_v1_schedules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedules/{schedule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Schedule
+         * @description 获取单个定时任务详情。
+         */
+        get: operations["get_schedule_api_v1_schedules__schedule_id__get"];
+        /**
+         * Update Schedule
+         * @description 更新定时任务。
+         */
+        put: operations["update_schedule_api_v1_schedules__schedule_id__put"];
+        post?: never;
+        /**
+         * Delete Schedule
+         * @description 删除定时任务（级联删除调度记录）。
+         */
+        delete: operations["delete_schedule_api_v1_schedules__schedule_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedules/{schedule_id}/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Toggle Schedule
+         * @description 启用/禁用定时任务。
+         */
+        patch: operations["toggle_schedule_api_v1_schedules__schedule_id__toggle_patch"];
         trace?: never;
     };
     "/api/v1/system/stats/api/overview": {
@@ -398,6 +506,102 @@ export interface paths {
          * @description 获取 API 明细分页列表，支持搜索和排序。
          */
         get: operations["get_api_list_api_v1_system_stats_api_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scripts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Scripts
+         * @description 获取分页的脚本列表。
+         */
+        get: operations["get_scripts_api_v1_scripts_get"];
+        put?: never;
+        /**
+         * Create Script
+         * @description 创建脚本。
+         */
+        post: operations["create_script_api_v1_scripts_post"];
+        /**
+         * Batch Delete Scripts
+         * @description 批量删除脚本。
+         */
+        delete: operations["batch_delete_scripts_api_v1_scripts_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scripts/{script_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Script
+         * @description 获取脚本详情（含 code）。
+         */
+        get: operations["get_script_api_v1_scripts__script_id__get"];
+        /**
+         * Update Script
+         * @description 更新脚本。
+         */
+        put: operations["update_script_api_v1_scripts__script_id__put"];
+        post?: never;
+        /**
+         * Delete Script
+         * @description 删除单个脚本。
+         */
+        delete: operations["delete_script_api_v1_scripts__script_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scripts/{script_id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute Script
+         * @description 执行脚本并记录审计日志。
+         */
+        post: operations["execute_script_api_v1_scripts__script_id__execute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scripts/{script_id}/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Script Executions
+         * @description 获取脚本执行历史（分页）。
+         */
+        get: operations["get_script_executions_api_v1_scripts__script_id__executions_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -746,78 +950,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/schedules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Schedules
-         * @description 分页查询定时任务列表。
-         */
-        get: operations["get_schedules_api_v1_schedules_get"];
-        put?: never;
-        /**
-         * Create Schedule
-         * @description 创建定时任务。
-         */
-        post: operations["create_schedule_api_v1_schedules_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/schedules/{schedule_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Schedule
-         * @description 获取单个定时任务详情。
-         */
-        get: operations["get_schedule_api_v1_schedules__schedule_id__get"];
-        /**
-         * Update Schedule
-         * @description 更新定时任务。
-         */
-        put: operations["update_schedule_api_v1_schedules__schedule_id__put"];
-        post?: never;
-        /**
-         * Delete Schedule
-         * @description 删除定时任务（级联删除调度记录）。
-         */
-        delete: operations["delete_schedule_api_v1_schedules__schedule_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/schedules/{schedule_id}/toggle": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Toggle Schedule
-         * @description 启用/禁用定时任务。
-         */
-        patch: operations["toggle_schedule_api_v1_schedules__schedule_id__toggle_patch"];
-        trace?: never;
-    };
     "/api/v1/manage/menus": {
         parameters: {
             query?: never;
@@ -1050,6 +1182,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 聚合健康状态
+         * @description 聚合基础设施健康状态。
+         */
+        get: operations["get_aggregated_health_api_v1_system_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/stats/business": {
         parameters: {
             query?: never;
@@ -1062,6 +1214,26 @@ export interface paths {
          * @description 获取各业务模块的数据总量。
          */
         get: operations["get_business_summary_api_v1_system_stats_business_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/activities/paginate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 活动日志分页查询
+         * @description 分页查询活动日志，支持按事件类型、用户、时间范围过滤。
+         */
+        get: operations["get_activities_paginated_api_v1_system_activities_paginate_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1085,6 +1257,114 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/plugins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 插件状态列表
+         * @description 返回所有插件的加载状态、版本、耗时和健康信息。
+         */
+        get: operations["get_plugin_status_api_v1_system_plugins_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/plugins/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 插件依赖关系图
+         * @description 返回插件依赖关系图的节点和边，用于前端可视化。
+         */
+        get: operations["get_plugin_dependencies_api_v1_system_plugins_dependencies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * EventBus 统计
+         * @description 返回 EventBus 的死信记录和 handler 错误统计。
+         */
+        get: operations["get_event_bus_stats_api_v1_system_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/audit-dict": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取所有审计字典
+         * @description 获取所有审计字典条目（前端启动时拉取）。
+         */
+        get: operations["get_all_audit_dict_api_v1_system_audit_dict_get"];
+        put?: never;
+        /**
+         * 新增审计字典
+         * @description 新增审计字典条目。
+         */
+        post: operations["create_audit_dict_api_v1_system_audit_dict_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/audit-dict/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 修改审计字典
+         * @description 修改审计字典条目。
+         */
+        put: operations["update_audit_dict_api_v1_system_audit_dict__item_id__put"];
+        post?: never;
+        /**
+         * 删除审计字典
+         * @description 删除审计字典条目。
+         */
+        delete: operations["delete_audit_dict_api_v1_system_audit_dict__item_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1122,6 +1402,26 @@ export interface paths {
          * @description 获取用户注册趋势数据。
          */
         get: operations["get_user_stats_trend_api_v1_users_stats_trend_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 全部用户选项
+         * @description 获取全部用户（精简字段，用于下拉选项）。
+         */
+        get: operations["get_all_users_api_v1_users_all_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1181,6 +1481,26 @@ export interface paths {
          * @description 删除单个用户。
          */
         delete: operations["delete_user_api_v1_users__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 修改用户密码
+         * @description 修改用户密码。仅本人或超管可操作。
+         */
+        put: operations["change_password_api_v1_users__user_id__password_put"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1247,6 +1567,31 @@ export interface components {
             detail?: string | null;
             /** Sourceip */
             sourceIp?: string | null;
+            /** Userid */
+            userId?: string | null;
+            /** Username */
+            username?: string | null;
+            /** Httpmethod */
+            httpMethod?: string | null;
+            /** Path */
+            path?: string | null;
+            /** Useragent */
+            userAgent?: string | null;
+            /** Requestbody */
+            requestBody?: {
+                [key: string]: unknown;
+            } | null;
+            /** Responsecode */
+            responseCode?: number | null;
+        };
+        /**
+         * AggregatedHealth
+         * @description 聚合健康状态响应（仅基础设施）。
+         */
+        AggregatedHealth: {
+            /** Status */
+            status: string;
+            infrastructure: components["schemas"]["InfrastructureHealth"];
         };
         /**
          * ApiDistributionItem
@@ -1403,6 +1748,63 @@ export interface components {
             errorCount: number;
         };
         /**
+         * AuditDictCreate
+         * @description 审计字典新增请求。
+         */
+        AuditDictCreate: {
+            /** Key */
+            key: string;
+            /** Category */
+            category: string;
+            /** Labelzh */
+            labelZh: string;
+            /** Labelen */
+            labelEn: string;
+        };
+        /**
+         * AuditDictResponse
+         * @description 审计字典响应。
+         */
+        AuditDictResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /** Key */
+            key: string;
+            /** Category */
+            category: string;
+            /** Labelzh */
+            labelZh: string;
+            /** Labelen */
+            labelEn: string;
+        };
+        /**
+         * AuditDictUpdate
+         * @description 审计字典修改请求。
+         */
+        AuditDictUpdate: {
+            /** Key */
+            key?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Labelzh */
+            labelZh?: string | null;
+            /** Labelen */
+            labelEn?: string | null;
+        };
+        /**
          * BusinessSummary
          * @description 业务数据汇总。
          */
@@ -1424,6 +1826,16 @@ export interface components {
             code: string;
             /** Desc */
             desc: string;
+        };
+        /**
+         * ChangePasswordBody
+         * @description 修改密码请求数据结构。
+         */
+        ChangePasswordBody: {
+            /** Oldpassword */
+            oldPassword?: string | null;
+            /** Newpassword */
+            newPassword: string;
         };
         /** CrontabScheduleCreate */
         CrontabScheduleCreate: {
@@ -1472,6 +1884,197 @@ export interface components {
             monthOfYear: string;
         };
         /**
+         * DataRuleCreate
+         * @description 创建数据规则请求。
+         */
+        DataRuleCreate: {
+            /** Name */
+            name: string;
+            /** Modelname */
+            modelName: string;
+            /** Field */
+            field: string;
+            /** Operator */
+            operator: string;
+            /** Value */
+            value: string;
+            /**
+             * Logic
+             * @default AND
+             */
+            logic: string;
+        };
+        /**
+         * DataRuleResponse
+         * @description 数据规则响应。
+         */
+        DataRuleResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /** Name */
+            name: string;
+            /** Modelname */
+            modelName: string;
+            /** Field */
+            field: string;
+            /** Operator */
+            operator: string;
+            /** Value */
+            value: string;
+            /** Logic */
+            logic: string;
+        };
+        /**
+         * DataRuleUpdate
+         * @description 更新数据规则请求。
+         */
+        DataRuleUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Modelname */
+            modelName?: string | null;
+            /** Field */
+            field?: string | null;
+            /** Operator */
+            operator?: string | null;
+            /** Value */
+            value?: string | null;
+            /** Logic */
+            logic?: string | null;
+        };
+        /**
+         * DeadLetterResponse
+         * @description 死信事件记录。
+         */
+        DeadLetterResponse: {
+            /** Eventname */
+            eventName: string;
+            /** Timestamp */
+            timestamp: string;
+            /** Source */
+            source?: string | null;
+        };
+        /**
+         * DepartmentCreate
+         * @description 创建部门请求。
+         */
+        DepartmentCreate: {
+            /** Parentid */
+            parentId?: string | null;
+            /** Name */
+            name: string;
+            /** Code */
+            code: string;
+            /**
+             * Sort
+             * @default 0
+             */
+            sort: number;
+            /** @default 1 */
+            status: components["schemas"]["Status"];
+            /** Leaderid */
+            leaderId?: string | null;
+        };
+        /**
+         * DepartmentResponse
+         * @description 部门响应。
+         */
+        DepartmentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /** Parentid */
+            parentId?: string | null;
+            /** Name */
+            name: string;
+            /** Code */
+            code: string;
+            /** Sort */
+            sort: number;
+            status: components["schemas"]["Status"];
+            /** Leaderid */
+            leaderId?: string | null;
+        };
+        /**
+         * DepartmentTreeNode
+         * @description 部门树节点。
+         */
+        DepartmentTreeNode: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /** Parentid */
+            parentId?: string | null;
+            /** Name */
+            name: string;
+            /** Code */
+            code: string;
+            /** Sort */
+            sort: number;
+            status: components["schemas"]["Status"];
+            /** Leaderid */
+            leaderId?: string | null;
+            /**
+             * Children
+             * @default []
+             */
+            children: components["schemas"]["DepartmentTreeNode"][];
+        };
+        /**
+         * DepartmentUpdate
+         * @description 更新部门请求。
+         */
+        DepartmentUpdate: {
+            /** Parentid */
+            parentId?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Code */
+            code?: string | null;
+            /** Sort */
+            sort?: number | null;
+            status?: components["schemas"]["Status"] | null;
+            /** Leaderid */
+            leaderId?: string | null;
+        };
+        /**
          * ErrorStats
          * @description 错误统计。
          */
@@ -1486,6 +2089,20 @@ export interface components {
             errorRate: number;
             /** Sparkline24H */
             sparkline24H: number[];
+        };
+        /**
+         * EventBusStats
+         * @description EventBus 统计信息。
+         */
+        EventBusStats: {
+            /** Handlererrors */
+            handlerErrors: {
+                [key: string]: number;
+            };
+            /** Deadletters */
+            deadLetters: components["schemas"]["DeadLetterResponse"][];
+            /** Deadlettercount */
+            deadLetterCount: number;
         };
         /**
          * FastAPIRouterResponse
@@ -2134,6 +2751,29 @@ export interface components {
             instances: components["schemas"]["InstanceResourceStats"][];
             summary: components["schemas"]["InstanceResourceStats"];
         };
+        /** PaginatedResponse[ActivityResponse] */
+        PaginatedResponse_ActivityResponse_: {
+            /**
+             * Page
+             * @description 页码。
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @description 每页条数。
+             */
+            pageSize: number;
+            /**
+             * Total
+             * @description 总条数。
+             */
+            total: number;
+            /**
+             * Records
+             * @description 记录列表。
+             */
+            records: components["schemas"]["ActivityResponse"][];
+        };
         /** PaginatedResponse[ApiListItem] */
         PaginatedResponse_ApiListItem_: {
             /**
@@ -2156,6 +2796,29 @@ export interface components {
              * @description 记录列表。
              */
             records: components["schemas"]["ApiListItem"][];
+        };
+        /** PaginatedResponse[DataRuleResponse] */
+        PaginatedResponse_DataRuleResponse_: {
+            /**
+             * Page
+             * @description 页码。
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @description 每页条数。
+             */
+            pageSize: number;
+            /**
+             * Total
+             * @description 总条数。
+             */
+            total: number;
+            /**
+             * Records
+             * @description 记录列表。
+             */
+            records: components["schemas"]["DataRuleResponse"][];
         };
         /** PaginatedResponse[MenuListResponse] */
         PaginatedResponse_MenuListResponse_: {
@@ -2486,6 +3149,76 @@ export interface components {
             crontab?: components["schemas"]["CrontabScheduleCreate"] | null;
         };
         /**
+         * PluginDependencyGraph
+         * @description 插件依赖关系图。
+         */
+        PluginDependencyGraph: {
+            /** Nodes */
+            nodes: components["schemas"]["PluginNode"][];
+            /** Edges */
+            edges: components["schemas"]["PluginEdge"][];
+        };
+        /**
+         * PluginEdge
+         * @description 依赖图中的边（source 依赖 target）。
+         */
+        PluginEdge: {
+            /** Source */
+            source: string;
+            /** Target */
+            target: string;
+        };
+        /**
+         * PluginErrorResponse
+         * @description 插件加载错误。
+         */
+        PluginErrorResponse: {
+            /** Phase */
+            phase: string;
+            /** Message */
+            message: string;
+            /** Causedby */
+            causedBy?: string | null;
+        };
+        /**
+         * PluginNode
+         * @description 依赖图中的插件节点。
+         */
+        PluginNode: {
+            /** Name */
+            name: string;
+            /** Version */
+            version?: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Required
+             * @default true
+             */
+            required: boolean;
+        };
+        /**
+         * PluginStatusItem
+         * @description 单个插件的状态信息。
+         */
+        PluginStatusItem: {
+            /** Name */
+            name: string;
+            /** Version */
+            version?: string | null;
+            /** Status */
+            status: string;
+            /** Required */
+            required?: boolean | null;
+            /** Dependencies */
+            dependencies?: string[] | null;
+            /** Loadtimems */
+            loadTimeMs?: number | null;
+            /** Startuptimems */
+            startupTimeMs?: number | null;
+            error?: components["schemas"]["PluginErrorResponse"] | null;
+        };
+        /**
          * PoolResizeRequest
          * @description Pool 扩缩容请求。
          */
@@ -2523,6 +3256,22 @@ export interface components {
             /** Tasks */
             tasks: string[];
         };
+        /** Response[AggregatedHealth] */
+        Response_AggregatedHealth_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["AggregatedHealth"] | null;
+        };
         /** Response[ApiOverviewResponse] */
         Response_ApiOverviewResponse_: {
             /**
@@ -2538,6 +3287,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["ApiOverviewResponse"] | null;
+        };
+        /** Response[AuditDictResponse] */
+        Response_AuditDictResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["AuditDictResponse"] | null;
         };
         /** Response[BusinessSummary] */
         Response_BusinessSummary_: {
@@ -2555,6 +3320,38 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["BusinessSummary"] | null;
         };
+        /** Response[DataRuleResponse] */
+        Response_DataRuleResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["DataRuleResponse"] | null;
+        };
+        /** Response[DepartmentResponse] */
+        Response_DepartmentResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["DepartmentResponse"] | null;
+        };
         /** Response[ErrorStats] */
         Response_ErrorStats_: {
             /**
@@ -2570,6 +3367,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["ErrorStats"] | null;
+        };
+        /** Response[EventBusStats] */
+        Response_EventBusStats_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["EventBusStats"] | null;
         };
         /** Response[HealthStats] */
         Response_HealthStats_: {
@@ -2635,6 +3448,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["MultiResourceStats"] | null;
         };
+        /** Response[PaginatedResponse[ActivityResponse]] */
+        Response_PaginatedResponse_ActivityResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PaginatedResponse_ActivityResponse_"] | null;
+        };
         /** Response[PaginatedResponse[ApiListItem]] */
         Response_PaginatedResponse_ApiListItem__: {
             /**
@@ -2650,6 +3479,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_ApiListItem_"] | null;
+        };
+        /** Response[PaginatedResponse[DataRuleResponse]] */
+        Response_PaginatedResponse_DataRuleResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PaginatedResponse_DataRuleResponse_"] | null;
         };
         /** Response[PaginatedResponse[MenuListResponse]] */
         Response_PaginatedResponse_MenuListResponse__: {
@@ -2794,6 +3639,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["PeriodicTaskResponse"] | null;
+        };
+        /** Response[PluginDependencyGraph] */
+        Response_PluginDependencyGraph_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PluginDependencyGraph"] | null;
         };
         /** Response[RegisteredTaskResponse] */
         Response_RegisteredTaskResponse_: {
@@ -3149,6 +4010,63 @@ export interface components {
              */
             data?: components["schemas"]["ApiTrendPoint"][] | null;
         };
+        /** Response[list[AuditDictResponse]] */
+        Response_list_AuditDictResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["AuditDictResponse"][] | null;
+        };
+        /** Response[list[DataRuleResponse]] */
+        Response_list_DataRuleResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["DataRuleResponse"][] | null;
+        };
+        /** Response[list[DepartmentTreeNode]] */
+        Response_list_DepartmentTreeNode__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["DepartmentTreeNode"][] | null;
+        };
         /** Response[list[FastAPIRouterResponse]] */
         Response_list_FastAPIRouterResponse__: {
             /**
@@ -3205,6 +4123,25 @@ export interface components {
              * @description 响应数据。
              */
             data?: components["schemas"]["MenuRouteResponse"][] | null;
+        };
+        /** Response[list[PluginStatusItem]] */
+        Response_list_PluginStatusItem__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["PluginStatusItem"][] | null;
         };
         /** Response[list[RoleResponse]] */
         Response_list_RoleResponse__: {
@@ -3300,6 +4237,25 @@ export interface components {
              * @description 响应数据。
              */
             data?: components["schemas"]["UserActivityTrend"][] | null;
+        };
+        /** Response[list[UserManageOptionResponse]] */
+        Response_list_UserManageOptionResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["UserManageOptionResponse"][] | null;
         };
         /** Response[list[WorkerResponse]] */
         Response_list_WorkerResponse__: {
@@ -3397,6 +4353,21 @@ export interface components {
              * @default []
              */
             routerPermissions: string[];
+            /**
+             * Datascope
+             * @default 2
+             */
+            dataScope: number;
+            /**
+             * Customdeptids
+             * @default []
+             */
+            customDeptIds: string[];
+            /**
+             * Dataruleids
+             * @default []
+             */
+            dataRuleIds: string[];
         };
         /**
          * RolePermissionsResponse
@@ -3483,6 +4454,18 @@ export interface components {
              * @default []
              */
             routerPermissions: string[];
+            /** Datascope */
+            dataScope: number;
+            /**
+             * Customdeptids
+             * @default []
+             */
+            customDeptIds: string[];
+            /**
+             * Dataruleids
+             * @default []
+             */
+            dataRuleIds: string[];
         };
         /**
          * RoleUpdate
@@ -3512,6 +4495,12 @@ export interface components {
              * @default []
              */
             routerPermissions: string[];
+            /** Datascope */
+            dataScope?: number | null;
+            /** Customdeptids */
+            customDeptIds?: string[] | null;
+            /** Dataruleids */
+            dataRuleIds?: string[] | null;
         };
         /**
          * RouteMeta
@@ -4072,8 +5061,25 @@ export interface components {
              * @default false
              */
             isAdmin: boolean;
+            /** Departmentid */
+            departmentId?: string | null;
             /** Password */
             password: string;
+        };
+        /**
+         * UserManageOptionResponse
+         * @description 用户选项响应（精简字段，用于下拉选择）。
+         */
+        UserManageOptionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username: string;
         };
         /**
          * UserManageResponse
@@ -4113,6 +5119,8 @@ export interface components {
              * @default false
              */
             isAdmin: boolean;
+            /** Departmentid */
+            departmentId?: string | null;
         };
         /**
          * UserManageUpdate
@@ -4125,13 +5133,13 @@ export interface components {
             email?: string | null;
             /** Username */
             username?: string | null;
-            /** Password */
-            password?: string | null;
             status?: components["schemas"]["Status"] | null;
             /** Roles */
             roles?: string[] | null;
             /** Isadmin */
             isAdmin?: boolean | null;
+            /** Departmentid */
+            departmentId?: string | null;
         };
         /**
          * UserRouteResponse
@@ -4688,6 +5696,671 @@ export interface operations {
             };
         };
     };
+    get_department_tree_api_v1_departments_tree_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_DepartmentTreeNode__"];
+                };
+            };
+        };
+    };
+    create_department_api_v1_departments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DepartmentResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_department_api_v1_departments__dept_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dept_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DepartmentResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_department_api_v1_departments__dept_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dept_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DepartmentResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_all_data_rules_api_v1_data_rules_all_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_DataRuleResponse__"];
+                };
+            };
+        };
+    };
+    get_data_rules_api_v1_data_rules_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_DataRuleResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_data_rule_api_v1_data_rules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataRuleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DataRuleResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_data_rule_api_v1_data_rules__rule_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataRuleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DataRuleResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_data_rule_api_v1_data_rules__rule_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DataRuleResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_schedules_api_v1_schedules_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                /** @description 启用状态筛选 */
+                enabled?: boolean | null;
+                /** @description 任务名筛选 */
+                taskName?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_PeriodicTaskListResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_schedule_api_v1_schedules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PeriodicTaskCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PeriodicTaskResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_schedule_api_v1_schedules__schedule_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schedule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PeriodicTaskResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_schedule_api_v1_schedules__schedule_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schedule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PeriodicTaskUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PeriodicTaskResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_schedule_api_v1_schedules__schedule_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schedule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    toggle_schedule_api_v1_schedules__schedule_id__toggle_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schedule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PeriodicTaskResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_overview_api_v1_system_stats_api_overview_get: {
+        parameters: {
+            query?: {
+                /** @description 时间范围: 1h / 6h / 24h / 7d */
+                range?: string;
+                /** @description 自定义开始时间 */
+                start?: string | null;
+                /** @description 自定义结束时间 */
+                end?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_ApiOverviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_top_api_v1_system_stats_api_top_get: {
+        parameters: {
+            query?: {
+                /** @description 时间范围: 1h / 6h / 24h / 7d */
+                range?: string;
+                /** @description 自定义开始时间 */
+                start?: string | null;
+                /** @description 自定义结束时间 */
+                end?: string | null;
+                /** @description 排序字段: requests/errors/avg_ms/p95_ms */
+                sortBy?: string;
+                /** @description 返回条数 */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_ApiTopItem__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_distribution_api_v1_system_stats_api_distribution_get: {
+        parameters: {
+            query?: {
+                /** @description 时间范围: 1h / 6h / 24h / 7d */
+                range?: string;
+                /** @description 自定义开始时间 */
+                start?: string | null;
+                /** @description 自定义结束时间 */
+                end?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_ApiDistributionItem__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_trend_api_v1_system_stats_api_trend_get: {
+        parameters: {
+            query?: {
+                /** @description 时间范围: 1h / 6h / 24h / 7d */
+                range?: string;
+                /** @description 自定义开始时间 */
+                start?: string | null;
+                /** @description 自定义结束时间 */
+                end?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_ApiTrendPoint__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_list_api_v1_system_stats_api_list_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                /** @description 时间范围: 1h / 6h / 24h / 7d */
+                range?: string;
+                /** @description 自定义开始时间 */
+                start?: string | null;
+                /** @description 自定义结束时间 */
+                end?: string | null;
+                /** @description 模糊搜索路径 */
+                keyword?: string | null;
+                /** @description 排序字段 */
+                sortBy?: string;
+                /** @description 排序方向 */
+                sortOrder?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_ApiListItem__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_scripts_api_v1_scripts_get: {
         parameters: {
             query?: {
@@ -4944,200 +6617,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_PaginatedResponse_ScriptExecutionResponse__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_overview_api_v1_system_stats_api_overview_get: {
-        parameters: {
-            query?: {
-                /** @description 时间范围: 1h / 6h / 24h / 7d */
-                range?: string;
-                /** @description 自定义开始时间 */
-                start?: string | null;
-                /** @description 自定义结束时间 */
-                end?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_ApiOverviewResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_top_api_v1_system_stats_api_top_get: {
-        parameters: {
-            query?: {
-                /** @description 时间范围: 1h / 6h / 24h / 7d */
-                range?: string;
-                /** @description 自定义开始时间 */
-                start?: string | null;
-                /** @description 自定义结束时间 */
-                end?: string | null;
-                /** @description 排序字段: requests/errors/avg_ms/p95_ms */
-                sortBy?: string;
-                /** @description 返回条数 */
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_ApiTopItem__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_distribution_api_v1_system_stats_api_distribution_get: {
-        parameters: {
-            query?: {
-                /** @description 时间范围: 1h / 6h / 24h / 7d */
-                range?: string;
-                /** @description 自定义开始时间 */
-                start?: string | null;
-                /** @description 自定义结束时间 */
-                end?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_ApiDistributionItem__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_trend_api_v1_system_stats_api_trend_get: {
-        parameters: {
-            query?: {
-                /** @description 时间范围: 1h / 6h / 24h / 7d */
-                range?: string;
-                /** @description 自定义开始时间 */
-                start?: string | null;
-                /** @description 自定义结束时间 */
-                end?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_ApiTrendPoint__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_list_api_v1_system_stats_api_list_get: {
-        parameters: {
-            query?: {
-                /** @description 当前页码。 */
-                page?: number;
-                /** @description 每页条数。 */
-                pageSize?: number;
-                /** @description 时间范围: 1h / 6h / 24h / 7d */
-                range?: string;
-                /** @description 自定义开始时间 */
-                start?: string | null;
-                /** @description 自定义结束时间 */
-                end?: string | null;
-                /** @description 模糊搜索路径 */
-                keyword?: string | null;
-                /** @description 排序字段 */
-                sortBy?: string;
-                /** @description 排序方向 */
-                sortOrder?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_ApiListItem__"];
                 };
             };
             /** @description Validation Error */
@@ -5786,205 +7265,6 @@ export interface operations {
             };
         };
     };
-    get_schedules_api_v1_schedules_get: {
-        parameters: {
-            query?: {
-                /** @description 当前页码。 */
-                page?: number;
-                /** @description 每页条数。 */
-                pageSize?: number;
-                /** @description 启用状态筛选 */
-                enabled?: boolean | null;
-                /** @description 任务名筛选 */
-                taskName?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_PeriodicTaskListResponse__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_schedule_api_v1_schedules_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PeriodicTaskCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PeriodicTaskResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_schedule_api_v1_schedules__schedule_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                schedule_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PeriodicTaskResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_schedule_api_v1_schedules__schedule_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                schedule_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PeriodicTaskUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PeriodicTaskResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_schedule_api_v1_schedules__schedule_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                schedule_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    toggle_schedule_api_v1_schedules__schedule_id__toggle_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                schedule_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PeriodicTaskResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_menu_list_api_v1_manage_menus_get: {
         parameters: {
             query?: {
@@ -6356,6 +7636,26 @@ export interface operations {
             };
         };
     };
+    get_aggregated_health_api_v1_system_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_AggregatedHealth_"];
+                };
+            };
+        };
+    };
     get_business_summary_api_v1_system_stats_business_get: {
         parameters: {
             query?: never;
@@ -6376,6 +7676,44 @@ export interface operations {
             };
         };
     };
+    get_activities_paginated_api_v1_system_activities_paginate_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                eventType?: string | null;
+                userId?: string | null;
+                startTime?: string | null;
+                endTime?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_ActivityResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_activities_api_v1_system_activities_get: {
         parameters: {
             query?: never;
@@ -6392,6 +7730,185 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_list_ActivityResponse__"];
+                };
+            };
+        };
+    };
+    get_plugin_status_api_v1_system_plugins_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_PluginStatusItem__"];
+                };
+            };
+        };
+    };
+    get_plugin_dependencies_api_v1_system_plugins_dependencies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PluginDependencyGraph_"];
+                };
+            };
+        };
+    };
+    get_event_bus_stats_api_v1_system_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_EventBusStats_"];
+                };
+            };
+        };
+    };
+    get_all_audit_dict_api_v1_system_audit_dict_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_AuditDictResponse__"];
+                };
+            };
+        };
+    };
+    create_audit_dict_api_v1_system_audit_dict_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuditDictCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_AuditDictResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_audit_dict_api_v1_system_audit_dict__item_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuditDictUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_AuditDictResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_audit_dict_api_v1_system_audit_dict__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -6448,6 +7965,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_all_users_api_v1_users_all_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_UserManageOptionResponse__"];
                 };
             };
         };
@@ -6630,6 +8167,41 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_password_api_v1_users__user_id__password_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordBody"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

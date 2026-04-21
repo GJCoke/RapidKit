@@ -48,6 +48,7 @@
     "workerNotFound": "Worker 不存在",
     "taskNotFound": "任务不存在",
     "workerControlFailed": "Worker 控制指令执行失败",
-    "workerOffline": "Worker 当前离线，无法执行操作"
+    "workerOffline": "Worker 当前离线，无法执行操作",
+    "departmentHasChildren": "该部门下存在子部门，无法删除"
   }
 }

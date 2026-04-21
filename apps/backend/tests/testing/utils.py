@@ -9,6 +9,8 @@ import string
 import uuid
 from datetime import datetime, timedelta
 
+from rapidkit_core.timezone import timezone
+
 
 def random_string(
     length: int = 10,
@@ -73,6 +75,6 @@ def random_text(min_words: int = 5, max_words: int = 15) -> str:
 
 
 def random_datetime(start_days_ago: int = 30, end_days_ago: int = 0) -> datetime:
-    start = datetime.now() - timedelta(days=start_days_ago)
-    end = datetime.now() - timedelta(days=end_days_ago)
+    start = timezone.now() - timedelta(days=start_days_ago)
+    end = timezone.now() - timedelta(days=end_days_ago)
     return start + (end - start) * random.random()

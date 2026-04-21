@@ -7,41 +7,8 @@ Date   : 2026-04-10
 
 from datetime import timedelta
 
-from fastapi_sio_di import AsyncServer
-from rapidkit_core.log import logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_core.timezone import timezone
-from sqlmodel.ext.asyncio.session import AsyncSession
-
-from plugin_system.crud import ActivityLogCRUD
-from plugin_system.models import ActivityLog
-
-
-async def log_activity(
-    session: AsyncSession,
-    *,
-    event_type: str,
-    params: dict | None = None,
-    detail: str | None = None,
-    source_ip: str | None = None,
-    sio: AsyncServer | None = None,
-) -> ActivityLog:
-    """记录活动日志并通过 Socket.IO 推送。"""
-    crud = ActivityLogCRUD(session)
-    record = await crud.create(
-        {"event_type": event_type, "params": params or {}, "detail": detail, "source_ip": source_ip},
-    )
-
-    if sio is not None:
-        try:
-            from plugin_system.schemas import ActivityResponse
-
-            payload = ActivityResponse.model_validate(record).serializable_dict()
-            await sio.emit("dashboard:activity", payload, namespace="/dashboard")
-        except Exception:
-            logger.debug("Failed to emit dashboard:activity", exc_info=True)
-
-    return record
 
 
 async def get_qps(redis: AsyncRedisClient, minutes: int = 60) -> float:

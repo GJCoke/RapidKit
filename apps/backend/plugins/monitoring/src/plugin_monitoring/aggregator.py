@@ -10,12 +10,14 @@ Date   : 2026-04-13
 import re
 from collections import defaultdict
 
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from redis.asyncio import Redis as AsyncRedis
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from plugin_monitoring.crud import ApiMetricsCRUD
+
+logger = get_plugin_logger("Monitoring")
 
 # Redis key 模式
 _QPS_PATTERN = re.compile(r"^metrics:api:(\d{8}_\d{4}):(\w+):(.+)$")

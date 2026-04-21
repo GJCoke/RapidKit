@@ -12,7 +12,7 @@ from sqlmodel import JSON, Column, Field
 class InterfaceRouter(SQLModel, table=True):
     """FastAPI 应用路由模型"""
 
-    __tablename__ = "manage_routers"
+    __tablename__ = "auth_routers"
 
     name: str = Field(..., unique=True, max_length=100, description="接口路由功能名称")
     description: str | None = Field(None, description="接口路由功能描述")

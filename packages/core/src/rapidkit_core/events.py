@@ -19,7 +19,11 @@ from itertools import groupby
 from typing import Callable, ClassVar
 from uuid import uuid4
 
-from rapidkit_core.log import logger
+from rapidkit_core.database import RedisManager
+from rapidkit_core.log import get_plugin_logger
+from rapidkit_core.timezone import timezone
+
+logger = get_plugin_logger("EventBus")
 
 DISTRIBUTED_CHANNEL = "eventbus:distributed"
 
@@ -38,17 +42,6 @@ class DeadLetter:
     event_name: str
     timestamp: datetime
     source: str | None = None
-
-
-@dataclass
-class ActivityLogEvent(Event):
-    """活动日志事件。"""
-
-    event_name: ClassVar[str] = "activity.log"
-    event_type: str
-    params: dict | None = None
-    detail: str | None = None
-    source_ip: str | None = None
 
 
 @dataclass
@@ -156,7 +149,7 @@ class EventBus:
         """
         entries = self._collect_handlers(event, source)
         if not entries:
-            self._dead_letters.append(DeadLetter(event_name=event.event_name, timestamp=datetime.now(), source=source))
+            self._dead_letters.append(DeadLetter(event_name=event.event_name, timestamp=timezone.now(), source=source))
             return
         for entry_handler, _ in entries:
             try:
@@ -182,7 +175,7 @@ class EventBus:
         """
         entries = self._collect_handlers(event, source)
         if not entries:
-            self._dead_letters.append(DeadLetter(event_name=event.event_name, timestamp=datetime.now(), source=source))
+            self._dead_letters.append(DeadLetter(event_name=event.event_name, timestamp=timezone.now(), source=source))
             return
 
         sorted_entries = sorted(entries, key=lambda e: e[1])
@@ -204,14 +197,14 @@ class EventBus:
             self._subscriber_task.cancel()
             self._subscriber_task = None
         if self._pending_tasks:
-            logger.info("EventBus: waiting for {} pending tasks...", len(self._pending_tasks))
+            logger.info("Waiting for {} pending tasks...", len(self._pending_tasks))
             done, pending = await asyncio.wait(
                 self._pending_tasks,
                 timeout=timeout,
             )
             if pending:
                 logger.warning(
-                    "EventBus: {} tasks still pending after {:.1f}s timeout, cancelling...",
+                    "{} tasks still pending after {:.1f}s timeout, cancelling...",
                     len(pending),
                     timeout,
                 )
@@ -229,8 +222,6 @@ class EventBus:
         instance_id 去重，不会二次执行。
         """
         await self.async_emit(event, source=source)
-
-        from rapidkit_core.database import RedisManager
 
         payload = json.dumps(
             {
@@ -250,7 +241,7 @@ class EventBus:
         self._subscriber_task = asyncio.create_task(self._subscribe_loop())
         self._pending_tasks.add(self._subscriber_task)
         self._subscriber_task.add_done_callback(self._pending_tasks.discard)
-        logger.info("EventBus: distributed subscriber started.")
+        logger.info("Distributed subscriber started.")
 
     async def _subscribe_loop(self) -> None:
         """Redis Pub/Sub 订阅循环（带指数退避重连）。"""
@@ -265,7 +256,7 @@ class EventBus:
                 pubsub = redis.pubsub()
                 await pubsub.subscribe(DISTRIBUTED_CHANNEL)
                 retry_interval = 1.0  # 连接成功，重置退避
-                logger.debug("EventBus: subscribed to '{}'", DISTRIBUTED_CHANNEL)
+                logger.debug("Subscribed to '{}'", DISTRIBUTED_CHANNEL)
 
                 async for message in pubsub.listen():
                     if message["type"] != "message":
@@ -283,19 +274,19 @@ class EventBus:
 
                         event_cls = self._event_registry.get(event_name)
                         if event_cls is None:
-                            logger.debug("EventBus: no registered class for distributed event '{}'", event_name)
+                            logger.debug("No registered class for distributed event '{}'", event_name)
                             continue
 
                         event = event_cls(**data)
                         await self.async_emit(event, source=source)
                     except Exception:
-                        logger.exception("EventBus: error processing distributed event")
+                        logger.exception("Error processing distributed event")
 
             except asyncio.CancelledError:
                 break
             except Exception:
                 logger.warning(
-                    "EventBus: Pub/Sub connection lost, retrying in {interval:.0f}s...",
+                    "Pub/Sub connection lost, retrying in {interval:.0f}s...",
                     interval=retry_interval,
                 )
                 await asyncio.sleep(retry_interval)

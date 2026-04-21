@@ -18,6 +18,10 @@ def register() -> PluginManifest:
     from plugin_auth.auth.api import router as auth_router
     from plugin_auth.auth.deps import get_current_user_form_db
     from plugin_auth.auth.models import User
+    from plugin_auth.data_rule.api import router as data_rule_router
+    from plugin_auth.data_rule.models import DataRule
+    from plugin_auth.department.api import router as dept_router
+    from plugin_auth.department.models import Department
     from plugin_auth.role.api import router as role_router
     from plugin_auth.role.deps import verify_user_permission
     from plugin_auth.role.models import Role
@@ -29,12 +33,14 @@ def register() -> PluginManifest:
     combined.include_router(auth_router)
     combined.include_router(role_router)
     combined.include_router(router_api_router)
+    combined.include_router(dept_router)
+    combined.include_router(data_rule_router)
 
     return PluginManifest(
         name="auth",
         version="0.1.0",
         router=combined,
-        models=[User, Role, InterfaceRouter],
+        models=[User, Role, InterfaceRouter, Department, DataRule],
         on_startup=[sync_routes_on_startup],
         dependency_overrides={
             _verify_user_permission_placeholder: verify_user_permission,

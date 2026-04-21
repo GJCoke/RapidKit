@@ -20,25 +20,25 @@ from plugin_schedule.schedule_types import SolarSchedule as _SolarSchedule
 class IntervalSchedule(_IntervalSchedule, SQLModel, table=True):
     """Celery 间隔调度 SQLModel 模型。"""
 
-    __tablename__ = "celery_interval_schedule"
+    __tablename__ = "schedule_interval_schedules"
 
 
 class CrontabSchedule(_CrontabSchedule, SQLModel, table=True):
     """Celery Crontab 调度 SQLModel 模型。"""
 
-    __tablename__ = "celery_crontab_schedule"
+    __tablename__ = "schedule_crontab_schedules"
 
 
 class SolarSchedule(_SolarSchedule, SQLModel, table=True):
     """Celery Solar 调度 SQLModel 模型。"""
 
-    __tablename__ = "celery_solar_schedule"
+    __tablename__ = "schedule_solar_schedules"
 
 
 class PeriodicTask(_PeriodicTask, SQLModel, table=True):
     """Celery 定时任务 SQLModel 模型。"""
 
-    __tablename__ = "celery_periodic_task"
+    __tablename__ = "schedule_periodic_tasks"
 
     args: list[Any] = Field([], sa_column=Column(JSON))
     kwargs: dict[str, Any] = Field({}, sa_column=Column(JSON))

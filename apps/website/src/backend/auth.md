@@ -76,19 +76,20 @@ Refresh Token 存储在 Redis 中，key 格式为 `auth:refresh:<user_id>:<jti>`
 
 ## RBAC 权限体系
 
-权限系统分为三个层级，覆盖前后端完整的访问控制需求：
+权限系统分为四个层级，覆盖前后端完整的访问控制需求：
 
-| 层级     | 字段                    | 说明                  |
-| -------- | ----------------------- | --------------------- |
-| 路由权限 | `router_permissions`    | 前端页面路由访问控制  |
-| 接口权限 | `interface_permissions` | 后端 API 端点访问控制 |
-| 按钮权限 | `button_permissions`    | 前端 UI 按钮显示控制  |
+| 层级     | 字段                    | 说明                     |
+| -------- | ----------------------- | ------------------------ |
+| 路由权限 | `router_permissions`    | 前端页面路由访问控制     |
+| 接口权限 | `interface_permissions` | 后端 API 端点访问控制    |
+| 按钮权限 | `button_permissions`    | 前端 UI 按钮显示控制     |
+| 数据权限 | `data_scope`            | 行级数据过滤（详见下文） |
 
-角色模型定义（`src/domains/role/models.py`）：
+角色模型定义（`plugins/auth/src/plugin_auth/role/models.py`）：
 
 ```python
 class Role(SQLModel, table=True):
-    __tablename__ = "manage_roles"
+    __tablename__ = "auth_roles"
 
     name: str = Field(..., unique=True, min_length=2, max_length=100, description="角色名称")
     description: str | None = Field(None, max_length=500, description="角色描述")
@@ -97,6 +98,11 @@ class Role(SQLModel, table=True):
     interface_permissions: list[str] = Field([], sa_column=Column(JSON), description="接口权限编码列表")
     button_permissions: list[str] = Field([], sa_column=Column(JSON), description="按钮权限编码列表")
     router_permissions: list[str] = Field([], sa_column=Column(JSON), description="路由权限编码列表")
+
+    # 数据级权限
+    data_scope: int = Field(default=DataScope.SELF, description="数据范围")
+    custom_dept_ids: list[UUID] = Field(default_factory=list, sa_column=Column(JSON), description="自定义部门列表")
+    data_rule_ids: list[UUID] = Field(default_factory=list, sa_column=Column(JSON), description="数据规则 ID 列表")
 ```
 
 接口权限通过 `InterfaceRouter` 模型动态注册，格式为 `METHOD:path`（如 `GET:POST:/api/v1/users`）。
@@ -131,6 +137,19 @@ async def verify_user_permission(user: UserDBDep, route: RequestRouterDep, redis
     return user
 ```
 
+## 权限缓存结构
+
+`UserPermissionCache` 缓存在 Redis 中，包含接口权限、按钮权限和数据范围信息：
+
+```python
+class UserPermissionCache(BaseModel):
+    permissions: list[str] = []        # 接口权限列表
+    buttons: list[str] = []            # 按钮权限列表
+    data_scope: int = DataScope.SELF   # 聚合后的数据范围
+    custom_dept_ids: list[UUID] = []   # 自定义部门 ID 列表
+    data_rule_ids: list[UUID] = []     # 数据规则 ID 列表
+```
+
 ## 用户信息缓存
 
 `get_current_user_form_db` 依赖使用 Redis 缓存避免每次请求都查库：
@@ -157,6 +176,115 @@ async def verify_user_permission(user: UserDBDep, route: RequestRouterDep, redis
 登录流程（`user_login` → `crud.get_by_username()`）不经过此缓存，始终从数据库读取最新数据。
 :::
 
+## 数据级权限（DataScope）
+
+在接口权限（控制"能否访问"）之上，系统还提供**数据级权限**（控制"能看到哪些数据"）。通过 `DataScope` 枚举和 `DataPermissionFilter` 依赖实现行级过滤。
+
+### DataScope 枚举
+
+```python
+class DataScope(IntEnum):
+    ALL = 1               # 全部数据
+    SELF = 2              # 仅自己创建的
+    DEPT = 3              # 本部门
+    DEPT_AND_CHILDREN = 4 # 本部门及下级
+    CUSTOM_DEPT = 5       # 自定义部门列表
+    CUSTOM_RULE = 6       # 自定义规则
+```
+
+角色模型新增字段：
+
+| 字段              | 类型         | 说明                             |
+| ----------------- | ------------ | -------------------------------- |
+| `data_scope`      | `int`        | 数据范围（DataScope 枚举值）     |
+| `custom_dept_ids` | `list[UUID]` | CUSTOM_DEPT 时的自定义部门列表   |
+| `data_rule_ids`   | `list[UUID]` | CUSTOM_RULE 时的数据规则 ID 列表 |
+
+### DataPermissionFilter 依赖
+
+`DataPermissionFilter` 是一个可复用的 FastAPI 依赖类，传入目标模型后自动生成 SQLAlchemy WHERE 条件：
+
+```python
+from plugin_auth.data_rule.deps import DataPermissionFilter
+
+@router.get("")
+async def get_users(
+    query: Annotated[UserManagePageQuery, Query(...)],
+    user_crud: UserManageCrudDep,
+    data_filter: Annotated[ColumnElement[bool], Depends(DataPermissionFilter(User))],
+) -> Response[PaginatedResponse[UserManageResponse]]:
+    filters = filter_user(query.status, query.keyword)
+    users = await user_crud.get_paginate(*filters, data_filter, page=query.page, size=query.page_size)
+    return Response(data=users)
+```
+
+### 多角色聚合策略
+
+当用户拥有多个角色时，数据范围取最宽（数值最小）：
+
+- 自定义部门列表取并集
+- 数据规则 ID 取并集
+
+聚合结果缓存在 `UserPermissionCache` 中，与接口权限共享同一 Redis key。
+
+### DataRule 模型
+
+自定义数据规则存储在 `auth_data_rules` 表中，支持动态条件构建：
+
+```python
+class DataRule(SQLModel, table=True):
+    __tablename__ = "auth_data_rules"
+
+    name: str          # 规则名称
+    model_name: str    # 目标表名
+    field: str         # 过滤字段名
+    operator: str      # 操作符：eq/ne/gt/ge/lt/le/in/not_in
+    value: str         # 值，支持模板变量 ${user_id} ${dept_id}
+    logic: str         # 逻辑：AND/OR
+```
+
+模板变量在运行时替换为当前用户的实际值。
+
+## 部门管理
+
+系统支持树形部门结构（自引用外键），用于数据级权限的组织架构依据：
+
+```python
+class Department(SQLModel, table=True):
+    __tablename__ = "auth_departments"
+
+    parent_id: UUID | None  # 父部门 ID（自引用）
+    name: str               # 部门名称
+    code: str               # 部门编码（唯一）
+    sort: int               # 排序
+    status: Status          # 状态
+    leader_id: UUID | None  # 部门负责人 ID
+```
+
+用户通过 `User.department_id` 关联到所属部门。
+
+## 强制重新登录
+
+当用户密码被修改后，系统通过 Redis 标记强制该用户重新登录：
+
+1. 密码修改后，设置 `auth:force_relogin:<user_id>` 标记（TTL 与 Access Token 过期时间一致）
+2. 同时清除该用户所有 Refresh Token 和权限缓存
+3. 用户下次请求时，`get_current_user_form_db` 检测到标记，抛出 `TOKEN_INVALID` 异常
+4. 用户重新登录成功后，删除该标记
+
+```python
+# 密码修改后
+relogin_key = force_relogin_structure.format(user_id=user_id)
+await redis.set(relogin_key, "1", ex=auth_settings.ACCESS_TOKEN_EXP)
+
+# 验证时检查
+if await redis.exists(relogin_key):
+    raise AppException(StatusCode.TOKEN_INVALID)
+
+# 登录成功后清除
+await redis.delete(relogin_key)
+```
+
 ## 类型协议（UserProtocol）
 
 `rapidkit_common.auth` 定义了 `UserProtocol` 协议类型，提供 `User` 模型的最小接口：
@@ -166,6 +294,7 @@ class UserProtocol(Protocol):
     id: UUID
     is_admin: bool
     roles: list[str]
+    department_id: UUID | None
 ```
 
 其他插件通过 `UserDBDep`（类型为 `UserProtocol`）获取当前用户，无需直接依赖 `plugin_auth` 的 `User` 模型。这实现了类型安全的跨插件解耦。

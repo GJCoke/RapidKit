@@ -11,13 +11,14 @@ from datetime import timedelta
 
 from fastapi_sio_di import AsyncServer
 from rapidkit_common.enums import TaskStatus, WorkerStatus
-from rapidkit_core.events import ActivityLogEvent, event_bus
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_worker.crud import TaskResultCRUD, WorkerCRUD
 from plugin_worker.models import CeleryTaskResult, CeleryWorker
+
+logger = get_plugin_logger("Worker")
 
 # 任务终态
 _TERMINAL_STATES = {TaskStatus.SUCCESS, TaskStatus.FAILURE, TaskStatus.REVOKED}
@@ -31,13 +32,6 @@ class EventService:
         self.worker_crud = WorkerCRUD(session)
         self.task_crud = TaskResultCRUD(session)
         self.sio = sio
-
-    def _log_activity(self, event_type: str, params: dict | None = None, detail: str | None = None) -> None:
-        """通过事件总线记录活动日志（fire-and-forget）。"""
-        event_bus.fire_and_forget(
-            ActivityLogEvent(event_type=event_type, params=params, detail=detail),
-            source="worker",
-        )
 
     # ==================== Socket.IO Helpers ====================
 
@@ -93,7 +87,6 @@ class EventService:
         )
         await self.session.flush()
         await self._emit_worker_status(worker)
-        self._log_activity(event_type="worker_online", params={"name": data["hostname"]})
 
     async def handle_worker_offline(self, data: dict) -> None:
         worker = await self.worker_crud.get_by_hostname(data["hostname"])
@@ -104,7 +97,6 @@ class EventService:
         worker.update_time = timezone.now()
         await self.session.flush()
         await self._emit_worker_status(worker)
-        self._log_activity(event_type="worker_offline", params={"name": data["hostname"]})
 
     async def handle_worker_heartbeat(self, data: dict) -> None:
         worker = await self.worker_crud.get_by_hostname(data["hostname"])
@@ -172,7 +164,6 @@ class EventService:
         await self._emit_task_update(task, runtime=task.runtime)
         if worker:
             await self._emit_worker_status(worker)
-        self._log_activity(event_type="task_success", params={"name": task.task_name})
 
     async def handle_task_failure(self, data: dict) -> None:
         task = await self.task_crud.get_by_task_id(data["task_id"])
@@ -207,11 +198,6 @@ class EventService:
         await self._emit_task_update(task, exception=data.get("exception", ""))
         if worker:
             await self._emit_worker_status(worker)
-        self._log_activity(
-            event_type="task_failure",
-            params={"name": task.task_name},
-            detail=data.get("exception", ""),
-        )
 
     async def handle_task_retry(self, data: dict) -> None:
         task = await self.task_crud.get_by_task_id(data["task_id"])

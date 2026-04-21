@@ -9,6 +9,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator, Iterator
 
+from pydantic_core import to_json
 from redis.asyncio import ConnectionPool
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -23,8 +24,18 @@ ASYNC_DATABASE_URL = str(settings.ASYNC_DATABASE_POSTGRESQL_URL)
 SYNC_DATABASE_URL = str(settings.SYNC_DATABASE_POSTGRESQL_URL)
 REDIS_URL = str(settings.REDIS_URL)
 
-async_engine = create_async_engine(ASYNC_DATABASE_URL, echo=settings.ENVIRONMENT.is_debug, pool_recycle=300)
-sync_engine = create_engine(SYNC_DATABASE_URL, echo=settings.ENVIRONMENT.is_debug, pool_recycle=300)
+
+def _json_serializer(obj: Any) -> str:
+    """使用 Pydantic 核心序列化器，原生支持 UUID、datetime 等类型。"""
+    return to_json(obj).decode()
+
+
+async_engine = create_async_engine(
+    ASYNC_DATABASE_URL, echo=settings.ENVIRONMENT.is_debug, pool_recycle=300, json_serializer=_json_serializer
+)
+sync_engine = create_engine(
+    SYNC_DATABASE_URL, echo=settings.ENVIRONMENT.is_debug, pool_recycle=300, json_serializer=_json_serializer
+)
 
 AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
 SyncSessionLocal = sessionmaker(sync_engine, class_=Session, expire_on_commit=False)
@@ -79,14 +90,14 @@ class RedisManager(BaseManager):
             pool = ConnectionPool.from_url(redis_url, max_connections=max_connections, decode_responses=True)
             cls._pools[pool_name] = pool
             cls._clients[pool_name] = AsyncRedisClient(connection_pool=pool)
-            logger.info(f'Redis connection pool for "{pool_name}" initialization completed.')
+            logger.info('Redis connection pool for "{pool_name}" initialization completed.', pool_name=pool_name)
         return cls._pools[pool_name]
 
     @classmethod
     async def disconnect(cls, pool_name: str = "default") -> None:
         if pool_name in cls._pools:
             await cls._pools[pool_name].disconnect()
-            logger.info(f'Redis connection pool for "{pool_name}" disconnect completed.')
+            logger.info('Redis connection pool for "{pool_name}" disconnect completed.', pool_name=pool_name)
             del cls._pools[pool_name]
             del cls._clients[pool_name]
 

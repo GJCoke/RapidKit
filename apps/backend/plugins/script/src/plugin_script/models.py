@@ -15,7 +15,7 @@ from sqlmodel import Column, Field, Text
 class Script(SQLModel, table=True):
     """脚本模型"""
 
-    __tablename__ = "scripts"
+    __tablename__ = "script_scripts"
 
     name: str = Field(..., unique=True, max_length=255, description="脚本名称")
     description: str = Field("", max_length=500, description="脚本描述")

@@ -48,6 +48,7 @@
     "workerNotFound": "Worker not found",
     "taskNotFound": "Task not found",
     "workerControlFailed": "Worker control command failed",
-    "workerOffline": "Worker is currently offline"
+    "workerOffline": "Worker is currently offline",
+    "departmentHasChildren": "Cannot delete department with sub-departments"
   }
 }

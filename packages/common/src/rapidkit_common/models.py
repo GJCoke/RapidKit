@@ -29,6 +29,7 @@ class SQLModel(_SQLModel):
         nullable=False,
         description="唯一ID",
     )
+    created_by: UUID | None = Field(default=None, index=True, description="创建者 ID")
     create_time: datetime = Field(default_factory=timezone.now, description="创建时间")
     update_time: datetime = Field(
         default_factory=timezone.now,

@@ -5,9 +5,12 @@ Author : Coke
 Date   : 2026-04-02
 """
 
+from uuid import UUID
+
 from rapidkit_common.enums import Status
 from rapidkit_common.schemas import BaseModel, BaseRequest, ResponseSchema
 from rapidkit_common.schemas.request import BatchRequest, PaginatedRequest
+from rapidkit_common.schemas.response import BaseResponse
 
 
 class UserManageSchema(BaseModel):
@@ -19,10 +22,19 @@ class UserManageSchema(BaseModel):
     status: Status = Status.ON
     roles: list[str] = []
     is_admin: bool = False
+    department_id: UUID | None = None
 
 
 class UserManageResponse(UserManageSchema, ResponseSchema):
     """用户管理响应数据结构（不含密码）。"""
+
+
+class UserManageOptionResponse(BaseResponse):
+    """用户选项响应（精简字段，用于下拉选择）。"""
+
+    id: UUID
+    name: str
+    username: str
 
 
 class UserManageCreate(UserManageSchema, BaseRequest):
@@ -37,10 +49,10 @@ class UserManageUpdate(BaseRequest):
     name: str | None = None
     email: str | None = None
     username: str | None = None
-    password: str | None = None
     status: Status | None = None
     roles: list[str] | None = None
     is_admin: bool | None = None
+    department_id: UUID | None = None
 
 
 class UserManageQueriesSchema(BaseModel):
@@ -56,3 +68,10 @@ class UserManagePageQuery(UserManageQueriesSchema, PaginatedRequest):
 
 class UserManageBatchBody(BatchRequest):
     """批量用户操作数据结构。"""
+
+
+class ChangePasswordBody(BaseRequest):
+    """修改密码请求数据结构。"""
+
+    old_password: str | None = None
+    new_password: str

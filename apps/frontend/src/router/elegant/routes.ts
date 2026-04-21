@@ -79,6 +79,30 @@ export const generatedRoutes: GeneratedRoute[] = [{
     i18nKey: 'route.manage'
   },
   children: [{
+    name: 'manage_audit-dict',
+    path: '/manage/audit-dict',
+    component: 'view.manage_audit-dict',
+    meta: {
+      title: 'manage_audit-dict',
+      i18nKey: 'route.manage_audit-dict'
+    }
+  }, {
+    name: 'manage_data-rule',
+    path: '/manage/data-rule',
+    component: 'view.manage_data-rule',
+    meta: {
+      title: 'manage_data-rule',
+      i18nKey: 'route.manage_data-rule'
+    }
+  }, {
+    name: 'manage_department',
+    path: '/manage/department',
+    component: 'view.manage_department',
+    meta: {
+      title: 'manage_department',
+      i18nKey: 'route.manage_department'
+    }
+  }, {
     name: 'manage_menu',
     path: '/manage/menu',
     component: 'view.manage_menu',

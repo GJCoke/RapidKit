@@ -39,6 +39,7 @@ redis_manager = AsyncRedisManager(url=str(settings.REDIS_URL))
 socket = AsyncServer(
     async_mode="asgi",
     cors_allowed_origins=[],
+    serializer="serializable_dict",
     client_manager=redis_manager,
 )
 

@@ -3,9 +3,10 @@
 import asyncio
 from typing import TYPE_CHECKING, Any
 
-from rapidkit_core.events import ActivityLogEvent, event_bus
+from rapidkit_core.events import event_bus
 from rapidkit_core.plugin import PluginManifest
 
+from plugin_system.audit_dict.models import AuditDictionary
 from plugin_system.models import ActivityLog
 
 if TYPE_CHECKING:
@@ -31,35 +32,19 @@ async def _shutdown(_app: FastAPI) -> None:
     _tasks.clear()
 
 
-async def _on_activity_event(event: ActivityLogEvent) -> None:
-    """事件总线 activity.log 监听器。"""
-    from rapidkit_core.database import AsyncSessionLocal
-
-    from plugin_system.services import log_activity
-
-    async with AsyncSessionLocal() as session:
-        await log_activity(
-            session,
-            event_type=event.event_type,
-            params=event.params,
-            detail=event.detail,
-            source_ip=event.source_ip,
-            sio=_sio,
-        )
-        await session.commit()
-
-
 def register() -> PluginManifest:
     """返回 system 插件的 manifest。"""
     from plugin_system.api import router
+    from plugin_system.audit_dict.api import router as audit_dict_router
+
+    router.include_router(audit_dict_router)
 
     return PluginManifest(
         name="system",
         version="0.1.0",
         router=router,
-        models=[ActivityLog],
+        models=[ActivityLog, AuditDictionary],
         dependencies=["auth", "menu", "script"],
         on_startup=[_startup],
         on_shutdown=[_shutdown],
-        event_listeners=[(ActivityLogEvent, _on_activity_event)],
     )

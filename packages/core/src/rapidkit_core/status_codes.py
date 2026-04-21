@@ -49,6 +49,7 @@ class StatusCode(Enum):
     TASK_NOT_REGISTERED = (2008, "common.response.taskNotRegistered")
     WORKER_CONTROL_FAILED = (2009, "common.response.workerControlFailed")
     WORKER_OFFLINE = (2010, "common.response.workerOffline")
+    DEPARTMENT_HAS_CHILDREN = (2011, "common.response.departmentHasChildren")
 
     # ==================== 状态/并发/幂等 (3XXX) ====================
     ALREADY_EXISTS = (3001, "common.response.alreadyExists")

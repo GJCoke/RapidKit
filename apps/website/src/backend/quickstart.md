@@ -89,7 +89,7 @@ sudo systemctl start redis
 
 设置密码（编辑 `redis.conf`）：
 
-```conf
+```ini
 requirepass 123456
 ```
 

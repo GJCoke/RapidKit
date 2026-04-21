@@ -16,7 +16,7 @@ from sqlmodel import Field, Index
 class ApiMetricsHourly(SQLModel, table=True):
     """API 指标小时归档表。"""
 
-    __tablename__ = "api_metrics_hourly"
+    __tablename__ = "monitoring_api_metrics_hourly"
     __table_args__ = (
         Index("idx_api_metrics_time", "time_bucket"),
         Index("idx_api_metrics_unique", "time_bucket", "method", "path", unique=True),

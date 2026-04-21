@@ -9,10 +9,9 @@ from datetime import datetime, timedelta
 
 from rapidkit_common.crud import BaseCRUD
 from rapidkit_core.timezone import timezone
-from sqlalchemy import case, text
 from sqlalchemy import select as sa_select
 from sqlalchemy.dialects.postgresql import insert
-from sqlmodel import col, delete, func, select
+from sqlmodel import case, col, delete, func, select, text
 
 from plugin_monitoring.models import ApiMetricsHourly
 
@@ -50,16 +49,16 @@ class ApiMetricsCRUD(BaseCRUD[ApiMetricsHourly]):
         stmt = stmt.on_conflict_do_update(
             index_elements=["time_bucket", "method", "path"],
             set_={
-                "request_count": text("api_metrics_hourly.request_count + EXCLUDED.request_count"),
-                "error_count": text("api_metrics_hourly.error_count + EXCLUDED.error_count"),
+                "request_count": text("monitoring_api_metrics_hourly.request_count + EXCLUDED.request_count"),
+                "error_count": text("monitoring_api_metrics_hourly.error_count + EXCLUDED.error_count"),
                 "avg_ms": text(
-                    "CASE WHEN (api_metrics_hourly.request_count + EXCLUDED.request_count) > 0 "
-                    "THEN (api_metrics_hourly.avg_ms * api_metrics_hourly.request_count "
+                    "CASE WHEN (monitoring_api_metrics_hourly.request_count + EXCLUDED.request_count) > 0 "
+                    "THEN (monitoring_api_metrics_hourly.avg_ms * monitoring_api_metrics_hourly.request_count "
                     "+ EXCLUDED.avg_ms * EXCLUDED.request_count) "
-                    "/ (api_metrics_hourly.request_count + EXCLUDED.request_count) "
+                    "/ (monitoring_api_metrics_hourly.request_count + EXCLUDED.request_count) "
                     "ELSE 0 END"
                 ),
-                "p95_ms": text("GREATEST(api_metrics_hourly.p95_ms, EXCLUDED.p95_ms)"),
+                "p95_ms": text("GREATEST(monitoring_api_metrics_hourly.p95_ms, EXCLUDED.p95_ms)"),
             },
         )
         await self.session.exec(stmt)  # type: ignore[arg-type]

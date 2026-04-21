@@ -12,11 +12,12 @@ from typing import TYPE_CHECKING
 from pydantic import TypeAdapter
 from rapidkit_common.enums import MenuType, Status
 from rapidkit_core.cache import PluginCacheManager
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 from sqlalchemy import ColumnElement
 from sqlmodel import col, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from plugin_menu.crud import MenuCRUD
 from plugin_menu.models import Menu
 from plugin_menu.route_schemas import MenuRouteResponse, UserRouteResponse
 from plugin_menu.route_services import get_constant_routes, get_user_routes
@@ -27,6 +28,8 @@ if TYPE_CHECKING:
     from rapidkit_common.auth import UserProtocol
 
 from rapidkit_core.redis_client import AsyncRedisClient
+
+logger = get_plugin_logger("Menu")
 
 _cache = PluginCacheManager("menu")
 
@@ -66,8 +69,6 @@ async def get_cached_menu_tree(
     if cached:
         return _menu_tree_adapter.validate_json(cached)
 
-    from plugin_menu.crud import MenuCRUD
-
     crud = MenuCRUD(session)
     tree = await crud.get_menu_tree()
 
@@ -84,8 +85,6 @@ async def get_cached_pages(
     cached = await redis.get(key)
     if cached:
         return json.loads(cached)
-
-    from plugin_menu.crud import MenuCRUD
 
     crud = MenuCRUD(session)
     pages = await crud.get_all(col(Menu.menu_type) == MenuType.MENU)
@@ -134,4 +133,4 @@ async def invalidate_menu_cache(redis: AsyncRedisClient) -> None:
     """清除所有菜单缓存。"""
     deleted = await _cache.invalidate_all(redis)
     if deleted:
-        logger.debug("[Menu] Invalidated {count} cache keys", count=deleted)
+        logger.debug("Invalidated {count} cache keys", count=deleted)

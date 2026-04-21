@@ -30,6 +30,7 @@ from starlette_context import context
 
 from src.lifecycle import lifespan
 from src.locales.i18n import is_i18n_key, t
+from src.middlewares.audit import AuditMiddleware
 from src.middlewares.context import ContextMiddleware
 from src.middlewares.i18n import I18nMiddleware
 from src.middlewares.limiter import SlowAPIMiddleware
@@ -85,6 +86,7 @@ def setup_middlewares(app: FastAPI) -> None:
 
     # 全局中间件（基础设施层，最靠近请求入口）
     app.add_middleware(StateMiddleware)
+    app.add_middleware(AuditMiddleware)
     app.add_middleware(MetricsMiddleware)
     app.add_middleware(SlowAPIMiddleware)
     app.add_middleware(I18nMiddleware)
@@ -234,6 +236,16 @@ def create_app() -> FastAPI:
     from src.sio.app import socket
 
     app.state.socket = socket
+
+    # Socket.IO 文档 (仅 debug 模式)
+    if settings.ENVIRONMENT.is_debug:
+        socket.setup_docs(
+            app,
+            path="/sio/docs",
+            title=f"{settings.APP_NAME} Socket.IO",
+            version=settings.APP_VERSION,
+            description=settings.APP_DESCRIPTION,
+        )
 
     # 将 celery_app 挂到 app.state，供 plugin_worker 使用
     if settings.ENABLE_CELERY_MONITOR:

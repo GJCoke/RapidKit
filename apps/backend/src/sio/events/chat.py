@@ -3,10 +3,12 @@ from typing import Any, Literal, TypeAlias
 
 from fastapi_sio_di import SID
 from rapidkit_common.schemas import BaseModel
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 
 from src.sio.app import socket
+
+logger = get_plugin_logger("Chat")
 
 MessageType: TypeAlias = Literal["text", "image", "video", "audio", "file", "system"]
 
@@ -65,7 +67,7 @@ async def on_connect(sid: SID, auth: ConnectEvent) -> None:
     """客户端连接聊天室"""
     # 将用户信息存入 session 方便后续使用
     await socket.save_session(sid, {"username": auth.username}, namespace="/chat")
-    logger.info("[Chat] User {username} ({sid}) connected", username=auth.username, sid=sid)
+    logger.info("User {username} ({sid}) connected", username=auth.username, sid=sid)
 
 
 @socket.on("join", namespace="/chat")
@@ -88,7 +90,7 @@ async def on_join(sid: SID, group: str) -> None:
 
     # 广播给房间内的所有人
     await socket.emit("message", notification, room=group, namespace="/chat")
-    logger.info("[Chat] {username} joined room: {group}", username=username, group=group)
+    logger.info("{username} joined room: {group}", username=username, group=group)
 
 
 @socket.on("message", namespace="/chat")
@@ -114,7 +116,7 @@ async def on_message(sid: SID, data: MessageEvent) -> None:
 
     # 广播给该组内的所有人（包括发送者自己）
     await socket.emit("message", message_payload, room=group, namespace="/chat")
-    logger.info("[Chat] Message in {group} from {sender}: {content}", group=group, sender=sender, content=content)
+    logger.info("Message in {group} from {sender}: {content}", group=group, sender=sender, content=content)
 
 
 @socket.on("disconnect", namespace="/chat")
@@ -138,6 +140,6 @@ async def on_disconnect(sid: SID) -> None:
         )
 
         await socket.emit("message", notification, room=group, namespace="/chat")
-        logger.info("[Chat] {username} left room: {group}", username=username, group=group)
+        logger.info("{username} left room: {group}", username=username, group=group)
 
-    logger.info("[Chat] User {username} ({sid}) disconnected", username=username, sid=sid)
+    logger.info("User {username} ({sid}) disconnected", username=username, sid=sid)

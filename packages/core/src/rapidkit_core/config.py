@@ -127,9 +127,7 @@ class LogConfigMixin(BaseSettings):
     LOG_ACCESS_FILENAME: str = "access.log"
     LOG_ERROR_FILENAME: str = "error.log"
 
-    LOG_FORMAT: str = (
-        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</> | <lvl>{level: <8}</> | <cyan>{request_id}</> | <lvl>{message}</>"
-    )
+    LOG_FORMAT: str = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</> | <lvl>{level: <8}</> | <cyan>{request_id}</> | <blue>{extra[plugin]: <12}</> | <lvl>{message}</>"
 
     SLOW_REQUEST_THRESHOLD_MS: int = Field(3000, description="慢请求告警阈值（毫秒）")
 
@@ -155,6 +153,30 @@ class SocketIOConfigMixin(BaseSettings):
     SOCKETIO_ADMIN_PASSWORD: Secret[str] = Secret("change-me-in-production")
 
 
+class AuditMixin(BaseSettings):
+    """审计日志配置。"""
+
+    AUDIT_ENABLED: bool = True
+    AUDIT_EXCLUDE_PATHS: list[str] = [
+        "/health",
+        "/metrics",
+        "/socket.io",
+        "/docs",
+        "/openapi.json",
+        "/redoc",
+    ]
+    AUDIT_SENSITIVE_FIELDS: list[str] = [
+        "password",
+        "token",
+        "secret",
+        "key",
+        "authorization",
+    ]
+    AUDIT_MAX_BODY_SIZE: int = Field(10240, description="请求体最大记录大小（字节）")
+    AUDIT_BATCH_SIZE: int = Field(50, description="批量写入条数")
+    AUDIT_FLUSH_INTERVAL: float = Field(5.0, description="定时刷新间隔（秒）")
+
+
 class Config(
     PostgreSQLConfigMixin,
     CeleryConfigMixin,
@@ -163,6 +185,7 @@ class Config(
     CorsConfigMixin,
     RateLimitConfigMixin,
     SocketIOConfigMixin,
+    AuditMixin,
 ):
     """从环境变量加载的项目配置设置。"""
 
@@ -187,7 +210,9 @@ class Config(
 
     API_PREFIX_V1: str = "/api/v1"
 
-    # App version
+    # App info
+    APP_NAME: str = "RapidKit"
+    APP_DESCRIPTION: str = "RapidKit Admin API"
     APP_VERSION: str = "0.1.0"
 
     # Datetime settings

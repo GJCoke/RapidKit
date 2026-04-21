@@ -85,7 +85,7 @@ class TaskType(Enum):
 
 ```python
 class PeriodicTask(SQLModel, table=True):
-    __tablename__ = "celery_periodic_task"
+    __tablename__ = "schedule_periodic_tasks"
 
     name: str
     enabled: bool = True

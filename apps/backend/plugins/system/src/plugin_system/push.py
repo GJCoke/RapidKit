@@ -11,9 +11,11 @@ import socket as _socket
 import psutil
 from fastapi_sio_di import AsyncServer
 from rapidkit_core.database import RedisManager
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 
 from plugin_system.services import get_error_counts, get_total_requests
+
+logger = get_plugin_logger("System")
 
 HOSTNAME = _socket.gethostname()
 _RESOURCE_KEY_PREFIX = "sys:resources:"

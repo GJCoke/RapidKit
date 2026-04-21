@@ -7,6 +7,7 @@ from uuid import UUID
 
 from fastapi import Depends
 from rapidkit_common.deps import RedisDep, SessionDep
+from rapidkit_common.enums import DataScope
 from rapidkit_core.auth_config import auth_settings
 from rapidkit_core.exceptions import AppException
 from rapidkit_core.redis_client import AsyncRedisClient
@@ -46,7 +47,38 @@ async def create_user_permission_cache(
     permissions = [p for role_info in roles for p in role_info.interface_permissions]
     buttons = list({b for role_info in roles for b in (role_info.button_permissions or [])})
 
-    cache = UserPermissionCache(permissions=permissions, buttons=buttons)
+    # 聚合数据范围：多角色取最宽（数值最小 = 最宽）
+    data_scope = DataScope.SELF
+    if roles:
+        data_scope = min(role.data_scope for role in roles)
+
+    # 聚合自定义部门列表（并集）
+    custom_dept_ids: list[UUID] = list(
+        {
+            dept_id
+            for role in roles
+            if role.data_scope == DataScope.CUSTOM_DEPT
+            for dept_id in (role.custom_dept_ids or [])
+        }
+    )
+
+    # 聚合数据规则 ID（并集）
+    data_rule_ids: list[UUID] = list(
+        {
+            rule_id
+            for role in roles
+            if role.data_scope == DataScope.CUSTOM_RULE
+            for rule_id in (role.data_rule_ids or [])
+        }
+    )
+
+    cache = UserPermissionCache(
+        permissions=permissions,
+        buttons=buttons,
+        data_scope=data_scope,
+        custom_dept_ids=custom_dept_ids,
+        data_rule_ids=data_rule_ids,
+    )
     if permissions or buttons:
         await redis.set(redis_key, cache, ex=auth_settings.ACCESS_TOKEN_EXP)
 

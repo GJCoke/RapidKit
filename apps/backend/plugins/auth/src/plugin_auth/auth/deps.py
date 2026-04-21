@@ -13,13 +13,15 @@ from rapidkit_core.auth_config import auth_settings
 from rapidkit_core.config import settings
 from rapidkit_core.context import ctx
 from rapidkit_core.exceptions import AppException
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.security import AccessJWT, RefreshJWT, decode_token
 from rapidkit_core.status_codes import StatusCode
 from typing_extensions import Annotated, Doc
 
 from plugin_auth.auth.crud import UserCRUD
 from plugin_auth.auth.models import User
+
+logger = get_plugin_logger("Auth")
 
 __all__ = [
     "OAuth2Form",
@@ -33,12 +35,14 @@ __all__ = [
     "AuthCrudDep",
     "refresh_structure",
     "user_structure",
+    "force_relogin_structure",
     "oauth2_scheme",
 ]
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_PREFIX_V1}/auth/login/swagger", auto_error=False)
 refresh_structure = "auth:refresh:<{user_id}>:<{jti}>"
 user_structure = "auth:user:<{user_id}>"
+force_relogin_structure = "auth:force_relogin:<{user_id}>"
 
 OAuth2Form = Annotated[
     OAuth2PasswordRequestForm,
@@ -99,9 +103,10 @@ def parse_refresh_jwt_user(
     if user.agent != user_agent:
         logger.warning(
             "User-Agent mismatch detected: original request User-Agent '{request_agent}'"
-            " does not match refresh token User-Agent '{token_agent}'.",
+            " does not match refresh token User-Agent '{token_agent}', user_id={user_id}.",
             request_agent=user_agent,
             token_agent=user.agent,
+            user_id=user.sub,
         )
         raise AppException(StatusCode.BAD_REQUEST)
     return user
@@ -119,6 +124,10 @@ AuthCrudDep = Annotated[UserCRUD, Depends(get_auth_crud), Doc("Auth CRUD instanc
 
 
 async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep, redis: RedisDep) -> User:
+    relogin_key = force_relogin_structure.format(user_id=user.sub)
+    if await redis.exists(relogin_key):
+        raise AppException(StatusCode.TOKEN_INVALID)
+
     cache_key = user_structure.format(user_id=user.sub)
     cached = await redis.get(cache_key)
     if cached:

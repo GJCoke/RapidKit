@@ -25,19 +25,27 @@ If the spec covers multiple independent subsystems, it should have been broken i
 
 ## Convention Discovery
 
-Before writing tasks, identify which project design skills apply to this plan based on the spec's tech stack and the files involved:
+Before writing tasks, ALWAYS read the `rapidkit-conventions` skill first for universal project rules. Then identify which domain skills apply based on what the plan needs to build:
 
-- **Backend** (Python / FastAPI / SQLModel / Celery / Socketio) → Read and follow `rapidkit-backend-design` skill
-- **Frontend** (Vue / TypeScript / NaiveUI / UnoCSS) → Read and follow `rapidkit-frontend-design` skill
-- **CLI** (TypeScript) → Read and follow `rapidkit-cli-design` skill
+| What the plan builds                         | Skill to read          |
+| -------------------------------------------- | ---------------------- |
+| Backend plugin / API / models / schemas      | `rapidkit-plugin`      |
+| Frontend pages / views                       | `rapidkit-page`        |
+| Frontend components (drawers, cards, modals) | `rapidkit-component`   |
+| Frontend API client / type definitions       | `rapidkit-api-client`  |
+| CLI commands / services                      | `rapidkit-cli-command` |
+| Database migrations                          | `rapidkit-migration`   |
+| Celery tasks / Beat scheduled jobs           | `rapidkit-celery-task` |
+| Shared packages (core/common/hooks/utils)    | `rapidkit-shared-pkg`  |
 
 **Process:**
 
-1. Determine which layers this plan touches (backend, frontend, CLI, or multiple)
-2. For each layer, scan the corresponding design skill file to load project conventions, import paths, patterns, and rules
-3. All code blocks in the plan MUST conform to these conventions — no exceptions
+1. Read `rapidkit-conventions` (always, regardless of scope)
+2. Determine which domains this plan touches
+3. Read each relevant domain skill to load patterns, import paths, and rules
+4. All code blocks in the plan MUST conform to these conventions — no exceptions
 
-If a plan spans multiple layers (e.g., a new API endpoint + frontend page), load ALL relevant design skills and follow each in its respective code blocks.
+If a plan spans multiple domains (e.g., a new API endpoint + frontend page + migration), load ALL relevant domain skills and follow each in its respective code blocks.
 
 ## File Structure
 

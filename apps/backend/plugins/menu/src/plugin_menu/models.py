@@ -17,7 +17,7 @@ from plugin_menu.schemas import Button, Query
 class Menu(SQLModel, table=True):
     """系统菜单模型"""
 
-    __tablename__ = "manage_menus"
+    __tablename__ = "menu_menus"
 
     menu_name: str = Field(description="菜单名称")
     menu_type: MenuType = Field(default=MenuType.MENU, description="菜单类型: 1-目录, 2-菜单")

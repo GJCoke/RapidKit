@@ -16,7 +16,7 @@ from sqlmodel import JSON, Column, Field, Text
 class CeleryWorker(SQLModel, table=True):
     """Celery Worker 状态模型"""
 
-    __tablename__ = "celery_workers"
+    __tablename__ = "worker_workers"
 
     hostname: str = Field(..., unique=True, index=True, max_length=255, description="Worker 主机名标识")
     status: WorkerStatus = Field(WorkerStatus.ONLINE, description="Worker 状态")
@@ -32,7 +32,7 @@ class CeleryWorker(SQLModel, table=True):
 class CeleryTaskResult(SQLModel, table=True):
     """Celery 任务执行记录模型"""
 
-    __tablename__ = "celery_task_results"
+    __tablename__ = "worker_task_results"
 
     task_id: str = Field(..., unique=True, index=True, max_length=255, description="Celery 原生 task_id")
     task_name: str = Field(..., index=True, max_length=255, description="任务函数全名")

@@ -5,7 +5,7 @@ Date    : 2025-04-24
 
 from uuid import UUID
 
-from rapidkit_common.enums import Status
+from rapidkit_common.enums import DataScope, Status
 from rapidkit_common.schemas import BaseModel, BaseRequest, ResponseSchema
 from rapidkit_common.schemas.request import BatchRequest, PaginatedRequest
 
@@ -20,20 +20,34 @@ class RoleSchema(BaseModel):
     interface_permissions: list[str] = []
     button_permissions: list[str] = []
     router_permissions: list[str] = []
+    data_scope: int = DataScope.SELF
+    custom_dept_ids: list[UUID] = []
+    data_rule_ids: list[UUID] = []
 
 
 class RoleResponse(RoleSchema, ResponseSchema):
     """角色响应数据结构。"""
 
     id: UUID
+    data_scope: int
+    custom_dept_ids: list[UUID] = []
+    data_rule_ids: list[UUID] = []
 
 
 class RoleCreate(RoleSchema, BaseRequest):
     """创建角色数据结构。"""
 
+    data_scope: int = DataScope.SELF
+    custom_dept_ids: list[UUID] = []
+    data_rule_ids: list[UUID] = []
+
 
 class RoleUpdate(RoleSchema, BaseRequest):
     """更新角色数据结构。"""
+
+    data_scope: int | None = None
+    custom_dept_ids: list[UUID] | None = None
+    data_rule_ids: list[UUID] | None = None
 
 
 class RoleQueriesSchema(BaseModel):
@@ -76,3 +90,6 @@ class UserPermissionCache(BaseModel):
 
     permissions: list[str] = []
     buttons: list[str] = []
+    data_scope: int = DataScope.SELF
+    custom_dept_ids: list[UUID] = []
+    data_rule_ids: list[UUID] = []

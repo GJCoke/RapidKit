@@ -7,10 +7,12 @@ Date    : 2026-03-30
 
 from celery import Celery
 from rapidkit_core.exceptions import AppException
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.status_codes import StatusCode
 
 from plugin_worker.schemas import ActiveTaskInfo, TriggerTaskResponse
+
+logger = get_plugin_logger("Worker")
 
 
 def get_registered_tasks(celery_app: Celery) -> list[str]:

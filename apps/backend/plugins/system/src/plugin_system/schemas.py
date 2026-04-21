@@ -5,7 +5,10 @@ Author : Coke
 Date   : 2026-04-10
 """
 
+from uuid import UUID
+
 from rapidkit_common.schemas.base import BaseModel
+from rapidkit_common.schemas.request import PaginatedRequest
 from rapidkit_common.schemas.response import BaseSchema
 from rapidkit_common.schemas.types import LocalDatetime
 
@@ -17,6 +20,22 @@ class ActivityResponse(BaseSchema):
     params: dict = {}
     detail: str | None = None
     source_ip: str | None = None
+    user_id: UUID | None = None
+    username: str | None = None
+    http_method: str | None = None
+    path: str | None = None
+    user_agent: str | None = None
+    request_body: dict | None = None
+    response_code: int | None = None
+
+
+class ActivityPaginatedQuery(PaginatedRequest):
+    """活动日志分页查询。"""
+
+    event_type: str | None = None
+    user_id: UUID | None = None
+    start_time: LocalDatetime | None = None
+    end_time: LocalDatetime | None = None
 
 
 # ========== 系统资源 ==========

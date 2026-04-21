@@ -12,7 +12,6 @@ Date   : 2025-04-17
 """
 
 import base64
-import logging
 from datetime import UTC, datetime, timedelta
 from typing import overload
 from uuid import UUID
@@ -25,8 +24,6 @@ from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPubl
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes, PublicKeyTypes
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
 from pydantic import BaseModel, SecretStr
-
-logger = logging.getLogger(__name__)
 
 
 class AccessJWT(BaseModel):

@@ -8,9 +8,11 @@ Date    : 2026-03-30
 from typing import Literal
 
 from fastapi_sio_di import SID
-from rapidkit_core.log import logger
+from rapidkit_core.log import get_plugin_logger
 
 from src.sio.app import socket
+
+logger = get_plugin_logger("Worker")
 
 
 @socket.on("connect", namespace="/worker")
@@ -20,7 +22,7 @@ async def on_worker_connect(sid: SID) -> Literal[False] | None:
 
     前端进入 Worker 管理页面时连接此 namespace。
     """
-    logger.info("[Worker] Client {sid} connected to /worker namespace", sid=sid)
+    logger.info("Client {sid} connected to /worker namespace", sid=sid)
     return None
 
 
@@ -31,4 +33,4 @@ async def on_worker_disconnect(sid: SID) -> None:
 
     前端离开 Worker 管理页面时断开连接。
     """
-    logger.info("[Worker] Client {sid} disconnected from /worker namespace", sid=sid)
+    logger.info("Client {sid} disconnected from /worker namespace", sid=sid)
