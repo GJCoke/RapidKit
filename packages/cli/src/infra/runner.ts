@@ -50,6 +50,7 @@ export function createTaskRunner(options: TaskRunnerOptions): TaskRunner {
 
     let spinnerIdx = 0
     const ringBuffer: string[] = []
+    const fullBuffer: string[] = []
     let renderedLines = 0
 
     const redraw = () => {
@@ -76,6 +77,8 @@ export function createTaskRunner(options: TaskRunnerOptions): TaskRunner {
       const pushLine = (line: string) => {
         const trimmed = line.replace(/\r$/, "")
         if (!trimmed) return
+
+        fullBuffer.push(trimmed)
 
         ringBuffer.push(trimmed)
         if (ringBuffer.length > maxLines) {
@@ -105,7 +108,7 @@ export function createTaskRunner(options: TaskRunnerOptions): TaskRunner {
           R.showCursor()
           resolve()
         } else {
-          const errorLines = ringBuffer.slice(-maxLines)
+          const errorLines = fullBuffer
           R.renderStepFail(step.label, duration, errorLines)
           R.showCursor()
           reject(new FluxError(`Command failed: ${cmd} ${args.join(" ")}`, "COMMAND_FAILED"))

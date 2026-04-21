@@ -31,16 +31,75 @@ export function cleanMigrationFiles(runner: TaskRunner): void {
   })
 }
 
-function cleanPyFiles(dir: string): void {
+function cleanPyFiles(dir: string): number {
   try {
+    let count = 0
     for (const f of readdirSync(dir)) {
       if (f.endsWith(".py") && f !== "__init__.py") {
         unlinkSync(resolve(dir, f))
+        count++
       }
     }
+    return count
   } catch {
-    // directory doesn't exist, ignore
+    return 0
   }
+}
+
+function countPyFiles(dir: string): number {
+  try {
+    return readdirSync(dir).filter((f) => f.endsWith(".py") && f !== "__init__.py").length
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * Get migration file counts per plugin (and alembic main dir).
+ * Only returns entries with count > 0.
+ */
+export function getMigrationFileStats(): Array<{ plugin: string; dir: string; count: number }> {
+  const ctx = getContext()
+  const stats: Array<{ plugin: string; dir: string; count: number }> = []
+
+  // Main alembic/versions
+  const mainDir = resolve(ctx.cwd, MIGRATION_DIR)
+  const mainCount = countPyFiles(mainDir)
+  if (mainCount > 0) {
+    stats.push({ plugin: "alembic", dir: mainDir, count: mainCount })
+  }
+
+  // Per-plugin
+  const pluginsRoot = resolve(ctx.cwd, PLUGINS_DIR)
+  if (existsSync(pluginsRoot)) {
+    for (const d of readdirSync(pluginsRoot, { withFileTypes: true })) {
+      if (!d.isDirectory()) continue
+      const versionsDir = resolve(pluginsRoot, d.name, "migrations", "versions")
+      const count = countPyFiles(versionsDir)
+      if (count > 0) {
+        stats.push({ plugin: d.name, dir: versionsDir, count })
+      }
+    }
+  }
+
+  return stats
+}
+
+/**
+ * Delete migration .py files for a specific plugin (or "alembic" for main dir).
+ * Preserves __init__.py. Returns the number of deleted files.
+ */
+export function cleanPluginMigrationFiles(pluginName: string): number {
+  const ctx = getContext()
+
+  let dir: string
+  if (pluginName === "alembic") {
+    dir = resolve(ctx.cwd, MIGRATION_DIR)
+  } else {
+    dir = resolve(ctx.cwd, PLUGINS_DIR, pluginName, "migrations", "versions")
+  }
+
+  return cleanPyFiles(dir)
 }
 
 /**

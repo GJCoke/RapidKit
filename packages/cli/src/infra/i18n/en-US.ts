@@ -119,4 +119,13 @@ export default {
   "db.seed.title": "Seed Database",
   "db.seed.running": "Running database seed...",
   "db.reset.generatingPlugin": "Generating initial migration for {plugin}...",
+  "db.clean.title": "Clean Migration Files",
+  "db.clean.description": "Delete migration files",
+  "db.clean.selectPlugins": "Select plugins to clean (space to toggle, enter to confirm):",
+  "db.clean.confirm": "Delete all migration files for the selected plugins? This is irreversible.",
+  "db.clean.confirmAll": "Delete all migration files? {count} files total. This is irreversible.",
+  "db.clean.noFiles": "No migration files to clean",
+  "db.clean.cleaning": "Cleaning {plugin} migration files...",
+  "db.clean.done": "Deleted {count} migration file(s)",
+  "db.clean.pluginNotFound": "Plugin {plugin} not found or has no migration files",
 } as const

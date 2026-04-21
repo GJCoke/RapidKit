@@ -117,4 +117,13 @@ export default {
   "db.seed.title": "初始化数据",
   "db.seed.running": "正在执行初始化数据...",
   "db.reset.generatingPlugin": "正在为 {plugin} 生成初始迁移...",
+  "db.clean.title": "清理迁移文件",
+  "db.clean.description": "删除迁移文件",
+  "db.clean.selectPlugins": "选择要清理的插件（空格切换，回车确认）：",
+  "db.clean.confirm": "确定要删除选中插件的所有迁移文件吗？此操作不可逆。",
+  "db.clean.confirmAll": "确定要删除所有插件的迁移文件吗？共 {count} 个文件。此操作不可逆。",
+  "db.clean.noFiles": "没有可清理的迁移文件",
+  "db.clean.cleaning": "正在清理 {plugin} 迁移文件...",
+  "db.clean.done": "已删除 {count} 个迁移文件",
+  "db.clean.pluginNotFound": "插件 {plugin} 不存在或没有迁移文件",
 } as const
