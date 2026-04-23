@@ -16,7 +16,7 @@
     "check:types": "turbo typecheck",
     "commit": "git-cz",
     "prepare": "husky",
-    "precommit": "lint-staged",
+    "precommit": "lint-staged --concurrent false",
     "clean:workspace": "tsx ./scripts/clean-workspace.ts",
     "sync:version": "changeset version && tsx ./scripts/sync-changelogs.ts",
     "dev:frontend": "turbo build --filter !@rapidkit/frontend && turbo watch dev --filter @rapidkit/frontend",

@@ -36,6 +36,10 @@ app.conf.beat_schedule = {
         "task": "cleanup_old_api_metrics",
         "schedule": crontab(hour=3, minute=0),
     },
+    "cleanup-stale-online-users": {
+        "task": "cleanup_stale_online_users",
+        "schedule": 120.0,
+    },
 }
 
 for _info in pkgutil.iter_modules(_tasks_pkg.__path__):

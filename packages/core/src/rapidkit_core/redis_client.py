@@ -88,6 +88,13 @@ class AsyncRedisClient(Redis):  # type: ignore[type-arg]
         serialized = [v.model_dump_json() if isinstance(v, BaseModel) else v for v in values]
         return await super().sadd(name, *serialized)  # ty: ignore[invalid-await]
 
+    async def srem(self, name: str, *values: str | BaseModel) -> int:
+        serialized = [v.model_dump_json() if isinstance(v, BaseModel) else v for v in values]
+        return await super().srem(name, *serialized)  # ty: ignore[invalid-await]
+
+    async def scard(self, name: str) -> int:
+        return await super().scard(name)  # ty: ignore[invalid-await]
+
     @overload
     async def smembers(self, name: str, *, response_model: type[T]) -> Set[T]: ...
 

@@ -345,9 +345,9 @@ class Task(_Task):
         for name, hint in di_hints.items():
             if hint is TaskRedis:
                 from rapidkit_core.config import settings
-                from redis.asyncio import Redis as AsyncRedis
+                from rapidkit_core.redis_client import AsyncRedisClient
 
-                deps[name] = AsyncRedis.from_url(str(settings.REDIS_URL), decode_responses=True)
+                deps[name] = AsyncRedisClient.from_url(str(settings.REDIS_URL), decode_responses=True)
             elif hint is TaskSession:
                 from rapidkit_core.config import settings
                 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine

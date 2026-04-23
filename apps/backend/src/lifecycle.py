@@ -19,6 +19,7 @@ from rapidkit_core.log import logger
 
 from src.locales.watch import watch_locale_files
 from src.queues.consumer import check_worker_offline, consume_events
+from src.sio.events.connection import renew_session_keys_loop
 
 
 async def _flush_audit_batch(batch: list[dict]) -> None:
@@ -89,6 +90,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if plugin.name in plugin_meta:
             plugin_meta[plugin.name].startup_ms = round(startup_ms, 2)
 
+    # Socket.IO session key renewal (per-instance, renews TTL for active connections)
+    renew_task = asyncio.create_task(renew_session_keys_loop())
+
     logger.info("Application startup complete.")
 
     yield
@@ -102,6 +106,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     for plugin in reversed(getattr(app.state, "plugins", [])):
         for cb in plugin.on_shutdown:
             await cb(app)
+
+    renew_task.cancel()
 
     if consumer_task:
         consumer_task.cancel()

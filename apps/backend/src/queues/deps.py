@@ -9,8 +9,8 @@ Date    : 2026-04-14
 
 from typing import NewType
 
-from redis.asyncio import Redis as AsyncRedis
+from rapidkit_core.redis_client import AsyncRedisClient
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-TaskRedis = NewType("TaskRedis", AsyncRedis)
+TaskRedis = NewType("TaskRedis", AsyncRedisClient)
 TaskSession = NewType("TaskSession", async_sessionmaker)
