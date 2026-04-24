@@ -68,7 +68,7 @@
         render: (row) => {
           const { i18nKey, menuName } = row
 
-          const label = i18nKey ? $t(i18nKey) : menuName
+          const label = i18nKey ? $t(i18nKey as I18nFullKey) : menuName
 
           return <span>{label}</span>
         },
@@ -79,9 +79,9 @@
         align: "center",
         width: 60,
         render: (row) => {
-          const icon = row.iconType === "1" ? row.icon : undefined
+          const icon = row.iconType === "1" ? (row.icon ?? undefined) : undefined
 
-          const localIcon = row.iconType === "2" ? row.icon : undefined
+          const localIcon = row.iconType === "2" ? (row.icon ?? undefined) : undefined
 
           return (
             <div class="flex-center">

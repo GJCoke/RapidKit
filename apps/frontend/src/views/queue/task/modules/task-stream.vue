@@ -80,7 +80,7 @@
         title: $t("page.manage.worker.runtime"),
         width: 100,
         align: "center",
-        render: (row) => (row.runtime !== null ? row.runtime.toFixed(2) : "-"),
+        render: (row) => (row.runtime ? row.runtime.toFixed(2) : "-"),
       },
       {
         key: "startedAt",
@@ -187,7 +187,7 @@
       pagination.itemCount = (pagination.itemCount || 0) + 1
 
       // 保持页面条数不超过 pageSize
-      if (data.value.length > searchParams.pageSize) {
+      if (data.value.length > (searchParams.pageSize ?? 10)) {
         data.value.pop()
       }
     }

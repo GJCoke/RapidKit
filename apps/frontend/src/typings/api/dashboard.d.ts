@@ -1,3 +1,5 @@
+import type { Service } from "@/typings/service"
+
 declare global {
   namespace Api {
     /**
@@ -25,54 +27,21 @@ declare global {
       }
 
       /** 多实例资源汇总 */
-      type MultiResourceStats = {
-        instances: InstanceResourceStats[]
-        summary: InstanceResourceStats
-      }
+      type MultiResourceStats = Service.ApiResponse<"/api/v1/system/stats/resources">
 
       /** 错误统计 */
-      type ErrorStats = {
-        http5xxCount: number
-        bizErrorCount: number
-        totalRequests: number
-        errorRate: number
-        sparkline24h: number[]
-      }
+      type ErrorStats = Service.ApiResponse<"/api/v1/system/stats/errors">
 
       /** 应用健康统计 */
-      type HealthStats = {
-        qps: number
-        p50Ms: number
-        p95Ms: number
-        http5xx1h: number
-        bizErrors1h: number
-        wsConnections: number
-      }
-
-      /** 单个服务健康状态 */
-      type ServiceHealth = {
-        status: "healthy" | "degraded" | "down"
-        latencyMs: number
-        details: Record<string, any> | null
-      }
+      type HealthStats = Service.ApiResponse<"/api/v1/system/stats/health">
 
       /** 基础设施健康状态 */
-      type InfrastructureHealth = {
-        pg: ServiceHealth
-        redis: ServiceHealth
-        minio: ServiceHealth
-      }
+      type InfrastructureHealth = Service.ApiResponse<"/api/v1/system/stats/infrastructure">
 
       /** 业务数据汇总 */
-      type BusinessSummary = {
-        roles: number
-        menus: number
-        routers: number
-        scripts: number
-        schedules: number
-      }
+      type BusinessSummary = Service.ApiResponse<"/api/v1/system/stats/business">
 
-      /** 活动日志 */
+      /** 活动日志项 */
       type ActivityItem = {
         id: string
         eventType: string
@@ -83,19 +52,29 @@ declare global {
         createTime: string
       }
 
+      /** 活动日志列表 */
+      type ActivityList = Service.ApiResponse<"/api/v1/system/activities">
+
+      /** 活动日志分页查询参数 */
+      type ActivityPaginateQuery = Service.ApiRequest<"/api/v1/system/activities/paginate", "get", "query">
+
+      /** 活动日志分页列表 */
+      type ActivityPaginateList = Service.ApiResponse<"/api/v1/system/activities/paginate">
+
       /** 用户统计摘要 */
-      type UserStatsSummary = {
-        total: number
-        todayNew: number
-        yesterdayNew: number
-        onlineCount: number
-      }
+      type UserStatsSummary = Service.ApiResponse<"/api/v1/users/stats/summary">
 
       /** 用户活跃趋势 */
       type UserActivityTrend = {
         timeBucket: string
         newUsers: number
       }
+
+      /** 用户活跃趋势查询参数 */
+      type UserActivityTrendQuery = Service.ApiRequest<"/api/v1/users/stats/trend", "get", "query">
+
+      /** 用户活跃趋势列表 */
+      type UserActivityTrendList = Service.ApiResponse<"/api/v1/users/stats/trend">
 
       // ==================== Socket.IO Event Payloads ====================
 
@@ -133,13 +112,30 @@ declare global {
         errorRate: number
       }
 
-      /** dashboard:resources event (携带 hostname) */
-      type ResourcesEvent = InstanceResourceStats
+      /** dashboard:resources event */
+      type ResourcesEvent = {
+        hostname: string
+        cpuPercent: number
+        memoryUsed: number
+        memoryTotal: number
+        memoryPercent: number
+        diskUsed: number
+        diskTotal: number
+        diskPercent: number
+        netSent: number
+        netRecv: number
+      }
 
-      /** dashboard:activity event (same as ActivityItem) */
-      type ActivityEvent = ActivityItem
+      /** dashboard:activity event */
+      type ActivityEvent = {
+        id: string
+        eventType: string
+        params: Record<string, string>
+        detail: string | null
+        sourceIp: string | null
+        username: string | null
+        createTime: string
+      }
     }
   }
 }
-
-export {}

@@ -316,6 +316,54 @@ Focus on:
 - **Spatial Composition**: Card-based layouts with consistent `gap-16px`. NGrid for responsive multi-column layouts. Generous padding inside cards (`px-12px py-8px`).
 - **Data Density**: Admin dashboards should be information-rich. Use `tabular-nums` for numeric data. Compact but readable list items. Smart use of tags, badges, and status indicators.
 
+## API Type File Pattern
+
+When creating new API type definition files in `src/typings/api/`, follow this standard template:
+
+```typescript
+import type { Service } from "@/typings/service"
+
+declare global {
+  namespace Api {
+    /**
+     * namespace ModuleName
+     *
+     * backend api module: "moduleName"
+     */
+    namespace ModuleName {
+      // REST API types — MUST derive from OpenAPI schema
+      type ListQuery = Service.ApiRequest<"/api/v1/example", "get", "query">
+      type CreateBody = Service.ApiRequest<"/api/v1/example", "post", "body">
+      type UpdatePath = Service.ApiRequest<"/api/v1/example/{id}", "put", "path">
+      type ListResponse = Service.ApiResponse<"/api/v1/example">
+      type DetailResponse = Service.ApiResponse<"/api/v1/example/{id}">
+
+      // Non-API types — manual definition only when no endpoint exists
+      type SomeSocketEvent = { field: string }
+      type FrontendEnum = "a" | "b" | "c"
+    }
+  }
+}
+```
+
+### Type Derivation Rules
+
+- **REST API request/response types** MUST use `Service.ApiRequest<path, method, location>` / `Service.ApiResponse<path, method>` to derive from the OpenAPI schema (`src/typings/schema.d.ts`)
+  - `Service.ApiRequest` locations: `"query"` (query params), `"body"` (request body), `"path"` (path params)
+  - `Service.ApiResponse` extracts the `data` field from the response envelope
+- **Non-API types** that have no corresponding REST endpoint use manual definitions:
+  - Socket.IO event payloads
+  - Frontend-only enums and union types
+  - Sub-types used as array elements or UI structural components
+- Reuse base types from `Api.Common` (`Common.CommonRecord`, `Common.PaginatingQueryRecord`, etc.) for manually-defined composite types
+
+### File Conventions
+
+- **File name**: kebab-case matching backend module name (e.g., `system-manage.d.ts`, `worker.d.ts`)
+- **Import**: `import type { Service }` at top makes the file a module — no `export {}` needed
+- **Declaration**: `declare global { namespace Api { ... } }` extends the global `Api` namespace
+- **Exceptions**: `common.d.ts` (base types, pure `declare namespace`) and `route.d.ts` (frontend routing, depends on `@elegant-router`)
+
 ## Rules
 
 ### Frontend Rules

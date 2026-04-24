@@ -138,6 +138,8 @@
       taskType: scheduleType.value as Api.Worker.ScheduleType,
       enabled: model.value.enabled,
       description: model.value.description,
+      args: [] as unknown[],
+      kwargs: {} as Record<string, unknown>,
     }
 
     const scheduleConfig =
@@ -145,7 +147,14 @@
         ? {
             interval: {
               every: model.value.intervalEvery,
-              period: model.value.intervalPeriod,
+              period: model.value.intervalPeriod as
+                | "days"
+                | "hours"
+                | "minutes"
+                | "seconds"
+                | "weeks"
+                | "milliseconds"
+                | "microseconds",
             },
             crontab: null,
           }
@@ -161,10 +170,13 @@
           }
 
     if (props.operateType === "add") {
-      const { error } = await fetchCreateSchedule({ ...baseData, ...scheduleConfig })
+      const { error } = await fetchCreateSchedule({ ...baseData, ...scheduleConfig } as Api.Worker.PeriodicTaskCreate)
       if (error) return
     } else if (props.rowData) {
-      const { error } = await fetchUpdateSchedule(props.rowData.id, { ...baseData, ...scheduleConfig })
+      const { error } = await fetchUpdateSchedule(props.rowData.id, {
+        ...baseData,
+        ...scheduleConfig,
+      } as Api.Worker.PeriodicTaskUpdate)
       if (error) return
     }
 

@@ -54,11 +54,11 @@ declare global {
         /** is admin */
         isAdmin: boolean
         /** department id */
-        departmentId: string | null
+        departmentId?: string | null
       }>
 
       /** user search params */
-      type UserSearchParams = CommonType.RecordNullable<{ keyword?: string; status?: string } & CommonSearchParams>
+      type UserSearchParams = Service.ApiRequest<"/api/v1/users", "get", "query">
 
       /** user option (for select dropdowns) */
       type UserOption = {
@@ -68,14 +68,10 @@ declare global {
       }
 
       /** user list */
-      type UserList = Common.PaginatingQueryRecord<User>
+      type UserList = Service.ApiResponse<"/api/v1/users">
 
       /** role permissions response */
-      type RolePermissions = {
-        routerPermissions: string[]
-        buttonPermissions: string[]
-        interfacePermissions: string[]
-      }
+      type RolePermissions = Service.ApiResponse<"/api/v1/roles/{role_id}/permissions">
 
       /**
        * menu type
@@ -104,28 +100,30 @@ declare global {
        */
       type IconType = "1" | "2"
 
-      type MenuPropsOfRoute = Pick<
-        import("vue-router").RouteMeta,
-        | "i18nKey"
-        | "keepAlive"
-        | "constant"
-        | "order"
-        | "href"
-        | "hideInMenu"
-        | "activeMenu"
-        | "multiTab"
-        | "fixedIndexInTab"
-        | "query"
-      >
-
-      type MenuSearchParams = Common.PaginatingQueryParams & {
-        keyword?: string
-        status?: number
+      type MenuPropsOfRoute = Omit<
+        Pick<
+          import("vue-router").RouteMeta,
+          | "i18nKey"
+          | "keepAlive"
+          | "constant"
+          | "order"
+          | "href"
+          | "hideInMenu"
+          | "activeMenu"
+          | "multiTab"
+          | "fixedIndexInTab"
+          | "query"
+        >,
+        "i18nKey"
+      > & {
+        i18nKey?: string | null
       }
+
+      type MenuSearchParams = Service.ApiRequest<"/api/v1/manage/menus", "get", "query">
 
       type Menu = Common.CommonRecord<{
         /** parent menu id */
-        parentId: number
+        parentId?: string | null
         /** menu type */
         menuType: MenuType
         /** menu name */
@@ -135,11 +133,11 @@ declare global {
         /** route path */
         routePath: string
         /** component */
-        component?: string
+        component?: string | null
         /** iconify icon name or local icon name */
-        icon: string
+        icon?: string | null
         /** icon type */
-        iconType: IconType
+        iconType?: IconType | null
         /** buttons */
         buttons?: MenuButton[] | null
         /** bound interface permission codes */
@@ -150,12 +148,13 @@ declare global {
         MenuPropsOfRoute
 
       /** menu list */
-      type MenuList = Common.PaginatingQueryRecord<Menu>
+      type MenuList = Service.ApiResponse<"/api/v1/manage/menus">
 
       type MenuTree = {
         id: string
         menuName: string
         routeName: string
+        constant: boolean
         children?: MenuTree[] | null
         buttons?: MenuButton[] | null
         interfaces?: string[] | null
@@ -190,7 +189,10 @@ declare global {
       }
 
       /** data rule */
-      type DataRule = Common.CommonRecord<{
+      type DataRule = {
+        id: string
+        createTime: string
+        updateTime: string
         /** rule name */
         name: string
         /** target model/table name */
@@ -203,13 +205,13 @@ declare global {
         value: string
         /** logic combinator (AND / OR) */
         logic: string
-      }>
+      }
 
       /** data rule search params */
-      type DataRuleSearchParams = CommonSearchParams
+      type DataRuleSearchParams = Service.ApiRequest<"/api/v1/data-rules", "get", "query">
 
       /** data rule list */
-      type DataRuleList = Common.PaginatingQueryRecord<DataRule>
+      type DataRuleList = Service.ApiResponse<"/api/v1/data-rules">
 
       /**
        * data scope enum
@@ -235,19 +237,11 @@ declare global {
         labelEn: string
       }>
 
-      /** audit dict search params */
-      type AuditDictSearchParams = CommonSearchParams & {
-        category?: string
-      }
-
       /** audit dict list */
-      type AuditDictList = Common.PaginatingQueryRecord<AuditDict>
+      type AuditDictList = Service.ApiResponse<"/api/v1/system/audit-dict">
 
       /** change password request */
-      type ChangePassword = {
-        oldPassword?: string
-        newPassword: string
-      }
+      type ChangePassword = Service.ApiRequest<"/api/v1/users/{user_id}/password", "put", "body">
     }
   }
 }

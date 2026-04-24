@@ -96,9 +96,9 @@
     }
 
     execOutput.value = data.stdout || ""
-    execError.value = data.stderr
+    execError.value = data.stderr ?? null
     execRuntime.value = data.runtime
-    execStatus.value = data.exit_code || data.stderr ? "error" : "success"
+    execStatus.value = data.exitCode || data.stderr ? "error" : "success"
   }
 
   watch(() => props.scriptId, fetchDetail, { immediate: true })

@@ -1,3 +1,5 @@
+import type { Service } from "@/typings/service"
+
 declare global {
   namespace Api {
     namespace Plugin {
@@ -31,10 +33,7 @@ declare global {
         target: string
       }
 
-      type DependencyGraph = {
-        nodes: PluginNode[]
-        edges: PluginEdge[]
-      }
+      type DependencyGraph = Service.ApiResponse<"/api/v1/system/plugins/dependencies">
 
       type DeadLetter = {
         eventName: string
@@ -42,12 +41,7 @@ declare global {
         source: string | null
       }
 
-      type EventStats = {
-        handlerErrors: Record<string, number>
-        deadLetters: DeadLetter[]
-        deadLetterCount: number
-      }
+      type EventStats = Service.ApiResponse<"/api/v1/system/events">
     }
   }
 }
-export {}

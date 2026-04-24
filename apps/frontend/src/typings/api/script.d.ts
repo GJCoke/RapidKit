@@ -1,3 +1,5 @@
+import type { Service } from "@/typings/service"
+
 declare global {
   namespace Api {
     /**
@@ -13,21 +15,23 @@ declare global {
       type ScriptListItem = Common.CommonRecord<{
         name: string
         description: string
-        language: ScriptLanguage
+        language: string
       }>
 
-      /** script detail (includes code) */
-      type ScriptDetail = ScriptListItem & { code: string }
+      /** script detail */
+      type ScriptDetail = Service.ApiResponse<"/api/v1/scripts/{script_id}">
 
       /** script search params */
-      type ScriptSearchParams = Common.CommonSearchParams & {
-        keyword?: string
-        status?: Common.EnableStatus | null
-        language?: ScriptLanguage | null
-      }
+      type ScriptSearchParams = Service.ApiRequest<"/api/v1/scripts", "get", "query">
 
       /** script list */
-      type ScriptList = Common.PaginatingQueryRecord<ScriptListItem>
+      type ScriptList = Service.ApiResponse<"/api/v1/scripts">
+
+      /** script create payload */
+      type ScriptCreate = Service.ApiRequest<"/api/v1/scripts", "post", "body">
+
+      /** script update payload */
+      type ScriptUpdate = Service.ApiRequest<"/api/v1/scripts/{script_id}", "put", "body">
 
       /** script create/update payload */
       type ScriptEdit = {
@@ -39,14 +43,7 @@ declare global {
       }
 
       /** script execute result */
-      type ScriptExecuteResult = {
-        stdout: string | null
-        stderr: string | null
-        exit_code: number
-        runtime: number
-      }
+      type ScriptExecuteResult = Service.ApiResponse<"/api/v1/scripts/{script_id}/execute", "post">
     }
   }
 }
-
-export {}

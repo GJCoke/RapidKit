@@ -76,6 +76,7 @@
           const typeMap: Record<Api.Worker.ScheduleType, { label: string; type: NaiveUI.ThemeColor }> = {
             interval: { label: $t("page.manage.worker.schedule.interval"), type: "info" },
             crontab: { label: $t("page.manage.worker.schedule.crontab"), type: "warning" },
+            solar: { label: "Solar", type: "success" },
           }
           const config = typeMap[row.taskType]
           return <NTag type={config.type}>{config.label}</NTag>

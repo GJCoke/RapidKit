@@ -33,14 +33,14 @@
       tip: $t("page.home.dashboard.p95Tip"),
     },
     {
-      value: fmt(props.healthStats.http5xx1h),
+      value: fmt(props.healthStats.http5Xx1H),
       label: $t("page.home.dashboard.http5xx"),
       icon: "carbon:close-outline",
       accent: "208, 48, 80",
       tip: $t("page.home.dashboard.http5xxTip"),
     },
     {
-      value: fmt(props.healthStats.bizErrors1h),
+      value: fmt(props.healthStats.bizErrors1H),
       label: $t("page.home.dashboard.bizErrors"),
       icon: "carbon:warning",
       accent: "240, 160, 32",

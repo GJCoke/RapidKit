@@ -8,18 +8,14 @@ Date   : 2025-03-11
 """
 
 import warnings
-from typing import Literal, TypeAlias
 
 from pydantic import Field, PostgresDsn, RedisDsn, Secret, field_validator
 from pydantic_settings import BaseSettings as _BaseSettings
 from pydantic_settings import SettingsConfigDict
 from slowapi.extension import StrOrCallableStr
 
+from rapidkit_core.constants import LANGUAGE_TYPE, LOG_LEVELS
 from rapidkit_core.environment import Environment
-
-LANGUAGE_TYPE: TypeAlias = Literal["zh-CN", "en-US"]
-
-LOG_LEVELS: TypeAlias = Literal["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 
 class ConfigError(Exception):

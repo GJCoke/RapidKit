@@ -99,7 +99,7 @@
       i18nKey: null,
       icon: "",
       iconType: "1",
-      parentId: 0,
+      parentId: null,
       status: "1",
       keepAlive: false,
       constant: false,
@@ -195,7 +195,7 @@
     )
   }
 
-  const showLayout = computed(() => model.value.parentId === 0)
+  const showLayout = computed(() => !model.value.parentId)
 
   const showPage = computed(() => model.value.menuType === "2")
 

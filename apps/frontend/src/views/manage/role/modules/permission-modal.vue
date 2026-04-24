@@ -69,7 +69,6 @@
           label: $t("page.manage.role.buttonAuth"),
           checkboxDisabled: true,
           children: btnChildren,
-          prefix: () => h(NText, { depth: 3, style: "font-size: 12px" }, { default: () => "🔘" }),
         })
       }
 
@@ -88,7 +87,6 @@
           label: $t("page.manage.role.interfaceAuth"),
           checkboxDisabled: true,
           children: apiChildren,
-          prefix: () => h(NText, { depth: 3, style: "font-size: 12px" }, { default: () => "🔗" }),
         })
       }
 
@@ -117,7 +115,10 @@
     }
 
     // Build tree
-    treeData.value = buildTree(menuRes.data, routerMap)
+    treeData.value = buildTree(
+      menuRes.data.filter((item) => !item.constant),
+      routerMap,
+    )
 
     // Restore checked keys (only leaf nodes: btn + api)
     checkedKeys.value = [

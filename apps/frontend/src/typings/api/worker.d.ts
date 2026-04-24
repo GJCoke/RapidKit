@@ -1,3 +1,5 @@
+import type { Service } from "@/typings/service"
+
 declare global {
   namespace Api {
     /**
@@ -43,36 +45,15 @@ declare global {
       }
 
       /** worker search params */
-      type WorkerSearchParams = Api.Common.CommonSearchParams & {
-        status?: WorkerStatus | null
-        hostname?: string | null
-      }
+      type WorkerSearchParams = Service.ApiRequest<"/api/v1/workers", "get", "query">
 
       /** worker list */
-      type WorkerList = Api.Common.PaginatingQueryRecord<WorkerInfo>
+      type WorkerList = Service.ApiResponse<"/api/v1/workers">
 
       /** task result info */
-      type TaskInfo = {
-        id: string
-        taskId: string
-        taskName: string
-        status: TaskStatus
-        workerHostname: string
-        args: any[]
-        kwargs: Record<string, any>
-        result: any
-        exception: string | null
-        traceback: string | null
-        logs: string | null
-        startedAt: string | null
-        finishedAt: string | null
-        runtime: number | null
-        retries: number
-        createTime: string
-        updateTime: string
-      }
+      type TaskInfo = Service.ApiResponse<"/api/v1/tasks/{task_id}">
 
-      /** task list item (without traceback etc.) */
+      /** task list item */
       type TaskListItem = {
         id: string
         taskId: string
@@ -88,31 +69,19 @@ declare global {
       }
 
       /** task search params */
-      type TaskSearchParams = Api.Common.CommonSearchParams & {
-        status?: TaskStatus | null
-        taskName?: string | null
-        workerHostname?: string | null
-      }
+      type TaskSearchParams = Service.ApiRequest<"/api/v1/tasks", "get", "query">
 
       /** task list */
-      type TaskList = Api.Common.PaginatingQueryRecord<TaskListItem>
+      type TaskList = Service.ApiResponse<"/api/v1/tasks">
 
       /** trigger task request */
-      type TriggerTaskRequest = {
-        taskName: string
-        args?: any[]
-        kwargs?: Record<string, any>
-      }
+      type TriggerTaskRequest = Service.ApiRequest<"/api/v1/tasks/trigger", "post", "body">
 
       /** trigger task response */
-      type TriggerTaskResponse = {
-        taskId: string
-      }
+      type TriggerTaskResponse = Service.ApiResponse<"/api/v1/tasks/trigger", "post">
 
       /** registered tasks response */
-      type RegisteredTasksResponse = {
-        tasks: string[]
-      }
+      type RegisteredTasksResponse = Service.ApiResponse<"/api/v1/tasks/registered">
 
       /** Socket.IO worker:status event data */
       type WorkerStatusEvent = {
@@ -126,18 +95,10 @@ declare global {
       }
 
       /** task stats query params */
-      type TaskStatsQuery = { days?: number }
+      type TaskStatsQuery = Service.ApiRequest<"/api/v1/tasks/stats/summary", "get", "query">
 
       /** task stats summary */
-      type TaskStatsSummary = {
-        total: number
-        success: number
-        failure: number
-        retry: number
-        revoked: number
-        successRate: number
-        avgRuntime: number | null
-      }
+      type TaskStatsSummary = Service.ApiResponse<"/api/v1/tasks/stats/summary">
 
       /** task stats timeline data point */
       type TaskStatsTimeline = {
@@ -178,7 +139,7 @@ declare global {
       // ==================== Schedule Types ====================
 
       /** schedule type */
-      type ScheduleType = "interval" | "crontab"
+      type ScheduleType = "interval" | "crontab" | "solar"
 
       /** interval schedule config */
       type IntervalConfig = {
@@ -196,21 +157,7 @@ declare global {
       }
 
       /** periodic task info */
-      type PeriodicTaskInfo = {
-        id: string
-        name: string
-        task: string
-        taskType: ScheduleType
-        enabled: boolean
-        description: string
-        scheduleId: string
-        args: any[]
-        kwargs: Record<string, any>
-        interval: IntervalConfig | null
-        crontab: CrontabConfig | null
-        createTime: string
-        updateTime: string
-      }
+      type PeriodicTaskInfo = Service.ApiResponse<"/api/v1/schedules/{schedule_id}">
 
       /** periodic task list item */
       type PeriodicTaskListItem = {
@@ -221,55 +168,33 @@ declare global {
         enabled: boolean
         description: string
         scheduleId: string
-        interval: IntervalConfig | null
-        crontab: CrontabConfig | null
+        interval?: IntervalConfig | null
+        crontab?: CrontabConfig | null
         createTime: string
         updateTime: string
       }
 
       /** periodic task search params */
-      type PeriodicTaskSearchParams = Api.Common.CommonSearchParams & {
-        enabled?: number | null
-        taskName?: string | null
-      }
+      type PeriodicTaskSearchParams = Service.ApiRequest<"/api/v1/schedules", "get", "query">
 
       /** periodic task list */
-      type PeriodicTaskList = Api.Common.PaginatingQueryRecord<PeriodicTaskListItem>
+      type PeriodicTaskList = Service.ApiResponse<"/api/v1/schedules">
 
       /** periodic task create request */
-      type PeriodicTaskCreate = {
-        name: string
-        task: string
-        taskType: ScheduleType
-        enabled?: boolean
-        description?: string
-        args?: any[]
-        kwargs?: Record<string, any>
-        interval?: IntervalConfig | null
-        crontab?: CrontabConfig | null
-      }
+      type PeriodicTaskCreate = Service.ApiRequest<"/api/v1/schedules", "post", "body">
 
       /** periodic task update request */
-      type PeriodicTaskUpdate = {
-        name?: string
-        task?: string
-        enabled?: boolean
-        description?: string
-        args?: any[]
-        kwargs?: Record<string, any>
-        interval?: IntervalConfig | null
-        crontab?: CrontabConfig | null
-      }
+      type PeriodicTaskUpdate = Service.ApiRequest<"/api/v1/schedules/{schedule_id}", "put", "body">
 
       // ==================== Worker Control Types ====================
 
       /** pool resize request */
-      type PoolResizeRequest = { n: number }
+      type PoolResizeRequest = Service.ApiRequest<"/api/v1/workers/{worker_id}/pool/grow", "post", "body">
 
       /** queue operate request */
-      type QueueOperateRequest = { queue: string }
+      type QueueOperateRequest = Service.ApiRequest<"/api/v1/workers/{worker_id}/queues/add", "post", "body">
 
-      /** active/reserved task info from Celery inspect */
+      /** active/reserved task info */
       type ActiveTaskInfo = {
         id: string
         name: string
@@ -280,12 +205,7 @@ declare global {
       }
 
       /** worker control response */
-      type WorkerControlResponse = {
-        success: boolean
-        message: string
-      }
+      type WorkerControlResponse = Service.ApiResponse<"/api/v1/workers/{worker_id}/ping", "post">
     }
   }
 }
-
-export {}

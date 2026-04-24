@@ -31,7 +31,7 @@
     }
   })
 
-  function formatTime(time: string | null) {
+  function formatTime(time: string | null | undefined) {
     if (!time) return "-"
     return new Date(time).toLocaleString()
   }

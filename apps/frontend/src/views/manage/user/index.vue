@@ -38,8 +38,8 @@
   const searchParams: Api.SystemManage.UserSearchParams = reactive({
     page: 1,
     pageSize: 10,
-    status: null,
-    keyword: null,
+    status: undefined,
+    keyword: undefined,
   })
 
   const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagination } = useNaivePaginatedTable({

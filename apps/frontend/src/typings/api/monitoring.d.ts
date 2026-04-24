@@ -1,3 +1,5 @@
+import type { Service } from "@/typings/service"
+
 declare global {
   namespace Api {
     /**
@@ -7,15 +9,25 @@ declare global {
      */
     namespace Monitoring {
       /** API 监控概览 */
-      type ApiOverview = {
-        totalRequests: number
-        totalErrors: number
-        avgErrorRate: number
-        avgMs: number
-        busiestPath: string | null
-        busiestMethod: string | null
-        busiestCount: number
-      }
+      type ApiOverview = Service.ApiResponse<"/api/v1/system/stats/api/overview">
+
+      /** API 概览查询参数 */
+      type ApiOverviewQuery = Service.ApiRequest<"/api/v1/system/stats/api/overview", "get", "query">
+
+      /** API Top 查询参数 */
+      type ApiTopQuery = Service.ApiRequest<"/api/v1/system/stats/api/top", "get", "query">
+
+      /** API 分布查询参数 */
+      type ApiDistributionQuery = Service.ApiRequest<"/api/v1/system/stats/api/distribution", "get", "query">
+
+      /** API 趋势查询参数 */
+      type ApiTrendQuery = Service.ApiRequest<"/api/v1/system/stats/api/trend", "get", "query">
+
+      /** API 明细列表查询参数 */
+      type ApiListQuery = Service.ApiRequest<"/api/v1/system/stats/api/list", "get", "query">
+
+      /** API 明细列表分页响应 */
+      type ApiListResponse = Service.ApiResponse<"/api/v1/system/stats/api/list">
 
       /** API 排行条目 */
       type ApiTopItem = {
@@ -67,5 +79,3 @@ declare global {
     }
   }
 }
-
-export {}

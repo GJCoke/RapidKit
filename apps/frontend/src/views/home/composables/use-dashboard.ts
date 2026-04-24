@@ -42,19 +42,19 @@ export function useDashboard() {
   })
 
   const errorStats = ref<Api.Dashboard.ErrorStats>({
-    http5xxCount: 0,
+    http5XxCount: 0,
     bizErrorCount: 0,
     totalRequests: 0,
     errorRate: 0,
-    sparkline24h: [],
+    sparkline24H: [],
   })
 
   const healthStats = ref<Api.Dashboard.HealthStats>({
     qps: 0,
     p50Ms: 0,
     p95Ms: 0,
-    http5xx1h: 0,
-    bizErrors1h: 0,
+    http5Xx1H: 0,
+    bizErrors1H: 0,
     wsConnections: 0,
   })
 
@@ -357,7 +357,7 @@ export function useDashboard() {
     socket.value?.on("dashboard:error_stats", (data: Api.Dashboard.ErrorStatsEvent) => {
       errorStats.value = {
         ...errorStats.value,
-        http5xxCount: data.http5xxCount,
+        http5XxCount: data.http5xxCount,
         bizErrorCount: data.bizErrorCount,
         totalRequests: Math.max(errorStats.value.totalRequests, data.totalRequests),
         errorRate: data.errorRate,

@@ -9,6 +9,8 @@ Author : Coke
 Date   : 2026-04-21
 """
 
+from types import TracebackType
+
 from redis.asyncio import Redis
 from redis.asyncio.lock import Lock
 
@@ -49,7 +51,12 @@ class DistributedLock:
             raise LockNotAcquired(str(self._lock.name))
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:  # noqa: ANN001
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         await self.release()
 
 

@@ -25,7 +25,7 @@
     emit("search")
   }
 
-  const enabledOptions = [
+  const enabledOptions: { label: string; value: number }[] = [
     { label: $t("page.manage.common.status.enable"), value: 1 },
     { label: $t("page.manage.common.status.disable"), value: 0 },
   ]
@@ -52,10 +52,11 @@
               class="pr-24px"
             >
               <NSelect
-                v-model:value="model.enabled"
+                :value="model.enabled == null ? null : model.enabled ? 1 : 0"
                 :placeholder="$t('page.manage.worker.schedule.enabled')"
                 :options="enabledOptions"
                 clearable
+                @update:value="(v: number | null) => (model.enabled = v == null ? undefined : Boolean(v))"
               />
             </NFormItemGi>
             <NFormItemGi span="24 s:12 m:8">
