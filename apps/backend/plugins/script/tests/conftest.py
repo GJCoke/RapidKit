@@ -1,6 +1,13 @@
 """plugin_script 测试 conftest。"""
 
 import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+# pytest registers the plugin's tests/ as a namespace package before conftest loads;
+# remove it so Python re-resolves 'tests' from sys.path to apps/backend/tests/.
+sys.modules.pop("tests", None)
 
 _ENV_DEFAULTS = {
     "POSTGRESQL_ASYNC_SCHEME": "postgresql+asyncpg",

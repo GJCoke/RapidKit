@@ -1,6 +1,11 @@
 """plugin_monitoring 测试 conftest。"""
 
 import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+sys.modules.pop("tests", None)
 
 _ENV_DEFAULTS = {
     "POSTGRESQL_ASYNC_SCHEME": "postgresql+asyncpg",

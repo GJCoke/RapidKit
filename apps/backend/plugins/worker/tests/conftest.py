@@ -1,6 +1,11 @@
 """plugin_worker test conftest."""
 
 import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+sys.modules.pop("tests", None)
 
 _ENV_DEFAULTS = {
     "POSTGRESQL_ASYNC_SCHEME": "postgresql+asyncpg",
@@ -26,7 +31,6 @@ for key, value in _ENV_DEFAULTS.items():
 from unittest.mock import MagicMock  # noqa: E402
 
 import pytest  # noqa: E402
-
 from tests.testing.fixtures import *  # noqa: E402, F401, F403
 
 

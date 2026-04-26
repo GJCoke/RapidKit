@@ -19,5 +19,6 @@ build-backend = "hatchling.build"
 packages = ["src/plugin_script"]
 
 [tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
