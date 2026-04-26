@@ -1,14 +1,14 @@
 import { confirm, isCancel } from "@clack/prompts"
-import { t } from "../infra/i18n"
-import { buildComposeCommand } from "../infra/compose"
-import { FluxError } from "../errors"
-import { DEV_COMPOSE, PROD_COMPOSE } from "../constants"
-import { defineFluxCommand } from "./_shared"
+import { t } from "../../infra/i18n"
+import { buildComposeCommand } from "../../infra/compose"
+import { FluxError } from "../../errors"
+import { DEV_COMPOSE, PROD_COMPOSE } from "../../constants"
+import { defineFluxCommand } from "../_shared"
 
-export const clean = defineFluxCommand({
-  meta: { description: t("clean.title") },
+export const docker = defineFluxCommand({
+  meta: { description: t("clean.docker.title") },
   async run({ ctx, runner }) {
-    const shouldClean = await confirm({ message: t("clean.confirm") })
+    const shouldClean = await confirm({ message: t("clean.docker.confirm") })
     if (isCancel(shouldClean) || !shouldClean) {
       throw new FluxError("", "CANCELLED")
     }

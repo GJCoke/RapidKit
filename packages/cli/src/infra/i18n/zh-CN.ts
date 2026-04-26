@@ -21,8 +21,6 @@ export default {
   "db.reset.manualHint": "已重置完成，运行 rapidkit dev up 来重新初始化数据库",
 
   "dev.description": "开发环境管理",
-  "dev.db.description": "数据库管理",
-  "dev.db.reset.description": "重置数据库",
   "dev.up.title": "开发环境启动",
   "dev.up.description": "启动开发基础设施",
   "dev.up.starting": "启动开发基础设施",
@@ -43,11 +41,19 @@ export default {
   "prod.logs.description": "查看生产日志",
   "prod.logs.following": "正在跟踪生产日志... (Ctrl+C 退出)",
 
-  "clean.description": "清理容器、卷和镜像",
-  "clean.title": "环境清理",
-  "clean.confirm": "确定要清理所有容器、卷和镜像吗？此操作不可逆。",
+  "clean.description": "清理命令",
+  "clean.docker.title": "Docker 环境清理",
+  "clean.docker.description": "清理容器、卷和镜像",
+  "clean.docker.confirm": "确定要清理所有容器、卷和镜像吗？此操作不可逆。",
   "clean.dev": "清理开发环境",
   "clean.prod": "清理生产环境",
+  "clean.workspace.title": "清理工作区",
+  "clean.workspace.description": "清理构建产物和依赖",
+  "clean.workspace.found": "发现 {count} 个可清理的目录",
+  "clean.workspace.confirm": "确定要清理这些目录吗？",
+  "clean.workspace.cleaning": "删除 {dir}",
+  "clean.workspace.done": "工作区清理完成",
+  "clean.workspace.nothingToClean": "没有可清理的目录",
 
   "config.description": "配置管理",
   "config.set.description": "设置配置项",
@@ -61,6 +67,8 @@ export default {
   "config.notSet": "(未设置)",
   "config.currentConfig": "当前配置",
 
+  "plugin.description": "插件管理",
+  "plugin.create.description": "创建新的后端插件",
   "createPlugin.description": "创建新的后端插件",
   "createPlugin.namePrompt": "输入插件名称（小写字母、数字、下划线）",
   "createPlugin.nameRequired": "插件名称不能为空",
@@ -126,4 +134,10 @@ export default {
   "db.clean.cleaning": "正在清理 {plugin} 迁移文件...",
   "db.clean.done": "已删除 {count} 个迁移文件",
   "db.clean.pluginNotFound": "插件 {plugin} 不存在或没有迁移文件",
+
+  "changelog.description": "Changelog 管理",
+  "changelog.sync.description": "同步 Changelog",
+  "changelog.sync.title": "同步 Changelog",
+  "changelog.sync.done": "已同步 {count} 个 Changelog 文件",
+  "changelog.sync.noFiles": "未找到 Changelog 文件",
 } as const

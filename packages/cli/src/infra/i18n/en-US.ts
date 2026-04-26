@@ -21,8 +21,6 @@ export default {
   "db.reset.manualHint": "Reset complete. Run rapidkit dev up to re-initialize the database",
 
   "dev.description": "Development environment management",
-  "dev.db.description": "Database management",
-  "dev.db.reset.description": "Reset database",
   "dev.up.title": "Dev Environment Startup",
   "dev.up.description": "Start dev infrastructure",
   "dev.up.starting": "Start dev infrastructure",
@@ -43,11 +41,19 @@ export default {
   "prod.logs.description": "Follow production logs",
   "prod.logs.following": "Following production logs... (Ctrl+C to exit)",
 
-  "clean.description": "Clean containers, volumes, and images",
-  "clean.title": "Environment Cleanup",
-  "clean.confirm": "Are you sure you want to clean all containers, volumes, and images? This is irreversible.",
+  "clean.description": "Cleanup commands",
+  "clean.docker.title": "Docker Environment Cleanup",
+  "clean.docker.description": "Clean containers, volumes, and images",
+  "clean.docker.confirm": "Are you sure you want to clean all containers, volumes, and images? This is irreversible.",
   "clean.dev": "Clean dev environment",
   "clean.prod": "Clean prod environment",
+  "clean.workspace.title": "Clean Workspace",
+  "clean.workspace.description": "Clean build artifacts and dependencies",
+  "clean.workspace.found": "Found {count} directories to clean",
+  "clean.workspace.confirm": "Are you sure you want to clean these directories?",
+  "clean.workspace.cleaning": "Deleting {dir}",
+  "clean.workspace.done": "Workspace cleanup complete",
+  "clean.workspace.nothingToClean": "Nothing to clean",
 
   "config.description": "Configuration management",
   "config.set.description": "Set a config value",
@@ -61,6 +67,8 @@ export default {
   "config.notSet": "(not set)",
   "config.currentConfig": "Current config",
 
+  "plugin.description": "Plugin management",
+  "plugin.create.description": "Scaffold a new backend plugin",
   "createPlugin.description": "Scaffold a new backend plugin",
   "createPlugin.namePrompt": "Enter plugin name (lowercase letters, digits, underscores)",
   "createPlugin.nameRequired": "Plugin name is required",
@@ -128,4 +136,10 @@ export default {
   "db.clean.cleaning": "Cleaning {plugin} migration files...",
   "db.clean.done": "Deleted {count} migration file(s)",
   "db.clean.pluginNotFound": "Plugin {plugin} not found or has no migration files",
+
+  "changelog.description": "Changelog management",
+  "changelog.sync.description": "Sync changelogs",
+  "changelog.sync.title": "Sync Changelogs",
+  "changelog.sync.done": "Synced {count} changelog file(s)",
+  "changelog.sync.noFiles": "No changelog files found",
 } as const

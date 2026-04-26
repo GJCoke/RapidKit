@@ -6,22 +6,24 @@ import { t, type MessageKey } from "./infra/i18n"
 import { FluxError } from "./errors"
 import { dev } from "./commands/dev"
 import { prod } from "./commands/prod"
+import { db } from "./commands/db"
+import { plugin } from "./commands/plugin"
 import { clean } from "./commands/clean"
 import { config } from "./commands/config"
-import { createPlugin } from "./commands/create-plugin"
-import { db } from "./commands/db"
+import { changelog } from "./commands/changelog"
 
-const domains = { dev, prod, clean, config, "create-plugin": createPlugin, db }
+const domains = { dev, prod, db, plugin, clean, config, changelog }
 
 type DomainKey = keyof typeof domains
 
 const domainLabels: Record<DomainKey, () => string> = {
   dev: () => t("dev.description"),
   prod: () => t("prod.description"),
+  db: () => t("db.description"),
+  plugin: () => t("plugin.description"),
   clean: () => t("clean.description"),
   config: () => t("config.description"),
-  "create-plugin": () => t("createPlugin.description"),
-  db: () => t("db.description"),
+  changelog: () => t("changelog.description"),
 }
 
 async function runWithSubMenu(domainName: string, domain: any): Promise<void> {

@@ -2,10 +2,10 @@ import { defineCommand } from "citty"
 import { text, confirm, multiselect, isCancel, log, note } from "@clack/prompts"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { resolve, join } from "node:path"
-import { t } from "../infra/i18n"
-import { FluxError } from "../errors"
-import { toPackageName, toModuleName, scaffoldPlugin, type PluginFeatures } from "../services/scaffold.service"
-import { syncAlembicConfig } from "../services/plugin.service"
+import { t } from "../../infra/i18n"
+import { FluxError } from "../../errors"
+import { toPackageName, toModuleName, scaffoldPlugin, type PluginFeatures } from "../../services/scaffold.service"
+import { syncAlembicConfig } from "../../services/plugin.service"
 
 const PLUGINS_DIR = "apps/backend/plugins"
 
@@ -32,8 +32,8 @@ function autoRegisterPyproject(cwd: string, name: string): void {
   }
 }
 
-export const createPlugin = defineCommand({
-  meta: { name: "create-plugin", description: t("createPlugin.description") },
+export const create = defineCommand({
+  meta: { name: "create", description: t("plugin.create.description") },
   args: {
     name: { type: "string", description: "Plugin name (e.g. notification)", required: false },
   },
