@@ -1,2 +1,10 @@
 #!/usr/bin/env sh
-pnpm check:types
+pnpm check:push
+
+# If auto-fix modified files, block push
+if ! git diff --quiet; then
+  echo "\n⚠️  Auto-fix modified files:"
+  git diff --name-only
+  echo "\nPlease review, commit, and push again."
+  exit 1
+fi

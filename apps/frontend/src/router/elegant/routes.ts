@@ -87,12 +87,12 @@ export const generatedRoutes: GeneratedRoute[] = [{
       i18nKey: 'route.manage_audit-dict'
     }
   }, {
-    name: 'manage_data-rule',
-    path: '/manage/data-rule',
-    component: 'view.manage_data-rule',
+    name: 'manage_data-policy',
+    path: '/manage/data-policy',
+    component: 'view.manage_data-policy',
     meta: {
-      title: 'manage_data-rule',
-      i18nKey: 'route.manage_data-rule'
+      title: 'manage_data-policy',
+      i18nKey: 'route.manage_data-policy'
     }
   }, {
     name: 'manage_department',
@@ -101,6 +101,14 @@ export const generatedRoutes: GeneratedRoute[] = [{
     meta: {
       title: 'manage_department',
       i18nKey: 'route.manage_department'
+    }
+  }, {
+    name: 'manage_field-policy',
+    path: '/manage/field-policy',
+    component: 'view.manage_field-policy',
+    meta: {
+      title: 'manage_field-policy',
+      i18nKey: 'route.manage_field-policy'
     }
   }, {
     name: 'manage_menu',

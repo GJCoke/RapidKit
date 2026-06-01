@@ -58,9 +58,12 @@ class TimeZone:
 
 
 def _create_timezone() -> TimeZone:
-    from rapidkit_core.config import settings
+    from rapidkit_core.config import get_settings
 
-    return TimeZone(tz=settings.DATETIME_TIMEZONE, fmt=settings.DATETIME_FORMAT)
+    s = get_settings()
+    return TimeZone(tz=s.DATETIME_TIMEZONE, fmt=s.DATETIME_FORMAT)
 
 
-timezone = _create_timezone()
+from rapidkit_core.proxy import LazyProxy  # noqa: E402
+
+timezone: TimeZone = LazyProxy(_create_timezone)  # type: ignore

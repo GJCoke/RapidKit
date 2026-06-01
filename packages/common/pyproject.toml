@@ -5,12 +5,16 @@ description = "RapidKit common models, CRUD, schemas and dependencies"
 requires-python = ">=3.14"
 dependencies = [
     "rapidkit-core",
+    "rapidkit-framework",
+    "rapidkit-policy-engine",
     "fastapi>=0.115.0",
     "user-agents>=2.2.0",
 ]
 
 [tool.uv.sources]
 rapidkit-core = { workspace = true }
+rapidkit-framework = { workspace = true }
+rapidkit-policy-engine = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

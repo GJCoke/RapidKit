@@ -9,6 +9,7 @@ Date   : 2025-03-10
 
 import asyncio
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -16,14 +17,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from rapidkit_common.schemas.response import Response as SchemaResponse
 from rapidkit_common.utils import format_validation_errors
-from rapidkit_core.auth_config import app_configs
 from rapidkit_core.config import settings
-from rapidkit_core.exceptions import AppException
-from rapidkit_core.limiter import RateLimiterService
 from rapidkit_core.log import logger, set_custom_logfile, setup_logging
 from rapidkit_core.nanoid import NanoIdPlugin
-from rapidkit_core.status_codes import StatusCode
 from rapidkit_core.timezone import timezone
+from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.limiter import RateLimiterService
+from rapidkit_framework.status_codes import StatusCode
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException
 from starlette_context import context
@@ -50,13 +50,13 @@ async def _increment_biz_error() -> None:
         redis = RedisManager.client()
         hour_bucket = timezone.now().strftime("%Y%m%d_%H")
         key = f"metrics:errors:biz:{hour_bucket}"
-        await redis.hincrby(key, "count", 1)  # ty: ignore[invalid-await]
+        await redis.hincrby(key, "count", 1)
         await redis.expire(key, 7200)
     except Exception:
         logger.debug("Failed to increment biz error count", exc_info=True)
 
 
-def _get_request_user(request: Request) -> str:
+def _get_request_user(_: Request) -> str:
     """从请求上下文中提取 user_id 用于异常日志。"""
     if context.exists():
         user_id = context.get("user_id")
@@ -80,7 +80,7 @@ def setup_middlewares(app: FastAPI) -> None:
     插件中间件在全局中间件之前注册，全局中间件更靠近请求入口。
     """
     # 插件中间件（按 order 排序挂载）
-    from rapidkit_core.loader import mount_plugin_middlewares
+    from rapidkit_framework.loader import mount_plugin_middlewares
 
     mount_plugin_middlewares(app, getattr(app.state, "plugins", []))
 
@@ -206,7 +206,7 @@ def setup_router(app: FastAPI) -> None:
 def create_app() -> FastAPI:
     """创建并配置 FastAPI 应用。"""
     # 注册 i18n 翻译函数到 rapidkit-core
-    from rapidkit_core.i18n import set_translator
+    from rapidkit_framework.i18n import set_translator
 
     from src.locales.i18n import is_i18n_key as actual_is_key
     from src.locales.i18n import t as actual_t
@@ -216,7 +216,15 @@ def create_app() -> FastAPI:
     setup_logging_config()
 
     # 加载插件 — entry points 自动发现 + plugins.toml 配置
-    from rapidkit_core.loader import discover_and_load_plugins
+    from rapidkit_framework.loader import discover_and_load_plugins
+
+    app_configs: dict[str, Any] = {
+        "title": settings.APP_NAME,
+        "description": settings.APP_DESCRIPTION,
+        "version": settings.APP_VERSION,
+    }
+    if not settings.ENVIRONMENT.is_debug:
+        app_configs["openapi_url"] = None
 
     app = FastAPI(**app_configs, lifespan=lifespan)
 
@@ -225,9 +233,13 @@ def create_app() -> FastAPI:
     app.state.plugin_load_result = result
     app.state.plugin_meta = result.meta
 
-    # 按拓扑序应用插件声明的 dependency_overrides
-    from rapidkit_core.loader import apply_dependency_overrides
+    # 按拓扑序注册 ServiceRegistry 服务
+    from rapidkit_framework.loader import apply_dependency_overrides, resolve_services
+    from rapidkit_framework.services import service_registry
 
+    resolve_services(service_registry, result.plugins)
+
+    # 按拓扑序应用插件声明的 dependency_overrides
     apply_dependency_overrides(app, result.plugins)
 
     app.mount("/socket.io", socket_app)
@@ -236,6 +248,10 @@ def create_app() -> FastAPI:
     from src.sio.app import socket
 
     app.state.socket = socket
+
+    from src.sio.app import auto_register_events
+
+    auto_register_events(result.plugins)
 
     # Socket.IO 文档 (仅 debug 模式)
     if settings.ENVIRONMENT.is_debug:

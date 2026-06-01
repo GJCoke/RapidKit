@@ -12,10 +12,10 @@ from typing import Any, ClassVar, Generic, Literal, Sequence, TypeVar, overload
 from uuid import UUID
 
 from pydantic import BaseModel as PydanticBaseModel
-from rapidkit_core.exceptions import AppException
-from rapidkit_core.status_codes import StatusCode
+from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.status_codes import StatusCode
 from sqlalchemy import ColumnExpressionArgument
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import col, delete, func, select, update
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -300,16 +300,16 @@ class BaseCRUD(Generic[Model]):
         """
         创建单条记录。
 
-        model_validate(data) → session.add → flush → refresh → 返回。
+        model_validate(data) → begin_nested → add + flush → refresh → 返回。
         """
         record = self.model.model_validate(data)
         try:
-            self.session.add(record)
-            await self.session.flush()
-            await self.session.refresh(record)
+            async with self.session.begin_nested():
+                self.session.add(record)
+                await self.session.flush()
         except IntegrityError:
-            await self.session.rollback()
             raise AppException(StatusCode.ALREADY_EXISTS)
+        await self.session.refresh(record)
         return record  # ty: ignore[invalid-return-type]
 
     async def create_all(self, data: Sequence[dict[str, Any] | PydanticBaseModel]) -> list[Model]:
@@ -319,10 +319,10 @@ class BaseCRUD(Generic[Model]):
 
         records = [self.model.model_validate(item) for item in data]
         try:
-            self.session.add_all(records)
-            await self.session.flush()
+            async with self.session.begin_nested():
+                self.session.add_all(records)
+                await self.session.flush()
         except IntegrityError:
-            await self.session.rollback()
             raise AppException(StatusCode.ALREADY_EXISTS)
         return records  # ty: ignore[invalid-return-type]
 
@@ -337,12 +337,12 @@ class BaseCRUD(Generic[Model]):
             setattr(record, field, value)
 
         try:
-            self.session.add(record)
-            await self.session.flush()
-            await self.session.refresh(record)
+            async with self.session.begin_nested():
+                self.session.add(record)
+                await self.session.flush()
         except IntegrityError:
-            await self.session.rollback()
             raise AppException(StatusCode.ALREADY_EXISTS)
+        await self.session.refresh(record)
         return record
 
     async def update_all(self, updates: list[dict[str, Any]]) -> None:
@@ -361,20 +361,17 @@ class BaseCRUD(Generic[Model]):
                 raise AppException(StatusCode.MISSING_REQUIRED_FIELD)
             ids.append(_id)
 
-        try:
-            result = await self.session.exec(
-                select(func.count()).select_from(self.model).where(col(self.model.id).in_(ids))
-            )
-            if result.one() != len(ids):
-                raise AppException(StatusCode.RESOURCE_NOT_FOUND)
+        result = await self.session.exec(
+            select(func.count()).select_from(self.model).where(col(self.model.id).in_(ids))
+        )
+        if result.one() != len(ids):
+            raise AppException(StatusCode.RESOURCE_NOT_FOUND)
 
-            await self.session.exec(update(self.model), params=updates)  # type: ignore[call-overload]
-        except AppException:
-            await self.session.rollback()
-            raise
-        except SQLAlchemyError as e:
-            await self.session.rollback()
-            raise SQLAlchemyError("Database error during batch update.") from e
+        try:
+            async with self.session.begin_nested():
+                await self.session.exec(update(self.model), params=updates)  # type: ignore[call-overload]
+        except IntegrityError:
+            raise AppException(StatusCode.ALREADY_EXISTS)
 
     async def delete(self, id: UUID, /) -> Model:
         """按主键删除，返回被删除的记录。"""

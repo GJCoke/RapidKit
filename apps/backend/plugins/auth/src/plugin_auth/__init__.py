@@ -1,49 +1,53 @@
 """
-Auth plugin — 认证、角色与路由管理。
+Authentication plugin — identity verification and token lifecycle.
 
-合并了 auth, role, router 三个域。
-通过 PluginManifest.dependency_overrides 注入真实的认证依赖实现。
-
-Author  : Claude
-Date    : 2026-04-14
+Author : Coke
+Date   : 2026-05-11
 """
 
-from rapidkit_core.plugin import PluginManifest
+from rapidkit_common.protocols.auth import (
+    Authenticator,
+    CurrentUserProvider,
+    PasswordDecryptor,
+    SessionInvalidator,
+    TokenDecoder,
+)
+from rapidkit_common.protocols.user import UserResolver
+from rapidkit_framework.plugin import PluginManifest
+from rapidkit_framework.services import ServiceRegistry
 
 
 def register() -> PluginManifest:
-    from fastapi import APIRouter
-    from rapidkit_common.auth import _get_current_user_placeholder, _verify_user_permission_placeholder
+    from rapidkit_common.auth import _get_current_user_placeholder
 
-    from plugin_auth.auth.api import router as auth_router
+    from plugin_auth.auth.api import router
     from plugin_auth.auth.deps import get_current_user_form_db
-    from plugin_auth.auth.models import User
-    from plugin_auth.data_rule.api import router as data_rule_router
-    from plugin_auth.data_rule.models import DataRule
-    from plugin_auth.department.api import router as dept_router
-    from plugin_auth.department.models import Department
-    from plugin_auth.role.api import router as role_router
-    from plugin_auth.role.deps import verify_user_permission
-    from plugin_auth.role.models import Role
-    from plugin_auth.router.api import router as router_api_router
-    from plugin_auth.router.models import InterfaceRouter
-    from plugin_auth.router.sync import sync_routes_on_startup
+    from plugin_auth.providers import (
+        AuthenticatorImpl,
+        CurrentUserProviderImpl,
+        PasswordDecryptorImpl,
+        SessionInvalidatorImpl,
+        TokenDecoderImpl,
+    )
 
-    combined = APIRouter()
-    combined.include_router(auth_router)
-    combined.include_router(role_router)
-    combined.include_router(router_api_router)
-    combined.include_router(dept_router)
-    combined.include_router(data_rule_router)
+    def register_services(registry: ServiceRegistry) -> None:
+        user_resolver = registry.get(UserResolver)
+        registry.register(TokenDecoder, TokenDecoderImpl())
+        registry.register(Authenticator, AuthenticatorImpl(user_resolver))
+        registry.register(CurrentUserProvider, CurrentUserProviderImpl(user_resolver))
+        registry.register(PasswordDecryptor, PasswordDecryptorImpl())
+        registry.register(SessionInvalidator, SessionInvalidatorImpl())
 
     return PluginManifest(
         name="auth",
         version="0.1.0",
-        router=combined,
-        models=[User, Role, InterfaceRouter, Department, DataRule],
-        on_startup=[sync_routes_on_startup],
+        router=router,
+        models=[],
+        dependencies=["user"],
+        requires=[UserResolver],
+        provides=[TokenDecoder, Authenticator, CurrentUserProvider, PasswordDecryptor, SessionInvalidator],
+        service_factories={TokenDecoder: register_services},
         dependency_overrides={
-            _verify_user_permission_placeholder: verify_user_permission,
             _get_current_user_placeholder: get_current_user_form_db,
         },
     )

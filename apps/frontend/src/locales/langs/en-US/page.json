@@ -263,18 +263,9 @@
       },
       "menuAuth": "Menu Auth",
       "permissionConfig": "Permission Config",
-      "dataScope": "Data Scope",
-      "dataScopeConfig": "Data Scope Config",
-      "customDepartments": "Custom Departments",
-      "customRules": "Custom Rules",
-      "dataScopeOptions": {
-        "all": "All Data",
-        "self": "Self Only",
-        "dept": "Own Department",
-        "deptAndChildren": "Dept & Children",
-        "customDept": "Custom Departments",
-        "customRule": "Custom Rules"
-      },
+      "dataPolicies": "Data Policies",
+      "fieldPolicy": "Field Policy",
+      "fieldPolicyPlaceholder": "Select field policies (no restriction if none selected)",
       "roleCode": "Code",
       "roleDesc": "Description",
       "roleName": "Name",
@@ -287,6 +278,7 @@
       "form": {
         "name": "Please enter name",
         "nickName": "Please enter nick name",
+        "nickname": "Please enter nickname",
         "password": "Please enter password",
         "oldPassword": "Please enter old password",
         "newPassword": "Please enter new password",
@@ -294,17 +286,28 @@
         "userEmail": "Please enter email",
         "userGender": "Please select gender",
         "userPhone": "Please enter phone number",
+        "phone": "Please enter phone number",
         "userRole": "Please select user role",
         "userStatus": "Please select user status",
-        "username": "Please enter user name"
+        "username": "Please enter user name",
+        "nameLengthRule": "Name must be between 2 and 100 characters",
+        "remark": "Please enter remark"
       },
-      "gender": {
+      "gender": "Gender",
+      "genderOptions": {
+        "male": "Male",
         "female": "Female",
-        "male": "Male"
+        "other": "Other"
       },
       "isAdmin": "Admin",
       "name": "Name",
       "nickName": "Nick Name",
+      "nickname": "Nickname",
+      "phone": "Phone",
+      "avatar": "Avatar",
+      "remark": "Remark",
+      "lastLoginTime": "Last Login Time",
+      "lastLoginIp": "Last Login IP",
       "password": "Password",
       "changePassword": "Password",
       "oldPassword": "Old Password",
@@ -356,33 +359,121 @@
         "labelEn": "Enter English label"
       }
     },
-    "dataRule": {
-      "title": "Data Rules",
-      "addRule": "Add Rule",
-      "editRule": "Edit Rule",
-      "name": "Rule Name",
-      "modelName": "Target Model",
-      "field": "Target Field",
-      "operator": "Operator",
-      "value": "Value",
-      "logic": "Logic",
-      "form": {
-        "name": "Please enter rule name",
-        "modelName": "Please enter target model",
-        "field": "Please enter target field",
-        "operator": "Please select operator",
-        "value": "Please enter value",
-        "logic": "Please select logic"
+    "dataPolicy": {
+      "title": "Data Policy",
+      "addPolicy": "Add Policy",
+      "editPolicy": "Edit Policy",
+      "name": "Policy Name",
+      "description": "Description",
+      "effect": "Effect",
+      "actions": "Actions",
+      "effectOptions": {
+        "allow": "Allow",
+        "deny": "Deny"
       },
-      "operatorOptions": {
-        "eq": "Equal",
-        "ne": "Not Equal",
-        "gt": "Greater Than",
-        "ge": "Greater or Equal",
-        "lt": "Less Than",
-        "le": "Less or Equal",
-        "in": "In",
-        "not_in": "Not In"
+      "actionOptions": {
+        "read": "Read",
+        "write": "Write"
+      },
+      "status": "Status",
+      "createTime": "Created At",
+      "rule": "Rule Configuration",
+      "form": {
+        "name": "Please enter policy name",
+        "description": "Please enter description"
+      },
+      "ruleEditor": {
+        "addCondition": "Add Condition",
+        "addGroup": "Add Group",
+        "addSubquery": "Subquery",
+        "conditionCount": "conditions",
+        "emptyHint": "Click to add first condition",
+        "field": "Field",
+        "operator": "Operator",
+        "value": "Value (supports template variables)",
+        "model": "Related Model",
+        "targetModel": "Target Model",
+        "targetField": "Target Field",
+        "inOp": "In",
+        "notInOp": "Not In",
+        "selectModel": "Please select target model",
+        "op": {
+          "eq": "Equal",
+          "ne": "Not Equal",
+          "gt": "Greater Than",
+          "ge": "Greater or Equal",
+          "lt": "Less Than",
+          "le": "Less or Equal",
+          "in": "In",
+          "not_in": "Not In",
+          "is_null": "Is Null",
+          "is_not_null": "Is Not Null",
+          "between": "Between"
+        },
+        "tplVar": {
+          "userId": "Current User ID",
+          "deptId": "Current Dept ID",
+          "deptIds": "Dept & Sub-dept IDs",
+          "roles": "User Roles",
+          "now": "Current Time",
+          "today": "Today's Date"
+        },
+        "help": {
+          "title": "Rule Editor Guide",
+          "conditionTitle": "Condition",
+          "conditionDesc": "The smallest filter unit. Pick a field, operator, and value to match rows. Values support template variables which resolve to the current user at runtime.",
+          "groupTitle": "Condition Group",
+          "groupDesc": "Combine multiple conditions with AND (all must match) or OR (any must match). Groups can nest up to 3 levels for complex logic.",
+          "subqueryTitle": "Subquery",
+          "subqueryDesc": "Cross-model filtering. Check whether a field's value exists IN (or NOT IN) the results of a query on another model. Example: show only departments belonging to the current user's organization.",
+          "tplVarTitle": "Template Variables",
+          "tplVarDesc": "Type the template variable prefix in the value field to see available variables. They resolve to actual user values at policy execution time, enabling per-user data scoping."
+        }
+      },
+      "simulator": {
+        "title": "Policy Simulator",
+        "selectPolicies": "Select Policies",
+        "selectUser": "Target User",
+        "run": "Simulate",
+        "totalCount": "Total Records",
+        "visibleCount": "Visible Records",
+        "excludedCount": "Excluded Records",
+        "policyDetails": "Policy Hit Details",
+        "matched": "matched",
+        "visibleData": "Visible Data Preview",
+        "excludedData": "Excluded Data Preview",
+        "generatedSql": "Generated SQL",
+        "adminBypass": "Target user is a super admin. In production, all data policy filters are bypassed and all data is visible."
+      }
+    },
+    "fieldPolicy": {
+      "title": "Field Policy",
+      "addPolicy": "Add Field Policy",
+      "editPolicy": "Edit Field Policy",
+      "name": "Policy Name",
+      "description": "Description",
+      "targetModel": "Target Model",
+      "fields": "Controlled Fields",
+      "actions": "Actions",
+      "effect": "Effect",
+      "condition": "Condition",
+      "status": "Status",
+      "createTime": "Created At",
+      "effectOptions": {
+        "strip": "Strip",
+        "mask": "Mask",
+        "deny": "Deny"
+      },
+      "actionOptions": {
+        "read": "Read",
+        "write": "Write"
+      },
+      "form": {
+        "name": "Enter policy name",
+        "targetModel": "Select target model",
+        "fields": "Select controlled fields",
+        "effect": "Select effect",
+        "addCondition": "Add condition"
       }
     },
     "worker": {

@@ -52,6 +52,7 @@ export default defineConfig({
               text: "架构与设计",
               items: [
                 { text: "整体架构", link: "/architecture/overview" },
+                { text: "包依赖架构", link: "/architecture/packages" },
                 { text: "前后端通信", link: "/architecture/api" },
                 { text: "认证与权限", link: "/architecture/auth" },
                 { text: "实时通信", link: "/architecture/websocket" },
@@ -83,6 +84,9 @@ export default defineConfig({
                 { text: "数据库与 ORM", link: "/backend/database" },
                 { text: "中间件", link: "/backend/middleware" },
                 { text: "错误处理与状态码", link: "/backend/error-handling" },
+                { text: "Service 层约定", link: "/backend/service-layer" },
+                { text: "插件模板化标准", link: "/backend/plugin-standard" },
+                { text: "跨插件协作", link: "/backend/cross-plugin" },
                 { text: "国际化", link: "/backend/i18n" },
                 { text: "日志系统", link: "/backend/logging" },
                 { text: "Pydantic 模型规范", link: "/backend/pydantic" },

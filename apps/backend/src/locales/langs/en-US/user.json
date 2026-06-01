@@ -1,0 +1,11 @@
+{
+  "error": {
+    "oldPasswordRequired": "Old password is required when changing your own password",
+    "oldPasswordIncorrect": "Old password is incorrect",
+    "cannotDeleteSelf": "Cannot delete your own account",
+    "cannotDeleteAdmin": "Cannot delete an admin account",
+    "batchContainsSelf": "Batch delete contains the current user",
+    "batchContainsAdmin": "Batch delete contains an admin user",
+    "passwordChangeForbidden": "No permission to change this user's password"
+  }
+}

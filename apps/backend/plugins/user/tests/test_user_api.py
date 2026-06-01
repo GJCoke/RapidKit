@@ -10,7 +10,7 @@ from tests.testing.utils import random_email, random_lowercase, random_uuid
 
 class TestCreateUser:
     async def test_create_success(self, client: AsyncClient, init, auth_headers: dict):
-        from rapidkit_core.security import encrypt_message, load_public_pem
+        from rapidkit_security import encrypt_message, load_public_pem
 
         resp = await client.get("/auth/keys/public")
         pub_key = cast(RSAPublicKey, load_public_pem(resp.json()["data"]))
@@ -33,7 +33,7 @@ class TestCreateUser:
         assert body["data"]["username"] == username
 
     async def test_create_duplicate_username(self, client: AsyncClient, init, auth_headers: dict):
-        from rapidkit_core.security import encrypt_message, load_public_pem
+        from rapidkit_security import encrypt_message, load_public_pem
         from src.initdb import USERNAME
 
         resp = await client.get("/auth/keys/public")
@@ -121,7 +121,7 @@ class TestDeleteUser:
 
     async def test_delete_regular_user(self, client: AsyncClient, init, auth_headers: dict):
         """Delete a non-admin user succeeds."""
-        from rapidkit_core.security import encrypt_message, load_public_pem
+        from rapidkit_security import encrypt_message, load_public_pem
 
         resp = await client.get("/auth/keys/public")
         pub_key = cast(RSAPublicKey, load_public_pem(resp.json()["data"]))
@@ -150,7 +150,7 @@ class TestDeleteUser:
         assert resp.json()["code"] != 0
 
     async def test_batch_delete(self, client: AsyncClient, init, auth_headers: dict):
-        from rapidkit_core.security import encrypt_message, load_public_pem
+        from rapidkit_security import encrypt_message, load_public_pem
 
         resp = await client.get("/auth/keys/public")
         pub_key = cast(RSAPublicKey, load_public_pem(resp.json()["data"]))

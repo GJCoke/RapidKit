@@ -51,6 +51,21 @@ class AsyncRedisClient(Redis):  # type: ignore[type-arg]
         return await super().hset(name, key=key, value=value, mapping=mapping, items=items)  # ty: ignore[invalid-await]
 
     @overload
+    async def hget(self, name: str, key: str, *, response_model: type[T]) -> T | None: ...
+
+    @overload
+    async def hget(self, name: str, key: str, *, response_model: None = None) -> str | None: ...
+
+    async def hget(self, name: str, key: str, *, response_model: type[T] | None = None) -> T | str | None:
+        data = await super().hget(name, key)  # ty: ignore[invalid-await]
+        if data is None or response_model is None:
+            return data
+        return response_model.model_validate_json(data)
+
+    async def hincrby(self, name: str, key: str, amount: int = 1) -> int:
+        return await super().hincrby(name, key, amount)  # ty: ignore[invalid-await]
+
+    @overload
     async def hgetall(self, name: str, *, response_model: type[T]) -> T: ...
 
     @overload

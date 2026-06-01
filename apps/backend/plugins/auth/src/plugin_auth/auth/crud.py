@@ -5,12 +5,12 @@ Author : Coke
 Date   : 2025-04-18
 """
 
+from plugin_user.models import User
 from rapidkit_common.crud import BaseCRUD
-from rapidkit_core.exceptions import AppException
-from rapidkit_core.status_codes import StatusCode
+from rapidkit_framework.exceptions import AppException
 from sqlmodel import col
 
-from plugin_auth.auth.models import User
+from plugin_auth.status_codes import AuthStatusCode
 
 
 class UserCRUD(BaseCRUD[User]):
@@ -24,6 +24,6 @@ class UserCRUD(BaseCRUD[User]):
         response = result.first()
 
         if not response:
-            raise AppException(StatusCode.USER_NOT_FOUND)
+            raise AppException(AuthStatusCode.USER_NOT_FOUND)
 
         return response

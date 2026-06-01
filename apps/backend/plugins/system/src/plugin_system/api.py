@@ -8,17 +8,12 @@ Date   : 2026-04-10
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
-from plugin_auth.role.models import Role
-from plugin_auth.router.models import InterfaceRouter
-from plugin_menu.models import Menu
-from plugin_script.models import Script
 from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_core.config import settings
-from rapidkit_core.events import event_bus
-from rapidkit_core.plugin import HealthStatus, PluginMeta
-from sqlmodel import func, select
+from rapidkit_framework.events import event_bus
+from rapidkit_framework.plugin import PluginMeta
 
 from plugin_system.deps import ActivityLogCrudDep
 from plugin_system.health import check_minio, check_pg, check_redis
@@ -42,11 +37,18 @@ from plugin_system.schemas import (
     PluginStatusItem,
 )
 from plugin_system.services import (
+    aggregate_instances,
+    build_business_summary,
+    build_plugin_dependency_graph,
+    build_plugin_status_list,
+    derive_overall_health,
+    empty_instance,
     get_error_counts,
     get_error_sparkline_24h,
     get_qps,
     get_response_time_percentiles,
     get_total_requests,
+    parse_instance,
 )
 
 router = APIRouter(
@@ -54,6 +56,14 @@ router = APIRouter(
     tags=["System"],
     dependencies=[Depends(verify_user_permission)],
 )
+
+
+def _plugin_status_to_schema(d: dict) -> dict:
+    """Convert a service-layer plugin status dict for PluginStatusItem construction."""
+    d = dict(d)
+    if d.get("error") is not None:
+        d["error"] = PluginErrorResponse(**d["error"])
+    return d
 
 
 @router.get("/stats/resources", summary="服务器资源统计")
@@ -66,9 +76,9 @@ async def get_resource_stats(
     if instance:
         data = await redis.hgetall(f"{_RESOURCE_KEY_PREFIX}{instance}")
         if not data:
-            parsed = _empty_instance(instance)
+            parsed = empty_instance(instance)
         else:
-            parsed = _parse_instance(data)
+            parsed = parse_instance(data)
         return Response(data=MultiResourceStats(instances=[parsed], summary=parsed))
 
     instances: list[InstanceResourceStats] = []
@@ -78,11 +88,11 @@ async def get_resource_stats(
         for key in keys:
             data = await redis.hgetall(key)
             if data:
-                instances.append(_parse_instance(data))
+                instances.append(parse_instance(data))
         if cursor == 0:
             break
 
-    summary = _aggregate_instances(instances)
+    summary = aggregate_instances(instances)
     return Response(data=MultiResourceStats(instances=instances, summary=summary))
 
 
@@ -150,64 +160,20 @@ async def get_aggregated_health(
     redis: RedisDep,
 ) -> Response[AggregatedHealth]:
     """聚合基础设施健康状态。"""
-
     pg_health = await check_pg(session)
     redis_health = await check_redis(redis)
     minio_health = check_minio()
     infra = InfrastructureHealth(pg=pg_health, redis=redis_health, minio=minio_health)
 
-    # 推导整体状态
-    all_statuses: list[str] = []
-    for svc in [infra.pg, infra.redis, infra.minio]:
-        if svc.status == "down":
-            all_statuses.append(HealthStatus.UNHEALTHY.value)
-        elif svc.status == "degraded":
-            all_statuses.append(HealthStatus.DEGRADED.value)
-        else:
-            all_statuses.append(HealthStatus.HEALTHY.value)
-
-    if HealthStatus.UNHEALTHY.value in all_statuses:
-        overall = HealthStatus.UNHEALTHY.value
-    elif HealthStatus.DEGRADED.value in all_statuses:
-        overall = HealthStatus.DEGRADED.value
-    else:
-        overall = HealthStatus.HEALTHY.value
-
-    return Response(
-        data=AggregatedHealth(
-            status=overall,
-            infrastructure=infra,
-        )
-    )
+    overall = derive_overall_health([svc.status for svc in (infra.pg, infra.redis, infra.minio)])
+    return Response(data=AggregatedHealth(status=overall, infrastructure=infra))
 
 
 @router.get("/stats/business", summary="业务数据汇总")
 async def get_business_summary(session: SessionDep) -> Response[BusinessSummary]:
     """获取各业务模块的数据总量。"""
-
-    roles = (await session.exec(select(func.count()).select_from(Role))).one()
-    menus = (await session.exec(select(func.count()).select_from(Menu))).one()
-    routers = (await session.exec(select(func.count()).select_from(InterfaceRouter))).one()
-    scripts = (await session.exec(select(func.count()).select_from(Script))).one()
-
-    schedules = 0
-    try:
-        if settings.ENABLE_CELERY_MONITOR:
-            from plugin_schedule.models import PeriodicTask
-
-            schedules = (await session.exec(select(func.count()).select_from(PeriodicTask))).one()
-    except Exception:
-        pass
-
-    return Response(
-        data=BusinessSummary(
-            roles=roles,
-            menus=menus,
-            routers=routers,
-            scripts=scripts,
-            schedules=schedules,
-        )
-    )
+    summary = await build_business_summary(session, enable_celery=settings.ENABLE_CELERY_MONITOR)
+    return Response(data=BusinessSummary(**summary))
 
 
 @router.get("/activities/paginate", summary="活动日志分页查询")
@@ -238,86 +204,35 @@ async def get_activities(crud: ActivityLogCrudDep) -> Response[list[ActivityResp
 @router.get("/plugins", summary="插件状态列表")
 async def get_plugin_status(request: Request) -> Response[list[PluginStatusItem]]:
     """返回所有插件的加载状态、版本、耗时和健康信息。"""
-
     plugins = getattr(request.app.state, "plugins", [])
     load_result = getattr(request.app.state, "plugin_load_result", None)
     plugin_meta: dict[str, PluginMeta] = getattr(request.app.state, "plugin_meta", {})
 
-    items: list[PluginStatusItem] = []
+    disabled = load_result.disabled if load_result else []
+    errors = load_result.errors if load_result else {}
 
-    # 已加载的插件
-    for plugin in plugins:
-        meta = plugin_meta.get(plugin.name)
-        dep_names = [d if isinstance(d, str) else d.name for d in plugin.dependencies]
-
-        items.append(
-            PluginStatusItem(
-                name=plugin.name,
-                version=plugin.version,
-                status=meta.status if meta else "loaded",
-                required=plugin.required,
-                dependencies=dep_names,
-                load_time_ms=meta.register_ms if meta else None,
-                startup_time_ms=meta.startup_ms if meta else None,
-            )
-        )
-
-    if load_result:
-        # 禁用的插件
-        for name in load_result.disabled:
-            items.append(PluginStatusItem(name=name, status="disabled"))
-
-        # 失败的插件
-        for name, error in load_result.errors.items():
-            items.append(
-                PluginStatusItem(
-                    name=name,
-                    status="failed",
-                    error=PluginErrorResponse(
-                        phase=error.phase,
-                        message=error.message,
-                        caused_by=error.caused_by,
-                    ),
-                )
-            )
-
+    raw_items = build_plugin_status_list(plugins, plugin_meta, disabled, errors)
+    items = [PluginStatusItem(**_plugin_status_to_schema(d)) for d in raw_items]
     return Response(data=items)
 
 
 @router.get("/plugins/dependencies", summary="插件依赖关系图")
 async def get_plugin_dependencies(request: Request) -> Response[PluginDependencyGraph]:
     """返回插件依赖关系图的节点和边，用于前端可视化。"""
-
     plugins = getattr(request.app.state, "plugins", [])
     load_result = getattr(request.app.state, "plugin_load_result", None)
     plugin_meta: dict[str, PluginMeta] = getattr(request.app.state, "plugin_meta", {})
 
-    nodes: list[PluginNode] = []
-    edges: list[PluginEdge] = []
+    disabled = load_result.disabled if load_result else []
+    errors = load_result.errors if load_result else {}
 
-    # 已加载的插件
-    for plugin in plugins:
-        meta = plugin_meta.get(plugin.name)
-        nodes.append(
-            PluginNode(
-                name=plugin.name,
-                version=plugin.version,
-                status=meta.status if meta else "loaded",
-                required=plugin.required,
-            )
+    graph = build_plugin_dependency_graph(plugins, plugin_meta, disabled, errors)
+    return Response(
+        data=PluginDependencyGraph(
+            nodes=[PluginNode(**n) for n in graph["nodes"]],
+            edges=[PluginEdge(**e) for e in graph["edges"]],
         )
-        for dep in plugin.dependencies:
-            dep_name = dep if isinstance(dep, str) else dep.name
-            edges.append(PluginEdge(source=plugin.name, target=dep_name))
-
-    if load_result:
-        for name in load_result.disabled:
-            nodes.append(PluginNode(name=name, status="disabled", required=False))
-
-        for name, error in load_result.errors.items():
-            nodes.append(PluginNode(name=name, status="failed", required=False))
-
-    return Response(data=PluginDependencyGraph(nodes=nodes, edges=edges))
+    )
 
 
 @router.get("/events", summary="EventBus 统计")
@@ -339,62 +254,4 @@ async def get_event_bus_stats() -> Response[EventBusStats]:
             dead_letters=dead_letters,
             dead_letter_count=len(dead_letters),
         )
-    )
-
-
-# ==================== 多实例资源辅助函数 ====================
-
-
-def _parse_instance(data: dict[str, str]) -> InstanceResourceStats:
-    """将 Redis Hash 数据解析为 InstanceResourceStats。"""
-    return InstanceResourceStats(
-        hostname=data.get("hostname", "unknown"),
-        cpu_percent=float(data.get("cpuPercent", 0)),
-        memory_used=int(data.get("memoryUsed", 0)),
-        memory_total=int(data.get("memoryTotal", 0)),
-        memory_percent=float(data.get("memoryPercent", 0)),
-        disk_used=int(data.get("diskUsed", 0)),
-        disk_total=int(data.get("diskTotal", 0)),
-        disk_percent=float(data.get("diskPercent", 0)),
-        net_sent=int(data.get("netSent", 0)),
-        net_recv=int(data.get("netRecv", 0)),
-    )
-
-
-def _empty_instance(hostname: str) -> InstanceResourceStats:
-    """返回空实例数据。"""
-    return InstanceResourceStats(
-        hostname=hostname,
-        cpu_percent=0,
-        memory_used=0,
-        memory_total=0,
-        memory_percent=0,
-        disk_used=0,
-        disk_total=0,
-        disk_percent=0,
-        net_sent=0,
-        net_recv=0,
-    )
-
-
-def _aggregate_instances(instances: list[InstanceResourceStats]) -> InstanceResourceStats:
-    """汇总多实例资源数据。"""
-    if not instances:
-        return _empty_instance("summary")
-
-    n = len(instances)
-    total_mem = sum(i.memory_total for i in instances)
-    total_disk = sum(i.disk_total for i in instances)
-
-    return InstanceResourceStats(
-        hostname="summary",
-        cpu_percent=round(sum(i.cpu_percent for i in instances) / n, 1),
-        memory_used=sum(i.memory_used for i in instances),
-        memory_total=total_mem,
-        memory_percent=round(sum(i.memory_used for i in instances) / total_mem * 100, 1) if total_mem else 0,
-        disk_used=sum(i.disk_used for i in instances),
-        disk_total=total_disk,
-        disk_percent=round(sum(i.disk_used for i in instances) / total_disk * 100, 1) if total_disk else 0,
-        net_sent=sum(i.net_sent for i in instances),
-        net_recv=sum(i.net_recv for i in instances),
     )

@@ -5,12 +5,22 @@ Author  : Claude
 Date    : 2026-04-14
 """
 
-from rapidkit_core.events import RolePermissionsChangedEvent
-from rapidkit_core.plugin import PluginManifest
+from rapidkit_common.events import RolePermissionsChangedEvent, UserRolesChangedEvent
+from rapidkit_framework.plugin import PluginManifest
 
 
 async def _on_role_permissions_changed(event: RolePermissionsChangedEvent) -> None:
     """角色权限变更时清除用户路由缓存。"""
+    from rapidkit_core.database import RedisManager
+
+    from plugin_menu.services import invalidate_menu_cache
+
+    redis = RedisManager.client()
+    await invalidate_menu_cache(redis)
+
+
+async def _on_user_roles_changed(event: UserRolesChangedEvent) -> None:
+    """用户角色变更时清除菜单缓存。"""
     from rapidkit_core.database import RedisManager
 
     from plugin_menu.services import invalidate_menu_cache
@@ -35,6 +45,9 @@ def register() -> PluginManifest:
         version="0.1.0",
         router=combined,
         models=[Menu],
-        dependencies=["auth"],
-        event_listeners=[(RolePermissionsChangedEvent, _on_role_permissions_changed)],
+        dependencies=["permission"],
+        event_listeners=[
+            (RolePermissionsChangedEvent, _on_role_permissions_changed),
+            (UserRolesChangedEvent, _on_user_roles_changed),
+        ],
     )

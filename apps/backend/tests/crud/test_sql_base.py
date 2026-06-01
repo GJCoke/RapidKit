@@ -10,8 +10,8 @@ import pytest_asyncio
 from rapidkit_common.crud import BaseCRUD
 from rapidkit_common.models import SQLModel
 from rapidkit_common.schemas import BaseRequest, BaseResponse
-from rapidkit_core.exceptions import AppException
-from rapidkit_core.status_codes import StatusCode
+from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.status_codes import StatusCode
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Field, col, delete
 from sqlmodel import SQLModel as _SQLModel

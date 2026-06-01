@@ -10,7 +10,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from rapidkit_common.auth import UserDBDep, verify_user_permission
+from rapidkit_common.events import ScriptExecutedEvent
 from rapidkit_common.schemas.response import PaginatedResponse, Response
+from rapidkit_framework.events import event_bus
 from sqlmodel import col
 
 from plugin_script.deps import ScriptCrudDep, ScriptExecCrudDep
@@ -126,6 +128,7 @@ async def execute_script(
         }
     )
 
+    event_bus.fire_and_forget(ScriptExecutedEvent(script_id=str(script.id), executor_id=str(user.id)))
     return Response(data=ScriptExecuteResponse(**result))
 
 

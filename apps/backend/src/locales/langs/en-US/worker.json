@@ -1,0 +1,12 @@
+{
+  "error": {
+    "taskTriggerFailed": "Task trigger failed",
+    "taskRevokeFailed": "Task revoke failed",
+    "taskNotRegistered": "Task is not registered",
+    "workerControlFailed": "Worker control command failed",
+    "workerOffline": "Worker is currently offline",
+    "taskRetryNotAllowed": "Only failed or revoked tasks can be retried",
+    "workerNotFound": "Worker not found",
+    "taskNotFound": "Task not found"
+  }
+}

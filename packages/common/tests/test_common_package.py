@@ -46,6 +46,6 @@ class TestCommonImports:
 
     def test_common_depends_on_core(self):
         """验证 common 正确依赖 core（不是循环的）。"""
-        from rapidkit_core.status_codes import StatusCode
+        from rapidkit_framework.status_codes import StatusCode
 
         assert StatusCode.SUCCESS.code == 0

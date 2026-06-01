@@ -2,7 +2,7 @@
 用户管理依赖注入。
 
 Author : Coke
-Date   : 2026-04-02
+Date   : 2026-05-11
 """
 
 from fastapi import Depends

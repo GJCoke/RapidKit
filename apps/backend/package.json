@@ -3,8 +3,8 @@
   "version": "1.0.1",
   "scripts": {
     "postinstall": "uv sync",
-    "format": "uv run ruff check --fix src && uv run ruff format src",
-    "typecheck": "uv run ty check src",
+    "format": "uv run ruff format src plugins tests && uv run ruff check --fix src plugins tests",
+    "typecheck": "uv run ty check src plugins",
     "dev": "HOST=0.0.0.0 PORT=16000 bash scripts/run-dev.sh",
     "worker": "uv run celery -A \"src.queues.app\" worker -l info",
     "beater": "uv run celery -A \"src.queues.app\" beat -S \"src.queues.scheduler:AsyncDatabaseScheduler\" -l info"

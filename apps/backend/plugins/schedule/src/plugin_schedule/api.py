@@ -1,7 +1,7 @@
 """
 Schedule domain API routes.
 
-Author  : Claude
+Author  : Coke
 Date    : 2026-04-01
 """
 
@@ -10,13 +10,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from rapidkit_common.auth import verify_user_permission
+from rapidkit_common.events import ScheduleCreatedEvent, ScheduleDeletedEvent, ScheduleToggledEvent
 from rapidkit_common.schemas.response import PaginatedResponse, Response
-from rapidkit_core.exceptions import AppException
 from rapidkit_core.log import get_plugin_logger
-from rapidkit_core.status_codes import StatusCode
+from rapidkit_framework.events import event_bus
+from rapidkit_framework.exceptions import AppException
 
 from plugin_schedule.deps import PeriodicTaskCrudDep
-from plugin_schedule.schedule_types import TaskType
 from plugin_schedule.schemas import (
     PeriodicTaskCreate,
     PeriodicTaskListResponse,
@@ -24,6 +24,8 @@ from plugin_schedule.schemas import (
     PeriodicTaskResponse,
     PeriodicTaskUpdate,
 )
+from plugin_schedule.services import create_periodic_task, delete_periodic_task, update_periodic_task
+from plugin_schedule.status_codes import ScheduleStatusCode
 
 logger = get_plugin_logger("Schedule")
 
@@ -52,7 +54,7 @@ async def get_schedule(
     """获取单个定时任务详情。"""
     data = await crud.get_with_schedule(schedule_id)
     if not data:
-        raise AppException(StatusCode.RESOURCE_NOT_FOUND)
+        raise AppException(ScheduleStatusCode.TASK_NOT_FOUND)
     return Response(data=data)
 
 
@@ -62,26 +64,8 @@ async def create_schedule(
     crud: PeriodicTaskCrudDep,
 ) -> Response[PeriodicTaskResponse]:
     """创建定时任务。"""
-    # 根据 task_type 创建对应的 schedule 记录
-    if body.task_type == TaskType.INTERVAL:
-        if not body.interval:
-            raise AppException(StatusCode.VALIDATION_ERROR)
-        schedule = await crud.interval_crud.create(body.interval)
-    elif body.task_type == TaskType.CRONTAB:
-        if not body.crontab:
-            raise AppException(StatusCode.VALIDATION_ERROR)
-        schedule = await crud.crontab_crud.create(body.crontab)
-    else:
-        raise AppException(StatusCode.VALIDATION_ERROR)
-
-    # 创建 PeriodicTask
-    task_data = body.model_dump(exclude={"interval", "crontab"})
-    task_data["schedule_id"] = schedule.id
-    task = await crud.create(task_data)
-    logger.info("Task created: {task_name}", task_name=body.task)
-
-    # 返回带调度详情的响应
-    result = await crud.get_with_schedule(task.id)
+    result = await create_periodic_task(crud, body)
+    event_bus.fire_and_forget(ScheduleCreatedEvent(schedule_id=str(result.id), task_name=body.name))
     return Response(data=result)
 
 
@@ -92,22 +76,7 @@ async def update_schedule(
     crud: PeriodicTaskCrudDep,
 ) -> Response[PeriodicTaskResponse]:
     """更新定时任务。"""
-    task = await crud.get(schedule_id, nullable=False)
-
-    # 更新调度配置（如果提供了新的）
-    if body.interval and task.task_type == TaskType.INTERVAL:
-        await crud.interval_crud.update_by_id(task.schedule_id, body.interval)
-    elif body.crontab and task.task_type == TaskType.CRONTAB:
-        await crud.crontab_crud.update_by_id(task.schedule_id, body.crontab)
-
-    # 更新 PeriodicTask 字段
-    task_data = body.model_dump(exclude={"interval", "crontab"}, exclude_unset=True)
-    if task_data:
-        await crud.update_by_id(task.id, task_data)
-
-    logger.info("Task updated: {schedule_id}", schedule_id=schedule_id)
-
-    result = await crud.get_with_schedule(schedule_id)
+    result = await update_periodic_task(crud, schedule_id, body)
     return Response(data=result)
 
 
@@ -124,8 +93,8 @@ async def toggle_schedule(
         task_name=task.name,
         enabled=not task.enabled,
     )
-
     result = await crud.get_with_schedule(schedule_id)
+    event_bus.fire_and_forget(ScheduleToggledEvent(schedule_id=str(schedule_id), enabled=not task.enabled))
     return Response(data=result)
 
 
@@ -135,15 +104,7 @@ async def delete_schedule(
     crud: PeriodicTaskCrudDep,
 ) -> Response[bool]:
     """删除定时任务（级联删除调度记录）。"""
-    task = await crud.get(schedule_id, nullable=False)
-
-    # 删除对应的 schedule 记录
-    if task.task_type == TaskType.INTERVAL:
-        await crud.interval_crud.delete(task.schedule_id)
-    elif task.task_type == TaskType.CRONTAB:
-        await crud.crontab_crud.delete(task.schedule_id)
-
-    # 删除 PeriodicTask
-    await crud.delete(schedule_id)
-    logger.info("Task deleted: {task_name}", task_name=task.name)
+    task_info = await crud.get(schedule_id, nullable=False)
+    await delete_periodic_task(crud, schedule_id)
+    event_bus.fire_and_forget(ScheduleDeletedEvent(schedule_id=str(schedule_id), task_name=task_info.name or ""))
     return Response(data=True)

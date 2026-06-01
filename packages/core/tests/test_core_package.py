@@ -19,16 +19,6 @@ class TestCoreImports:
         assert Environment.LOCAL.is_dev is True
         assert Environment.PRODUCTION.is_deployed is True
 
-    def test_import_status_codes(self):
-        from rapidkit_core.status_codes import StatusCode
-
-        assert StatusCode.SUCCESS.code == 0
-
-    def test_import_exceptions(self):
-        from rapidkit_core.exceptions import AppException
-
-        assert issubclass(AppException, Exception)
-
     def test_import_redis_client(self):
         from rapidkit_core.redis_client import AsyncRedisClient
 
@@ -38,23 +28,6 @@ class TestCoreImports:
         from rapidkit_core.log import logger
 
         assert logger is not None
-
-    def test_import_i18n(self):
-        from rapidkit_core.i18n import is_i18n_key, t
-
-        # 默认 translator 返回原始值
-        assert t("hello") == "hello"
-        assert is_i18n_key("common.response.success") is True
-        assert is_i18n_key("no_dots") is False
-
-    def test_set_translator(self):
-        from rapidkit_core.i18n import set_translator, t
-
-        set_translator(lambda s: f"translated:{s}")
-        assert t("hello") == "translated:hello"
-
-        # 恢复默认
-        set_translator(lambda s: s)
 
     def test_import_uuid7(self):
         from rapidkit_core.uuid7 import uuid7

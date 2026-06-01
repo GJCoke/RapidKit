@@ -23,6 +23,8 @@ jobs:
     outputs:
       core_changed: ${{ steps.changes.outputs.core }}
       common_changed: ${{ steps.changes.outputs.common }}
+      framework_changed: ${{ steps.changes.outputs.framework }}
+      security_changed: ${{ steps.changes.outputs.security }}
       backend_changed: ${{ steps.changes.outputs.backend }}
       affected_plugins: ${{ steps.plugins.outputs.matrix }}
       has_plugins: ${{ steps.plugins.outputs.has_plugins }}
@@ -37,6 +39,10 @@ jobs:
               - 'packages/core/**'
             common:
               - 'packages/common/**'
+            framework:
+              - 'packages/framework/**'
+            security:
+              - 'packages/security/**'
             backend:
               - 'apps/backend/src/**'
               - 'apps/backend/alembic/**'
@@ -72,9 +78,11 @@ jobs:
 
           plugins=()
 
-          # 如果 core 或 common 变更，所有插件都需要测试
+          # 如果 core/common/framework/security 变更，所有插件都需要测试
           if [[ "${{ steps.changes.outputs.core }}" == "true" ]] || \
              [[ "${{ steps.changes.outputs.common }}" == "true" ]] || \
+             [[ "${{ steps.changes.outputs.framework }}" == "true" ]] || \
+             [[ "${{ steps.changes.outputs.security }}" == "true" ]] || \
              [[ "${{ steps.changes.outputs.backend }}" == "true" ]]; then
             plugins=("script" "monitoring" "system" "worker" "schedule" "menu" "auth" "user")
           else
@@ -214,6 +222,8 @@ jobs:
     if: >-
       needs.detect-changes.outputs.core_changed == 'true' ||
       needs.detect-changes.outputs.common_changed == 'true' ||
+      needs.detect-changes.outputs.framework_changed == 'true' ||
+      needs.detect-changes.outputs.security_changed == 'true' ||
       needs.detect-changes.outputs.backend_changed == 'true'
     runs-on: ubuntu-latest
     services:
@@ -255,6 +265,12 @@ jobs:
       - name: Run common tests
         run: uv run pytest packages/common/tests/ -v
 
+      - name: Run framework tests
+        run: uv run pytest packages/framework/tests/ -v
+
+      - name: Run security tests
+        run: uv run pytest packages/security/tests/ -v
+
       - name: Run backend tests
         working-directory: apps/backend
         run: uv run pytest tests/ -v
@@ -283,6 +299,8 @@ jobs:
     if: >-
       needs.detect-changes.outputs.core_changed == 'true' ||
       needs.detect-changes.outputs.common_changed == 'true' ||
+      needs.detect-changes.outputs.framework_changed == 'true' ||
+      needs.detect-changes.outputs.security_changed == 'true' ||
       needs.detect-changes.outputs.backend_changed == 'true' ||
       needs.detect-changes.outputs.has_plugins == 'true'
     runs-on: ubuntu-latest

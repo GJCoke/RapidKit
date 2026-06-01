@@ -7,17 +7,17 @@ Date    : 2025-04-18
 
 import asyncio
 
-from plugin_auth.auth.models import User
-from plugin_auth.data_rule.models import DataRule
-from plugin_auth.department.models import Department
-from plugin_auth.role.models import Role
+from plugin_department.models import Department
 from plugin_menu.models import Menu
 from plugin_menu.services import invalidate_menu_cache
+from plugin_permission.field_guard.models import FieldPolicy
+from plugin_permission.models import DataPolicy, Role
 from plugin_system.audit_dict.models import AuditDictionary
-from rapidkit_common.enums import DataScope, Status
+from plugin_user.models import User
+from rapidkit_common.enums import Status
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
-from rapidkit_core.security import hash_password
 from rapidkit_core.uuid7 import uuid7
+from rapidkit_security import hash_password
 from sqlmodel import delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -43,10 +43,14 @@ ALL_BUTTON_PERMISSIONS = [
     "manage_department:add",
     "manage_department:edit",
     "manage_department:delete",
-    # 数据规则
-    "manage_data-rule:add",
-    "manage_data-rule:edit",
-    "manage_data-rule:delete",
+    # 数据策略
+    "manage_data-policy:add",
+    "manage_data-policy:edit",
+    "manage_data-policy:delete",
+    # 字段策略
+    "manage_field-policy:add",
+    "manage_field-policy:edit",
+    "manage_field-policy:delete",
     # 审计字典
     "manage_audit-dict:add",
     "manage_audit-dict:edit",
@@ -80,9 +84,13 @@ GUEST_INTERFACE_PERMISSIONS = [
     "GET:/api/v1/manage/menus/pages",
     # 部门管理 (只读)
     "GET:/api/v1/departments/tree",
-    # 数据规则 (只读)
-    "GET:/api/v1/data-rules",
-    "GET:/api/v1/data-rules/all",
+    # 数据策略 (只读)
+    "GET:/api/v1/data-policies",
+    "GET:/api/v1/data-policies/all",
+    "GET:/api/v1/data-policies/models",
+    # 字段策略 (只读)
+    "GET:/api/v1/field-policies",
+    "GET:/api/v1/field-policies/all",
     # 审计字典 (只读)
     "GET:/api/v1/system/audit-dict",
     # Worker 概览 (只读)
@@ -125,7 +133,8 @@ GUEST_ROUTER_PERMISSIONS = [
     "manage_role",
     "manage_menu",
     "manage_department",
-    "manage_data-rule",
+    "manage_data-policy",
+    "manage_field-policy",
     "manage_audit-dict",
     "socketio",
     "socketio_chat",
@@ -141,36 +150,207 @@ GUEST_ROUTER_PERMISSIONS = [
 ]
 
 
-async def create_data_rules(session: AsyncSession) -> list[DataRule]:
-    """初始化示例数据规则。"""
-    result = await session.exec(select(DataRule).limit(1))
+async def create_data_policies(session: AsyncSession) -> list[DataPolicy]:
+    """初始化预置数据策略。"""
+    result = await session.exec(select(DataPolicy).limit(1))
     if result.first():
-        return list((await session.exec(select(DataRule))).all())
+        return list((await session.exec(select(DataPolicy))).all())
 
-    rules = [
-        DataRule(
+    policies = [
+        DataPolicy(
             id=uuid7(),
-            name="仅查看自己创建的用户",
-            model_name="auth_users",
-            field="created_by",
-            operator="eq",
-            value="${user_id}",
-            logic="AND",
+            name="仅自己及自己创建",
+            description="用户只能看到自己的记录和自己创建的记录",
+            target_model="user_users",
+            rule={
+                "type": "group",
+                "logic": "OR",
+                "conditions": [
+                    {"type": "condition", "field": "id", "operator": "eq", "value": "${user.id}"},
+                    {"type": "condition", "field": "created_by", "operator": "eq", "value": "${user.id}"},
+                ],
+            },
+        ),
+        DataPolicy(
+            id=uuid7(),
+            name="本部门数据",
+            description="用户只能看到本部门的数据",
+            target_model="user_users",
+            rule={
+                "type": "group",
+                "logic": "AND",
+                "conditions": [
+                    {"type": "condition", "field": "department_id", "operator": "eq", "value": "${user.dept_id}"},
+                ],
+            },
+        ),
+        DataPolicy(
+            id=uuid7(),
+            name="仅本人执行记录",
+            description="用户只能看到自己执行的脚本记录",
+            target_model="script_executions",
+            rule={
+                "type": "group",
+                "logic": "AND",
+                "conditions": [
+                    {"type": "condition", "field": "executor_id", "operator": "eq", "value": "${user.id}"},
+                ],
+            },
+        ),
+        DataPolicy(
+            id=uuid7(),
+            name="本部门活动日志",
+            description="用户只能看到本部门成员产生的操作日志",
+            target_model="system_activity_logs",
+            rule={
+                "type": "group",
+                "logic": "AND",
+                "conditions": [
+                    {
+                        "type": "subquery",
+                        "field": "user_id",
+                        "operator": "in",
+                        "model": "user_users",
+                        "target_field": "id",
+                        "filter": {
+                            "type": "group",
+                            "logic": "AND",
+                            "conditions": [
+                                {
+                                    "type": "condition",
+                                    "field": "department_id",
+                                    "operator": "eq",
+                                    "value": "${user.dept_id}",
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        ),
+        DataPolicy(
+            id=uuid7(),
+            name="本部门及本人创建的脚本",
+            description="用户只能看到本部门成员创建的脚本或自己创建的脚本",
+            target_model="script_scripts",
+            rule={
+                "type": "group",
+                "logic": "OR",
+                "conditions": [
+                    {"type": "condition", "field": "created_by", "operator": "eq", "value": "${user.id}"},
+                    {
+                        "type": "group",
+                        "logic": "AND",
+                        "conditions": [
+                            {"type": "condition", "field": "created_by", "operator": "is_not_null"},
+                            {
+                                "type": "subquery",
+                                "field": "created_by",
+                                "operator": "in",
+                                "model": "user_users",
+                                "target_field": "id",
+                                "filter": {
+                                    "type": "group",
+                                    "logic": "AND",
+                                    "conditions": [
+                                        {
+                                            "type": "condition",
+                                            "field": "department_id",
+                                            "operator": "eq",
+                                            "value": "${user.dept_id}",
+                                        },
+                                    ],
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+        ),
+        DataPolicy(
+            id=uuid7(),
+            name="仅活跃角色",
+            description="只能看到启用状态的角色",
+            target_model="permission_roles",
+            rule={
+                "type": "group",
+                "logic": "AND",
+                "conditions": [
+                    {"type": "condition", "field": "status", "operator": "ne", "value": "2"},
+                ],
+            },
         ),
     ]
-    session.add_all(rules)
+    session.add_all(policies)
     await session.flush()
-    return rules
+    return policies
 
 
-async def create_roles_and_users(session: AsyncSession, data_rules: list[DataRule]) -> None:
+async def create_field_policies(session: AsyncSession) -> list[FieldPolicy]:
+    """初始化预置字段策略。"""
+    result = await session.exec(select(FieldPolicy).limit(1))
+    if result.first():
+        return list((await session.exec(select(FieldPolicy))).all())
+
+    policies = [
+        FieldPolicy(
+            id=uuid7(),
+            name="用户手机号脱敏",
+            description="非管理员查看用户列表时，手机号显示为脱敏格式",
+            target_model="user_users",
+            fields=["phone"],
+            actions=["read"],
+            effect="mask",
+        ),
+        FieldPolicy(
+            id=uuid7(),
+            name="用户邮箱脱敏",
+            description="非管理员查看用户列表时，邮箱显示为脱敏格式",
+            target_model="user_users",
+            fields=["email"],
+            actions=["read"],
+            effect="mask",
+        ),
+        FieldPolicy(
+            id=uuid7(),
+            name="禁止修改用户角色",
+            description="普通用户不能修改用户的角色字段",
+            target_model="user_users",
+            fields=["roles"],
+            actions=["write"],
+            effect="deny",
+        ),
+        FieldPolicy(
+            id=uuid7(),
+            name="隐藏密码哈希",
+            description="响应中移除密码字段",
+            target_model="user_users",
+            fields=["password"],
+            actions=["read"],
+            effect="strip",
+        ),
+        FieldPolicy(
+            id=uuid7(),
+            name="禁止修改管理员标记",
+            description="非管理员不能修改 is_admin 字段",
+            target_model="user_users",
+            fields=["is_admin"],
+            actions=["write"],
+            effect="deny",
+        ),
+    ]
+    session.add_all(policies)
+    await session.flush()
+    return policies
+
+
+async def create_roles_and_users(
+    session: AsyncSession, data_policies: list[DataPolicy], field_policies: list[FieldPolicy]
+) -> None:
     """初始化角色和用户。"""
     result = await session.exec(select(User).limit(1))
     if result.first():
         return
-
-    # 数据规则 ID 列表（GUEST 角色绑定）
-    rule_ids = [r.id for r in data_rules]
 
     admin_role = Role.model_validate(
         {
@@ -179,20 +359,19 @@ async def create_roles_and_users(session: AsyncSession, data_rules: list[DataRul
             "code": "ADMIN",
             "interface_permissions": [],
             "button_permissions": ALL_BUTTON_PERMISSIONS,
-            "data_scope": DataScope.ALL,
         }
     )
 
     guest_role = Role.model_validate(
         {
             "name": "guest",
-            "description": "Guest (data scope demo)",
+            "description": "Guest (data policy demo)",
             "code": "GUEST",
             "router_permissions": GUEST_ROUTER_PERMISSIONS,
             "interface_permissions": GUEST_INTERFACE_PERMISSIONS,
             "button_permissions": [],
-            "data_scope": DataScope.CUSTOM_RULE,
-            "data_rule_ids": rule_ids,
+            "data_policy_ids": [p.id for p in data_policies[:1]],
+            "field_policy_ids": [p.id for p in field_policies[:3]],
         }
     )
 
@@ -207,6 +386,9 @@ async def create_roles_and_users(session: AsyncSession, data_rules: list[DataRul
             "password": PASSWORD,
             "is_admin": True,
             "roles": ["ADMIN"],
+            "phone": "13800000001",
+            "nickname": "Super Admin",
+            "gender": "male",
         },
         {
             "name": "guest",
@@ -215,6 +397,9 @@ async def create_roles_and_users(session: AsyncSession, data_rules: list[DataRul
             "password": PASSWORD,
             "is_admin": False,
             "roles": ["GUEST"],
+            "phone": "13800000002",
+            "nickname": "Guest User",
+            "gender": "male",
         },
         {
             "name": "张三",
@@ -223,6 +408,9 @@ async def create_roles_and_users(session: AsyncSession, data_rules: list[DataRul
             "password": PASSWORD,
             "is_admin": False,
             "roles": ["GUEST"],
+            "phone": "13800000003",
+            "nickname": "小张",
+            "gender": "male",
         },
         {
             "name": "李四",
@@ -231,6 +419,9 @@ async def create_roles_and_users(session: AsyncSession, data_rules: list[DataRul
             "password": PASSWORD,
             "is_admin": False,
             "roles": ["GUEST"],
+            "phone": "13800000004",
+            "nickname": "小李",
+            "gender": "female",
         },
     ]
 
@@ -287,7 +478,8 @@ async def create_audit_dictionary(session: AsyncSession) -> None:
         AuditDictionary(key="roles", category="resource", label_zh="角色", label_en="Role"),
         AuditDictionary(key="menus", category="resource", label_zh="菜单", label_en="Menu"),
         AuditDictionary(key="departments", category="resource", label_zh="部门", label_en="Department"),
-        AuditDictionary(key="data-rules", category="resource", label_zh="数据规则", label_en="Data Rule"),
+        AuditDictionary(key="data-policies", category="resource", label_zh="数据策略", label_en="Data Policy"),
+        AuditDictionary(key="field-policies", category="resource", label_zh="字段策略", label_en="Field Policy"),
         AuditDictionary(key="scripts", category="resource", label_zh="脚本", label_en="Script"),
         AuditDictionary(key="schedules", category="resource", label_zh="计划任务", label_en="Schedule"),
         AuditDictionary(key="workers", category="resource", label_zh="Worker", label_en="Worker"),
@@ -327,7 +519,8 @@ async def clean_db(session: AsyncSession) -> None:
     await session.exec(delete(Role))
     await session.exec(delete(User))
     await session.exec(delete(Department))
-    await session.exec(delete(DataRule))
+    await session.exec(delete(DataPolicy))
+    await session.exec(delete(FieldPolicy))
     await session.exec(delete(AuditDictionary))
     await session.commit()
 
@@ -336,9 +529,10 @@ async def init_db(session: AsyncSession) -> None:
     # 取消注释以下行可清理数据库后重新初始化
     await clean_db(session)
     await create_departments(session)
-    data_rules = await create_data_rules(session)
+    data_policies = await create_data_policies(session)
+    field_policies = await create_field_policies(session)
     await session.commit()
-    await create_roles_and_users(session, data_rules)
+    await create_roles_and_users(session, data_policies, field_policies)
     await create_menus(session)
     await create_audit_dictionary(session)
 
@@ -348,6 +542,10 @@ async def flush_redis_cache() -> None:
     RedisManager.connect()
     redis = RedisManager.client()
     await invalidate_menu_cache(redis)
+    for pattern in ("auth:permission:*", "auth:policy:*"):
+        keys = await redis.keys(pattern)
+        if keys:
+            await redis.delete(*keys)
     await RedisManager.disconnect()
 
 

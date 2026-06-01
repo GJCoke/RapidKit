@@ -1,7 +1,7 @@
 import json
 
-from rapidkit_core.exceptions import AppException
-from rapidkit_core.status_codes import StatusCode
+from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.status_codes import StatusCode
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response

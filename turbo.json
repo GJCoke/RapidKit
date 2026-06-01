@@ -14,14 +14,8 @@
     "watch": {
       "cache": false
     },
-    "typecheck": {
-      "dependsOn": ["^typecheck"]
-    },
-    "format": {
-      "dependsOn": ["^format"]
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
-    }
+    "typecheck": {},
+    "format": {},
+    "lint": {}
   }
 }

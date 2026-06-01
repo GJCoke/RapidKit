@@ -1,23 +1,23 @@
 """RapidKit API monitoring plugin."""
 
 import asyncio
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from rapidkit_core.database import RedisManager
-from rapidkit_core.leader_election import LeaderElection
-from rapidkit_core.plugin import PluginManifest
-
-from plugin_monitoring.models import ApiMetricsHourly
+from celery.schedules import crontab
+from rapidkit_framework.plugin import PluginManifest
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
 
 _tasks: list[asyncio.Task] = []
-_leader: LeaderElection | None = None
+_leader: Any = None
 
 
 async def _startup(app: FastAPI) -> None:
     global _leader  # noqa: PLW0603
+    from rapidkit_core.database import RedisManager
+    from rapidkit_core.leader_election import LeaderElection
+
     from plugin_monitoring.push import push_api_stats_loop
 
     redis = RedisManager.client()
@@ -39,6 +39,7 @@ async def _shutdown(app: FastAPI) -> None:
 def register() -> PluginManifest:
     """返回 monitoring 插件的 manifest。"""
     from plugin_monitoring.api import router
+    from plugin_monitoring.models import ApiMetricsHourly
 
     return PluginManifest(
         name="monitoring",
@@ -47,4 +48,15 @@ def register() -> PluginManifest:
         models=[ApiMetricsHourly],
         on_startup=[_startup],
         on_shutdown=[_shutdown],
+        task_modules=["plugin_monitoring.tasks"],
+        beat_schedule={
+            "aggregate-api-metrics": {
+                "task": "aggregate_api_metrics",
+                "schedule": 60.0,
+            },
+            "cleanup-old-api-metrics": {
+                "task": "cleanup_old_api_metrics",
+                "schedule": crontab(hour=3, minute=0),
+            },
+        },
     )

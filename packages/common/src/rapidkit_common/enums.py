@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum
+from enum import Enum
 
 
 class MenuIconType(str, Enum):
@@ -28,14 +28,3 @@ class TaskStatus(str, Enum):
     FAILURE = "4"
     RETRY = "5"
     REVOKED = "6"
-
-
-class DataScope(IntEnum):
-    """数据范围枚举。"""
-
-    ALL = 1  # 全部数据
-    SELF = 2  # 仅自己创建的
-    DEPT = 3  # 本部门
-    DEPT_AND_CHILDREN = 4  # 本部门及下级
-    CUSTOM_DEPT = 5  # 自定义部门列表
-    CUSTOM_RULE = 6  # 自定义规则

@@ -49,12 +49,26 @@ declare global {
         name: string
         /** user email */
         email: string
+        /** phone number */
+        phone?: string | null
+        /** avatar URL */
+        avatar?: string | null
+        /** nickname */
+        nickname?: string | null
+        /** gender: male/female/other */
+        gender?: string | null
         /** user role code collection */
         roles: string[]
         /** is admin */
         isAdmin: boolean
         /** department id */
         departmentId?: string | null
+        /** last login time */
+        lastLoginTime?: string | null
+        /** last login IP */
+        lastLoginIp?: string | null
+        /** remark */
+        remark?: string | null
       }>
 
       /** user search params */

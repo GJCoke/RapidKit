@@ -9,8 +9,8 @@ from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_serializer
-from rapidkit_core.i18n import is_i18n_key, t
-from rapidkit_core.status_codes import StatusCode
+from rapidkit_framework.i18n import is_i18n_key, t
+from rapidkit_framework.status_codes import StatusCode
 
 from .base import BaseModel
 from .types import LocalDatetime

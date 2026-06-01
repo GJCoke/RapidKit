@@ -1,5 +1,0 @@
-{
-  "*.{ts,tsx,js,jsx,vue}": ["oxlint --fix"],
-  "*.{js,ts,mjs,cjs,json,jsx,tsx,css,less,scss,vue,html,md}": ["oxfmt"],
-  "*.py": ["uv run ruff format", "uv run ruff check --fix", "bash -c 'uv run ty check'"]
-}

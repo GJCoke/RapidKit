@@ -24,7 +24,6 @@ from plugin_menu.route_services import get_constant_routes, get_user_routes
 from plugin_menu.schemas import MenuListResponse
 
 if TYPE_CHECKING:
-    from plugin_auth.role.crud import RoleCRUD
     from rapidkit_common.auth import UserProtocol
 
 from rapidkit_core.redis_client import AsyncRedisClient
@@ -114,7 +113,6 @@ async def get_cached_user_routes(
     user: "UserProtocol",
     redis: AsyncRedisClient,
     session: AsyncSession,
-    role_crud: "RoleCRUD",
 ) -> UserRouteResponse:
     """获取用户授权路由（按角色组合 cache-aside）。"""
     roles_key = hashlib.md5(":".join(sorted(user.roles or [])).encode()).hexdigest()
@@ -123,7 +121,7 @@ async def get_cached_user_routes(
     if cached:
         return UserRouteResponse.model_validate_json(cached)
 
-    result = await get_user_routes(user, session, role_crud)
+    result = await get_user_routes(user, session)
 
     await redis.set(key, result.model_dump_json(), ex=_CACHE_TTL)
     return result

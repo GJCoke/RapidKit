@@ -5,14 +5,13 @@ Author : Coke
 Date   : 2026-04-14
 """
 
-from rapidkit_core.plugin import PluginManifest
-
-from plugin_script.models import Script, ScriptExecution
+from rapidkit_framework.plugin import PluginManifest
 
 
 def register() -> PluginManifest:
     """注册 Script 插件。"""
     from plugin_script.api import router
+    from plugin_script.models import Script, ScriptExecution
 
     return PluginManifest(
         name="script",

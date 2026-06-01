@@ -12,8 +12,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request
 from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.schemas.response import PaginatedResponse, Response
-from rapidkit_core.exceptions import AppException
-from rapidkit_core.status_codes import StatusCode
+from rapidkit_framework.exceptions import AppException
 
 from plugin_worker.deps import TaskResultCrudDep, WorkerCrudDep
 from plugin_worker.schemas import (
@@ -48,6 +47,7 @@ from plugin_worker.services import (
     shutdown_worker,
     trigger_task,
 )
+from plugin_worker.status_codes import WorkerStatusCode
 
 router = APIRouter(
     prefix="/workers",
@@ -75,7 +75,7 @@ async def get_all_workers(crud: WorkerCrudDep) -> Response[list[WorkerResponse]]
 async def get_worker(worker_id: UUID, crud: WorkerCrudDep) -> Response[WorkerResponse]:
     worker = await crud.get(worker_id)
     if not worker:
-        raise AppException(StatusCode.WORKER_NOT_FOUND)
+        raise AppException(WorkerStatusCode.WORKER_NOT_FOUND)
     return Response(data=WorkerResponse.model_validate(worker))
 
 
@@ -235,7 +235,7 @@ async def get_registered_task_list(request: Request) -> Response[RegisteredTaskR
 async def get_task(task_id: str, crud: TaskResultCrudDep) -> Response[TaskResponse]:
     task = await crud.get_by_task_id(task_id)
     if not task:
-        raise AppException(StatusCode.TASK_NOT_FOUND)
+        raise AppException(WorkerStatusCode.TASK_NOT_FOUND)
     return Response(data=TaskResponse.model_validate(task))
 
 

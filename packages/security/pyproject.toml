@@ -1,0 +1,18 @@
+[project]
+name = "rapidkit-security"
+version = "0.1.0"
+description = "RapidKit security utilities: JWT, password hashing, RSA encryption"
+requires-python = ">=3.14"
+dependencies = [
+    "authlib>=1.6.9,<2.0",
+    "bcrypt>=5.0.0,<6.0",
+    "cryptography>=46.0.6,<47.0",
+    "pydantic>=2.12.4,<3.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rapidkit_security"]

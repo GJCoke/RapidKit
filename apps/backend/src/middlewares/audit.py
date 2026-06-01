@@ -13,11 +13,11 @@ import re
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from rapidkit_core.auth_config import auth_settings
+from rapidkit_common.protocols.auth import TokenDecoder
 from rapidkit_core.config import settings
-from rapidkit_core.context import ctx
 from rapidkit_core.log import logger
-from rapidkit_core.security import decode_token
+from rapidkit_framework.context import ctx
+from rapidkit_framework.services import get_service_optional
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
@@ -62,14 +62,19 @@ def _truncate_body(body_dict: dict) -> dict | None:
         return None
 
 
-def _extract_user_from_token(request: Request) -> tuple[UUID | None, str | None]:
+async def _extract_user_from_token(request: Request) -> tuple[UUID | None, str | None]:
     """从 Authorization header 中解码 JWT 获取用户信息。"""
     auth_header = request.headers.get("authorization", "")
     if not auth_header.startswith("Bearer "):
         return None, None
+    decoder = get_service_optional(TokenDecoder)
+    if decoder is None:
+        return None, None
     try:
-        jwt_data = decode_token(auth_header[7:], auth_settings.ACCESS_TOKEN_KEY)
-        return jwt_data.sub, jwt_data.name
+        user_id = await decoder.decode_user_id(auth_header[7:])
+        if user_id is None:
+            return None, None
+        return UUID(user_id) if isinstance(user_id, str) else user_id, None
     except Exception:
         return None, None
 
@@ -183,7 +188,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
         body_dict = _parse_request_body(raw_body)
 
         # 提取用户信息
-        user_id, username = _extract_user_from_token(request)
+        user_id, username = await _extract_user_from_token(request)
 
         # 获取上下文信息（由 StateMiddleware 设置）
         source_ip: str | None = None

@@ -8,6 +8,7 @@ Date   : 2025-03-11
 """
 
 import warnings
+from typing import Any, cast
 
 from pydantic import Field, PostgresDsn, RedisDsn, Secret, field_validator
 from pydantic_settings import BaseSettings as _BaseSettings
@@ -16,6 +17,7 @@ from slowapi.extension import StrOrCallableStr
 
 from rapidkit_core.constants import LANGUAGE_TYPE, LOG_LEVELS
 from rapidkit_core.environment import Environment
+from rapidkit_core.proxy import LazyProxy
 
 
 class ConfigError(Exception):
@@ -93,6 +95,7 @@ class CeleryConfigMixin(RedisConfigMixin):
         True,
         description="是否启用 Celery 任务队列管理（事件消费、Worker 监控、管理 API）",
     )
+    TASK_RESULT_RETENTION_DAYS: int = 30
 
     @property
     def CELERY_REDIS_URL(self) -> RedisDsn:
@@ -123,7 +126,13 @@ class LogConfigMixin(BaseSettings):
     LOG_ACCESS_FILENAME: str = "access.log"
     LOG_ERROR_FILENAME: str = "error.log"
 
-    LOG_FORMAT: str = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</> | <lvl>{level: <8}</> | <cyan>{request_id}</> | <blue>{extra[plugin]: <12}</> | <lvl>{message}</>"
+    LOG_FORMAT: str = (
+        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</>"
+        " | <lvl>{level: <8}</>"
+        " | <cyan>{request_id}</>"
+        " | <blue>{extra[plugin]: <12}</>"
+        " | <lvl>{message}</>"
+    )
 
     SLOW_REQUEST_THRESHOLD_MS: int = Field(3000, description="慢请求告警阈值（毫秒）")
 
@@ -219,4 +228,20 @@ class Config(
     DEFAULT_LANGUAGE: LANGUAGE_TYPE = "zh-CN"
 
 
-settings = Config()  # type: ignore
+_settings_proxy = LazyProxy(Config)
+settings: Config = cast(Config, cast(Any, _settings_proxy))
+
+
+def get_settings() -> Config:
+    """获取 settings 单例（首次调用时从环境变量初始化）。"""
+    return _settings_proxy.get_instance()
+
+
+def override_settings(instance: object) -> None:
+    """替换 settings 实例（测试/运行时切换场景）。"""
+    _settings_proxy.set_instance(instance)
+
+
+def reset_settings() -> None:
+    """重置为默认工厂，下次访问重新创建 Config()（仅测试用）。"""
+    _settings_proxy.reset(Config)

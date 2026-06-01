@@ -1,4 +1,0 @@
-#!/usr/bin/env sh
-
-# Safety cleanup: remove backup patch after successful commit
-rm -f .git/staged-backup.patch

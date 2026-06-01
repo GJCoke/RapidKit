@@ -232,39 +232,66 @@ def build_menus() -> list[Menu]:
         ],
     )
 
-    # 2.5 数据规则
-    manage_data_rule = Menu(
+    # 2.5 数据策略
+    manage_data_policy = Menu(
         id=uuid8(),
         parent_id=manage_id,
-        menu_name="数据规则",
+        menu_name="数据策略",
         menu_type=MenuType.MENU,
         order=5,
-        route_name="manage_data-rule",
-        route_path="/manage/data-rule",
-        component="view.manage_data-rule",
+        route_name="manage_data-policy",
+        route_path="/manage/data-policy",
+        component="view.manage_data-policy",
         icon="ic:outline-rule",
-        i18n_key="route.manage_data-rule",
+        i18n_key="route.manage_data-policy",
         buttons=[
-            Button(code="manage_data-rule:add", desc="新增数据规则").model_dump(),
-            Button(code="manage_data-rule:edit", desc="编辑数据规则").model_dump(),
-            Button(code="manage_data-rule:delete", desc="删除数据规则").model_dump(),
+            Button(code="manage_data-policy:add", desc="新增数据策略").model_dump(),
+            Button(code="manage_data-policy:edit", desc="编辑数据策略").model_dump(),
+            Button(code="manage_data-policy:delete", desc="删除数据策略").model_dump(),
         ],
         interfaces=[
-            "GET:/api/v1/data-rules",
-            "GET:/api/v1/data-rules/all",
-            "POST:/api/v1/data-rules",
-            "PUT:/api/v1/data-rules/{rule_id}",
-            "DELETE:/api/v1/data-rules/{rule_id}",
+            "GET:/api/v1/data-policies",
+            "GET:/api/v1/data-policies/all",
+            "GET:/api/v1/data-policies/models",
+            "POST:/api/v1/data-policies",
+            "PUT:/api/v1/data-policies/{policy_id}",
+            "DELETE:/api/v1/data-policies/{policy_id}",
         ],
     )
 
-    # 2.6 审计字典
+    # 2.6 字段策略
+    manage_field_policy = Menu(
+        id=uuid8(),
+        parent_id=manage_id,
+        menu_name="字段策略",
+        menu_type=MenuType.MENU,
+        order=6,
+        route_name="manage_field-policy",
+        route_path="/manage/field-policy",
+        component="view.manage_field-policy",
+        icon="ic:outline-shield",
+        i18n_key="route.manage_field-policy",
+        buttons=[
+            Button(code="manage_field-policy:add", desc="新增字段策略").model_dump(),
+            Button(code="manage_field-policy:edit", desc="编辑字段策略").model_dump(),
+            Button(code="manage_field-policy:delete", desc="删除字段策略").model_dump(),
+        ],
+        interfaces=[
+            "GET:/api/v1/field-policies",
+            "GET:/api/v1/field-policies/all",
+            "POST:/api/v1/field-policies",
+            "PUT:/api/v1/field-policies/{policy_id}",
+            "DELETE:/api/v1/field-policies/{policy_id}",
+        ],
+    )
+
+    # 2.7 审计字典
     manage_audit_dict = Menu(
         id=uuid8(),
         parent_id=manage_id,
         menu_name="审计字典",
         menu_type=MenuType.MENU,
-        order=6,
+        order=7,
         route_name="manage_audit-dict",
         route_path="/manage/audit-dict",
         component="view.manage_audit-dict",
@@ -548,7 +575,8 @@ def build_menus() -> list[Menu]:
         manage_role,
         manage_menu,
         manage_department,
-        manage_data_rule,
+        manage_data_policy,
+        manage_field_policy,
         manage_audit_dict,
         socketio,
         socketio_chat,

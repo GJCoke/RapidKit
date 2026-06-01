@@ -176,36 +176,37 @@ class UserPermissionCache(BaseModel):
 登录流程（`user_login` → `crud.get_by_username()`）不经过此缓存，始终从数据库读取最新数据。
 :::
 
-## 数据级权限（DataScope）
+## 数据级权限（DataPolicy）
 
-在接口权限（控制"能否访问"）之上，系统还提供**数据级权限**（控制"能看到哪些数据"）。通过 `DataScope` 枚举和 `DataPermissionFilter` 依赖实现行级过滤。
+在接口权限（控制"能否访问"）之上，系统还提供**数据级权限**（控制"能看到哪些数据"）。通过 `DataPolicy` 模型和 `DataPermissionFilter` 依赖实现行级过滤。
 
-### DataScope 枚举
+### DataPolicy 模型
+
+数据策略以 JSON 规则树存储条件，支持嵌套分组（AND/OR）、子查询和模板变量：
 
 ```python
-class DataScope(IntEnum):
-    ALL = 1               # 全部数据
-    SELF = 2              # 仅自己创建的
-    DEPT = 3              # 本部门
-    DEPT_AND_CHILDREN = 4 # 本部门及下级
-    CUSTOM_DEPT = 5       # 自定义部门列表
-    CUSTOM_RULE = 6       # 自定义规则
+class DataPolicy(SQLModel, table=True):
+    __tablename__ = "auth_data_policies"
+
+    name: str           # 策略名称
+    target_model: str   # 目标模型 tablename (如 auth_users)
+    description: str    # 策略描述
+    rule: dict          # 规则树 JSON（条件组/条件/子查询）
+    status: Status      # 启用/禁用
 ```
 
-角色模型新增字段：
+角色通过 `data_policy_ids` 字段关联数据策略：
 
-| 字段              | 类型         | 说明                             |
-| ----------------- | ------------ | -------------------------------- |
-| `data_scope`      | `int`        | 数据范围（DataScope 枚举值）     |
-| `custom_dept_ids` | `list[UUID]` | CUSTOM_DEPT 时的自定义部门列表   |
-| `data_rule_ids`   | `list[UUID]` | CUSTOM_RULE 时的数据规则 ID 列表 |
+| 字段              | 类型         | 说明                   |
+| ----------------- | ------------ | ---------------------- |
+| `data_policy_ids` | `list[UUID]` | 关联的数据策略 ID 列表 |
 
 ### DataPermissionFilter 依赖
 
 `DataPermissionFilter` 是一个可复用的 FastAPI 依赖类，传入目标模型后自动生成 SQLAlchemy WHERE 条件：
 
 ```python
-from plugin_auth.data_rule.deps import DataPermissionFilter
+from plugin_auth.data_policy.deps import DataPermissionFilter
 
 @router.get("")
 async def get_users(
@@ -220,30 +221,19 @@ async def get_users(
 
 ### 多角色聚合策略
 
-当用户拥有多个角色时，数据范围取最宽（数值最小）：
-
-- 自定义部门列表取并集
-- 数据规则 ID 取并集
+当用户拥有多个角色时，数据策略 ID 取并集，多策略以 OR 合并（满足任一策略即可见）。
 
 聚合结果缓存在 `UserPermissionCache` 中，与接口权限共享同一 Redis key。
 
-### DataRule 模型
+### 规则树结构
 
-自定义数据规则存储在 `auth_data_rules` 表中，支持动态条件构建：
+规则树支持三种节点类型：
 
-```python
-class DataRule(SQLModel, table=True):
-    __tablename__ = "auth_data_rules"
+- **group**：条件组，包含 `logic`（AND/OR）和 `conditions` 子节点列表
+- **condition**：单条件，包含 `field`、`operator`、`value`（支持模板变量如 `${user.id}`）
+- **subquery**：子查询条件，引用其他模型进行 IN/NOT IN 过滤
 
-    name: str          # 规则名称
-    model_name: str    # 目标表名
-    field: str         # 过滤字段名
-    operator: str      # 操作符：eq/ne/gt/ge/lt/le/in/not_in
-    value: str         # 值，支持模板变量 ${user_id} ${dept_id}
-    logic: str         # 逻辑：AND/OR
-```
-
-模板变量在运行时替换为当前用户的实际值。
+模板变量在运行时替换为当前用户的实际值（`${user.id}`、`${user.dept_id}`、`${now}` 等）。
 
 ## 部门管理
 

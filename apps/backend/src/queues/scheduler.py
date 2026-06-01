@@ -7,7 +7,7 @@ Date    : 2025-04-10
 
 import asyncio
 from abc import abstractmethod
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any, Coroutine, Sequence
 
 from celery.beat import ScheduleEntry as _ScheduleEntry
@@ -16,6 +16,7 @@ from kombu import Producer
 from plugin_schedule.models import CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
 from plugin_schedule.schedule_types import TaskType
 from rapidkit_core.log import logger
+from rapidkit_core.timezone import timezone
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -65,7 +66,7 @@ class Scheduler(_Scheduler):
         )
         self.refresh_interval = refresh_interval or self.app.conf.get("refresh_interval")
         logger.info("Synchronize database tasks every {interval} seconds.", interval=self.refresh_interval)
-        self.last_updated = datetime.now(UTC)
+        self.last_updated = timezone.now()
 
     @abstractmethod
     def get_database_schedule(self) -> dict[str, ScheduleEntry] | Coroutine[Any, Any, dict[str, ScheduleEntry]]:
@@ -140,7 +141,7 @@ class Scheduler(_Scheduler):
             **kwargs: 传递给父类 tick 的关键字参数。
         """
 
-        now = datetime.now(UTC)
+        now = timezone.now()
         # TODO: apscheduler ?
         if self.refresh_interval and (now - self.last_updated) > timedelta(seconds=self.refresh_interval):
             self.setup_schedule()

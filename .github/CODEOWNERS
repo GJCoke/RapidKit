@@ -4,6 +4,8 @@
 # 基础设施
 packages/core/                          @rapidkit/infra-team
 packages/common/                        @rapidkit/infra-team
+packages/framework/                     @rapidkit/infra-team
+packages/security/                      @rapidkit/infra-team
 apps/backend/src/                       @rapidkit/infra-team
 apps/backend/alembic/                   @rapidkit/infra-team
 

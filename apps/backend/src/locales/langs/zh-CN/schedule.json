@@ -1,0 +1,8 @@
+{
+  "error": {
+    "intervalDataRequired": "间隔类型任务必须提供 interval 配置",
+    "crontabDataRequired": "Crontab 类型任务必须提供 crontab 配置",
+    "unsupportedTaskType": "不支持的任务类型",
+    "taskNotFound": "定时任务不存在"
+  }
+}

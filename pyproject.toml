@@ -8,14 +8,19 @@ dependencies = [
     "rapidkit-backend",
     "rapidkit-core",
     "rapidkit-common",
+    "rapidkit-framework",
+    "rapidkit-policy-engine",
     "rapidkit-plugin-script",
     "rapidkit-plugin-monitoring",
     "rapidkit-plugin-system",
     "rapidkit-plugin-worker",
     "rapidkit-plugin-schedule",
     "rapidkit-plugin-menu",
+    "rapidkit-plugin-department",
+    "rapidkit-plugin-permission",
     "rapidkit-plugin-auth",
     "rapidkit-plugin-user",
+    "rapidkit-security",
 ]
 
 [dependency-groups]
@@ -31,14 +36,19 @@ dev = [
 rapidkit-backend = { workspace = true }
 rapidkit-core = { workspace = true }
 rapidkit-common = { workspace = true }
+rapidkit-framework = { workspace = true }
+rapidkit-policy-engine = { workspace = true }
 rapidkit-plugin-script = { workspace = true }
 rapidkit-plugin-monitoring = { workspace = true }
 rapidkit-plugin-system = { workspace = true }
 rapidkit-plugin-worker = { workspace = true }
 rapidkit-plugin-schedule = { workspace = true }
 rapidkit-plugin-menu = { workspace = true }
+rapidkit-plugin-department = { workspace = true }
+rapidkit-plugin-permission = { workspace = true }
 rapidkit-plugin-auth = { workspace = true }
 rapidkit-plugin-user = { workspace = true }
+rapidkit-security = { workspace = true }
 
 [tool.uv.workspace]
 members = [
@@ -46,6 +56,9 @@ members = [
     "apps/backend/plugins/*",
     "packages/core",
     "packages/common",
+    "packages/framework",
+    "packages/policy-engine",
+    "packages/security",
 ]
 
 [tool.ty.src]
@@ -105,7 +118,6 @@ select = [
     "W",
     "I001",
 ]
-ignore = ["E501"]
 per-file-ignores = { }
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 

@@ -1,0 +1,12 @@
+{
+  "error": {
+    "taskTriggerFailed": "任务触发失败",
+    "taskRevokeFailed": "任务撤销失败",
+    "taskNotRegistered": "任务未注册",
+    "workerControlFailed": "Worker 控制指令执行失败",
+    "workerOffline": "Worker 当前离线，无法执行操作",
+    "taskRetryNotAllowed": "仅失败或被撤销的任务可以重试",
+    "workerNotFound": "Worker 不存在",
+    "taskNotFound": "任务不存在"
+  }
+}

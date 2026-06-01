@@ -2,7 +2,7 @@
 用户管理 API 接口。
 
 Author : Coke
-Date   : 2026-04-02
+Date   : 2026-05-11
 """
 
 from datetime import date
@@ -10,38 +10,40 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from plugin_auth.auth.deps import UserDBDep
-from plugin_auth.auth.models import User
-from plugin_auth.auth.services import decrypt_password
-from plugin_auth.data_rule.deps import DataPermissionFilter
-from plugin_auth.role.deps import VerifyPermissionDep
-from plugin_system.schemas import UserActivityTrend, UserStatsSummary
-from rapidkit_common.auth import verify_user_permission
-from rapidkit_common.deps import RedisDep
+from rapidkit_common.auth import UserDBDep, VerifyPermissionDep, verify_user_permission
+from rapidkit_common.field_permission import FieldPermissionFilter, FieldRestrictions, serialize_with_restrictions
+from rapidkit_common.deps import RedisDep, SessionDep
+from rapidkit_common.events import UserCreatedEvent, UserDeletedEvent, UserPasswordChangedEvent, UserRolesChangedEvent
 from rapidkit_common.schemas.response import PaginatedResponse, Response
-from rapidkit_core.exceptions import AppException
+from rapidkit_common.transaction import after_commit
 from rapidkit_core.log import get_plugin_logger
-from rapidkit_core.security import check_password
-from rapidkit_core.status_codes import StatusCode
-from sqlalchemy import ColumnElement
+from rapidkit_framework.events import event_bus
+from rapidkit_framework.exceptions import AppException
+from rapidkit_security import check_password
+from sqlmodel import col
 
 from plugin_user.deps import UserManageCrudDep
+from plugin_user.models import User
 from plugin_user.schemas import (
     ChangePasswordBody,
+    UserActivityTrend,
     UserManageBatchBody,
     UserManageCreate,
     UserManageOptionResponse,
     UserManagePageQuery,
     UserManageResponse,
     UserManageUpdate,
+    UserStatsSummary,
 )
 from plugin_user.services import (
+    decrypt_user_password,
     filter_user,
     invalidate_user_cache,
     invalidate_user_permission_cache,
     invalidate_user_session,
     process_password,
 )
+from plugin_user.status_codes import UserStatusCode
 
 logger = get_plugin_logger("User")
 
@@ -60,7 +62,7 @@ async def get_user_stats_summary(
 ) -> Response[UserStatsSummary]:
     """获取用户总数、今日新增、昨日新增和在线用户数。"""
     summary = await user_crud.get_user_count_summary()
-    online_count = await redis.scard("online_users") or 0  # ty: ignore[invalid-await]
+    online_count = await redis.scard("online_users") or 0
     return Response(
         data=UserStatsSummary(
             total=summary["total"],
@@ -94,13 +96,22 @@ async def get_all_users(user_crud: UserManageCrudDep) -> Response[list[UserManag
 async def get_users(
     query: Annotated[UserManagePageQuery, Query(...)],
     user_crud: UserManageCrudDep,
-    data_filter: Annotated[ColumnElement[bool], Depends(DataPermissionFilter(User))],
+    field_rules: Annotated[FieldRestrictions, Depends(FieldPermissionFilter(User))],
 ) -> Response[PaginatedResponse[UserManageResponse]]:
     """获取分页的用户列表。"""
     filters = filter_user(query.status, query.keyword)
     users = await user_crud.get_paginate(
-        *filters, data_filter, page=query.page, size=query.page_size, schema=UserManageResponse
+        *filters,
+        page=query.page,
+        size=query.page_size,
+        order_by=col(User.create_time).desc(),
+        schema=UserManageResponse,
     )
+    if not field_rules.is_empty:
+        users.records = [
+            UserManageResponse.model_validate(serialize_with_restrictions(r.model_dump(), field_rules))
+            for r in users.records
+        ]
     return Response(data=users)
 
 
@@ -108,10 +119,14 @@ async def get_users(
 async def get_user(
     user_id: UUID,
     user_crud: UserManageCrudDep,
+    field_rules: Annotated[FieldRestrictions, Depends(FieldPermissionFilter(User))],
 ) -> Response[UserManageResponse]:
     """获取单个用户详情。"""
     user = await user_crud.get(user_id, nullable=False)
-    return Response(data=UserManageResponse.model_validate(user))
+    response = UserManageResponse.model_validate(user)
+    if not field_rules.is_empty:
+        response = UserManageResponse.model_validate(serialize_with_restrictions(response.model_dump(), field_rules))
+    return Response(data=response)
 
 
 @router.put("/{user_id}/password", summary="修改用户密码")
@@ -121,31 +136,33 @@ async def change_password(
     current_user: UserDBDep,
     user_crud: UserManageCrudDep,
     redis: RedisDep,
+    session: SessionDep,
 ) -> Response[bool]:
     """修改用户密码。仅本人或超管可操作。"""
     is_self = current_user.id == user_id
 
     if not is_self and not current_user.is_admin:
-        raise AppException(StatusCode.INSUFFICIENT_PERMISSIONS)
+        raise AppException(UserStatusCode.PASSWORD_CHANGE_FORBIDDEN)
 
     if is_self:
         if not body.old_password:
-            raise AppException(StatusCode.BAD_REQUEST)
-        decrypted_old = decrypt_password(body.old_password)
+            raise AppException(UserStatusCode.OLD_PASSWORD_REQUIRED)
+        decrypted_old = decrypt_user_password(body.old_password)
         target_user = await user_crud.get(user_id, nullable=False)
         if not check_password(decrypted_old, target_user.password):
-            raise AppException(StatusCode.AUTHENTICATION_FAILED)
+            raise AppException(UserStatusCode.OLD_PASSWORD_INCORRECT)
 
     new_hashed = process_password(body.new_password)
     await user_crud.update_by_id(user_id, {"password": new_hashed})
 
-    await invalidate_user_cache(redis, user_id)
-    await invalidate_user_session(redis, user_id)
+    after_commit(session, invalidate_user_cache, redis, user_id)
+    after_commit(session, invalidate_user_session, redis, user_id)
     logger.warning(
         "Password changed for user {user_id} by {operator}",
         user_id=user_id,
         operator=current_user.id,
     )
+    event_bus.fire_and_forget(UserPasswordChangedEvent(user_id=str(user_id)))
     return Response(data=True)
 
 
@@ -163,6 +180,7 @@ async def create_user(
     create_data = body.model_dump()
     create_data["password"] = hashed_password
     user = await user_crud.create(create_data)
+    event_bus.fire_and_forget(UserCreatedEvent(user_id=str(user.id)))
     logger.info("User created: {user_id} by {operator}", user_id=user.id, operator=current_user.id)
     return Response(data=UserManageResponse.model_validate(user))
 
@@ -174,6 +192,7 @@ async def update_user(
     current_user: VerifyPermissionDep,
     user_crud: UserManageCrudDep,
     redis: RedisDep,
+    session: SessionDep,
 ) -> Response[UserManageResponse]:
     """更新用户信息。"""
     update_data = body.model_dump(exclude_unset=True)
@@ -184,10 +203,11 @@ async def update_user(
     if "roles" in update_data:
         target_user = await user_crud.get(user_id, nullable=False)
         if set(update_data["roles"]) != set(target_user.roles or []):
-            await invalidate_user_permission_cache(redis, user_id)
+            after_commit(session, invalidate_user_permission_cache, redis, user_id)
+            event_bus.fire_and_forget(UserRolesChangedEvent(user_id=str(user_id), role_codes=update_data["roles"]))
 
     user = await user_crud.update_by_id(user_id, update_data)
-    await invalidate_user_cache(redis, user_id)
+    after_commit(session, invalidate_user_cache, redis, user_id)
     logger.info("User updated: {user_id}", user_id=user_id)
     return Response(data=UserManageResponse.model_validate(user))
 
@@ -198,19 +218,21 @@ async def delete_user(
     current_user: VerifyPermissionDep,
     user_crud: UserManageCrudDep,
     redis: RedisDep,
+    session: SessionDep,
 ) -> Response[bool]:
     """删除单个用户。"""
     if user_id == current_user.id:
-        raise AppException(StatusCode.BAD_REQUEST)
+        raise AppException(UserStatusCode.CANNOT_DELETE_SELF)
 
     target = await user_crud.get(user_id, nullable=False)
     if target.is_admin:
-        raise AppException(StatusCode.BAD_REQUEST)
+        raise AppException(UserStatusCode.CANNOT_DELETE_ADMIN)
 
     await user_crud.delete(user_id)
     logger.warning("User deleted: {user_id} by {operator}", user_id=user_id, operator=current_user.id)
-    await invalidate_user_cache(redis, user_id)
-    await invalidate_user_session(redis, user_id)
+    after_commit(session, invalidate_user_cache, redis, user_id)
+    after_commit(session, invalidate_user_session, redis, user_id)
+    event_bus.fire_and_forget(UserDeletedEvent(user_id=str(user_id)))
     return Response(data=True)
 
 
@@ -220,14 +242,15 @@ async def batch_delete_users(
     current_user: VerifyPermissionDep,
     user_crud: UserManageCrudDep,
     redis: RedisDep,
+    session: SessionDep,
 ) -> Response[bool]:
     """批量删除用户。"""
     targets = await user_crud.get_by_ids(body.ids)
     for target in targets:
         if target.id == current_user.id:
-            raise AppException(StatusCode.BAD_REQUEST)
+            raise AppException(UserStatusCode.BATCH_CONTAINS_SELF)
         if target.is_admin:
-            raise AppException(StatusCode.BAD_REQUEST)
+            raise AppException(UserStatusCode.BATCH_CONTAINS_ADMIN)
 
     await user_crud.delete_all(body.ids)
     logger.warning(
@@ -237,7 +260,8 @@ async def batch_delete_users(
     )
 
     for uid in body.ids:
-        await invalidate_user_cache(redis, uid)
-        await invalidate_user_session(redis, uid)
+        after_commit(session, invalidate_user_cache, redis, uid)
+        after_commit(session, invalidate_user_session, redis, uid)
+        event_bus.fire_and_forget(UserDeletedEvent(user_id=str(uid)))
 
     return Response(data=True)

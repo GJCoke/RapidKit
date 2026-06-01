@@ -38,7 +38,7 @@
   })
 
   const { formRef, validate, restoreValidation } = useNaiveForm()
-  const { defaultRequiredRule } = useFormRules()
+  const { defaultRequiredRule, formRules, patternRules } = useFormRules()
   const authStore = useAuthStore()
 
   const title = computed(() => {
@@ -54,10 +54,15 @@
     name: string
     email: string
     password: string
+    phone: string
+    avatar: string
+    nickname: string
+    gender: string | null
     roles: string[]
     status: Api.Common.EnableStatus | null
     isAdmin: boolean
     departmentId: string | null
+    remark: string
   }
 
   const model = ref(createDefaultModel())
@@ -68,24 +73,44 @@
       name: "",
       email: "",
       password: "",
+      phone: "",
+      avatar: "",
+      nickname: "",
+      gender: null,
       roles: [],
-      status: null,
+      status: "1",
       isAdmin: false,
       departmentId: null,
+      remark: "",
     }
   }
 
-  type RuleKey = Extract<keyof Model, "username" | "name" | "status">
+  const genderOptions = [
+    { label: $t("page.manage.user.genderOptions.male"), value: "male" },
+    { label: $t("page.manage.user.genderOptions.female"), value: "female" },
+    { label: $t("page.manage.user.genderOptions.other"), value: "other" },
+  ]
 
-  const rules = computed<Record<RuleKey, App.Global.FormRule>>(() => {
+  type RuleKey = Extract<keyof Model, "username" | "name" | "email" | "status">
+
+  const rules = computed<Record<RuleKey, App.Global.FormRule | App.Global.FormRule[]>>(() => {
     return {
-      username: defaultRequiredRule,
-      name: defaultRequiredRule,
+      username: [
+        defaultRequiredRule,
+        patternRules.username,
+      ],
+      name: [
+        defaultRequiredRule,
+        { min: 2, max: 100, message: $t("page.manage.user.form.nameLengthRule"), trigger: "change" },
+      ],
+      email: formRules.email,
       status: defaultRequiredRule,
     }
   })
 
-  const passwordRequired = computed(() => (props.operateType === "add" ? defaultRequiredRule : undefined))
+  const passwordRules = computed(() =>
+    props.operateType === "add" ? formRules.pwd : undefined,
+  )
 
   /** the enabled role options */
   const roleOptions = ref<CommonType.Option<string>[]>([])
@@ -121,8 +146,8 @@
     model.value = createDefaultModel()
 
     if (props.operateType === "edit" && props.rowData) {
-      const { username, name, email, roles, status, isAdmin, departmentId } = jsonClone(props.rowData)
-      Object.assign(model.value, { username, name, email, roles, status, isAdmin, departmentId })
+      const { username, name, email, phone, avatar, nickname, gender, roles, status, isAdmin, departmentId, remark } = jsonClone(props.rowData)
+      Object.assign(model.value, { username, name, email, phone: phone || "", avatar: avatar || "", nickname: nickname || "", gender, roles, status, isAdmin, departmentId, remark: remark || "" })
     }
   }
 
@@ -138,29 +163,30 @@
   async function handleSubmit() {
     await validate()
 
+    const commonFields = {
+      username: model.value.username,
+      name: model.value.name,
+      email: model.value.email,
+      phone: model.value.phone || undefined,
+      avatar: model.value.avatar || undefined,
+      nickname: model.value.nickname || undefined,
+      gender: model.value.gender ?? undefined,
+      roles: model.value.roles,
+      status: model.value.status ?? undefined,
+      isAdmin: model.value.isAdmin,
+      departmentId: model.value.departmentId || null,
+      remark: model.value.remark || undefined,
+    }
+
     if (props.operateType === "add") {
       const encryptedPassword = await encryptPassword(model.value.password)
       const { error } = await fetchCreateUser({
-        username: model.value.username,
-        name: model.value.name,
-        email: model.value.email,
+        ...commonFields,
         password: encryptedPassword,
-        roles: model.value.roles,
-        status: model.value.status ?? undefined,
-        isAdmin: model.value.isAdmin,
-        departmentId: model.value.departmentId ?? undefined,
       })
       if (error) return
     } else {
-      const { error } = await fetchUpdateUser(props.rowData!.id!, {
-        username: model.value.username,
-        name: model.value.name,
-        email: model.value.email,
-        roles: model.value.roles,
-        status: model.value.status ?? undefined,
-        isAdmin: model.value.isAdmin,
-        departmentId: model.value.departmentId ?? undefined,
-      })
+      const { error } = await fetchUpdateUser(props.rowData!.id!, commonFields)
       if (error) return
     }
 
@@ -192,11 +218,22 @@
         <NFormItem :label="$t('page.manage.user.userEmail')" path="email">
           <NInput v-model:value="model.email" :placeholder="$t('page.manage.user.form.userEmail')" />
         </NFormItem>
+        <NFormItem :label="$t('page.manage.user.phone')" path="phone">
+          <NInput v-model:value="model.phone" :placeholder="$t('page.manage.user.form.phone')" />
+        </NFormItem>
+        <NFormItem :label="$t('page.manage.user.nickname')" path="nickname">
+          <NInput v-model:value="model.nickname" :placeholder="$t('page.manage.user.form.nickname')" />
+        </NFormItem>
+        <NFormItem :label="$t('page.manage.user.gender')" path="gender">
+          <NRadioGroup v-model:value="model.gender">
+            <NRadio v-for="item in genderOptions" :key="item.value" :value="item.value" :label="item.label" />
+          </NRadioGroup>
+        </NFormItem>
         <NFormItem
           v-if="operateType === 'add'"
           :label="$t('page.manage.user.password')"
           path="password"
-          :rule="passwordRequired"
+          :rule="passwordRules"
         >
           <NInput
             v-model:value="model.password"
@@ -226,6 +263,9 @@
             clearable
             default-expand-all
           />
+        </NFormItem>
+        <NFormItem :label="$t('page.manage.user.remark')" path="remark">
+          <NInput v-model:value="model.remark" type="textarea" :placeholder="$t('page.manage.user.form.remark')" />
         </NFormItem>
         <NFormItem v-if="authStore.userInfo.isAdmin" :label="$t('page.manage.user.isAdmin')">
           <NSwitch v-model:value="model.isAdmin" />

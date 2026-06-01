@@ -1,7 +1,7 @@
 import json
 
-from rapidkit_core.exceptions import AppException
-from rapidkit_core.status_codes import StatusCode
+from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.status_codes import StatusCode
 from slowapi import Limiter
 from slowapi.middleware import _find_route_handler, _should_exempt, sync_check_limits
 from starlette.applications import Starlette

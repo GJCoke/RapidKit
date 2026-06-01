@@ -1,0 +1,24 @@
+[project]
+name = "rapidkit-plugin-department"
+version = "0.1.0"
+description = "Department organizational hierarchy plugin"
+requires-python = ">=3.14"
+dependencies = [
+    "rapidkit-core",
+    "rapidkit-common",
+    "rapidkit-framework",
+]
+
+[project.entry-points."rapidkit.plugins"]
+department = "plugin_department:register"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/plugin_department"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

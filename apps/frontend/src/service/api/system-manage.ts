@@ -119,7 +119,7 @@ export function fetchUpdateUser(
     status?: string
     roles?: string[]
     isAdmin?: boolean
-    departmentId?: string
+    departmentId?: string | null
   },
 ) {
   return request<Api.SystemManage.User>({
@@ -278,56 +278,98 @@ export function fetchDeleteDepartment(id: string) {
   })
 }
 
-// ==================== DataRule ====================
+// ============== Data Policy ==============
 
-/** get data rule list (paginated) */
-export function fetchGetDataRuleList(params?: Api.SystemManage.DataRuleSearchParams) {
-  return request<Api.SystemManage.DataRuleList>({
-    url: "/data-rules",
+export function fetchGetDataPolicyList(params?: Api.DataPolicy.PolicySearchParams) {
+  return request<Api.DataPolicy.PolicyList>({
+    url: "/data-policies",
     method: "get",
     params,
   })
 }
 
-/** get all data rules (for select options) */
-export function fetchGetAllDataRules() {
-  return request<Api.SystemManage.DataRule[]>({
-    url: "/data-rules/all",
+export function fetchGetAllDataPolicies() {
+  return request<Api.DataPolicy.Policy[]>({
+    url: "/data-policies/all",
     method: "get",
   })
 }
 
-/** create data rule */
-export function fetchCreateDataRule(data: {
-  name: string
-  modelName: string
-  field: string
-  operator: string
-  value: string
-  logic?: string
-}) {
-  return request<Api.SystemManage.DataRule>({
-    url: "/data-rules",
+export function fetchCreateDataPolicy(data: Api.DataPolicy.PolicyCreate) {
+  return request<Api.DataPolicy.Policy>({
+    url: "/data-policies",
     method: "post",
     data,
   })
 }
 
-/** update data rule */
-export function fetchUpdateDataRule(id: string, data: Partial<Api.SystemManage.DataRule>) {
-  return request<Api.SystemManage.DataRule>({
-    url: `/data-rules/${id}`,
+export function fetchUpdateDataPolicy(id: string, data: Api.DataPolicy.PolicyUpdate) {
+  return request<Api.DataPolicy.Policy>({
+    url: `/data-policies/${id}`,
     method: "put",
     data,
   })
 }
 
-/** delete data rule */
-export function fetchDeleteDataRule(id: string) {
-  return request<Api.SystemManage.DataRule>({
-    url: `/data-rules/${id}`,
+export function fetchDeleteDataPolicy(id: string) {
+  return request<Api.DataPolicy.Policy>({
+    url: `/data-policies/${id}`,
     method: "delete",
   })
+}
+
+export function fetchGetPolicyModels() {
+  return request<Api.DataPolicy.ModelMetadata[]>({
+    url: "/data-policies/models",
+    method: "get",
+  })
+}
+
+export function fetchGetTemplateVars() {
+  return request<{ name: string; description: string }[]>({
+    url: "/data-policies/template-vars",
+    method: "get",
+  })
+}
+
+export function fetchSimulatePolicy(data: Api.DataPolicy.PolicySimulateRequest) {
+  return request<Api.DataPolicy.PolicySimulateResponse>({
+    url: "/data-policies/simulate",
+    method: "post",
+    data,
+  })
+}
+
+// ---------- Field Policy ----------
+
+/** Fetch field policy list (paginated) */
+export function fetchGetFieldPolicyList(params?: Api.FieldPolicy.PolicySearchParams) {
+  return request<Api.FieldPolicy.PolicyList>({ url: '/field-policies', method: 'get', params });
+}
+
+/** Fetch all field policies (for role drawer select) */
+export function fetchGetAllFieldPolicies() {
+  return request<Api.FieldPolicy.Policy[]>({ url: '/field-policies/all', method: 'get' });
+}
+
+/** Create a field policy */
+export function fetchCreateFieldPolicy(data: Api.FieldPolicy.PolicyCreate) {
+  return request<Api.FieldPolicy.Policy>({ url: '/field-policies', method: 'post', data });
+}
+
+/** Update a field policy */
+export function fetchUpdateFieldPolicy(id: string, data: Api.FieldPolicy.PolicyUpdate) {
+  return request<Api.FieldPolicy.Policy>({ url: `/field-policies/${id}`, method: 'put', data });
+}
+
+/** Delete a field policy */
+export function fetchDeleteFieldPolicy(id: string) {
+  return request<null>({ url: `/field-policies/${id}`, method: 'delete' });
+}
+
+/** Batch delete field policies */
+export function fetchBatchDeleteFieldPolicies(ids: string[]) {
+  return request<null>({ url: '/field-policies/batch', method: 'delete', data: { ids } });
 }
 
 // ==================== AuditDictionary ====================

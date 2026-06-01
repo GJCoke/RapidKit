@@ -1,0 +1,25 @@
+[project]
+name = "rapidkit-plugin-permission"
+version = "0.1.0"
+description = "Permission (RBAC/ABAC) authorization plugin"
+requires-python = ">=3.14"
+dependencies = [
+    "rapidkit-core",
+    "rapidkit-common",
+    "rapidkit-framework",
+    "rapidkit-policy-engine",
+]
+
+[project.entry-points."rapidkit.plugins"]
+permission = "plugin_permission:register"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/plugin_permission"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

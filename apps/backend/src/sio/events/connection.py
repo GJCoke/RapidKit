@@ -6,16 +6,12 @@ Date    : 2025-05-16
 import asyncio
 from typing import Literal
 
-from authlib.jose.errors import ExpiredTokenError, JoseError
 from fastapi_sio_di import SID
-from plugin_auth.auth.deps import AuthCrudDep
 from rapidkit_common.deps import RedisDep
+from rapidkit_common.protocols.auth import CurrentUserProvider
 from rapidkit_common.schemas import BaseModel
-from rapidkit_core.auth_config import auth_settings
-from rapidkit_core.exceptions import AppException
 from rapidkit_core.log import logger
-from rapidkit_core.security import decode_token
-from rapidkit_core.status_codes import StatusCode
+from rapidkit_framework.services import get_service
 
 from src.sio.app import socket
 from src.sio.constants import (
@@ -53,14 +49,13 @@ class AccessToken(BaseModel):
 
 
 @socket.event
-async def connect(sid: SID, auth: AccessToken, db_user: AuthCrudDep, redis: RedisDep) -> Literal[False] | None:
+async def connect(sid: SID, auth: AccessToken, redis: RedisDep) -> Literal[False] | None:
     """
     处理 websocket 连接事件。
 
     Args:
         sid: 会话ID。
         auth: 访问令牌对象。
-        db_user: 用户数据库依赖。
         redis: Redis 依赖。
 
     Returns:
@@ -70,14 +65,8 @@ async def connect(sid: SID, auth: AccessToken, db_user: AuthCrudDep, redis: Redi
     if not token:
         return False
 
-    try:
-        user = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
-    except ExpiredTokenError:
-        raise AppException(StatusCode.TOKEN_EXPIRED)
-    except JoseError:
-        raise AppException(StatusCode.TOKEN_INVALID)
-
-    user_info = await db_user.get(user.sub)
+    current_user_provider = get_service(CurrentUserProvider)
+    user_info = await current_user_provider.get_current_user(token)
     if not user_info:
         return False
 

@@ -1,0 +1,8 @@
+{
+  "error": {
+    "intervalDataRequired": "Interval data is required for interval task type",
+    "crontabDataRequired": "Crontab data is required for crontab task type",
+    "unsupportedTaskType": "Unsupported task type",
+    "taskNotFound": "Scheduled task not found"
+  }
+}

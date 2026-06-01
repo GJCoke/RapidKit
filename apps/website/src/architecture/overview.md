@@ -15,8 +15,11 @@ rapidkit/
 │   │   └── alembic/               #   数据库迁移（多分支）
 │   └── desktop/                   # Electron 桌面客户端
 ├── packages/                      # 共享包层
-│   ├── core/                      # rapidkit-core（后端基础设施）
-│   ├── common/                    # rapidkit-common（后端公共层）
+│   ├── core/                      # rapidkit-core（进程基建：config/db/redis/log）
+│   ├── framework/                 # rapidkit-framework（插件运行时：plugin/event/HTTP）
+│   ├── security/                  # rapidkit-security（安全工具：JWT/bcrypt/RSA）
+│   ├── common/                    # rapidkit-common（业务脚手架：CRUD/Schema/deps）
+│   ├── policy-engine/             # rapidkit-policy-engine（数据策略引擎）
 │   ├── cli/                       # RapidKit CLI（rapidkit 命令行工具）
 │   ├── utils/                     # 通用工具函数
 │   ├── axios/                     # HTTP 请求封装
@@ -67,6 +70,20 @@ rapidkit/
 
 `builder` 包为所有共享包提供统一的 Vite 构建配置和插件。应用层通过 pnpm workspace protocol（`workspace:*`
 ）引用共享包，确保始终使用本地最新版本。
+
+## Python 包依赖关系
+
+后端 Python 包采用三层架构，依赖单向流动：
+
+```
+rapidkit-security  (独立叶子节点)
+rapidkit-core      (独立叶子节点)
+  <- rapidkit-framework (依赖 core)
+    <- rapidkit-common (依赖 core + framework)
+      <- apps/backend + all plugins (依赖 common + security)
+```
+
+详细说明参见 [包依赖架构](./packages.md)。
 
 ## pnpm Workspace
 

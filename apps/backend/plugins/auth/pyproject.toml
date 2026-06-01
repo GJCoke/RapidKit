@@ -6,6 +6,9 @@ requires-python = ">=3.14"
 dependencies = [
     "rapidkit-core",
     "rapidkit-common",
+    "rapidkit-framework",
+    "rapidkit-security",
+    "rapidkit-plugin-permission",
     "authlib",
 ]
 

@@ -11,8 +11,8 @@ import re
 from collections import defaultdict
 
 from rapidkit_core.log import get_plugin_logger
+from rapidkit_core.redis_client import AsyncRedisClient as AsyncRedis
 from rapidkit_core.timezone import timezone
-from redis.asyncio import Redis as AsyncRedis
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from plugin_monitoring.crud import ApiMetricsCRUD
@@ -45,7 +45,7 @@ async def _collect_minute_keys(redis: AsyncRedis) -> dict[tuple[str, str], dict]
             if not m:
                 continue
             minute_bucket, method, path = m.group(1), m.group(2), m.group(3)
-            data = await redis.hgetall(key)  # type: ignore[misc]  # ty: ignore[invalid-await]
+            data = await redis.hgetall(key)
             if not data:
                 continue
 

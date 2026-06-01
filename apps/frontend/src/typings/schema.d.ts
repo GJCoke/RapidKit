@@ -274,7 +274,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/data-rules/all": {
+    "/api/v1/data-policies/models": {
         parameters: {
             query?: never;
             header?: never;
@@ -282,10 +282,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 全部数据规则
-         * @description 获取全部数据规则（不分页，用于下拉选项）。
+         * 可用模型元数据
+         * @description 获取所有已注册模型及其字段信息。
          */
-        get: operations["get_all_data_rules_api_v1_data_rules_all_get"];
+        get: operations["get_models_api_v1_data_policies_models_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -294,7 +294,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/data-rules": {
+    "/api/v1/data-policies/template-vars": {
         parameters: {
             query?: never;
             header?: never;
@@ -302,23 +302,63 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 数据规则分页列表
-         * @description 分页查询数据规则。
+         * 可用模板变量列表
+         * @description 获取所有可用的模板变量（内置 + 插件注册）。
          */
-        get: operations["get_data_rules_api_v1_data_rules_get"];
+        get: operations["get_template_vars_api_v1_data_policies_template_vars_get"];
         put?: never;
-        /**
-         * 创建数据规则
-         * @description 创建新数据规则。
-         */
-        post: operations["create_data_rule_api_v1_data_rules_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/data-rules/{rule_id}": {
+    "/api/v1/data-policies/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 全部数据策略
+         * @description 获取全部数据策略（不分页，用于下拉选项）。
+         */
+        get: operations["get_all_policies_api_v1_data_policies_all_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 数据策略分页列表
+         * @description 分页查询数据策略。
+         */
+        get: operations["get_policies_api_v1_data_policies_get"];
+        put?: never;
+        /**
+         * 创建数据策略
+         * @description 创建新数据策略。
+         */
+        post: operations["create_policy_api_v1_data_policies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-policies/{policy_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -327,16 +367,36 @@ export interface paths {
         };
         get?: never;
         /**
-         * 更新数据规则
-         * @description 更新数据规则。
+         * 更新数据策略
+         * @description 更新数据策略。
          */
-        put: operations["update_data_rule_api_v1_data_rules__rule_id__put"];
+        put: operations["update_policy_api_v1_data_policies__policy_id__put"];
         post?: never;
         /**
-         * 删除数据规则
-         * @description 删除数据规则。
+         * 删除数据策略
+         * @description 删除数据策略。
          */
-        delete: operations["delete_data_rule_api_v1_data_rules__rule_id__delete"];
+        delete: operations["delete_policy_api_v1_data_policies__policy_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-policies/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 策略模拟
+         * @description 模拟策略执行，仅管理员可用。
+         */
+        post: operations["simulate_policy_api_v1_data_policies_simulate_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1884,31 +1944,31 @@ export interface components {
             monthOfYear: string;
         };
         /**
-         * DataRuleCreate
-         * @description 创建数据规则请求。
+         * DataPolicyCreate
+         * @description 创建数据策略请求。
          */
-        DataRuleCreate: {
+        DataPolicyCreate: {
             /** Name */
             name: string;
-            /** Modelname */
-            modelName: string;
-            /** Field */
-            field: string;
-            /** Operator */
-            operator: string;
-            /** Value */
-            value: string;
+            /** Targetmodel */
+            targetModel: string;
             /**
-             * Logic
-             * @default AND
+             * Description
+             * @default
              */
-            logic: string;
+            description: string;
+            /** Rule */
+            rule: {
+                [key: string]: unknown;
+            };
+            /** @default 1 */
+            status: components["schemas"]["Status"];
         };
         /**
-         * DataRuleResponse
-         * @description 数据规则响应。
+         * DataPolicyResponse
+         * @description 数据策略响应。
          */
-        DataRuleResponse: {
+        DataPolicyResponse: {
             /**
              * Id
              * Format: uuid
@@ -1926,34 +1986,32 @@ export interface components {
             updateTime: string;
             /** Name */
             name: string;
-            /** Modelname */
-            modelName: string;
-            /** Field */
-            field: string;
-            /** Operator */
-            operator: string;
-            /** Value */
-            value: string;
-            /** Logic */
-            logic: string;
+            /** Targetmodel */
+            targetModel: string;
+            /** Description */
+            description: string;
+            /** Rule */
+            rule: {
+                [key: string]: unknown;
+            };
+            status: components["schemas"]["Status"];
         };
         /**
-         * DataRuleUpdate
-         * @description 更新数据规则请求。
+         * DataPolicyUpdate
+         * @description 更新数据策略请求。
          */
-        DataRuleUpdate: {
+        DataPolicyUpdate: {
             /** Name */
             name?: string | null;
-            /** Modelname */
-            modelName?: string | null;
-            /** Field */
-            field?: string | null;
-            /** Operator */
-            operator?: string | null;
-            /** Value */
-            value?: string | null;
-            /** Logic */
-            logic?: string | null;
+            /** Targetmodel */
+            targetModel?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Rule */
+            rule?: {
+                [key: string]: unknown;
+            } | null;
+            status?: components["schemas"]["Status"] | null;
         };
         /**
          * DeadLetterResponse
@@ -2797,8 +2855,8 @@ export interface components {
              */
             records: components["schemas"]["ApiListItem"][];
         };
-        /** PaginatedResponse[DataRuleResponse] */
-        PaginatedResponse_DataRuleResponse_: {
+        /** PaginatedResponse[DataPolicyResponse] */
+        PaginatedResponse_DataPolicyResponse_: {
             /**
              * Page
              * @description 页码。
@@ -2818,7 +2876,7 @@ export interface components {
              * Records
              * @description 记录列表。
              */
-            records: components["schemas"]["DataRuleResponse"][];
+            records: components["schemas"]["DataPolicyResponse"][];
         };
         /** PaginatedResponse[MenuListResponse] */
         PaginatedResponse_MenuListResponse_: {
@@ -3219,6 +3277,74 @@ export interface components {
             error?: components["schemas"]["PluginErrorResponse"] | null;
         };
         /**
+         * PolicyAppliedDetail
+         * @description 单条策略模拟结果明细。
+         */
+        PolicyAppliedDetail: {
+            /**
+             * Policyid
+             * Format: uuid
+             */
+            policyId: string;
+            /** Policyname */
+            policyName: string;
+            /** Matchedcount */
+            matchedCount: number;
+            /** Sqlfragment */
+            sqlFragment: string;
+        };
+        /**
+         * PolicySimulateRequest
+         * @description 策略模拟请求。
+         */
+        PolicySimulateRequest: {
+            /** Policyids */
+            policyIds: string[];
+            /**
+             * Targetuserid
+             * Format: uuid
+             */
+            targetUserId: string;
+            /**
+             * Previewlimit
+             * @default 20
+             */
+            previewLimit: number;
+        };
+        /**
+         * PolicySimulateResponse
+         * @description 策略模拟响应。
+         */
+        PolicySimulateResponse: {
+            /** Targetmodel */
+            targetModel: string;
+            /** Targetmodellabel */
+            targetModelLabel: string;
+            /** Totalcount */
+            totalCount: number;
+            /** Filteredcount */
+            filteredCount: number;
+            /** Excludedcount */
+            excludedCount: number;
+            /** Previewrows */
+            previewRows: {
+                [key: string]: unknown;
+            }[];
+            /** Excludedrows */
+            excludedRows: {
+                [key: string]: unknown;
+            }[];
+            /** Generatedsql */
+            generatedSql: string;
+            /** Policiesapplied */
+            policiesApplied: components["schemas"]["PolicyAppliedDetail"][];
+            /**
+             * Isadminbypass
+             * @default false
+             */
+            isAdminBypass: boolean;
+        };
+        /**
          * PoolResizeRequest
          * @description Pool 扩缩容请求。
          */
@@ -3320,8 +3446,8 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["BusinessSummary"] | null;
         };
-        /** Response[DataRuleResponse] */
-        Response_DataRuleResponse_: {
+        /** Response[DataPolicyResponse] */
+        Response_DataPolicyResponse_: {
             /**
              * Code
              * @description 状态码。
@@ -3334,7 +3460,7 @@ export interface components {
              */
             message?: string;
             /** @description 响应数据。 */
-            data?: components["schemas"]["DataRuleResponse"] | null;
+            data?: components["schemas"]["DataPolicyResponse"] | null;
         };
         /** Response[DepartmentResponse] */
         Response_DepartmentResponse_: {
@@ -3480,8 +3606,8 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_ApiListItem_"] | null;
         };
-        /** Response[PaginatedResponse[DataRuleResponse]] */
-        Response_PaginatedResponse_DataRuleResponse__: {
+        /** Response[PaginatedResponse[DataPolicyResponse]] */
+        Response_PaginatedResponse_DataPolicyResponse__: {
             /**
              * Code
              * @description 状态码。
@@ -3494,7 +3620,7 @@ export interface components {
              */
             message?: string;
             /** @description 响应数据。 */
-            data?: components["schemas"]["PaginatedResponse_DataRuleResponse_"] | null;
+            data?: components["schemas"]["PaginatedResponse_DataPolicyResponse_"] | null;
         };
         /** Response[PaginatedResponse[MenuListResponse]] */
         Response_PaginatedResponse_MenuListResponse__: {
@@ -3655,6 +3781,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["PluginDependencyGraph"] | null;
+        };
+        /** Response[PolicySimulateResponse] */
+        Response_PolicySimulateResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PolicySimulateResponse"] | null;
         };
         /** Response[RegisteredTaskResponse] */
         Response_RegisteredTaskResponse_: {
@@ -4029,8 +4171,8 @@ export interface components {
              */
             data?: components["schemas"]["AuditDictResponse"][] | null;
         };
-        /** Response[list[DataRuleResponse]] */
-        Response_list_DataRuleResponse__: {
+        /** Response[list[DataPolicyResponse]] */
+        Response_list_DataPolicyResponse__: {
             /**
              * Code
              * @description 状态码。
@@ -4046,7 +4188,7 @@ export interface components {
              * Data
              * @description 响应数据。
              */
-            data?: components["schemas"]["DataRuleResponse"][] | null;
+            data?: components["schemas"]["DataPolicyResponse"][] | null;
         };
         /** Response[list[DepartmentTreeNode]] */
         Response_list_DepartmentTreeNode__: {
@@ -4276,6 +4418,27 @@ export interface components {
              */
             data?: components["schemas"]["WorkerResponse"][] | null;
         };
+        /** Response[list[dict]] */
+        Response_list_dict__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: {
+                [key: string]: unknown;
+            }[] | null;
+        };
         /** Response[list[str]] */
         Response_list_str__: {
             /**
@@ -4354,20 +4517,10 @@ export interface components {
              */
             routerPermissions: string[];
             /**
-             * Datascope
-             * @default 2
-             */
-            dataScope: number;
-            /**
-             * Customdeptids
+             * Datapolicyids
              * @default []
              */
-            customDeptIds: string[];
-            /**
-             * Dataruleids
-             * @default []
-             */
-            dataRuleIds: string[];
+            dataPolicyIds: string[];
         };
         /**
          * RolePermissionsResponse
@@ -4454,18 +4607,11 @@ export interface components {
              * @default []
              */
             routerPermissions: string[];
-            /** Datascope */
-            dataScope: number;
             /**
-             * Customdeptids
+             * Datapolicyids
              * @default []
              */
-            customDeptIds: string[];
-            /**
-             * Dataruleids
-             * @default []
-             */
-            dataRuleIds: string[];
+            dataPolicyIds: string[];
         };
         /**
          * RoleUpdate
@@ -4495,12 +4641,8 @@ export interface components {
              * @default []
              */
             routerPermissions: string[];
-            /** Datascope */
-            dataScope?: number | null;
-            /** Customdeptids */
-            customDeptIds?: string[] | null;
-            /** Dataruleids */
-            dataRuleIds?: string[] | null;
+            /** Datapolicyids */
+            dataPolicyIds?: string[] | null;
         };
         /**
          * RouteMeta
@@ -5815,7 +5957,7 @@ export interface operations {
             };
         };
     };
-    get_all_data_rules_api_v1_data_rules_all_get: {
+    get_models_api_v1_data_policies_models_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5830,18 +5972,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_list_DataRuleResponse__"];
+                    "application/json": components["schemas"]["Response_list_dict__"];
                 };
             };
         };
     };
-    get_data_rules_api_v1_data_rules_get: {
+    get_template_vars_api_v1_data_policies_template_vars_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_dict__"];
+                };
+            };
+        };
+    };
+    get_all_policies_api_v1_data_policies_all_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_DataPolicyResponse__"];
+                };
+            };
+        };
+    };
+    get_policies_api_v1_data_policies_get: {
         parameters: {
             query?: {
                 /** @description 当前页码。 */
                 page?: number;
                 /** @description 每页条数。 */
                 pageSize?: number;
+                keyword?: string;
             };
             header?: never;
             path?: never;
@@ -5855,7 +6038,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_DataRuleResponse__"];
+                    "application/json": components["schemas"]["Response_PaginatedResponse_DataPolicyResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -5869,7 +6052,7 @@ export interface operations {
             };
         };
     };
-    create_data_rule_api_v1_data_rules_post: {
+    create_policy_api_v1_data_policies_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5878,7 +6061,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DataRuleCreate"];
+                "application/json": components["schemas"]["DataPolicyCreate"];
             };
         };
         responses: {
@@ -5888,7 +6071,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_DataRuleResponse_"];
+                    "application/json": components["schemas"]["Response_DataPolicyResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -5902,18 +6085,18 @@ export interface operations {
             };
         };
     };
-    update_data_rule_api_v1_data_rules__rule_id__put: {
+    update_policy_api_v1_data_policies__policy_id__put: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                rule_id: string;
+                policy_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DataRuleUpdate"];
+                "application/json": components["schemas"]["DataPolicyUpdate"];
             };
         };
         responses: {
@@ -5923,7 +6106,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_DataRuleResponse_"];
+                    "application/json": components["schemas"]["Response_DataPolicyResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -5937,12 +6120,12 @@ export interface operations {
             };
         };
     };
-    delete_data_rule_api_v1_data_rules__rule_id__delete: {
+    delete_policy_api_v1_data_policies__policy_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                rule_id: string;
+                policy_id: string;
             };
             cookie?: never;
         };
@@ -5954,7 +6137,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_DataRuleResponse_"];
+                    "application/json": components["schemas"]["Response_DataPolicyResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulate_policy_api_v1_data_policies_simulate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PolicySimulateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PolicySimulateResponse_"];
                 };
             };
             /** @description Validation Error */

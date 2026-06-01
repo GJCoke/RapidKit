@@ -11,7 +11,6 @@ import json
 import platform
 import threading
 import traceback as tb_module
-from datetime import UTC, datetime
 
 import celery
 import celery.app.task
@@ -27,6 +26,7 @@ from celery.signals import (
 )
 from rapidkit_core.config import settings
 from rapidkit_core.log import logger
+from rapidkit_core.timezone import timezone
 
 STREAM_KEY = "celery:events"
 STREAM_MAXLEN = 10000
@@ -49,7 +49,7 @@ def _publish_event(event_type: str, data: dict) -> None:
     r = _get_redis()
     message = {
         "event_type": event_type,
-        "timestamp": datetime.now(UTC).isoformat(),
+        "timestamp": timezone.now().isoformat(),
         "data": json.dumps(data, default=str),
     }
     r.xadd(STREAM_KEY, message, maxlen=STREAM_MAXLEN, approximate=True)  # ty: ignore[invalid-argument-type]

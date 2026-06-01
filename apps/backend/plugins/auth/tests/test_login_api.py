@@ -16,7 +16,7 @@ class TestGetPublicKey:
 
     async def test_pem_loadable_as_rsa(self, client: AsyncClient):
         from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
-        from rapidkit_core.security import load_public_pem
+        from rapidkit_security import load_public_pem
 
         resp = await client.get("/auth/keys/public")
         pem = resp.json()["data"]
@@ -27,13 +27,13 @@ class TestGetPublicKey:
 class TestLogin:
     @pytest.fixture
     async def rsa_public_key(self, client: AsyncClient):
-        from rapidkit_core.security import load_public_pem
+        from rapidkit_security import load_public_pem
 
         resp = await client.get("/auth/keys/public")
         return load_public_pem(resp.json()["data"])
 
     async def test_login_success(self, client: AsyncClient, init, rsa_public_key):
-        from rapidkit_core.security import encrypt_message
+        from rapidkit_security import encrypt_message
         from src.initdb import PASSWORD, USERNAME
 
         resp = await client.post(
@@ -47,7 +47,7 @@ class TestLogin:
         assert "refreshToken" in body["data"]
 
     async def test_login_wrong_password(self, client: AsyncClient, init, rsa_public_key):
-        from rapidkit_core.security import encrypt_message
+        from rapidkit_security import encrypt_message
         from src.initdb import USERNAME
 
         resp = await client.post(
@@ -58,7 +58,7 @@ class TestLogin:
         assert resp.json()["code"] != 0
 
     async def test_login_nonexistent_user(self, client: AsyncClient, init, rsa_public_key):
-        from rapidkit_core.security import encrypt_message
+        from rapidkit_security import encrypt_message
 
         resp = await client.post(
             "/auth/login",

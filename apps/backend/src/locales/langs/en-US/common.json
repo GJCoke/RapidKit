@@ -49,6 +49,36 @@
     "taskNotFound": "Task not found",
     "workerControlFailed": "Worker control command failed",
     "workerOffline": "Worker is currently offline",
-    "departmentHasChildren": "Cannot delete department with sub-departments"
+    "departmentHasChildren": "Cannot delete department with sub-departments",
+    "taskRetryNotAllowed": "Only failed or revoked tasks can be retried",
+    "accountLocked": "Account has been locked"
+  },
+  "error": {
+    "success": "Successful",
+    "validationError": "Request parameter validation failed",
+    "invalidInput": "Invalid input data",
+    "missingRequiredField": "Missing required field",
+    "invalidFormat": "Invalid data format",
+    "badRequest": "Bad request format",
+    "tooManyRequests": "Too many requests, please try again later",
+    "invalidOperation": "This operation is not allowed in the current environment",
+    "alreadyExists": "Resource already exists, cannot create duplicate",
+    "duplicateRequest": "Duplicate request",
+    "stateConflict": "Resource state conflict",
+    "concurrentModification": "Concurrent modification conflict",
+    "forbidden": "Access denied",
+    "resourceNotFound": "Resource not found",
+    "externalServiceError": "External service call failed",
+    "thirdPartyError": "Third-party service error",
+    "dependencyError": "Dependency service error",
+    "internalServerError": "Internal server error",
+    "databaseError": "Database operation failed",
+    "systemBusy": "System busy, please try again later",
+    "socketConnectionError": "Socket connection failed",
+    "socketConnectionClosed": "Socket connection closed",
+    "socketMessageSendError": "Socket message send failed",
+    "socketInvalidMessage": "Socket message format error",
+    "socketAuthenticationFailed": "Socket authentication failed",
+    "socketNamespaceNotFound": "Socket namespace not found"
   }
 }

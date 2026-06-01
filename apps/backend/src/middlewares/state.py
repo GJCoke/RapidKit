@@ -2,8 +2,8 @@ from typing import Awaitable, Callable
 
 from fastapi import Request, Response
 from rapidkit_common.request import get_client_ip, parse_user_agent
-from rapidkit_core.context import ctx
 from rapidkit_core.log import logger
+from rapidkit_framework.context import ctx
 from starlette.middleware.base import BaseHTTPMiddleware
 
 

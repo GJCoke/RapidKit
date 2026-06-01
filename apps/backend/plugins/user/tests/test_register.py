@@ -34,8 +34,8 @@ class TestUserRegister(unittest.TestCase):
         assert "auth" in m.dependencies
 
     def test_no_cross_plugin_imports(self):
-        """plugin_user 允许导入 plugin_auth 和 plugin_system（声明依赖）。"""
-        allowed = {"plugin_user", "plugin_auth", "plugin_system"}
+        """plugin_user must not import other plugins (communicates via protocols)."""
+        allowed = {"plugin_user"}
         plugin_src = Path(__file__).resolve().parent.parent / "src" / "plugin_user"
         violations = []
         for py_file in plugin_src.rglob("*.py"):

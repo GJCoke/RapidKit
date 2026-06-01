@@ -1,0 +1,12 @@
+{
+  "error": {
+    "rolePermissionDenied": "Insufficient role permissions",
+    "resourcePermissionDenied": "Insufficient resource permissions",
+    "dataWriteDenied": "No write access to this data",
+    "fieldWriteDenied": "Request contains protected fields that cannot be modified",
+    "createPermissionDenied": "No permission to create this data",
+    "roleNotFound": "Role not found",
+    "roleOperationError": "Role operation failed",
+    "permissionOperationError": "Permission operation failed"
+  }
+}

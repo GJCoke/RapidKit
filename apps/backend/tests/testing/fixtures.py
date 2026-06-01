@@ -169,8 +169,8 @@ async def client(
     monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterator[AsyncClient]:
     """Full-app httpx client with auth bypass and service URL overrides."""
-    from plugin_auth.role.deps import verify_user_permission
-    from plugin_auth.router import sync
+    from plugin_permission.role.deps import verify_user_permission
+    from plugin_permission.router import sync
     from rapidkit_core import database
     from rapidkit_core.config import settings
     from src.main import app
@@ -196,7 +196,7 @@ async def client(
 async def auth_headers(client: AsyncClient) -> dict[str, str]:
     """Login as admin and return Authorization headers for authenticated requests."""
     from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
-    from rapidkit_core.security import encrypt_message, load_public_pem
+    from rapidkit_security import encrypt_message, load_public_pem
     from src.initdb import PASSWORD, USERNAME
 
     # Get RSA public key

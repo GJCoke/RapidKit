@@ -3,36 +3,30 @@ Author  : Coke
 Date    : 2025-05-19
 """
 
-from importlib import util
-from pathlib import Path
+import importlib
 
 from fastapi_sio_di import AsyncServer
 from rapidkit_core.config import settings
+from rapidkit_framework.plugin import PluginManifest
 from socketio import ASGIApp, AsyncRedisManager
 
 
-def auto_register_events() -> None:
+def auto_register_events(plugins: list[PluginManifest] | None = None) -> None:
+    """注册 SocketIO 事件处理器。
+
+    1. Core events (always loaded)
+    2. Retained non-plugin events (chat — future plugin candidate)
+    3. Plugin-declared event modules
     """
-    动态导入 events 目录下所有 Python 文件以注册 Socket.IO 事件。
+    # 1. Core events
+    import src.sio.events.chat  # noqa: F401
+    import src.sio.events.connection  # noqa: F401
 
-    此函数会扫描 sio/events 目录，导入所有不以下划线开头的 .py 文件，并加载为模块。
-    这样可确保所有用 @socket.event 装饰的事件处理器自动注册到服务器。
-    """
-    base_path = Path(__file__).parent / "events"
-    for file in base_path.glob("*.py"):
-        if file.name.startswith("_"):
-            continue
-
-        module_name = f"sio.events.{file.stem}"
-        spec = util.spec_from_file_location(module_name, file)
-        if spec is None:
-            raise ImportError(f"Could not create a spec for module '{module_name}' at '{base_path}'")
-
-        if spec.loader is None:
-            raise ImportError(f"Spec loader is None for module '{module_name}' at '{base_path}'")
-
-        module = util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+    # 3. Plugin-declared event modules
+    if plugins:
+        for plugin in plugins:
+            for module_path in plugin.sio_modules:
+                importlib.import_module(module_path)
 
 
 redis_manager = AsyncRedisManager(url=str(settings.REDIS_URL))
@@ -51,4 +45,3 @@ if settings.ENVIRONMENT.is_debug:
         }
     )
 socket_app = ASGIApp(socket)
-auto_register_events()

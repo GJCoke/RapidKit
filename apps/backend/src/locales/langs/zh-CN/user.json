@@ -1,0 +1,11 @@
+{
+  "error": {
+    "oldPasswordRequired": "修改自己的密码时必须提供旧密码",
+    "oldPasswordIncorrect": "旧密码不正确",
+    "cannotDeleteSelf": "不能删除自己的账号",
+    "cannotDeleteAdmin": "不能删除管理员账号",
+    "batchContainsSelf": "批量删除中包含当前用户",
+    "batchContainsAdmin": "批量删除中包含管理员用户",
+    "passwordChangeForbidden": "无权修改该用户的密码"
+  }
+}

@@ -28,30 +28,11 @@ class TestAuthRegister(unittest.TestCase):
         assert "/auth/logout" in routes
         assert "/auth/user/info" in routes
 
-    def test_router_has_role_routes(self):
+    def test_models_is_empty(self):
         from plugin_auth import register
 
         m = register()
-        routes = [r.path for r in m.router.routes]
-        assert "/roles" in routes or "/roles/" in routes
-
-    def test_router_has_router_routes(self):
-        from plugin_auth import register
-
-        m = register()
-        routes = [r.path for r in m.router.routes]
-        assert "/router/backend" in routes
-
-    def test_models_contains_all(self):
-        from plugin_auth import register
-        from plugin_auth.auth.models import User
-        from plugin_auth.role.models import Role
-        from plugin_auth.router.models import InterfaceRouter
-
-        m = register()
-        assert User in m.models
-        assert Role in m.models
-        assert InterfaceRouter in m.models
+        assert m.models == []
 
     def test_no_cross_plugin_imports(self):
         """plugin_auth 允许导入 plugin_system 和 plugin_user（声明依赖）。"""

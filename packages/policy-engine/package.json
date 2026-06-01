@@ -1,0 +1,9 @@
+{
+  "name": "rapidkit-policy-engine",
+  "private": true,
+  "scripts": {
+    "postinstall": "uv sync",
+    "format": "uv run ruff format src/",
+    "typecheck": "uv run ty check src/"
+  }
+}

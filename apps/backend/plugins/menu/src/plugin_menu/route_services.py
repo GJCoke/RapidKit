@@ -12,10 +12,11 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from plugin_auth.role.crud import RoleCRUD
     from rapidkit_common.auth import UserProtocol
 
 from rapidkit_common.enums import MenuIconType, Status
+from rapidkit_common.protocols.permission import PermissionCacheManager
+from rapidkit_framework.services import get_service
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -99,7 +100,6 @@ async def get_constant_routes(session: AsyncSession) -> list[MenuRouteResponse]:
 async def get_user_routes(
     user: "UserProtocol",
     session: AsyncSession,
-    role_crud: RoleCRUD,
 ) -> UserRouteResponse:
     """
     获取当前用户的授权路由。
@@ -117,10 +117,8 @@ async def get_user_routes(
     if user.is_admin:
         filtered_menus = all_menus
     else:
-        roles = await role_crud.get_role_by_codes(user.roles or [])
-        permitted_routes: set[str] = set()
-        for role in roles:
-            permitted_routes.update(role.router_permissions or [])
+        cache_mgr = get_service(PermissionCacheManager)
+        permitted_routes = await cache_mgr.get_permitted_routes(user.roles or [])
 
         permitted_menu_ids: set[UUID] = set()
         menu_map = {m.id: m for m in all_menus}

@@ -10,7 +10,7 @@ from redis.asyncio import Redis
 class TestTokenRefresh:
     async def test_refresh_success(self, client: AsyncClient, init):
         """Login, then refresh the token using the refresh token."""
-        from rapidkit_core.security import encrypt_message, load_public_pem
+        from rapidkit_security import encrypt_message, load_public_pem
         from src.initdb import PASSWORD, USERNAME
 
         # Login first
@@ -52,8 +52,8 @@ class TestLogout:
     async def test_logout_clears_redis(self, client: AsyncClient, init, redis: Redis):
         """Logout should remove the refresh token from Redis."""
         from plugin_auth.auth.deps import refresh_structure
-        from rapidkit_core.auth_config import auth_settings
-        from rapidkit_core.security import decode_token, encrypt_message, load_public_pem
+        from plugin_auth.auth_config import auth_settings
+        from rapidkit_security import decode_token, encrypt_message, load_public_pem
         from src.initdb import PASSWORD, USERNAME
 
         # Login

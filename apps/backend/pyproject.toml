@@ -21,6 +21,8 @@ dependencies = [
     "rapidkit-plugin-worker",
     "rapidkit-plugin-schedule",
     "rapidkit-plugin-menu",
+    "rapidkit-plugin-department",
+    "rapidkit-plugin-permission",
     "rapidkit-plugin-auth",
     "rapidkit-plugin-user",
     # Server
@@ -29,10 +31,8 @@ dependencies = [
     "greenlet>=3.3.2,<4.0",
     # In FastAPI, if you want to use Form or File to receive form data or file uploads, you must install the python-multipart dependency.
     "python-multipart>=0.0.24,<0.1",
-    # Encryption Algorithm
-    "authlib>=1.6.9,<2.0",
-    "bcrypt>=5.0.0,<6.0",
-    "cryptography>=46.0.6,<47.0",
+    # Security
+    "rapidkit-security",
     # Python Type
     "pydantic-settings>=2.13.1,<3.0",
     "pydantic[email]>=2.12.4,<3.0",
@@ -82,8 +82,11 @@ rapidkit-plugin-system = { workspace = true }
 rapidkit-plugin-worker = { workspace = true }
 rapidkit-plugin-schedule = { workspace = true }
 rapidkit-plugin-menu = { workspace = true }
+rapidkit-plugin-department = { workspace = true }
+rapidkit-plugin-permission = { workspace = true }
 rapidkit-plugin-auth = { workspace = true }
 rapidkit-plugin-user = { workspace = true }
+rapidkit-security = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 include = ["src/"]

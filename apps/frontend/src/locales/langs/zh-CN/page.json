@@ -263,18 +263,9 @@
       },
       "menuAuth": "菜单权限",
       "permissionConfig": "权限配置",
-      "dataScope": "数据范围",
-      "dataScopeConfig": "数据范围配置",
-      "customDepartments": "自定义部门",
-      "customRules": "自定义规则",
-      "dataScopeOptions": {
-        "all": "全部数据",
-        "self": "仅本人",
-        "dept": "本部门",
-        "deptAndChildren": "本部门及子部门",
-        "customDept": "自定义部门",
-        "customRule": "自定义规则"
-      },
+      "dataPolicies": "数据策略",
+      "fieldPolicy": "字段策略",
+      "fieldPolicyPlaceholder": "选择字段策略（不选则不限制）",
       "roleCode": "角色编码",
       "roleDesc": "角色描述",
       "roleName": "角色名称",
@@ -287,6 +278,7 @@
       "form": {
         "name": "请输入姓名",
         "nickName": "请输入昵称",
+        "nickname": "请输入昵称",
         "password": "请输入密码",
         "oldPassword": "请输入旧密码",
         "newPassword": "请输入新密码",
@@ -294,17 +286,28 @@
         "userEmail": "请输入邮箱",
         "userGender": "请选择性别",
         "userPhone": "请输入手机号",
+        "phone": "请输入手机号",
         "userRole": "请选择用户角色",
         "userStatus": "请选择用户状态",
-        "username": "请输入用户名"
+        "username": "请输入用户名",
+        "nameLengthRule": "姓名长度需在 2-100 个字符之间",
+        "remark": "请输入备注"
       },
-      "gender": {
+      "gender": "性别",
+      "genderOptions": {
+        "male": "男",
         "female": "女",
-        "male": "男"
+        "other": "其他"
       },
       "isAdmin": "管理员",
       "name": "姓名",
       "nickName": "昵称",
+      "nickname": "昵称",
+      "phone": "手机号",
+      "avatar": "头像",
+      "remark": "备注",
+      "lastLoginTime": "最后登录时间",
+      "lastLoginIp": "最后登录 IP",
       "password": "密码",
       "changePassword": "修改密码",
       "oldPassword": "旧密码",
@@ -356,33 +359,121 @@
         "labelEn": "请输入英文标签"
       }
     },
-    "dataRule": {
-      "title": "数据规则",
-      "addRule": "新增规则",
-      "editRule": "编辑规则",
-      "name": "规则名称",
-      "modelName": "目标模型",
-      "field": "目标字段",
-      "operator": "操作符",
-      "value": "值",
-      "logic": "逻辑组合",
-      "form": {
-        "name": "请输入规则名称",
-        "modelName": "请输入目标模型名",
-        "field": "请输入目标字段名",
-        "operator": "请选择操作符",
-        "value": "请输入匹配值",
-        "logic": "请选择逻辑组合"
+    "dataPolicy": {
+      "title": "数据策略",
+      "addPolicy": "新增策略",
+      "editPolicy": "编辑策略",
+      "name": "策略名称",
+      "description": "描述",
+      "effect": "效果",
+      "actions": "适用动作",
+      "effectOptions": {
+        "allow": "允许",
+        "deny": "拒绝"
       },
-      "operatorOptions": {
-        "eq": "等于",
-        "ne": "不等于",
-        "gt": "大于",
-        "ge": "大于等于",
-        "lt": "小于",
-        "le": "小于等于",
-        "in": "包含",
-        "not_in": "不包含"
+      "actionOptions": {
+        "read": "读取",
+        "write": "写入"
+      },
+      "status": "状态",
+      "createTime": "创建时间",
+      "rule": "规则配置",
+      "form": {
+        "name": "请输入策略名称",
+        "description": "请输入描述"
+      },
+      "ruleEditor": {
+        "addCondition": "添加条件",
+        "addGroup": "添加条件组",
+        "addSubquery": "子查询",
+        "conditionCount": "个条件",
+        "emptyHint": "点击添加第一个条件",
+        "field": "字段",
+        "operator": "操作符",
+        "value": "值（支持模板变量）",
+        "model": "关联模型",
+        "targetModel": "目标模型",
+        "targetField": "目标字段",
+        "inOp": "包含于",
+        "notInOp": "不包含于",
+        "selectModel": "请选择目标模型",
+        "op": {
+          "eq": "等于",
+          "ne": "不等于",
+          "gt": "大于",
+          "ge": "大于等于",
+          "lt": "小于",
+          "le": "小于等于",
+          "in": "包含",
+          "not_in": "不包含",
+          "is_null": "为空",
+          "is_not_null": "不为空",
+          "between": "区间"
+        },
+        "tplVar": {
+          "userId": "当前用户ID",
+          "deptId": "当前部门ID",
+          "deptIds": "部门及子部门ID",
+          "roles": "用户角色列表",
+          "now": "当前时间",
+          "today": "今天日期"
+        },
+        "help": {
+          "title": "规则编辑器使用指南",
+          "conditionTitle": "条件",
+          "conditionDesc": "最小过滤单元。选择字段、操作符和值，匹配符合条件的数据行。值支持模板变量，运行时自动替换为当前用户信息。",
+          "groupTitle": "条件组",
+          "groupDesc": "用 AND（全部满足）或 OR（满足任一）将多个条件组合。条件组可嵌套最多 3 层，实现复杂逻辑。",
+          "subqueryTitle": "子查询",
+          "subqueryDesc": "跨模型关联过滤。判断当前模型的某字段是否存在于另一模型的查询结果中（IN / NOT IN）。例如：只显示当前用户所在组织下的部门数据。",
+          "tplVarTitle": "模板变量",
+          "tplVarDesc": "在值输入框中输入模板变量前缀会自动弹出可用变量。变量在策略执行时动态替换为当前用户的实际值，实现「每个用户只看到自己相关的数据」。"
+        }
+      },
+      "simulator": {
+        "title": "策略模拟器",
+        "selectPolicies": "选择策略",
+        "selectUser": "目标用户",
+        "run": "开始模拟",
+        "totalCount": "总记录数",
+        "visibleCount": "可见记录",
+        "excludedCount": "被过滤记录",
+        "policyDetails": "各策略命中明细",
+        "matched": "条命中",
+        "visibleData": "可见数据样例",
+        "excludedData": "被排除数据样例",
+        "generatedSql": "生成的 SQL",
+        "adminBypass": "目标用户为超级管理员，在实际运行中将跳过所有数据策略过滤，可见全部数据。"
+      }
+    },
+    "fieldPolicy": {
+      "title": "字段策略",
+      "addPolicy": "新增字段策略",
+      "editPolicy": "编辑字段策略",
+      "name": "策略名称",
+      "description": "描述",
+      "targetModel": "目标模型",
+      "fields": "受控字段",
+      "actions": "适用动作",
+      "effect": "效果",
+      "condition": "条件限制",
+      "status": "状态",
+      "createTime": "创建时间",
+      "effectOptions": {
+        "strip": "移除",
+        "mask": "脱敏",
+        "deny": "拒绝"
+      },
+      "actionOptions": {
+        "read": "读取",
+        "write": "写入"
+      },
+      "form": {
+        "name": "请输入策略名称",
+        "targetModel": "请选择目标模型",
+        "fields": "请选择受控字段",
+        "effect": "请选择效果",
+        "addCondition": "添加条件限制"
       }
     },
     "worker": {

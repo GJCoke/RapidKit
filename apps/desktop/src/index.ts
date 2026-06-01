@@ -1,3 +1,3 @@
-import { AppMain } from "./core/main"
+import { App } from "./core/app"
 
-new AppMain()
+new App().start()

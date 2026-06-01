@@ -11,13 +11,13 @@ from typing import Any
 
 from rapidkit_common.enums import Status
 from rapidkit_core.config import settings
-from rapidkit_core.exceptions import AppException
 from rapidkit_core.log import get_plugin_logger
-from rapidkit_core.status_codes import StatusCode
+from rapidkit_framework.exceptions import AppException
 from sqlalchemy import ColumnElement
 from sqlmodel import col, or_
 
 from plugin_script.models import Script
+from plugin_script.status_codes import ScriptStatusCode
 
 logger = get_plugin_logger("Script")
 
@@ -60,7 +60,7 @@ async def execute_code(language: str, code: str) -> dict[str, Any]:
 
     cmd = _LANGUAGE_COMMANDS.get(language)
     if not cmd:
-        raise AppException(StatusCode.BAD_REQUEST)
+        raise AppException(ScriptStatusCode.UNSUPPORTED_LANGUAGE)
 
     timeout = settings.SCRIPT_EXEC_TIMEOUT
     max_output = settings.SCRIPT_EXEC_MAX_OUTPUT

@@ -8,7 +8,6 @@ Date   : 2026-04-02
 """
 
 from fastapi import APIRouter, Query
-from plugin_auth.role.deps import RoleCrudDep
 from rapidkit_common.auth import UserDBDep
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import Response
@@ -39,10 +38,9 @@ async def get_user_routes_api(
     user: UserDBDep,
     redis: RedisDep,
     session: SessionDep,
-    role_crud: RoleCrudDep,
 ) -> Response[UserRouteResponse]:
     """获取当前用户的授权路由。"""
-    result = await get_cached_user_routes(user, redis, session, role_crud)
+    result = await get_cached_user_routes(user, redis, session)
     return Response(data=result)
 
 

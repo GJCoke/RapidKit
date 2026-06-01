@@ -11,8 +11,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.deps import RedisDep, SessionDep
+from rapidkit_common.events import MenuChangedEvent
 from rapidkit_common.schemas.response import PaginatedResponse, Response
+from rapidkit_common.transaction import after_commit
 from rapidkit_core.log import get_plugin_logger
+from rapidkit_framework.events import event_bus
 
 from plugin_menu.deps import MenuCrudDep
 from plugin_menu.schemas import (
@@ -68,11 +71,17 @@ async def get_all_pages(redis: RedisDep, session: SessionDep) -> Response[list[s
 
 
 @router.post("/menus")
-async def add_menu(data: MenuCreate, menu_crud: MenuCrudDep, redis: RedisDep) -> Response[MenuResponse]:
+async def add_menu(
+    data: MenuCreate,
+    menu_crud: MenuCrudDep,
+    redis: RedisDep,
+    session: SessionDep,
+) -> Response[MenuResponse]:
     """新增菜单。"""
     menu = await menu_crud.create(data)
     logger.info("Menu created: {menu_name}", menu_name=data.menu_name)
-    await invalidate_menu_cache(redis)
+    event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(menu.id), action="created"))
+    after_commit(session, invalidate_menu_cache, redis)
     return Response(data=MenuResponse.model_validate(menu))
 
 
@@ -82,27 +91,34 @@ async def update_menu(
     data: MenuUpdate,
     menu_crud: MenuCrudDep,
     redis: RedisDep,
+    session: SessionDep,
 ) -> Response[MenuResponse]:
     """更新菜单。"""
     menu = await menu_crud.update_by_id(menu_id, data)
     logger.info("Menu updated: {menu_id}", menu_id=menu_id)
-    await invalidate_menu_cache(redis)
+    event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(menu_id), action="updated"))
+    after_commit(session, invalidate_menu_cache, redis)
     return Response(data=MenuResponse.model_validate(menu))
 
 
 @router.delete("/menus/{menu_id}")
-async def delete_menu(menu_id: UUID, menu_crud: MenuCrudDep, redis: RedisDep) -> Response[bool]:
+async def delete_menu(menu_id: UUID, menu_crud: MenuCrudDep, redis: RedisDep, session: SessionDep) -> Response[bool]:
     """删除单个菜单。"""
     await menu_crud.delete(menu_id)
     logger.info("Menu deleted: {menu_id}", menu_id=menu_id)
-    await invalidate_menu_cache(redis)
+    event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(menu_id), action="deleted"))
+    after_commit(session, invalidate_menu_cache, redis)
     return Response(data=True)
 
 
 @router.delete("/menus")
-async def batch_delete_menus(data: MenuBatchRequest, menu_crud: MenuCrudDep, redis: RedisDep) -> Response[bool]:
+async def batch_delete_menus(
+    data: MenuBatchRequest, menu_crud: MenuCrudDep, redis: RedisDep, session: SessionDep
+) -> Response[bool]:
     """批量删除菜单。"""
     await menu_crud.delete_all(data.ids)
     logger.info("Menus batch deleted: {count} items", count=len(data.ids))
-    await invalidate_menu_cache(redis)
+    for mid in data.ids:
+        event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(mid), action="deleted"))
+    after_commit(session, invalidate_menu_cache, redis)
     return Response(data=True)

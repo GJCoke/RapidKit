@@ -1,0 +1,12 @@
+{
+  "error": {
+    "rolePermissionDenied": "角色权限不足",
+    "resourcePermissionDenied": "资源权限不足",
+    "dataWriteDenied": "无此数据的写入权限",
+    "fieldWriteDenied": "包含受保护的字段，无法修改",
+    "createPermissionDenied": "无权创建此数据",
+    "roleNotFound": "角色不存在",
+    "roleOperationError": "角色操作失败",
+    "permissionOperationError": "权限操作失败"
+  }
+}

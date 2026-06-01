@@ -5,7 +5,7 @@ Author  : Claude
 Date    : 2026-04-01
 """
 
-from rapidkit_core.plugin import PluginManifest
+from rapidkit_framework.plugin import PluginManifest
 
 
 def register() -> PluginManifest:

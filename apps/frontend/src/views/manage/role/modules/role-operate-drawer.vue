@@ -1,10 +1,9 @@
 <script setup lang="ts">
-  import { computed, ref, shallowRef, watch, type ComputedRef } from "vue"
-  import type { TreeSelectOption } from "naive-ui"
+  import { computed, ref, watch } from "vue"
   import { jsonClone } from "@rapidkit/utils"
   import { useBoolean } from "@rapidkit/hooks"
-  import { dataScopeOptions, enableStatusOptions } from "@/constants/business"
-  import { fetchCreateRole, fetchGetAllDataRules, fetchGetDepartmentTree, fetchUpdateRole } from "@/service/api"
+  import { enableStatusOptions } from "@/constants/business"
+  import { fetchCreateRole, fetchGetAllDataPolicies, fetchGetAllFieldPolicies, fetchUpdateRole } from "@/service/api"
   import { translateOptions } from "@/utils/common"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
@@ -48,9 +47,8 @@
   })
 
   type Model = Pick<Api.SystemManage.Role, "name" | "code" | "description" | "status"> & {
-    dataScope: Api.SystemManage.DataScopeType
-    customDeptIds: string[]
-    dataRuleIds: string[]
+    dataPolicyIds: string[]
+    fieldPolicyIds: string[]
   }
 
   const model = ref(createDefaultModel())
@@ -61,9 +59,8 @@
       code: "",
       description: "",
       status: null,
-      dataScope: 2,
-      customDeptIds: [],
-      dataRuleIds: [],
+      dataPolicyIds: [],
+      fieldPolicyIds: [],
     }
   }
 
@@ -75,38 +72,29 @@
     status: defaultRequiredRule,
   }
 
-  // Department tree options for custom dept select
-  const deptTreeOptions = shallowRef<TreeSelectOption[]>([])
+  // Data policy options
+  const policyOptions = ref<Array<{ label: string; value: string }>>([])
 
-  function buildDeptTreeSelect(departments: Api.SystemManage.DepartmentTree[]): TreeSelectOption[] {
-    return departments.map((dept) => ({
-      key: dept.id,
-      label: dept.name,
-      children: dept.children?.length ? buildDeptTreeSelect(dept.children) : undefined,
+  async function loadPolicies() {
+    const { data, error } = await fetchGetAllDataPolicies()
+    if (error) return
+    policyOptions.value = data.map((p: Api.DataPolicy.Policy) => ({
+      label: p.name,
+      value: p.id,
     }))
   }
 
-  async function loadDeptTree() {
-    const { data, error } = await fetchGetDepartmentTree()
-    if (error) return
-    deptTreeOptions.value = buildDeptTreeSelect(data)
-  }
+  // Field policy options
+  const fieldPolicyOptions = ref<Array<{ label: string; value: string }>>([])
 
-  // Data rule options
-  const dataRuleOptions = ref<Array<{ label: string; value: string }>>([])
-
-  async function loadDataRuleOptions() {
-    const { data, error } = await fetchGetAllDataRules()
+  async function loadFieldPolicies() {
+    const { data, error } = await fetchGetAllFieldPolicies()
     if (error) return
-    dataRuleOptions.value = data.map((r: Api.SystemManage.DataRule) => ({
-      label: `${r.name} (${r.modelName}.${r.field})`,
-      value: r.id,
+    fieldPolicyOptions.value = data.map((p: Api.FieldPolicy.Policy) => ({
+      label: p.name,
+      value: p.id,
     }))
   }
-
-  const numericDataScopeOptions = computed(() =>
-    translateOptions(dataScopeOptions).map((opt) => ({ ...opt, value: Number(opt.value) })),
-  )
 
   const roleId = computed(() => props.rowData?.id || "")
 
@@ -144,8 +132,8 @@
     if (visible.value) {
       handleInitModel()
       restoreValidation()
-      loadDeptTree()
-      loadDataRuleOptions()
+      loadPolicies()
+      loadFieldPolicies()
     }
   })
 </script>
@@ -168,31 +156,22 @@
         <NFormItem :label="$t('page.manage.role.roleDesc')" path="description">
           <NInput v-model:value="model.description" :placeholder="$t('page.manage.role.form.roleDesc')" />
         </NFormItem>
-        <NFormItem :label="$t('page.manage.role.dataScope')" path="dataScope">
+        <NFormItem :label="$t('page.manage.role.dataPolicies')" path="dataPolicyIds">
           <NSelect
-            v-model:value="model.dataScope"
-            :options="numericDataScopeOptions"
-            :placeholder="$t('page.manage.role.dataScopeConfig')"
+            v-model:value="model.dataPolicyIds"
+            :options="policyOptions"
+            multiple
+            clearable
+            placeholder="选择数据策略（不选则不限制）"
           />
         </NFormItem>
-        <NFormItem v-if="model.dataScope === 5" :label="$t('page.manage.role.customDepartments')" path="customDeptIds">
-          <NTreeSelect
-            v-model:value="model.customDeptIds"
-            multiple
-            checkable
-            cascade
-            :options="deptTreeOptions"
-            :placeholder="$t('page.manage.role.customDepartments')"
-            default-expand-all
-          />
-        </NFormItem>
-        <NFormItem v-if="model.dataScope === 6" :label="$t('page.manage.role.customRules')" path="dataRuleIds">
+        <NFormItem :label="$t('page.manage.role.fieldPolicy')" path="fieldPolicyIds">
           <NSelect
-            v-model:value="model.dataRuleIds"
+            v-model:value="model.fieldPolicyIds"
+            :options="fieldPolicyOptions"
             multiple
-            :options="dataRuleOptions"
-            :placeholder="$t('page.manage.role.customRules')"
-            filterable
+            clearable
+            :placeholder="$t('page.manage.role.fieldPolicyPlaceholder')"
           />
         </NFormItem>
       </NForm>
