@@ -113,11 +113,7 @@ def evaluate_create_permission(
 
     # Check allow: at least one must match
     if allow_policies:
-        any_allows = any(
-            _evaluate_condition(p.rule, obj_attrs, ctx)
-            for p in allow_policies
-            if p.rule
-        )
+        any_allows = any(_evaluate_condition(p.rule, obj_attrs, ctx) for p in allow_policies if p.rule)
         if not any_allows:
             logger.warning(
                 "Create denied: no allow policy matched user_id={user_id}",

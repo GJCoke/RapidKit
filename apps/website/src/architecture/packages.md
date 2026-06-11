@@ -20,19 +20,19 @@ RapidKit 后端 Python 包采用三层架构，每层职责明确、依赖单向
 
 > 「启动一个进程连上所有外部依赖所需的一切」
 
-| 模块 | 职责 |
-|------|------|
-| `config.py` | BaseSettings + Config 类，settings 单例 |
-| `database.py` | SQLAlchemy engine、session 工厂、RedisManager |
-| `redis_client.py` | AsyncRedisClient 封装 |
-| `minio_client.py` | MinIO 对象存储连接 |
-| `distributed_lock.py` | Redis 分布式锁 |
-| `leader_election.py` | Redis 主节点选举 |
-| `batch_queue.py` | 异步批量队列 |
-| `log.py` | Loguru 日志配置 |
-| `timezone.py` | 时区工具 |
-| `nanoid.py` | 请求 ID |
-| `uuid7.py` | UUID v7 生成器 |
+| 模块                  | 职责                                          |
+| --------------------- | --------------------------------------------- |
+| `config.py`           | BaseSettings + Config 类，settings 单例       |
+| `database.py`         | SQLAlchemy engine、session 工厂、RedisManager |
+| `redis_client.py`     | AsyncRedisClient 封装                         |
+| `minio_client.py`     | MinIO 对象存储连接                            |
+| `distributed_lock.py` | Redis 分布式锁                                |
+| `leader_election.py`  | Redis 主节点选举                              |
+| `batch_queue.py`      | 异步批量队列                                  |
+| `log.py`              | Loguru 日志配置                               |
+| `timezone.py`         | 时区工具                                      |
+| `nanoid.py`           | 请求 ID                                       |
+| `uuid7.py`            | UUID v7 生成器                                |
 
 **依赖：** pydantic-settings, sqlmodel, redis, asyncpg, loguru, minio
 
@@ -40,16 +40,16 @@ RapidKit 后端 Python 包采用三层架构，每层职责明确、依赖单向
 
 > 「把进程变成可扩展的插件化应用」
 
-| 模块 | 职责 |
-|------|------|
-| `plugin.py` | PluginManifest、生命周期声明 |
-| `loader.py` | 插件发现、拓扑排序、加载 |
-| `events.py` | Event 基类 + EventBus（纯机制，无业务事件） |
-| `exceptions.py` | AppException、BaseHTTPException |
-| `status_codes.py` | StatusCode 枚举 |
-| `i18n.py` | 可插拔翻译桥接 |
-| `limiter.py` | 速率限制服务 |
-| `context.py` | 请求上下文 |
+| 模块              | 职责                                        |
+| ----------------- | ------------------------------------------- |
+| `plugin.py`       | PluginManifest、生命周期声明                |
+| `loader.py`       | 插件发现、拓扑排序、加载                    |
+| `events.py`       | Event 基类 + EventBus（纯机制，无业务事件） |
+| `exceptions.py`   | AppException、BaseHTTPException             |
+| `status_codes.py` | StatusCode 枚举                             |
+| `i18n.py`         | 可插拔翻译桥接                              |
+| `limiter.py`      | 速率限制服务                                |
+| `context.py`      | 请求上下文                                  |
 
 **依赖：** rapidkit-core, fastapi, slowapi, starlette-context, packaging
 
@@ -57,12 +57,12 @@ RapidKit 后端 Python 包采用三层架构，每层职责明确、依赖单向
 
 > 「无状态的加密/签名/哈希纯函数」
 
-| 模块 | 职责 |
-|------|------|
-| `jwt.py` | JWT 令牌创建与解码 |
-| `password.py` | bcrypt 密码哈希与校验 |
-| `rsa.py` | RSA 密钥对生成、加解密 |
-| `types.py` | AccessSecret / RefreshSecret 类型 |
+| 模块          | 职责                              |
+| ------------- | --------------------------------- |
+| `jwt.py`      | JWT 令牌创建与解码                |
+| `password.py` | bcrypt 密码哈希与校验             |
+| `rsa.py`      | RSA 密钥对生成、加解密            |
+| `types.py`    | AccessSecret / RefreshSecret 类型 |
 
 **依赖：** authlib, bcrypt, cryptography, pydantic
 
@@ -72,14 +72,14 @@ RapidKit 后端 Python 包采用三层架构，每层职责明确、依赖单向
 
 > 「写业务路由时的公共基类和工具」
 
-| 模块 | 职责 |
-|------|------|
-| `crud.py` | BaseCRUD 泛型基类 |
-| `models.py` | SQLModel 基类（id + timestamps） |
-| `schemas/` | BaseModel、Response、PaginatedResponse |
-| `deps.py` | SessionDep、RedisDep |
-| `auth.py` | UserProtocol 接口契约 |
-| `utils.py` | 通用工具函数 |
+| 模块        | 职责                                   |
+| ----------- | -------------------------------------- |
+| `crud.py`   | BaseCRUD 泛型基类                      |
+| `models.py` | SQLModel 基类（id + timestamps）       |
+| `schemas/`  | BaseModel、Response、PaginatedResponse |
+| `deps.py`   | SessionDep、RedisDep                   |
+| `auth.py`   | UserProtocol 接口契约                  |
+| `utils.py`  | 通用工具函数                           |
 
 **依赖：** rapidkit-core, rapidkit-framework
 
@@ -93,12 +93,12 @@ RapidKit 后端 Python 包采用三层架构，每层职责明确、依赖单向
 
 ### 导入路径对照表
 
-| 功能 | 导入路径 |
-|------|---------|
-| 配置 / 数据库 / Redis / 日志 | `from rapidkit_core.xxx import ...` |
-| 插件 / 事件 / 异常 / 状态码 | `from rapidkit_framework.xxx import ...` |
-| JWT / 密码 / RSA | `from rapidkit_security import ...` |
-| CRUD / Schema / Deps | `from rapidkit_common.xxx import ...` |
+| 功能                         | 导入路径                                 |
+| ---------------------------- | ---------------------------------------- |
+| 配置 / 数据库 / Redis / 日志 | `from rapidkit_core.xxx import ...`      |
+| 插件 / 事件 / 异常 / 状态码  | `from rapidkit_framework.xxx import ...` |
+| JWT / 密码 / RSA             | `from rapidkit_security import ...`      |
+| CRUD / Schema / Deps         | `from rapidkit_common.xxx import ...`    |
 
 ### 事件归属规则
 
@@ -121,10 +121,10 @@ from plugin_auth.events import RolePermissionsChangedEvent
 
 ## 新增包 / 模块的判断标准
 
-| 你要写的代码... | 放在哪里 |
-|---------------|---------|
-| 需要连接外部服务（DB/Redis/MinIO） | `core` |
-| 是插件系统的机制或 HTTP 框架层 | `framework` |
-| 是无状态的加密/签名/哈希工具 | `security` |
-| 是多插件共用的业务脚手架 | `common` |
-| 是某个业务域的逻辑 | 对应的插件 |
+| 你要写的代码...                    | 放在哪里    |
+| ---------------------------------- | ----------- |
+| 需要连接外部服务（DB/Redis/MinIO） | `core`      |
+| 是插件系统的机制或 HTTP 框架层     | `framework` |
+| 是无状态的加密/签名/哈希工具       | `security`  |
+| 是多插件共用的业务脚手架           | `common`    |
+| 是某个业务域的逻辑                 | 对应的插件  |

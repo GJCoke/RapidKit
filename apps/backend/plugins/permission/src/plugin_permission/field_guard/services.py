@@ -27,10 +27,7 @@ def build_field_restrictions(
     """
     restrictions = FieldRestrictions()
 
-    relevant = [
-        p for p in policies
-        if p.target_model == model_tablename and action in p.actions
-    ]
+    relevant = [p for p in policies if p.target_model == model_tablename and action in p.actions]
 
     for policy in relevant:
         if policy.effect == "strip":
@@ -80,9 +77,7 @@ def apply_field_write_restrictions(data: dict[str, Any], restrictions: FieldRest
 
     # Remove stripped/masked fields
     result = {
-        key: value
-        for key, value in data.items()
-        if key not in restrictions.stripped and key not in restrictions.masked
+        key: value for key, value in data.items() if key not in restrictions.stripped and key not in restrictions.masked
     }
 
     return result

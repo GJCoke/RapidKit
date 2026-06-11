@@ -95,10 +95,7 @@
 
   const rules = computed<Record<RuleKey, App.Global.FormRule | App.Global.FormRule[]>>(() => {
     return {
-      username: [
-        defaultRequiredRule,
-        patternRules.username,
-      ],
+      username: [defaultRequiredRule, patternRules.username],
       name: [
         defaultRequiredRule,
         { min: 2, max: 100, message: $t("page.manage.user.form.nameLengthRule"), trigger: "change" },
@@ -108,9 +105,7 @@
     }
   })
 
-  const passwordRules = computed(() =>
-    props.operateType === "add" ? formRules.pwd : undefined,
-  )
+  const passwordRules = computed(() => (props.operateType === "add" ? formRules.pwd : undefined))
 
   /** the enabled role options */
   const roleOptions = ref<CommonType.Option<string>[]>([])
@@ -146,8 +141,22 @@
     model.value = createDefaultModel()
 
     if (props.operateType === "edit" && props.rowData) {
-      const { username, name, email, phone, avatar, nickname, gender, roles, status, isAdmin, departmentId, remark } = jsonClone(props.rowData)
-      Object.assign(model.value, { username, name, email, phone: phone || "", avatar: avatar || "", nickname: nickname || "", gender, roles, status, isAdmin, departmentId, remark: remark || "" })
+      const { username, name, email, phone, avatar, nickname, gender, roles, status, isAdmin, departmentId, remark } =
+        jsonClone(props.rowData)
+      Object.assign(model.value, {
+        username,
+        name,
+        email,
+        phone: phone || "",
+        avatar: avatar || "",
+        nickname: nickname || "",
+        gender,
+        roles,
+        status,
+        isAdmin,
+        departmentId,
+        remark: remark || "",
+      })
     }
   }
 
@@ -182,6 +191,7 @@
       const encryptedPassword = await encryptPassword(model.value.password)
       const { error } = await fetchCreateUser({
         ...commonFields,
+        status: model.value.status!,
         password: encryptedPassword,
       })
       if (error) return

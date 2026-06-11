@@ -1,11 +1,7 @@
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from "vue"
   import { $t } from "@/locales"
-  import {
-    fetchCreateFieldPolicy,
-    fetchGetPolicyModels,
-    fetchUpdateFieldPolicy,
-  } from "@/service/api/system-manage"
+  import { fetchCreateFieldPolicy, fetchGetPolicyModels, fetchUpdateFieldPolicy } from "@/service/api/system-manage"
   import RuleEditor from "../../data-policy/modules/rule-editor/rule-editor.vue"
   import type { GroupNode, ModelOption } from "../../data-policy/modules/rule-editor/types"
 
@@ -21,9 +17,7 @@
   const visible = defineModel<boolean>("visible", { default: false })
 
   const title = computed(() =>
-    props.operateType === "add"
-      ? $t("page.manage.fieldPolicy.addPolicy")
-      : $t("page.manage.fieldPolicy.editPolicy"),
+    props.operateType === "add" ? $t("page.manage.fieldPolicy.addPolicy") : $t("page.manage.fieldPolicy.editPolicy"),
   )
 
   const models = ref<ModelOption[]>([])

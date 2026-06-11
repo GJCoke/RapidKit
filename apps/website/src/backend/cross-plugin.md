@@ -18,11 +18,11 @@ rapidkit_framework/events    ← 异步事件总线
 
 选择哪种协作机制取决于交互模式：
 
-| 场景 | 机制 | 示例 |
-|------|------|------|
-| A 需要调用 B 的能力并等待结果 | Protocol + ServiceRegistry | auth 构建权限缓存 |
-| A 发生了事件，B 可能需要响应 | EventBus | 角色权限变更后清用户缓存 |
-| 只需简单统计，不需要完整模型语义 | Raw SQL | system 插件统计各表行数 |
+| 场景                             | 机制                       | 示例                     |
+| -------------------------------- | -------------------------- | ------------------------ |
+| A 需要调用 B 的能力并等待结果    | Protocol + ServiceRegistry | auth 构建权限缓存        |
+| A 发生了事件，B 可能需要响应     | EventBus                   | 角色权限变更后清用户缓存 |
+| 只需简单统计，不需要完整模型语义 | Raw SQL                    | system 插件统计各表行数  |
 
 ---
 
@@ -56,6 +56,7 @@ class UserResolver(Protocol):
 ```
 
 **命名约定：**
+
 - 数据协议用 `XxxProtocol`（如 `UserProtocol`）
 - 能力协议用动词/名词（如 `UserResolver`、`PermissionCacheManager`、`TokenDecoder`）
 
@@ -91,6 +92,7 @@ def register() -> PluginManifest:
 ```
 
 **关键点：**
+
 - `provides` 声明此插件对外提供的 Protocol 列表（文档化用途 + 依赖检查）
 - `service_factories` 的 key 只需要填一个代表性 Protocol，value 是注册函数
 - 注册函数接收 `ServiceRegistry`，调用 `registry.register(Protocol, impl)` 完成绑定
@@ -114,6 +116,7 @@ async def user_login(user, redis):
 ```
 
 **注意事项：**
+
 - `get_service()` 在服务未注册时抛出 `RuntimeError`，确保 `dependencies` 声明正确
 - 可用 `get_service_optional()` 获取可选依赖（返回 `None` 而非抛异常）
 - 确保消费方插件在 `PluginManifest.dependencies` 中声明了提供方（保证加载顺序）
@@ -162,6 +165,7 @@ class RolePermissionsChangedEvent(Event):
 ```
 
 **约定：**
+
 - `event_name` 使用 `{domain}.{action}` 格式（如 `role.permissions_changed`）
 - 事件类继承 `Event`，使用 `@dataclass` 声明字段
 
@@ -256,11 +260,13 @@ menus = await _count("menu_menus")
 ```
 
 **适用条件：**
+
 - 只读、只聚合（COUNT/SUM/AVG）
 - 不需要 model 的业务方法
 - 表名遵循 `{plugin}_{entity_plural}` 命名约定，视为稳定 API
 
 **不适用时改用 ServiceRegistry：**
+
 - 需要 model 实例及其方法
 - 需要写操作
 - 查询逻辑可能变更
@@ -269,13 +275,13 @@ menus = await _count("menu_menus")
 
 ## 禁止事项
 
-| 做法 | 为什么不行 | 替代方案 |
-|------|-----------|---------|
-| `from plugin_rbac.role.deps import RoleCrudDep` | 直接依赖内部实现 | 定义 Protocol + ServiceRegistry |
-| `from plugin_user.models import User` | 耦合 ORM 模型 | 使用 `UserProtocol` 或 raw SQL |
-| 在 Service 层 import 其他插件的 CRUD | 跨越边界 | Protocol 方法封装所需能力 |
-| 通过 `app.state` 传递插件内部对象 | 隐式耦合 | ServiceRegistry 显式注册 |
-| 在 Protocol 中暴露 SQLModel/Session | 泄露实现 | Protocol 参数用基础类型或 Protocol |
+| 做法                                            | 为什么不行       | 替代方案                           |
+| ----------------------------------------------- | ---------------- | ---------------------------------- |
+| `from plugin_rbac.role.deps import RoleCrudDep` | 直接依赖内部实现 | 定义 Protocol + ServiceRegistry    |
+| `from plugin_user.models import User`           | 耦合 ORM 模型    | 使用 `UserProtocol` 或 raw SQL     |
+| 在 Service 层 import 其他插件的 CRUD            | 跨越边界         | Protocol 方法封装所需能力          |
+| 通过 `app.state` 传递插件内部对象               | 隐式耦合         | ServiceRegistry 显式注册           |
+| 在 Protocol 中暴露 SQLModel/Session             | 泄露实现         | Protocol 参数用基础类型或 Protocol |
 
 ---
 
@@ -301,19 +307,19 @@ menus = await _count("menu_menus")
 
 ## 现有 Protocol 清单
 
-| Protocol | 所在文件 | 提供者 | 消费者 |
-|----------|---------|--------|--------|
-| `UserProtocol` | `protocols/user.py` | — (数据契约) | auth, rbac |
-| `UserResolver` | `protocols/user.py` | plugin_user | plugin_auth, plugin_rbac |
-| `UserQueryService` | `protocols/user.py` | plugin_user | plugin_rbac |
-| `TokenDecoder` | `protocols/auth.py` | plugin_auth | plugin_rbac |
-| `Authenticator` | `protocols/auth.py` | plugin_auth | — |
-| `CurrentUserProvider` | `protocols/auth.py` | plugin_auth | — |
-| `PasswordDecryptor` | `protocols/auth.py` | plugin_auth | plugin_user |
-| `PermissionChecker` | `protocols/rbac.py` | plugin_rbac | — |
-| `PolicyLoader` | `protocols/rbac.py` | plugin_rbac | — |
-| `PermissionCacheManager` | `protocols/rbac.py` | plugin_rbac | plugin_auth, plugin_menu |
-| `DepartmentResolver` | `protocols/department.py` | plugin_department | — |
+| Protocol                 | 所在文件                  | 提供者            | 消费者                   |
+| ------------------------ | ------------------------- | ----------------- | ------------------------ |
+| `UserProtocol`           | `protocols/user.py`       | — (数据契约)      | auth, rbac               |
+| `UserResolver`           | `protocols/user.py`       | plugin_user       | plugin_auth, plugin_rbac |
+| `UserQueryService`       | `protocols/user.py`       | plugin_user       | plugin_rbac              |
+| `TokenDecoder`           | `protocols/auth.py`       | plugin_auth       | plugin_rbac              |
+| `Authenticator`          | `protocols/auth.py`       | plugin_auth       | —                        |
+| `CurrentUserProvider`    | `protocols/auth.py`       | plugin_auth       | —                        |
+| `PasswordDecryptor`      | `protocols/auth.py`       | plugin_auth       | plugin_user              |
+| `PermissionChecker`      | `protocols/rbac.py`       | plugin_rbac       | —                        |
+| `PolicyLoader`           | `protocols/rbac.py`       | plugin_rbac       | —                        |
+| `PermissionCacheManager` | `protocols/rbac.py`       | plugin_rbac       | plugin_auth, plugin_menu |
+| `DepartmentResolver`     | `protocols/department.py` | plugin_department | —                        |
 
 ---
 

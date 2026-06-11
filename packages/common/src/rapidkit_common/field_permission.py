@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from fastapi import Request
+
 from rapidkit_common.auth import UserDBDep
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.models import SQLModel

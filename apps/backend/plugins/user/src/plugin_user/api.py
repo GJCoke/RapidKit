@@ -11,9 +11,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from rapidkit_common.auth import UserDBDep, VerifyPermissionDep, verify_user_permission
-from rapidkit_common.field_permission import FieldPermissionFilter, FieldRestrictions, serialize_with_restrictions
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.events import UserCreatedEvent, UserDeletedEvent, UserPasswordChangedEvent, UserRolesChangedEvent
+from rapidkit_common.field_permission import FieldPermissionFilter, FieldRestrictions, serialize_with_restrictions
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_common.transaction import after_commit
 from rapidkit_core.log import get_plugin_logger

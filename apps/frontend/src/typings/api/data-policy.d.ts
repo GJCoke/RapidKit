@@ -34,8 +34,8 @@ declare global {
         description: string
         rule: RuleTree
         status: Api.Common.EnableStatus
-        effect: 'allow' | 'deny'
-        actions: ('read' | 'write')[]
+        effect: "allow" | "deny"
+        actions: ("read" | "write")[]
         createTime: string
         updateTime: string
       }
@@ -46,8 +46,8 @@ declare global {
         description?: string
         rule: RuleTree
         status?: Api.Common.EnableStatus
-        effect?: 'allow' | 'deny'
-        actions?: ('read' | 'write')[]
+        effect?: "allow" | "deny"
+        actions?: ("read" | "write")[]
       }
 
       type PolicyUpdate = Partial<PolicyCreate>

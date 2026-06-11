@@ -92,16 +92,7 @@ export function fetchGetUserList(params?: Api.SystemManage.UserSearchParams) {
 }
 
 /** create user */
-export function fetchCreateUser(data: {
-  name: string
-  email: string
-  username: string
-  password: string
-  status?: string
-  roles?: string[]
-  isAdmin?: boolean
-  departmentId?: string
-}) {
+export function fetchCreateUser(data: Api.SystemManage.CreateUserBody) {
   return request<Api.SystemManage.User>({
     url: "/users",
     method: "post",
@@ -344,32 +335,32 @@ export function fetchSimulatePolicy(data: Api.DataPolicy.PolicySimulateRequest) 
 
 /** Fetch field policy list (paginated) */
 export function fetchGetFieldPolicyList(params?: Api.FieldPolicy.PolicySearchParams) {
-  return request<Api.FieldPolicy.PolicyList>({ url: '/field-policies', method: 'get', params });
+  return request<Api.FieldPolicy.PolicyList>({ url: "/field-policies", method: "get", params })
 }
 
 /** Fetch all field policies (for role drawer select) */
 export function fetchGetAllFieldPolicies() {
-  return request<Api.FieldPolicy.Policy[]>({ url: '/field-policies/all', method: 'get' });
+  return request<Api.FieldPolicy.Policy[]>({ url: "/field-policies/all", method: "get" })
 }
 
 /** Create a field policy */
 export function fetchCreateFieldPolicy(data: Api.FieldPolicy.PolicyCreate) {
-  return request<Api.FieldPolicy.Policy>({ url: '/field-policies', method: 'post', data });
+  return request<Api.FieldPolicy.Policy>({ url: "/field-policies", method: "post", data })
 }
 
 /** Update a field policy */
 export function fetchUpdateFieldPolicy(id: string, data: Api.FieldPolicy.PolicyUpdate) {
-  return request<Api.FieldPolicy.Policy>({ url: `/field-policies/${id}`, method: 'put', data });
+  return request<Api.FieldPolicy.Policy>({ url: `/field-policies/${id}`, method: "put", data })
 }
 
 /** Delete a field policy */
 export function fetchDeleteFieldPolicy(id: string) {
-  return request<null>({ url: `/field-policies/${id}`, method: 'delete' });
+  return request<null>({ url: `/field-policies/${id}`, method: "delete" })
 }
 
 /** Batch delete field policies */
 export function fetchBatchDeleteFieldPolicies(ids: string[]) {
-  return request<null>({ url: '/field-policies/batch', method: 'delete', data: { ids } });
+  return request<null>({ url: "/field-policies/batch", method: "delete", data: { ids } })
 }
 
 // ==================== AuditDictionary ====================

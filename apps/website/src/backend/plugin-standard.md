@@ -77,17 +77,17 @@ Router 和 Model 的导入**必须**在 `register()` 函数内部，避免模块
 
 ### PluginManifest 完整字段
 
-| 字段                    | 类型                     | 必填 | 说明                      |
-| ----------------------- | ------------------------ | ---- | ------------------------- |
-| `name`                  | `str`                    | 是   | 插件名，匹配目录名        |
-| `version`               | `str`                    | 是   | PEP 440 语义化版本        |
-| `router`                | `APIRouter`              | 是   | 插件路由                  |
-| `models`                | `list[type]`             | 是   | SQLModel 表类列表         |
-| `dependencies`          | `list[str]`              | 否   | 前置插件名列表            |
-| `event_listeners`       | `list`                   | 否   | 跨插件事件监听器          |
-| `on_startup`            | `list[Callable]`         | 否   | 启动回调                  |
-| `on_shutdown`           | `list[Callable]`         | 否   | 关闭回调                  |
-| `dependency_overrides`  | `dict`                   | 否   | 覆盖 FastAPI 依赖         |
+| 字段                   | 类型             | 必填 | 说明               |
+| ---------------------- | ---------------- | ---- | ------------------ |
+| `name`                 | `str`            | 是   | 插件名，匹配目录名 |
+| `version`              | `str`            | 是   | PEP 440 语义化版本 |
+| `router`               | `APIRouter`      | 是   | 插件路由           |
+| `models`               | `list[type]`     | 是   | SQLModel 表类列表  |
+| `dependencies`         | `list[str]`      | 否   | 前置插件名列表     |
+| `event_listeners`      | `list`           | 否   | 跨插件事件监听器   |
+| `on_startup`           | `list[Callable]` | 否   | 启动回调           |
+| `on_shutdown`          | `list[Callable]` | 否   | 关闭回调           |
+| `dependency_overrides` | `dict`           | 否   | 覆盖 FastAPI 依赖  |
 
 ## pyproject.toml 模板
 
@@ -206,16 +206,16 @@ class MyPluginStatusCode(BaseStatusCode):
 
 ## 命名规范
 
-| 对象                   | 规范                         | 示例                     |
-| ---------------------- | ---------------------------- | ------------------------ |
-| 插件目录名             | `kebab-case`                 | `plugins/my-plugin/`     |
-| Python 包名            | `plugin_<snake_case>`        | `plugin_my_plugin`       |
-| PyPI 包名              | `rapidkit-plugin-<kebab>`    | `rapidkit-plugin-my-plugin` |
-| 数据库表名             | `{plugin}_{entity_plural}`   | `auth_users`, `worker_task_results` |
-| Entry Point 名         | 与插件目录名相同             | `my-plugin`              |
-| PluginManifest.name    | 与插件目录名相同             | `"my-plugin"`            |
-| API 路由前缀           | `/{plural_entity}`           | `/users`, `/roles`       |
-| 状态码枚举类名         | `{Plugin}StatusCode`         | `AuthStatusCode`         |
+| 对象                | 规范                       | 示例                                |
+| ------------------- | -------------------------- | ----------------------------------- |
+| 插件目录名          | `kebab-case`               | `plugins/my-plugin/`                |
+| Python 包名         | `plugin_<snake_case>`      | `plugin_my_plugin`                  |
+| PyPI 包名           | `rapidkit-plugin-<kebab>`  | `rapidkit-plugin-my-plugin`         |
+| 数据库表名          | `{plugin}_{entity_plural}` | `auth_users`, `worker_task_results` |
+| Entry Point 名      | 与插件目录名相同           | `my-plugin`                         |
+| PluginManifest.name | 与插件目录名相同           | `"my-plugin"`                       |
+| API 路由前缀        | `/{plural_entity}`         | `/users`, `/roles`                  |
+| 状态码枚举类名      | `{Plugin}StatusCode`       | `AuthStatusCode`                    |
 
 ## 路由规范
 

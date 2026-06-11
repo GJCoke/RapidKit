@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v1/auth/keys/public": {
+    "/api/v1/users/stats/summary": {
         parameters: {
             query?: never;
             header?: never;
@@ -12,10 +12,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Public Key
-         * @description 得到用于 RSA 加密密码的公开密钥。
+         * 用户统计摘要
+         * @description 获取用户总数、今日新增、昨日新增和在线用户数。
          */
-        get: operations["get_public_key_api_v1_auth_keys_public_get"];
+        get: operations["get_user_stats_summary_api_v1_users_stats_summary_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -24,67 +24,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Login
-         * @description 用户登录端点。
-         */
-        post: operations["login_api_v1_auth_login_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Logout
-         * @description 登出当前用户。
-         */
-        post: operations["logout_api_v1_auth_logout_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/token/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Token
-         * @description 使用刷新令牌刷新用户的访问令牌。
-         */
-        post: operations["refresh_token_api_v1_auth_token_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/user/info": {
+    "/api/v1/users/stats/trend": {
         parameters: {
             query?: never;
             header?: never;
@@ -92,10 +32,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get User Info
-         * @description 检索当前的用户信息。
+         * 用户活跃趋势
+         * @description 获取用户注册趋势数据。
          */
-        get: operations["get_user_info_api_v1_auth_user_info_get"];
+        get: operations["get_user_stats_trend_api_v1_users_stats_trend_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -104,113 +44,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Roles */
-        get: operations["get_roles_api_v1_roles_get"];
-        put?: never;
-        /** Create Role */
-        post: operations["create_role_api_v1_roles_post"];
-        /** Batch Delete Role */
-        delete: operations["batch_delete_role_api_v1_roles_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/roles/mine": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get My Roles */
-        get: operations["get_my_roles_api_v1_roles_mine_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/roles/all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get All Roles */
-        get: operations["get_all_roles_api_v1_roles_all_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/roles/{role_id}/permissions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Role Permissions */
-        get: operations["get_role_permissions_api_v1_roles__role_id__permissions_get"];
-        /** Update Role Permissions */
-        put: operations["update_role_permissions_api_v1_roles__role_id__permissions_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/roles/{role_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update Role */
-        put: operations["update_role_api_v1_roles__role_id__put"];
-        post?: never;
-        /** Delete Role */
-        delete: operations["delete_role_api_v1_roles__role_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/router/backend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Router */
-        get: operations["get_router_api_v1_router_backend_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/departments/tree": {
+    "/api/v1/users/all": {
         parameters: {
             query?: never;
             header?: never;
@@ -218,10 +52,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 部门树
-         * @description 返回完整部门树。
+         * 全部用户选项
+         * @description 获取全部用户（精简字段，用于下拉选项）。
          */
-        get: operations["get_department_tree_api_v1_departments_tree_get"];
+        get: operations["get_all_users_api_v1_users_all_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -230,27 +64,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/departments": {
+    "/api/v1/users": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get Users
+         * @description 获取分页的用户列表。
+         */
+        get: operations["get_users_api_v1_users_get"];
         put?: never;
         /**
-         * 创建部门
-         * @description 创建新部门。
+         * Create User
+         * @description 创建新用户。
          */
-        post: operations["create_department_api_v1_departments_post"];
-        delete?: never;
+        post: operations["create_user_api_v1_users_post"];
+        /**
+         * Batch Delete Users
+         * @description 批量删除用户。
+         */
+        delete: operations["batch_delete_users_api_v1_users_delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/departments/{dept_id}": {
+    "/api/v1/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User
+         * @description 获取单个用户详情。
+         */
+        get: operations["get_user_api_v1_users__user_id__get"];
+        /**
+         * Update User
+         * @description 更新用户信息。
+         */
+        put: operations["update_user_api_v1_users__user_id__put"];
+        post?: never;
+        /**
+         * Delete User
+         * @description 删除单个用户。
+         */
+        delete: operations["delete_user_api_v1_users__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/password": {
         parameters: {
             query?: never;
             header?: never;
@@ -259,143 +129,11 @@ export interface paths {
         };
         get?: never;
         /**
-         * 更新部门
-         * @description 更新部门信息。
+         * 修改用户密码
+         * @description 修改用户密码。仅本人或超管可操作。
          */
-        put: operations["update_department_api_v1_departments__dept_id__put"];
+        put: operations["change_password_api_v1_users__user_id__password_put"];
         post?: never;
-        /**
-         * 删除部门
-         * @description 删除部门（需检查子部门）。
-         */
-        delete: operations["delete_department_api_v1_departments__dept_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/data-policies/models": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 可用模型元数据
-         * @description 获取所有已注册模型及其字段信息。
-         */
-        get: operations["get_models_api_v1_data_policies_models_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/data-policies/template-vars": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 可用模板变量列表
-         * @description 获取所有可用的模板变量（内置 + 插件注册）。
-         */
-        get: operations["get_template_vars_api_v1_data_policies_template_vars_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/data-policies/all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 全部数据策略
-         * @description 获取全部数据策略（不分页，用于下拉选项）。
-         */
-        get: operations["get_all_policies_api_v1_data_policies_all_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/data-policies": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 数据策略分页列表
-         * @description 分页查询数据策略。
-         */
-        get: operations["get_policies_api_v1_data_policies_get"];
-        put?: never;
-        /**
-         * 创建数据策略
-         * @description 创建新数据策略。
-         */
-        post: operations["create_policy_api_v1_data_policies_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/data-policies/{policy_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 更新数据策略
-         * @description 更新数据策略。
-         */
-        put: operations["update_policy_api_v1_data_policies__policy_id__put"];
-        post?: never;
-        /**
-         * 删除数据策略
-         * @description 删除数据策略。
-         */
-        delete: operations["delete_policy_api_v1_data_policies__policy_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/data-policies/simulate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 策略模拟
-         * @description 模拟策略执行，仅管理员可用。
-         */
-        post: operations["simulate_policy_api_v1_data_policies_simulate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -472,6 +210,70 @@ export interface paths {
          * @description 启用/禁用定时任务。
          */
         patch: operations["toggle_schedule_api_v1_schedules__schedule_id__toggle_patch"];
+        trace?: never;
+    };
+    "/api/v1/departments/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 部门树
+         * @description 返回完整部门树。
+         */
+        get: operations["get_department_tree_api_v1_departments_tree_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 创建部门
+         * @description 创建新部门。
+         */
+        post: operations["create_department_api_v1_departments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/departments/{dept_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 更新部门
+         * @description 更新部门信息。
+         */
+        put: operations["update_department_api_v1_departments__dept_id__put"];
+        post?: never;
+        /**
+         * 删除部门
+         * @description 删除部门（需检查子部门）。
+         */
+        delete: operations["delete_department_api_v1_departments__dept_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/system/stats/api/overview": {
@@ -1010,6 +812,396 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/keys/public": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Public Key
+         * @description 得到用于 RSA 加密密码的公开密钥。
+         */
+        get: operations["get_public_key_api_v1_auth_keys_public_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login
+         * @description 用户登录端点。
+         */
+        post: operations["login_api_v1_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Logout
+         * @description 登出当前用户。
+         */
+        post: operations["logout_api_v1_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/token/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Token
+         * @description 使用刷新令牌刷新用户的访问令牌。
+         */
+        post: operations["refresh_token_api_v1_auth_token_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/user/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User Info
+         * @description 检索当前的用户信息。
+         */
+        get: operations["get_user_info_api_v1_auth_user_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Roles */
+        get: operations["get_roles_api_v1_roles_get"];
+        put?: never;
+        /** Create Role */
+        post: operations["create_role_api_v1_roles_post"];
+        /** Batch Delete Role */
+        delete: operations["batch_delete_role_api_v1_roles_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My Roles */
+        get: operations["get_my_roles_api_v1_roles_mine_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get All Roles */
+        get: operations["get_all_roles_api_v1_roles_all_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles/{role_id}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Role Permissions */
+        get: operations["get_role_permissions_api_v1_roles__role_id__permissions_get"];
+        /** Update Role Permissions */
+        put: operations["update_role_permissions_api_v1_roles__role_id__permissions_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles/{role_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Role */
+        put: operations["update_role_api_v1_roles__role_id__put"];
+        post?: never;
+        /** Delete Role */
+        delete: operations["delete_role_api_v1_roles__role_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/router/backend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Router */
+        get: operations["get_router_api_v1_router_backend_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-policies/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 可用模型元数据
+         * @description 获取所有已注册模型及其字段信息。
+         */
+        get: operations["get_models_api_v1_data_policies_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-policies/template-vars": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 可用模板变量列表
+         * @description 获取所有可用的模板变量（内置 + 插件注册）。
+         */
+        get: operations["get_template_vars_api_v1_data_policies_template_vars_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-policies/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 全部数据策略
+         * @description 获取全部数据策略（不分页，用于下拉选项）。
+         */
+        get: operations["get_all_policies_api_v1_data_policies_all_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 数据策略分页列表
+         * @description 分页查询数据策略。
+         */
+        get: operations["get_policies_api_v1_data_policies_get"];
+        put?: never;
+        /**
+         * 创建数据策略
+         * @description 创建新数据策略。
+         */
+        post: operations["create_policy_api_v1_data_policies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-policies/{policy_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 更新数据策略
+         * @description 更新数据策略。
+         */
+        put: operations["update_policy_api_v1_data_policies__policy_id__put"];
+        post?: never;
+        /**
+         * 删除数据策略
+         * @description 删除数据策略。
+         */
+        delete: operations["delete_policy_api_v1_data_policies__policy_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-policies/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 策略模拟
+         * @description 模拟策略执行，仅管理员可用。
+         */
+        post: operations["simulate_policy_api_v1_data_policies_simulate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/field-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Field Policies */
+        get: operations["list_field_policies_api_v1_field_policies_get"];
+        put?: never;
+        /** Create Field Policy */
+        post: operations["create_field_policy_api_v1_field_policies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/field-policies/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get All Field Policies
+         * @description 获取全部字段策略（不分页，用于角色分配下拉）。
+         */
+        get: operations["get_all_field_policies_api_v1_field_policies_all_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/field-policies/{policy_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Field Policy */
+        put: operations["update_field_policy_api_v1_field_policies__policy_id__put"];
+        post?: never;
+        /** Delete Field Policy */
+        delete: operations["delete_field_policy_api_v1_field_policies__policy_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/manage/menus": {
         parameters: {
             query?: never;
@@ -1430,142 +1622,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/users/stats/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 用户统计摘要
-         * @description 获取用户总数、今日新增、昨日新增和在线用户数。
-         */
-        get: operations["get_user_stats_summary_api_v1_users_stats_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/users/stats/trend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 用户活跃趋势
-         * @description 获取用户注册趋势数据。
-         */
-        get: operations["get_user_stats_trend_api_v1_users_stats_trend_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/users/all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 全部用户选项
-         * @description 获取全部用户（精简字段，用于下拉选项）。
-         */
-        get: operations["get_all_users_api_v1_users_all_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Users
-         * @description 获取分页的用户列表。
-         */
-        get: operations["get_users_api_v1_users_get"];
-        put?: never;
-        /**
-         * Create User
-         * @description 创建新用户。
-         */
-        post: operations["create_user_api_v1_users_post"];
-        /**
-         * Batch Delete Users
-         * @description 批量删除用户。
-         */
-        delete: operations["batch_delete_users_api_v1_users_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/users/{user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get User
-         * @description 获取单个用户详情。
-         */
-        get: operations["get_user_api_v1_users__user_id__get"];
-        /**
-         * Update User
-         * @description 更新用户信息。
-         */
-        put: operations["update_user_api_v1_users__user_id__put"];
-        post?: never;
-        /**
-         * Delete User
-         * @description 删除单个用户。
-         */
-        delete: operations["delete_user_api_v1_users__user_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/users/{user_id}/password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 修改用户密码
-         * @description 修改用户密码。仅本人或超管可操作。
-         */
-        put: operations["change_password_api_v1_users__user_id__password_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1961,6 +2017,19 @@ export interface components {
             rule: {
                 [key: string]: unknown;
             };
+            /**
+             * Effect
+             * @default allow
+             */
+            effect: string;
+            /**
+             * Actions
+             * @default [
+             *       "read",
+             *       "write"
+             *     ]
+             */
+            actions: string[];
             /** @default 1 */
             status: components["schemas"]["Status"];
         };
@@ -1994,6 +2063,10 @@ export interface components {
             rule: {
                 [key: string]: unknown;
             };
+            /** Effect */
+            effect: string;
+            /** Actions */
+            actions: string[];
             status: components["schemas"]["Status"];
         };
         /**
@@ -2011,6 +2084,10 @@ export interface components {
             rule?: {
                 [key: string]: unknown;
             } | null;
+            /** Effect */
+            effect?: string | null;
+            /** Actions */
+            actions?: string[] | null;
             status?: components["schemas"]["Status"] | null;
         };
         /**
@@ -2192,6 +2269,87 @@ export interface components {
             methods: string[];
             /** Code */
             readonly code: string;
+        };
+        /** FieldPolicyCreate */
+        FieldPolicyCreate: {
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Targetmodel */
+            targetModel: string;
+            /** Fields */
+            fields: string[];
+            /**
+             * Actions
+             * @default [
+             *       "read",
+             *       "write"
+             *     ]
+             */
+            actions: string[];
+            /** Effect */
+            effect: string;
+            /** Condition */
+            condition?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** FieldPolicyResponse */
+        FieldPolicyResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Targetmodel */
+            targetModel: string;
+            /** Fields */
+            fields: string[];
+            /** Actions */
+            actions: string[];
+            /** Effect */
+            effect: string;
+            /** Condition */
+            condition: {
+                [key: string]: unknown;
+            } | null;
+            /** Status */
+            status: string;
+        };
+        /** FieldPolicyUpdate */
+        FieldPolicyUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Fields */
+            fields?: string[] | null;
+            /** Actions */
+            actions?: string[] | null;
+            /** Effect */
+            effect?: string | null;
+            /** Condition */
+            condition?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2878,6 +3036,29 @@ export interface components {
              */
             records: components["schemas"]["DataPolicyResponse"][];
         };
+        /** PaginatedResponse[FieldPolicyResponse] */
+        PaginatedResponse_FieldPolicyResponse_: {
+            /**
+             * Page
+             * @description 页码。
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @description 每页条数。
+             */
+            pageSize: number;
+            /**
+             * Total
+             * @description 总条数。
+             */
+            total: number;
+            /**
+             * Records
+             * @description 记录列表。
+             */
+            records: components["schemas"]["FieldPolicyResponse"][];
+        };
         /** PaginatedResponse[MenuListResponse] */
         PaginatedResponse_MenuListResponse_: {
             /**
@@ -3510,6 +3691,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["EventBusStats"] | null;
         };
+        /** Response[FieldPolicyResponse] */
+        Response_FieldPolicyResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["FieldPolicyResponse"] | null;
+        };
         /** Response[HealthStats] */
         Response_HealthStats_: {
             /**
@@ -3574,6 +3771,25 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["MultiResourceStats"] | null;
         };
+        /** Response[NoneType] */
+        Response_NoneType_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: null;
+        };
         /** Response[PaginatedResponse[ActivityResponse]] */
         Response_PaginatedResponse_ActivityResponse__: {
             /**
@@ -3621,6 +3837,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_DataPolicyResponse_"] | null;
+        };
+        /** Response[PaginatedResponse[FieldPolicyResponse]] */
+        Response_PaginatedResponse_FieldPolicyResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PaginatedResponse_FieldPolicyResponse_"] | null;
         };
         /** Response[PaginatedResponse[MenuListResponse]] */
         Response_PaginatedResponse_MenuListResponse__: {
@@ -4228,6 +4460,25 @@ export interface components {
              */
             data?: components["schemas"]["FastAPIRouterResponse"][] | null;
         };
+        /** Response[list[FieldPolicyResponse]] */
+        Response_list_FieldPolicyResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["FieldPolicyResponse"][] | null;
+        };
         /** Response[list[MenuListResponse]] */
         Response_list_MenuListResponse__: {
             /**
@@ -4521,6 +4772,11 @@ export interface components {
              * @default []
              */
             dataPolicyIds: string[];
+            /**
+             * Fieldpolicyids
+             * @default []
+             */
+            fieldPolicyIds: string[];
         };
         /**
          * RolePermissionsResponse
@@ -4612,6 +4868,11 @@ export interface components {
              * @default []
              */
             dataPolicyIds: string[];
+            /**
+             * Fieldpolicyids
+             * @default []
+             */
+            fieldPolicyIds: string[];
         };
         /**
          * RoleUpdate
@@ -4643,6 +4904,8 @@ export interface components {
             routerPermissions: string[];
             /** Datapolicyids */
             dataPolicyIds?: string[] | null;
+            /** Fieldpolicyids */
+            fieldPolicyIds?: string[] | null;
         };
         /**
          * RouteMeta
@@ -5187,10 +5450,21 @@ export interface components {
         UserManageCreate: {
             /** Name */
             name: string;
-            /** Email */
+            /**
+             * Email
+             * Format: email
+             */
             email: string;
             /** Username */
             username: string;
+            /** Phone */
+            phone?: string | null;
+            /** Avatar */
+            avatar?: string | null;
+            /** Nickname */
+            nickname?: string | null;
+            /** Gender */
+            gender?: string | null;
             /** @default 1 */
             status: components["schemas"]["Status"];
             /**
@@ -5205,6 +5479,8 @@ export interface components {
             isAdmin: boolean;
             /** Departmentid */
             departmentId?: string | null;
+            /** Remark */
+            remark?: string | null;
             /** Password */
             password: string;
         };
@@ -5245,10 +5521,21 @@ export interface components {
             updateTime: string;
             /** Name */
             name: string;
-            /** Email */
+            /**
+             * Email
+             * Format: email
+             */
             email: string;
             /** Username */
             username: string;
+            /** Phone */
+            phone?: string | null;
+            /** Avatar */
+            avatar?: string | null;
+            /** Nickname */
+            nickname?: string | null;
+            /** Gender */
+            gender?: string | null;
             /** @default 1 */
             status: components["schemas"]["Status"];
             /**
@@ -5263,6 +5550,12 @@ export interface components {
             isAdmin: boolean;
             /** Departmentid */
             departmentId?: string | null;
+            /** Remark */
+            remark?: string | null;
+            /** Lastlogintime */
+            lastLoginTime?: string | null;
+            /** Lastloginip */
+            lastLoginIp?: string | null;
         };
         /**
          * UserManageUpdate
@@ -5275,6 +5568,14 @@ export interface components {
             email?: string | null;
             /** Username */
             username?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Avatar */
+            avatar?: string | null;
+            /** Nickname */
+            nickname?: string | null;
+            /** Gender */
+            gender?: string | null;
             status?: components["schemas"]["Status"] | null;
             /** Roles */
             roles?: string[] | null;
@@ -5282,6 +5583,8 @@ export interface components {
             isAdmin?: boolean | null;
             /** Departmentid */
             departmentId?: string | null;
+            /** Remark */
+            remark?: string | null;
         };
         /**
          * UserRouteResponse
@@ -5408,7 +5711,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    get_public_key_api_v1_auth_keys_public_get: {
+    get_user_stats_summary_api_v1_users_stats_summary_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5423,23 +5726,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_str_"];
+                    "application/json": components["schemas"]["Response_UserStatsSummary_"];
                 };
             };
         };
     };
-    login_api_v1_auth_login_post: {
+    get_user_stats_trend_api_v1_users_stats_trend_get: {
         parameters: {
-            query?: never;
+            query: {
+                /** @description 开始日期 */
+                start: string;
+                /** @description 结束日期 */
+                end: string;
+                /** @description 粒度: hour | day */
+                granularity?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -5447,7 +5753,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_TokenResponse_"];
+                    "application/json": components["schemas"]["Response_list_UserActivityTrend__"];
                 };
             };
             /** @description Validation Error */
@@ -5461,7 +5767,7 @@ export interface operations {
             };
         };
     };
-    logout_api_v1_auth_logout_post: {
+    get_all_users_api_v1_users_all_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5476,63 +5782,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_bool_"];
+                    "application/json": components["schemas"]["Response_list_UserManageOptionResponse__"];
                 };
             };
         };
     };
-    refresh_token_api_v1_auth_token_refresh_post: {
-        parameters: {
-            query?: never;
-            header: {
-                "x-refresh-token": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_TokenResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_user_info_api_v1_auth_user_info_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_UserInfoResponse_"];
-                };
-            };
-        };
-    };
-    get_roles_api_v1_roles_get: {
+    get_users_api_v1_users_get: {
         parameters: {
             query?: {
                 /** @description 当前页码。 */
@@ -5554,7 +5809,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_RoleResponse__"];
+                    "application/json": components["schemas"]["Response_PaginatedResponse_UserManageResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -5568,7 +5823,7 @@ export interface operations {
             };
         };
     };
-    create_role_api_v1_roles_post: {
+    create_user_api_v1_users_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5577,7 +5832,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RoleCreate"];
+                "application/json": components["schemas"]["UserManageCreate"];
             };
         };
         responses: {
@@ -5587,7 +5842,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_RoleResponse_"];
+                    "application/json": components["schemas"]["Response_UserManageResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -5601,7 +5856,7 @@ export interface operations {
             };
         };
     };
-    batch_delete_role_api_v1_roles_delete: {
+    batch_delete_users_api_v1_users_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -5610,7 +5865,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RoleBatchBody"];
+                "application/json": components["schemas"]["UserManageBatchBody"];
             };
         };
         responses: {
@@ -5634,11 +5889,13 @@ export interface operations {
             };
         };
     };
-    get_my_roles_api_v1_roles_mine_get: {
+    get_user_api_v1_users__user_id__get: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                user_id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -5649,30 +5906,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_list_RoleResponse__"];
-                };
-            };
-        };
-    };
-    get_all_roles_api_v1_roles_all_get: {
-        parameters: {
-            query?: {
-                keyword?: string;
-                status?: components["schemas"]["Status"] | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_RoleResponse__"];
+                    "application/json": components["schemas"]["Response_UserManageResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -5686,49 +5920,18 @@ export interface operations {
             };
         };
     };
-    get_role_permissions_api_v1_roles__role_id__permissions_get: {
+    update_user_api_v1_users__user_id__put: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                role_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_RolePermissionsResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_role_permissions_api_v1_roles__role_id__permissions_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                role_id: string;
+                user_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RolePermissionsUpdateBody"];
+                "application/json": components["schemas"]["UserManageUpdate"];
             };
         };
         responses: {
@@ -5738,7 +5941,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_bool_"];
+                    "application/json": components["schemas"]["Response_UserManageResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -5752,47 +5955,12 @@ export interface operations {
             };
         };
     };
-    update_role_api_v1_roles__role_id__put: {
+    delete_user_api_v1_users__user_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                role_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RoleUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_RoleResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_role_api_v1_roles__role_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                role_id: string;
+                user_id: string;
             };
             cookie?: never;
         };
@@ -5818,91 +5986,18 @@ export interface operations {
             };
         };
     };
-    get_router_api_v1_router_backend_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_FastAPIRouterResponse__"];
-                };
-            };
-        };
-    };
-    get_department_tree_api_v1_departments_tree_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_DepartmentTreeNode__"];
-                };
-            };
-        };
-    };
-    create_department_api_v1_departments_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DepartmentCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_DepartmentResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_department_api_v1_departments__dept_id__put: {
+    change_password_api_v1_users__user_id__password_put: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                dept_id: string;
+                user_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DepartmentUpdate"];
+                "application/json": components["schemas"]["ChangePasswordBody"];
             };
         };
         responses: {
@@ -5912,265 +6007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_DepartmentResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_department_api_v1_departments__dept_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                dept_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_DepartmentResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_models_api_v1_data_policies_models_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_dict__"];
-                };
-            };
-        };
-    };
-    get_template_vars_api_v1_data_policies_template_vars_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_dict__"];
-                };
-            };
-        };
-    };
-    get_all_policies_api_v1_data_policies_all_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_DataPolicyResponse__"];
-                };
-            };
-        };
-    };
-    get_policies_api_v1_data_policies_get: {
-        parameters: {
-            query?: {
-                /** @description 当前页码。 */
-                page?: number;
-                /** @description 每页条数。 */
-                pageSize?: number;
-                keyword?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_DataPolicyResponse__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_policy_api_v1_data_policies_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DataPolicyCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_DataPolicyResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_policy_api_v1_data_policies__policy_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                policy_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DataPolicyUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_DataPolicyResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_policy_api_v1_data_policies__policy_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                policy_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_DataPolicyResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    simulate_policy_api_v1_data_policies_simulate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PolicySimulateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PolicySimulateResponse_"];
+                    "application/json": components["schemas"]["Response_bool_"];
                 };
             };
             /** @description Validation Error */
@@ -6370,6 +6207,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_PeriodicTaskResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_department_tree_api_v1_departments_tree_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_DepartmentTreeNode__"];
+                };
+            };
+        };
+    };
+    create_department_api_v1_departments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DepartmentResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_department_api_v1_departments__dept_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dept_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DepartmentResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_department_api_v1_departments__dept_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dept_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DepartmentResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -7481,6 +7437,817 @@ export interface operations {
             };
         };
     };
+    get_public_key_api_v1_auth_keys_public_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_str_"];
+                };
+            };
+        };
+    };
+    login_api_v1_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_TokenResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_v1_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+        };
+    };
+    refresh_token_api_v1_auth_token_refresh_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "x-refresh-token": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_TokenResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_info_api_v1_auth_user_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_UserInfoResponse_"];
+                };
+            };
+        };
+    };
+    get_roles_api_v1_roles_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                keyword?: string;
+                status?: components["schemas"]["Status"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_RoleResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_role_api_v1_roles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_RoleResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_delete_role_api_v1_roles_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleBatchBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_roles_api_v1_roles_mine_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_RoleResponse__"];
+                };
+            };
+        };
+    };
+    get_all_roles_api_v1_roles_all_get: {
+        parameters: {
+            query?: {
+                keyword?: string;
+                status?: components["schemas"]["Status"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_RoleResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_role_permissions_api_v1_roles__role_id__permissions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_RolePermissionsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_role_permissions_api_v1_roles__role_id__permissions_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RolePermissionsUpdateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_role_api_v1_roles__role_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_RoleResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_role_api_v1_roles__role_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_router_api_v1_router_backend_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_FastAPIRouterResponse__"];
+                };
+            };
+        };
+    };
+    get_models_api_v1_data_policies_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_dict__"];
+                };
+            };
+        };
+    };
+    get_template_vars_api_v1_data_policies_template_vars_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_dict__"];
+                };
+            };
+        };
+    };
+    get_all_policies_api_v1_data_policies_all_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_DataPolicyResponse__"];
+                };
+            };
+        };
+    };
+    get_policies_api_v1_data_policies_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                keyword?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_DataPolicyResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_policy_api_v1_data_policies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataPolicyCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DataPolicyResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_policy_api_v1_data_policies__policy_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                policy_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataPolicyUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DataPolicyResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_policy_api_v1_data_policies__policy_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                policy_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DataPolicyResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulate_policy_api_v1_data_policies_simulate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PolicySimulateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PolicySimulateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_field_policies_api_v1_field_policies_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                targetModel?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_FieldPolicyResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_field_policy_api_v1_field_policies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldPolicyCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_FieldPolicyResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_all_field_policies_api_v1_field_policies_all_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_FieldPolicyResponse__"];
+                };
+            };
+        };
+    };
+    update_field_policy_api_v1_field_policies__policy_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                policy_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldPolicyUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_FieldPolicyResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_field_policy_api_v1_field_policies__policy_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                policy_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_menu_list_api_v1_manage_menus_get: {
         parameters: {
             query?: {
@@ -8108,316 +8875,6 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_user_stats_summary_api_v1_users_stats_summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_UserStatsSummary_"];
-                };
-            };
-        };
-    };
-    get_user_stats_trend_api_v1_users_stats_trend_get: {
-        parameters: {
-            query: {
-                /** @description 开始日期 */
-                start: string;
-                /** @description 结束日期 */
-                end: string;
-                /** @description 粒度: hour | day */
-                granularity?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_UserActivityTrend__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_all_users_api_v1_users_all_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_UserManageOptionResponse__"];
-                };
-            };
-        };
-    };
-    get_users_api_v1_users_get: {
-        parameters: {
-            query?: {
-                /** @description 当前页码。 */
-                page?: number;
-                /** @description 每页条数。 */
-                pageSize?: number;
-                keyword?: string;
-                status?: components["schemas"]["Status"] | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_UserManageResponse__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_user_api_v1_users_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserManageCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_UserManageResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    batch_delete_users_api_v1_users_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserManageBatchBody"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_user_api_v1_users__user_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_UserManageResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_user_api_v1_users__user_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserManageUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_UserManageResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_user_api_v1_users__user_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    change_password_api_v1_users__user_id__password_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangePasswordBody"];
-            };
-        };
         responses: {
             /** @description Successful Response */
             200: {

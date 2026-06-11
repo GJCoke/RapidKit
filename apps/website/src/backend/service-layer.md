@@ -28,15 +28,15 @@ crud.py (数据层)
   └── 批量操作
 ```
 
-| 关注点           | 放在哪里       | 示例                                  |
-| ---------------- | -------------- | ------------------------------------- |
-| HTTP 请求解析    | `api.py`       | Query 参数、Path 参数、Body 解析      |
-| 过滤条件构建     | `services.py`  | `filter_user(status, keyword)`        |
-| 密码加密/解密    | `services.py`  | `process_password(rsa_password)`      |
-| 缓存失效         | `services.py`  | `invalidate_user_cache(redis, id)`    |
-| 数据库读写       | `crud.py`      | `get_paginate()`, `create()`, `delete()` |
-| 跨模型联合查询   | `services.py`  | 查询关联用户后批量清缓存              |
-| 响应构造         | `api.py`       | `Response(data=...)`                  |
+| 关注点         | 放在哪里      | 示例                                     |
+| -------------- | ------------- | ---------------------------------------- |
+| HTTP 请求解析  | `api.py`      | Query 参数、Path 参数、Body 解析         |
+| 过滤条件构建   | `services.py` | `filter_user(status, keyword)`           |
+| 密码加密/解密  | `services.py` | `process_password(rsa_password)`         |
+| 缓存失效       | `services.py` | `invalidate_user_cache(redis, id)`       |
+| 数据库读写     | `crud.py`     | `get_paginate()`, `create()`, `delete()` |
+| 跨模型联合查询 | `services.py` | 查询关联用户后批量清缓存                 |
+| 响应构造       | `api.py`      | `Response(data=...)`                     |
 
 :::warning
 Service 层不持有 `request`、`response` 等 HTTP 上下文对象。需要当前用户信息时，通过函数参数传入，而非在 Service 中注入依赖。
@@ -51,14 +51,14 @@ Service 层不持有 `request`、`response` 等 HTTP 上下文对象。需要当
 
 ### 函数命名
 
-| 前缀           | 用途             | 示例                          |
-| -------------- | ---------------- | ----------------------------- |
-| `filter_`      | 构建查询过滤条件 | `filter_user(status, keyword)` |
-| `process_`     | 数据转换/处理    | `process_password(raw)`       |
-| `invalidate_`  | 缓存失效         | `invalidate_user_cache()`     |
-| `validate_`    | 业务校验         | `validate_role_assignment()`  |
-| `notify_`      | 通知/事件触发    | `notify_password_changed()`   |
-| `sync_`        | 数据同步         | `sync_role_permissions()`     |
+| 前缀          | 用途             | 示例                           |
+| ------------- | ---------------- | ------------------------------ |
+| `filter_`     | 构建查询过滤条件 | `filter_user(status, keyword)` |
+| `process_`    | 数据转换/处理    | `process_password(raw)`        |
+| `invalidate_` | 缓存失效         | `invalidate_user_cache()`      |
+| `validate_`   | 业务校验         | `validate_role_assignment()`   |
+| `notify_`     | 通知/事件触发    | `notify_password_changed()`    |
+| `sync_`       | 数据同步         | `sync_role_permissions()`      |
 
 :::tip
 Service 函数应为纯函数或仅依赖显式参数的异步函数。依赖通过参数注入，不要在函数内部访问全局状态。
@@ -80,12 +80,12 @@ Service 函数应为纯函数或仅依赖显式参数的异步函数。依赖通
 
 ## 依赖注入规则
 
-| 场景 | 方式 | 说明 |
-|------|------|------|
-| 本插件 CRUD/Redis/Session → api.py | FastAPI `Depends` | 标准 deps.py 模式 |
-| api.py → services.py | 显式函数参数传递 | `await do_something(crud=crud, redis=redis)` |
-| services.py → 跨插件能力 | `get_service(Protocol)` | 仅用于跨插件，本插件内禁用 |
-| providers.py → 基础设施 | 构造器注入 | `__init__(self, session_factory)` |
+| 场景                               | 方式                    | 说明                                         |
+| ---------------------------------- | ----------------------- | -------------------------------------------- |
+| 本插件 CRUD/Redis/Session → api.py | FastAPI `Depends`       | 标准 deps.py 模式                            |
+| api.py → services.py               | 显式函数参数传递        | `await do_something(crud=crud, redis=redis)` |
+| services.py → 跨插件能力           | `get_service(Protocol)` | 仅用于跨插件，本插件内禁用                   |
+| providers.py → 基础设施            | 构造器注入              | `__init__(self, session_factory)`            |
 
 :::danger
 `get_service()` 是跨插件边界的唯一调用方式。**同一插件内部永远使用显式参数传递**，绝不通过 ServiceRegistry 获取本插件的服务。
@@ -198,19 +198,20 @@ async def delete_user(user_id: UUID, redis: RedisDep, session: SessionDep, ...):
 ```
 
 注册的回调：
+
 - 仅在 `commit()` 成功后执行
 - 如果请求异常导致 rollback，回调不会执行（Redis 不会被错误失效）
 - 回调失败会记录警告日志，但不影响已返回的响应
 
 ### 何时使用 after_commit
 
-| 场景                              | 策略            |
-| --------------------------------- | --------------- |
-| DB 写入后的 Redis 缓存失效        | `after_commit`  |
-| DB 写入后的事件总线通知           | `after_commit`  |
-| 纯读取操作后的 Redis 缓存填充    | 直接调用        |
-| 与 DB 写入无关的 Redis 操作       | 直接调用        |
-| 日志记录                          | 直接调用        |
+| 场景                          | 策略           |
+| ----------------------------- | -------------- |
+| DB 写入后的 Redis 缓存失效    | `after_commit` |
+| DB 写入后的事件总线通知       | `after_commit` |
+| 纯读取操作后的 Redis 缓存填充 | 直接调用       |
+| 与 DB 写入无关的 Redis 操作   | 直接调用       |
+| 日志记录                      | 直接调用       |
 
 :::danger
 **绝不**在 `after_commit` 回调中执行数据库写入操作——此时 session 已关闭。回调仅用于外部系统（Redis、消息队列、通知等）。
@@ -247,7 +248,7 @@ async def transfer_role(
 | 多次写入（同请求）   | 天然原子（同一 session，一次 commit）    |
 | IntegrityError 隔离  | BaseCRUD 使用 `begin_nested()` savepoint |
 | DB 写入 + Redis 失效 | `after_commit` hook                      |
-| 读后写（乐观锁）    | Service 层版本号校验                     |
+| 读后写（乐观锁）     | Service 层版本号校验                     |
 
 ## 并发控制
 
@@ -351,13 +352,13 @@ class UserResolverImpl:
 
 ### 规则
 
-| 规则 | 说明 |
-|------|------|
-| 构造函数注入 `session_factory` | 默认 `AsyncSessionLocal`，测试时可替换 |
-| 类名统一 `{ProtocolName}Impl` | 如 `UserResolverImpl`、`PermissionCacheManagerImpl` |
-| 每个类实现一个 Protocol | 不要在一个类中混合多个 Protocol |
-| `services.py` 中不放任何 class | 所有类定义都在 `providers.py` |
-| 只注册完整实现的 Protocol | **绝不**注册 `NotImplementedError` 的 stub |
+| 规则                           | 说明                                                |
+| ------------------------------ | --------------------------------------------------- |
+| 构造函数注入 `session_factory` | 默认 `AsyncSessionLocal`，测试时可替换              |
+| 类名统一 `{ProtocolName}Impl`  | 如 `UserResolverImpl`、`PermissionCacheManagerImpl` |
+| 每个类实现一个 Protocol        | 不要在一个类中混合多个 Protocol                     |
+| `services.py` 中不放任何 class | 所有类定义都在 `providers.py`                       |
+| 只注册完整实现的 Protocol      | **绝不**注册 `NotImplementedError` 的 stub          |
 
 ### 注册
 
@@ -373,12 +374,12 @@ def register_services(registry: ServiceRegistry) -> None:
 
 ### 与 services.py 的区别
 
-| 对比维度 | services.py | providers.py |
-|----------|-------------|--------------|
-| 代码形式 | 纯函数 | 类（实现 Protocol） |
-| 调用方 | 同插件的 api.py | 其他插件通过 `get_service()` |
+| 对比维度     | services.py                 | providers.py                     |
+| ------------ | --------------------------- | -------------------------------- |
+| 代码形式     | 纯函数                      | 类（实现 Protocol）              |
+| 调用方       | 同插件的 api.py             | 其他插件通过 `get_service()`     |
 | Session 来源 | 参数传入（来自 FastAPI DI） | 构造函数注入的 `session_factory` |
-| 测试方式 | 直接传 mock 参数 | 替换 `session_factory` |
+| 测试方式     | 直接传 mock 参数            | 替换 `session_factory`           |
 
 ### 单元测试
 

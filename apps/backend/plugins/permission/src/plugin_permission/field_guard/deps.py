@@ -10,14 +10,13 @@ from typing import Literal
 from fastapi import Request
 from rapidkit_common.auth import UserDBDep
 from rapidkit_common.deps import RedisDep, SessionDep
+from rapidkit_common.field_permission import FieldRestrictions
 from rapidkit_common.models import SQLModel
 from rapidkit_core.log import get_plugin_logger
 
 from plugin_permission.adapters import RedisPermissionCache
 from plugin_permission.bypass import is_permission_bypass
 from plugin_permission.context import PermissionContext
-from rapidkit_common.field_permission import FieldRestrictions
-
 from plugin_permission.field_guard.crud import FieldPolicyCRUD
 from plugin_permission.field_guard.services import build_field_restrictions
 from plugin_permission.providers import permission_structure

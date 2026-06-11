@@ -74,6 +74,9 @@ declare global {
       /** user search params */
       type UserSearchParams = Service.ApiRequest<"/api/v1/users", "get", "query">
 
+      /** create user body */
+      type CreateUserBody = Service.ApiRequest<"/api/v1/users", "post", "body">
+
       /** user option (for select dropdowns) */
       type UserOption = {
         id: string

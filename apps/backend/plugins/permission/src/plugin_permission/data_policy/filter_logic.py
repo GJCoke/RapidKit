@@ -12,9 +12,9 @@ from typing import Literal
 from rapidkit_common.models import SQLModel
 from rapidkit_framework.plugin import get_loaded_models
 from rapidkit_policy_engine import TemplateContext, resolve_rule_tree
-from sqlalchemy import ColumnElement
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import and_, not_, or_, true
+from sqlalchemy import ColumnElement, not_
+from sqlmodel import and_, or_, true
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_permission.cache import PolicyLike
 
@@ -39,10 +39,7 @@ def build_filter_condition(
     3. Combine: allow_cond AND NOT deny_cond
     """
     # Filter by target_model and action
-    relevant = [
-        p for p in policies
-        if p.target_model == model_tablename and action in p.actions
-    ]
+    relevant = [p for p in policies if p.target_model == model_tablename and action in p.actions]
 
     if not relevant:
         return None
