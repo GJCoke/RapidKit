@@ -1,9 +1,8 @@
 import type { RouteMeta } from "vue-router"
-import type { Plugin } from "vite"
 import ElegantVueRouter from "@elegant-router/vue/vite"
 import type { RouteKey } from "@elegant-router/types"
 
-export function setupElegantRouter(): Plugin {
+export function setupElegantRouter(): ReturnType<typeof ElegantVueRouter> {
   return ElegantVueRouter({
     layouts: {
       base: "src/layouts/base-layout/index.vue",
