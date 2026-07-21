@@ -46,9 +46,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-6 rounded-lg border border-border p-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold">{t("system.title")}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t("auth.loginDescription", "Sign in to your account")}
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("auth.loginDescription", "Sign in to your account")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,11 +76,7 @@ export default function LoginPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Checkbox
-                id="remember"
-                checked={remember}
-                onCheckedChange={(val) => setRemember(val as boolean)}
-              />
+              <Checkbox id="remember" checked={remember} onCheckedChange={(val) => setRemember(val as boolean)} />
               <Label htmlFor="remember" className="text-sm font-normal">
                 {t("auth.rememberMe", "Remember me")}
               </Label>
@@ -90,11 +84,7 @@ export default function LoginPage() {
             <Badge variant="secondary">v0.1.0</Badge>
           </div>
 
-          <Button
-            type="button"
-            variant="default"
-            className="w-full"
-          >
+          <Button type="button" variant="default" className="w-full">
             测试
           </Button>
 

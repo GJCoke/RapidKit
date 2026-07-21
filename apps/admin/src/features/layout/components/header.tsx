@@ -28,11 +28,7 @@ export function Header() {
 
       <div className="flex items-center gap-4">
         <span className="text-sm text-muted-foreground">{userInfo?.realName}</span>
-        <button
-          type="button"
-          className="text-sm text-muted-foreground hover:text-foreground"
-          onClick={handleLogout}
-        >
+        <button type="button" className="text-sm text-muted-foreground hover:text-foreground" onClick={handleLogout}>
           {t("auth.logout")}
         </button>
       </div>

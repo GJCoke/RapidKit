@@ -39,8 +39,7 @@ function hexToOklch(hex: string): string | null {
   if (!result) return null
 
   // sRGB → linear RGB
-  const toLinear = (c: number) =>
-    c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
   const lr = toLinear(parseInt(result[1], 16) / 255)
   const lg = toLinear(parseInt(result[2], 16) / 255)
   const lb = toLinear(parseInt(result[3], 16) / 255)

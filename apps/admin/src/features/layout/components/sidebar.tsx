@@ -14,16 +14,12 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex h-14 items-center justify-center border-b border-border px-4">
-        <span className={cn("text-lg font-bold text-sidebar-foreground", siderCollapse && "hidden")}>
-          RapidKit
-        </span>
+        <span className={cn("text-lg font-bold text-sidebar-foreground", siderCollapse && "hidden")}>RapidKit</span>
         {siderCollapse && <span className="text-lg font-bold text-sidebar-foreground">R</span>}
       </div>
 
       {/* Menu placeholder — will be populated by dynamic routes */}
-      <nav className="flex-1 overflow-y-auto py-2">
-        {/* Menu items rendered from route store */}
-      </nav>
+      <nav className="flex-1 overflow-y-auto py-2">{/* Menu items rendered from route store */}</nav>
     </aside>
   )
 }
