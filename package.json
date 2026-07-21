@@ -25,6 +25,7 @@
     "dev:backend": "pnpm --filter @rapidkit/backend dev",
     "dev:worker": "pnpm --filter @rapidkit/backend worker",
     "dev:beater": "pnpm --filter @rapidkit/backend beater",
+    "dev:admin": "turbo build --filter !rapidkit-admin && turbo watch dev --filter rapidkit-admin",
     "dev:website": "turbo dev --filter @rapidkit/website",
     "rapidkit": "tsx packages/cli/src/index.ts"
   },
