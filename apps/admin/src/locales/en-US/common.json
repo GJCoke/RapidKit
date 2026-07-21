@@ -1,0 +1,28 @@
+{
+  "system": {
+    "title": "RapidKit Admin"
+  },
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "reset": "Reset",
+    "loading": "Loading...",
+    "noData": "No Data",
+    "success": "Success",
+    "failed": "Failed"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "loginSuccess": "Login successful",
+    "loginFailed": "Login failed",
+    "sessionExpired": "Session expired, please login again"
+  }
+}
