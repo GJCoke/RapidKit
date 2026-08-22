@@ -36,4 +36,4 @@ for pkg_src in "$PROJECT_ROOT"/packages/*/src; do
   fi
 done
 
-exec uvicorn --reload --proxy-headers --host "$HOST" --port "$PORT" "${RELOAD_ARGS[@]}" "$APP_MODULE"
+exec uv run uvicorn --reload --proxy-headers --host "$HOST" --port "$PORT" "${RELOAD_ARGS[@]}" "$APP_MODULE"

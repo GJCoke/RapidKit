@@ -27,10 +27,10 @@ export default defineConfig(({ mode }) => {
       target: "esnext",
       rollupOptions: {
         output: {
-          manualChunks: {
-            react: ["react", "react-dom"],
-            router: ["react-router"],
-            query: ["@tanstack/react-query"],
+          manualChunks(id) {
+            if (id.includes("/node_modules/react/") || id.includes("/node_modules/react-dom/")) return "react"
+            if (id.includes("/node_modules/react-router/")) return "router"
+            if (id.includes("/node_modules/@tanstack/react-query/")) return "query"
           },
         },
       },
