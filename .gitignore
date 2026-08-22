@@ -67,10 +67,10 @@ lib-es6/
 lib-esnext/
 lib-commonjs/
 lib-shim/
-!apps/admin/lib/
-!apps/admin/lib/**
-!apps/admin/src/lib/
-!apps/admin/src/lib/**
+!packages/ui/lib/
+!packages/ui/lib/**
+!packages/ui/src/lib/
+!packages/ui/src/lib/**
 dist/
 dist-ssr/
 dist-electron/
