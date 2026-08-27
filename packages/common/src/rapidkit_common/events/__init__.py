@@ -13,6 +13,7 @@ from rapidkit_common.events.script import ScriptExecutedEvent
 from rapidkit_common.events.user import (
     UserCreatedEvent,
     UserDeletedEvent,
+    UserInviteRequestedEvent,
     UserPasswordChangedEvent,
     UserRolesChangedEvent,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "ScriptExecutedEvent",
     "UserCreatedEvent",
     "UserDeletedEvent",
+    "UserInviteRequestedEvent",
     "UserLoginEvent",
     "UserLogoutEvent",
     "UserPasswordChangedEvent",
