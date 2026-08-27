@@ -2,10 +2,17 @@
 
 from enum import Enum
 
+from plugin_auth.status_codes import AuthStatusCode
+
+
+def test_invite_status_codes_present() -> None:
+    assert AuthStatusCode.INVITE_TOKEN_INVALID.value == (14011, "auth.error.inviteTokenInvalid")
+    assert AuthStatusCode.INVITE_TOKEN_EXPIRED.value == (14012, "auth.error.inviteTokenExpired")
+    assert AuthStatusCode.ACCOUNT_NOT_ACTIVATED.value == (14013, "auth.error.accountNotActivated")
+
 
 class TestAuthStatusCode:
     def test_is_base_status_code_subclass(self):
-        from plugin_auth.status_codes import AuthStatusCode
         from rapidkit_framework.status_codes import BaseStatusCode
 
         assert issubclass(AuthStatusCode, BaseStatusCode)
