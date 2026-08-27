@@ -11,6 +11,7 @@ export const upgrade = defineFluxCommand({
   async run({ runner, args }) {
     const pluginName = args.plugin as string | undefined
 
+    let canonicalName = pluginName
     if (pluginName) {
       const plugin = findPlugin(pluginName)
       if (!plugin) {
@@ -19,14 +20,15 @@ export const upgrade = defineFluxCommand({
           .join(", ")
         throw new Error(t("db.migrate.pluginNotFound", { plugin: pluginName, available }))
       }
+      canonicalName = plugin.name
     }
 
     runner.exec({ label: t("db.migrate.syncing") }, () => {
       syncAlembicConfig()
     })
 
-    const label = pluginName ? t("db.upgrade.runningPlugin", { plugin: pluginName }) : t("db.upgrade.running")
+    const label = canonicalName ? t("db.upgrade.runningPlugin", { plugin: canonicalName }) : t("db.upgrade.running")
 
-    await alembicService.upgrade(runner, label, pluginName)
+    await alembicService.upgrade(runner, label, canonicalName)
   },
 })

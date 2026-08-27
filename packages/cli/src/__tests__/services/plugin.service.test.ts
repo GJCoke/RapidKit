@@ -11,6 +11,15 @@ vi.mock("../../context", () => ({
 import { getContext } from "../../context"
 import { discoverPlugins, findPlugin } from "../../services/plugin.service"
 
+function writePluginConfig(root: string, directoryName: string, name: string = directoryName) {
+  const pluginRoot = join(root, "apps/backend/plugins", directoryName)
+  mkdirSync(pluginRoot, { recursive: true })
+  writeFileSync(
+    join(pluginRoot, "pyproject.toml"),
+    `[project.entry-points."rapidkit.plugins"]\n${name} = "plugin_${name}:register"\n`,
+  )
+}
+
 describe("discoverPlugins", () => {
   let tempDir: string
 
@@ -34,6 +43,7 @@ describe("discoverPlugins", () => {
     // Create a plugin with migrations
     const pluginDir = join(tempDir, "apps/backend/plugins/auth/migrations/versions")
     mkdirSync(pluginDir, { recursive: true })
+    writePluginConfig(tempDir, "auth")
     writeFileSync(join(pluginDir, "__init__.py"), "")
     writeFileSync(join(pluginDir, "abc123_init.py"), "# migration")
 
@@ -52,6 +62,7 @@ describe("discoverPlugins", () => {
   it("ignores directories without migrations/versions", () => {
     const pluginDir = join(tempDir, "apps/backend/plugins/auth/src")
     mkdirSync(pluginDir, { recursive: true })
+    writePluginConfig(tempDir, "auth")
 
     const plugins = discoverPlugins()
     expect(plugins).toEqual([])
@@ -60,11 +71,34 @@ describe("discoverPlugins", () => {
   it("detects plugin without migration files as hasMigrations=false", () => {
     const pluginDir = join(tempDir, "apps/backend/plugins/menu/migrations/versions")
     mkdirSync(pluginDir, { recursive: true })
+    writePluginConfig(tempDir, "menu")
     writeFileSync(join(pluginDir, "__init__.py"), "")
 
     const plugins = discoverPlugins()
     expect(plugins).toHaveLength(1)
     expect(plugins[0].hasMigrations).toBe(false)
+  })
+
+  it("uses the entry point identity for a hyphenated plugin directory", () => {
+    const pluginRoot = join(tempDir, "apps/backend/plugins/gitlab-ci")
+    const versionsDir = join(pluginRoot, "migrations/versions")
+    mkdirSync(versionsDir, { recursive: true })
+    writeFileSync(join(versionsDir, "__init__.py"), "")
+    writeFileSync(
+      join(pluginRoot, "pyproject.toml"),
+      '[project.entry-points."rapidkit.plugins"]\ngitlab_ci = "plugin_gitlab_ci:register"\n',
+    )
+
+    const plugin = discoverPlugins().find(item => item.name === "gitlab_ci")
+
+    expect(plugin).toEqual({
+      name: "gitlab_ci",
+      directoryName: "gitlab-ci",
+      module: "plugin_gitlab_ci",
+      versionPath: "plugins/gitlab-ci/migrations/versions",
+      hasMigrations: false,
+    })
+    expect(findPlugin("gitlab-ci")).toEqual(plugin)
   })
 })
 
@@ -84,6 +118,7 @@ describe("findPlugin", () => {
 
     const pluginDir = join(tempDir, "apps/backend/plugins/auth/migrations/versions")
     mkdirSync(pluginDir, { recursive: true })
+    writePluginConfig(tempDir, "auth")
     writeFileSync(join(pluginDir, "__init__.py"), "")
   })
 

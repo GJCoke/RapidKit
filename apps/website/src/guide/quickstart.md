@@ -265,10 +265,10 @@ uv run celery -A src.queues.app beat -S src.queues.scheduler:AsyncDatabaseSchedu
 redis-cli ping  # 应返回 PONG
 ```
 
-如果使用 Docker 运行 Redis，确认容器已启动且端口映射正确：
+如果使用项目提供的容器基础设施，确认 Redis 已通过 RapidKit CLI 启动：
 
 ```bash
-docker compose -f docker-compose.dev.yaml up -d redis
+pnpm rapidkit dev up
 ```
 
 #### Broker URL 不匹配

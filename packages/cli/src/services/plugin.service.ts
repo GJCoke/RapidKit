@@ -1,10 +1,12 @@
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs"
 import { resolve, join } from "node:path"
+import { parse } from "smol-toml"
 import { PLUGINS_DIR, BACKEND_DIR, ALEMBIC_INI, ALEMBIC_ENV } from "../constants"
 import { getContext } from "../context"
 
 export interface Plugin {
   name: string
+  directoryName: string
   module: string
   versionPath: string
   hasMigrations: boolean
@@ -19,20 +21,30 @@ export function discoverPlugins(cwdOverride?: string): Plugin[] {
   return readdirSync(pluginsRoot, { withFileTypes: true })
     .filter((d) => d.isDirectory())
     .filter((d) => existsSync(join(pluginsRoot, d.name, "migrations", "versions")))
-    .map((d) => {
+    .flatMap((d) => {
+      const pyprojectPath = join(pluginsRoot, d.name, "pyproject.toml")
+      if (!existsSync(pyprojectPath)) return []
+      const config = parse(readFileSync(pyprojectPath, "utf-8")) as {
+        project?: { "entry-points"?: { "rapidkit.plugins"?: Record<string, string> } }
+      }
+      const entries = config.project?.["entry-points"]?.["rapidkit.plugins"] ?? {}
+      const declared = Object.entries(entries)
+      if (declared.length !== 1) return []
+      const [name, value] = declared[0]
       const versionsDir = join(pluginsRoot, d.name, "migrations", "versions")
       const files = readdirSync(versionsDir).filter((f) => f.endsWith(".py") && f !== "__init__.py")
-      return {
-        name: d.name,
-        module: `plugin_${d.name}`,
+      return [{
+        name,
+        directoryName: d.name,
+        module: value.split(":", 1)[0],
         versionPath: `plugins/${d.name}/migrations/versions`,
         hasMigrations: files.length > 0,
-      }
+      }]
     })
 }
 
 export function findPlugin(name: string, cwdOverride?: string): Plugin | undefined {
-  return discoverPlugins(cwdOverride).find((p) => p.name === name)
+  return discoverPlugins(cwdOverride).find((p) => p.name === name || p.directoryName === name)
 }
 
 function syncAlembicIni(cwdOverride?: string): boolean {

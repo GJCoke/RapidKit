@@ -24,7 +24,7 @@ export const downgrade = defineFluxCommand({
         log.error(t("db.migrate.pluginNotFound", { plugin: args.plugin as string, available }))
         return
       }
-      pluginName = args.plugin as string
+      pluginName = plugin.name
     } else {
       const plugins = discoverPlugins().filter((p) => p.hasMigrations)
       if (plugins.length === 0) {

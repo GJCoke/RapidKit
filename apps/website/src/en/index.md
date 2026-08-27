@@ -26,7 +26,7 @@ features:
   - title: Task Queue
     details: Celery async tasks + Beat scheduling + Worker monitoring, Redis Stream event consumption, WebSocket status push.
   - title: Containerized Deployment
-    details: Docker multi-stage builds, dev/prod dual-mode Compose, dock CLI for one-click management, Docker and Podman support.
+    details: Docker multi-stage builds, dev/prod dual-mode Compose, RapidKit CLI workflows, and Docker/Podman support.
   - title: Developer Experience
     details: ESLint + Ruff + Prettier formatting, Husky + lint-staged commit checks, Changesets version management.
   - title: Internationalization

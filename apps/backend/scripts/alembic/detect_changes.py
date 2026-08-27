@@ -5,7 +5,6 @@ Usage: uv run python scripts/alembic/detect_changes.py
 Output: JSON to stdout with per-plugin change details.
 """
 
-import importlib
 import json
 import logging
 import os
@@ -18,52 +17,31 @@ os.environ.setdefault("SQLALCHEMY_WARN_20", "0")
 from alembic.autogenerate import compare_metadata  # noqa: E402
 from alembic.migration import MigrationContext  # noqa: E402
 from rapidkit_core.config import settings  # noqa: E402
+from scripts.alembic.plugin_discovery import discover_migration_plugins  # noqa: E402
 from sqlalchemy import create_engine  # noqa: E402
 from sqlmodel import SQLModel  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # 1. Load all plugins and build table → plugin mapping
 # ---------------------------------------------------------------------------
-PLUGIN_MODULES: list[str] = [
-    "plugin_auth",
-    "plugin_script",
-    "plugin_monitoring",
-    "plugin_system",
-    "plugin_menu",
-    "plugin_worker",
-    "plugin_schedule",
-    "plugin_user",
-]
-
-table_to_plugin: dict[str, str] = {}
+discovery = discover_migration_plugins(Path("plugins"))
+table_to_plugin = discovery.table_to_plugin
 plugin_info: dict[str, dict] = {}
 
-for mod_name in PLUGIN_MODULES:
-    # Derive plugin name: "plugin_auth" → "auth"
-    name = mod_name.removeprefix("plugin_")
-
-    try:
-        mod = importlib.import_module(mod_name)
-        manifest = mod.register()
-    except Exception:
+for descriptor in discovery.plugins.values():
+    if descriptor.external:
         continue
-
-    tables: list[str] = []
-    for model_cls in manifest.models:
-        tname = getattr(model_cls, "__tablename__", None)
-        if tname:
-            table_to_plugin[tname] = name
-            tables.append(tname)
-
-    # Check if plugin has existing migration files
-    versions_dir = Path("plugins") / name / "migrations" / "versions"
-    has_migrations = False
-    if versions_dir.exists():
-        has_migrations = any(f.suffix == ".py" and f.name != "__init__.py" for f in versions_dir.iterdir())
-
-    plugin_info[name] = {
-        "name": name,
-        "tables": tables,
+    versions_dir = Path(descriptor.version_path or "")
+    has_migrations = any(
+        file.suffix == ".py" and file.name != "__init__.py"
+        for file in versions_dir.iterdir()
+    )
+    plugin_info[descriptor.name] = {
+        "name": descriptor.name,
+        "directoryName": descriptor.directory_name,
+        "module": descriptor.module,
+        "versionPath": descriptor.version_path,
+        "tables": list(descriptor.tables),
         "hasMigrations": has_migrations,
         "changes": [],
     }
@@ -176,13 +154,16 @@ for info in plugin_info.values():
     result.append(
         {
             "name": info["name"],
+            "directoryName": info["directoryName"],
+            "module": info["module"],
+            "versionPath": info["versionPath"],
             "status": status,
             "hasMigrations": info["hasMigrations"],
             "changes": info["changes"],
         }
     )
 
-output = {"plugins": result}
+output = {"plugins": result, "errors": []}
 
 if unassigned:
     output["unassigned"] = unassigned

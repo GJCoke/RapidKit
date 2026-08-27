@@ -11,6 +11,7 @@ import type { Plugin } from "../../services/plugin.service"
 describe("buildMigrateArgs", () => {
   const basePlugin: Plugin = {
     name: "auth",
+    directoryName: "auth",
     module: "plugin_auth",
     versionPath: "plugins/auth/migrations/versions",
     hasMigrations: true,
@@ -37,6 +38,8 @@ describe("buildMigrateArgs", () => {
     const args = buildMigrateArgs(basePlugin, "test")
     expect(args).toContain("revision")
     expect(args).toContain("--autogenerate")
+    expect(args).toContain("-x")
+    expect(args).toContain("plugin=auth")
   })
 })
 

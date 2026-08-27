@@ -10,7 +10,7 @@ function getAlembicCwd(): string {
 }
 
 export function buildMigrateArgs(plugin: Plugin, message: string): string[] {
-  const args = ["run", "alembic", "revision", "--autogenerate", "-m", message]
+  const args = ["run", "alembic", "-x", `plugin=${plugin.name}`, "revision", "--autogenerate", "-m", message]
 
   if (plugin.hasMigrations) {
     args.push(`--head=${plugin.name}@head`)

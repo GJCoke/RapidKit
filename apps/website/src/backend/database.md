@@ -175,32 +175,25 @@ class RoleCRUD(BaseCRUD[Role]):
 
 ### 常用命令
 
-| 命令                            | 说明                 |
-| ------------------------------- | -------------------- |
-| `alembic upgrade heads`         | 升级所有分支到最新   |
-| `alembic upgrade <plugin>@head` | 升级指定插件分支     |
-| `alembic downgrade <plugin>@-1` | 回退指定插件一个版本 |
-| `alembic heads`                 | 查看所有分支的 head  |
-| `alembic history`               | 查看迁移历史         |
+| 命令                                                   | 说明                     |
+| ------------------------------------------------------ | ------------------------ |
+| `pnpm rapidkit db status`                              | 查看各插件迁移状态       |
+| `pnpm rapidkit db migrate -m "描述"`                   | 检测变更并交互式生成迁移 |
+| `pnpm rapidkit db migrate --plugin <name> -m "描述"`   | 为指定插件生成迁移       |
+| `pnpm rapidkit db upgrade`                             | 升级所有分支到最新       |
+| `pnpm rapidkit db upgrade --plugin <name>`             | 升级指定插件分支         |
+| `pnpm rapidkit db downgrade --plugin <name> --steps 1` | 回退指定插件一个版本     |
 
 ### 为插件生成迁移
 
 ```bash
-# 首次迁移（创建分支）
-uv run alembic revision --autogenerate \
-  --branch-label=notification \
-  -m "add notification table" \
-  --version-path plugins/notification/migrations/versions/
-
-# 后续迁移（追加到已有分支）
-uv run alembic revision --autogenerate \
-  --head=notification@head \
-  -m "add read_at column" \
-  --version-path plugins/notification/migrations/versions/
+# CLI 会自动区分首次迁移和后续迁移
+pnpm rapidkit db migrate --plugin notification -m "add notification table"
+pnpm rapidkit db upgrade --plugin notification
 ```
 
 :::warning
-新增插件时，需要在 `alembic.ini` 的 `version_locations` 和 `alembic/env.py` 的 `PLUGIN_MODULES` 中注册，否则 Alembic 无法发现该插件的模型和迁移文件。
+RapidKit CLI 会同步 Alembic 配置，并自动选择插件的 branch label、head 和版本目录。不要手工编辑这些参数。
 :::
 
 ## 添加新模型
@@ -231,8 +224,6 @@ return PluginManifest(
 3. **生成并应用迁移**：
 
 ```bash
-uv run alembic revision --autogenerate --branch-label=notification \
-  -m "add notification table" \
-  --version-path plugins/notification/migrations/versions/
-uv run alembic upgrade heads
+pnpm rapidkit db migrate --plugin notification -m "add notification table"
+pnpm rapidkit db upgrade --plugin notification
 ```

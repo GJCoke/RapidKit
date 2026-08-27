@@ -1,113 +1,84 @@
-# dock CLI 工具
+# RapidKit CLI
 
-`dock` 是项目自带的容器管理命令行工具，封装了 Docker Compose 命令，提供交互式菜单和命令模式两种使用方式，并支持 Docker / Podman 双运行时。
-
-## 安装
-
-脚本位于仓库根目录，通过软链接安装到 PATH：
+RapidKit CLI 是项目统一的开发、数据库和部署入口。请在仓库根目录通过 `pnpm rapidkit` 运行，无需全局安装额外命令。
 
 ```bash
-# 在项目根目录执行（仅需一次）
-sudo ln -sf "$(pwd)/dock" /usr/local/bin/dock
+# 打开交互式菜单
+pnpm rapidkit
+
+# 也可以直接执行子命令
+pnpm rapidkit dev up
+pnpm rapidkit prod up
+pnpm rapidkit db status
 ```
 
-安装后即可在任意位置使用 `dock` 命令。也可以不安装，直接在项目根目录通过 `./dock` 调用。
-
-## 两种使用模式
-
-### 交互式模式
-
-不带参数直接运行 `dock`，会显示菜单供选择：
-
-```
-dock -- Monorepo Container Management
-
-  Development
-    1) dev-up        Start infrastructure (PostgreSQL, Redis, MinIO)
-    2) dev-down      Stop infrastructure
-    3) dev-logs      Follow infrastructure logs
-
-  Production
-    4) prod-build    Build production images
-    5) prod-up       Build and start full stack
-    6) prod-down     Stop production stack
-    7) prod-logs     Follow production logs
-
-  Cleanup
-    8) clean         Remove all containers, volumes, and images
-
-    0) exit
-
-> Select command:
-```
-
-输入对应数字即可执行操作。
-
-### 命令模式
-
-直接指定子命令跳过菜单，适合脚本调用和 CI/CD 场景：
+## 首次开发启动
 
 ```bash
-dock dev-up       # 启动开发基础设施
-dock prod-up      # 构建并启动生产全栈
-dock clean        # 清理所有容器、卷和镜像
+pnpm install
+pnpm rapidkit dev up
 ```
 
-## 命令参考
+`dev up` 会启动 PostgreSQL、Redis 和 MinIO，然后询问是否初始化数据库。首次运行请选择“是”，CLI 将自动：
 
-| 命令              | 说明                                         |
-| ----------------- | -------------------------------------------- |
-| `dock dev-up`     | 启动开发基础设施（PostgreSQL、Redis、MinIO） |
-| `dock dev-down`   | 停止开发基础设施                             |
-| `dock dev-logs`   | 查看开发基础设施日志（实时跟踪）             |
-| `dock prod-build` | 仅构建生产镜像，不启动容器                   |
-| `dock prod-up`    | 构建镜像并启动生产环境全栈（`--build -d`）   |
-| `dock prod-down`  | 停止生产环境所有容器                         |
-| `dock prod-logs`  | 查看生产环境日志（实时跟踪）                 |
-| `dock clean`      | 停止所有容器，删除数据卷和本地构建的镜像     |
+1. 检测各插件的模型变更并生成缺失的初始迁移。
+2. 将所有迁移升级到最新版本。
+3. 写入默认管理员、角色、菜单等种子数据。
 
-其他选项：
+基础设施就绪后，分别启动应用：
 
-| 选项                       | 说明               |
-| -------------------------- | ------------------ |
-| `--runtime docker\|podman` | 手动指定容器运行时 |
-| `--help` / `-h`            | 显示帮助信息       |
+```bash
+pnpm dev:backend
+pnpm dev:frontend
+```
 
-## Docker / Podman 自动检测
+## 首次生产部署
 
-`dock` 同时兼容 Docker 和 Podman 两种容器运行时，检测逻辑如下：
+配置 `docker/prod/.env.prod` 后执行：
 
-1. **仅安装一个**：自动使用已安装的运行时，无需任何配置。
-2. **同时安装两个**：弹出交互式选择菜单：
+```bash
+pnpm rapidkit prod up
+```
 
-   ```
-   Detected both Docker and Podman
+`prod up` 会构建生产镜像、启动基础设施，并询问是否初始化数据库。首次部署请选择“是”并通过二次确认，CLI 会在后端容器中执行迁移和 seed，随后启动全部服务。
 
-     1) docker
-     2) podman
-
-   > Select runtime [1]:
-   ```
-
-3. **手动指定**：通过 `--runtime` 标志跳过检测：
-   ```bash
-   dock --runtime podman dev-up
-   dock --runtime docker prod-up
-   ```
-4. **均未安装**：报错退出。
-
-::: info Podman Compose
-当运行时为 Podman 时，`dock` 优先使用 `podman-compose`（如已安装），否则回退到 `podman compose` 子命令。
+::: warning
+生产环境的二次确认用于防止误操作。首次部署需要确认初始化；已有数据库的常规启动通常应跳过初始化。
 :::
 
-## 工作原理
+## 命令速查
 
-`dock` 是一个纯 Bash 脚本，核心逻辑如下：
+| 命令                                 | 说明                                     |
+| ------------------------------------ | ---------------------------------------- |
+| `pnpm rapidkit dev up`               | 启动开发基础设施，可交互式初始化数据库   |
+| `pnpm rapidkit dev down`             | 停止开发基础设施                         |
+| `pnpm rapidkit dev logs`             | 跟踪开发基础设施日志                     |
+| `pnpm rapidkit prod build`           | 构建生产镜像                             |
+| `pnpm rapidkit prod up`              | 构建并启动生产环境，可交互式初始化数据库 |
+| `pnpm rapidkit prod down`            | 停止生产环境                             |
+| `pnpm rapidkit prod logs`            | 跟踪生产环境日志                         |
+| `pnpm rapidkit db migrate -m "描述"` | 检测模型变更并交互式生成迁移             |
+| `pnpm rapidkit db upgrade`           | 应用全部迁移                             |
+| `pnpm rapidkit db status`            | 查看迁移状态                             |
+| `pnpm rapidkit db seed`              | 写入种子数据                             |
+| `pnpm rapidkit clean docker`         | 删除容器、数据卷和本地生产镜像           |
 
-- 自动定位 `docker/dev/docker-compose.yml` 和 `docker/prod/docker-compose.yml`，路径基于脚本自身位置解析，因此软链接安装后仍能正确找到 compose 文件。
-- 每条命令本质上是对 `docker compose -f <file> <子命令>` 的封装。
-- `clean` 命令会同时清理开发和生产环境：对开发环境执行 `down -v`，对生产环境执行 `down -v --rmi local`（额外删除本地构建的镜像）。
+## Docker / Podman 运行时
+
+CLI 会自动检测容器运行时。也可以临时指定，或保存到仓库本地配置：
+
+```bash
+# 仅本次命令生效
+pnpm rapidkit --runtime podman dev up
+
+# 保存到 .rapidkitrc.local.json
+pnpm rapidkit config set runtime podman
+```
 
 ::: danger
-`dock clean` 会删除所有数据卷，开发和生产数据均不可恢复。执行前请确认已做好备份。
+`pnpm rapidkit clean docker` 会删除开发和生产环境的数据卷，并删除本地构建的生产镜像。数据不可恢复，执行前务必备份。
 :::
+
+## 底层命令
+
+CLI 最终会调用 `docker compose` 或 `podman compose`。仅在 CLI 无法完成诊断时，才建议直接使用 Compose；日常操作应优先使用 `pnpm rapidkit`，以保持运行时选择、路径和数据库流程一致。

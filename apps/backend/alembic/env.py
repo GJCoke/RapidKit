@@ -1,9 +1,15 @@
 import asyncio
-import importlib.metadata
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context  # type: ignore
 from rapidkit_core.config import settings
+from scripts.alembic.plugin_discovery import (
+    PluginDiscoveryError,
+    discover_migration_plugins,
+    enum_type_owners,
+    object_belongs_to_plugin,
+)
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
@@ -13,12 +19,7 @@ from sqlmodel import SQLModel
 # 调用 register() 触发模型导入 → 注册到 SQLModel.metadata。
 # 这样 Alembic autogenerate 就能检测到所有表的变更。
 # ---------------------------------------------------------------------------
-for _ep in importlib.metadata.entry_points(group="rapidkit.plugins"):
-    try:
-        _register_fn = _ep.load()
-        _register_fn()
-    except Exception:
-        pass  # 可选插件可能不可用
+discovery = discover_migration_plugins(Path("plugins"))
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -34,6 +35,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = SQLModel.metadata
+shared_enum_owners = enum_type_owners(target_metadata, discovery.table_to_plugin)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -45,6 +47,42 @@ DATABASE_URL = str(settings.ASYNC_DATABASE_POSTGRESQL_URL)
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 config.compare_type = True  # type: ignore[attr-defined]
 config.compare_server_default = True  # type: ignore[attr-defined]
+plugin_name = context.get_x_argument(as_dictionary=True).get("plugin")
+if plugin_name is not None:
+    descriptor = discovery.plugins.get(plugin_name)
+    if descriptor is None or descriptor.external:
+        raise PluginDiscoveryError(f"unknown local migration plugin: {plugin_name}")
+
+
+def include_object(
+    obj: object,
+    _name: str | None,
+    object_type: str,
+    _reflected: bool,
+    _compare_to: object | None,
+) -> bool:
+    if plugin_name is None:
+        return True
+    return object_belongs_to_plugin(
+        obj, object_type, plugin_name, discovery.table_to_plugin
+    )
+
+
+def render_item(item_type: str, obj: object, autogen_context: object) -> str | bool:
+    """Reuse cross-plugin PostgreSQL enum types instead of creating duplicates."""
+    if item_type != "type" or plugin_name is None:
+        return False
+    enum_name = getattr(obj, "name", None)
+    owner = shared_enum_owners.get(enum_name)
+    if owner is None or owner == plugin_name:
+        return False
+    imports = getattr(autogen_context, "imports")
+    imports.add("from sqlalchemy.dialects import postgresql")
+    values = ", ".join(repr(value) for value in getattr(obj, "enums"))
+    return (
+        f"postgresql.ENUM({values}, name={enum_name!r}, "
+        "create_type=False)"
+    )
 
 
 def run_migrations_offline() -> None:
@@ -65,6 +103,8 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=include_object,
+        render_item=render_item,
     )
 
     with context.begin_transaction():
@@ -72,7 +112,12 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection | None) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_object=include_object,
+        render_item=render_item,
+    )
 
     with context.begin_transaction():
         context.run_migrations()

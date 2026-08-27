@@ -691,25 +691,16 @@ def register() -> PluginManifest:
 插件的迁移文件存放在 `plugins/<name>/migrations/versions/`，使用 Alembic 多分支策略：
 
 ```bash
-# 生成初始迁移
-uv run alembic revision --autogenerate \
-  --branch-label=notification \
-  -m "add notification table" \
-  --version-path plugins/notification/migrations/versions/
+# 首次和后续迁移使用相同入口，CLI 会识别插件当前状态
+pnpm rapidkit db migrate --plugin notification -m "add notification table"
+pnpm rapidkit db migrate --plugin notification -m "add notification_settings table"
 
-# 后续迁移
-uv run alembic revision --autogenerate \
-  --head=notification@head \
-  -m "add notification_settings table" \
-  --version-path plugins/notification/migrations/versions/
-
-# 执行迁移
-uv run alembic upgrade heads          # 全部分支
-uv run alembic upgrade notification@head  # 仅特定插件
+# 执行指定插件迁移
+pnpm rapidkit db upgrade --plugin notification
 ```
 
 :::danger branch-label 必须唯一且与插件名一致
-初次迁移使用 `--branch-label=xxx` 创建新分支。后续迁移必须使用 `--head=xxx@head` 追加到已有分支。
+每个插件的 branch label 必须唯一且与插件名一致。RapidKit CLI 会自动生成正确参数，不要绕过 CLI 手工指定。
 :::
 
 ## 权限声明

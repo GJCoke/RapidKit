@@ -26,8 +26,8 @@ docker/
 开发模式只启动基础设施服务，后端和前端在宿主机本地运行，方便调试和热重载。
 
 ```bash
-# 1. 启动基础设施
-dock dev-up
+# 1. 启动基础设施；首次运行时按提示初始化数据库
+pnpm rapidkit dev up
 
 # 2. 启动后端（新终端）
 pnpm dev:backend
@@ -153,25 +153,21 @@ FROM nginx:stable-alpine AS serve
 开发环境对应 `dev-pg-data`、`dev-redis-data`、`dev-minio-data`。
 
 ::: danger
-`dock clean` 会删除所有 volumes，数据将不可恢复。在生产环境执行前务必做好备份。
+`pnpm rapidkit clean docker` 会删除所有 volumes，数据将不可恢复。在生产环境执行前务必做好备份。
 :::
 
 ## 数据库初始化
 
-首次部署或数据库结构变更后，需要执行迁移和初始化：
+开发环境的数据库迁移和初始化统一通过 RapidKit CLI 执行：
 
 ```bash
-# 进入后端容器
-docker exec -it rapidkit-prod-backend-api bash
-
-# 执行 Alembic 迁移
-alembic upgrade head
-
-# 运行初始化脚本（创建默认数据）
-uv run python -m src.initdb
+pnpm rapidkit db status
+pnpm rapidkit db migrate -m "描述模型变更"
+pnpm rapidkit db upgrade
+pnpm rapidkit db seed
 ```
 
-`alembic upgrade head` 负责创建/更新表结构，`src.initdb` 负责写入初始数据（如默认管理员账号、基础配置等）。
+生产环境首次部署不需要手工进入容器执行 Alembic。`pnpm rapidkit prod up` 会在确认后于后端容器中完成迁移和 seed。
 
 ## 首次部署
 
@@ -188,20 +184,15 @@ cp docker/prod/.env.example docker/prod/.env.prod
 #    - CORS_ORIGINS 设为实际域名
 
 # 3. 构建并启动所有服务
-dock prod-up
+pnpm rapidkit prod up
+# 首次部署时，对“初始化数据库”和二次确认均选择“是”
 
-# 4. 初始化数据库
-docker exec -it rapidkit-prod-backend-api bash
-alembic upgrade head
-uv run python -m src.initdb
-exit
-
-# 5. 验证服务状态
+# 4. 验证服务状态（底层排障命令）
 docker compose -f docker/prod/docker-compose.yml ps
 ```
 
 ::: tip
-`dock prod-up` 等价于 `docker compose -f docker/prod/docker-compose.yml up -d --build`，会自动构建镜像并以后台模式启动。
+`pnpm rapidkit prod up` 会依次构建镜像、启动基础设施、按确认结果执行数据库迁移和 seed，最后启动全部服务。已有数据库的常规启动通常应跳过初始化。
 :::
 
 ## 故障排查
@@ -210,9 +201,11 @@ docker compose -f docker/prod/docker-compose.yml ps
 # 查看所有服务状态
 docker compose -f docker/prod/docker-compose.yml ps
 
-# 查看特定服务日志
-docker compose -f docker/prod/docker-compose.yml logs backend-api
-docker compose -f docker/prod/docker-compose.yml logs nginx
+# 跟踪生产环境日志（优先）
+pnpm rapidkit prod logs
+
+# 查看指定服务（底层排障）
+docker compose -f docker/prod/docker-compose.yml logs backend-api nginx
 
 # 进入容器排查
 docker exec -it rapidkit-prod-backend-api bash

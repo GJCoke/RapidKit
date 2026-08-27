@@ -159,14 +159,14 @@ Monorepo 通过 pnpm scripts 统一调用后端工具链命令：
 提交代码前建议依次运行 `format`、`lint` 和 `typecheck`，确保代码风格和类型安全性。
 :::
 
-## 插件脚手架（rapidkit create-plugin）
+## 插件脚手架（pnpm rapidkit plugin create）
 
-RapidKit CLI 提供 `create-plugin` 命令，一键生成符合规范的插件骨架：
+RapidKit CLI 提供 `plugin create` 命令，一键生成符合规范的插件骨架：
 
 ```bash
-rapidkit create-plugin
+pnpm rapidkit plugin create
 # 或直接指定名称
-rapidkit create-plugin --name notification
+pnpm rapidkit plugin create --name notification
 ```
 
 生成的文件包括：

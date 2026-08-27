@@ -271,8 +271,8 @@ HelloCrudDep = Annotated[HelloCRUD, Depends(get_hello_crud)]
 ### 初始迁移
 
 ```bash
-flux db migrate --plugin <name> -m "init"
-flux db upgrade --plugin <name>
+pnpm rapidkit db migrate --plugin <name> -m "init"
+pnpm rapidkit db upgrade --plugin <name>
 ```
 
 首次迁移自动使用 `--branch-label=<name> --head=base` 创建独立的 Alembic 分支。
@@ -280,8 +280,8 @@ flux db upgrade --plugin <name>
 ### 后续迁移
 
 ```bash
-flux db migrate --plugin <name> -m "add_field_xxx"
-flux db upgrade --plugin <name>
+pnpm rapidkit db migrate --plugin <name> -m "add_field_xxx"
+pnpm rapidkit db upgrade --plugin <name>
 ```
 
 :::warning

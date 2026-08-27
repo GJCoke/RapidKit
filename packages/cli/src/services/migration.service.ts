@@ -4,7 +4,7 @@ import { t } from "../infra/i18n"
 import { getContext } from "../context"
 import { BACKEND_DIR } from "../constants"
 import { buildMigrateArgs } from "./alembic.service"
-import { findPlugin } from "./plugin.service"
+import type { Plugin } from "./plugin.service"
 
 export interface PluginChange {
   type: string
@@ -12,7 +12,7 @@ export interface PluginChange {
   detail: string
 }
 
-export interface PluginChangeInfo {
+export interface PluginChangeInfo extends Plugin {
   name: string
   status: "initial" | "changed" | "up_to_date"
   hasMigrations: boolean
@@ -22,6 +22,7 @@ export interface PluginChangeInfo {
 interface DetectResult {
   plugins: PluginChangeInfo[]
   unassigned?: PluginChange[]
+  errors?: string[]
 }
 
 /**
@@ -39,6 +40,14 @@ export function detectChanges(runner: TaskRunner): { plugins: PluginChangeInfo[]
   const result: DetectResult = JSON.parse(output!)
 
   const unassignedTables = (result.unassigned ?? []).map((c) => c.table)
+  const errors = result.errors ?? []
+  if (errors.length > 0 || unassignedTables.length > 0) {
+    throw new Error(
+      [...errors, unassignedTables.length > 0 ? `unassigned tables: ${[...new Set(unassignedTables)].join(", ")}` : ""]
+        .filter(Boolean)
+        .join("; "),
+    )
+  }
 
   return { plugins: result.plugins, unassignedTables }
 }
@@ -64,10 +73,7 @@ export async function generateForPlugins(
 
   // Generate + upgrade each plugin atomically
   for (const info of plugins) {
-    const plugin = findPlugin(info.name)
-    if (!plugin) continue
-
-    const alembicArgs = buildMigrateArgs(plugin, finalMessage)
+    const alembicArgs = buildMigrateArgs(info, finalMessage)
     await runner.run({ label: t("db.migrate.generating", { plugin: info.name }), cwd }, "uv", alembicArgs)
 
     await runner.run({ label: t("db.upgrade.runningPlugin", { plugin: info.name }), cwd }, "uv", [

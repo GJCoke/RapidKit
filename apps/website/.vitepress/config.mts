@@ -107,7 +107,7 @@ export default defineConfig({
               text: "部署运维",
               items: [
                 { text: "Docker 容器化", link: "/deploy/docker" },
-                { text: "dock CLI 工具", link: "/deploy/dock-cli" },
+                { text: "RapidKit CLI", link: "/deploy/dock-cli" },
                 { text: "Nginx / Caddy 配置", link: "/deploy/proxy" },
               ],
             },

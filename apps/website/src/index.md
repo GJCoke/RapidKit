@@ -26,7 +26,7 @@ features:
   - title: 任务队列
     details: Celery 异步任务 + Beat 定时调度 + Worker 实时监控，Redis Stream 事件消费，WebSocket 状态推送。
   - title: 容器化部署
-    details: Docker 多阶段构建，开发/生产双模式 Compose，dock CLI 一键管理，支持 Docker 和 Podman。
+    details: Docker 多阶段构建，开发/生产双模式 Compose，RapidKit CLI 一键管理，支持 Docker 和 Podman。
   - title: 开发体验
     details: ESLint + Ruff + Prettier 代码格式化，Husky + lint-staged 提交检查，Changesets 版本管理。
   - title: 国际化
