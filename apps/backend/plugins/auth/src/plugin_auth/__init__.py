@@ -20,7 +20,6 @@ from rapidkit_framework.services import ServiceRegistry
 
 def register() -> PluginManifest:
     from fastapi import APIRouter
-
     from rapidkit_common.auth import _get_current_user_placeholder
 
     from plugin_auth.auth.api import router as auth_router

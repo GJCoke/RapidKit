@@ -1,7 +1,6 @@
 from uuid import uuid4
 
 import pytest
-
 from plugin_auth.auth.services import user_login
 from plugin_auth.status_codes import AuthStatusCode
 from rapidkit_common.enums import Status

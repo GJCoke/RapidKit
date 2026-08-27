@@ -1,7 +1,6 @@
 from uuid import uuid4
 
 import pytest
-
 from plugin_auth.invite.token_store import InviteTokenStore
 
 
