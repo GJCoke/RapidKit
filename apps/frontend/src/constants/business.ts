@@ -7,6 +7,12 @@ export const enableStatusRecord: Record<Api.Common.EnableStatus, I18nFullKey> = 
 
 export const enableStatusOptions = transformRecordToOption(enableStatusRecord)
 
+export const userStatusRecord: Record<Api.SystemManage.UserStatus, I18nFullKey> = {
+  "1": "page.manage.common.status.enable",
+  "2": "page.manage.common.status.disable",
+  "3": "page.manage.user.status.pending",
+}
+
 export const menuTypeRecord: Record<Api.SystemManage.MenuType, I18nFullKey> = {
   "1": "page.manage.menu.type.directory",
   "2": "page.manage.menu.type.menu",

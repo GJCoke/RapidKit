@@ -171,6 +171,11 @@
     },
     "resetPwd": {
       "title": "重置密码"
+    },
+    "setPassword": {
+      "title": "设置密码",
+      "success": "密码设置成功，请登录。",
+      "invalidToken": "邀请链接无效或已过期，请联系管理员。"
     }
   },
   "manage": {
@@ -320,7 +325,13 @@
       "userPhone": "手机号",
       "userRole": "用户角色",
       "userStatus": "用户状态",
-      "username": "用户名"
+      "username": "用户名",
+      "inviteNote": "系统将发送邀请邮件，用户可自行设置密码。",
+      "resendInvite": "重新邀请",
+      "resendInviteSuccess": "邀请邮件已重新发送",
+      "status": {
+        "pending": "待激活"
+      }
     },
     "department": {
       "title": "部门管理",

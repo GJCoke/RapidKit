@@ -19,13 +19,13 @@ declare global {
       }>
 
       /** script detail */
-      type ScriptDetail = Service.ApiResponse<"/api/v1/scripts/{script_id}">
+      type ScriptDetail = ScriptListItem & { code: string }
 
       /** script search params */
       type ScriptSearchParams = Service.ApiRequest<"/api/v1/scripts", "get", "query">
 
       /** script list */
-      type ScriptList = Service.ApiResponse<"/api/v1/scripts">
+      type ScriptList = Common.PaginatingQueryRecord<ScriptListItem>
 
       /** script create payload */
       type ScriptCreate = Service.ApiRequest<"/api/v1/scripts", "post", "body">

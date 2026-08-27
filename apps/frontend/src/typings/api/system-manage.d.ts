@@ -8,6 +8,9 @@ declare global {
      * backend api module: "systemManage"
      */
     namespace SystemManage {
+      /** "1" active, "2" disabled, "3" awaiting invite activation */
+      type UserStatus = Api.Common.EnableStatus | "3"
+
       type CommonSearchParams = Pick<Common.PaginatingCommonParams, "page" | "pageSize">
 
       /** role */
@@ -36,13 +39,13 @@ declare global {
       type RoleSearchParams = Service.ApiRequest<"/api/v1/roles", "get", "query">
 
       /** role list */
-      type RoleList = Service.ApiResponse<"/api/v1/roles">
+      type RoleList = Common.PaginatingQueryRecord<Role>
 
       /** all role */
       type AllRole = Pick<Role, "id" | "name" | "code">
 
       /** user */
-      type User = Common.CommonRecord<{
+      type User = Omit<Common.CommonRecord<{
         /** user name */
         username: string
         /** display name */
@@ -69,13 +72,15 @@ declare global {
         lastLoginIp?: string | null
         /** remark */
         remark?: string | null
-      }>
+      }>, "status"> & { status: UserStatus | null }
 
       /** user search params */
       type UserSearchParams = Service.ApiRequest<"/api/v1/users", "get", "query">
 
       /** create user body */
       type CreateUserBody = Service.ApiRequest<"/api/v1/users", "post", "body">
+
+      type ResendInvitePath = Service.ApiRequest<"/api/v1/users/{user_id}/resend-invite", "post", "path">
 
       /** user option (for select dropdowns) */
       type UserOption = {
@@ -85,7 +90,7 @@ declare global {
       }
 
       /** user list */
-      type UserList = Service.ApiResponse<"/api/v1/users">
+      type UserList = Common.PaginatingQueryRecord<User>
 
       /** role permissions response */
       type RolePermissions = Service.ApiResponse<"/api/v1/roles/{role_id}/permissions">
@@ -165,7 +170,7 @@ declare global {
         MenuPropsOfRoute
 
       /** menu list */
-      type MenuList = Service.ApiResponse<"/api/v1/manage/menus">
+      type MenuList = Common.PaginatingQueryRecord<Menu>
 
       type MenuTree = {
         id: string
