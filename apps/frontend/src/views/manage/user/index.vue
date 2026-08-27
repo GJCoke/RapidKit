@@ -1,8 +1,14 @@
 <script setup lang="tsx">
   import { reactive, ref } from "vue"
   import { NButton, NPopconfirm, NTag } from "naive-ui"
-  import { enableStatusRecord } from "@/constants/business"
-  import { fetchBatchDeleteUsers, fetchDeleteUser, fetchGetDepartmentTree, fetchGetUserList } from "@/service/api"
+  import { userStatusRecord } from "@/constants/business"
+  import {
+    fetchBatchDeleteUsers,
+    fetchDeleteUser,
+    fetchGetDepartmentTree,
+    fetchGetUserList,
+    fetchResendInvite,
+  } from "@/service/api"
   import { useAppStore } from "@/store/modules/app"
   import { defaultTransform, useNaivePaginatedTable, useTableOperate } from "@/hooks/common/table"
   import { $t } from "@/locales"
@@ -111,16 +117,17 @@
         align: "center",
         width: 100,
         render: (row) => {
-          if (row.status === null) {
+          if (row.status === null || row.status === undefined) {
             return null
           }
 
-          const tagMap: Record<Api.Common.EnableStatus, NaiveUI.ThemeColor> = {
+          const tagMap: Record<Api.SystemManage.UserStatus, NaiveUI.ThemeColor> = {
             1: "success",
             2: "warning",
+            3: "info",
           }
 
-          const label = $t(enableStatusRecord[row.status])
+          const label = $t(userStatusRecord[row.status])
 
           return <NTag type={tagMap[row.status]}>{label}</NTag>
         },
@@ -129,7 +136,7 @@
         key: "operate",
         title: $t("common.operate"),
         align: "center",
-        width: 220,
+        width: 300,
         render: (row) => (
           <div class="flex-center gap-8px">
             {hasAuth("manage_user:edit") && (
@@ -140,6 +147,11 @@
             {hasAuth("manage_user:password") && (authStore.userInfo.isAdmin || row.id === authStore.userInfo.id) && (
               <NButton type="warning" ghost size="small" onClick={() => handleChangePassword(row)}>
                 {$t("page.manage.user.changePassword")}
+              </NButton>
+            )}
+            {hasAuth("manage_user:edit") && row.status === "3" && (
+              <NButton type="info" ghost size="small" onClick={() => handleResendInvite(row.id)}>
+                {$t("page.manage.user.resendInvite")}
               </NButton>
             )}
             {hasAuth("manage_user:delete") && (
@@ -169,6 +181,12 @@
     passwordModal.userId = row.id
     passwordModal.isSelf = row.id === authStore.userInfo.id
     passwordModal.visible = true
+  }
+
+  async function handleResendInvite(id: string) {
+    const { error } = await fetchResendInvite(id)
+    if (error) return
+    window.$message?.success($t("page.manage.user.resendInviteSuccess"))
   }
 
   async function handleBatchDelete() {

@@ -7,6 +7,7 @@ Date    : 2025-04-18
 
 from uuid import UUID
 
+from rapidkit_common.enums import Status
 from rapidkit_common.events import UserLoginEvent
 from rapidkit_common.protocols.permission import PermissionCacheManager
 from rapidkit_common.protocols.user import UserProtocol
@@ -102,6 +103,13 @@ async def user_login(
 
     # Fix 3: Clear login attempts on success
     await redis.delete(attempts_key)
+
+    if user_info.status != Status.ON:
+        if user_info.status == Status.PENDING:
+            logger.warning("Login blocked for pending user {user_id}", user_id=user_info.id)
+            raise AppException(AuthStatusCode.ACCOUNT_NOT_ACTIVATED)
+        logger.warning("Login blocked for disabled user {user_id}", user_id=user_info.id)
+        raise AppException(AuthStatusCode.USER_DISABLED)
 
     token = await token_store.issue(user_info.id, user_info.name, user_agent)
     cache_mgr = get_service(PermissionCacheManager)

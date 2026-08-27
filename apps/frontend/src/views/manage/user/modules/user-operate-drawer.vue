@@ -1,13 +1,12 @@
 <script setup lang="ts">
   import { computed, ref, shallowRef, watch } from "vue"
-  import { jsonClone, rsaEncrypt } from "@rapidkit/utils"
+  import { jsonClone } from "@rapidkit/utils"
   import { enableStatusOptions } from "@/constants/business"
   import type { TreeSelectOption } from "naive-ui"
   import {
     fetchCreateUser,
     fetchGetAllRoles,
     fetchGetDepartmentTree,
-    fetchGetPublicKey,
     fetchUpdateUser,
   } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
@@ -53,7 +52,6 @@
     username: string
     name: string
     email: string
-    password: string
     phone: string
     avatar: string
     nickname: string
@@ -72,7 +70,6 @@
       username: "",
       name: "",
       email: "",
-      password: "",
       phone: "",
       avatar: "",
       nickname: "",
@@ -104,8 +101,6 @@
       status: defaultRequiredRule,
     }
   })
-
-  const passwordRules = computed(() => (props.operateType === "add" ? formRules.pwd : undefined))
 
   /** the enabled role options */
   const roleOptions = ref<CommonType.Option<string>[]>([])
@@ -164,11 +159,6 @@
     visible.value = false
   }
 
-  async function encryptPassword(password: string): Promise<string> {
-    const { data: publicKey } = await fetchGetPublicKey()
-    return rsaEncrypt(publicKey!, password)
-  }
-
   async function handleSubmit() {
     await validate()
 
@@ -188,12 +178,7 @@
     }
 
     if (props.operateType === "add") {
-      const encryptedPassword = await encryptPassword(model.value.password)
-      const { error } = await fetchCreateUser({
-        ...commonFields,
-        status: model.value.status!,
-        password: encryptedPassword,
-      })
+      const { error } = await fetchCreateUser({ ...commonFields, status: model.value.status! })
       if (error) return
     } else {
       const { error } = await fetchUpdateUser(props.rowData!.id!, commonFields)
@@ -239,18 +224,10 @@
             <NRadio v-for="item in genderOptions" :key="item.value" :value="item.value" :label="item.label" />
           </NRadioGroup>
         </NFormItem>
-        <NFormItem
-          v-if="operateType === 'add'"
-          :label="$t('page.manage.user.password')"
-          path="password"
-          :rule="passwordRules"
-        >
-          <NInput
-            v-model:value="model.password"
-            type="password"
-            show-password-on="click"
-            :placeholder="$t('page.manage.user.form.password')"
-          />
+        <NFormItem v-if="operateType === 'add'" :show-label="false">
+          <NAlert type="info" :bordered="false" class="w-full">
+            {{ $t("page.manage.user.inviteNote") }}
+          </NAlert>
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.userStatus')" path="status">
           <NRadioGroup v-model:value="model.status">

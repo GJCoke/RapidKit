@@ -651,7 +651,7 @@ export interface paths {
         put?: never;
         /**
          * Create User
-         * @description 创建新用户。
+         * @description 创建待激活用户，密码由邀请流程设置。
          */
         post: operations["create_user_api_v1_users_post"];
         /**
@@ -706,6 +706,26 @@ export interface paths {
          */
         put: operations["change_password_api_v1_users__user_id__password_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/resend-invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 重新发送邀请
+         * @description 为待激活用户重新发送邀请。
+         */
+        post: operations["resend_invite_api_v1_users__user_id__resend_invite_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -906,6 +926,40 @@ export interface paths {
         get: operations["get_user_info_api_v1_auth_user_info_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/invite/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Validate Invite */
+        get: operations["validate_invite_api_v1_auth_invite_validate_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/invite/set-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Password */
+        post: operations["set_password_api_v1_auth_invite_set_password_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2426,6 +2480,14 @@ export interface components {
             period: components["schemas"]["Period"];
         };
         /**
+         * InviteValidateResponse
+         * @description Invite validity without consuming it.
+         */
+        InviteValidateResponse: {
+            /** Valid */
+            valid: boolean;
+        };
+        /**
          * LoginRequest
          * @description 登录请求数据结构。
          */
@@ -3738,6 +3800,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["InfrastructureHealth"] | null;
+        };
+        /** Response[InviteValidateResponse] */
+        Response_InviteValidateResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["InviteValidateResponse"] | null;
         };
         /** Response[MenuResponse] */
         Response_MenuResponse_: {
@@ -5146,10 +5224,20 @@ export interface components {
             } | null;
         };
         /**
+         * SetPasswordBody
+         * @description Set a password using an encrypted password and invite token.
+         */
+        SetPasswordBody: {
+            /** Token */
+            token: string;
+            /** Newpassword */
+            newPassword: string;
+        };
+        /**
          * Status
          * @enum {string}
          */
-        Status: "1" | "2";
+        Status: "1" | "2" | "3";
         /**
          * TaskListResponse
          * @description 任务列表响应数据结构（不含 traceback 等大字段）。
@@ -5445,7 +5533,7 @@ export interface components {
         };
         /**
          * UserManageCreate
-         * @description 创建用户请求数据结构。
+         * @description 创建用户请求数据结构（密码由受邀用户自行设置）。
          */
         UserManageCreate: {
             /** Name */
@@ -5481,8 +5569,6 @@ export interface components {
             departmentId?: string | null;
             /** Remark */
             remark?: string | null;
-            /** Password */
-            password: string;
         };
         /**
          * UserManageOptionResponse
@@ -7243,6 +7329,37 @@ export interface operations {
             };
         };
     };
+    resend_invite_api_v1_users__user_id__resend_invite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_api_overview_api_v1_system_stats_api_overview_get: {
         parameters: {
             query?: {
@@ -7557,6 +7674,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_UserInfoResponse_"];
+                };
+            };
+        };
+    };
+    validate_invite_api_v1_auth_invite_validate_get: {
+        parameters: {
+            query: {
+                /** @description 邀请令牌 */
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_InviteValidateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_password_api_v1_auth_invite_set_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPasswordBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

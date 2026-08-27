@@ -6,6 +6,7 @@
     "cannotDeleteAdmin": "Cannot delete an admin account",
     "batchContainsSelf": "Batch delete contains the current user",
     "batchContainsAdmin": "Batch delete contains an admin user",
-    "passwordChangeForbidden": "No permission to change this user's password"
+    "passwordChangeForbidden": "No permission to change this user's password",
+    "userNotPending": "Only pending users can be re-invited"
   }
 }

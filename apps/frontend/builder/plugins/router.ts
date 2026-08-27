@@ -12,7 +12,14 @@ export function setupElegantRouter(): ReturnType<typeof ElegantVueRouter> {
       const key = routeName as RouteKey
 
       if (key === "login") {
-        const modules: UnionKey.LoginModule[] = ["pwd-login", "code-login", "register", "reset-pwd", "bind-wechat"]
+        const modules: UnionKey.LoginModule[] = [
+          "pwd-login",
+          "code-login",
+          "register",
+          "reset-pwd",
+          "bind-wechat",
+          "set-password",
+        ]
 
         const moduleReg = modules.join("|")
 

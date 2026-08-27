@@ -14,6 +14,7 @@ class MenuType(str, Enum):
 class Status(str, Enum):
     ON = "1"  # 启用
     OFF = "2"  # 禁用
+    PENDING = "3"  # 待激活（邀请未完成）
 
 
 class WorkerStatus(str, Enum):

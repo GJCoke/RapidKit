@@ -31,6 +31,9 @@ class AuthStatusCode(BaseStatusCode):
     USER_DISABLED = (14008, "auth.error.userDisabled")
     TOKEN_REFRESH_FAILED = (14009, "auth.error.tokenRefreshFailed")
     ACCOUNT_LOCKED = (14010, "auth.error.accountLocked")
+    INVITE_TOKEN_INVALID = (14011, "auth.error.inviteTokenInvalid")
+    INVITE_TOKEN_EXPIRED = (14012, "auth.error.inviteTokenExpired")
+    ACCOUNT_NOT_ACTIVATED = (14013, "auth.error.accountNotActivated")
 
     # Resource not found (015xxx)
     USER_NOT_FOUND = (15001, "auth.error.userNotFound")

@@ -18,6 +18,7 @@ export const loginModuleRecord: Record<UnionKey.LoginModule, I18nFullKey> = {
   register: "page.login.register.title",
   "reset-pwd": "page.login.resetPwd.title",
   "bind-wechat": "page.login.bindWeChat.title",
+  "set-password": "page.login.setPassword.title",
 }
 
 export const themeLayoutModeRecord: Record<UnionKey.ThemeLayoutMode, I18nFullKey> = {

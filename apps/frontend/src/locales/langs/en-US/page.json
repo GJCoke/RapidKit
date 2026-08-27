@@ -171,6 +171,11 @@
     },
     "resetPwd": {
       "title": "Reset Password"
+    },
+    "setPassword": {
+      "title": "Set your password",
+      "success": "Password set. You can now sign in.",
+      "invalidToken": "This invite link is invalid or has expired. Please contact your administrator."
     }
   },
   "manage": {
@@ -320,7 +325,13 @@
       "userPhone": "Phone Number",
       "userRole": "Role",
       "userStatus": "Status",
-      "username": "Username"
+      "username": "Username",
+      "inviteNote": "An invite email will be sent so the user can set their own password.",
+      "resendInvite": "Resend invite",
+      "resendInviteSuccess": "Invite email re-sent",
+      "status": {
+        "pending": "Pending"
+      }
     },
     "department": {
       "title": "Department Manage",

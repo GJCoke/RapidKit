@@ -100,6 +100,14 @@ export function fetchCreateUser(data: Api.SystemManage.CreateUserBody) {
   })
 }
 
+/** resend the invite email for a pending user */
+export function fetchResendInvite(userId: string) {
+  return request<boolean>({
+    url: `/users/${userId}/resend-invite`,
+    method: "post",
+  })
+}
+
 /** update user */
 export function fetchUpdateUser(
   id: string,

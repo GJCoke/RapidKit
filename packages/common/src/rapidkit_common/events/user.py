@@ -15,6 +15,14 @@ class UserCreatedEvent(Event):
 
 
 @dataclass
+class UserInviteRequestedEvent(Event):
+    """Fired when an admin requests another invite for a pending user."""
+
+    event_name: ClassVar[str] = "user.invite_requested"
+    user_id: str
+
+
+@dataclass
 class UserDeletedEvent(Event):
     """Fired when a user is deleted. Consumers should clean up references."""
 
