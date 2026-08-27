@@ -22,6 +22,7 @@ class UserStatusCode(BaseStatusCode):
     CANNOT_DELETE_ADMIN = (22002, "user.error.cannotDeleteAdmin")
     BATCH_CONTAINS_SELF = (22003, "user.error.batchContainsSelf")
     BATCH_CONTAINS_ADMIN = (22004, "user.error.batchContainsAdmin")
+    USER_NOT_PENDING = (22005, "user.error.userNotPending")
 
     # Permission errors (024xxx)
     PASSWORD_CHANGE_FORBIDDEN = (24001, "user.error.passwordChangeForbidden")
