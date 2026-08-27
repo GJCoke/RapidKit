@@ -15,6 +15,10 @@ declare global {
       type UserInfo = Service.ApiResponse<"/api/v1/auth/user/info">
 
       type PublicKey = Service.ApiResponse<"/api/v1/auth/keys/public">
+
+      type SetPasswordBody = Service.ApiRequest<"/api/v1/auth/invite/set-password", "post", "body">
+
+      type InviteValidate = Service.ApiResponse<"/api/v1/auth/invite/validate", "get">
     }
 
     namespace Role {

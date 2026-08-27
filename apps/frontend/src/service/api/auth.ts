@@ -19,6 +19,24 @@ export function fetchGetUserInfo() {
   return request<Api.Auth.UserInfo>({ url: "/auth/user/info" })
 }
 
+/** Validate an invite token without consuming it */
+export function fetchValidateInvite(token: string) {
+  return request<Api.Auth.InviteValidate>({
+    url: "/auth/invite/validate",
+    method: "get",
+    params: { token },
+  })
+}
+
+/** Set a password and activate an invited account */
+export function fetchSetPassword(data: Api.Auth.SetPasswordBody) {
+  return request<boolean>({
+    url: "/auth/invite/set-password",
+    method: "post",
+    data,
+  })
+}
+
 /**
  * Refresh token
  *
