@@ -10,6 +10,7 @@ from fastapi import Depends, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from plugin_user.models import User
 from rapidkit_common.deps import RedisDep, SessionDep
+from rapidkit_common.enums import Status
 from rapidkit_core.config import settings
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.context import ctx
@@ -158,8 +159,10 @@ async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep,
             ex=auth_settings.ACCESS_TOKEN_EXP,
         )
 
-    if not user_info.status:
-        logger.debug("User found but is inactive.")
+    if user_info.status != Status.ON:
+        logger.debug("User found but is not active.")
+        if user_info.status == Status.PENDING:
+            raise AppException(AuthStatusCode.ACCOUNT_NOT_ACTIVATED)
         raise AppException(AuthStatusCode.USER_DISABLED)
     return user_info
 
