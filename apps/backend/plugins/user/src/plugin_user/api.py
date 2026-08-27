@@ -5,6 +5,7 @@ Author : Coke
 Date   : 2026-05-11
 """
 
+import secrets
 from datetime import date
 from typing import Annotated
 from uuid import UUID
@@ -12,14 +13,21 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from rapidkit_common.auth import UserDBDep, VerifyPermissionDep, verify_user_permission
 from rapidkit_common.deps import RedisDep, SessionDep
-from rapidkit_common.events import UserCreatedEvent, UserDeletedEvent, UserPasswordChangedEvent, UserRolesChangedEvent
+from rapidkit_common.enums import Status
+from rapidkit_common.events import (
+    UserCreatedEvent,
+    UserDeletedEvent,
+    UserInviteRequestedEvent,
+    UserPasswordChangedEvent,
+    UserRolesChangedEvent,
+)
 from rapidkit_common.field_permission import FieldPermissionFilter, FieldRestrictions, serialize_with_restrictions
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_common.transaction import after_commit
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.exceptions import AppException
-from rapidkit_security import check_password
+from rapidkit_security import check_password, hash_password
 from sqlmodel import col
 
 from plugin_user.deps import UserManageCrudDep
@@ -172,17 +180,32 @@ async def create_user(
     current_user: VerifyPermissionDep,
     user_crud: UserManageCrudDep,
 ) -> Response[UserManageResponse]:
-    """创建新用户。"""
+    """创建待激活用户，密码由邀请流程设置。"""
     if not current_user.is_admin:
         body.is_admin = False
 
-    hashed_password = process_password(body.password)
     create_data = body.model_dump()
-    create_data["password"] = hashed_password
+    create_data["status"] = Status.PENDING
+    create_data["password"] = hash_password(secrets.token_urlsafe(32))
     user = await user_crud.create(create_data)
     event_bus.fire_and_forget(UserCreatedEvent(user_id=str(user.id)))
-    logger.info("User created: {user_id} by {operator}", user_id=user.id, operator=current_user.id)
+    logger.info("Pending user created: {user_id} by {operator}", user_id=user.id, operator=current_user.id)
     return Response(data=UserManageResponse.model_validate(user))
+
+
+@router.post("/{user_id}/resend-invite", summary="重新发送邀请")
+async def resend_invite(
+    user_id: UUID,
+    current_user: VerifyPermissionDep,
+    user_crud: UserManageCrudDep,
+) -> Response[bool]:
+    """为待激活用户重新发送邀请。"""
+    target = await user_crud.get(user_id, nullable=False)
+    if target.status != Status.PENDING:
+        raise AppException(UserStatusCode.USER_NOT_PENDING)
+    event_bus.fire_and_forget(UserInviteRequestedEvent(user_id=str(user_id)))
+    logger.info("Invite resend requested for {user_id} by {operator}", user_id=user_id, operator=current_user.id)
+    return Response(data=True)
 
 
 @router.put("/{user_id}")

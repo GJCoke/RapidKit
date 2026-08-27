@@ -48,9 +48,7 @@ class UserManageOptionResponse(BaseResponse):
 
 
 class UserManageCreate(UserManageSchema, BaseRequest):
-    """创建用户请求数据结构。"""
-
-    password: str  # RSA 加密的密码
+    """创建用户请求数据结构（密码由受邀用户自行设置）。"""
 
 
 class UserManageUpdate(BaseRequest):
