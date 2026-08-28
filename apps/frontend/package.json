@@ -7,6 +7,7 @@
   "scripts": {
     "format": "oxfmt",
     "lint": "oxlint --fix",
+    "test": "tsx --test src/router/guard/login-redirect.test.ts src/views/_builtin/login/login-presentation.test.ts",
     "dev": "vite --mode test",
     "build": "vite build --mode test",
     "typecheck": "vue-tsc --noEmit",
@@ -48,6 +49,7 @@
     "consola": "^3.4.2",
     "kolorist": "^1.8.0",
     "sass": "^1.99.0",
+    "tsx": "^4.21.0",
     "typescript": "~6.0.2",
     "unocss": "^66.6.6",
     "unplugin-icons": "^23.0.1",

@@ -40,12 +40,12 @@ Backend OpenAPI spec
 
 | File                                         | Role                                                           |
 | -------------------------------------------- | -------------------------------------------------------------- |
-| `apps/frontend/src/typings/schema.d.ts`      | Auto-generated OpenAPI types (DO NOT edit)                     |
-| `apps/frontend/src/typings/service.d.ts`     | `Service.ApiRequest` / `Service.ApiResponse` conditional types |
+| `../../../apps/frontend/src/typings/schema.d.ts`      | Auto-generated OpenAPI types (DO NOT edit)                     |
+| `../../../apps/frontend/src/typings/service.d.ts`     | `Service.ApiRequest` / `Service.ApiResponse` conditional types |
 | `apps/frontend/src/typings/api/*.d.ts`       | Per-module named type aliases                                  |
-| `apps/frontend/src/service/request/index.ts` | Configured Axios request instance                              |
+| `../../../apps/frontend/src/service/request/index.ts` | Configured Axios request instance                              |
 | `apps/frontend/src/service/api/*.ts`         | Per-module API functions                                       |
-| `apps/frontend/src/service/api/index.ts`     | Barrel re-export of all API functions                          |
+| `../../../apps/frontend/src/service/api/index.ts`     | Barrel re-export of all API functions                          |
 
 ## Core Patterns
 
@@ -180,7 +180,7 @@ No try/catch needed. Check `error` for failure, use `data` for success.
    }
    ```
 
-4. **Add to barrel file** `apps/frontend/src/service/api/index.ts`:
+4. **Add to barrel file** `../../../apps/frontend/src/service/api/index.ts`:
    ```typescript
    export * from "./<module>"
    ```

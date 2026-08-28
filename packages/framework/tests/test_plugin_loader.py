@@ -120,6 +120,31 @@ class TestDiscoverAndLoadPlugins:
         assert result.disabled == []
         assert result.errors == {}
 
+    def test_can_discover_plugins_without_registering_event_listeners(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        handler = MagicMock()
+        manifest = PluginManifest(
+            name="worker-only",
+            version="1.0",
+            event_listeners=[(MagicMock(), handler)],
+        )
+        monkeypatch.setattr(
+            "rapidkit_framework.loader._get_entry_points",
+            lambda: [_make_entry_point("worker-only", manifest)],
+        )
+        register_listener = MagicMock()
+        monkeypatch.setattr(
+            "rapidkit_framework.loader._register_event_listener",
+            register_listener,
+        )
+
+        result = discover_and_load_plugins(register_event_listeners=False)
+
+        assert result.plugins == [manifest]
+        register_listener.assert_not_called()
+
     def test_config_disables_plugin(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         """Plugins disabled in config are not loaded."""
         a = PluginManifest(name="a", version="1.0")

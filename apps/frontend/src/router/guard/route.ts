@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/modules/auth"
 import { useRouteStore } from "@/store/modules/route"
 import { localStg } from "@/utils/storage"
 import { getRouteName } from "@/router/elegant/transform"
+import { shouldRedirectLoggedInUserFromLogin } from "./login-redirect"
 
 /**
  * create route guard
@@ -32,7 +33,7 @@ export function createRouteGuard(router: Router) {
     const hasAuth = authStore.isStaticSuper || !routeRoles.length || hasRole
 
     // if it is login route when logged in, then switch to the root page
-    if (to.name === loginRoute && isLogin) {
+    if (to.name === loginRoute && shouldRedirectLoggedInUserFromLogin(to.params.module, isLogin)) {
       return { name: rootRoute }
     }
 

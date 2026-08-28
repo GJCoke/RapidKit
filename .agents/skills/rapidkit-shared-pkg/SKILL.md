@@ -43,8 +43,8 @@ Out of scope (use other skills):
 
 | Package           | PyPI name         | Purpose                                                            |
 | ----------------- | ----------------- | ------------------------------------------------------------------ |
-| `packages/core`   | `rapidkit-core`   | Infrastructure: config, database, redis, logging, security, events |
-| `packages/common` | `rapidkit-common` | Models, CRUD, schemas, deps, auth, data scoping                    |
+| `../../../packages/core`   | `rapidkit-core`   | Infrastructure: config, database, redis, logging, security, events |
+| `../../../packages/common` | `rapidkit-common` | Models, CRUD, schemas, deps, auth, data scoping                    |
 
 ### Dependency Graph
 
@@ -176,11 +176,11 @@ packages = ["src/rapidkit_<name>"]
 ### Operation 1: Create a New TypeScript Package
 
 1. Create `packages/<name>/` with:
-   - `package.json` from the template above
-   - `tsconfig.json` extending root
+   - `../../../package.json` from the template above
+   - `../../../tsconfig.json` extending root
    - `src/index.ts` as the barrel entry point
 
-2. The package is auto-discovered by pnpm (`packages/*` glob in `pnpm-workspace.yaml`) and Turborepo.
+2. The package is auto-discovered by pnpm (`packages/*` glob in `../../../pnpm-workspace.yaml`) and Turborepo.
 
 3. Add as dependency where needed:
 
@@ -196,11 +196,11 @@ packages = ["src/rapidkit_<name>"]
 ### Operation 2: Create a New Python Package
 
 1. Create `packages/<name>/` with:
-   - `pyproject.toml` from the template above
-   - `package.json` for turbo integration
+   - `../../../pyproject.toml` from the template above
+   - `../../../package.json` for turbo integration
    - `src/rapidkit_<name>/__init__.py`
 
-2. Register in root `pyproject.toml` under `[tool.uv.workspace].members`:
+2. Register in root `../../../pyproject.toml` under `[tool.uv.workspace].members`:
 
    ```toml
    [tool.uv.workspace]
@@ -210,7 +210,7 @@ packages = ["src/rapidkit_<name>"]
    ]
    ```
 
-3. Add as dependency to consumers in their `pyproject.toml`:
+3. Add as dependency to consumers in their `../../../pyproject.toml`:
 
    ```toml
    [project]
@@ -232,5 +232,5 @@ packages = ["src/rapidkit_<name>"]
 - ALWAYS use `"workspace:*"` for TS package references and `{ workspace = true }` for Python package references
 - ALWAYS use the shared builder (`tsx ../builder/cli.ts`) for TS package builds -- never configure Rollup/Vite directly
 - ALWAYS export through a barrel `src/index.ts` for TS packages
-- NEVER add Python packages to `pnpm-workspace.yaml` `members` -- they are registered in root `pyproject.toml`'s `[tool.uv.workspace]`
+- NEVER add Python packages to `../../../pnpm-workspace.yaml` `members` -- they are registered in root `../../../pyproject.toml`'s `[tool.uv.workspace]`
 - PREFER keeping packages focused on a single responsibility -- create separate packages rather than expanding existing ones with unrelated functionality

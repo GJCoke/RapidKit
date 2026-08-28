@@ -3,13 +3,16 @@ from logging.config import fileConfig
 from pathlib import Path
 
 from alembic import context  # type: ignore
+from alembic.autogenerate import comparators
 from rapidkit_core.config import settings
+from scripts.alembic.enum_changes import autogenerate_enum_value_ops
 from scripts.alembic.plugin_discovery import (
     PluginDiscoveryError,
     discover_migration_plugins,
     enum_type_owners,
     object_belongs_to_plugin,
 )
+from sqlalchemy import inspect
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
@@ -63,9 +66,7 @@ def include_object(
 ) -> bool:
     if plugin_name is None:
         return True
-    return object_belongs_to_plugin(
-        obj, object_type, plugin_name, discovery.table_to_plugin
-    )
+    return object_belongs_to_plugin(obj, object_type, plugin_name, discovery.table_to_plugin)
 
 
 def render_item(item_type: str, obj: object, autogen_context: object) -> str | bool:
@@ -79,9 +80,25 @@ def render_item(item_type: str, obj: object, autogen_context: object) -> str | b
     imports = getattr(autogen_context, "imports")
     imports.add("from sqlalchemy.dialects import postgresql")
     values = ", ".join(repr(value) for value in getattr(obj, "enums"))
-    return (
-        f"postgresql.ENUM({values}, name={enum_name!r}, "
-        "create_type=False)"
+    return f"postgresql.ENUM({values}, name={enum_name!r}, create_type=False)"
+
+
+@comparators.dispatch_for("schema")
+def compare_enum_values(
+    autogen_context: object,
+    upgrade_ops: object,
+    _schemas: object,
+) -> None:
+    """Add PostgreSQL enum member changes to plugin migrations."""
+    if plugin_name is None:
+        return
+    connection = getattr(autogen_context, "connection")
+    autogenerate_enum_value_ops(
+        metadata=target_metadata,
+        table_to_plugin=discovery.table_to_plugin,
+        inspector=inspect(connection),
+        upgrade_ops=upgrade_ops,
+        plugin_name=plugin_name,
     )
 
 
@@ -101,6 +118,8 @@ def run_migrations_offline() -> None:
     context.configure(
         url=url,
         target_metadata=target_metadata,
+        compare_type=True,
+        compare_server_default=True,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         include_object=include_object,
@@ -115,6 +134,8 @@ def do_run_migrations(connection: Connection | None) -> None:
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
+        compare_type=True,
+        compare_server_default=True,
         include_object=include_object,
         render_item=render_item,
     )

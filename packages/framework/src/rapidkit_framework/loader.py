@@ -147,6 +147,7 @@ def discover_and_load_plugins(
     config_path: Path | None = None,
     *,
     non_required_names: set[str] | None = None,
+    register_event_listeners: bool = True,
 ) -> PluginLoadResult:
     """
     通过 entry points 发现插件，结合配置过滤，然后加载并拓扑排序。
@@ -154,6 +155,7 @@ def discover_and_load_plugins(
     Args:
         config_path: plugins.toml 配置文件路径，为 None 或不存在时全部启用。
         non_required_names: 加载失败时允许跳过的插件名集合。
+        register_event_listeners: 是否将插件事件监听器注册到全局 EventBus。
 
     Returns:
         PluginLoadResult 包含成功加载的插件、禁用列表、错误信息和元数据。
@@ -240,10 +242,11 @@ def discover_and_load_plugins(
         if manifest.models:
             register_models(manifest.models)
 
-    # 按拓扑顺序注册事件监听器
-    for manifest in sorted_manifests:
-        for entry in manifest.event_listeners:
-            _register_event_listener(entry)
+    if register_event_listeners:
+        # 按拓扑顺序注册事件监听器
+        for manifest in sorted_manifests:
+            for entry in manifest.event_listeners:
+                _register_event_listener(entry)
 
     return PluginLoadResult(plugins=sorted_manifests, disabled=disabled, errors=errors, meta=meta)
 

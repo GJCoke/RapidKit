@@ -47,7 +47,7 @@ Dependencies flow **downward only**: plugins depend on common and core; common d
 
 ### Application Shell
 
-`apps/backend/src/` contains only infrastructure — no business logic:
+`../../../apps/backend/src` contains only infrastructure — no business logic:
 
 ```
 apps/backend/src/
@@ -66,7 +66,7 @@ apps/backend/src/
 
 ### Plugin Structure
 
-Each plugin is an **independent uv workspace package** under `apps/backend/plugins/`:
+Each plugin is an **independent uv workspace package** under `../../../apps/backend/plugins`:
 
 ```
 plugins/<name>/
@@ -143,14 +143,14 @@ def register() -> PluginManifest:
 
 Plugins are discovered via **Python entry points** and configured via `plugins.toml`:
 
-**1. Entry Point declaration** (`pyproject.toml`):
+**1. Entry Point declaration** (`../../../pyproject.toml`):
 
 ```toml
 [project.entry-points."rapidkit.plugins"]
 my_plugin = "plugin_my:register"
 ```
 
-**2. Plugin configuration** (`apps/backend/plugins.toml`):
+**2. Plugin configuration** (`../../../apps/backend/plugins.toml`):
 
 ```toml
 [plugins.worker]
@@ -450,7 +450,7 @@ DATETIME_FORMAT=%Y-%m-%d %H:%M:%S
 
 - NEVER define query parameters as raw `Query()` in API endpoints — always use schema classes with `Annotated[Schema, Query(...)]`
 - NEVER bypass the BaseModel alias convention — all request/response schemas must inherit from the appropriate base class
-- NEVER put business logic in `apps/backend/src/` — it belongs in a plugin
+- NEVER put business logic in `../../../apps/backend/src` — it belongs in a plugin
 - NEVER use `datetime.now()` or `datetime.utcnow()` — always use `timezone.now()`
 - NEVER manually call `timezone.to_local().strftime()` in CRUD/Service layers for response data
 - NEVER use bare `datetime` as a field type in response schemas — always use `LocalDatetime`
@@ -458,7 +458,7 @@ DATETIME_FORMAT=%Y-%m-%d %H:%M:%S
 - ALWAYS use `Response[T]` envelope for API responses
 - ALWAYS follow the plugin directory structure: `__init__.py` (register), then domain dirs with `models.py`, `schemas.py`, `crud.py`, `services.py`, `api.py`, `deps.py`
 - ALWAYS declare inter-plugin dependencies in `PluginManifest.dependencies`
-- ALWAYS declare entry points in `pyproject.toml` under `[project.entry-points."rapidkit.plugins"]`
+- ALWAYS declare entry points in `../../../pyproject.toml` under `[project.entry-points."rapidkit.plugins"]`
 - ALWAYS use `Annotated[Dep, Depends()]` pattern for dependency injection
 - ALWAYS import from `rapidkit_core` and `rapidkit_common` — never from old `src.common` or `src.core` paths
 - PREFER `PaginatedRequest` as base for any paginated query schema

@@ -6,6 +6,7 @@
   import { useAppStore } from "@/store/modules/app"
   import { useThemeStore } from "@/store/modules/theme"
   import { $t } from "@/locales"
+  import { getLoginPresentation } from "./login-presentation"
   import PwdLogin from "./modules/pwd-login.vue"
   import CodeLogin from "./modules/code-login.vue"
   import Register from "./modules/register.vue"
@@ -38,6 +39,7 @@
   }
 
   const activeModule = computed(() => moduleMap[props.module || "pwd-login"])
+  const presentation = computed(() => getLoginPresentation(props.module))
 
   const bgThemeColor = computed(() =>
     themeStore.darkMode ? getPaletteColorByNumber(themeStore.themeColor, 600) : themeStore.themeColor,
@@ -53,13 +55,31 @@
 </script>
 
 <template>
-  <div class="relative size-full flex-center overflow-hidden" :style="{ backgroundColor: bgColor }">
+  <div
+    class="relative size-full flex justify-center overflow-x-hidden overflow-y-auto px-16px py-24px"
+    :style="{ backgroundColor: bgColor }"
+  >
     <WaveBg :theme-color="bgThemeColor" />
-    <NCard :bordered="false" class="relative z-4 w-auto rd-12px">
-      <div class="w-400px lt-sm:w-300px">
-        <header class="flex-y-center justify-between">
-          <SystemLogo class="size-64px text-primary lt-sm:size-48px" />
-          <h3 class="text-28px text-primary font-500 lt-sm:text-22px">{{ $t("system.title") }}</h3>
+    <NCard
+      :bordered="false"
+      class="relative z-4 my-auto w-auto rd-12px"
+      :class="{ 'activation-card': presentation.mode === 'activation' }"
+    >
+      <div :class="presentation.mode === 'activation' ? 'w-460px lt-sm:w-300px' : 'w-400px lt-sm:w-300px'">
+        <header
+          class="flex-y-center justify-between"
+          :class="{ 'activation-header': presentation.mode === 'activation' }"
+        >
+          <SystemLogo
+            class="text-primary"
+            :class="presentation.mode === 'activation' ? 'size-44px' : 'size-64px lt-sm:size-48px'"
+          />
+          <h3
+            class="text-primary font-500"
+            :class="presentation.mode === 'activation' ? 'mr-auto ml-12px text-20px' : 'text-28px lt-sm:text-22px'"
+          >
+            {{ $t("system.title") }}
+          </h3>
           <div class="i-flex-col">
             <ThemeSchemaSwitch
               :theme-schema="themeStore.themeScheme"
@@ -76,9 +96,11 @@
             />
           </div>
         </header>
-        <main class="pt-24px">
-          <h3 class="text-18px text-primary font-medium">{{ $t(activeModule.label) }}</h3>
-          <div class="pt-24px">
+        <main :class="presentation.mode === 'activation' ? 'pt-16px' : 'pt-24px'">
+          <h3 v-if="presentation.showModuleTitle" class="text-18px text-primary font-medium">
+            {{ $t(activeModule.label) }}
+          </h3>
+          <div :class="{ 'pt-24px': presentation.showModuleTitle }">
             <Transition :name="themeStore.page.animateMode" mode="out-in" appear>
               <component :is="activeModule.component" />
             </Transition>
@@ -89,4 +111,14 @@
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+  .activation-card {
+    border: 1px solid color-mix(in srgb, var(--primary-color) 14%, transparent);
+    box-shadow: 0 24px 64px rgb(15 23 42 / 10%);
+  }
+
+  .activation-header {
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--n-border-color);
+  }
+</style>

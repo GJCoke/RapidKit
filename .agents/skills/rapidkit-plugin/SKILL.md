@@ -160,7 +160,7 @@ Use the template from section 3 above. Add any plugin-specific dependencies beyo
 
 Add the plugin package to **two** dependency lists:
 
-**Root `pyproject.toml`** (`/pyproject.toml`):
+**Root `../../../pyproject.toml`** (`/pyproject.toml`):
 
 ```toml
 [project]
@@ -174,7 +174,7 @@ dependencies = [
 rapidkit-plugin-<name> = { workspace = true }
 ```
 
-**Backend `pyproject.toml`** (`apps/backend/pyproject.toml`):
+**Backend `../../../pyproject.toml`** (`../../../apps/backend/pyproject.toml`):
 
 ```toml
 [project]
@@ -192,13 +192,13 @@ Note: The workspace `members` glob `apps/backend/plugins/*` in the root pyprojec
 
 ### Step 4: Register in Alembic
 
-**`apps/backend/alembic.ini`** -- append to `version_locations`:
+**`../../../apps/backend/alembic.ini`** -- append to `version_locations`:
 
 ```ini
 version_locations = alembic/versions:...:plugins/<name>/migrations/versions
 ```
 
-**`apps/backend/alembic/env.py`** -- add to `PLUGIN_MODULES` list:
+**`../../../apps/backend/alembic/env.py`** -- add to `PLUGIN_MODULES` list:
 
 ```python
 PLUGIN_MODULES: list[str] = [
@@ -228,7 +228,7 @@ The first migration automatically uses `--branch-label=<name> --head=base` to cr
 
 ## Optional: plugins.toml
 
-If the plugin needs conditional enabling/disabling, add an entry to `apps/backend/plugins.toml`:
+If the plugin needs conditional enabling/disabling, add an entry to `../../../apps/backend/plugins.toml`:
 
 ```toml
 [plugins.<name>]

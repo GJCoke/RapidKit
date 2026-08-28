@@ -164,7 +164,7 @@ process_user_report.apply_async(kwargs={"user_id": 42})
 ### Operation 2: Create a Periodic Beat Task
 
 1. Follow Operation 1 to create the task file and function
-2. Open `apps/backend/src/queues/app.py`
+2. Open `../../../apps/backend/src/queues/app.py`
 3. Add an entry to `app.conf.beat_schedule`:
 
 ```python

@@ -174,6 +174,15 @@
     },
     "setPassword": {
       "title": "Set your password",
+      "eyebrow": "Account activation",
+      "welcomeTitle": "Welcome to RapidKit",
+      "description": "Create your sign-in password to finish setting up your account.",
+      "passwordLabel": "New password",
+      "confirmPasswordLabel": "Confirm password",
+      "activate": "Activate account",
+      "checkingTitle": "Checking your invitation",
+      "checkingDescription": "Please wait while we confirm your account details.",
+      "invalidTitle": "Invitation link unavailable",
       "success": "Password set. You can now sign in.",
       "invalidToken": "This invite link is invalid or has expired. Please contact your administrator."
     }

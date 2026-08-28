@@ -17,8 +17,13 @@ os.environ.setdefault("SQLALCHEMY_WARN_20", "0")
 from alembic.autogenerate import compare_metadata  # noqa: E402
 from alembic.migration import MigrationContext  # noqa: E402
 from rapidkit_core.config import settings  # noqa: E402
+from scripts.alembic.enum_changes import (  # noqa: E402
+    collect_model_enums,
+    compare_enum_values,
+    load_database_enums,
+)
 from scripts.alembic.plugin_discovery import discover_migration_plugins  # noqa: E402
-from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy import create_engine, inspect  # noqa: E402
 from sqlmodel import SQLModel  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -32,10 +37,7 @@ for descriptor in discovery.plugins.values():
     if descriptor.external:
         continue
     versions_dir = Path(descriptor.version_path or "")
-    has_migrations = any(
-        file.suffix == ".py" and file.name != "__init__.py"
-        for file in versions_dir.iterdir()
-    )
+    has_migrations = any(file.suffix == ".py" and file.name != "__init__.py" for file in versions_dir.iterdir())
     plugin_info[descriptor.name] = {
         "name": descriptor.name,
         "directoryName": descriptor.directory_name,
@@ -51,6 +53,8 @@ for descriptor in discovery.plugins.values():
 # ---------------------------------------------------------------------------
 db_url = str(settings.ASYNC_DATABASE_POSTGRESQL_URL).replace("+asyncpg", "+psycopg")
 engine = create_engine(db_url)
+enum_changes = []
+enum_errors: list[str] = []
 
 try:
     with engine.connect() as conn:
@@ -59,6 +63,10 @@ try:
             opts={"compare_type": True, "compare_server_default": True},
         )
         diffs = compare_metadata(migration_ctx, SQLModel.metadata)
+        enum_changes, enum_errors = compare_enum_values(
+            collect_model_enums(SQLModel.metadata, table_to_plugin),
+            load_database_enums(inspect(conn)),
+        )
 finally:
     engine.dispose()
 
@@ -167,5 +175,20 @@ output = {"plugins": result, "errors": []}
 
 if unassigned:
     output["unassigned"] = unassigned
+
+for enum_change in enum_changes:
+    plugin_info[enum_change.owner]["changes"].append(
+        {
+            "type": "add_enum_value",
+            "table": enum_change.name,
+            "detail": (f"enum '{enum_change.name}' add value '{enum_change.value}'"),
+        }
+    )
+
+for item in result:
+    if item["status"] == "up_to_date" and item["changes"]:
+        item["status"] = "changed"
+
+output["errors"].extend(enum_errors)
 
 print(json.dumps(output, ensure_ascii=False))

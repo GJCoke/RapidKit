@@ -31,9 +31,9 @@ RapidKit uses Alembic with a **multi-branch strategy** -- each plugin maintains 
 
 | File                                               | Role                                                    |
 | -------------------------------------------------- | ------------------------------------------------------- |
-| `apps/backend/alembic.ini`                         | Central config with multi-directory `version_locations` |
-| `apps/backend/alembic/env.py`                      | Plugin model discovery + async migration runner         |
-| `apps/backend/scripts/alembic/detect_changes.py`   | Python probe that diffs metadata vs DB per-plugin       |
+| `../../../apps/backend/alembic.ini`                         | Central config with multi-directory `version_locations` |
+| `../../../apps/backend/alembic/env.py`                      | Plugin model discovery + async migration runner         |
+| `../../../apps/backend/scripts/alembic/detect_changes.py`   | Python probe that diffs metadata vs DB per-plugin       |
 | `apps/backend/plugins/<name>/migrations/versions/` | Per-plugin migration files                              |
 
 ### How It Works

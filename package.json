@@ -17,7 +17,7 @@
     "commit": "git-cz",
     "prepare": "husky",
     "check:python": "uv run ruff format . && uv run ruff check --fix . && uv run ty check",
-    "check:push": "turbo lint format typecheck --parallel && pnpm check:python",
+    "check:push": "turbo lint format typecheck --parallel && pnpm --filter @rapidkit/frontend test && pnpm check:python",
     "clean:workspace": "tsx ./scripts/clean-workspace.ts",
     "sync:version": "changeset version && tsx ./scripts/sync-changelogs.ts",
     "dev:frontend": "turbo build --filter !@rapidkit/frontend && turbo watch dev --filter @rapidkit/frontend",
