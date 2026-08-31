@@ -28,6 +28,9 @@ class TestAuthRegister(unittest.TestCase):
         assert "/auth/logout" in routes
         assert "/auth/user/info" in routes
         assert "/auth/invite/set-password" in routes
+        assert "/auth/password-reset/request" in routes
+        assert "/auth/password-reset/validate" in routes
+        assert "/auth/password-reset/confirm" in routes
 
     def test_manifest_wires_invite_events_and_task(self):
         from rapidkit_common.events import UserCreatedEvent, UserInviteRequestedEvent
@@ -36,6 +39,7 @@ class TestAuthRegister(unittest.TestCase):
 
         manifest = register()
         assert "plugin_auth.invite.tasks" in manifest.task_modules
+        assert "plugin_auth.password_reset.tasks" in manifest.task_modules
         events = {entry[0] for entry in manifest.event_listeners}
         assert UserCreatedEvent in events
         assert UserInviteRequestedEvent in events

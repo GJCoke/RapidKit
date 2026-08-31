@@ -68,6 +68,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/admin-contacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 系统管理员联系方式
+         * @description Return enabled super administrators without user-management fields.
+         */
+        get: operations["get_admin_contacts_api_v1_users_admin_contacts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/stats/summary": {
         parameters: {
             query?: never;
@@ -966,6 +986,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/password-reset/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Reset */
+        post: operations["request_reset_api_v1_auth_password_reset_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password-reset/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Validate Reset */
+        get: operations["validate_reset_api_v1_auth_password_reset_validate_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Reset */
+        post: operations["confirm_reset_api_v1_auth_password_reset_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/roles": {
         parameters: {
             query?: never;
@@ -1251,6 +1322,26 @@ export interface paths {
         post?: never;
         /** Delete Field Policy */
         delete: operations["delete_field_policy_api_v1_field_policies__policy_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboard/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 当前用户首页模块权限
+         * @description Return authorized keys from the loaded plugin capability registry.
+         */
+        get: operations["get_dashboard_capabilities_api_v1_dashboard_capabilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1755,6 +1846,26 @@ export interface components {
             responseCode?: number | null;
         };
         /**
+         * AdminContactResponse
+         * @description 登录用户可见的最小管理员联系方式。
+         */
+        AdminContactResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Avatar */
+            avatar?: string | null;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
+        /**
          * AggregatedHealth
          * @description 聚合健康状态响应（仅基础设施）。
          */
@@ -2052,6 +2163,16 @@ export interface components {
             dayOfMonth: string;
             /** Monthofyear */
             monthOfYear: string;
+        };
+        /**
+         * DashboardCapabilitiesResponse
+         * @description Dashboard modules the current user may load.
+         */
+        DashboardCapabilitiesResponse: {
+            /** Allowedmodules */
+            allowedModules: string[];
+            /** Revision */
+            revision: string;
         };
         /**
          * DataPolicyCreate
@@ -3306,6 +3427,35 @@ export interface components {
             records: components["schemas"]["WorkerResponse"][];
         };
         /**
+         * PasswordResetConfirmBody
+         * @description Encrypted password and single-use reset token.
+         */
+        PasswordResetConfirmBody: {
+            /** Token */
+            token: string;
+            /** Newpassword */
+            newPassword: string;
+        };
+        /**
+         * PasswordResetRequestBody
+         * @description Public password-reset request.
+         */
+        PasswordResetRequestBody: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
+        /**
+         * PasswordResetValidateResponse
+         * @description Token validity without user disclosure.
+         */
+        PasswordResetValidateResponse: {
+            /** Valid */
+            valid: boolean;
+        };
+        /**
          * Period
          * @description datetime.timedelta 的参数枚举。
          * @enum {string}
@@ -3689,6 +3839,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["BusinessSummary"] | null;
         };
+        /** Response[DashboardCapabilitiesResponse] */
+        Response_DashboardCapabilitiesResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["DashboardCapabilitiesResponse"] | null;
+        };
         /** Response[DataPolicyResponse] */
         Response_DataPolicyResponse_: {
             /**
@@ -4060,6 +4226,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_WorkerResponse_"] | null;
         };
+        /** Response[PasswordResetValidateResponse] */
+        Response_PasswordResetValidateResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PasswordResetValidateResponse"] | null;
+        };
         /** Response[PeriodicTaskResponse] */
         Response_PeriodicTaskResponse_: {
             /**
@@ -4404,6 +4586,25 @@ export interface components {
              * @description 响应数据。
              */
             data?: components["schemas"]["ActivityResponse"][] | null;
+        };
+        /** Response[list[AdminContactResponse]] */
+        Response_list_AdminContactResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["AdminContactResponse"][] | null;
         };
         /** Response[list[ApiDistributionItem]] */
         Response_list_ApiDistributionItem__: {
@@ -5912,6 +6113,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_admin_contacts_api_v1_users_admin_contacts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_AdminContactResponse__"];
                 };
             };
         };
@@ -7743,6 +7964,103 @@ export interface operations {
             };
         };
     };
+    request_reset_api_v1_auth_password_reset_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequestBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_reset_api_v1_auth_password_reset_validate_get: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PasswordResetValidateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_reset_api_v1_auth_password_reset_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirmBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_roles_api_v1_roles_get: {
         parameters: {
             query?: {
@@ -8426,6 +8744,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_capabilities_api_v1_dashboard_capabilities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DashboardCapabilitiesResponse_"];
                 };
             };
         };

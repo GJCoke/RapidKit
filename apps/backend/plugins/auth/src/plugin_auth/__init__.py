@@ -26,6 +26,7 @@ def register() -> PluginManifest:
     from plugin_auth.auth.deps import get_current_user_form_db
     from plugin_auth.invite.api import router as invite_router
     from plugin_auth.invite.handlers import on_invite_requested, on_user_created
+    from plugin_auth.password_reset.api import router as password_reset_router
     from plugin_auth.providers import (
         AuthenticatorImpl,
         CurrentUserProviderImpl,
@@ -37,6 +38,7 @@ def register() -> PluginManifest:
     router = APIRouter()
     router.include_router(auth_router)
     router.include_router(invite_router)
+    router.include_router(password_reset_router)
 
     def register_services(registry: ServiceRegistry) -> None:
         user_resolver = registry.get(UserResolver)
@@ -59,7 +61,7 @@ def register() -> PluginManifest:
             (UserCreatedEvent, on_user_created),
             (UserInviteRequestedEvent, on_invite_requested),
         ],
-        task_modules=["plugin_auth.invite.tasks"],
+        task_modules=["plugin_auth.invite.tasks", "plugin_auth.password_reset.tasks"],
         dependency_overrides={
             _get_current_user_placeholder: get_current_user_form_db,
         },

@@ -19,6 +19,12 @@ declare global {
       type SetPasswordBody = Service.ApiRequest<"/api/v1/auth/invite/set-password", "post", "body">
 
       type InviteValidate = Service.ApiResponse<"/api/v1/auth/invite/validate", "get">
+
+      type PasswordResetRequestBody = Service.ApiRequest<"/api/v1/auth/password-reset/request", "post", "body">
+
+      type PasswordResetValidate = Service.ApiResponse<"/api/v1/auth/password-reset/validate", "get">
+
+      type PasswordResetConfirmBody = Service.ApiRequest<"/api/v1/auth/password-reset/confirm", "post", "body">
     }
 
     namespace Role {

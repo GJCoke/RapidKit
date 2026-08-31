@@ -72,7 +72,19 @@
       "apiDistribution": "Request Distribution",
       "apiTopFailures": "Top Failures",
       "apiTrend24h": "24h Request Trend",
-      "noData": "No Data"
+      "noData": "No Data",
+      "permission": {
+        "title": "No dashboard access",
+        "description": "Your account does not currently have access to dashboard data. Contact a system administrator for help.",
+        "copyEmail": "Copy email",
+        "copyEmailFor": "Copy {name}'s administrator email",
+        "copySuccess": "Administrator {name}'s email was copied",
+        "viewAll": "View all administrators ({count})",
+        "collapse": "Collapse administrators",
+        "contactsUnavailable": "Administrator contacts are temporarily unavailable. Contact system support.",
+        "pageUnavailable": "The home page is temporarily unavailable",
+        "retry": "Reload"
+      }
     }
   },
   "monitoring": {
@@ -170,7 +182,28 @@
       "title": "Register"
     },
     "resetPwd": {
-      "title": "Reset Password"
+      "title": "Forgot password",
+      "eyebrow": "Account recovery",
+      "description": "Enter your account email and we will send a secure password-reset link.",
+      "emailPlaceholder": "Enter your email address",
+      "send": "Send reset link",
+      "cooldown": "Send again in {seconds}s",
+      "sent": "If this email belongs to an available account, a password-reset link has been sent."
+    },
+    "resetPassword": {
+      "eyebrow": "Secure recovery",
+      "title": "Choose a new password",
+      "description": "Create a new password for your RapidKit account.",
+      "checkingTitle": "Checking your reset link",
+      "checkingDescription": "Please wait while we verify this secure link.",
+      "invalidTitle": "Reset link unavailable",
+      "invalidToken": "This password-reset link is invalid or has expired.",
+      "requestAgain": "Request another link",
+      "passwordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "sessionsInvalidated": "After resetting, every device must sign in again.",
+      "confirm": "Reset password",
+      "success": "Password reset. Please sign in again on all devices."
     },
     "setPassword": {
       "title": "Set your password",

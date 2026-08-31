@@ -7,7 +7,7 @@
   "scripts": {
     "format": "oxfmt",
     "lint": "oxlint --fix",
-    "test": "tsx --test src/router/guard/login-redirect.test.ts src/views/_builtin/login/login-presentation.test.ts",
+    "test": "tsx --test builder/plugins/router-path.test.ts src/router/guard/login-redirect.test.ts src/views/_builtin/login/login-presentation.test.ts src/views/_builtin/login/password-reset-presentation.test.ts src/views/home/dashboard-registry.test.ts src/views/home/composables/use-home-permissions.test.ts src/views/home/visible-admin-contacts.test.ts src/views/manage/role/modules/permission-selection.test.ts",
     "dev": "vite --mode test",
     "build": "vite build --mode test",
     "typecheck": "vue-tsc --noEmit",

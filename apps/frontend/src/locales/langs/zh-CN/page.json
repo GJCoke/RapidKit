@@ -72,7 +72,19 @@
       "apiDistribution": "请求分布",
       "apiTopFailures": "失败排行",
       "apiTrend24h": "24h 请求趋势",
-      "noData": "暂无数据"
+      "noData": "暂无数据",
+      "permission": {
+        "title": "暂无首页数据权限",
+        "description": "你的账号尚未获得数据看板的访问权限。如需查看，请联系以下系统管理员。",
+        "copyEmail": "复制邮箱",
+        "copyEmailFor": "复制管理员 {name} 的邮箱",
+        "copySuccess": "管理员 {name} 的邮箱已复制",
+        "viewAll": "查看全部管理员（{count}）",
+        "collapse": "收起管理员",
+        "contactsUnavailable": "暂时无法获取管理员信息，请联系系统维护人员",
+        "pageUnavailable": "暂时无法加载首页",
+        "retry": "重新加载"
+      }
     }
   },
   "monitoring": {
@@ -170,7 +182,28 @@
       "title": "注册账号"
     },
     "resetPwd": {
-      "title": "重置密码"
+      "title": "忘记密码",
+      "eyebrow": "找回账户",
+      "description": "输入账户邮箱，我们会发送一封安全的密码重置邮件。",
+      "emailPlaceholder": "请输入邮箱地址",
+      "send": "发送重置链接",
+      "cooldown": "{seconds} 秒后可重新发送",
+      "sent": "如果该邮箱对应可用账户，密码重置邮件已发送。"
+    },
+    "resetPassword": {
+      "eyebrow": "安全找回",
+      "title": "设置新密码",
+      "description": "为你的 RapidKit 账户创建一个新密码。",
+      "checkingTitle": "正在检查重置链接",
+      "checkingDescription": "请稍候，我们正在验证此安全链接。",
+      "invalidTitle": "重置链接不可用",
+      "invalidToken": "密码重置链接无效或已过期。",
+      "requestAgain": "重新申请链接",
+      "passwordLabel": "新密码",
+      "confirmPasswordLabel": "确认新密码",
+      "sessionsInvalidated": "重置成功后，所有设备都需要重新登录。",
+      "confirm": "重置密码",
+      "success": "密码已重置，请在所有设备上重新登录。"
     },
     "setPassword": {
       "title": "设置密码",

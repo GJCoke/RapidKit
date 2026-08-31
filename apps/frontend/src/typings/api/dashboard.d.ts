@@ -8,6 +8,9 @@ declare global {
      * backend api module: "system"
      */
     namespace Dashboard {
+      /** 当前用户可访问的首页模块 */
+      type Capabilities = Service.ApiResponse<"/api/v1/dashboard/capabilities">
+
       /** 服务器资源统计 */
       type ResourceStats = {
         cpuPercent: number

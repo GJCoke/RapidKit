@@ -37,6 +37,25 @@ export function fetchSetPassword(data: Api.Auth.SetPasswordBody) {
   })
 }
 
+/** Request a password-reset email without disclosing account state */
+export function fetchRequestPasswordReset(data: Api.Auth.PasswordResetRequestBody) {
+  return request<boolean>({ url: "/auth/password-reset/request", method: "post", data })
+}
+
+/** Validate a password-reset token without consuming it */
+export function fetchValidatePasswordReset(token: string) {
+  return request<Api.Auth.PasswordResetValidate>({
+    url: "/auth/password-reset/validate",
+    method: "get",
+    params: { token },
+  })
+}
+
+/** Consume a password-reset token and replace the password */
+export function fetchConfirmPasswordReset(data: Api.Auth.PasswordResetConfirmBody) {
+  return request<boolean>({ url: "/auth/password-reset/confirm", method: "post", data })
+}
+
 /**
  * Refresh token
  *

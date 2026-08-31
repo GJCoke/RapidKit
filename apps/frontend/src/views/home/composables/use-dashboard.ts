@@ -144,24 +144,20 @@ export function useDashboard() {
 
   // ==================== Data Loaders ====================
 
-  async function loadInitialData() {
+  async function loadModules(moduleKeys: readonly string[]) {
     loading.initial = true
-    const results = await Promise.allSettled([
-      loadUserSummary(),
-      loadTaskSummary(),
-      loadErrorStats(),
-      loadHealthStats(),
-      loadInfrastructure(),
-      loadBusinessSummary(),
-      loadResources(),
-      loadWorkers(),
-      loadActivities(),
-      loadAuditDict(),
-      loadUserTrend(),
-      loadApiDistribution(),
-      loadApiTopFailures(),
-      loadApiTrend(),
-    ])
+    const loaders: Record<string, () => Promise<unknown>> = {
+      "dashboard.overview": () => Promise.all([loadUserSummary(), loadTaskSummary(), loadErrorStats(), loadWorkers()]),
+      "dashboard.application-health": loadHealthStats,
+      "dashboard.infrastructure": () => Promise.all([loadInfrastructure(), loadResources()]),
+      "dashboard.business": loadBusinessSummary,
+      "dashboard.api-monitoring": () => Promise.all([loadApiDistribution(), loadApiTopFailures(), loadApiTrend()]),
+      "dashboard.trends": loadUserTrend,
+      "dashboard.activity": () => Promise.all([loadActivities(), loadAuditDict()]),
+    }
+    const results = await Promise.allSettled(
+      moduleKeys.map(key => loaders[key]?.()).filter((result): result is Promise<unknown> => Boolean(result)),
+    )
     void results
     loading.initial = false
   }
@@ -321,7 +317,8 @@ export function useDashboard() {
 
   const { socket, connect, isConnected } = useSocket()
 
-  function setupSocket() {
+  function setupSocket(moduleKeys: readonly string[]) {
+    const enabled = new Set(moduleKeys)
     const baseUrl = new URL(import.meta.env.VITE_SERVICE_BASE_URL || "", window.location.origin).origin
 
     connect({
@@ -330,12 +327,12 @@ export function useDashboard() {
       path: "/socket.io",
     })
 
-    socket.value?.on("dashboard:online_users", (data: Api.Dashboard.OnlineUsersEvent) => {
+    if (enabled.has("dashboard.overview")) socket.value?.on("dashboard:online_users", (data: Api.Dashboard.OnlineUsersEvent) => {
       onlineUsers.value = data.count
       userSummary.value = { ...userSummary.value, onlineCount: data.count }
     })
 
-    socket.value?.on("dashboard:worker_status", (data: Api.Dashboard.DashboardWorkerStatusEvent) => {
+    if (enabled.has("dashboard.overview")) socket.value?.on("dashboard:worker_status", (data: Api.Dashboard.DashboardWorkerStatusEvent) => {
       if (data.status === "1") {
         onlineWorkerSet.add(data.hostname)
       } else {
@@ -344,7 +341,7 @@ export function useDashboard() {
       workerCount.value = onlineWorkerSet.size
     })
 
-    socket.value?.on("dashboard:task_completed", (data: Api.Dashboard.TaskCompletedEvent) => {
+    if (enabled.has("dashboard.overview")) socket.value?.on("dashboard:task_completed", (data: Api.Dashboard.TaskCompletedEvent) => {
       // Update today's task summary
       taskSummary.value = {
         ...taskSummary.value,
@@ -354,7 +351,7 @@ export function useDashboard() {
       }
     })
 
-    socket.value?.on("dashboard:error_stats", (data: Api.Dashboard.ErrorStatsEvent) => {
+    if (enabled.has("dashboard.overview")) socket.value?.on("dashboard:error_stats", (data: Api.Dashboard.ErrorStatsEvent) => {
       errorStats.value = {
         ...errorStats.value,
         http5XxCount: data.http5xxCount,
@@ -364,17 +361,17 @@ export function useDashboard() {
       }
     })
 
-    socket.value?.on("dashboard:resources", (data: Api.Dashboard.ResourcesEvent) => {
+    if (enabled.has("dashboard.infrastructure")) socket.value?.on("dashboard:resources", (data: Api.Dashboard.ResourcesEvent) => {
       const map = new Map(instanceResources.value)
       map.set(data.hostname, data)
       instanceResources.value = map
     })
 
-    socket.value?.on("dashboard:activity", (data: Api.Dashboard.ActivityEvent) => {
+    if (enabled.has("dashboard.activity")) socket.value?.on("dashboard:activity", (data: Api.Dashboard.ActivityEvent) => {
       activities.value = [data, ...activities.value.slice(0, 14)]
     })
 
-    socket.value?.on("dashboard:api_stats", (data: Api.Monitoring.ApiStatsEvent) => {
+    if (enabled.has("dashboard.api-monitoring")) socket.value?.on("dashboard:api_stats", (data: Api.Monitoring.ApiStatsEvent) => {
       if (data.topFailures?.length) {
         apiTopFailures.value = data.topFailures
       }
@@ -406,7 +403,7 @@ export function useDashboard() {
     isConnected,
 
     // Actions
-    loadInitialData,
+    loadModules,
     setupSocket,
     onTrendRangeChange,
     loadUserTrend,

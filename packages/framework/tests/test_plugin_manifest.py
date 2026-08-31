@@ -1,10 +1,12 @@
 """PluginManifest 数据类测试。"""
 
+import pytest
+
+from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
+
 
 class TestPluginManifest:
     def test_default_values(self):
-        from rapidkit_framework.plugin import PluginManifest
-
         m = PluginManifest(name="test", version="0.1.0")
         assert m.name == "test"
         assert m.version == "0.1.0"
@@ -31,8 +33,6 @@ class TestPluginManifest:
         assert HealthStatus.UNHEALTHY.value == "unhealthy"
 
     def test_manifest_with_dependencies(self):
-        from rapidkit_framework.plugin import PluginManifest
-
         m = PluginManifest(
             name="auth",
             version="1.0.0",
@@ -41,3 +41,31 @@ class TestPluginManifest:
         )
         assert m.dependencies == ["core", "user"]
         assert m.required is False
+
+
+def test_manifest_dashboard_modules_default_empty() -> None:
+    assert PluginManifest(name="demo", version="1.0.0").dashboard_modules == []
+
+
+def test_dashboard_module_def_keeps_stable_security_metadata() -> None:
+    definition = DashboardModuleDef(
+        key="worker.dashboard.queue-health",
+        required_permissions=("GET:/api/v1/workers",),
+        realtime_topics=("dashboard:worker_status",),
+    )
+
+    assert definition.key == "worker.dashboard.queue-health"
+    assert definition.required_permissions == ("GET:/api/v1/workers",)
+
+
+def test_dashboard_module_def_rejects_empty_key() -> None:
+    with pytest.raises(ValueError, match="key"):
+        DashboardModuleDef(key="", required_permissions=("GET:/api/v1/workers",))
+
+
+def test_dashboard_module_def_rejects_duplicate_permissions() -> None:
+    with pytest.raises(ValueError, match="unique"):
+        DashboardModuleDef(
+            key="dashboard.overview",
+            required_permissions=("GET:/api/v1/users", "GET:/api/v1/users"),
+        )

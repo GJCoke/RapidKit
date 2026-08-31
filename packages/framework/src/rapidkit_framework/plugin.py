@@ -57,6 +57,23 @@ class PermissionDef:
     description: str = ""
 
 
+@dataclass(frozen=True)
+class DashboardModuleDef:
+    """Security metadata for one dashboard presentation module."""
+
+    key: str
+    required_permissions: tuple[str, ...]
+    realtime_topics: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.key.strip():
+            raise ValueError("dashboard module key must not be empty")
+        if not self.required_permissions:
+            raise ValueError("dashboard module must require at least one permission")
+        if len(set(self.required_permissions)) != len(self.required_permissions):
+            raise ValueError("dashboard module permissions must be unique")
+
+
 @dataclass
 class MiddlewareDef:
     """插件声明的中间件定义。"""
@@ -136,6 +153,9 @@ class PluginManifest:
 
     # 插件声明的权限
     permissions: list[PermissionDef] = field(default_factory=list)
+
+    # 插件声明的 Dashboard 模块安全元数据
+    dashboard_modules: list[DashboardModuleDef] = field(default_factory=list)
 
     # 是否为必要插件（加载失败时是否中止应用）
     required: bool = True

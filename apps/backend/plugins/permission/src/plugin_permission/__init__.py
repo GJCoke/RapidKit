@@ -27,6 +27,7 @@ def register() -> PluginManifest:
     from fastapi import APIRouter
 
     from plugin_permission.data_policy.api import router as data_policy_router
+    from plugin_permission.dashboard.api import router as dashboard_router
     from plugin_permission.field_guard.api import router as field_guard_router
     from plugin_permission.models import DataPolicy, InterfaceRouter, Role
     from plugin_permission.providers import PermissionCacheManagerImpl
@@ -39,6 +40,7 @@ def register() -> PluginManifest:
     combined.include_router(router_api_router)
     combined.include_router(data_policy_router)
     combined.include_router(field_guard_router)
+    combined.include_router(dashboard_router)
 
     def register_services(registry: ServiceRegistry) -> None:
         registry.register(PermissionCacheManager, PermissionCacheManagerImpl())

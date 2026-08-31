@@ -1,7 +1,6 @@
 <script setup lang="ts">
-  import { computed, h, shallowRef, watch } from "vue"
+  import { computed, shallowRef, watch } from "vue"
   import type { TreeOption } from "naive-ui"
-  import { NText } from "naive-ui"
   import {
     fetchGetBackendRouters,
     fetchGetMenuTree,
@@ -9,6 +8,10 @@
     fetchUpdateRolePermissions,
   } from "@/service/api"
   import { $t } from "@/locales"
+  import {
+    buildPermissionCheckedKeys,
+    normalizePermissionSelection,
+  } from "./permission-selection"
 
   defineOptions({
     name: "PermissionModal",
@@ -31,15 +34,11 @@
   const title = computed(() => $t("page.manage.role.permissionConfig"))
 
   const treeData = shallowRef<TreeOption[]>([])
+  const permissionMenus = shallowRef<Api.SystemManage.MenuTree[]>([])
   const checkedKeys = shallowRef<string[]>([])
-  const indeterminateKeys = shallowRef<string[]>([])
 
   function handleCheckedKeysUpdate(keys: string[]) {
     checkedKeys.value = keys
-  }
-
-  function handleIndeterminateKeysUpdate(keys: Array<string | number>) {
-    indeterminateKeys.value = keys.map(String)
   }
 
   function buildTree(
@@ -100,6 +99,10 @@
   }
 
   async function loadData() {
+    checkedKeys.value = []
+    treeData.value = []
+    permissionMenus.value = []
+
     const [menuRes, routerRes, permRes] = await Promise.all([
       fetchGetMenuTree(),
       fetchGetBackendRouters(),
@@ -115,47 +118,15 @@
     }
 
     // Build tree
-    treeData.value = buildTree(
-      menuRes.data.filter((item) => !item.constant),
-      routerMap,
-    )
+    permissionMenus.value = menuRes.data.filter((item) => !item.constant)
+    treeData.value = buildTree(permissionMenus.value, routerMap)
 
-    // Restore checked keys (only leaf nodes: btn + api)
-    checkedKeys.value = [
-      ...(permRes.data.buttonPermissions || []).map((k: string) => `btn:${k}`),
-      ...(permRes.data.interfacePermissions || []).map((k: string) => `api:${k}`),
-    ]
+    checkedKeys.value = buildPermissionCheckedKeys(permRes.data)
   }
 
   async function handleSubmit() {
-    // Extract permissions by prefix
-    const routerPermissions: string[] = []
-    const buttonPermissions: string[] = []
-    const interfacePermissions: string[] = []
-
-    // Fully checked menu nodes
-    for (const key of checkedKeys.value) {
-      if (key.startsWith("menu:")) {
-        routerPermissions.push(key.slice(5))
-      } else if (key.startsWith("btn:")) {
-        buttonPermissions.push(key.slice(4))
-      } else if (key.startsWith("api:")) {
-        interfacePermissions.push(key.slice(4))
-      }
-    }
-
-    // Indeterminate (partially checked) menu nodes also count as router permissions
-    for (const key of indeterminateKeys.value) {
-      if (key.startsWith("menu:")) {
-        routerPermissions.push(key.slice(5))
-      }
-    }
-
-    const { error } = await fetchUpdateRolePermissions(props.roleId, {
-      routerPermissions,
-      buttonPermissions,
-      interfacePermissions,
-    })
+    const permissions = normalizePermissionSelection(checkedKeys.value, permissionMenus.value)
+    const { error } = await fetchUpdateRolePermissions(props.roleId, permissions)
 
     if (error) return
 
@@ -176,13 +147,11 @@
       :checked-keys="checkedKeys"
       :data="treeData"
       checkable
-      cascade
       expand-on-click
       block-line
       virtual-scroll
       class="h-480px"
       @update:checked-keys="handleCheckedKeysUpdate"
-      @update:indeterminate-keys="handleIndeterminateKeysUpdate"
     />
     <template #footer>
       <NSpace justify="end">

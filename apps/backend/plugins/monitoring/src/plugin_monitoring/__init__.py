@@ -4,7 +4,7 @@ import asyncio
 from typing import TYPE_CHECKING, Any
 
 from celery.schedules import crontab
-from rapidkit_framework.plugin import PluginManifest
+from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -46,6 +46,17 @@ def register() -> PluginManifest:
         version="0.1.0",
         router=router,
         models=[ApiMetricsHourly],
+        dashboard_modules=[
+            DashboardModuleDef(
+                key="dashboard.api-monitoring",
+                required_permissions=(
+                    "GET:/api/v1/system/stats/api/distribution",
+                    "GET:/api/v1/system/stats/api/top",
+                    "GET:/api/v1/system/stats/api/trend",
+                ),
+                realtime_topics=("dashboard:api_stats",),
+            )
+        ],
         on_startup=[_startup],
         on_shutdown=[_shutdown],
         task_modules=["plugin_monitoring.tasks"],

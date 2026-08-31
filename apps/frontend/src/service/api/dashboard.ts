@@ -1,5 +1,13 @@
 import { request } from "../request"
 
+/** 获取当前用户可访问的首页模块 */
+export function fetchGetDashboardCapabilities() {
+  return request<Api.Dashboard.Capabilities>({
+    url: "/dashboard/capabilities",
+    method: "get",
+  })
+}
+
 /** 获取服务器资源统计（多实例） */
 export function fetchSystemResources(instance?: string) {
   return request<Api.Dashboard.MultiResourceStats>({

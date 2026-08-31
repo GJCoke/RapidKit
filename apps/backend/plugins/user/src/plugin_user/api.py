@@ -33,6 +33,7 @@ from sqlmodel import col
 from plugin_user.deps import UserManageCrudDep
 from plugin_user.models import User
 from plugin_user.schemas import (
+    AdminContactResponse,
     ChangePasswordBody,
     UserActivityTrend,
     UserManageBatchBody,
@@ -61,6 +62,25 @@ router = APIRouter(
     tags=["User"],
     dependencies=[Depends(verify_user_permission)],
 )
+
+contact_router = APIRouter(prefix="/users", tags=["User"])
+
+
+@contact_router.get("/admin-contacts", summary="系统管理员联系方式")
+async def get_admin_contacts(
+    _: UserDBDep,
+    user_crud: UserManageCrudDep,
+) -> Response[list[AdminContactResponse]]:
+    """Return enabled super administrators without user-management fields."""
+    users = await user_crud.get_all(
+        User.is_admin.is_(True),
+        User.status == Status.ON,
+    )
+    contacts = [
+        AdminContactResponse.model_validate(user)
+        for user in sorted(users, key=lambda item: (item.name, item.id))
+    ]
+    return Response(data=contacts)
 
 
 @router.get("/stats/summary", summary="用户统计摘要")

@@ -1,6 +1,7 @@
 import type { RouteMeta } from "vue-router"
 import ElegantVueRouter from "@elegant-router/vue/vite"
 import type { RouteKey } from "@elegant-router/types"
+import { getLoginRoutePath } from "./router-path"
 
 export function setupElegantRouter(): ReturnType<typeof ElegantVueRouter> {
   return ElegantVueRouter({
@@ -12,18 +13,7 @@ export function setupElegantRouter(): ReturnType<typeof ElegantVueRouter> {
       const key = routeName as RouteKey
 
       if (key === "login") {
-        const modules: UnionKey.LoginModule[] = [
-          "pwd-login",
-          "code-login",
-          "register",
-          "reset-pwd",
-          "bind-wechat",
-          "set-password",
-        ]
-
-        const moduleReg = modules.join("|")
-
-        return `/login/:module(${moduleReg})?`
+        return getLoginRoutePath()
       }
 
       return routePath

@@ -11,6 +11,10 @@ def test_invite_status_codes_present() -> None:
     assert AuthStatusCode.ACCOUNT_NOT_ACTIVATED.value == (14013, "auth.error.accountNotActivated")
 
 
+def test_password_reset_status_code_present() -> None:
+    assert AuthStatusCode.PASSWORD_RESET_TOKEN_INVALID.value == (14014, "auth.error.passwordResetTokenInvalid")
+
+
 class TestAuthStatusCode:
     def test_is_base_status_code_subclass(self):
         from rapidkit_framework.status_codes import BaseStatusCode

@@ -1,73 +1,139 @@
 <script setup lang="ts">
-  import { onMounted } from "vue"
+  import { computed, onMounted, type Component } from "vue"
+  import { $t } from "@/locales"
+  import { useAuthStore } from "@/store/modules/auth"
+  import { selectDashboardModules } from "./dashboard-registry"
   import { useDashboard } from "./composables/use-dashboard"
-  import StatCards from "./modules/stat-cards.vue"
-  import AppStatus from "./modules/app-status.vue"
-  import InfraStatus from "./modules/infra-status.vue"
-  import ServerResources from "./modules/server-resources.vue"
-  import BusinessData from "./modules/business-data.vue"
-  import ApiOverview from "./modules/api-overview.vue"
-  import TrendCharts from "./modules/trend-charts.vue"
+  import { useHomePermissions } from "./composables/use-home-permissions"
   import ActivityFeed from "./modules/activity-feed.vue"
+  import ApiOverview from "./modules/api-overview.vue"
+  import AppStatus from "./modules/app-status.vue"
+  import BusinessData from "./modules/business-data.vue"
+  import InfrastructureOverview from "./modules/infrastructure-overview.vue"
+  import RestrictedHome from "./modules/restricted-home.vue"
+  import StatCards from "./modules/stat-cards.vue"
+  import TrendCharts from "./modules/trend-charts.vue"
 
   defineOptions({ name: "HomeDashboard" })
 
-  const dashboard = useDashboard()
+  type PresentationModule = {
+    key: string
+    order: number
+    component: Component
+    className: string
+    props: () => Record<string, unknown>
+    events?: Record<string, (...args: never[]) => void>
+  }
 
-  onMounted(() => {
-    dashboard.loadInitialData()
-    dashboard.setupSocket()
-  })
+  const dashboard = useDashboard()
+  const authStore = useAuthStore()
+  const registry = computed<PresentationModule[]>(() => [
+    {
+      key: "dashboard.overview",
+      order: 10,
+      component: StatCards,
+      className: "col-span-24",
+      props: () => ({
+        userSummary: dashboard.userSummary.value,
+        onlineUsers: dashboard.onlineUsers.value,
+        workerCount: dashboard.workerCount.value,
+        taskSummary: dashboard.taskSummary.value,
+        errorStats: dashboard.errorStats.value,
+      }),
+    },
+    {
+      key: "dashboard.application-health",
+      order: 20,
+      component: AppStatus,
+      className: "col-span-24",
+      props: () => ({ healthStats: dashboard.healthStats.value }),
+    },
+    {
+      key: "dashboard.infrastructure",
+      order: 30,
+      component: InfrastructureOverview,
+      className: "col-span-24 md:col-span-16",
+      props: () => ({
+        infrastructure: dashboard.infrastructure.value,
+        resources: dashboard.resources.value,
+        instanceResources: dashboard.instanceResources.value,
+        selectedInstance: dashboard.selectedInstance.value,
+        "onUpdate:selectedInstance": (value: string) => {
+          dashboard.selectedInstance.value = value
+        },
+      }),
+    },
+    {
+      key: "dashboard.business",
+      order: 40,
+      component: BusinessData,
+      className: "col-span-24 md:col-span-8",
+      props: () => ({ businessSummary: dashboard.businessSummary.value }),
+    },
+    {
+      key: "dashboard.api-monitoring",
+      order: 50,
+      component: ApiOverview,
+      className: "col-span-24",
+      props: () => ({
+        distribution: dashboard.apiDistribution.value,
+        topFailures: dashboard.apiTopFailures.value,
+        trend: dashboard.apiTrend.value,
+      }),
+    },
+    {
+      key: "dashboard.trends",
+      order: 60,
+      component: TrendCharts,
+      className: "col-span-24 md:col-span-15",
+      props: () => ({
+        userTrend: dashboard.userTrend.value,
+        trendRange: dashboard.trendRange.value,
+        loading: dashboard.loading.userTrend,
+        onRangeChange: dashboard.onTrendRangeChange,
+      }),
+    },
+    {
+      key: "dashboard.activity",
+      order: 70,
+      component: ActivityFeed,
+      className: "col-span-24 min-h-400px md:col-span-9",
+      props: () => ({ activities: dashboard.activities.value, auditDict: dashboard.auditDict.value }),
+    },
+  ])
+  const knownKeys = registry.value.map(item => item.key)
+  const permissions = useHomePermissions(knownKeys)
+  const activeModules = computed(() => selectDashboardModules(registry.value, permissions.allowedModules.value))
+
+  async function initializeHome() {
+    await permissions.loadCapabilities()
+    if (permissions.state.value !== "dashboard") return
+
+    const keys = activeModules.value.map(item => item.key)
+    await dashboard.loadModules(keys)
+    if (authStore.userInfo.isAdmin) dashboard.setupSocket(keys)
+  }
+
+  onMounted(initializeHome)
 </script>
 
 <template>
-  <div class="flex-col-stretch gap-16px">
-    <!-- Layer 1: Stat Cards -->
-    <StatCards
-      :user-summary="dashboard.userSummary.value"
-      :online-users="dashboard.onlineUsers.value"
-      :worker-count="dashboard.workerCount.value"
-      :task-summary="dashboard.taskSummary.value"
-      :error-stats="dashboard.errorStats.value"
-    />
+  <div v-if="permissions.state.value === 'loading'" class="min-h-520px flex-center">
+    <NSpin size="large" />
+  </div>
 
-    <!-- Layer 2: App Status -->
-    <AppStatus :health-stats="dashboard.healthStats.value" />
+  <div v-else-if="permissions.state.value === 'unavailable'" class="min-h-520px flex-col-center gap-16px">
+    <NEmpty :description="$t('page.home.dashboard.permission.pageUnavailable')" />
+    <NButton type="primary" @click="initializeHome">
+      {{ $t("page.home.dashboard.permission.retry") }}
+    </NButton>
+  </div>
 
-    <!-- Layer 3: Infrastructure | Server Resources | Business Data -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-16px">
-      <InfraStatus :infrastructure="dashboard.infrastructure.value" />
-      <ServerResources
-        :resources="dashboard.resources.value"
-        :instance-resources="dashboard.instanceResources.value"
-        :selected-instance="dashboard.selectedInstance.value"
-        @update:selected-instance="dashboard.selectedInstance.value = $event"
-      />
-      <BusinessData :business-summary="dashboard.businessSummary.value" />
-    </div>
+  <RestrictedHome v-else-if="permissions.state.value === 'restricted'" />
 
-    <!-- Layer 4: API Overview -->
-    <ApiOverview
-      :distribution="dashboard.apiDistribution.value"
-      :top-failures="dashboard.apiTopFailures.value"
-      :trend="dashboard.apiTrend.value"
-    />
-
-    <!-- Layer 5: Trend Charts + Activity Feed -->
-    <div class="grid grid-cols-1 md:grid-cols-24 gap-16px">
-      <div class="md:col-span-15">
-        <TrendCharts
-          :user-trend="dashboard.userTrend.value"
-          :trend-range="dashboard.trendRange.value"
-          :loading="dashboard.loading.userTrend"
-          @range-change="dashboard.onTrendRangeChange"
-        />
-      </div>
-      <div class="md:col-span-9 min-h-400px md:min-h-0 relative">
-        <div class="h-full md:absolute md:inset-0">
-          <ActivityFeed :activities="dashboard.activities.value" :audit-dict="dashboard.auditDict.value" />
-        </div>
-      </div>
+  <div v-else class="grid grid-cols-24 gap-16px">
+    <div v-for="module in activeModules" :key="module.key" :class="module.className">
+      <component :is="module.component" v-bind="module.props()" />
     </div>
   </div>
 </template>

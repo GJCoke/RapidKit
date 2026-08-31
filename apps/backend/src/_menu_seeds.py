@@ -21,7 +21,7 @@ def build_menus() -> list[Menu]:
         menu_type=MenuType.MENU,
         order=0,
         route_name="login",
-        route_path="/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?",
+        route_path=("/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat|set-password|reset-password)?"),
         component="layout.blank$view.login",
         icon="fe:login",
         icon_type=MenuIconType.ICONIFY,

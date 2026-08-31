@@ -27,3 +27,10 @@ class UserCRUD(BaseCRUD[User]):
             raise AppException(AuthStatusCode.USER_NOT_FOUND)
 
         return response
+
+    async def get_user_by_email(self, email: str) -> User | None:
+        """Return a user by normalized, case-insensitive email."""
+        normalized = email.strip().casefold()
+        stmt = self.select(col(self.model.email).ilike(normalized))
+        result = await self.session.exec(stmt)
+        return result.first()

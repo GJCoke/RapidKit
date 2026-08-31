@@ -92,6 +92,9 @@ declare global {
       /** user list */
       type UserList = Common.PaginatingQueryRecord<User>
 
+      /** enabled super-administrator contacts */
+      type AdminContacts = Service.ApiResponse<"/api/v1/users/admin-contacts">
+
       /** role permissions response */
       type RolePermissions = Service.ApiResponse<"/api/v1/roles/{role_id}/permissions">
 

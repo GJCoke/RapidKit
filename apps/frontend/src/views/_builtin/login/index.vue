@@ -13,6 +13,7 @@
   import ResetPwd from "./modules/reset-pwd.vue"
   import BindWechat from "./modules/bind-wechat.vue"
   import SetPassword from "./modules/set-password.vue"
+  import ResetPassword from "./modules/reset-password.vue"
 
   interface Props {
     /** The login module */
@@ -36,6 +37,7 @@
     "reset-pwd": { label: loginModuleRecord["reset-pwd"], component: ResetPwd },
     "bind-wechat": { label: loginModuleRecord["bind-wechat"], component: BindWechat },
     "set-password": { label: loginModuleRecord["set-password"], component: SetPassword },
+    "reset-password": { label: loginModuleRecord["reset-password"], component: ResetPassword },
   }
 
   const activeModule = computed(() => moduleMap[props.module || "pwd-login"])

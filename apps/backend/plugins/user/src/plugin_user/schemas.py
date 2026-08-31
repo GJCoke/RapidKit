@@ -47,6 +47,15 @@ class UserManageOptionResponse(BaseResponse):
     username: str
 
 
+class AdminContactResponse(BaseResponse):
+    """登录用户可见的最小管理员联系方式。"""
+
+    id: UUID
+    name: str
+    avatar: str | None = None
+    email: EmailStr
+
+
 class UserManageCreate(UserManageSchema, BaseRequest):
     """创建用户请求数据结构（密码由受邀用户自行设置）。"""
 

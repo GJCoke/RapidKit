@@ -9,6 +9,13 @@ test("uses the activation presentation for set-password", () => {
   })
 })
 
+test("uses the activation presentation for password reset confirmation", () => {
+  assert.deepEqual(getLoginPresentation("reset-password" as UnionKey.LoginModule), {
+    mode: "activation",
+    showModuleTitle: false,
+  })
+})
+
 test("keeps the default presentation for regular login modules", () => {
   assert.deepEqual(getLoginPresentation("pwd-login"), {
     mode: "default",

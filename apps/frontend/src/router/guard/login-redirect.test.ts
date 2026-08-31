@@ -6,6 +6,10 @@ test("keeps set-password accessible to logged-in users", () => {
   assert.equal(shouldRedirectLoggedInUserFromLogin("set-password", true), false)
 })
 
+test("keeps reset-password accessible to logged-in users", () => {
+  assert.equal(shouldRedirectLoggedInUserFromLogin("reset-password", true), false)
+})
+
 test("redirects logged-in users away from regular login modules", () => {
   assert.equal(shouldRedirectLoggedInUserFromLogin("pwd-login", true), true)
 })

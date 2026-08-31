@@ -7,7 +7,7 @@ Date    : 2026-05-11
 
 from rapidkit_common.events import DepartmentDeletedEvent, RoleDeletedEvent, RolePermissionsChangedEvent
 from rapidkit_common.protocols.user import UserQueryService, UserResolver
-from rapidkit_framework.plugin import PluginManifest
+from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
 from rapidkit_framework.services import ServiceRegistry
 
 
@@ -54,7 +54,9 @@ async def _on_role_deleted(event: RoleDeletedEvent) -> None:
 
 
 def register() -> PluginManifest:
-    from plugin_user.api import router
+    from fastapi import APIRouter
+
+    from plugin_user.api import contact_router, router
     from plugin_user.models import User
     from plugin_user.providers import UserQueryServiceImpl, UserResolverImpl
 
@@ -62,11 +64,21 @@ def register() -> PluginManifest:
         registry.register(UserResolver, UserResolverImpl())
         registry.register(UserQueryService, UserQueryServiceImpl())
 
+    combined = APIRouter()
+    combined.include_router(contact_router)
+    combined.include_router(router)
+
     return PluginManifest(
         name="user",
         version="0.1.0",
-        router=router,
+        router=combined,
         models=[User],
+        dashboard_modules=[
+            DashboardModuleDef(
+                key="dashboard.trends",
+                required_permissions=("GET:/api/v1/users/stats/trend",),
+            )
+        ],
         provides=[UserResolver, UserQueryService],
         service_factories={UserResolver: register_services},
         event_listeners=[
