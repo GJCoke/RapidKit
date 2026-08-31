@@ -10,6 +10,41 @@ interface PermissionTreeIndex {
   interfaceMenus: Map<string, string>
 }
 
+function indexMenuSubtreeKeys(
+  menus: Api.SystemManage.MenuTree[],
+  result = new Map<string, Set<string>>(),
+): Map<string, Set<string>> {
+  for (const menu of menus) {
+    const keys = new Set<string>([
+      `menu:${menu.routeName}`,
+      ...(menu.buttons ?? []).map((button) => `btn:${button.code}`),
+      ...(menu.interfaces ?? []).map((code) => `api:${code}`),
+    ])
+
+    indexMenuSubtreeKeys(menu.children ?? [], result)
+    for (const child of menu.children ?? []) {
+      for (const key of result.get(`menu:${child.routeName}`) ?? []) keys.add(key)
+    }
+    result.set(`menu:${menu.routeName}`, keys)
+  }
+
+  return result
+}
+
+export function applyPermissionCheckChange(
+  previousKeys: readonly string[],
+  nextKeys: readonly string[],
+  menus: Api.SystemManage.MenuTree[],
+): string[] {
+  const nextKeySet = new Set(nextKeys)
+  const removedMenuKeys = previousKeys.filter((key) => key.startsWith("menu:") && !nextKeySet.has(key))
+  if (removedMenuKeys.length === 0) return [...nextKeys]
+
+  const subtreeKeys = indexMenuSubtreeKeys(menus)
+  const revokedKeys = new Set(removedMenuKeys.flatMap((key) => [...(subtreeKeys.get(key) ?? [])]))
+  return nextKeys.filter((key) => !revokedKeys.has(key))
+}
+
 export function buildPermissionCheckedKeys(selection: RolePermissionSelection): string[] {
   return [
     ...selection.routerPermissions.map((key) => `menu:${key}`),

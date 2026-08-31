@@ -1,6 +1,10 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { buildPermissionCheckedKeys, normalizePermissionSelection } from "./permission-selection"
+import {
+  applyPermissionCheckChange,
+  buildPermissionCheckedKeys,
+  normalizePermissionSelection,
+} from "./permission-selection"
 
 const menuTree: Api.SystemManage.MenuTree[] = [
   {
@@ -90,5 +94,38 @@ test("preserves unknown button and interface permissions without guessing a menu
       buttonPermissions: ["removed:edit"],
       interfacePermissions: ["removed:list"],
     },
+  )
+})
+
+test("removes all descendant permissions when a nested menu is unchecked", () => {
+  assert.deepEqual(
+    applyPermissionCheckChange(
+      ["menu:manage", "menu:manage_user", "btn:user:create", "api:user:list"],
+      ["menu:manage", "btn:user:create", "api:user:list"],
+      menuTree,
+    ),
+    ["menu:manage"],
+  )
+})
+
+test("removes the complete permission subtree when a parent menu is unchecked", () => {
+  assert.deepEqual(
+    applyPermissionCheckChange(
+      ["menu:manage", "menu:manage_user", "menu:manage_role", "btn:user:create", "api:user:list"],
+      ["menu:manage_user", "menu:manage_role", "btn:user:create", "api:user:list"],
+      menuTree,
+    ),
+    [],
+  )
+})
+
+test("does not grant descendants when a menu is checked", () => {
+  assert.deepEqual(
+    applyPermissionCheckChange(
+      ["btn:user:create"],
+      ["menu:manage_user", "btn:user:create"],
+      menuTree,
+    ),
+    ["menu:manage_user", "btn:user:create"],
   )
 })

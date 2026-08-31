@@ -9,6 +9,7 @@
   } from "@/service/api"
   import { $t } from "@/locales"
   import {
+    applyPermissionCheckChange,
     buildPermissionCheckedKeys,
     normalizePermissionSelection,
   } from "./permission-selection"
@@ -38,7 +39,7 @@
   const checkedKeys = shallowRef<string[]>([])
 
   function handleCheckedKeysUpdate(keys: string[]) {
-    checkedKeys.value = keys
+    checkedKeys.value = applyPermissionCheckChange(checkedKeys.value, keys, permissionMenus.value)
   }
 
   function buildTree(
