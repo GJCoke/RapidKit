@@ -5,5 +5,5 @@ export function resolvePermissionState(
   allowedModules: readonly string[],
 ): Extract<HomePermissionState, "dashboard" | "restricted"> {
   const known = new Set(knownModules)
-  return allowedModules.some(key => known.has(key)) ? "dashboard" : "restricted"
+  return allowedModules.some((key) => known.has(key)) ? "dashboard" : "restricted"
 }

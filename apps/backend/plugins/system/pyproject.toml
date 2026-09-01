@@ -6,7 +6,9 @@ requires-python = ">=3.14"
 dependencies = [
     "rapidkit-core",
     "rapidkit-common",
+    "minio>=7.2.18,<8.0",
     "psutil>=7.0.0,<8.0",
+    "urllib3>=2.6.0,<3.0",
 ]
 
 [project.entry-points."rapidkit.plugins"]

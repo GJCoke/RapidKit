@@ -12,13 +12,18 @@ from rapidkit_common.schemas.request import BatchRequest, PaginatedRequest
 from plugin_permission.cache import CachedPermissions
 
 
-class RoleSchema(BaseModel):
-    """角色数据结构。"""
+class RoleMetadataSchema(BaseModel):
+    """角色基础信息数据结构。"""
 
     name: str
     description: str
     code: str
     status: Status = Status.ON
+
+
+class RoleSchema(RoleMetadataSchema):
+    """角色数据结构。"""
+
     interface_permissions: list[str] = []
     button_permissions: list[str] = []
     router_permissions: list[str] = []
@@ -41,7 +46,7 @@ class RoleCreate(RoleSchema, BaseRequest):
     field_policy_ids: list[UUID] = []
 
 
-class RoleUpdate(RoleSchema, BaseRequest):
+class RoleUpdate(RoleMetadataSchema, BaseRequest):
     """更新角色数据结构。"""
 
     data_policy_ids: list[UUID] | None = None

@@ -26,8 +26,8 @@ def _register_field_permission_resolver() -> None:
 def register() -> PluginManifest:
     from fastapi import APIRouter
 
-    from plugin_permission.data_policy.api import router as data_policy_router
     from plugin_permission.dashboard.api import router as dashboard_router
+    from plugin_permission.data_policy.api import router as data_policy_router
     from plugin_permission.field_guard.api import router as field_guard_router
     from plugin_permission.models import DataPolicy, InterfaceRouter, Role
     from plugin_permission.providers import PermissionCacheManagerImpl

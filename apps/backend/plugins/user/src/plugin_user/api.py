@@ -77,8 +77,7 @@ async def get_admin_contacts(
         User.status == Status.ON,
     )
     contacts = [
-        AdminContactResponse.model_validate(user)
-        for user in sorted(users, key=lambda item: (item.name, item.id))
+        AdminContactResponse.model_validate(user) for user in sorted(users, key=lambda item: (item.name, item.id))
     ]
     return Response(data=contacts)
 

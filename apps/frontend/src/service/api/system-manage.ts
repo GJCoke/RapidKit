@@ -31,7 +31,7 @@ export function fetchCreateRole(
 }
 
 /** update role */
-export function fetchUpdateRole(id: string, data: Partial<Api.SystemManage.Role>) {
+export function fetchUpdateRole(id: string, data: Api.SystemManage.UpdateRoleBody) {
   return request<Api.SystemManage.Role>({
     url: `/roles/${id}`,
     method: "put",

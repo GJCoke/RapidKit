@@ -132,7 +132,7 @@ export function useDashboard() {
   const userTrend = ref<Api.Dashboard.UserActivityTrend[]>([])
   const taskTrend = ref<Api.Dashboard.UserActivityTrend[]>([])
   // Time range
-  const trendRange = ref<"today" | "7d" | "30d" | "custom">("today")
+  const trendRange = ref<"today" | "7d" | "30d" | "custom">("30d")
   const customRange = ref<[number, number] | null>(null)
 
   // Loading states
@@ -156,7 +156,7 @@ export function useDashboard() {
       "dashboard.activity": () => Promise.all([loadActivities(), loadAuditDict()]),
     }
     const results = await Promise.allSettled(
-      moduleKeys.map(key => loaders[key]?.()).filter((result): result is Promise<unknown> => Boolean(result)),
+      moduleKeys.map((key) => loaders[key]?.()).filter((result): result is Promise<unknown> => Boolean(result)),
     )
     void results
     loading.initial = false
@@ -327,55 +327,62 @@ export function useDashboard() {
       path: "/socket.io",
     })
 
-    if (enabled.has("dashboard.overview")) socket.value?.on("dashboard:online_users", (data: Api.Dashboard.OnlineUsersEvent) => {
-      onlineUsers.value = data.count
-      userSummary.value = { ...userSummary.value, onlineCount: data.count }
-    })
+    if (enabled.has("dashboard.overview"))
+      socket.value?.on("dashboard:online_users", (data: Api.Dashboard.OnlineUsersEvent) => {
+        onlineUsers.value = data.count
+        userSummary.value = { ...userSummary.value, onlineCount: data.count }
+      })
 
-    if (enabled.has("dashboard.overview")) socket.value?.on("dashboard:worker_status", (data: Api.Dashboard.DashboardWorkerStatusEvent) => {
-      if (data.status === "1") {
-        onlineWorkerSet.add(data.hostname)
-      } else {
-        onlineWorkerSet.delete(data.hostname)
-      }
-      workerCount.value = onlineWorkerSet.size
-    })
+    if (enabled.has("dashboard.overview"))
+      socket.value?.on("dashboard:worker_status", (data: Api.Dashboard.DashboardWorkerStatusEvent) => {
+        if (data.status === "1") {
+          onlineWorkerSet.add(data.hostname)
+        } else {
+          onlineWorkerSet.delete(data.hostname)
+        }
+        workerCount.value = onlineWorkerSet.size
+      })
 
-    if (enabled.has("dashboard.overview")) socket.value?.on("dashboard:task_completed", (data: Api.Dashboard.TaskCompletedEvent) => {
-      // Update today's task summary
-      taskSummary.value = {
-        ...taskSummary.value,
-        total: taskSummary.value.total + 1,
-        success: data.status === "3" ? taskSummary.value.success + 1 : taskSummary.value.success,
-        failure: data.status === "4" ? taskSummary.value.failure + 1 : taskSummary.value.failure,
-      }
-    })
+    if (enabled.has("dashboard.overview"))
+      socket.value?.on("dashboard:task_completed", (data: Api.Dashboard.TaskCompletedEvent) => {
+        // Update today's task summary
+        taskSummary.value = {
+          ...taskSummary.value,
+          total: taskSummary.value.total + 1,
+          success: data.status === "3" ? taskSummary.value.success + 1 : taskSummary.value.success,
+          failure: data.status === "4" ? taskSummary.value.failure + 1 : taskSummary.value.failure,
+        }
+      })
 
-    if (enabled.has("dashboard.overview")) socket.value?.on("dashboard:error_stats", (data: Api.Dashboard.ErrorStatsEvent) => {
-      errorStats.value = {
-        ...errorStats.value,
-        http5XxCount: data.http5xxCount,
-        bizErrorCount: data.bizErrorCount,
-        totalRequests: Math.max(errorStats.value.totalRequests, data.totalRequests),
-        errorRate: data.errorRate,
-      }
-    })
+    if (enabled.has("dashboard.overview"))
+      socket.value?.on("dashboard:error_stats", (data: Api.Dashboard.ErrorStatsEvent) => {
+        errorStats.value = {
+          ...errorStats.value,
+          http5XxCount: data.http5xxCount,
+          bizErrorCount: data.bizErrorCount,
+          totalRequests: Math.max(errorStats.value.totalRequests, data.totalRequests),
+          errorRate: data.errorRate,
+        }
+      })
 
-    if (enabled.has("dashboard.infrastructure")) socket.value?.on("dashboard:resources", (data: Api.Dashboard.ResourcesEvent) => {
-      const map = new Map(instanceResources.value)
-      map.set(data.hostname, data)
-      instanceResources.value = map
-    })
+    if (enabled.has("dashboard.infrastructure"))
+      socket.value?.on("dashboard:resources", (data: Api.Dashboard.ResourcesEvent) => {
+        const map = new Map(instanceResources.value)
+        map.set(data.hostname, data)
+        instanceResources.value = map
+      })
 
-    if (enabled.has("dashboard.activity")) socket.value?.on("dashboard:activity", (data: Api.Dashboard.ActivityEvent) => {
-      activities.value = [data, ...activities.value.slice(0, 14)]
-    })
+    if (enabled.has("dashboard.activity"))
+      socket.value?.on("dashboard:activity", (data: Api.Dashboard.ActivityEvent) => {
+        activities.value = [data, ...activities.value.slice(0, 14)]
+      })
 
-    if (enabled.has("dashboard.api-monitoring")) socket.value?.on("dashboard:api_stats", (data: Api.Monitoring.ApiStatsEvent) => {
-      if (data.topFailures?.length) {
-        apiTopFailures.value = data.topFailures
-      }
-    })
+    if (enabled.has("dashboard.api-monitoring"))
+      socket.value?.on("dashboard:api_stats", (data: Api.Monitoring.ApiStatsEvent) => {
+        if (data.topFailures?.length) {
+          apiTopFailures.value = data.topFailures
+        }
+      })
   }
 
   return {

@@ -7,8 +7,5 @@ test("uses restricted state when no allowed key exists locally", () => {
 })
 
 test("uses dashboard state when an allowed key exists locally", () => {
-  assert.equal(
-    resolvePermissionState(["dashboard.business", "dashboard.trends"], ["dashboard.trends"]),
-    "dashboard",
-  )
+  assert.equal(resolvePermissionState(["dashboard.business", "dashboard.trends"], ["dashboard.trends"]), "dashboard")
 })

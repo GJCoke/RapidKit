@@ -38,6 +38,12 @@ declare global {
       /** role search params */
       type RoleSearchParams = Service.ApiRequest<"/api/v1/roles", "get", "query">
 
+      /** role update body (permissions are managed by the dedicated endpoint) */
+      type UpdateRoleBody = Omit<
+        Service.ApiRequest<"/api/v1/roles/{role_id}", "put", "body">,
+        "routerPermissions" | "buttonPermissions" | "interfacePermissions"
+      >
+
       /** role list */
       type RoleList = Common.PaginatingQueryRecord<Role>
 
@@ -45,34 +51,37 @@ declare global {
       type AllRole = Pick<Role, "id" | "name" | "code">
 
       /** user */
-      type User = Omit<Common.CommonRecord<{
-        /** user name */
-        username: string
-        /** display name */
-        name: string
-        /** user email */
-        email: string
-        /** phone number */
-        phone?: string | null
-        /** avatar URL */
-        avatar?: string | null
-        /** nickname */
-        nickname?: string | null
-        /** gender: male/female/other */
-        gender?: string | null
-        /** user role code collection */
-        roles: string[]
-        /** is admin */
-        isAdmin: boolean
-        /** department id */
-        departmentId?: string | null
-        /** last login time */
-        lastLoginTime?: string | null
-        /** last login IP */
-        lastLoginIp?: string | null
-        /** remark */
-        remark?: string | null
-      }>, "status"> & { status: UserStatus | null }
+      type User = Omit<
+        Common.CommonRecord<{
+          /** user name */
+          username: string
+          /** display name */
+          name: string
+          /** user email */
+          email: string
+          /** phone number */
+          phone?: string | null
+          /** avatar URL */
+          avatar?: string | null
+          /** nickname */
+          nickname?: string | null
+          /** gender: male/female/other */
+          gender?: string | null
+          /** user role code collection */
+          roles: string[]
+          /** is admin */
+          isAdmin: boolean
+          /** department id */
+          departmentId?: string | null
+          /** last login time */
+          lastLoginTime?: string | null
+          /** last login IP */
+          lastLoginIp?: string | null
+          /** remark */
+          remark?: string | null
+        }>,
+        "status"
+      > & { status: UserStatus | null }
 
       /** user search params */
       type UserSearchParams = Service.ApiRequest<"/api/v1/users", "get", "query">

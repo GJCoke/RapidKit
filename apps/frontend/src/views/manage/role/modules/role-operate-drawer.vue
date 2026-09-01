@@ -9,6 +9,7 @@
   import { $t } from "@/locales"
   import { useAuth } from "@/hooks/business/auth"
   import PermissionModal from "./permission-modal.vue"
+  import { buildRoleUpdatePayload } from "./role-update-payload"
 
   defineOptions({
     name: "RoleOperateDrawer",
@@ -119,7 +120,7 @@
       const { error } = await fetchCreateRole(model.value)
       if (error) return
     } else {
-      const { error } = await fetchUpdateRole(props.rowData!.id!, model.value)
+      const { error } = await fetchUpdateRole(props.rowData!.id!, buildRoleUpdatePayload(model.value))
       if (error) return
     }
 

@@ -66,7 +66,15 @@
         </NInput>
       </NFormItem>
       <NSpace vertical :size="14" class="w-full">
-        <NButton type="primary" size="large" round block :loading="loading" :disabled="seconds > 0" @click="handleSubmit">
+        <NButton
+          type="primary"
+          size="large"
+          round
+          block
+          :loading="loading"
+          :disabled="seconds > 0"
+          @click="handleSubmit"
+        >
           {{ seconds > 0 ? $t("page.login.resetPwd.cooldown", { seconds }) : $t("page.login.resetPwd.send") }}
         </NButton>
         <NButton size="large" round block @click="toggleLoginModule('pwd-login')">

@@ -12,7 +12,7 @@ test("selects allowed modules in presentation order", () => {
   )
 
   assert.deepEqual(
-    active.map(item => item.key),
+    active.map((item) => item.key),
     ["dashboard.business", "dashboard.trends"],
   )
 })
@@ -23,7 +23,10 @@ test("ignores backend keys absent from the presentation registry", () => {
     ["dashboard.business", "plugin.removed"],
   )
 
-  assert.deepEqual(active.map(item => item.key), ["dashboard.business"])
+  assert.deepEqual(
+    active.map((item) => item.key),
+    ["dashboard.business"],
+  )
 })
 
 test("rejects duplicate presentation keys", () => {

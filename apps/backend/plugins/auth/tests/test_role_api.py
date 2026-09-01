@@ -1,7 +1,6 @@
 """Role CRUD API tests."""
 
 from httpx import AsyncClient
-
 from tests.testing.utils import random_lowercase, random_uuid
 
 
@@ -109,6 +108,30 @@ class TestUpdateRole:
         )
         assert resp.status_code == 200
         assert resp.json()["code"] == 0
+
+        resp = await client.put(
+            f"/roles/{guest['id']}",
+            json={
+                "name": guest["name"],
+                "code": guest["code"],
+                "description": guest["description"],
+                "status": guest["status"],
+                "routerPermissions": [],
+                "buttonPermissions": [],
+                "interfacePermissions": [],
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["code"] == 0
+
+        resp = await client.get(f"/roles/{guest['id']}/permissions", headers=auth_headers)
+        assert resp.status_code == 200
+        assert resp.json()["data"] == {
+            "routerPermissions": ["home"],
+            "buttonPermissions": [],
+            "interfacePermissions": ["GET:/api/v1/users"],
+        }
 
 
 class TestDeleteRole:

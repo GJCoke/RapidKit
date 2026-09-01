@@ -59,7 +59,7 @@
 </script>
 
 <template>
-  <div class="card-wrapper h-full flex flex-col overflow-hidden bg-container p-20px">
+  <div class="card-wrapper h-400px flex flex-col overflow-hidden bg-container p-20px">
     <div class="flex items-center gap-8px text-15px font-600 mb-16px shrink-0">
       <SvgIcon icon="carbon:recently-viewed" class="text-16px text-primary" />
       {{ $t("page.home.dashboard.activityFeed") }}

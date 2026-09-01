@@ -68,7 +68,7 @@
 </script>
 
 <template>
-  <NCard :bordered="false" class="card-wrapper">
+  <NCard :bordered="false" class="card-wrapper h-400px">
     <div class="flex items-center justify-between mb-16px flex-wrap gap-12px">
       <div class="flex items-center gap-8px text-15px font-600">
         <SvgIcon icon="carbon:chart-line" class="text-16px text-primary" />

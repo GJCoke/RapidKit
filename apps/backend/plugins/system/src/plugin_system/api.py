@@ -5,6 +5,7 @@ Author : Coke
 Date   : 2026-04-10
 """
 
+import asyncio
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -147,9 +148,11 @@ async def get_health_stats(request: Request, redis: RedisDep) -> Response[Health
 @router.get("/stats/infrastructure", summary="基础设施健康状态")
 async def get_infrastructure_health(session: SessionDep, redis: RedisDep) -> Response[InfrastructureHealth]:
     """检查 PostgreSQL、Redis、MinIO 的健康状态。"""
-    pg_health = await check_pg(session)
-    redis_health = await check_redis(redis)
-    minio_health = check_minio()
+    pg_health, redis_health, minio_health = await asyncio.gather(
+        check_pg(session),
+        check_redis(redis),
+        check_minio(),
+    )
 
     return Response(data=InfrastructureHealth(pg=pg_health, redis=redis_health, minio=minio_health))
 
@@ -160,9 +163,11 @@ async def get_aggregated_health(
     redis: RedisDep,
 ) -> Response[AggregatedHealth]:
     """聚合基础设施健康状态。"""
-    pg_health = await check_pg(session)
-    redis_health = await check_redis(redis)
-    minio_health = check_minio()
+    pg_health, redis_health, minio_health = await asyncio.gather(
+        check_pg(session),
+        check_redis(redis),
+        check_minio(),
+    )
     infra = InfrastructureHealth(pg=pg_health, redis=redis_health, minio=minio_health)
 
     overall = derive_overall_health([svc.status for svc in (infra.pg, infra.redis, infra.minio)])

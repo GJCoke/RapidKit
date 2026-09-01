@@ -43,7 +43,10 @@
       </div>
 
       <NSpin :show="loading">
-        <div v-if="!failed" class="mx-auto max-w-560px overflow-hidden rounded-12px border border-[var(--border-color)]">
+        <div
+          v-if="!failed"
+          class="mx-auto max-w-560px overflow-hidden rounded-12px border border-[var(--border-color)]"
+        >
           <div
             v-for="contact in visibleContacts"
             :key="contact.id"

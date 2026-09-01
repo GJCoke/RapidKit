@@ -3,12 +3,7 @@
   import { jsonClone } from "@rapidkit/utils"
   import { enableStatusOptions } from "@/constants/business"
   import type { TreeSelectOption } from "naive-ui"
-  import {
-    fetchCreateUser,
-    fetchGetAllRoles,
-    fetchGetDepartmentTree,
-    fetchUpdateUser,
-  } from "@/service/api"
+  import { fetchCreateUser, fetchGetAllRoles, fetchGetDepartmentTree, fetchUpdateUser } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
   import { useAuthStore } from "@/store/modules/auth"

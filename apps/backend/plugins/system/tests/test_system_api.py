@@ -1,6 +1,12 @@
 """System stats and activity log API tests."""
 
+import asyncio
+from contextlib import suppress
+
+import pytest
 from httpx import AsyncClient
+from plugin_system import api as system_api
+from plugin_system.schemas import ServiceHealth
 
 
 class TestResourceStats:
@@ -62,6 +68,41 @@ class TestHealthStats:
 
 
 class TestInfrastructureHealth:
+    @pytest.mark.asyncio
+    async def test_checks_run_concurrently(self, monkeypatch):
+        """Independent infrastructure checks must all start before any finishes."""
+        started = {name: asyncio.Event() for name in ("pg", "redis", "minio")}
+        release = asyncio.Event()
+        healthy = ServiceHealth(status="healthy", latency_ms=1, details={})
+
+        async def check_pg(_session):
+            started["pg"].set()
+            await release.wait()
+            return healthy
+
+        async def check_redis(_redis):
+            started["redis"].set()
+            await release.wait()
+            return healthy
+
+        async def check_minio():
+            started["minio"].set()
+            await release.wait()
+            return healthy
+
+        monkeypatch.setattr(system_api, "check_pg", check_pg)
+        monkeypatch.setattr(system_api, "check_redis", check_redis)
+        monkeypatch.setattr(system_api, "check_minio", check_minio)
+
+        task = asyncio.create_task(system_api.get_infrastructure_health(None, None))
+        try:
+            await asyncio.wait_for(asyncio.gather(*(event.wait() for event in started.values())), timeout=0.05)
+        finally:
+            release.set()
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
     async def test_get_infrastructure(self, client: AsyncClient, init, auth_headers: dict):
         resp = await client.get("/system/stats/infrastructure", headers=auth_headers)
         assert resp.status_code == 200

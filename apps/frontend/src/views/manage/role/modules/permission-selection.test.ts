@@ -54,14 +54,11 @@ test("keeps an explicitly selected menu independent from descendants and sibling
 })
 
 test("adds owning and ancestor menus for selected buttons and interfaces", () => {
-  assert.deepEqual(
-    normalizePermissionSelection(["btn:user:create", "api:user:list"], menuTree),
-    {
-      routerPermissions: ["manage", "manage_user"],
-      buttonPermissions: ["user:create"],
-      interfacePermissions: ["user:list"],
-    },
-  )
+  assert.deepEqual(normalizePermissionSelection(["btn:user:create", "api:user:list"], menuTree), {
+    routerPermissions: ["manage", "manage_user"],
+    buttonPermissions: ["user:create"],
+    interfacePermissions: ["user:list"],
+  })
 })
 
 test("does not grant sibling menus or other permissions while completing the path", () => {
@@ -74,10 +71,7 @@ test("does not grant sibling menus or other permissions while completing the pat
 
 test("deduplicates menus contributed by explicit and inferred selections", () => {
   assert.deepEqual(
-    normalizePermissionSelection(
-      ["menu:manage", "menu:manage_user", "btn:user:create", "api:user:list"],
-      menuTree,
-    ),
+    normalizePermissionSelection(["menu:manage", "menu:manage_user", "btn:user:create", "api:user:list"], menuTree),
     {
       routerPermissions: ["manage", "manage_user"],
       buttonPermissions: ["user:create"],
@@ -87,14 +81,11 @@ test("deduplicates menus contributed by explicit and inferred selections", () =>
 })
 
 test("preserves unknown button and interface permissions without guessing a menu", () => {
-  assert.deepEqual(
-    normalizePermissionSelection(["btn:removed:edit", "api:removed:list"], menuTree),
-    {
-      routerPermissions: [],
-      buttonPermissions: ["removed:edit"],
-      interfacePermissions: ["removed:list"],
-    },
-  )
+  assert.deepEqual(normalizePermissionSelection(["btn:removed:edit", "api:removed:list"], menuTree), {
+    routerPermissions: [],
+    buttonPermissions: ["removed:edit"],
+    interfacePermissions: ["removed:list"],
+  })
 })
 
 test("removes all descendant permissions when a nested menu is unchecked", () => {
@@ -120,12 +111,8 @@ test("removes the complete permission subtree when a parent menu is unchecked", 
 })
 
 test("does not grant descendants when a menu is checked", () => {
-  assert.deepEqual(
-    applyPermissionCheckChange(
-      ["btn:user:create"],
-      ["menu:manage_user", "btn:user:create"],
-      menuTree,
-    ),
-    ["menu:manage_user", "btn:user:create"],
-  )
+  assert.deepEqual(applyPermissionCheckChange(["btn:user:create"], ["menu:manage_user", "btn:user:create"], menuTree), [
+    "menu:manage_user",
+    "btn:user:create",
+  ])
 })

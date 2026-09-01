@@ -10,12 +10,8 @@ from sqlalchemy import Column, Enum, MetaData, String, Table
 def test_table_filter_only_includes_selected_plugin_ownership() -> None:
     ownership = {"permission_roles": "permission", "script_scripts": "script"}
 
-    assert object_belongs_to_plugin(
-        SimpleNamespace(name="permission_roles"), "table", "permission", ownership
-    )
-    assert not object_belongs_to_plugin(
-        SimpleNamespace(name="script_scripts"), "table", "permission", ownership
-    )
+    assert object_belongs_to_plugin(SimpleNamespace(name="permission_roles"), "table", "permission", ownership)
+    assert not object_belongs_to_plugin(SimpleNamespace(name="script_scripts"), "table", "permission", ownership)
 
 
 def test_child_schema_objects_inherit_table_ownership() -> None:

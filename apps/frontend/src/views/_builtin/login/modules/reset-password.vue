@@ -2,11 +2,7 @@
   import { computed, onMounted, reactive, ref } from "vue"
   import { useRoute } from "vue-router"
   import { rsaEncrypt } from "@rapidkit/utils"
-  import {
-    fetchConfirmPasswordReset,
-    fetchGetPublicKey,
-    fetchValidatePasswordReset,
-  } from "@/service/api"
+  import { fetchConfirmPasswordReset, fetchGetPublicKey, fetchValidatePasswordReset } from "@/service/api"
   import { useRouterPush } from "@/hooks/common/router"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
@@ -78,7 +74,10 @@
       </div>
     </div>
 
-    <div v-else-if="tokenValid === false" class="flex-col-stretch gap-14px rd-12px bg-error-50 p-18px dark:bg-error-950">
+    <div
+      v-else-if="tokenValid === false"
+      class="flex-col-stretch gap-14px rd-12px bg-error-50 p-18px dark:bg-error-950"
+    >
       <SvgIcon icon="carbon:link-not-found" class="text-28px text-error" />
       <div>
         <p class="font-600">{{ $t("page.login.resetPassword.invalidTitle") }}</p>
@@ -102,12 +101,24 @@
       @keyup.enter="handleSubmit"
     >
       <NFormItem path="password" :label="$t('page.login.resetPassword.passwordLabel')">
-        <NInput v-model:value="model.password" type="password" show-password-on="click" :placeholder="$t('page.login.common.passwordPlaceholder')" />
+        <NInput
+          v-model:value="model.password"
+          type="password"
+          show-password-on="click"
+          :placeholder="$t('page.login.common.passwordPlaceholder')"
+        />
       </NFormItem>
       <NFormItem path="confirmPassword" :label="$t('page.login.resetPassword.confirmPasswordLabel')">
-        <NInput v-model:value="model.confirmPassword" type="password" show-password-on="click" :placeholder="$t('page.login.common.confirmPasswordPlaceholder')" />
+        <NInput
+          v-model:value="model.confirmPassword"
+          type="password"
+          show-password-on="click"
+          :placeholder="$t('page.login.common.confirmPasswordPlaceholder')"
+        />
       </NFormItem>
-      <div class="mb-16px flex items-start gap-8px rd-10px bg-primary-50 p-12px text-13px text-[var(--text-color-2)] dark:bg-primary-950">
+      <div
+        class="mb-16px flex items-start gap-8px rd-10px bg-primary-50 p-12px text-13px text-[var(--text-color-2)] dark:bg-primary-950"
+      >
         <SvgIcon icon="carbon:security" class="mt-1px shrink-0 text-16px text-primary" />
         {{ $t("page.login.resetPassword.sessionsInvalidated") }}
       </div>

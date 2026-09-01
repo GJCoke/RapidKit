@@ -89,7 +89,7 @@ describe("discoverPlugins", () => {
       '[project.entry-points."rapidkit.plugins"]\ngitlab_ci = "plugin_gitlab_ci:register"\n',
     )
 
-    const plugin = discoverPlugins().find(item => item.name === "gitlab_ci")
+    const plugin = discoverPlugins().find((item) => item.name === "gitlab_ci")
 
     expect(plugin).toEqual({
       name: "gitlab_ci",

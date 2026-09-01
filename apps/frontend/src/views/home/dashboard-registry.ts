@@ -18,5 +18,5 @@ export function selectDashboardModules<T extends DashboardModuleDefinition>(
   }
 
   const allowed = new Set(allowedModules)
-  return registry.filter(definition => allowed.has(definition.key)).toSorted((a, b) => a.order - b.order)
+  return registry.filter((definition) => allowed.has(definition.key)).toSorted((a, b) => a.order - b.order)
 }

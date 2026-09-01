@@ -33,13 +33,15 @@ export function discoverPlugins(cwdOverride?: string): Plugin[] {
       const [name, value] = declared[0]
       const versionsDir = join(pluginsRoot, d.name, "migrations", "versions")
       const files = readdirSync(versionsDir).filter((f) => f.endsWith(".py") && f !== "__init__.py")
-      return [{
-        name,
-        directoryName: d.name,
-        module: value.split(":", 1)[0],
-        versionPath: `plugins/${d.name}/migrations/versions`,
-        hasMigrations: files.length > 0,
-      }]
+      return [
+        {
+          name,
+          directoryName: d.name,
+          module: value.split(":", 1)[0],
+          versionPath: `plugins/${d.name}/migrations/versions`,
+          hasMigrations: files.length > 0,
+        },
+      ]
     })
 }
 

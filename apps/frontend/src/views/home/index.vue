@@ -97,11 +97,11 @@
       key: "dashboard.activity",
       order: 70,
       component: ActivityFeed,
-      className: "col-span-24 min-h-400px md:col-span-9",
+      className: "col-span-24 md:col-span-9",
       props: () => ({ activities: dashboard.activities.value, auditDict: dashboard.auditDict.value }),
     },
   ])
-  const knownKeys = registry.value.map(item => item.key)
+  const knownKeys = registry.value.map((item) => item.key)
   const permissions = useHomePermissions(knownKeys)
   const activeModules = computed(() => selectDashboardModules(registry.value, permissions.allowedModules.value))
 
@@ -109,7 +109,7 @@
     await permissions.loadCapabilities()
     if (permissions.state.value !== "dashboard") return
 
-    const keys = activeModules.value.map(item => item.key)
+    const keys = activeModules.value.map((item) => item.key)
     await dashboard.loadModules(keys)
     if (authStore.userInfo.isAdmin) dashboard.setupSocket(keys)
   }
