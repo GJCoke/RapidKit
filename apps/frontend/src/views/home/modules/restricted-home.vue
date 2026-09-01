@@ -52,7 +52,7 @@
             :key="contact.id"
             class="flex flex-wrap items-center gap-12px border-b border-[var(--border-color)] px-16px py-14px last:border-b-0"
           >
-            <NAvatar round :size="40" :src="contact.avatar || undefined">{{ contact.name.slice(0, 1) }}</NAvatar>
+            <AppAvatar :src="contact.avatar" :name="contact.name" :seed="contact.id" :size="42" />
             <div class="min-w-0 flex-1 text-left">
               <div class="font-500 text-[var(--text-color-1)]">{{ contact.name }}</div>
               <div class="break-all text-13px text-[var(--text-color-3)]">{{ contact.email }}</div>

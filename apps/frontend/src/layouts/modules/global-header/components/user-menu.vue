@@ -7,7 +7,7 @@
   import { $t } from "@/locales"
 
   defineOptions({
-    name: "UserAvatar",
+    name: "UserMenu",
   })
 
   const authStore = useAuthStore()
@@ -59,7 +59,6 @@
     if (key === "logout") {
       logout()
     } else {
-      // If your other options are jumps from other routes, they will be directly supported here
       routerPushByKey(key)
     }
   }
@@ -70,12 +69,16 @@
     {{ $t("page.login.common.loginOrRegister") }}
   </NButton>
   <NDropdown v-else placement="bottom" trigger="click" :options="options" @select="handleDropdown">
-    <div>
-      <ButtonIcon>
-        <SvgIcon icon="ph:user-circle" class="text-icon-large" />
-        <span class="text-16px font-medium">{{ authStore.userInfo.name }}</span>
-      </ButtonIcon>
-    </div>
+    <button
+      type="button"
+      class="h-40px flex-y-center gap-8px border-0 bg-transparent px-8px rd-8px text-[var(--text-color-1)] transition-colors duration-200 cursor-pointer hover:bg-[var(--n-color-modal)]"
+    >
+      <AppAvatar :name="authStore.userInfo.name" :seed="authStore.userInfo.id" :size="32" />
+      <span class="max-w-140px ellipsis-text text-14px font-500">
+        {{ authStore.userInfo.name }}
+      </span>
+      <SvgIcon icon="ph:caret-down" class="text-14px text-[var(--text-color-3)]" aria-hidden="true" />
+    </button>
   </NDropdown>
 </template>
 

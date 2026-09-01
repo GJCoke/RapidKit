@@ -6,6 +6,7 @@ declare namespace I18nKeys {
     | "action"
     | "add"
     | "addSuccess"
+    | "avatar"
     | "backToHome"
     | "batchDelete"
     | "cancel"
