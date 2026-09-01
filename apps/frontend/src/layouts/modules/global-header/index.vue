@@ -7,7 +7,7 @@
   import GlobalBreadcrumb from "../global-breadcrumb/index.vue"
   import GlobalSearch from "../global-search/index.vue"
   import ThemeButton from "./components/theme-button.vue"
-  import UserAvatar from "./components/user-avatar.vue"
+  import UserMenu from "./components/user-menu.vue"
 
   defineOptions({
     name: "GlobalHeader",
@@ -52,7 +52,7 @@
         @switch="themeStore.toggleThemeScheme"
       />
       <ThemeButton />
-      <UserAvatar />
+      <UserMenu />
     </div>
   </DarkModeContainer>
 </template>
