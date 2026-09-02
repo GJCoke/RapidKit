@@ -9,15 +9,16 @@ class TestWorkerRegister:
         assert m.name == "worker"
         assert m.version == "0.1.0"
         assert m.router is not None
-        assert len(m.models) == 2
+        assert len(m.models) == 3
 
     def test_models_are_correct(self):
         from plugin_worker import register
-        from plugin_worker.models import CeleryTaskResult, CeleryWorker
+        from plugin_worker.models import CeleryTaskResult, CeleryWorker, QueueDepthSnapshot
 
         m = register()
         assert CeleryWorker in m.models
         assert CeleryTaskResult in m.models
+        assert QueueDepthSnapshot in m.models
 
     def test_router_has_routes(self):
         from plugin_worker import register

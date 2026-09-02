@@ -11,9 +11,12 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from plugin_user.models import User
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.enums import Status
+from rapidkit_common.events import UserActivityObservedEvent
 from rapidkit_core.config import settings
 from rapidkit_core.log import get_plugin_logger
+from rapidkit_core.timezone import timezone
 from rapidkit_framework.context import ctx
+from rapidkit_framework.events import event_bus
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.status_codes import StatusCode
 from rapidkit_security import AccessJWT, RefreshJWT, decode_token
@@ -164,6 +167,10 @@ async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep,
         if user_info.status == Status.PENDING:
             raise AppException(AuthStatusCode.ACCOUNT_NOT_ACTIVATED)
         raise AppException(AuthStatusCode.USER_DISABLED)
+    event_bus.fire_and_forget(
+        UserActivityObservedEvent(user_id=str(user_info.id), occurred_at=timezone.now()),
+        source="auth",
+    )
     return user_info
 
 

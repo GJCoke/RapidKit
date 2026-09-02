@@ -10,6 +10,7 @@ import {
   fetchErrorStats,
   fetchHealthStats,
   fetchInfrastructureHealth,
+  fetchGetOperationsOverview,
   fetchSystemResources,
   fetchUserActivityTrend,
   fetchUserStatsSummary,
@@ -18,6 +19,11 @@ import {
 } from "@/service/api"
 
 export function useDashboard() {
+  const operationsOverview = ref<Api.Dashboard.OperationsOverview | null>(null)
+  const operationsRange = ref<"7d" | "30d" | "custom">("7d")
+  const operationsError = ref(false)
+  const operationsLoading = ref(false)
+  let operationsRequestId = 0
   // ==================== Reactive State ====================
   const userSummary = ref<Api.Dashboard.UserStatsSummary>({
     total: 0,
@@ -142,7 +148,7 @@ export function useDashboard() {
   async function loadModules(moduleKeys: readonly string[]) {
     loading.initial = true
     const loaders: Record<string, () => Promise<unknown>> = {
-      "dashboard.overview": () => Promise.all([loadUserSummary(), loadTaskSummary(), loadErrorStats(), loadWorkers()]),
+      "dashboard.overview": loadOperationsOverview,
       "dashboard.application-health": loadHealthStats,
       "dashboard.infrastructure": () => Promise.all([loadInfrastructure(), loadResources()]),
       "dashboard.business": loadBusinessSummary,
@@ -155,6 +161,30 @@ export function useDashboard() {
     )
     void results
     loading.initial = false
+  }
+
+  async function loadOperationsOverview(custom?: [number, number]) {
+    const requestId = ++operationsRequestId
+    operationsLoading.value = true
+    operationsError.value = false
+    const params: Api.Dashboard.OperationsOverviewQuery = { range: operationsRange.value }
+    if (operationsRange.value === "custom" && custom) {
+      params.start = dayjs(custom[0]).format("YYYY-MM-DD")
+      params.end = dayjs(custom[1]).format("YYYY-MM-DD")
+    }
+    const { data, error } = await fetchGetOperationsOverview(params)
+    if (requestId !== operationsRequestId) return
+    if (error) {
+      operationsError.value = true
+    } else {
+      operationsOverview.value = data
+    }
+    operationsLoading.value = false
+  }
+
+  async function onOperationsRangeChange(range: "7d" | "30d" | "custom", custom?: [number, number]) {
+    operationsRange.value = range
+    await loadOperationsOverview(custom)
   }
 
   async function loadUserSummary() {
@@ -377,6 +407,10 @@ export function useDashboard() {
   return {
     // State
     userSummary,
+    operationsOverview,
+    operationsRange,
+    operationsError,
+    operationsLoading,
     onlineUsers,
     workerCount,
     taskSummary,
@@ -400,6 +434,8 @@ export function useDashboard() {
 
     // Actions
     loadModules,
+    loadOperationsOverview,
+    onOperationsRangeChange,
     setupSocket,
     onTrendRangeChange,
     loadUserTrend,

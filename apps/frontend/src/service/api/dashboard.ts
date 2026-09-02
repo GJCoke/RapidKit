@@ -8,6 +8,15 @@ export function fetchGetDashboardCapabilities() {
   })
 }
 
+/** 获取运营总览快照 */
+export function fetchGetOperationsOverview(params?: Api.Dashboard.OperationsOverviewQuery) {
+  return request<Api.Dashboard.OperationsOverview>({
+    url: "/system/stats/operations-overview",
+    method: "get",
+    params,
+  })
+}
+
 /** 获取服务器资源统计（多实例） */
 export function fetchSystemResources(instance?: string) {
   return request<Api.Dashboard.MultiResourceStats>({

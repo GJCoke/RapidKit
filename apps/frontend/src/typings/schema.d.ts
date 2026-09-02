@@ -1499,6 +1499,12 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/stats/operations-overview": {
+        parameters: { query?: never; header?: never; path?: never; cookie?: never; };
+        /** 运营总览 */
+        get: operations["get_operations_overview_api_v1_system_stats_operations_overview_get"];
+        put?: never; post?: never; delete?: never; options?: never; head?: never; patch?: never; trace?: never;
+    };
     "/api/v1/system/stats/resources": {
         parameters: {
             query?: never;
@@ -3193,6 +3199,42 @@ export interface components {
             instances: components["schemas"]["InstanceResourceStats"][];
             summary: components["schemas"]["InstanceResourceStats"];
         };
+        /** OperationsDayComparison */
+        OperationsDayComparison: { today: number; yesterday: number; changePercent: number | null; };
+        /** OperationsErrorComparison */
+        OperationsErrorComparison: { today: number | null; yesterday: number | null; changePoints: number | null; };
+        /** OperationsOverviewResponse */
+        OperationsOverviewResponse: {
+            /** Format: date-time */ generatedAt: string;
+            timezone: string;
+            summary: components["schemas"]["OperationsSummary"];
+            trend: components["schemas"]["OperationsTrendPoint"][];
+            system: components["schemas"]["OperationsSystemSummary"];
+        };
+        /** OperationsServerSummary */
+        OperationsServerSummary: { healthy: number; total: number; status: "healthy" | "degraded" | "down"; };
+        /** OperationsSummary */
+        OperationsSummary: {
+            servers: components["schemas"]["OperationsServerSummary"] | null;
+            activeUsers: components["schemas"]["OperationsDayComparison"] | null;
+            tasks: components["schemas"]["OperationsDayComparison"] | null;
+            apiErrorRate: components["schemas"]["OperationsErrorComparison"] | null;
+        };
+        /** OperationsSystemSummary */
+        OperationsSystemSummary: {
+            /** Format: date-time */ startedAt: string;
+            uptimeSeconds: number;
+            queueDepth: number | null;
+            queueDepthYesterday: number | null;
+            queueDepthChangePercent: number | null;
+            lastSyncAt: string | null;
+            syncStatus: "healthy" | "delayed" | "failed" | "unavailable";
+            taskSuccessRate7D: number | null;
+            previousTaskSuccessRate7D: number | null;
+            taskSuccessRateChangePoints: number | null;
+        };
+        /** OperationsTrendPoint */
+        OperationsTrendPoint: { date: string; requestCount: number; avgResponseMs: number | null; };
         /** PaginatedResponse[ApiListItem] */
         PaginatedResponse_ApiListItem_: {
             /**
@@ -4057,6 +4099,12 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["MultiResourceStats"] | null;
+        };
+        /** Response[OperationsOverviewResponse] */
+        Response_OperationsOverviewResponse_: {
+            /** @default 0 */ code: number;
+            message?: string;
+            data?: components["schemas"]["OperationsOverviewResponse"] | null;
         };
         /** Response[NoneType] */
         Response_NoneType_: {
@@ -9051,6 +9099,17 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+        };
+    };
+    get_operations_overview_api_v1_system_stats_operations_overview_get: {
+        parameters: {
+            query?: { range?: "7d" | "30d" | "custom"; start?: string | null; end?: string | null; };
+            header?: never; path?: never; cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: { headers: { [name: string]: unknown; }; content: { "application/json": components["schemas"]["Response_OperationsOverviewResponse_"]; }; };
+            422: { headers: { [name: string]: unknown; }; content: { "application/json": components["schemas"]["HTTPValidationError"]; }; };
         };
     };
     get_resource_stats_api_v1_system_stats_resources_get: {

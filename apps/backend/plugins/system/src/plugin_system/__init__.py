@@ -25,6 +25,7 @@ async def _startup(app: FastAPI) -> None:
     from plugin_system.activity_projector import configure_activity_publisher
     from plugin_system.push import push_error_stats_loop, push_resources_loop
 
+    app.state.started_at = timezone.now()
     redis = RedisManager.client()
     _leader = LeaderElection(redis, "leader:system_push")
     await _leader.start()
@@ -78,12 +79,7 @@ def register() -> PluginManifest:
         dashboard_modules=[
             DashboardModuleDef(
                 key="dashboard.overview",
-                required_permissions=(
-                    "GET:/api/v1/users/stats/summary",
-                    "GET:/api/v1/tasks/stats/summary",
-                    "GET:/api/v1/system/stats/errors",
-                    "GET:/api/v1/workers/all",
-                ),
+                required_permissions=("GET:/api/v1/system/stats/operations-overview",),
                 realtime_topics=(
                     "dashboard:online_users",
                     "dashboard:worker_status",

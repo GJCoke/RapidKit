@@ -14,6 +14,7 @@ from rapidkit_common.events.activity import (
 from rapidkit_common.events.auth import UserLoginEvent, UserLogoutEvent
 from rapidkit_common.events.department import DepartmentDeletedEvent
 from rapidkit_common.events.menu import MenuChangedEvent
+from rapidkit_common.events.operations import UserActivityObservedEvent
 from rapidkit_common.events.rbac import RoleDeletedEvent, RolePermissionsChangedEvent
 from rapidkit_common.events.schedule import (
     ScheduleCreatedEvent,
@@ -46,6 +47,7 @@ __all__ = [
     "TaskStartedEvent",
     "TaskSucceededEvent",
     "UserCreatedEvent",
+    "UserActivityObservedEvent",
     "UserDeletedEvent",
     "UserInviteRequestedEvent",
     "UserLoginEvent",

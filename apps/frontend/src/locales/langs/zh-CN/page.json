@@ -1,6 +1,23 @@
 {
   "home": {
     "dashboard": {
+      "operationsOverview": "运营总览",
+      "serverStatus": "服务状态",
+      "runningNormally": "服务运行状态",
+      "activeUsers": "活跃用户",
+      "yesterday": "较昨日",
+      "requestCount": "请求次数",
+      "averageResponseTime": "平均响应时间",
+      "times": "次",
+      "percentagePoints": " 个百分点",
+      "systemUptime": "系统运行时间",
+      "queueDepth": "队列深度",
+      "lastDataSync": "最后数据同步",
+      "taskSuccessRate7d": "过去 7 天任务成功率",
+      "overviewUnavailable": "运营总览暂时不可用",
+      "days": "天",
+      "hours": "小时",
+      "minutes": "分钟",
       "userTotal": "用户总数",
       "onlineUsers": "在线用户",
       "workerCount": "Worker 数量",

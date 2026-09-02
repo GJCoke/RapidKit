@@ -4,7 +4,9 @@ import asyncio
 from typing import TYPE_CHECKING, Any
 
 from celery.schedules import crontab
+from rapidkit_common.protocols.operations import MonitoringOperationsProvider
 from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
+from rapidkit_framework.services import ServiceRegistry
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -40,12 +42,18 @@ def register() -> PluginManifest:
     """返回 monitoring 插件的 manifest。"""
     from plugin_monitoring.api import router
     from plugin_monitoring.models import ApiMetricsHourly
+    from plugin_monitoring.operations import MonitoringOperationsProviderImpl
+
+    def register_services(registry: ServiceRegistry) -> None:
+        registry.register(MonitoringOperationsProvider, MonitoringOperationsProviderImpl())
 
     return PluginManifest(
         name="monitoring",
         version="0.1.0",
         router=router,
         models=[ApiMetricsHourly],
+        provides=[MonitoringOperationsProvider],
+        service_factories={MonitoringOperationsProvider: register_services},
         dashboard_modules=[
             DashboardModuleDef(
                 key="dashboard.api-monitoring",

@@ -10,9 +10,8 @@
   import AppStatus from "./modules/app-status.vue"
   import BusinessData from "./modules/business-data.vue"
   import InfrastructureOverview from "./modules/infrastructure-overview.vue"
+  import OperationsOverview from "./modules/operations-overview.vue"
   import RestrictedHome from "./modules/restricted-home.vue"
-  import StatCards from "./modules/stat-cards.vue"
-  import TrendCharts from "./modules/trend-charts.vue"
 
   defineOptions({ name: "HomeDashboard" })
 
@@ -38,26 +37,15 @@
     {
       key: "dashboard.overview",
       order: 10,
-      component: StatCards,
+      component: OperationsOverview,
       className: "col-span-24",
       props: () => ({
-        userSummary: dashboard.userSummary.value,
-        onlineUsers: dashboard.onlineUsers.value,
-        workerCount: dashboard.workerCount.value,
-        taskSummary: dashboard.taskSummary.value,
-        errorStats: dashboard.errorStats.value,
-      }),
-    },
-    {
-      key: "dashboard.trends",
-      order: 20,
-      component: TrendCharts,
-      className: "col-span-24 xl:col-span-15",
-      props: () => ({
-        userTrend: dashboard.userTrend.value,
-        trendRange: dashboard.trendRange.value,
-        loading: dashboard.loading.userTrend,
-        onRangeChange: dashboard.onTrendRangeChange,
+        data: dashboard.operationsOverview.value,
+        range: dashboard.operationsRange.value,
+        loading: dashboard.operationsLoading.value,
+        error: dashboard.operationsError.value,
+        onRangeChange: dashboard.onOperationsRangeChange,
+        onRetry: dashboard.loadOperationsOverview,
       }),
     },
     {

@@ -5,12 +5,13 @@ Author : Coke
 Date   : 2026-05-11
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import EmailStr
 from rapidkit_common.enums import Status
 from rapidkit_common.models import SQLModel
+from sqlalchemy import UniqueConstraint
 from sqlmodel import JSON, Column, Field
 
 
@@ -34,3 +35,13 @@ class User(SQLModel, table=True):
     last_login_time: datetime | None = Field(default=None, description="最后登录时间")
     last_login_ip: str | None = Field(default=None, max_length=45, description="最后登录 IP")
     remark: str | None = Field(default=None, max_length=500, description="备注")
+
+
+class UserDailyActivity(SQLModel, table=True):
+    """One idempotent activity fact per user and local calendar day."""
+
+    __tablename__ = "user_daily_activities"
+    __table_args__ = (UniqueConstraint("activity_date", "user_id", name="uq_user_daily_activity_date_user"),)
+
+    user_id: UUID = Field(foreign_key="user_users.id", index=True, nullable=False)
+    activity_date: date = Field(index=True, nullable=False)

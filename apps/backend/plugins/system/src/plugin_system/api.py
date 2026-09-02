@@ -14,11 +14,13 @@ from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import CursorPaginatedResponse, PaginatedResponse, Response
 from rapidkit_core.config import settings
+from rapidkit_core.timezone import timezone
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.plugin import PluginMeta
 
 from plugin_system.deps import ActivityEventCrudDep, AuditLogCrudDep
 from plugin_system.health import check_minio, check_pg, check_redis
+from plugin_system.operations import build_operations_overview
 from plugin_system.push import _RESOURCE_KEY_PREFIX
 from plugin_system.schemas import (
     ActivityCursorQuery,
@@ -35,6 +37,8 @@ from plugin_system.schemas import (
     InfrastructureHealth,
     InstanceResourceStats,
     MultiResourceStats,
+    OperationsOverviewQuery,
+    OperationsOverviewResponse,
     PluginDependencyGraph,
     PluginEdge,
     PluginErrorResponse,
@@ -61,6 +65,15 @@ router = APIRouter(
     tags=["System"],
     dependencies=[Depends(verify_user_permission)],
 )
+
+
+@router.get("/stats/operations-overview", summary="运营总览")
+async def get_operations_overview(
+    request: Request,
+    query: Annotated[OperationsOverviewQuery, Query(...)],
+) -> Response[OperationsOverviewResponse]:
+    started_at = getattr(request.app.state, "started_at", timezone.now())
+    return Response(data=await build_operations_overview(query, started_at))
 
 
 def _plugin_status_to_schema(d: dict) -> dict:

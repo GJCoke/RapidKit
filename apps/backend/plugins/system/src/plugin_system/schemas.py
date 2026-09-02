@@ -5,9 +5,11 @@ Author : Coke
 Date   : 2026-04-10
 """
 
+from datetime import date, datetime
+from typing import Literal
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.request import BaseRequest, PaginatedRequest
 from rapidkit_common.schemas.response import BaseSchema
@@ -269,3 +271,69 @@ class PluginDependencyGraph(BaseModel):
 
     nodes: list[PluginNode]
     edges: list[PluginEdge]
+
+
+class OperationsOverviewQuery(BaseRequest):
+    range: Literal["7d", "30d", "custom"] = "7d"
+    start: date | None = None
+    end: date | None = None
+
+    @model_validator(mode="after")
+    def validate_custom_range(self) -> "OperationsOverviewQuery":
+        if self.range == "custom" and (self.start is None or self.end is None):
+            raise ValueError("start and end are required for a custom range")
+        if self.start is not None and self.end is not None and self.start > self.end:
+            raise ValueError("start must not be after end")
+        return self
+
+
+class OperationsServerSummary(BaseModel):
+    healthy: int
+    total: int
+    status: Literal["healthy", "degraded", "down"]
+
+
+class OperationsDayComparison(BaseModel):
+    today: int
+    yesterday: int
+    change_percent: float | None
+
+
+class OperationsErrorComparison(BaseModel):
+    today: float | None
+    yesterday: float | None
+    change_points: float | None
+
+
+class OperationsSummary(BaseModel):
+    servers: OperationsServerSummary | None
+    active_users: OperationsDayComparison | None
+    tasks: OperationsDayComparison | None
+    api_error_rate: OperationsErrorComparison | None
+
+
+class OperationsTrendPoint(BaseModel):
+    date: str
+    request_count: int
+    avg_response_ms: float | None
+
+
+class OperationsSystemSummary(BaseModel):
+    started_at: datetime
+    uptime_seconds: int
+    queue_depth: int | None
+    queue_depth_yesterday: int | None
+    queue_depth_change_percent: float | None
+    last_sync_at: datetime | None
+    sync_status: Literal["healthy", "delayed", "failed", "unavailable"]
+    task_success_rate_7d: float | None
+    previous_task_success_rate_7d: float | None
+    task_success_rate_change_points: float | None
+
+
+class OperationsOverviewResponse(BaseModel):
+    generated_at: datetime
+    timezone: str
+    summary: OperationsSummary
+    trend: list[OperationsTrendPoint]
+    system: OperationsSystemSummary

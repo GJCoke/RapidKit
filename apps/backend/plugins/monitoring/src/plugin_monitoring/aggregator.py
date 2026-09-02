@@ -16,6 +16,7 @@ from rapidkit_core.timezone import timezone
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from plugin_monitoring.crud import ApiMetricsCRUD
+from plugin_monitoring.operations import LAST_SYNC_ERROR_KEY, LAST_SYNC_KEY
 
 logger = get_plugin_logger("Monitoring")
 
@@ -89,31 +90,31 @@ async def aggregate_once(redis: AsyncRedis, session_factory: async_sessionmaker)
     """
     grouped = await _collect_minute_keys(redis)
 
-    if not grouped:
-        return
-
     now = timezone.now()
     time_bucket = now.replace(minute=0, second=0, microsecond=0)
 
-    async with session_factory() as session:
-        crud = ApiMetricsCRUD(session)
+    if grouped:
+        async with session_factory() as session:
+            crud = ApiMetricsCRUD(session)
 
-        for (method, path), data in grouped.items():
-            count = data["count"]
-            avg_ms = round(data["total_ms"] / count, 2) if count > 0 else 0.0
-            p95_ms = await _compute_p95(redis, data["rt_keys"])
+            for (method, path), data in grouped.items():
+                count = data["count"]
+                avg_ms = round(data["total_ms"] / count, 2) if count > 0 else 0.0
+                p95_ms = await _compute_p95(redis, data["rt_keys"])
 
-            await crud.upsert_hourly(
-                time_bucket=time_bucket,
-                method=method,
-                path=path,
-                request_count=count,
-                error_count=data["errors"],
-                avg_ms=avg_ms,
-                p95_ms=p95_ms,
-            )
+                await crud.upsert_hourly(
+                    time_bucket=time_bucket,
+                    method=method,
+                    path=path,
+                    request_count=count,
+                    error_count=data["errors"],
+                    avg_ms=avg_ms,
+                    p95_ms=p95_ms,
+                )
 
-        await session.commit()
+            await session.commit()
+    await redis.set(LAST_SYNC_KEY, now.isoformat())
+    await redis.delete(LAST_SYNC_ERROR_KEY)
 
 
 async def cleanup_old_metrics(session_factory: async_sessionmaker, days: int = 7) -> None:

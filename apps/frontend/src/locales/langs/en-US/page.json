@@ -1,6 +1,23 @@
 {
   "home": {
     "dashboard": {
+      "operationsOverview": "Operations overview",
+      "serverStatus": "Server status",
+      "runningNormally": "Service availability",
+      "activeUsers": "Active users",
+      "yesterday": "Yesterday",
+      "requestCount": "Requests",
+      "averageResponseTime": "Average response time",
+      "times": "requests",
+      "percentagePoints": " pp",
+      "systemUptime": "System uptime",
+      "queueDepth": "Queue depth",
+      "lastDataSync": "Last data sync",
+      "taskSuccessRate7d": "7-day task success rate",
+      "overviewUnavailable": "Operations overview is temporarily unavailable",
+      "days": "d",
+      "hours": "h",
+      "minutes": "m",
       "userTotal": "Total Users",
       "onlineUsers": "Online Users",
       "workerCount": "Workers",

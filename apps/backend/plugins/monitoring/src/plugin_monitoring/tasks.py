@@ -22,6 +22,9 @@ async def aggregate_api_metrics(redis: TaskRedis, session: TaskSession) -> None:
         return
     try:
         await aggregate_once(redis, session)
+    except Exception as exc:
+        await redis.set("monitoring:last_sync_error", type(exc).__name__)
+        raise
     finally:
         await lock.release()
 

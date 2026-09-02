@@ -10,6 +10,7 @@ from rapidkit_common.events import (
     ScheduleToggledEvent,
     ScriptExecutedEvent,
     TaskSucceededEvent,
+    UserActivityObservedEvent,
     UserCreatedEvent,
     UserDeletedEvent,
     UserLoginEvent,
@@ -63,6 +64,13 @@ class TestUserEvents:
 
 
 class TestAuthEvents:
+    def test_user_activity_observed(self):
+        occurred_at = timezone.now()
+        event = UserActivityObservedEvent(user_id="xyz-456", occurred_at=occurred_at)
+        assert event.event_name == "user.activity_observed"
+        assert event.user_id == "xyz-456"
+        assert event.occurred_at == occurred_at
+
     def test_user_login(self):
         e = UserLoginEvent(user_id="xyz-456")
         assert e.event_name == "user.login"

@@ -48,3 +48,12 @@ class CeleryTaskResult(SQLModel, table=True):
     runtime: float | None = Field(default=None, description="执行耗时（秒）")
     retries: int = Field(0, description="重试次数")
     logs: str | None = Field(default=None, sa_column=Column(Text), description="任务执行日志（stdout 输出）")
+
+
+class QueueDepthSnapshot(SQLModel, table=True):
+    """Periodic broker queue-depth sample used for day-over-day comparison."""
+
+    __tablename__ = "worker_queue_depth_snapshots"
+
+    sampled_at: datetime = Field(default_factory=timezone.now, index=True, nullable=False)
+    depth: int = Field(default=0, ge=0, nullable=False)

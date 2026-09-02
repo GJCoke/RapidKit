@@ -11,6 +11,16 @@ declare global {
       /** 当前用户可访问的首页模块 */
       type Capabilities = Service.ApiResponse<"/api/v1/dashboard/capabilities">
 
+      /** 运营总览查询参数 */
+      type OperationsOverviewQuery = Service.ApiRequest<
+        "/api/v1/system/stats/operations-overview",
+        "get",
+        "query"
+      >
+
+      /** 运营总览快照 */
+      type OperationsOverview = Service.ApiResponse<"/api/v1/system/stats/operations-overview">
+
       /** 服务器资源统计 */
       type ResourceStats = {
         cpuPercent: number

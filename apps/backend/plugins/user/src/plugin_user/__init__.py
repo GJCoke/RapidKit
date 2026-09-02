@@ -5,7 +5,13 @@ Author  : Coke
 Date    : 2026-05-11
 """
 
-from rapidkit_common.events import DepartmentDeletedEvent, RoleDeletedEvent, RolePermissionsChangedEvent
+from rapidkit_common.events import (
+    DepartmentDeletedEvent,
+    RoleDeletedEvent,
+    RolePermissionsChangedEvent,
+    UserActivityObservedEvent,
+)
+from rapidkit_common.protocols.operations import UserOperationsProvider
 from rapidkit_common.protocols.user import UserQueryService, UserResolver
 from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
 from rapidkit_framework.services import ServiceRegistry
@@ -57,12 +63,14 @@ def register() -> PluginManifest:
     from fastapi import APIRouter
 
     from plugin_user.api import contact_router, router
-    from plugin_user.models import User
+    from plugin_user.models import User, UserDailyActivity
+    from plugin_user.operations import UserOperationsProviderImpl, record_user_activity
     from plugin_user.providers import UserQueryServiceImpl, UserResolverImpl
 
     def register_services(registry: ServiceRegistry) -> None:
         registry.register(UserResolver, UserResolverImpl())
         registry.register(UserQueryService, UserQueryServiceImpl())
+        registry.register(UserOperationsProvider, UserOperationsProviderImpl())
 
     combined = APIRouter()
     combined.include_router(contact_router)
@@ -72,18 +80,19 @@ def register() -> PluginManifest:
         name="user",
         version="0.1.0",
         router=combined,
-        models=[User],
+        models=[User, UserDailyActivity],
         dashboard_modules=[
             DashboardModuleDef(
                 key="dashboard.trends",
                 required_permissions=("GET:/api/v1/users/stats/trend",),
             )
         ],
-        provides=[UserResolver, UserQueryService],
+        provides=[UserResolver, UserQueryService, UserOperationsProvider],
         service_factories={UserResolver: register_services},
         event_listeners=[
             (RolePermissionsChangedEvent, _on_role_permissions_changed),
             (DepartmentDeletedEvent, _on_department_deleted),
             (RoleDeletedEvent, _on_role_deleted),
+            (UserActivityObservedEvent, record_user_activity),
         ],
     )
