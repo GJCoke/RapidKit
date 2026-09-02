@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router"
+import { useTranslation } from "react-i18next"
 import { ChevronDown } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@rapidkit/ui/components/collapsible"
 import { Popover, PopoverContent, PopoverTrigger } from "@rapidkit/ui/components/popover"
@@ -8,6 +9,7 @@ import { cn } from "@rapidkit/ui/lib/utils"
 import { useAppStore } from "@/stores/app"
 import { useRouteStore, type MenuItem } from "@/stores/route"
 import { resolveIcon } from "./icon-map"
+import { getMenuLabel } from "./menu-label"
 
 interface MenuFlyoutValue {
   inFlyout: boolean
@@ -40,17 +42,19 @@ function useCollapsedMenu() {
 }
 
 function MenuLeaf({ item, depth }: { item: MenuItem; depth: number }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const { closeFlyout } = useContext(MenuFlyoutContext)
   const collapsed = useCollapsedMenu()
   const Icon = resolveIcon(item.icon)
   const active = item.path === pathname
+  const label = getMenuLabel(item, t)
   const button = (
     <button
       type="button"
       aria-current={active ? "page" : undefined}
-      aria-label={collapsed ? item.title : undefined}
+      aria-label={collapsed ? label : undefined}
       onClick={() => navigateToMenuItem(navigate, item.path, closeFlyout)}
       className={cn(
         "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
@@ -62,7 +66,7 @@ function MenuLeaf({ item, depth }: { item: MenuItem; depth: number }) {
       style={collapsed ? undefined : { paddingLeft: `${depth * 12 + 12}px` }}
     >
       <Icon className="size-4 shrink-0" aria-hidden="true" />
-      {!collapsed && <span className="truncate">{item.title}</span>}
+      {!collapsed && <span className="truncate">{label}</span>}
     </button>
   )
 
@@ -70,7 +74,7 @@ function MenuLeaf({ item, depth }: { item: MenuItem; depth: number }) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
-        <TooltipContent side="right">{item.title}</TooltipContent>
+        <TooltipContent side="right">{label}</TooltipContent>
       </Tooltip>
     )
   }
@@ -79,6 +83,7 @@ function MenuLeaf({ item, depth }: { item: MenuItem; depth: number }) {
 }
 
 function MenuGroup({ item, depth }: { item: MenuItem; depth: number }) {
+  const { t } = useTranslation()
   const { pathname } = useLocation()
   const collapsed = useCollapsedMenu()
   const branchActive = isActive(item, pathname)
@@ -86,6 +91,7 @@ function MenuGroup({ item, depth }: { item: MenuItem; depth: number }) {
   const [popoverOpen, setPopoverOpen] = useState(false)
   const popoverTriggerRef = useRef<HTMLButtonElement>(null)
   const Icon = resolveIcon(item.icon)
+  const label = getMenuLabel(item, t)
   const visibleChildren = item.children?.filter((child) => !child.hideInMenu) ?? []
 
   useEffect(() => {
@@ -99,7 +105,7 @@ function MenuGroup({ item, depth }: { item: MenuItem; depth: number }) {
           <button
             ref={popoverTriggerRef}
             type="button"
-            aria-label={item.title}
+            aria-label={label}
             className={cn(
               "flex w-full items-center justify-center rounded-md py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
               branchActive && "bg-sidebar-accent text-sidebar-accent-foreground",
@@ -117,7 +123,7 @@ function MenuGroup({ item, depth }: { item: MenuItem; depth: number }) {
             restoreMenuTriggerFocus(popoverTriggerRef.current)
           }}
         >
-          <div className="px-3 pb-2 pt-1 text-xs font-semibold text-muted-foreground">{item.title}</div>
+          <div className="px-3 pb-2 pt-1 text-xs font-semibold text-muted-foreground">{label}</div>
           <MenuFlyoutContext.Provider value={{ inFlyout: true, closeFlyout: () => setPopoverOpen(false) }}>
             <div className="space-y-1">
               {visibleChildren.map((child) => (
@@ -141,7 +147,7 @@ function MenuGroup({ item, depth }: { item: MenuItem; depth: number }) {
         style={{ paddingLeft: `${depth * 12 + 12}px` }}
       >
         <Icon className="size-4 shrink-0" aria-hidden="true" />
-        <span className="flex-1 truncate text-left">{item.title}</span>
+        <span className="flex-1 truncate text-left">{label}</span>
         <ChevronDown className="size-4 shrink-0 transition-transform" aria-hidden="true" />
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-1 space-y-1">

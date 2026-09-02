@@ -4,7 +4,7 @@ export interface BackendRoute {
   name: string
   path: string
   component?: string
-  meta?: { title: string; icon?: string; order?: number; hideInMenu?: boolean }
+  meta?: { title: string; i18nKey?: string; icon?: string; order?: number; hideInMenu?: boolean }
   children?: BackendRoute[]
 }
 

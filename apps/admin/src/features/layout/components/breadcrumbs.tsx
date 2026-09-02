@@ -9,6 +9,7 @@ import {
   BreadcrumbSeparator,
 } from "@rapidkit/ui/components/breadcrumb"
 import { useRouteStore, type MenuItem } from "@/stores/route"
+import { getMenuLabel } from "./menu-label"
 
 export function buildBreadcrumbTrail(pathname: string, flat: Record<string, MenuItem>): MenuItem[] {
   const segments = pathname.split("/").filter(Boolean)
@@ -32,7 +33,11 @@ export function Breadcrumbs() {
         {trail.map((item, index) => (
           <Fragment key={item.path}>
             <BreadcrumbItem>
-              {index === trail.length - 1 ? <BreadcrumbPage>{item.title}</BreadcrumbPage> : item.title}
+              {index === trail.length - 1 ? (
+                <BreadcrumbPage>{getMenuLabel(item, t)}</BreadcrumbPage>
+              ) : (
+                getMenuLabel(item, t)
+              )}
             </BreadcrumbItem>
             {index < trail.length - 1 && <BreadcrumbSeparator />}
           </Fragment>

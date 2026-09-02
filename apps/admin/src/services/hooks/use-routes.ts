@@ -14,8 +14,10 @@ export function useUserRoutes() {
     staleTime: Infinity,
   })
   const routes = query.data?.data?.routes
+  const responseError = query.data?.error
   useLayoutEffect(() => {
-    setRoutes(token ? (routes ?? []) : [])
-  }, [routes, setRoutes, token])
+    if (!token) setRoutes([])
+    else if (!responseError && routes) setRoutes(routes)
+  }, [responseError, routes, setRoutes, token])
   return query
 }

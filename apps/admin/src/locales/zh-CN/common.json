@@ -31,6 +31,29 @@
       "unknown": "系统活动"
     }
   },
+  "route": {
+    "home": "首页",
+    "manage": "系统管理",
+    "manage_user": "用户管理",
+    "manage_role": "角色管理",
+    "manage_menu": "菜单管理",
+    "manage_department": "部门管理",
+    "manage_data-policy": "数据策略",
+    "manage_field-policy": "字段策略",
+    "manage_audit-dict": "审计字典",
+    "socketio": "即时通讯",
+    "socketio_chat": "聊天室",
+    "socketio_debug": "调试面板",
+    "socketio_instrument": "仪表盘",
+    "queue": "任务队列",
+    "queue_dashboard": "队列概览",
+    "queue_schedule": "定时任务",
+    "queue_task": "任务历史",
+    "script": "脚本管理",
+    "monitoring": "监控中心",
+    "monitoring_api": "API 监控",
+    "monitoring_plugin": "插件管理"
+  },
   "common": {
     "confirm": "确定",
     "cancel": "取消",

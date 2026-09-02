@@ -31,6 +31,29 @@
       "unknown": "System activity"
     }
   },
+  "route": {
+    "home": "Home",
+    "manage": "System management",
+    "manage_user": "Users",
+    "manage_role": "Roles",
+    "manage_menu": "Menus",
+    "manage_department": "Departments",
+    "manage_data-policy": "Data policies",
+    "manage_field-policy": "Field policies",
+    "manage_audit-dict": "Audit dictionary",
+    "socketio": "Realtime communication",
+    "socketio_chat": "Chat",
+    "socketio_debug": "Debug console",
+    "socketio_instrument": "Dashboard",
+    "queue": "Task queue",
+    "queue_dashboard": "Queue overview",
+    "queue_schedule": "Schedules",
+    "queue_task": "Task history",
+    "script": "Scripts",
+    "monitoring": "Monitoring",
+    "monitoring_api": "API monitoring",
+    "monitoring_plugin": "Plugins"
+  },
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",

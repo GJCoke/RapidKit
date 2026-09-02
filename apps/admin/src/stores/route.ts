@@ -5,6 +5,7 @@ export interface MenuItem {
   key: string
   path: string
   title: string
+  i18nKey?: string
   icon?: string
   order: number
   hideInMenu: boolean
@@ -25,6 +26,7 @@ function normalize(routes: BackendRoute[], flat: Record<string, MenuItem>): Menu
         key: r.name,
         path: r.path,
         title: r.meta?.title ?? r.name,
+        i18nKey: r.meta?.i18nKey,
         icon: r.meta?.icon,
         order: r.meta?.order ?? 0,
         hideInMenu: r.meta?.hideInMenu ?? false,
