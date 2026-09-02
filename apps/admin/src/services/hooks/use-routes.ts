@@ -8,7 +8,7 @@ export function useUserRoutes() {
   const token = useAuthStore((s) => s.token)
   const setRoutes = useRouteStore((s) => s.setRoutes)
   const query = useQuery({
-    queryKey: ["user-routes"],
+    queryKey: ["user-routes", token],
     queryFn: fetchUserRoutes,
     enabled: Boolean(token),
     staleTime: Infinity,
