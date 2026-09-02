@@ -2,6 +2,9 @@
   "system": {
     "title": "RapidKit Admin"
   },
+  "home": {
+    "trendChart": "趋势图：{{title}}"
+  },
   "common": {
     "confirm": "确定",
     "cancel": "取消",

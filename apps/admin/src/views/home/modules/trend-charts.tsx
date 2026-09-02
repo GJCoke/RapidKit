@@ -1,7 +1,10 @@
+import { useTranslation } from "react-i18next"
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@rapidkit/ui/components/card"
 
 export function TrendCharts({ title, data }: { title: string; data: Array<{ name: string; value: number }> }) {
+  const { t } = useTranslation()
+
   return (
     <Card>
       <CardHeader>
@@ -9,7 +12,7 @@ export function TrendCharts({ title, data }: { title: string; data: Array<{ name
       </CardHeader>
       <CardContent className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data}>
+          <AreaChart data={data} accessibilityLayer role="img" title={t("home.trendChart", { title })}>
             <defs>
               <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3} />
