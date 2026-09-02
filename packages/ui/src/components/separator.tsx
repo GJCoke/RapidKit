@@ -1,10 +1,15 @@
-import { Separator as SeparatorPrimitive } from "@base-ui/react/separator"
+import * as React from "react"
+import * as SeparatorPrimitive from "@radix-ui/react-separator"
 
 import { cn } from "../lib/utils"
 
-function Separator({ className, orientation = "horizontal", ...props }: SeparatorPrimitive.Props) {
+function Separator({
+  className,
+  orientation = "horizontal",
+  ...props
+}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
   return (
-    <SeparatorPrimitive
+    <SeparatorPrimitive.Root
       data-slot="separator"
       orientation={orientation}
       className={cn(
