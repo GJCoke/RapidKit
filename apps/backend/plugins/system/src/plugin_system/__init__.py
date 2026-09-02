@@ -105,9 +105,7 @@ def register() -> PluginManifest:
             ),
             DashboardModuleDef(
                 key="dashboard.activity",
-                required_permissions=(
-                    "GET:/api/v1/system/activities",
-                ),
+                required_permissions=("GET:/api/v1/system/activities",),
                 realtime_topics=("dashboard:activity.created",),
             ),
         ],

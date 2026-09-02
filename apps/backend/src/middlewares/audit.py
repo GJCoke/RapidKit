@@ -295,9 +295,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
         # 构建审计记录
         redacted_body = None
         if body_dict:
-            redacted_body = _truncate_body(
-                _sanitize_mapping(body_dict, settings.AUDIT_SENSITIVE_FIELDS)
-            )
+            redacted_body = _truncate_body(_sanitize_mapping(body_dict, settings.AUDIT_SENSITIVE_FIELDS))
 
         target = _extract_target(body_dict, username)
 

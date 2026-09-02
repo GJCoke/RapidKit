@@ -142,6 +142,7 @@ class EventService:
         await self._emit_task_update(task)
         if worker:
             await self._emit_worker_status(worker)
+
     async def handle_task_success(self, data: dict) -> None:
         task = await self.task_crud.get_by_task_id(data["task_id"])
         now = timezone.now()
