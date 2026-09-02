@@ -27,6 +27,8 @@
       "success": "Success",
       "failure": "Failure",
       "appStatus": "App Status",
+      "healthAndBusiness": "Healthy runtime and active business configuration",
+      "businessScale": "Business Scale",
       "qps": "QPS",
       "responseTime": "Response Time",
       "http5xx": "HTTP 5xx",

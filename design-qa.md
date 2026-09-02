@@ -1,66 +1,60 @@
-# Design QA — navigation user menu
+# Design QA — 基础设施与最近活动同排
 
-- Source visual truth: `/tmp/product-design-audit/nav-avatar/02-open.png`
-- Implementation: `/tmp/product-design-audit/nav-avatar/04-implemented-open.png`
-- Viewport and pixels: 1280 × 720 CSS px, device scale factor 1; both captures are 1280 × 720 px, so no density normalization was required.
-- State: authenticated home page, light theme, user menu open.
-- Full-view evidence: the before/after captures were reviewed together at matching viewport and state. The avatar-only trigger reduces header noise without shifting adjacent controls, while the expanded panel now has a clear identity → action hierarchy.
-- Focused-region evidence: the top-right header region is legible at full capture size, so a separate crop was unnecessary. The 40 × 40 trigger, 32 px avatar, 220 px identity row, divider, and logout row were checked directly.
+- Source visual truth: `/home/coke/.codex/generated_images/01a0620d-52c6-7100-990b-dcd0c0fee128/exec-21dc052d-e912-41a3-85e7-bea91e97087a.png`
+- Implementation screenshot: `/tmp/rapidkit-infrastructure-no-section-headings.png`
+- Side-by-side comparison: `/tmp/rapidkit-infrastructure-activity-comparison.png`
+- Responsive evidence: `/tmp/rapidkit-infrastructure-activity-mobile.png`
+- Viewport: desktop 1280 × 720 CSS px; responsive check 390 × 844 CSS px; device pixel ratio 1
+- Source pixels: 1512 × 1024; aspect-preserving fit used in the comparison canvas
+- Implementation pixels: 1280 × 720
+- State: authenticated home page, Simplified Chinese, light theme, live backend data
+
+## Full-view comparison evidence
+
+The selected design and implementation were placed together in a 2560 × 760 comparison image. Both use a 15/9 desktop split with Recent Activity on the left and a single Infrastructure card on the right. Service health, resource utilization, and network throughput follow the same top-to-bottom order, and the API Overview remains below the paired row.
+
+## Focused region comparison evidence
+
+The paired row is legible in the full comparison, including service latency, state tags, utilization percentages, progress bars, and network values. The 390 px responsive capture verifies that Recent Activity and Infrastructure stack vertically, with no horizontal overflow or clipped infrastructure values, so a separate magnified crop was not required.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: existing project font stack retained; identity name uses 14 px/600 and secondary email uses 12 px with the existing secondary-text token.
-- Spacing and layout rhythm: trigger is a square 40 px target; dropdown content uses 14 px horizontal padding, a 12 px identity gap, and a divider before the action.
-- Colors and visual tokens: background, primary focus outline, and three text levels use existing theme tokens; the existing `AppAvatar` gradient is preserved.
-- Image quality and asset fidelity: no new raster or custom icon assets were introduced; the shared avatar and Phosphor sign-out icon remain sharp at their rendered sizes.
-- Copy and content: display name and email/username are shown only after expansion; the existing localized logout copy is unchanged.
+- Fonts and typography: existing RapidKit font stack retained; 16 px card title, 12 px section headings, 13 px service labels, and tabular numeric values match the surrounding dashboard.
+- Spacing and layout rhythm: the desktop row uses the existing 15/9 grid and 14 px gap; both cards stretch to equal height. Infrastructure uses compact internal dividers instead of nested cards.
+- Colors and visual tokens: all surfaces, dividers, text, progress states, and service tags use existing semantic theme utilities. Memory shifts to warning color at 60% without being labeled as failed.
+- Image quality and assets: no raster assets are needed. Existing Carbon/Iconify icons and the RapidKit logo remain sharp and unchanged.
+- Copy and content: PostgreSQL, Redis, MinIO, CPU, memory, disk, network sent, and network received values all come from the existing live data flow. The instance selector remains available when multiple instances exist.
 
 ## Findings
 
-- No actionable P0/P1/P2 visual differences remain.
-
-## Interaction and accessibility checks
-
-- Avatar trigger opens and closes the dropdown.
-- Trigger exposes an accessible name, `aria-haspopup="menu"`, and live expanded state.
-- Existing logout confirmation flow remains wired to the same menu key.
-- Browser console errors checked: none attributable to the change.
+No actionable P0, P1, or P2 differences remain. The implementation uses the project's existing compact activity controls and tighter typography rather than the generated mock's larger spacing; this preserves information density without changing the selected structure.
 
 ## Comparison history
 
-- Initial source showed a wide avatar + name + caret trigger and a one-row dropdown.
-- Implemented an avatar-only trigger, moved identity into the dropdown header, added a divider, and retained logout.
-- Post-fix evidence: `/tmp/product-design-audit/nav-avatar/04-implemented-open.png`; no P0/P1/P2 findings.
+### Pass 1
 
-## Follow-up polish
+- Earlier finding: Infrastructure was about one row taller than Recent Activity, leaving their bottom edges misaligned.
+- Fix made: Recent Activity now stretches to the height of its grid row.
+- Post-fix evidence: `/tmp/rapidkit-infrastructure-activity-aligned.png`; both card bottoms align at the desktop breakpoint.
 
-- None required for this scope.
+### Pass 2
 
-final result: passed
+- Earlier finding: the original Carbon icon names for memory and MinIO were not available in the installed icon set, so both slots rendered empty; the “资源使用” label also added an unnecessary hierarchy level.
+- Fix made: replaced them with available `container-software` and `storage-pool` icons and removed the resource-section heading.
+- Post-fix evidence: `/tmp/rapidkit-infrastructure-icons-fixed.png`; both icons render and the resource metrics now follow the service list directly.
 
----
+### Pass 3
 
-# Operations Overview Design QA
+- User-requested refinement: removed the redundant “服务状态” heading.
+- Post-fix evidence: `/tmp/rapidkit-infrastructure-no-section-headings.png`; PostgreSQL, Redis, and MinIO now follow the Infrastructure header directly, while their status values and icons remain intact.
 
-- Reference: `/tmp/codex-clipboard-32313eff-d86c-488d-9683-cf5259e795bc.png`
-- Rendered capture: `/tmp/operations-overview-rendered.png`
-- Side-by-side comparison: `/tmp/operations-overview-comparison.png`
-- Viewport: 713 × 493, light theme, seven-day data.
+## Primary interactions tested
 
-## Findings and fixes
+- Loaded `/home` with the local authenticated test account and live API values.
+- Selected the “任务” activity filter and confirmed its pressed state.
+- Verified the desktop paired row and 390 px stacked layout.
+- Browser console errors attributable to this change: none.
 
-- P1 — Metrics initially collapsed to two columns at the reference viewport. Fixed with a four-column compact layout from 680px upward while preserving tablet/mobile fallbacks.
-- P1 — Both chart series initially rendered black because RapidKit color tokens expose RGB channel values. Fixed by converting token values to valid ECharts RGB colors.
-- P2 — Compact trend suffixes wrapped. Fixed to match the reference's percent form.
-- P2 — Card and footer separators used an unavailable global border token. Fixed by using the Naive UI card border token.
-- P2 — Chart axes differed from the reference. Fixed at 0–20K requests and 0–800ms response time, with compact K labels.
-- P3 — The application font renders slightly heavier than the supplied raster. The project font stack remains unchanged for consistency.
-- P3 — The reference includes a “查看详情” action without a corresponding product route. It remains omitted to avoid a nonfunctional control.
-
-## Verification
-
-- Header, four metric columns, dual-series chart, axes, legend, footer status row, card border, and responsive separators were compared side by side.
-- The seven-day selector remains interactive.
-- Loading, empty, and retry states remain available.
+## Final result
 
 final result: passed

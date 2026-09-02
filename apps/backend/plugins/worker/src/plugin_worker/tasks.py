@@ -1,21 +1,22 @@
 """Periodic worker metrics tasks."""
 
 from rapidkit_core.timezone import timezone
+from sqlmodel import select
+
+from plugin_worker.models import CeleryWorker, QueueDepthSnapshot
 
 
 async def capture_queue_depth(redis, session_factory) -> None:
     """Persist the total number of waiting messages across active queues."""
-
-    from sqlmodel import select
-
-    from plugin_worker.models import CeleryWorker, QueueDepthSnapshot
 
     async with session_factory() as session:
         workers = list((await session.execute(select(CeleryWorker))).scalars().all())
         queues = {"celery"}
         for worker in workers:
             queues.update(str(queue) for queue in (worker.active_queues or []))
-        depth = sum(int(await redis.llen(queue) or 0) for queue in queues)
+        depth = 0
+        for queue in queues:
+            depth += int(await redis.llen(queue) or 0)
         session.add(QueueDepthSnapshot(sampled_at=timezone.now(), depth=depth))
         await session.commit()
 

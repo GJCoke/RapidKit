@@ -80,7 +80,7 @@
 </script>
 
 <template>
-  <section class="activity-card card-wrapper overflow-hidden bg-container" aria-labelledby="recent-activity-title">
+  <section class="activity-card card-wrapper h-full overflow-hidden bg-container" aria-labelledby="recent-activity-title">
     <header class="activity-header flex flex-wrap items-center gap-12px px-18px pb-10px pt-15px">
       <h2 id="recent-activity-title" class="m-0 mr-10px text-16px font-700 text-base-text-1">
         {{ $t("page.home.dashboard.recentActivity") }}
@@ -125,7 +125,7 @@
         @click="openActivityDetail(item)"
       >
         <div class="flex items-center gap-12px tabular-nums" role="cell">
-          <NBadge :type="categoryType[item.category]" dot />
+          <NBadge :type="resultConfig[item.level].type" dot />
           <span>{{ formatTime(item.occurredAt) }}</span>
         </div>
         <div role="cell">
@@ -166,7 +166,7 @@
           class="activity-drawer-row flex items-center gap-12px border-0 rd-8px bg-transparent px-10px py-10px text-left transition-colors hover:bg-theme-modal"
           @click="openActivityDetail(item)"
         >
-          <NBadge :type="categoryType[item.category]" dot />
+          <NBadge :type="resultConfig[item.level].type" dot />
           <span class="w-66px shrink-0 tabular-nums text-12px text-base-text-3">{{ formatTime(item.occurredAt) }}</span>
           <NTag :type="categoryType[item.category]" size="small" :bordered="false">
             {{ $t(`page.home.dashboard.activityCategory.${item.category}` as any) }}

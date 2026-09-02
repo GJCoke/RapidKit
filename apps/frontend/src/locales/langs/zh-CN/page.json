@@ -27,6 +27,8 @@
       "success": "成功",
       "failure": "失败",
       "appStatus": "应用状态",
+      "healthAndBusiness": "应用运行健康，业务配置活跃",
+      "businessScale": "业务规模",
       "qps": "QPS",
       "responseTime": "响应时间",
       "http5xx": "HTTP 5xx",

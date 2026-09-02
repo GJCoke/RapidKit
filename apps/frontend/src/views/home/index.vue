@@ -38,7 +38,7 @@
       key: "dashboard.overview",
       order: 10,
       component: OperationsOverview,
-      className: "col-span-24",
+      className: "col-span-24 xl:col-span-15",
       props: () => ({
         data: dashboard.operationsOverview.value,
         range: dashboard.operationsRange.value,
@@ -50,10 +50,13 @@
     },
     {
       key: "dashboard.application-health",
-      order: 30,
+      order: 20,
       component: AppStatus,
       className: "col-span-24 xl:col-span-9",
-      props: () => ({ healthStats: dashboard.healthStats.value }),
+      props: () => ({
+        healthStats: dashboard.healthStats.value,
+        businessSummary: canShowBusinessSummary.value ? dashboard.businessSummary.value : null,
+      }),
     },
     {
       key: "dashboard.activity",
@@ -75,9 +78,9 @@
     },
     {
       key: "dashboard.infrastructure",
-      order: 60,
+      order: 50,
       component: InfrastructureOverview,
-      className: "col-span-24",
+      className: "col-span-24 xl:col-span-9",
       props: () => ({
         infrastructure: dashboard.infrastructure.value,
         resources: dashboard.resources.value,
@@ -102,13 +105,22 @@
   ])
   const knownKeys = registry.value.map((item) => item.key)
   const permissions = useHomePermissions(knownKeys)
-  const activeModules = computed(() => selectDashboardModules(registry.value, permissions.allowedModules.value))
+  const permittedModules = computed(() => selectDashboardModules(registry.value, permissions.allowedModules.value))
+  const canShowBusinessSummary = computed(() =>
+    permissions.allowedModules.value.includes("dashboard.business"),
+  )
+  const activeModules = computed(() => {
+    const hasApplicationHealth = permittedModules.value.some((item) => item.key === "dashboard.application-health")
+    return hasApplicationHealth
+      ? permittedModules.value.filter((item) => item.key !== "dashboard.business")
+      : permittedModules.value
+  })
 
   async function initializeHome() {
     await permissions.loadCapabilities()
     if (permissions.state.value !== "dashboard") return
 
-    const keys = activeModules.value.map((item) => item.key)
+    const keys = permittedModules.value.map((item) => item.key)
     await dashboard.loadModules(keys)
     if (authStore.userInfo.isAdmin) dashboard.setupSocket(keys)
   }
