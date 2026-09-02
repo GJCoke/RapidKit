@@ -64,7 +64,17 @@ test("clearing auth also removes route data from the signed-out session", async 
   useAuthStore.setState({
     token: "access-token",
     refreshToken: "refresh-token",
-    userInfo: { id: "1", userName: "admin", realName: "Admin", roles: ["admin"] },
+    userInfo: {
+      id: "1",
+      createTime: "2026-09-02 00:00:00",
+      updateTime: "2026-09-02 00:00:00",
+      name: "Admin",
+      email: "admin@example.com",
+      username: "admin",
+      isAdmin: true,
+      roles: ["admin"],
+      buttons: [],
+    },
   })
   storage.setItem("accessToken", "access-token")
   storage.setItem("refreshToken", "refresh-token")

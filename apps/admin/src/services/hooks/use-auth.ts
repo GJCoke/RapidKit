@@ -9,13 +9,11 @@ export function useLogin() {
     mutationFn: fetchLogin,
     onSuccess: async (res) => {
       if (res.data) {
-        const data = res.data as { accessToken: string; refreshToken: string }
-        setToken(data.accessToken, data.refreshToken)
+        setToken(res.data.accessToken, res.data.refreshToken)
         // Fetch user info after login
         const userRes = await fetchUserInfo()
         if (userRes.data) {
-          const info = userRes.data as { id: string; userName: string; realName: string; roles: string[] }
-          setUserInfo(info)
+          setUserInfo(userRes.data)
         }
       }
     },
@@ -30,9 +28,8 @@ export function useUserInfo() {
     queryFn: async () => {
       const res = await fetchUserInfo()
       if (res.data) {
-        const info = res.data as { id: string; userName: string; realName: string; roles: string[] }
-        setUserInfo(info)
-        return info
+        setUserInfo(res.data)
+        return res.data
       }
       return null
     },

@@ -33,21 +33,27 @@ test("breadcrumb trail follows matching pathname prefixes in order", async () =>
   assert.deepEqual(buildBreadcrumbTrail("/unknown", flat), [])
 })
 
-test("user initial prefers real name, then username, then a safe fallback", async () => {
-  const { getUserInitial } = await import("./user-menu")
-  assert.equal(getUserInitial({ realName: "Alice", userName: "admin" }), "A")
-  assert.equal(getUserInitial({ realName: "", userName: "admin" }), "A")
+test("user identity follows the backend name, username, email contract", async () => {
+  const { getUserDisplayName, getUserInitial } = await import("./user-menu")
+  const namedUser = { name: "Alice", username: "admin", email: "alice@example.com" }
+  const usernameOnly = { name: "", username: "admin", email: "admin@example.com" }
+
+  assert.equal(getUserDisplayName(namedUser, "User"), "Alice")
+  assert.equal(getUserInitial(namedUser), "A")
+  assert.equal(getUserDisplayName(usernameOnly, "User"), "admin")
+  assert.equal(getUserInitial(usernameOnly), "A")
+  assert.equal(getUserDisplayName(null, "User"), "User")
   assert.equal(getUserInitial(null), "U")
 })
 
-test("navigation trigger opens mobile navigation or toggles the desktop sidebar", async () => {
-  const { handleNavigationToggle } = await import("./header")
+test("mobile navigation close restores focus to its trigger", async () => {
+  const { handleMobileNavigationCloseAutoFocus } = await import("./mobile-nav")
   const events: string[] = []
-  const openMobile = (open: boolean) => events.push(`mobile:${open}`)
-  const toggleSidebar = () => events.push("sidebar")
 
-  handleNavigationToggle(true, openMobile, toggleSidebar)
-  handleNavigationToggle(false, openMobile, toggleSidebar)
+  handleMobileNavigationCloseAutoFocus(
+    { preventDefault: () => events.push("prevent-default") },
+    { focus: () => events.push("focus-trigger") },
+  )
 
-  assert.deepEqual(events, ["mobile:true", "sidebar"])
+  assert.deepEqual(events, ["prevent-default", "focus-trigger"])
 })

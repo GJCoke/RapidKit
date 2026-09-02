@@ -12,18 +12,23 @@ import {
 import { useAuthStore } from "@/stores/auth"
 
 interface UserIdentity {
-  realName?: string | null
-  userName?: string | null
+  name?: string | null
+  username?: string | null
+  email?: string | null
+}
+
+export function getUserDisplayName(userInfo: UserIdentity | null, fallback: string): string {
+  return userInfo?.name?.trim() || userInfo?.username?.trim() || fallback
 }
 
 export function getUserInitial(userInfo: UserIdentity | null): string {
-  return (userInfo?.realName?.trim() || userInfo?.userName?.trim() || "U").slice(0, 1).toUpperCase()
+  return getUserDisplayName(userInfo, "U").slice(0, 1).toUpperCase()
 }
 
 export function UserMenu() {
   const { t } = useTranslation()
   const { userInfo, clearAuth } = useAuthStore()
-  const displayName = userInfo?.realName || userInfo?.userName || t("layout.unknownUser")
+  const displayName = getUserDisplayName(userInfo, t("layout.unknownUser"))
 
   const handleLogout = () => {
     clearAuth()
@@ -44,7 +49,7 @@ export function UserMenu() {
         <DropdownMenuLabel>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-foreground">{displayName}</span>
-            {userInfo?.userName && <span className="text-xs text-muted-foreground">{userInfo.userName}</span>}
+            {userInfo?.email && <span className="text-xs text-muted-foreground">{userInfo.email}</span>}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

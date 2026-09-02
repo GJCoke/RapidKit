@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
-type ColorScheme = "light" | "dark" | "auto"
+export type ColorScheme = "light" | "dark" | "auto"
 
 interface ThemeState {
   colorScheme: ColorScheme

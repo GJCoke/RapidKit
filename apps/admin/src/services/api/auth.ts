@@ -5,16 +5,21 @@ interface LoginParams {
   password: string
 }
 
-interface LoginResponse {
+export interface LoginResponse {
   accessToken: string
   refreshToken: string
 }
 
-interface UserInfoResponse {
+export interface AuthUserInfo {
   id: string
-  userName: string
-  realName: string
+  createTime: string
+  updateTime: string
+  name: string
+  email: string
+  username: string
+  isAdmin: boolean
   roles: string[]
+  buttons: string[]
 }
 
 export function fetchLogin(params: LoginParams) {
@@ -26,7 +31,7 @@ export function fetchLogin(params: LoginParams) {
 }
 
 export function fetchUserInfo() {
-  return request<UserInfoResponse>({
+  return request<AuthUserInfo>({
     url: "/auth/user/info",
   })
 }

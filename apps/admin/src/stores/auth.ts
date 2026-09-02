@@ -1,19 +1,13 @@
 import { create } from "zustand"
+import type { AuthUserInfo } from "@/services/api/auth"
 import { useRouteStore } from "@/stores/route"
-
-interface UserInfo {
-  id: string
-  userName: string
-  realName: string
-  roles: string[]
-}
 
 interface AuthState {
   token: string
   refreshToken: string
-  userInfo: UserInfo | null
+  userInfo: AuthUserInfo | null
   setToken: (token: string, refreshToken: string) => void
-  setUserInfo: (info: UserInfo) => void
+  setUserInfo: (info: AuthUserInfo) => void
   clearAuth: () => void
 }
 
