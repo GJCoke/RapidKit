@@ -54,7 +54,7 @@
           <SvgIcon :icon="card.icon" class="text-22px text-white" />
         </div>
         <div class="flex-1 min-w-0">
-          <div class="text-13px text-[var(--text-color-3)] truncate">{{ card.title }}</div>
+          <div class="text-13px text-base-text-3 truncate">{{ card.title }}</div>
           <div class="text-24px font-700 tracking-tight leading-none mt-4px">{{ card.value }}</div>
         </div>
       </div>

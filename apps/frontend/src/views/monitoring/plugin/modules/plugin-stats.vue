@@ -57,7 +57,7 @@
           <SvgIcon :icon="card.icon" class="text-22px text-white" />
         </div>
         <div>
-          <div class="text-13px text-[var(--text-color-3)]">{{ card.title }}</div>
+          <div class="text-13px text-base-text-3">{{ card.title }}</div>
           <div class="text-26px font-700 tracking-tight leading-none mt-4px tabular-nums">
             <NSpin v-if="loading" :size="16" />
             <span v-else>{{ card.value }}</span>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, type Component } from "vue"
+  import { computed, onMounted, ref, type Component } from "vue"
   import { $t } from "@/locales"
   import { useAuthStore } from "@/store/modules/auth"
   import { selectDashboardModules } from "./dashboard-registry"
@@ -27,6 +27,13 @@
 
   const dashboard = useDashboard()
   const authStore = useAuthStore()
+  const refreshing = ref(false)
+  const displayName = computed(() => authStore.userInfo.name || authStore.userInfo.username || $t("route.home"))
+  const formattedDate = computed(() =>
+    new Intl.DateTimeFormat(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" }).format(
+      new Date(),
+    ),
+  )
   const registry = computed<PresentationModule[]>(() => [
     {
       key: "dashboard.overview",
@@ -42,17 +49,47 @@
       }),
     },
     {
-      key: "dashboard.application-health",
+      key: "dashboard.trends",
       order: 20,
+      component: TrendCharts,
+      className: "col-span-24 xl:col-span-15",
+      props: () => ({
+        userTrend: dashboard.userTrend.value,
+        trendRange: dashboard.trendRange.value,
+        loading: dashboard.loading.userTrend,
+        onRangeChange: dashboard.onTrendRangeChange,
+      }),
+    },
+    {
+      key: "dashboard.application-health",
+      order: 30,
       component: AppStatus,
-      className: "col-span-24",
+      className: "col-span-24 xl:col-span-9",
       props: () => ({ healthStats: dashboard.healthStats.value }),
     },
     {
+      key: "dashboard.activity",
+      order: 40,
+      component: ActivityFeed,
+      className: "col-span-24 xl:col-span-15",
+      props: () => ({
+        activities: dashboard.activities.value,
+        category: dashboard.activityCategory.value,
+        onCategoryChange: dashboard.onActivityCategoryChange,
+      }),
+    },
+    {
+      key: "dashboard.business",
+      order: 50,
+      component: BusinessData,
+      className: "col-span-24 xl:col-span-9",
+      props: () => ({ businessSummary: dashboard.businessSummary.value }),
+    },
+    {
       key: "dashboard.infrastructure",
-      order: 30,
+      order: 60,
       component: InfrastructureOverview,
-      className: "col-span-24 md:col-span-16",
+      className: "col-span-24",
       props: () => ({
         infrastructure: dashboard.infrastructure.value,
         resources: dashboard.resources.value,
@@ -64,44 +101,14 @@
       }),
     },
     {
-      key: "dashboard.business",
-      order: 40,
-      component: BusinessData,
-      className: "col-span-24 md:col-span-8",
-      props: () => ({ businessSummary: dashboard.businessSummary.value }),
-    },
-    {
       key: "dashboard.api-monitoring",
-      order: 50,
+      order: 70,
       component: ApiOverview,
       className: "col-span-24",
       props: () => ({
         distribution: dashboard.apiDistribution.value,
         topFailures: dashboard.apiTopFailures.value,
         trend: dashboard.apiTrend.value,
-      }),
-    },
-    {
-      key: "dashboard.trends",
-      order: 60,
-      component: TrendCharts,
-      className: "col-span-24 md:col-span-15",
-      props: () => ({
-        userTrend: dashboard.userTrend.value,
-        trendRange: dashboard.trendRange.value,
-        loading: dashboard.loading.userTrend,
-        onRangeChange: dashboard.onTrendRangeChange,
-      }),
-    },
-    {
-      key: "dashboard.activity",
-      order: 70,
-      component: ActivityFeed,
-      className: "col-span-24 md:col-span-9",
-      props: () => ({
-        activities: dashboard.activities.value,
-        category: dashboard.activityCategory.value,
-        onCategoryChange: dashboard.onActivityCategoryChange,
       }),
     },
   ])
@@ -116,6 +123,20 @@
     const keys = activeModules.value.map((item) => item.key)
     await dashboard.loadModules(keys)
     if (authStore.userInfo.isAdmin) dashboard.setupSocket(keys)
+  }
+
+  async function refreshHome() {
+    refreshing.value = true
+    try {
+      await initializeHome()
+      window.$message?.success($t("page.home.dashboard.permission.retry"))
+    } finally {
+      refreshing.value = false
+    }
+  }
+
+  function scrollToDashboard() {
+    document.querySelector("[data-dashboard-module]")?.scrollIntoView({ behavior: "smooth" })
   }
 
   onMounted(initializeHome)
@@ -135,9 +156,36 @@
 
   <RestrictedHome v-else-if="permissions.state.value === 'restricted'" />
 
-  <div v-else class="grid grid-cols-24 gap-16px">
-    <div v-for="module in activeModules" :key="module.key" :class="module.className">
-      <component :is="module.component" v-bind="module.props()" />
+  <div v-else class="dashboard-shell flex flex-col gap-14px">
+    <header class="dashboard-header flex flex-col gap-12px py-4px lg:flex-row lg:items-center lg:justify-between">
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-x-12px gap-y-6px">
+          <h1 class="m-0 text-24px font-700 tracking-tight">
+            {{ $t("page.login.common.welcomeBack", { name: displayName }) }}
+          </h1>
+          <span class="inline-flex items-center gap-6px text-12px text-base-text-3">
+            <span class="size-7px rd-full bg-success" />
+            {{ $t("page.home.dashboard.healthy") }}
+          </span>
+        </div>
+        <p class="m-0 mt-5px text-12px text-base-text-3">{{ formattedDate }} · Asia / Shanghai</p>
+      </div>
+      <div class="flex items-center gap-8px">
+        <NButton size="small" :loading="refreshing" @click="refreshHome">
+          <template #icon><SvgIcon icon="carbon:renew" /></template>
+          {{ $t("page.home.dashboard.permission.retry") }}
+        </NButton>
+        <NButton type="primary" size="small" @click="scrollToDashboard">
+          <template #icon><SvgIcon icon="carbon:dashboard" /></template>
+          {{ $t("page.home.dashboard.businessData") }}
+        </NButton>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-24 gap-14px">
+      <div v-for="module in activeModules" :key="module.key" :class="module.className" data-dashboard-module>
+        <component :is="module.component" v-bind="module.props()" />
+      </div>
     </div>
   </div>
 </template>

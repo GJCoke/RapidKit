@@ -56,10 +56,10 @@
       <p class="text-12px text-primary font-700 tracking-0.12em uppercase">
         {{ $t("page.login.resetPassword.eyebrow") }}
       </p>
-      <h1 class="text-26px text-[var(--text-color-1)] font-700 lt-sm:text-22px">
+      <h1 class="text-26px text-base-text-1 font-700 lt-sm:text-22px">
         {{ $t("page.login.resetPassword.title") }}
       </h1>
-      <p class="text-14px text-[var(--text-color-2)] leading-22px">
+      <p class="text-14px text-base-text-2 leading-22px">
         {{ $t("page.login.resetPassword.description") }}
       </p>
     </div>
@@ -68,7 +68,7 @@
       <NSpin size="medium" />
       <div>
         <p class="font-600">{{ $t("page.login.resetPassword.checkingTitle") }}</p>
-        <p class="mt-4px text-13px text-[var(--text-color-2)]">
+        <p class="mt-4px text-13px text-base-text-2">
           {{ $t("page.login.resetPassword.checkingDescription") }}
         </p>
       </div>
@@ -81,7 +81,7 @@
       <SvgIcon icon="carbon:link-not-found" class="text-28px text-error" />
       <div>
         <p class="font-600">{{ $t("page.login.resetPassword.invalidTitle") }}</p>
-        <p class="mt-4px text-13px text-[var(--text-color-2)] leading-20px">
+        <p class="mt-4px text-13px text-base-text-2 leading-20px">
           {{ $t("page.login.resetPassword.invalidToken") }}
         </p>
       </div>
@@ -117,7 +117,7 @@
         />
       </NFormItem>
       <div
-        class="mb-16px flex items-start gap-8px rd-10px bg-primary-50 p-12px text-13px text-[var(--text-color-2)] dark:bg-primary-950"
+        class="mb-16px flex items-start gap-8px rd-10px bg-primary-50 p-12px text-13px text-base-text-2 dark:bg-primary-950"
       >
         <SvgIcon icon="carbon:security" class="mt-1px shrink-0 text-16px text-primary" />
         {{ $t("page.login.resetPassword.sessionsInvalidated") }}

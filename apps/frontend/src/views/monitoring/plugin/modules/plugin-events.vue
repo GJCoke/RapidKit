@@ -53,7 +53,7 @@
 <template>
   <NCard :bordered="false" class="card-wrapper">
     <div class="flex items-center gap-8px text-15px font-600 mb-12px">
-      <SvgIcon icon="carbon:event-schedule" class="text-16px text-[var(--primary-color)]" />
+      <SvgIcon icon="carbon:event-schedule" class="text-16px text-primary" />
       {{ $t("page.monitoring.plugin.eventStats") }}
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-16px">
@@ -76,7 +76,7 @@
       <div>
         <div class="text-14px font-600 mb-8px">
           {{ $t("page.monitoring.plugin.deadLetters") }}
-          <span v-if="events.deadLetterCount > 0" class="text-12px text-[var(--text-color-3)] ml-4px">
+          <span v-if="events.deadLetterCount > 0" class="text-12px text-base-text-3 ml-4px">
             ({{ events.deadLetterCount }})
           </span>
         </div>

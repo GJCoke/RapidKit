@@ -73,7 +73,7 @@
     return (
       <NSpace size={8} align="center" class="ml-8px">
         <NTag size="small" type={tagType}>{statusLabel}</NTag>
-        <span class="text-12px text-[var(--text-color-3)]">{dept.code}</span>
+        <span class="text-12px text-base-text-3">{dept.code}</span>
         {hasAuth("manage_department:add") && (
           <NButton size="tiny" quaternary type="primary" onClick={(e: Event) => { e.stopPropagation(); handleAddChild(dept) }}>
             {$t("common.add")}

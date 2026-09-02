@@ -29,9 +29,9 @@
 </script>
 
 <template>
-  <div class="rd-8px border border-dashed border-[var(--primary-color)] p-12px bg-[var(--n-color-modal)]">
+  <div class="rd-8px border border-dashed border-theme-primary p-12px bg-theme-modal">
     <div class="flex items-center gap-8px mb-8px">
-      <span class="text-12px text-[var(--text-color-3)]"
+      <span class="text-12px text-base-text-3"
         >{{ $t("page.manage.dataPolicy.ruleEditor.addSubquery") }}:</span
       >
       <NSelect
@@ -59,7 +59,7 @@
         size="small"
         filterable
       />
-      <span class="text-12px text-[var(--text-color-3)]">.</span>
+      <span class="text-12px text-base-text-3">.</span>
       <NSelect
         v-model:value="model.target_field"
         :options="targetFields.map((f) => ({ label: f.label || f.name, value: f.name }))"

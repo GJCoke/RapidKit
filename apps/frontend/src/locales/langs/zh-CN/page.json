@@ -60,6 +60,10 @@
       "revoked": "已撤销",
       "pending": "等待中",
       "activityFeed": "活动动态",
+      "recentActivity": "最近活动",
+      "viewAllActivities": "查看全部活动",
+      "allActivities": "全部活动",
+      "activityDetails": "活动详情",
       "noActivity": "暂无活动",
       "activityCategory": {
         "all": "全部",
@@ -77,14 +81,44 @@
         "pluginLoadFailed": "插件「{plugin}」加载失败",
         "pluginLoadFailedDescription": "失败原因：{error}"
       },
+      "activityTable": {
+        "time": "时间",
+        "type": "类型",
+        "content": "内容",
+        "user": "用户",
+        "result": "结果",
+        "eventCode": "事件编码"
+      },
+      "activityResult": {
+        "success": "成功",
+        "info": "成功",
+        "warning": "需关注",
+        "error": "失败"
+      },
       "apiOverview": "API 概览",
       "apiDistribution": "请求分布",
       "apiTopFailures": "失败排行",
       "apiTrend24h": "24h 请求趋势",
       "noData": "暂无数据",
       "permission": {
-        "title": "暂无首页数据权限",
-        "description": "你的账号尚未获得数据看板的访问权限。如需查看，请联系以下系统管理员。",
+        "title": "首页权限待配置",
+        "description": "完成授权后即可查看与你职责相关的首页数据。",
+        "contactTitle": "可联系的管理员",
+        "contactDescription": "联系拥有首页配置权限的管理员完成授权",
+        "steps": {
+          "contactAdmin": {
+            "title": "联系管理员",
+            "description": "联系拥有首页配置权限的管理员"
+          },
+          "configure": {
+            "title": "配置首页模块",
+            "description": "管理员为你配置可见的模块与数据"
+          },
+          "refresh": {
+            "title": "刷新后查看",
+            "description": "配置完成后刷新页面即可查看首页数据"
+          }
+        },
         "copyEmail": "复制邮箱",
         "copyEmailFor": "复制管理员 {name} 的邮箱",
         "copySuccess": "管理员 {name} 的邮箱已复制",
@@ -404,21 +438,49 @@
         "parentDepartment": "请选择上级部门"
       }
     },
-    "auditDict": {
-      "title": "审计字典管理",
-      "key": "键名",
-      "category": "分类",
-      "labelZh": "中文标签",
-      "labelEn": "英文标签",
-      "categoryResource": "资源",
-      "categoryAction": "动作",
-      "addAuditDict": "新增字典",
-      "editAuditDict": "编辑字典",
+    "auditLog": {
+      "title": "审计日志",
+      "time": "时间",
+      "actor": "操作人",
+      "action": "动作",
+      "resource": "资源",
+      "resourceType": "资源类型",
+      "resourceName": "资源名称",
+      "resultLabel": "结果",
+      "riskLabel": "风险等级",
+      "sourceLabel": "来源",
+      "ip": "IP 地址",
+      "httpMethod": "HTTP 方法",
+      "path": "请求路径",
+      "responseCode": "响应状态码",
+      "userAgent": "User Agent",
+      "requestSummary": "请求摘要",
+      "errorMessage": "错误信息",
       "form": {
-        "key": "请输入键名",
-        "category": "请选择分类",
-        "labelZh": "请输入中文标签",
-        "labelEn": "请输入英文标签"
+        "actor": "请选择操作人",
+        "action": "请输入动作",
+        "result": "请选择执行结果"
+      },
+      "result": {
+        "success": "成功",
+        "failure": "失败"
+      },
+      "risk": {
+        "normal": "普通",
+        "sensitive": "敏感",
+        "critical": "严重"
+      },
+      "source": {
+        "http": "HTTP",
+        "domain_event": "领域事件",
+        "system": "系统"
+      },
+      "detail": {
+        "title": "审计详情",
+        "event": "事件信息",
+        "request": "请求信息",
+        "trace": "追踪与诊断",
+        "empty": "暂无审计详情"
       }
     },
     "dataPolicy": {

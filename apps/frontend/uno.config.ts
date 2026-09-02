@@ -20,6 +20,15 @@ export default defineConfig({
   shortcuts: {
     "card-wrapper": "rd-8px shadow-sm",
   },
+  rules: [
+    [/^bg-theme-(body|fill)$/, ([, tone]) => ({ "background-color": `var(--${tone}-color)` })],
+    ["bg-theme-modal", { "background-color": "var(--n-color-modal)" }],
+    ["bg-theme-primary", { "background-color": "var(--primary-color)" }],
+    ["border-theme-default", { "border-color": "var(--border-color)" }],
+    ["border-theme-naive", { "border-color": "var(--n-border-color)" }],
+    [/^border-theme-(primary|error)$/, ([, tone]) => ({ "border-color": `var(--${tone}-color)` })],
+    ["outline-theme-primary", { "outline-color": "var(--primary-color)" }],
+  ],
   transformers: [transformerDirectives(), transformerVariantGroup()],
   presets: [
     presetWind3({ dark: "class" }),

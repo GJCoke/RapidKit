@@ -207,7 +207,7 @@ PLUGIN_MODULES: list[str] = [
 ]
 ```
 
-Note: If using `flux create-plugin`, the CLI's `syncAlembicConfig()` handles this automatically.
+Note: If using `pnpm rapidkit plugin create`, the CLI's `syncAlembicConfig()` handles this automatically.
 
 ### Step 5: Install and Verify
 
@@ -220,8 +220,8 @@ uv sync
 After writing models, generate the first migration:
 
 ```bash
-flux db migrate --plugin <name> -m "init"
-flux db upgrade --plugin <name>
+pnpm rapidkit db migrate --plugin <name> -m "init"
+pnpm rapidkit db upgrade --plugin <name>
 ```
 
 The first migration automatically uses `--branch-label=<name> --head=base` to create an independent Alembic branch.

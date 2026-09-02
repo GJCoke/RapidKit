@@ -45,19 +45,19 @@ RapidKit uses Alembic with a **multi-branch strategy** -- each plugin maintains 
 
 ## CLI Commands
 
-All migration operations are done through the `flux` CLI:
+All migration operations are done through the `pnpm rapidkit` CLI:
 
 | Command                                       | Purpose                                                     |
 | --------------------------------------------- | ----------------------------------------------------------- |
-| `flux db migrate`                             | Generate new migration files (auto-detects changed plugins) |
-| `flux db migrate --plugin <name> -m "msg"`    | Generate migration for a specific plugin                    |
-| `flux db upgrade`                             | Apply all pending migrations (`alembic upgrade heads`)      |
-| `flux db upgrade --plugin <name>`             | Apply migrations for a specific plugin                      |
-| `flux db downgrade --plugin <name>`           | Roll back one migration for a plugin                        |
-| `flux db downgrade --plugin <name> --steps N` | Roll back N migrations                                      |
-| `flux db status`                              | Show per-plugin migration status table                      |
-| `flux db reset`                               | Drop schema, regenerate all, re-seed (destructive)          |
-| `flux db clean`                               | Delete migration `.py` files (preserves `__init__.py`)      |
+| `pnpm rapidkit db migrate`                             | Generate new migration files (auto-detects changed plugins) |
+| `pnpm rapidkit db migrate --plugin <name> -m "msg"`    | Generate migration for a specific plugin                    |
+| `pnpm rapidkit db upgrade`                             | Apply all pending migrations (`alembic upgrade heads`)      |
+| `pnpm rapidkit db upgrade --plugin <name>`             | Apply migrations for a specific plugin                      |
+| `pnpm rapidkit db downgrade --plugin <name>`           | Roll back one migration for a plugin                        |
+| `pnpm rapidkit db downgrade --plugin <name> --steps N` | Roll back N migrations                                      |
+| `pnpm rapidkit db status`                              | Show per-plugin migration status table                      |
+| `pnpm rapidkit db reset`                               | Drop schema, regenerate all, re-seed (destructive)          |
+| `pnpm rapidkit db clean`                               | Delete migration `.py` files (preserves `__init__.py`)      |
 
 ## Step-by-Step Operations
 
@@ -67,19 +67,19 @@ All migration operations are done through the `flux` CLI:
 2. Ensure the model is included in `register()` -> `models=[...]` list
 3. Generate migration:
    ```bash
-   flux db migrate --plugin <name> -m "add user_preferences table"
+   pnpm rapidkit db migrate --plugin <name> -m "add user_preferences table"
    ```
 4. Review the generated migration file in `plugins/<name>/migrations/versions/`
 5. Apply:
    ```bash
-   flux db upgrade --plugin <name>
+   pnpm rapidkit db upgrade --plugin <name>
    ```
 
 ### Operation 2: Auto-Detect Changes Across All Plugins
 
 1. Run without `--plugin` flag:
    ```bash
-   flux db migrate
+   pnpm rapidkit db migrate
    ```
 2. The CLI runs `detect_changes.py` which:
    - Loads all plugins and builds a `table_name -> plugin_name` mapping
@@ -88,20 +88,20 @@ All migration operations are done through the `flux` CLI:
 3. Select which plugins to generate migrations for (interactive prompt)
 4. Apply all:
    ```bash
-   flux db upgrade
+   pnpm rapidkit db upgrade
    ```
 
 ### Operation 3: Roll Back a Migration
 
 ```bash
-flux db downgrade --plugin <name>           # roll back 1 step
-flux db downgrade --plugin <name> --steps 3 # roll back 3 steps
+pnpm rapidkit db downgrade --plugin <name>           # roll back 1 step
+pnpm rapidkit db downgrade --plugin <name> --steps 3 # roll back 3 steps
 ```
 
 ### Operation 4: Check Current Status
 
 ```bash
-flux db status
+pnpm rapidkit db status
 ```
 
 Shows a table with each plugin's current revision, head revision, and whether it is up to date or has pending migrations.
@@ -109,7 +109,7 @@ Shows a table with each plugin's current revision, head revision, and whether it
 ### Operation 5: Full Reset (Destructive)
 
 ```bash
-flux db reset
+pnpm rapidkit db reset
 ```
 
 This will:
@@ -164,9 +164,9 @@ Key points:
 
 ## Rules
 
-- ALWAYS use `flux db migrate` instead of raw `alembic` commands -- the CLI handles config syncing
+- ALWAYS use `pnpm rapidkit db migrate` instead of raw `alembic` commands -- the CLI handles config syncing
 - ALWAYS review auto-generated migration files before applying -- autogenerate can miss or misinterpret changes
 - ALWAYS prefix table names with the plugin name to avoid cross-plugin collisions
 - NEVER manually edit `version_locations` in `alembic.ini` or `PLUGIN_MODULES` in `env.py` -- the CLI's `syncAlembicConfig()` manages these
 - NEVER delete migration files that have been applied to shared databases -- use downgrade instead
-- PREFER `flux db reset` only in development -- never in production
+- PREFER `pnpm rapidkit db reset` only in development -- never in production

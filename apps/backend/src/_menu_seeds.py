@@ -285,28 +285,22 @@ def build_menus() -> list[Menu]:
         ],
     )
 
-    # 2.7 审计字典
-    manage_audit_dict = Menu(
+    # 2.7 审计日志
+    manage_audit_log = Menu(
         id=uuid8(),
         parent_id=manage_id,
-        menu_name="审计字典",
+        menu_name="审计日志",
         menu_type=MenuType.MENU,
         order=7,
-        route_name="manage_audit-dict",
-        route_path="/manage/audit-dict",
-        component="view.manage_audit-dict",
-        icon="carbon:catalog",
-        i18n_key="route.manage_audit-dict",
-        buttons=[
-            Button(code="manage_audit-dict:add", desc="新增审计字典").model_dump(),
-            Button(code="manage_audit-dict:edit", desc="编辑审计字典").model_dump(),
-            Button(code="manage_audit-dict:delete", desc="删除审计字典").model_dump(),
-        ],
+        route_name="manage_audit-log",
+        route_path="/manage/audit-log",
+        component="view.manage_audit-log",
+        icon="carbon:security",
+        i18n_key="route.manage_audit-log",
         interfaces=[
-            "GET:/api/v1/system/audit-dict",
-            "POST:/api/v1/system/audit-dict",
-            "PUT:/api/v1/system/audit-dict/{item_id}",
-            "DELETE:/api/v1/system/audit-dict/{item_id}",
+            "GET:/api/v1/system/audit-logs/paginate",
+            "GET:/api/v1/system/audit-logs/{item_id}",
+            "GET:/api/v1/users/all",
         ],
     )
 
@@ -577,7 +571,7 @@ def build_menus() -> list[Menu]:
         manage_department,
         manage_data_policy,
         manage_field_policy,
-        manage_audit_dict,
+        manage_audit_log,
         socketio,
         socketio_chat,
         socketio_debug,

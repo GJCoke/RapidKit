@@ -25,10 +25,10 @@
             { label: $t('page.home.dashboard.schedules'), value: businessSummary.schedules, icon: 'carbon:time' },
           ]"
           :key="item.label"
-          class="flex items-center justify-between px-12px py-6px rd-8px transition-colors duration-200 hover:bg-[var(--n-color-modal)]"
+          class="flex items-center justify-between px-12px py-6px rd-8px transition-colors duration-200 hover:bg-theme-modal"
         >
           <div class="flex items-center gap-8px">
-            <SvgIcon :icon="item.icon" class="text-15px text-[var(--text-color-3)]" />
+            <SvgIcon :icon="item.icon" class="text-15px text-base-text-3" />
             <span class="text-14px">{{ item.label }}</span>
           </div>
           <span class="text-16px font-600 tabular-nums">{{ item.value }}</span>

@@ -81,7 +81,7 @@
     <NCard size="small" class="mb-16px">
       <div class="flex items-end gap-14px">
         <div class="flex-1">
-          <div class="text-12px font-500 text-[var(--text-color-3)] mb-6px uppercase tracking-wide">
+          <div class="text-12px font-500 text-base-text-3 mb-6px uppercase tracking-wide">
             {{ $t("page.manage.dataPolicy.simulator.selectPolicies") }}
           </div>
           <NSelect
@@ -94,7 +94,7 @@
           />
         </div>
         <div class="w-200px">
-          <div class="text-12px font-500 text-[var(--text-color-3)] mb-6px uppercase tracking-wide">
+          <div class="text-12px font-500 text-base-text-3 mb-6px uppercase tracking-wide">
             {{ $t("page.manage.dataPolicy.simulator.selectUser") }}
           </div>
           <NSelect v-model:value="selectedUser" :options="userOptions" filterable size="small" />
@@ -124,11 +124,11 @@
       <div class="grid grid-cols-3 gap-12px mb-16px">
         <NCard size="small" hoverable>
           <div class="flex items-center gap-12px">
-            <div class="flex-center w-36px h-36px rd-8px bg-[var(--body-color)]">
+            <div class="flex-center w-36px h-36px rd-8px bg-theme-body">
               <icon-mdi-database-outline class="text-18px op-60" />
             </div>
             <div class="flex-col gap-2px">
-              <span class="text-11px text-[var(--text-color-3)] tracking-wide">
+              <span class="text-11px text-base-text-3 tracking-wide">
                 {{ $t("page.manage.dataPolicy.simulator.totalCount") }}
               </span>
               <span class="text-22px font-700 tabular-nums lh-tight">{{ result.totalCount }}</span>
@@ -139,13 +139,13 @@
         <NCard size="small" hoverable class="relative">
           <div class="flex items-center gap-12px">
             <div class="flex-center w-36px h-36px rd-8px bg-[rgba(24,160,88,0.08)]">
-              <icon-mdi-eye-outline class="text-18px text-[var(--success-color)]" />
+              <icon-mdi-eye-outline class="text-18px text-success" />
             </div>
             <div class="flex-col gap-2px">
-              <span class="text-11px text-[var(--text-color-3)] tracking-wide">
+              <span class="text-11px text-base-text-3 tracking-wide">
                 {{ $t("page.manage.dataPolicy.simulator.visibleCount") }}
               </span>
-              <span class="text-22px font-700 tabular-nums lh-tight text-[var(--success-color)]">
+              <span class="text-22px font-700 tabular-nums lh-tight text-success">
                 {{ result.filteredCount }}
               </span>
             </div>
@@ -158,13 +158,13 @@
         <NCard size="small" hoverable>
           <div class="flex items-center gap-12px">
             <div class="flex-center w-36px h-36px rd-8px bg-[rgba(208,48,80,0.08)]">
-              <icon-mdi-eye-off-outline class="text-18px text-[var(--error-color)]" />
+              <icon-mdi-eye-off-outline class="text-18px text-error" />
             </div>
             <div class="flex-col gap-2px">
-              <span class="text-11px text-[var(--text-color-3)] tracking-wide">
+              <span class="text-11px text-base-text-3 tracking-wide">
                 {{ $t("page.manage.dataPolicy.simulator.excludedCount") }}
               </span>
-              <span class="text-22px font-700 tabular-nums lh-tight text-[var(--error-color)]">
+              <span class="text-22px font-700 tabular-nums lh-tight text-error">
                 {{ result.excludedCount }}
               </span>
             </div>
@@ -179,10 +179,10 @@
             <div
               v-for="p in result.policiesApplied"
               :key="p.policyId"
-              class="flex items-center justify-between px-12px py-8px rd-8px bg-[var(--body-color)] border border-transparent hover:border-[var(--border-color)] transition-colors"
+              class="flex items-center justify-between px-12px py-8px rd-8px bg-theme-body border border-transparent hover:border-theme-default transition-colors"
             >
               <div class="flex items-center gap-8px">
-                <div class="w-6px h-6px rd-full bg-[var(--primary-color)] shrink-0" />
+                <div class="w-6px h-6px rd-full bg-theme-primary shrink-0" />
                 <span class="text-13px font-500">{{ p.policyName }}</span>
               </div>
               <div class="flex items-center gap-10px">

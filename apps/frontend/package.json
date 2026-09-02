@@ -7,7 +7,6 @@
   "scripts": {
     "format": "oxfmt",
     "lint": "oxlint --fix",
-    "test": "tsx --test builder/plugins/router-path.test.ts src/router/guard/login-redirect.test.ts src/views/_builtin/login/login-presentation.test.ts src/views/_builtin/login/password-reset-presentation.test.ts src/views/home/dashboard-registry.test.ts src/views/home/composables/use-home-permissions.test.ts src/views/home/modules/activity-feed.test.ts src/views/home/visible-admin-contacts.test.ts src/views/manage/role/modules/permission-selection.test.ts src/views/manage/role/modules/role-update-payload.test.ts src/utils/avatar.test.ts src/hooks/common/use-avatar-image.test.ts",
     "dev": "vite --mode test",
     "build": "vite build --mode test",
     "typecheck": "vue-tsc --noEmit",
@@ -49,7 +48,6 @@
     "consola": "^3.4.2",
     "kolorist": "^1.8.0",
     "sass": "^1.99.0",
-    "tsx": "^4.21.0",
     "typescript": "~6.0.2",
     "unocss": "^66.6.6",
     "unplugin-icons": "^23.0.1",

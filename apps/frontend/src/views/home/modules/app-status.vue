@@ -15,89 +15,82 @@
       value: fmt(props.healthStats.qps),
       label: "QPS",
       icon: "carbon:meter-alt",
-      accent: "56, 158, 13",
+      tone: "text-success",
       tip: $t("page.home.dashboard.qpsTip"),
     },
     {
       value: fmt(props.healthStats.p50Ms, "ms"),
       label: "P50",
       icon: "carbon:timer",
-      accent: "32, 128, 240",
+      tone: "text-info",
       tip: $t("page.home.dashboard.p50Tip"),
     },
     {
       value: fmt(props.healthStats.p95Ms, "ms"),
       label: "P95",
       icon: "carbon:time",
-      accent: "114, 46, 209",
+      tone: "text-primary",
       tip: $t("page.home.dashboard.p95Tip"),
     },
     {
       value: fmt(props.healthStats.http5Xx1H),
       label: $t("page.home.dashboard.http5xx"),
       icon: "carbon:close-outline",
-      accent: "208, 48, 80",
+      tone: "text-error",
       tip: $t("page.home.dashboard.http5xxTip"),
     },
     {
       value: fmt(props.healthStats.bizErrors1H),
       label: $t("page.home.dashboard.bizErrors"),
       icon: "carbon:warning",
-      accent: "240, 160, 32",
+      tone: "text-warning",
       tip: $t("page.home.dashboard.bizErrorsTip"),
     },
     {
       value: fmt(props.healthStats.wsConnections),
       label: $t("page.home.dashboard.wsConnections"),
       icon: "carbon:connect",
-      accent: "32, 128, 240",
+      tone: "text-info",
       tip: $t("page.home.dashboard.wsConnectionsTip"),
     },
   ])
 </script>
 
 <template>
-  <NCard :bordered="false" class="card-wrapper">
-    <div class="flex items-center gap-8px text-15px font-600 mb-14px">
+  <NCard :bordered="false" class="card-wrapper h-400px">
+    <div class="flex items-center gap-8px border-b border-theme-naive pb-12px text-15px font-600">
       <SvgIcon icon="carbon:activity" class="text-16px text-primary" />
       {{ $t("page.home.dashboard.appStatus") }}
     </div>
 
-    <div class="grid grid-cols-2 gap-12px sm:grid-cols-3 lg:grid-cols-6">
+    <div class="health-check-list mt-2px divide-y">
       <div
         v-for="metric in metrics"
         :key="metric.label"
-        class="relative flex flex-col gap-6px px-14px py-12px rd-10px transition-all duration-200 border border-solid hover:shadow-sm"
-        :style="{
-          background: `rgba(${metric.accent}, 0.05)`,
-          borderColor: `rgba(${metric.accent}, 0.08)`,
-          '--accent': metric.accent,
-        }"
-        @mouseenter="
-          ;($event.currentTarget as HTMLElement).style.background = `rgba(${metric.accent}, 0.1)`
-          ;($event.currentTarget as HTMLElement).style.borderColor = `rgba(${metric.accent}, 0.18)`
-        "
-        @mouseleave="
-          ;($event.currentTarget as HTMLElement).style.background = `rgba(${metric.accent}, 0.05)`
-          ;($event.currentTarget as HTMLElement).style.borderColor = `rgba(${metric.accent}, 0.08)`
-        "
+        class="flex items-center gap-10px px-2px py-10px transition-colors duration-200 hover:bg-theme-modal"
       >
-        <div class="flex items-center gap-6px">
-          <SvgIcon :icon="metric.icon" class="text-13px" :style="{ color: `rgb(${metric.accent})` }" />
-          <span class="text-12px text-[var(--text-color-3)] truncate">{{ metric.label }}</span>
+        <span class="flex-center size-28px rd-8px bg-theme-modal" :class="metric.tone">
+          <SvgIcon :icon="metric.icon" class="text-14px" />
+        </span>
+        <span class="min-w-0 flex-1 truncate text-12px">{{ metric.label }}</span>
+        <span class="text-13px font-600 tabular-nums" :class="metric.tone">{{ metric.value }}</span>
+        <div>
           <NTooltip>
             <template #trigger>
               <span class="inline-flex cursor-pointer flex-shrink-0">
-                <SvgIcon icon="carbon:help" class="text-12px text-[var(--text-color-4)]" />
+                <SvgIcon icon="carbon:help" class="text-12px text-base-text-4" />
               </span>
             </template>
             {{ metric.tip }}
           </NTooltip>
         </div>
-        <span class="text-22px font-700 tabular-nums leading-none" :style="{ color: `rgb(${metric.accent})` }">
-          {{ metric.value }}
-        </span>
       </div>
     </div>
   </NCard>
 </template>
+
+<style scoped>
+  .health-check-list > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--n-border-color);
+  }
+</style>

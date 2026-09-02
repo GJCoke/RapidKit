@@ -60,6 +60,10 @@
       "revoked": "Revoked",
       "pending": "Pending",
       "activityFeed": "Activity Feed",
+      "recentActivity": "Recent Activity",
+      "viewAllActivities": "View all activity",
+      "allActivities": "All Activity",
+      "activityDetails": "Activity Details",
       "noActivity": "No Activity",
       "activityCategory": {
         "all": "All",
@@ -77,14 +81,44 @@
         "pluginLoadFailed": "Plugin “{plugin}” failed to load",
         "pluginLoadFailedDescription": "Reason: {error}"
       },
+      "activityTable": {
+        "time": "Time",
+        "type": "Type",
+        "content": "Content",
+        "user": "User",
+        "result": "Result",
+        "eventCode": "Event code"
+      },
+      "activityResult": {
+        "success": "Success",
+        "info": "Success",
+        "warning": "Attention",
+        "error": "Failed"
+      },
       "apiOverview": "API Overview",
       "apiDistribution": "Request Distribution",
       "apiTopFailures": "Top Failures",
       "apiTrend24h": "24h Request Trend",
       "noData": "No Data",
       "permission": {
-        "title": "No dashboard access",
-        "description": "Your account does not currently have access to dashboard data. Contact a system administrator for help.",
+        "title": "Home access pending",
+        "description": "Once access is granted, you can view home data relevant to your responsibilities.",
+        "contactTitle": "Administrators you can contact",
+        "contactDescription": "Contact an administrator who can configure home access",
+        "steps": {
+          "contactAdmin": {
+            "title": "Contact an administrator",
+            "description": "Reach an administrator who can configure home access"
+          },
+          "configure": {
+            "title": "Configure home modules",
+            "description": "The administrator assigns your visible modules and data"
+          },
+          "refresh": {
+            "title": "Refresh to view",
+            "description": "Refresh the page after configuration to view home data"
+          }
+        },
         "copyEmail": "Copy email",
         "copyEmailFor": "Copy {name}'s administrator email",
         "copySuccess": "Administrator {name}'s email was copied",
@@ -404,21 +438,49 @@
         "parentDepartment": "Please select parent department"
       }
     },
-    "auditDict": {
-      "title": "Audit Dictionary",
-      "key": "Key",
-      "category": "Category",
-      "labelZh": "Label (ZH)",
-      "labelEn": "Label (EN)",
-      "categoryResource": "Resource",
-      "categoryAction": "Action",
-      "addAuditDict": "Add Entry",
-      "editAuditDict": "Edit Entry",
+    "auditLog": {
+      "title": "Audit Log",
+      "time": "Time",
+      "actor": "Actor",
+      "action": "Action",
+      "resource": "Resource",
+      "resourceType": "Resource Type",
+      "resourceName": "Resource Name",
+      "resultLabel": "Result",
+      "riskLabel": "Risk Level",
+      "sourceLabel": "Source",
+      "ip": "IP Address",
+      "httpMethod": "HTTP Method",
+      "path": "Request Path",
+      "responseCode": "Response Code",
+      "userAgent": "User Agent",
+      "requestSummary": "Request Summary",
+      "errorMessage": "Error Message",
       "form": {
-        "key": "Enter key",
-        "category": "Select category",
-        "labelZh": "Enter Chinese label",
-        "labelEn": "Enter English label"
+        "actor": "Select an actor",
+        "action": "Enter an action",
+        "result": "Select a result"
+      },
+      "result": {
+        "success": "Success",
+        "failure": "Failure"
+      },
+      "risk": {
+        "normal": "Normal",
+        "sensitive": "Sensitive",
+        "critical": "Critical"
+      },
+      "source": {
+        "http": "HTTP",
+        "domain_event": "Domain Event",
+        "system": "System"
+      },
+      "detail": {
+        "title": "Audit Details",
+        "event": "Event Information",
+        "request": "Request Information",
+        "trace": "Tracing and Diagnostics",
+        "empty": "No audit details"
       }
     },
     "dataPolicy": {

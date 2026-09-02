@@ -259,23 +259,16 @@ declare global {
        */
       type DataScopeType = 1 | 2 | 3 | 4 | 5 | 6
 
-      /** audit dictionary item */
-      type AuditDict = Common.CommonRecord<{
-        /** key name (e.g., user, create) */
-        key: string
-        /** category: resource or action */
-        category: string
-        /** Chinese label */
-        labelZh: string
-        /** English label */
-        labelEn: string
-      }>
-
-      /** audit dict list */
-      type AuditDictList = Service.ApiResponse<"/api/v1/system/audit-dict">
-
       /** change password request */
       type ChangePassword = Service.ApiRequest<"/api/v1/users/{user_id}/password", "put", "body">
+
+      type AuditLogQuery = Service.ApiRequest<"/api/v1/system/audit-logs/paginate", "get", "query">
+      type AuditLogList = Service.ApiResponse<"/api/v1/system/audit-logs/paginate">
+      type AuditLogItem = AuditLogList["records"][number]
+      type AuditLogDetail = Service.ApiResponse<"/api/v1/system/audit-logs/{item_id}">
+      type AuditResult = NonNullable<AuditLogQuery["result"]>
+      type AuditRiskLevel = AuditLogItem["riskLevel"]
+      type AuditSource = AuditLogItem["source"]
     }
   }
 }

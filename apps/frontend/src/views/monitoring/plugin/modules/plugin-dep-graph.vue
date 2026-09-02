@@ -113,7 +113,7 @@
 <template>
   <NCard :bordered="false" class="card-wrapper h-full" content-class="flex flex-col h-full">
     <div class="flex items-center gap-8px text-15px font-600 mb-12px">
-      <SvgIcon icon="carbon:network-3" class="text-16px text-[var(--primary-color)]" />
+      <SvgIcon icon="carbon:network-3" class="text-16px text-primary" />
       {{ $t("page.monitoring.plugin.depGraph") }}
     </div>
     <div class="relative flex-1 min-h-0">

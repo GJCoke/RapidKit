@@ -12,7 +12,6 @@ from plugin_menu.models import Menu
 from plugin_menu.services import invalidate_menu_cache
 from plugin_permission.field_guard.models import FieldPolicy
 from plugin_permission.models import DataPolicy, Role
-from plugin_system.audit_dict.models import AuditDictionary
 from plugin_user.models import User
 from rapidkit_common.enums import Status
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
@@ -51,10 +50,6 @@ ALL_BUTTON_PERMISSIONS = [
     "manage_field-policy:add",
     "manage_field-policy:edit",
     "manage_field-policy:delete",
-    # 审计字典
-    "manage_audit-dict:add",
-    "manage_audit-dict:edit",
-    "manage_audit-dict:delete",
     # 脚本管理
     "script:add",
     "script:edit",
@@ -91,8 +86,9 @@ GUEST_INTERFACE_PERMISSIONS = [
     # 字段策略 (只读)
     "GET:/api/v1/field-policies",
     "GET:/api/v1/field-policies/all",
-    # 审计字典 (只读)
-    "GET:/api/v1/system/audit-dict",
+    # 审计日志 (只读)
+    "GET:/api/v1/system/audit-logs/paginate",
+    "GET:/api/v1/system/audit-logs/{item_id}",
     # Worker 概览 (只读)
     "GET:/api/v1/workers",
     "GET:/api/v1/workers/all",
@@ -135,7 +131,7 @@ GUEST_ROUTER_PERMISSIONS = [
     "manage_department",
     "manage_data-policy",
     "manage_field-policy",
-    "manage_audit-dict",
+    "manage_audit-log",
     "socketio",
     "socketio_chat",
     "socketio_debug",
@@ -464,55 +460,6 @@ async def create_menus(session: AsyncSession) -> None:
     await session.commit()
 
 
-async def create_audit_dictionary(session: AsyncSession) -> None:
-    """初始化审计字典数据。"""
-    result = await session.exec(select(AuditDictionary).limit(1))
-    if result.first():
-        return
-
-    entries = [
-        # Resources
-        AuditDictionary(key="auth", category="resource", label_zh="系统", label_en="System"),
-        AuditDictionary(key="user", category="resource", label_zh="用户", label_en="User"),
-        AuditDictionary(key="users", category="resource", label_zh="用户", label_en="User"),
-        AuditDictionary(key="roles", category="resource", label_zh="角色", label_en="Role"),
-        AuditDictionary(key="menus", category="resource", label_zh="菜单", label_en="Menu"),
-        AuditDictionary(key="departments", category="resource", label_zh="部门", label_en="Department"),
-        AuditDictionary(key="data-policies", category="resource", label_zh="数据策略", label_en="Data Policy"),
-        AuditDictionary(key="field-policies", category="resource", label_zh="字段策略", label_en="Field Policy"),
-        AuditDictionary(key="scripts", category="resource", label_zh="脚本", label_en="Script"),
-        AuditDictionary(key="schedules", category="resource", label_zh="计划任务", label_en="Schedule"),
-        AuditDictionary(key="workers", category="resource", label_zh="Worker", label_en="Worker"),
-        AuditDictionary(key="system", category="resource", label_zh="系统", label_en="System"),
-        AuditDictionary(key="audit-dict", category="resource", label_zh="审计字典", label_en="Audit Dict"),
-        AuditDictionary(key="monitoring", category="resource", label_zh="监控", label_en="Monitoring"),
-        AuditDictionary(key="tasks", category="resource", label_zh="任务", label_en="Task"),
-        AuditDictionary(key="permissions", category="resource", label_zh="权限", label_en="Permission"),
-        # Resources — worker/task/script 子操作路径
-        AuditDictionary(key="execute", category="resource", label_zh="执行", label_en="Execution"),
-        AuditDictionary(key="trigger", category="resource", label_zh="触发", label_en="Trigger"),
-        AuditDictionary(key="revoke", category="resource", label_zh="撤销", label_en="Revoke"),
-        AuditDictionary(key="toggle", category="resource", label_zh="切换", label_en="Toggle"),
-        AuditDictionary(key="ping", category="resource", label_zh="Ping", label_en="Ping"),
-        AuditDictionary(key="shutdown", category="resource", label_zh="关停", label_en="Shutdown"),
-        AuditDictionary(key="grow", category="resource", label_zh="扩容", label_en="Pool Grow"),
-        AuditDictionary(key="shrink", category="resource", label_zh="缩容", label_en="Pool Shrink"),
-        AuditDictionary(key="add", category="resource", label_zh="添加", label_en="Add"),
-        AuditDictionary(key="cancel", category="resource", label_zh="取消", label_en="Cancel"),
-        # Actions
-        AuditDictionary(key="create", category="action", label_zh="创建了", label_en="created"),
-        AuditDictionary(key="update", category="action", label_zh="修改了", label_en="updated"),
-        AuditDictionary(key="delete", category="action", label_zh="删除了", label_en="deleted"),
-        AuditDictionary(key="login", category="action", label_zh="登录了", label_en="logged into"),
-        AuditDictionary(key="logout", category="action", label_zh="登出了", label_en="logged out of"),
-        AuditDictionary(key="refresh", category="action", label_zh="刷新了", label_en="refreshed"),
-        AuditDictionary(key="enable", category="action", label_zh="启用了", label_en="enabled"),
-        AuditDictionary(key="disable", category="action", label_zh="禁用了", label_en="disabled"),
-    ]
-    session.add_all(entries)
-    await session.commit()
-
-
 async def clean_db(session: AsyncSession) -> None:
     """清理数据库中的初始化数据，方便重新初始化。"""
     await session.exec(delete(Menu))
@@ -521,7 +468,6 @@ async def clean_db(session: AsyncSession) -> None:
     await session.exec(delete(Department))
     await session.exec(delete(DataPolicy))
     await session.exec(delete(FieldPolicy))
-    await session.exec(delete(AuditDictionary))
     await session.commit()
 
 
@@ -534,7 +480,6 @@ async def init_db(session: AsyncSession) -> None:
     await session.commit()
     await create_roles_and_users(session, data_policies, field_policies)
     await create_menus(session)
-    await create_audit_dictionary(session)
 
 
 async def flush_redis_cache() -> None:

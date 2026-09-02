@@ -9,7 +9,7 @@ class TestSystemRegister:
         assert m.name == "system"
         assert m.version == "0.1.0"
         assert m.router is not None
-        assert len(m.models) == 3
+        assert len(m.models) == 2
 
     def test_models_are_correct(self):
         from plugin_system import register
@@ -38,6 +38,7 @@ class TestSystemRegister:
         assert "/system/audit-logs/paginate" in routes
         assert "/system/audit-logs/{item_id}" in routes
         assert "/system/plugins/dependencies" in routes
+        assert all("audit-dict" not in route for route in routes)
 
     def test_no_cross_plugin_imports(self):
         """plugin_system 允许导入 plugin_menu、plugin_auth、plugin_script（声明依赖）。"""

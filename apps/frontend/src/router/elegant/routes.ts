@@ -79,12 +79,12 @@ export const generatedRoutes: GeneratedRoute[] = [{
     i18nKey: 'route.manage'
   },
   children: [{
-    name: 'manage_audit-dict',
-    path: '/manage/audit-dict',
-    component: 'view.manage_audit-dict',
+    name: 'manage_audit-log',
+    path: '/manage/audit-log',
+    component: 'view.manage_audit-log',
     meta: {
-      title: 'manage_audit-dict',
-      i18nKey: 'route.manage_audit-dict'
+      title: 'manage_audit-log',
+      i18nKey: 'route.manage_audit-log'
     }
   }, {
     name: 'manage_data-policy',

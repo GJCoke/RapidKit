@@ -45,7 +45,7 @@
       <p class="text-13px text-primary font-600 tracking-0.08em uppercase">
         {{ $t("page.login.resetPwd.eyebrow") }}
       </p>
-      <p class="text-14px text-[var(--text-color-2)] leading-22px">
+      <p class="text-14px text-base-text-2 leading-22px">
         {{ $t("page.login.resetPwd.description") }}
       </p>
     </div>
@@ -53,7 +53,7 @@
     <div v-if="submitted" class="flex-col-stretch gap-12px rd-12px bg-primary-50 p-16px dark:bg-primary-950">
       <div class="flex items-start gap-10px">
         <SvgIcon icon="carbon:checkmark-outline" class="mt-2px text-20px text-primary" />
-        <p class="text-14px text-[var(--text-color-1)] leading-22px">
+        <p class="text-14px text-base-text-1 leading-22px">
           {{ $t("page.login.resetPwd.sent") }}
         </p>
       </div>

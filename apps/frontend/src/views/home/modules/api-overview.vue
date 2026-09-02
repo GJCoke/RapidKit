@@ -91,21 +91,21 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-16px">
       <!-- Pie: Request Distribution -->
       <div>
-        <div class="text-13px text-[var(--text-color-3)] mb-8px">{{ $t("page.home.dashboard.apiDistribution") }}</div>
+        <div class="text-13px text-base-text-3 mb-8px">{{ $t("page.home.dashboard.apiDistribution") }}</div>
         <div ref="pieRef" class="h-200px" />
       </div>
 
       <!-- Failures Top 5 -->
       <div>
-        <div class="text-13px text-[var(--text-color-3)] mb-8px">{{ $t("page.home.dashboard.apiTopFailures") }}</div>
-        <div v-if="topFailures.length === 0" class="h-200px flex-center text-[var(--text-color-4)]">
+        <div class="text-13px text-base-text-3 mb-8px">{{ $t("page.home.dashboard.apiTopFailures") }}</div>
+        <div v-if="topFailures.length === 0" class="h-200px flex-center text-base-text-4">
           {{ $t("page.home.dashboard.noData") }}
         </div>
         <div v-else class="flex flex-col gap-8px">
           <div
             v-for="(item, index) in topFailures.slice(0, 5)"
             :key="index"
-            class="flex items-center gap-8px px-8px py-6px rd-6px bg-[var(--fill-color)]"
+            class="flex items-center gap-8px px-8px py-6px rd-6px bg-theme-fill"
           >
             <NTag
               :bordered="false"
@@ -116,14 +116,14 @@
             </NTag>
             <span class="flex-1 text-13px truncate font-mono">{{ item.path }}</span>
             <span class="text-13px text-error font-600">{{ item.errorCount }}</span>
-            <span class="text-12px text-[var(--text-color-4)]">{{ item.errorRate }}%</span>
+            <span class="text-12px text-base-text-4">{{ item.errorRate }}%</span>
           </div>
         </div>
       </div>
 
       <!-- Sparkline: 24h Trend -->
       <div>
-        <div class="text-13px text-[var(--text-color-3)] mb-8px">{{ $t("page.home.dashboard.apiTrend24h") }}</div>
+        <div class="text-13px text-base-text-3 mb-8px">{{ $t("page.home.dashboard.apiTrend24h") }}</div>
         <div ref="sparkRef" class="h-200px" />
       </div>
     </div>

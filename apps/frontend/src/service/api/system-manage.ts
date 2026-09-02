@@ -379,38 +379,21 @@ export function fetchBatchDeleteFieldPolicies(ids: string[]) {
   return request<null>({ url: "/field-policies/batch", method: "delete", data: { ids } })
 }
 
-// ==================== AuditDictionary ====================
+// ==================== Audit Log ====================
 
-/** get all audit dictionary entries */
-export function fetchGetAuditDictList() {
-  return request<Api.SystemManage.AuditDict[]>({
-    url: "/system/audit-dict",
+/** Get paginated technical audit logs. */
+export function fetchGetAuditLogList(params?: Api.SystemManage.AuditLogQuery) {
+  return request<Api.SystemManage.AuditLogList>({
+    url: "/system/audit-logs/paginate",
     method: "get",
+    params,
   })
 }
 
-/** create audit dictionary entry */
-export function fetchCreateAuditDict(data: { key: string; category: string; labelZh: string; labelEn: string }) {
-  return request<Api.SystemManage.AuditDict>({
-    url: "/system/audit-dict",
-    method: "post",
-    data,
-  })
-}
-
-/** update audit dictionary entry */
-export function fetchUpdateAuditDict(id: string, data: Partial<Api.SystemManage.AuditDict>) {
-  return request<Api.SystemManage.AuditDict>({
-    url: `/system/audit-dict/${id}`,
-    method: "put",
-    data,
-  })
-}
-
-/** delete audit dictionary entry */
-export function fetchDeleteAuditDict(id: string) {
-  return request<boolean>({
-    url: `/system/audit-dict/${id}`,
-    method: "delete",
+/** Get a technical audit log detail. */
+export function fetchGetAuditLogDetail(id: string) {
+  return request<Api.SystemManage.AuditLogDetail>({
+    url: `/system/audit-logs/${id}`,
+    method: "get",
   })
 }

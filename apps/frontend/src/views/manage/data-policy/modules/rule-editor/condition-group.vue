@@ -87,7 +87,7 @@
 <template>
   <div
     class="rd-8px p-12px"
-    :class="depth ? 'bg-[var(--n-color-modal)]' : ''"
+    :class="depth ? 'bg-theme-modal' : ''"
     :style="{ border: `1px solid ${bandColor}` }"
   >
     <!-- Group header -->
@@ -113,7 +113,7 @@
         <NButton :type="model.logic === 'OR' ? 'primary' : 'default'" @click="model.logic = 'OR'"> OR </NButton>
       </NButtonGroup>
 
-      <span v-if="collapsed" class="text-12px text-[var(--text-color-3)]">
+      <span v-if="collapsed" class="text-12px text-base-text-3">
         ({{ model.conditions.length }} {{ $t("page.manage.dataPolicy.ruleEditor.conditionCount") }})
       </span>
 
@@ -140,7 +140,7 @@
       <!-- Empty state -->
       <div
         v-if="!model.conditions.length"
-        class="flex-center gap-8px py-24px rd-6px border border-dashed border-[var(--border-color)] cursor-pointer text-[var(--text-color-3)] hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] transition-colors"
+        class="flex-center gap-8px py-24px rd-6px border border-dashed border-theme-default cursor-pointer text-base-text-3 hover:border-theme-primary hover:text-primary transition-colors"
         @click="addCondition"
       >
         <icon-carbon-add-alt class="text-18px" />

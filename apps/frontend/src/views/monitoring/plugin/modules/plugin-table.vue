@@ -24,7 +24,7 @@
       return (
         <div class="flex-col gap-6px text-13px px-8px py-4px">
           <div>
-            <span class="text-[var(--text-color-3)]">{$t("page.monitoring.plugin.dependencies")}:</span>
+            <span class="text-base-text-3">{$t("page.monitoring.plugin.dependencies")}:</span>
             <span class="ml-6px">
               {deps.length > 0
                 ? deps.map((dep) => (
@@ -32,11 +32,11 @@
                       {dep}
                     </NTag>
                   ))
-                : <span class="text-[var(--text-color-4)]">-</span>}
+                : <span class="text-base-text-4">-</span>}
             </span>
           </div>
           <div>
-            <span class="text-[var(--text-color-3)]">{$t("page.monitoring.plugin.required")}:</span>
+            <span class="text-base-text-3">{$t("page.monitoring.plugin.required")}:</span>
             <span class="ml-6px">{row.required ? "Yes" : "No"}</span>
           </div>
         </div>
@@ -66,7 +66,7 @@
 
     if (row.status === "disabled") {
       return (
-        <div class="text-13px px-8px py-4px text-[var(--text-color-4)]">
+        <div class="text-13px px-8px py-4px text-base-text-4">
           {$t("page.monitoring.plugin.disabledHint")}
         </div>
       )
@@ -93,7 +93,7 @@
       title: $t("page.monitoring.plugin.version"),
       key: "version",
       width: 80,
-      render: (row) => <span class="text-[var(--text-color-3)]">{row.version ?? "-"}</span>,
+      render: (row) => <span class="text-base-text-3">{row.version ?? "-"}</span>,
     },
     {
       title: $t("page.monitoring.plugin.status"),
@@ -111,9 +111,9 @@
       width: 100,
       render: (row) =>
         row.loadTimeMs ? (
-          <span class="font-mono text-[var(--text-color-3)]">{row.loadTimeMs.toFixed(1)}ms</span>
+          <span class="font-mono text-base-text-3">{row.loadTimeMs.toFixed(1)}ms</span>
         ) : (
-          <span class="text-[var(--text-color-4)]">-</span>
+          <span class="text-base-text-4">-</span>
         ),
     },
     {
@@ -122,9 +122,9 @@
       width: 100,
       render: (row) =>
         row.startupTimeMs ? (
-          <span class="font-mono text-[var(--text-color-3)]">{row.startupTimeMs.toFixed(1)}ms</span>
+          <span class="font-mono text-base-text-3">{row.startupTimeMs.toFixed(1)}ms</span>
         ) : (
-          <span class="text-[var(--text-color-4)]">-</span>
+          <span class="text-base-text-4">-</span>
         ),
     },
   ])
@@ -137,7 +137,7 @@
 <template>
   <NCard :bordered="false" class="card-wrapper h-full">
     <div class="flex items-center gap-8px text-15px font-600 mb-12px">
-      <SvgIcon icon="carbon:list" class="text-16px text-[var(--primary-color)]" />
+      <SvgIcon icon="carbon:list" class="text-16px text-primary" />
       {{ $t("page.monitoring.plugin.pluginList") }}
     </div>
     <NDataTable

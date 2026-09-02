@@ -1619,26 +1619,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/system/activities/paginate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 活动日志分页查询
-         * @description 分页查询活动日志，支持按事件类型、用户、时间范围过滤。
-         */
-        get: operations["get_activities_paginated_api_v1_system_activities_paginate_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/system/activities": {
         parameters: {
             query?: never;
@@ -1648,9 +1628,43 @@ export interface paths {
         };
         /**
          * 最近系统活动
-         * @description 获取最近 15 条系统活动日志。
+         * @description Return cursor-paginated, explicitly curated dashboard activity.
          */
         get: operations["get_activities_api_v1_system_activities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/audit-logs/paginate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 审计日志分页查询 */
+        get: operations["get_audit_logs_api_v1_system_audit_logs_paginate_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/audit-logs/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 审计日志详情 */
+        get: operations["get_audit_log_detail_api_v1_system_audit_logs__item_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1719,54 +1733,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/system/audit-dict": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取所有审计字典
-         * @description 获取所有审计字典条目（前端启动时拉取）。
-         */
-        get: operations["get_all_audit_dict_api_v1_system_audit_dict_get"];
-        put?: never;
-        /**
-         * 新增审计字典
-         * @description 新增审计字典条目。
-         */
-        post: operations["create_audit_dict_api_v1_system_audit_dict_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/system/audit-dict/{item_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 修改审计字典
-         * @description 修改审计字典条目。
-         */
-        put: operations["update_audit_dict_api_v1_system_audit_dict__item_id__put"];
-        post?: never;
-        /**
-         * 删除审计字典
-         * @description 删除审计字典条目。
-         */
-        delete: operations["delete_audit_dict_api_v1_system_audit_dict__item_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1796,8 +1762,18 @@ export interface components {
             timeStart?: number | null;
         };
         /**
+         * ActivityCategory
+         * @enum {string}
+         */
+        ActivityCategory: "task" | "user" | "system" | "alert";
+        /**
+         * ActivityLevel
+         * @enum {string}
+         */
+        ActivityLevel: "info" | "success" | "warning" | "error";
+        /**
          * ActivityResponse
-         * @description 活动日志响应。
+         * @description Curated activity response without audit diagnostics.
          */
         ActivityResponse: {
             /**
@@ -1815,35 +1791,38 @@ export interface components {
              * @example 2024-07-31 16:07:34
              */
             updateTime: string;
-            /** Eventtype */
-            eventType: string;
-            /**
-             * Params
-             * @default {}
-             */
-            params: {
+            category: components["schemas"]["ActivityCategory"];
+            /** Eventcode */
+            eventCode: string;
+            level: components["schemas"]["ActivityLevel"];
+            /** Actorid */
+            actorId?: string | null;
+            /** Actorname */
+            actorName?: string | null;
+            /** Subjecttype */
+            subjectType: string;
+            /** Subjectid */
+            subjectId?: string | null;
+            /** Subjectname */
+            subjectName?: string | null;
+            /** Titlekey */
+            titleKey: string;
+            /** Titleparams */
+            titleParams?: {
                 [key: string]: unknown;
             };
-            /** Detail */
-            detail?: string | null;
-            /** Sourceip */
-            sourceIp?: string | null;
-            /** Userid */
-            userId?: string | null;
-            /** Username */
-            username?: string | null;
-            /** Httpmethod */
-            httpMethod?: string | null;
-            /** Path */
-            path?: string | null;
-            /** Useragent */
-            userAgent?: string | null;
-            /** Requestbody */
-            requestBody?: {
+            /** Descriptionkey */
+            descriptionKey?: string | null;
+            /** Descriptionparams */
+            descriptionParams?: {
                 [key: string]: unknown;
-            } | null;
-            /** Responsecode */
-            responseCode?: number | null;
+            };
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /** Occurredat */
+            occurredAt: string;
         };
         /**
          * AdminContactResponse
@@ -2028,25 +2007,8 @@ export interface components {
              */
             errorCount: number;
         };
-        /**
-         * AuditDictCreate
-         * @description 审计字典新增请求。
-         */
-        AuditDictCreate: {
-            /** Key */
-            key: string;
-            /** Category */
-            category: string;
-            /** Labelzh */
-            labelZh: string;
-            /** Labelen */
-            labelEn: string;
-        };
-        /**
-         * AuditDictResponse
-         * @description 审计字典响应。
-         */
-        AuditDictResponse: {
+        /** AuditLogDetail */
+        AuditLogDetail: {
             /**
              * Id
              * Format: uuid
@@ -2062,29 +2024,92 @@ export interface components {
              * @example 2024-07-31 16:07:34
              */
             updateTime: string;
-            /** Key */
-            key: string;
-            /** Category */
-            category: string;
-            /** Labelzh */
-            labelZh: string;
-            /** Labelen */
-            labelEn: string;
+            /** Actorid */
+            actorId?: string | null;
+            /** Actorname */
+            actorName?: string | null;
+            /** Action */
+            action: string;
+            /** Resourcetype */
+            resourceType?: string | null;
+            /** Resourcename */
+            resourceName?: string | null;
+            result: components["schemas"]["AuditResult"];
+            riskLevel: components["schemas"]["AuditRiskLevel"];
+            source: components["schemas"]["AuditSource"];
+            /** Ip */
+            ip?: string | null;
+            /** Occurredat */
+            occurredAt: string;
+            /** Requestid */
+            requestId?: string | null;
+            /** Correlationid */
+            correlationId?: string | null;
+            /** Useragent */
+            userAgent?: string | null;
+            /** Httpmethod */
+            httpMethod?: string | null;
+            /** Path */
+            path?: string | null;
+            /** Requestsummary */
+            requestSummary?: {
+                [key: string]: unknown;
+            } | null;
+            /** Responsecode */
+            responseCode?: number | null;
+            /** Errormessage */
+            errorMessage?: string | null;
+        };
+        /** AuditLogListItem */
+        AuditLogListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /** Actorid */
+            actorId?: string | null;
+            /** Actorname */
+            actorName?: string | null;
+            /** Action */
+            action: string;
+            /** Resourcetype */
+            resourceType?: string | null;
+            /** Resourcename */
+            resourceName?: string | null;
+            result: components["schemas"]["AuditResult"];
+            riskLevel: components["schemas"]["AuditRiskLevel"];
+            source: components["schemas"]["AuditSource"];
+            /** Ip */
+            ip?: string | null;
+            /** Occurredat */
+            occurredAt: string;
         };
         /**
-         * AuditDictUpdate
-         * @description 审计字典修改请求。
+         * AuditResult
+         * @enum {string}
          */
-        AuditDictUpdate: {
-            /** Key */
-            key?: string | null;
-            /** Category */
-            category?: string | null;
-            /** Labelzh */
-            labelZh?: string | null;
-            /** Labelen */
-            labelEn?: string | null;
-        };
+        AuditResult: "success" | "failure";
+        /**
+         * AuditRiskLevel
+         * @enum {string}
+         */
+        AuditRiskLevel: "normal" | "sensitive" | "critical";
+        /**
+         * AuditSource
+         * @enum {string}
+         */
+        AuditSource: "http" | "domain_event" | "system";
         /**
          * BusinessSummary
          * @description 业务数据汇总。
@@ -2163,6 +2188,24 @@ export interface components {
             dayOfMonth: string;
             /** Monthofyear */
             monthOfYear: string;
+        };
+        /** CursorPaginatedResponse[ActivityResponse] */
+        CursorPaginatedResponse_ActivityResponse_: {
+            /**
+             * Items
+             * @description 记录列表。
+             */
+            items: components["schemas"]["ActivityResponse"][];
+            /**
+             * Nextcursor
+             * @description 下一页游标，None 表示没有更多数据。
+             */
+            nextCursor?: string | null;
+            /**
+             * Size
+             * @description 每页条数。
+             */
+            size: number;
         };
         /**
          * DashboardCapabilitiesResponse
@@ -3150,29 +3193,6 @@ export interface components {
             instances: components["schemas"]["InstanceResourceStats"][];
             summary: components["schemas"]["InstanceResourceStats"];
         };
-        /** PaginatedResponse[ActivityResponse] */
-        PaginatedResponse_ActivityResponse_: {
-            /**
-             * Page
-             * @description 页码。
-             */
-            page: number;
-            /**
-             * Pagesize
-             * @description 每页条数。
-             */
-            pageSize: number;
-            /**
-             * Total
-             * @description 总条数。
-             */
-            total: number;
-            /**
-             * Records
-             * @description 记录列表。
-             */
-            records: components["schemas"]["ActivityResponse"][];
-        };
         /** PaginatedResponse[ApiListItem] */
         PaginatedResponse_ApiListItem_: {
             /**
@@ -3195,6 +3215,29 @@ export interface components {
              * @description 记录列表。
              */
             records: components["schemas"]["ApiListItem"][];
+        };
+        /** PaginatedResponse[AuditLogListItem] */
+        PaginatedResponse_AuditLogListItem_: {
+            /**
+             * Page
+             * @description 页码。
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @description 每页条数。
+             */
+            pageSize: number;
+            /**
+             * Total
+             * @description 总条数。
+             */
+            total: number;
+            /**
+             * Records
+             * @description 记录列表。
+             */
+            records: components["schemas"]["AuditLogListItem"][];
         };
         /** PaginatedResponse[DataPolicyResponse] */
         PaginatedResponse_DataPolicyResponse_: {
@@ -3807,22 +3850,6 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["ApiOverviewResponse"] | null;
         };
-        /** Response[AuditDictResponse] */
-        Response_AuditDictResponse_: {
-            /**
-             * Code
-             * @description 状态码。
-             * @default 0
-             */
-            code: number;
-            /**
-             * Message
-             * @description 响应消息。
-             */
-            message?: string;
-            /** @description 响应数据。 */
-            data?: components["schemas"]["AuditDictResponse"] | null;
-        };
         /** Response[BusinessSummary] */
         Response_BusinessSummary_: {
             /**
@@ -3838,6 +3865,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["BusinessSummary"] | null;
+        };
+        /** Response[CursorPaginatedResponse[ActivityResponse]] */
+        Response_CursorPaginatedResponse_ActivityResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["CursorPaginatedResponse_ActivityResponse_"] | null;
         };
         /** Response[DashboardCapabilitiesResponse] */
         Response_DashboardCapabilitiesResponse_: {
@@ -4034,22 +4077,6 @@ export interface components {
              */
             data?: null;
         };
-        /** Response[PaginatedResponse[ActivityResponse]] */
-        Response_PaginatedResponse_ActivityResponse__: {
-            /**
-             * Code
-             * @description 状态码。
-             * @default 0
-             */
-            code: number;
-            /**
-             * Message
-             * @description 响应消息。
-             */
-            message?: string;
-            /** @description 响应数据。 */
-            data?: components["schemas"]["PaginatedResponse_ActivityResponse_"] | null;
-        };
         /** Response[PaginatedResponse[ApiListItem]] */
         Response_PaginatedResponse_ApiListItem__: {
             /**
@@ -4065,6 +4092,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_ApiListItem_"] | null;
+        };
+        /** Response[PaginatedResponse[AuditLogListItem]] */
+        Response_PaginatedResponse_AuditLogListItem__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PaginatedResponse_AuditLogListItem_"] | null;
         };
         /** Response[PaginatedResponse[DataPolicyResponse]] */
         Response_PaginatedResponse_DataPolicyResponse__: {
@@ -4434,6 +4477,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["TriggerTaskResponse"] | null;
         };
+        /** Response[Union[AuditLogDetail, NoneType]] */
+        Response_Union_AuditLogDetail__NoneType__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["AuditLogDetail"] | null;
+        };
         /** Response[UserInfoResponse] */
         Response_UserInfoResponse_: {
             /**
@@ -4568,25 +4627,6 @@ export interface components {
              */
             data?: components["schemas"]["ActiveTaskInfo"][] | null;
         };
-        /** Response[list[ActivityResponse]] */
-        Response_list_ActivityResponse__: {
-            /**
-             * Code
-             * @description 状态码。
-             * @default 0
-             */
-            code: number;
-            /**
-             * Message
-             * @description 响应消息。
-             */
-            message?: string;
-            /**
-             * Data
-             * @description 响应数据。
-             */
-            data?: components["schemas"]["ActivityResponse"][] | null;
-        };
         /** Response[list[AdminContactResponse]] */
         Response_list_AdminContactResponse__: {
             /**
@@ -4662,25 +4702,6 @@ export interface components {
              * @description 响应数据。
              */
             data?: components["schemas"]["ApiTrendPoint"][] | null;
-        };
-        /** Response[list[AuditDictResponse]] */
-        Response_list_AuditDictResponse__: {
-            /**
-             * Code
-             * @description 状态码。
-             * @default 0
-             */
-            code: number;
-            /**
-             * Message
-             * @description 响应消息。
-             */
-            message?: string;
-            /**
-             * Data
-             * @description 响应数据。
-             */
-            data?: components["schemas"]["AuditDictResponse"][] | null;
         };
         /** Response[list[DataPolicyResponse]] */
         Response_list_DataPolicyResponse__: {
@@ -5166,21 +5187,6 @@ export interface components {
             code: string;
             /** @default 1 */
             status: components["schemas"]["Status"];
-            /**
-             * Interfacepermissions
-             * @default []
-             */
-            interfacePermissions: string[];
-            /**
-             * Buttonpermissions
-             * @default []
-             */
-            buttonPermissions: string[];
-            /**
-             * Routerpermissions
-             * @default []
-             */
-            routerPermissions: string[];
             /** Datapolicyids */
             dataPolicyIds?: string[] | null;
             /** Fieldpolicyids */
@@ -9179,17 +9185,13 @@ export interface operations {
             };
         };
     };
-    get_activities_paginated_api_v1_system_activities_paginate_get: {
+    get_activities_api_v1_system_activities_get: {
         parameters: {
             query?: {
-                /** @description 当前页码。 */
-                page?: number;
-                /** @description 每页条数。 */
-                pageSize?: number;
-                eventType?: string | null;
-                userId?: string | null;
-                startTime?: string | null;
-                endTime?: string | null;
+                categories?: components["schemas"]["ActivityCategory"][] | null;
+                levels?: components["schemas"]["ActivityLevel"][] | null;
+                cursor?: string | null;
+                size?: number;
             };
             header?: never;
             path?: never;
@@ -9203,7 +9205,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_ActivityResponse__"];
+                    "application/json": components["schemas"]["Response_CursorPaginatedResponse_ActivityResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -9217,9 +9219,17 @@ export interface operations {
             };
         };
     };
-    get_activities_api_v1_system_activities_get: {
+    get_audit_logs_api_v1_system_audit_logs_paginate_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                action?: string | null;
+                result?: components["schemas"]["AuditResult"] | null;
+                actorId?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -9232,7 +9242,47 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_list_ActivityResponse__"];
+                    "application/json": components["schemas"]["Response_PaginatedResponse_AuditLogListItem__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_audit_log_detail_api_v1_system_audit_logs__item_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_Union_AuditLogDetail__NoneType__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -9293,125 +9343,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_EventBusStats_"];
-                };
-            };
-        };
-    };
-    get_all_audit_dict_api_v1_system_audit_dict_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_AuditDictResponse__"];
-                };
-            };
-        };
-    };
-    create_audit_dict_api_v1_system_audit_dict_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AuditDictCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_AuditDictResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_audit_dict_api_v1_system_audit_dict__item_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AuditDictUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_AuditDictResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_audit_dict_api_v1_system_audit_dict__item_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

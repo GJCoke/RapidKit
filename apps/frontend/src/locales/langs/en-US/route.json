@@ -13,7 +13,7 @@
   "manage_role": "Role Manage",
   "manage_user": "User Manage",
   "manage_department": "Department",
-  "manage_audit-dict": "Audit Dictionary",
+  "manage_audit-log": "Audit Log",
   "manage_data-policy": "Data Policy",
   "manage_field-policy": "Field Policy",
   "manage_user-detail": "User Detail",

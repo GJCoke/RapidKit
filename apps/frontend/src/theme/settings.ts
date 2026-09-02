@@ -42,6 +42,10 @@ export const themeSettings: App.Theme.ThemeSetting = {
         layout: "rgb(247, 250, 252)",
         inverted: "rgb(0, 20, 40)",
         "base-text": "rgb(31, 31, 31)",
+        "base-text-1": "rgb(31, 34, 37)",
+        "base-text-2": "rgb(51, 54, 57)",
+        "base-text-3": "rgb(118, 124, 130)",
+        "base-text-4": "rgb(194, 194, 194)",
       },
       boxShadow: {
         header: "0 1px 2px rgb(0, 21, 41, 0.08)",
@@ -49,7 +53,17 @@ export const themeSettings: App.Theme.ThemeSetting = {
         tab: "0 1px 2px rgb(0, 21, 41, 0.08)",
       },
     },
-    dark: { colors: { container: "rgb(28, 28, 28)", layout: "rgb(18, 18, 18)", "base-text": "rgb(224, 224, 224)" } },
+    dark: {
+      colors: {
+        container: "rgb(28, 28, 28)",
+        layout: "rgb(18, 18, 18)",
+        "base-text": "rgb(224, 224, 224)",
+        "base-text-1": "rgb(224, 224, 224)",
+        "base-text-2": "rgb(204, 204, 204)",
+        "base-text-3": "rgb(133, 133, 133)",
+        "base-text-4": "rgb(97, 97, 97)",
+      },
+    },
   },
 }
 

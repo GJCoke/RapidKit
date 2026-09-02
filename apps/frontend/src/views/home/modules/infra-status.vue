@@ -45,7 +45,7 @@
             MinIO: infrastructure.minio,
           }"
           :key="key"
-          class="flex items-center justify-between px-12px py-8px rd-8px transition-colors duration-200 hover:bg-[var(--n-color-modal)]"
+          class="flex items-center justify-between px-12px py-8px rd-8px transition-colors duration-200 hover:bg-theme-modal"
         >
           <div class="flex items-center gap-8px min-w-0">
             <span
@@ -56,7 +56,7 @@
             <span class="font-500 text-14px">{{ key }}</span>
           </div>
           <div class="flex items-center gap-8px">
-            <span v-if="service.latencyMs" class="text-12px text-[var(--text-color-3)] tabular-nums">
+            <span v-if="service.latencyMs" class="text-12px text-base-text-3 tabular-nums">
               {{ service.latencyMs }}ms
             </span>
             <NTag :type="statusTagType(service.status)" size="small" round>

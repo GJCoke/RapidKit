@@ -14,6 +14,24 @@
   const visibleContacts = computed(() => visibleAdminContacts(contacts.value, expanded.value))
   const { copy } = useClipboard()
 
+  const permissionSteps = computed(() => [
+    {
+      icon: "carbon:user-admin",
+      title: $t("page.home.dashboard.permission.steps.contactAdmin.title"),
+      description: $t("page.home.dashboard.permission.steps.contactAdmin.description"),
+    },
+    {
+      icon: "carbon:dashboard-reference",
+      title: $t("page.home.dashboard.permission.steps.configure.title"),
+      description: $t("page.home.dashboard.permission.steps.configure.description"),
+    },
+    {
+      icon: "carbon:renew",
+      title: $t("page.home.dashboard.permission.steps.refresh.title"),
+      description: $t("page.home.dashboard.permission.steps.refresh.description"),
+    },
+  ])
+
   async function copyEmail(name: string, email: string) {
     await copy(email)
     window.$message?.success($t("page.home.dashboard.permission.copySuccess", { name }))
@@ -28,34 +46,76 @@
 </script>
 
 <template>
-  <div class="min-h-520px flex-center px-16px py-32px">
-    <NCard :bordered="false" class="card-wrapper max-w-680px w-full">
-      <div class="flex-col-center py-24px text-center">
-        <div class="size-64px flex-center rounded-18px bg-primary-50 text-32px text-primary dark:bg-primary-900/30">
-          <SvgIcon icon="carbon:locked" />
+  <div class="mx-auto min-h-520px max-w-1080px w-full px-16px py-36px sm:px-24px lg:py-52px">
+    <div class="flex-col-center text-center">
+      <div
+        class="size-72px flex-center rounded-20px bg-primary-50 text-34px text-primary dark:bg-primary-950"
+      >
+        <SvgIcon icon="carbon:security" />
+      </div>
+      <h2 class="mb-8px mt-20px text-26px font-600 text-base-text-1">
+        {{ $t("page.home.dashboard.permission.title") }}
+      </h2>
+      <p class="m-0 max-w-560px text-14px leading-24px text-base-text-3">
+        {{ $t("page.home.dashboard.permission.description") }}
+      </p>
+    </div>
+
+    <NCard :bordered="false" class="card-wrapper mt-32px">
+      <div class="grid grid-cols-1 gap-24px md:grid-cols-3 md:gap-16px">
+        <div
+          v-for="(step, index) in permissionSteps"
+          :key="step.title"
+          class="relative flex items-start gap-14px px-4px py-6px"
+        >
+          <div
+            class="size-46px flex-center shrink-0 rounded-14px bg-primary-50 text-21px text-primary dark:bg-primary-950"
+          >
+            <SvgIcon :icon="step.icon" />
+          </div>
+          <div class="min-w-0 text-left">
+            <div class="flex items-center gap-8px">
+              <span
+                class="size-20px flex-center rounded-full bg-primary text-11px text-white"
+              >
+                {{ index + 1 }}
+              </span>
+              <span class="text-15px font-600 text-base-text-1">{{ step.title }}</span>
+            </div>
+            <p class="mb-0 mt-8px text-13px leading-20px text-base-text-3">{{ step.description }}</p>
+          </div>
+          <SvgIcon
+            v-if="index < permissionSteps.length - 1"
+            icon="carbon:chevron-right"
+            class="absolute right--10px top-20px hidden text-18px text-base-text-3 md:block"
+          />
         </div>
-        <h2 class="mb-8px mt-20px text-24px text-[var(--text-color-1)]">
-          {{ $t("page.home.dashboard.permission.title") }}
-        </h2>
-        <p class="m-0 max-w-500px text-14px leading-24px text-[var(--text-color-3)]">
-          {{ $t("page.home.dashboard.permission.description") }}
-        </p>
+      </div>
+    </NCard>
+
+    <section class="mt-28px">
+      <div class="mb-12px flex flex-wrap items-end justify-between gap-8px">
+        <div>
+          <h3 class="m-0 text-16px font-600 text-base-text-1">
+            {{ $t("page.home.dashboard.permission.contactTitle") }}
+          </h3>
+          <p class="mb-0 mt-4px text-13px text-base-text-3">
+            {{ $t("page.home.dashboard.permission.contactDescription") }}
+          </p>
+        </div>
       </div>
 
       <NSpin :show="loading">
-        <div
-          v-if="!failed"
-          class="mx-auto max-w-560px overflow-hidden rounded-12px border border-[var(--border-color)]"
-        >
+        <NCard v-if="!failed" :bordered="false" class="card-wrapper overflow-hidden" content-style="padding: 0">
           <div
             v-for="contact in visibleContacts"
             :key="contact.id"
-            class="flex flex-wrap items-center gap-12px border-b border-[var(--border-color)] px-16px py-14px last:border-b-0"
+            class="flex flex-wrap items-center gap-14px border-b border-theme-default px-16px py-15px transition-colors last:border-b-0 sm:px-20px hover:bg-theme-modal"
           >
             <AppAvatar :src="contact.avatar" :name="contact.name" :seed="contact.id" :size="42" />
-            <div class="min-w-0 flex-1 text-left">
-              <div class="font-500 text-[var(--text-color-1)]">{{ contact.name }}</div>
-              <div class="break-all text-13px text-[var(--text-color-3)]">{{ contact.email }}</div>
+            <div class="min-w-150px flex-1 text-left">
+              <div class="font-600 text-base-text-1">{{ contact.name }}</div>
+              <div class="mt-2px break-all text-13px text-base-text-3">{{ contact.email }}</div>
             </div>
             <NButton
               quaternary
@@ -66,12 +126,10 @@
               {{ $t("page.home.dashboard.permission.copyEmail") }}
             </NButton>
           </div>
-        </div>
-        <NEmpty
-          v-else-if="!loading"
-          :description="$t('page.home.dashboard.permission.contactsUnavailable')"
-          class="py-24px"
-        />
+        </NCard>
+        <NCard v-else-if="!loading" :bordered="false" class="card-wrapper">
+          <NEmpty :description="$t('page.home.dashboard.permission.contactsUnavailable')" class="py-20px" />
+        </NCard>
       </NSpin>
 
       <div v-if="contacts.length > 3" class="mt-16px text-center">
@@ -83,6 +141,6 @@
           }}
         </NButton>
       </div>
-    </NCard>
+    </section>
   </div>
 </template>

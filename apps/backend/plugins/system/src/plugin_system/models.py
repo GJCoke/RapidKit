@@ -6,6 +6,7 @@ from uuid import UUID
 
 from rapidkit_common.models import SQLModel
 from rapidkit_core.timezone import timezone
+from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy import UniqueConstraint
 from sqlmodel import JSON, Column, Field
 
@@ -41,6 +42,14 @@ class AuditSource(StrEnum):
     SYSTEM = "system"
 
 
+def _varchar_enum(enum_type: type[StrEnum]) -> SQLAlchemyEnum:
+    return SQLAlchemyEnum(
+        enum_type,
+        native_enum=False,
+        values_callable=lambda members: [member.value for member in members],
+    )
+
+
 class AuditLog(SQLModel, table=True):
     """Technical record used for security review and diagnostics."""
 
@@ -52,9 +61,13 @@ class AuditLog(SQLModel, table=True):
     resource_type: str | None = Field(default=None, max_length=50, index=True)
     resource_id: str | None = Field(default=None, max_length=100)
     resource_name: str | None = Field(default=None, max_length=200)
-    result: AuditResult = Field(index=True)
-    risk_level: AuditRiskLevel = Field(default=AuditRiskLevel.NORMAL, index=True)
-    source: AuditSource = Field(index=True)
+    result: AuditResult = Field(index=True, sa_type=_varchar_enum(AuditResult))
+    risk_level: AuditRiskLevel = Field(
+        default=AuditRiskLevel.NORMAL,
+        index=True,
+        sa_type=_varchar_enum(AuditRiskLevel),
+    )
+    source: AuditSource = Field(index=True, sa_type=_varchar_enum(AuditSource))
     request_id: str | None = Field(default=None, max_length=100, index=True)
     correlation_id: str | None = Field(default=None, max_length=100, index=True)
     ip: str | None = Field(default=None, max_length=45)
@@ -74,9 +87,9 @@ class ActivityEvent(SQLModel, table=True):
     __tablename__ = "system_activity_events"
     __table_args__ = (UniqueConstraint("source_event_id", name="uq_system_activity_source_event_id"),)
 
-    category: ActivityCategory = Field(index=True)
+    category: ActivityCategory = Field(index=True, sa_type=_varchar_enum(ActivityCategory))
     event_code: str = Field(max_length=100, index=True)
-    level: ActivityLevel = Field(index=True)
+    level: ActivityLevel = Field(index=True, sa_type=_varchar_enum(ActivityLevel))
     actor_id: UUID | None = Field(default=None, index=True)
     actor_name: str | None = Field(default=None, max_length=100)
     subject_type: str = Field(max_length=50, index=True)

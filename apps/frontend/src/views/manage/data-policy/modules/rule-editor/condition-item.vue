@@ -59,14 +59,14 @@
 
 <template>
   <div
-    class="flex items-center gap-8px px-10px py-6px rd-6px transition-colors hover:bg-[var(--n-color-modal)]"
+    class="flex items-center gap-8px px-10px py-6px rd-6px transition-colors hover:bg-theme-modal"
     :class="
       isIncomplete
-        ? 'border border-dashed border-[var(--error-color)] bg-[rgba(239,71,111,0.04)]'
-        : 'bg-[var(--body-color)]'
+        ? 'border border-dashed border-theme-error bg-[rgba(239,71,111,0.04)]'
+        : 'bg-theme-body'
     "
   >
-    <icon-carbon-warning-alt v-if="isIncomplete" class="text-14px text-[var(--error-color)] shrink-0 op-60" />
+    <icon-carbon-warning-alt v-if="isIncomplete" class="text-14px text-error shrink-0 op-60" />
     <NSelect
       v-model:value="model.field"
       :options="fields.map((f) => ({ label: f.label || f.name, value: f.name }))"

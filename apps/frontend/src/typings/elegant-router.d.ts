@@ -24,7 +24,7 @@ declare module "@elegant-router/types" {
     "iframe-page": "/iframe-page/:url";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat|set-password|reset-password)?";
     "manage": "/manage";
-    "manage_audit-dict": "/manage/audit-dict";
+    "manage_audit-log": "/manage/audit-log";
     "manage_data-policy": "/manage/data-policy";
     "manage_department": "/manage/department";
     "manage_field-policy": "/manage/field-policy";
@@ -108,7 +108,7 @@ declare module "@elegant-router/types" {
     | "iframe-page"
     | "login"
     | "home"
-    | "manage_audit-dict"
+    | "manage_audit-log"
     | "manage_data-policy"
     | "manage_department"
     | "manage_field-policy"

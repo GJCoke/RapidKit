@@ -141,15 +141,15 @@
           <div ref="diskRef" class="h-110px" />
         </div>
 
-        <div class="flex gap-12px mt-4px pt-10px border-t border-[var(--border-color)]">
-          <div class="flex-1 flex items-center gap-6px px-10px py-6px rd-8px bg-[var(--n-color-modal)]">
+        <div class="flex gap-12px mt-4px pt-10px border-t border-theme-default">
+          <div class="flex-1 flex items-center gap-6px px-10px py-6px rd-8px bg-theme-modal">
             <SvgIcon icon="carbon:arrow-up" class="text-14px text-success" />
-            <span class="text-12px text-[var(--text-color-3)]">{{ $t("page.home.dashboard.netSent") }}</span>
+            <span class="text-12px text-base-text-3">{{ $t("page.home.dashboard.netSent") }}</span>
             <span class="text-13px font-500 tabular-nums">{{ netInfo.sent }}</span>
           </div>
-          <div class="flex-1 flex items-center gap-6px px-10px py-6px rd-8px bg-[var(--n-color-modal)]">
+          <div class="flex-1 flex items-center gap-6px px-10px py-6px rd-8px bg-theme-modal">
             <SvgIcon icon="carbon:arrow-down" class="text-14px text-primary" />
-            <span class="text-12px text-[var(--text-color-3)]">{{ $t("page.home.dashboard.netRecv") }}</span>
+            <span class="text-12px text-base-text-3">{{ $t("page.home.dashboard.netRecv") }}</span>
             <span class="text-13px font-500 tabular-nums">{{ netInfo.recv }}</span>
           </div>
         </div>

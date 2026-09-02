@@ -170,7 +170,7 @@ const routeMap: RouteMap = {
   "iframe-page": "/iframe-page/:url",
   "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat|set-password|reset-password)?",
   "manage": "/manage",
-  "manage_audit-dict": "/manage/audit-dict",
+  "manage_audit-log": "/manage/audit-log",
   "manage_data-policy": "/manage/data-policy",
   "manage_department": "/manage/department",
   "manage_field-policy": "/manage/field-policy",

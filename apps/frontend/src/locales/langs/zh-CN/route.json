@@ -13,7 +13,7 @@
   "manage_role": "角色管理",
   "manage_user": "用户管理",
   "manage_department": "部门管理",
-  "manage_audit-dict": "审计字典",
+  "manage_audit-log": "审计日志",
   "manage_data-policy": "数据策略",
   "manage_field-policy": "字段策略",
   "manage_user-detail": "用户详情",

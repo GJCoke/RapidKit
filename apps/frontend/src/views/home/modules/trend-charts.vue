@@ -91,7 +91,7 @@
     </div>
 
     <NSpin :show="loading">
-      <div class="text-13px text-[var(--text-color-3)] mb-4px pl-4px">{{ $t("page.home.dashboard.userTrend") }}</div>
+      <div class="text-13px text-base-text-3 mb-4px pl-4px">{{ $t("page.home.dashboard.userTrend") }}</div>
       <div ref="userChartRef" class="h-260px" />
     </NSpin>
   </NCard>

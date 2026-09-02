@@ -68,17 +68,13 @@ def register() -> PluginManifest:
 
     from plugin_system.activity_projector import handle_activity_event
     from plugin_system.api import router
-    from plugin_system.audit_dict.api import router as audit_dict_router
-    from plugin_system.audit_dict.models import AuditDictionary
     from plugin_system.models import ActivityEvent, AuditLog
-
-    router.include_router(audit_dict_router)
 
     return PluginManifest(
         name="system",
         version="0.1.0",
         router=router,
-        models=[AuditLog, ActivityEvent, AuditDictionary],
+        models=[AuditLog, ActivityEvent],
         dashboard_modules=[
             DashboardModuleDef(
                 key="dashboard.overview",

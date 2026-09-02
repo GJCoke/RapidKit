@@ -249,10 +249,28 @@ Follow this order of preference:
 
 1. **UnoCSS utility classes** (primary method) — use for all standard styling
 2. **UnoCSS shortcuts** — use project-defined shortcuts when applicable
-3. **Bracket syntax** for CSS variables — `text-[var(--primary-color)]`, `bg-[var(--n-color-modal)]`
+3. **Semantic theme classes** — use the project rules listed below for CSS-variable colors
 4. **Arbitrary values** — `w-220px`, `gap-16px`, `text-13px`
 5. **Scoped `<style>`** — only when utilities are insufficient (complex animations, `:deep()` selectors for NaiveUI internal elements)
 6. **`@apply` directive** — group repeated utility patterns in `<style scoped>` when needed
+
+Never put a CSS variable expression inside an UnoCSS arbitrary-value class. Use the
+project's semantic theme utilities instead; CSS-variable arbitrary values are unsupported.
+
+### Semantic Theme Classes
+
+- Text hierarchy: `text-base-text-1`, `text-base-text-2`, `text-base-text-3`,
+  `text-base-text-4`
+- Status text: `text-primary`, `text-info`, `text-success`, `text-warning`, `text-error`
+- Background: `bg-theme-body`, `bg-theme-fill`, `bg-theme-modal`, `bg-theme-primary`
+- Border: `border-theme-default`, `border-theme-naive`, `border-theme-primary`,
+  `border-theme-error`
+- Outline: `outline-theme-primary`
+
+Variants work normally, for example `hover:bg-theme-modal`,
+`hover:border-theme-primary`, and `focus-visible:outline-theme-primary`.
+When no semantic class exists, use a scoped CSS rule with `var(--token-name)` and add a
+reusable UnoCSS rule in `apps/frontend/uno.config.ts` if the pattern occurs more than once.
 
 ### Common Patterns
 
@@ -262,15 +280,15 @@ Follow this order of preference:
 
 <!-- Card with icon title -->
 <div class="flex items-center gap-8px text-15px font-600 mb-12px">
-  <SvgIcon icon="carbon:activity" class="text-16px text-[var(--primary-color)]" />
+  <SvgIcon icon="carbon:activity" class="text-16px text-primary" />
   {{ $t("page.module.title") }}
 </div>
 
 <!-- Hover effect row -->
-<div class="flex items-center justify-between px-12px py-8px rd-8px transition-colors duration-200 hover:bg-[var(--n-color-modal)]">
+<div class="flex items-center justify-between px-12px py-8px rd-8px transition-colors duration-200 hover:bg-theme-modal">
 
 <!-- Metric badge -->
-<div class="px-10px py-6px rd-8px bg-[var(--n-color-modal)]">
+<div class="px-10px py-6px rd-8px bg-theme-modal">
   <span class="text-20px font-700 tabular-nums">{{ value }}</span>
 </div>
 
@@ -310,7 +328,7 @@ Implement working code that is:
 
 Focus on:
 
-- **Typography**: Use the project's font stack. Differentiate hierarchy with `font-600`/`font-700` weights, `text-13px`/`text-15px`/`text-20px` sizes, and `text-[var(--text-color-N)]` color variants.
+- **Typography**: Use the project's font stack. Differentiate hierarchy with `font-600`/`font-700` weights, `text-13px`/`text-15px`/`text-20px` sizes, and `text-base-text-1` through `text-base-text-4` color variants.
 - **Color & Theme**: Always use CSS variables (`var(--primary-color)`, theme palette colors). Never hardcode colors that should change with theme. Accent colors for status: green=success, orange=warning, red=error.
 - **Motion**: Subtle transitions on interactive elements (`transition-colors duration-200`). Pulse animations for live status indicators. Chart value animations via ECharts `valueAnimation`.
 - **Spatial Composition**: Card-based layouts with consistent `gap-16px`. NGrid for responsive multi-column layouts. Generous padding inside cards (`px-12px py-8px`).
@@ -370,6 +388,7 @@ declare global {
 
 - NEVER import NaiveUI components manually — they are auto-imported
 - NEVER use raw CSS for styling that UnoCSS utilities can handle
+- NEVER use `[var(--...)]` inside UnoCSS classes — use semantic theme classes
 - NEVER hardcode colors — use CSS variables or UnoCSS theme colors
 - ALWAYS use `$t()` for user-facing text (i18n)
 - ALWAYS add `defineOptions({ name: "ComponentName" })` to every component
