@@ -7,35 +7,81 @@ Date   : 2026-04-10
 
 from uuid import UUID
 
+from pydantic import Field
 from rapidkit_common.schemas.base import BaseModel
-from rapidkit_common.schemas.request import PaginatedRequest
+from rapidkit_common.schemas.request import BaseRequest, PaginatedRequest
 from rapidkit_common.schemas.response import BaseSchema
 from rapidkit_common.schemas.types import LocalDatetime
 
+from plugin_system.models import (
+    ActivityCategory,
+    ActivityEvent,
+    ActivityLevel,
+    AuditResult,
+    AuditRiskLevel,
+    AuditSource,
+)
+
 
 class ActivityResponse(BaseSchema):
-    """活动日志响应。"""
+    """Curated activity response without audit diagnostics."""
 
-    event_type: str
-    params: dict = {}
-    detail: str | None = None
-    source_ip: str | None = None
-    user_id: UUID | None = None
-    username: str | None = None
+    category: ActivityCategory
+    event_code: str
+    level: ActivityLevel
+    actor_id: UUID | None = None
+    actor_name: str | None = None
+    subject_type: str
+    subject_id: str | None = None
+    subject_name: str | None = None
+    title_key: str
+    title_params: dict = Field(default_factory=dict)
+    description_key: str | None = None
+    description_params: dict = Field(default_factory=dict)
+    metadata: dict = Field(default_factory=dict)
+    occurred_at: LocalDatetime
+
+    @classmethod
+    def from_record(cls, record: ActivityEvent) -> "ActivityResponse":
+        data = record.model_dump(exclude={"extra_data"})
+        return cls.model_validate({**data, "metadata": record.extra_data})
+
+
+class ActivityCursorQuery(BaseRequest):
+    categories: list[ActivityCategory] | None = None
+    levels: list[ActivityLevel] | None = None
+    cursor: UUID | None = None
+    size: int = Field(default=20, ge=1, le=100)
+
+
+class AuditLogQuery(PaginatedRequest):
+    action: str | None = None
+    result: AuditResult | None = None
+    actor_id: UUID | None = None
+
+
+class AuditLogListItem(BaseSchema):
+    actor_id: UUID | None = None
+    actor_name: str | None = None
+    action: str
+    resource_type: str | None = None
+    resource_name: str | None = None
+    result: AuditResult
+    risk_level: AuditRiskLevel
+    source: AuditSource
+    ip: str | None = None
+    occurred_at: LocalDatetime
+
+
+class AuditLogDetail(AuditLogListItem):
+    request_id: str | None = None
+    correlation_id: str | None = None
+    user_agent: str | None = None
     http_method: str | None = None
     path: str | None = None
-    user_agent: str | None = None
-    request_body: dict | None = None
+    request_summary: dict | None = None
     response_code: int | None = None
-
-
-class ActivityPaginatedQuery(PaginatedRequest):
-    """活动日志分页查询。"""
-
-    event_type: str | None = None
-    user_id: UUID | None = None
-    start_time: LocalDatetime | None = None
-    end_time: LocalDatetime | None = None
+    error_message: str | None = None
 
 
 # ========== 系统资源 ==========

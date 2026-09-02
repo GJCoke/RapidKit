@@ -13,6 +13,8 @@ from rapidkit_common.protocols.permission import PermissionCacheManager
 from rapidkit_common.protocols.user import UserProtocol
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
+from rapidkit_core.timezone import timezone
+from rapidkit_core.uuid7 import uuid7
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.services import get_service
@@ -118,7 +120,14 @@ async def user_login(
     await token_store.clear_force_relogin(user_info.id)
 
     logger.info("Login success for user {user_id}", user_id=user_info.id)
-    event_bus.fire_and_forget(UserLoginEvent(user_id=str(user_info.id)))
+    event_bus.fire_and_forget(
+        UserLoginEvent(
+            user_id=str(user_info.id),
+            event_id=str(uuid7()),
+            occurred_at=timezone.now(),
+            actor_name=user_info.name,
+        )
+    )
     return token
 
 

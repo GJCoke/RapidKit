@@ -15,21 +15,32 @@ _leader: Any = None
 
 async def _startup(app: FastAPI) -> None:
     global _sio, _leader  # noqa: PLW0603
+    from rapidkit_common.events import PluginLoadFailedEvent
     from rapidkit_core.database import RedisManager
     from rapidkit_core.leader_election import LeaderElection
+    from rapidkit_core.timezone import timezone
+    from rapidkit_core.uuid7 import uuid7
     from rapidkit_framework.events import event_bus
 
-    from plugin_system.audit import audit_event_handler
+    from plugin_system.activity_projector import configure_activity_publisher
     from plugin_system.push import push_error_stats_loop, push_resources_loop
-
-    # Register wildcard audit handler (low priority — runs after business handlers)
-    event_bus.on_pattern("*", audit_event_handler, priority=100)
 
     redis = RedisManager.client()
     _leader = LeaderElection(redis, "leader:system_push")
     await _leader.start()
 
     _sio = app.state.socket
+    configure_activity_publisher(_sio)
+    load_result = getattr(app.state, "plugin_load_result", None)
+    for plugin_name, error in getattr(load_result, "errors", {}).items():
+        event_bus.fire_and_forget(
+            PluginLoadFailedEvent(
+                event_id=str(uuid7()),
+                occurred_at=timezone.now(),
+                plugin_name=plugin_name,
+                error_summary=str(error),
+            )
+        )
     _tasks.append(asyncio.create_task(push_resources_loop(_sio, _leader)))
     _tasks.append(asyncio.create_task(push_error_stats_loop(_sio, _leader)))
 
@@ -47,10 +58,19 @@ async def _shutdown(_app: FastAPI) -> None:
 
 def register() -> PluginManifest:
     """返回 system 插件的 manifest。"""
+    from rapidkit_common.events import (
+        PluginLoadFailedEvent,
+        TaskFailedEvent,
+        TaskSucceededEvent,
+        UserLoginEvent,
+        WorkerOfflineEvent,
+    )
+
+    from plugin_system.activity_projector import handle_activity_event
     from plugin_system.api import router
     from plugin_system.audit_dict.api import router as audit_dict_router
     from plugin_system.audit_dict.models import AuditDictionary
-    from plugin_system.models import ActivityLog
+    from plugin_system.models import ActivityEvent, AuditLog
 
     router.include_router(audit_dict_router)
 
@@ -58,7 +78,7 @@ def register() -> PluginManifest:
         name="system",
         version="0.1.0",
         router=router,
-        models=[ActivityLog, AuditDictionary],
+        models=[AuditLog, ActivityEvent, AuditDictionary],
         dashboard_modules=[
             DashboardModuleDef(
                 key="dashboard.overview",
@@ -95,13 +115,19 @@ def register() -> PluginManifest:
                 key="dashboard.activity",
                 required_permissions=(
                     "GET:/api/v1/system/activities",
-                    "GET:/api/v1/audit-dict",
                 ),
-                realtime_topics=("dashboard:activity",),
+                realtime_topics=("dashboard:activity.created",),
             ),
         ],
         dependencies=["auth", "menu", "script"],
         sio_modules=["plugin_system.events"],
         on_startup=[_startup],
         on_shutdown=[_shutdown],
+        event_listeners=[
+            (UserLoginEvent, handle_activity_event),
+            (TaskSucceededEvent, handle_activity_event),
+            (TaskFailedEvent, handle_activity_event),
+            (WorkerOfflineEvent, handle_activity_event),
+            (PluginLoadFailedEvent, handle_activity_event),
+        ],
     )

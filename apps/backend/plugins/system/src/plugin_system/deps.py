@@ -9,16 +9,24 @@ from fastapi import Depends
 from rapidkit_common.deps import SessionDep
 from typing_extensions import Annotated, Doc
 
-from plugin_system.crud import ActivityLogCRUD
+from plugin_system.activity_crud import ActivityEventCRUD
+from plugin_system.audit_crud import AuditLogCRUD
 
 
-async def get_activity_log_crud(session: SessionDep) -> ActivityLogCRUD:
-    """提供 ActivityLogCRUD 实例。"""
-    return ActivityLogCRUD(session)
+async def get_activity_event_crud(session: SessionDep) -> ActivityEventCRUD:
+    """Provide curated activity data access."""
+    return ActivityEventCRUD(session)
 
 
-ActivityLogCrudDep = Annotated[
-    ActivityLogCRUD,
-    Depends(get_activity_log_crud),
-    Doc("依赖项：提供 ActivityLogCRUD 实例，用于活动日志数据操作。"),
+ActivityEventCrudDep = Annotated[
+    ActivityEventCRUD,
+    Depends(get_activity_event_crud),
+    Doc("Curated dashboard activity data access."),
 ]
+
+
+async def get_audit_log_crud(session: SessionDep) -> AuditLogCRUD:
+    return AuditLogCRUD(session)
+
+
+AuditLogCrudDep = Annotated[AuditLogCRUD, Depends(get_audit_log_crud), Doc("Technical audit data access.")]

@@ -61,12 +61,21 @@
       "pending": "等待中",
       "activityFeed": "活动动态",
       "noActivity": "暂无活动",
+      "activityCategory": {
+        "all": "全部",
+        "task": "任务",
+        "user": "用户",
+        "system": "系统",
+        "alert": "告警"
+      },
       "activity": {
-        "user_login": "{name} 登录了系统",
-        "worker_online": "{name} 已上线",
-        "worker_offline": "{name} 已离线",
-        "task_success": "{name} 执行成功",
-        "task_failure": "{name} 执行失败"
+        "userLogin": "{actor} 登录了系统",
+        "taskSucceeded": "任务「{task}」执行成功，耗时 {duration} 秒",
+        "taskFailed": "任务「{task}」执行失败",
+        "taskFailedDescription": "失败原因：{error}",
+        "workerOffline": "工作节点「{worker}」已离线",
+        "pluginLoadFailed": "插件「{plugin}」加载失败",
+        "pluginLoadFailedDescription": "失败原因：{error}"
       },
       "apiOverview": "API 概览",
       "apiDistribution": "请求分布",

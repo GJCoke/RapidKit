@@ -169,6 +169,7 @@ class AuditMixin(BaseSettings):
         "/docs",
         "/openapi.json",
         "/redoc",
+        "/api/v1/auth/refreshToken",
     ]
     AUDIT_SENSITIVE_FIELDS: list[str] = [
         "password",
@@ -176,8 +177,13 @@ class AuditMixin(BaseSettings):
         "secret",
         "key",
         "authorization",
+        "cookie",
+        "verification_code",
+        "verificationCode",
     ]
     AUDIT_MAX_BODY_SIZE: int = Field(10240, description="请求体最大记录大小（字节）")
+    AUDIT_MAX_DEPTH: int = Field(5, description="审计请求摘要最大嵌套深度")
+    AUDIT_MAX_FIELDS: int = Field(100, description="审计请求摘要最大字段数")
     AUDIT_BATCH_SIZE: int = Field(50, description="批量写入条数")
     AUDIT_FLUSH_INTERVAL: float = Field(5.0, description="定时刷新间隔（秒）")
 
