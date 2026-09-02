@@ -1,20 +1,46 @@
 import { useEffect } from "react"
-import { useThemeStore } from "@/stores/theme"
+import { useThemeStore, type ColorScheme } from "@/stores/theme"
+
+interface ThemeClassList {
+  add: (token: string) => void
+  remove: (token: string) => void
+  toggle: (token: string, force?: boolean) => boolean
+}
+
+interface ThemeMediaQuery {
+  matches: boolean
+  addEventListener: (type: "change", listener: (event: { matches: boolean }) => void) => void
+  removeEventListener: (type: "change", listener: (event: { matches: boolean }) => void) => void
+}
+
+export function syncColorScheme(
+  colorScheme: ColorScheme,
+  classList: ThemeClassList,
+  matchMedia: (query: string) => ThemeMediaQuery,
+): () => void {
+  if (colorScheme === "dark") {
+    classList.add("dark")
+    return () => undefined
+  }
+
+  if (colorScheme === "light") {
+    classList.remove("dark")
+    return () => undefined
+  }
+
+  const media = matchMedia("(prefers-color-scheme: dark)")
+  const applySystemScheme = (event: { matches: boolean }) => classList.toggle("dark", event.matches)
+  applySystemScheme(media)
+  media.addEventListener("change", applySystemScheme)
+
+  return () => media.removeEventListener("change", applySystemScheme)
+}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { colorScheme, primaryColor, radius } = useThemeStore()
 
   useEffect(() => {
-    const root = document.documentElement
-
-    if (colorScheme === "dark") {
-      root.classList.add("dark")
-    } else if (colorScheme === "auto") {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-      root.classList.toggle("dark", prefersDark)
-    } else {
-      root.classList.remove("dark")
-    }
+    return syncColorScheme(colorScheme, document.documentElement.classList, (query) => window.matchMedia(query))
   }, [colorScheme])
 
   useEffect(() => {

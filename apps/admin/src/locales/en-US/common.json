@@ -2,6 +2,58 @@
   "system": {
     "title": "RapidKit Admin"
   },
+  "home": {
+    "trendChart": "Trend chart: {{title}}",
+    "welcome": "Welcome to RapidKit",
+    "restricted": "Your account has limited dashboard access. Contact an administrator if you need additional modules.",
+    "statusReady": "Dashboard access ready",
+    "statusRefreshing": "Refreshing dashboard",
+    "currentDate": "Today: {{date}}",
+    "revision": "Revision {{revision}}",
+    "refresh": "Refresh",
+    "userTotal": "Total users",
+    "onlineUsers": "Online users",
+    "workerCount": "Online workers",
+    "todayTasks": "Today's tasks",
+    "apiErrorRate": "API error rate",
+    "todayNew": "+{{count}} new today",
+    "taskSuccess": "{{count}} succeeded",
+    "userTrend": "User activity trend",
+    "activityFeed": "Recent activity",
+    "activity": {
+      "userLogin": "{{actor}} logged in",
+      "taskSucceeded": "Task “{{task}}” succeeded in {{duration}} seconds",
+      "taskFailed": "Task “{{task}}” failed",
+      "taskFailedDescription": "Reason: {{error}}",
+      "workerOffline": "Worker “{{worker}}” went offline",
+      "pluginLoadFailed": "Plugin “{{plugin}}” failed to load",
+      "pluginLoadFailedDescription": "Reason: {{error}}",
+      "unknown": "System activity"
+    }
+  },
+  "route": {
+    "home": "Home",
+    "manage": "System management",
+    "manage_user": "Users",
+    "manage_role": "Roles",
+    "manage_menu": "Menus",
+    "manage_department": "Departments",
+    "manage_data-policy": "Data policies",
+    "manage_field-policy": "Field policies",
+    "manage_audit-dict": "Audit dictionary",
+    "socketio": "Realtime communication",
+    "socketio_chat": "Chat",
+    "socketio_debug": "Debug console",
+    "socketio_instrument": "Dashboard",
+    "queue": "Task queue",
+    "queue_dashboard": "Queue overview",
+    "queue_schedule": "Schedules",
+    "queue_task": "Task history",
+    "script": "Scripts",
+    "monitoring": "Monitoring",
+    "monitoring_api": "API monitoring",
+    "monitoring_plugin": "Plugins"
+  },
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
@@ -12,9 +64,22 @@
     "search": "Search",
     "reset": "Reset",
     "loading": "Loading...",
+    "retry": "Retry",
     "noData": "No Data",
     "success": "Success",
     "failed": "Failed"
+  },
+  "state": {
+    "loading": "Loading...",
+    "empty": "No data",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "backHome": "Back home"
+  },
+  "error": {
+    "403": "You do not have permission to access this page",
+    "404": "The page you are looking for does not exist",
+    "500": "The server encountered an unexpected error"
   },
   "auth": {
     "login": "Login",
@@ -24,5 +89,20 @@
     "loginSuccess": "Login successful",
     "loginFailed": "Login failed",
     "sessionExpired": "Session expired, please login again"
+  },
+  "tabs": {
+    "close": "Close",
+    "closeOthers": "Close Others",
+    "closeAll": "Close All"
+  },
+  "layout": {
+    "toggleTheme": "Toggle theme",
+    "userMenu": "User menu",
+    "unknownUser": "User",
+    "openNavigation": "Open navigation",
+    "toggleSidebar": "Toggle sidebar",
+    "mobileNavigation": "Mobile navigation",
+    "closeNavigation": "Close navigation",
+    "breadcrumbs": "Breadcrumbs"
   }
 }

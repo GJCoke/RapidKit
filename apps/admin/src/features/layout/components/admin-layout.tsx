@@ -2,23 +2,28 @@ import { Outlet } from "react-router"
 import { useAppStore } from "@/stores/app"
 import { Header } from "./header"
 import { Sidebar } from "./sidebar"
-import { TabBar } from "./tab-bar"
+import { PageTabs } from "./page-tabs"
+import { PageContainer } from "./page-container"
+import { useMobileWatch } from "./use-mobile-watch"
 
 export function AdminLayout() {
-  const { siderCollapse } = useAppStore()
-  const siderWidth = siderCollapse ? 64 : 220
+  useMobileWatch()
+  const { siderCollapse, isMobile } = useAppStore()
+  const siderWidth = isMobile ? 0 : siderCollapse ? "var(--sidebar-width-collapsed)" : "var(--sidebar-width)"
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+    <div className="flex h-screen overflow-hidden bg-background">
+      {!isMobile && <Sidebar />}
       <div
-        className="flex flex-1 flex-col overflow-hidden transition-all duration-300"
-        style={{ marginLeft: `${siderWidth}px` }}
+        className="flex flex-1 flex-col overflow-hidden transition-[margin] duration-300"
+        style={{ marginLeft: siderWidth }}
       >
         <Header />
-        <TabBar />
-        <main className="flex-1 overflow-auto p-4">
-          <Outlet />
+        <PageTabs />
+        <main className="flex-1 overflow-auto">
+          <PageContainer>
+            <Outlet />
+          </PageContainer>
         </main>
       </div>
     </div>

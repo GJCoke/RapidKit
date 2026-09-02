@@ -2,6 +2,58 @@
   "system": {
     "title": "RapidKit Admin"
   },
+  "home": {
+    "trendChart": "趋势图：{{title}}",
+    "welcome": "欢迎使用 RapidKit",
+    "restricted": "当前账号仅有有限的仪表盘访问权限。如需使用更多模块，请联系管理员。",
+    "statusReady": "仪表盘访问已就绪",
+    "statusRefreshing": "正在刷新仪表盘",
+    "currentDate": "今天：{{date}}",
+    "revision": "版本 {{revision}}",
+    "refresh": "刷新",
+    "userTotal": "用户总数",
+    "onlineUsers": "在线用户",
+    "workerCount": "在线 Worker",
+    "todayTasks": "今日任务",
+    "apiErrorRate": "API 错误率",
+    "todayNew": "今日新增 +{{count}}",
+    "taskSuccess": "成功 {{count}}",
+    "userTrend": "用户活跃趋势",
+    "activityFeed": "最近活动",
+    "activity": {
+      "userLogin": "{{actor}} 登录了系统",
+      "taskSucceeded": "任务「{{task}}」执行成功，耗时 {{duration}} 秒",
+      "taskFailed": "任务「{{task}}」执行失败",
+      "taskFailedDescription": "失败原因：{{error}}",
+      "workerOffline": "Worker「{{worker}}」已离线",
+      "pluginLoadFailed": "插件「{{plugin}}」加载失败",
+      "pluginLoadFailedDescription": "失败原因：{{error}}",
+      "unknown": "系统活动"
+    }
+  },
+  "route": {
+    "home": "首页",
+    "manage": "系统管理",
+    "manage_user": "用户管理",
+    "manage_role": "角色管理",
+    "manage_menu": "菜单管理",
+    "manage_department": "部门管理",
+    "manage_data-policy": "数据策略",
+    "manage_field-policy": "字段策略",
+    "manage_audit-dict": "审计字典",
+    "socketio": "即时通讯",
+    "socketio_chat": "聊天室",
+    "socketio_debug": "调试面板",
+    "socketio_instrument": "仪表盘",
+    "queue": "任务队列",
+    "queue_dashboard": "队列概览",
+    "queue_schedule": "定时任务",
+    "queue_task": "任务历史",
+    "script": "脚本管理",
+    "monitoring": "监控中心",
+    "monitoring_api": "API 监控",
+    "monitoring_plugin": "插件管理"
+  },
   "common": {
     "confirm": "确定",
     "cancel": "取消",
@@ -12,9 +64,22 @@
     "search": "搜索",
     "reset": "重置",
     "loading": "加载中...",
+    "retry": "重试",
     "noData": "暂无数据",
     "success": "操作成功",
     "failed": "操作失败"
+  },
+  "state": {
+    "loading": "加载中...",
+    "empty": "暂无数据",
+    "error": "出现错误",
+    "retry": "重试",
+    "backHome": "返回首页"
+  },
+  "error": {
+    "403": "无权限访问此页面",
+    "404": "页面不存在",
+    "500": "服务器发生意外错误"
   },
   "auth": {
     "login": "登录",
@@ -24,5 +89,20 @@
     "loginSuccess": "登录成功",
     "loginFailed": "登录失败",
     "sessionExpired": "会话已过期，请重新登录"
+  },
+  "tabs": {
+    "close": "关闭",
+    "closeOthers": "关闭其他",
+    "closeAll": "关闭全部"
+  },
+  "layout": {
+    "toggleTheme": "切换主题",
+    "userMenu": "用户菜单",
+    "unknownUser": "用户",
+    "openNavigation": "打开导航",
+    "toggleSidebar": "切换侧边栏",
+    "mobileNavigation": "移动端导航",
+    "closeNavigation": "关闭导航",
+    "breadcrumbs": "面包屑导航"
   }
 }

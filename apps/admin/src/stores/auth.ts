@@ -1,18 +1,13 @@
 import { create } from "zustand"
-
-interface UserInfo {
-  id: string
-  userName: string
-  realName: string
-  roles: string[]
-}
+import type { AuthUserInfo } from "@/services/api/auth"
+import { useRouteStore } from "@/stores/route"
 
 interface AuthState {
   token: string
   refreshToken: string
-  userInfo: UserInfo | null
+  userInfo: AuthUserInfo | null
   setToken: (token: string, refreshToken: string) => void
-  setUserInfo: (info: UserInfo) => void
+  setUserInfo: (info: AuthUserInfo) => void
   clearAuth: () => void
 }
 
@@ -29,6 +24,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   clearAuth: () => {
     localStorage.removeItem("accessToken")
     localStorage.removeItem("refreshToken")
+    useRouteStore.getState().clearRoutes()
     set({ token: "", refreshToken: "", userInfo: null })
   },
 }))

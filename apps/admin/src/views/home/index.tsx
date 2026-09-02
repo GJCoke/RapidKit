@@ -1,12 +1,20 @@
-import { useTranslation } from "react-i18next"
+import {
+  useDashboardCapabilities,
+  useDashboardFetchingCount,
+  useDashboardRefresh,
+} from "@/services/hooks/use-dashboard"
+import { HomeDashboard, resolveHomeView } from "./home-dashboard"
 
 export default function HomePage() {
-  const { t } = useTranslation()
+  const query = useDashboardCapabilities()
+  const fetchingCount = useDashboardFetchingCount()
+  const refreshDashboard = useDashboardRefresh()
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">{t("system.title")}</h1>
-      <p className="text-muted-foreground">Welcome to the admin dashboard.</p>
-    </div>
+    <HomeDashboard
+      state={resolveHomeView(query)}
+      isRefreshing={fetchingCount > 0}
+      onRefresh={() => void refreshDashboard()}
+    />
   )
 }
