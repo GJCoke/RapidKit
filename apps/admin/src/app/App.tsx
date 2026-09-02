@@ -2,15 +2,19 @@ import { Suspense, useMemo } from "react"
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router"
 import type { RouteObject } from "react-router"
 import { useAuthStore } from "@/stores/auth"
+import { useUserRoutes } from "@/services/hooks/use-routes"
 import { AuthGuard } from "@/features/auth"
 import { AdminLayout } from "@/features/layout"
-import { constantRoutes, HOME_PATH } from "@/features/router"
+import { constantRoutes, generateRoutes, HOME_PATH } from "@/features/router"
 import { AppProviders } from "./providers"
 
 function AppRouter() {
   const { token } = useAuthStore()
+  const { data: routeResponse } = useUserRoutes()
+  const backendRoutes = routeResponse?.data
 
   const router = useMemo(() => {
+    const dynamicChildren = backendRoutes ? generateRoutes(backendRoutes) : []
     const authRoutes: RouteObject[] = [
       {
         path: "/",
@@ -27,6 +31,7 @@ function AppRouter() {
                   return { Component: mod.default }
                 },
               },
+              ...dynamicChildren,
             ],
           },
         ],
@@ -34,7 +39,7 @@ function AppRouter() {
     ]
 
     return createBrowserRouter([...authRoutes, ...constantRoutes])
-  }, [token])
+  }, [token, backendRoutes])
 
   return (
     <Suspense
