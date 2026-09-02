@@ -50,10 +50,11 @@ export function fetchBusinessSummary() {
 }
 
 /** 获取最近系统活动 */
-export function fetchActivities() {
-  return request<Api.Dashboard.ActivityItem[]>({
+export function fetchActivities(params?: Api.Dashboard.ActivityQuery) {
+  return request<Api.Dashboard.ActivityPage>({
     url: "/system/activities",
     method: "get",
+    params,
   })
 }
 

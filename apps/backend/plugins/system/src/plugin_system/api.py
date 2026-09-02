@@ -7,22 +7,26 @@ Date   : 2026-04-10
 
 import asyncio
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 from rapidkit_common.auth import verify_user_permission
 from rapidkit_common.deps import RedisDep, SessionDep
-from rapidkit_common.schemas.response import PaginatedResponse, Response
+from rapidkit_common.schemas.response import CursorPaginatedResponse, PaginatedResponse, Response
 from rapidkit_core.config import settings
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.plugin import PluginMeta
 
-from plugin_system.deps import ActivityLogCrudDep
+from plugin_system.deps import ActivityEventCrudDep, AuditLogCrudDep
 from plugin_system.health import check_minio, check_pg, check_redis
 from plugin_system.push import _RESOURCE_KEY_PREFIX
 from plugin_system.schemas import (
-    ActivityPaginatedQuery,
+    ActivityCursorQuery,
     ActivityResponse,
     AggregatedHealth,
+    AuditLogDetail,
+    AuditLogListItem,
+    AuditLogQuery,
     BusinessSummary,
     DeadLetterResponse,
     ErrorStats,
@@ -181,29 +185,33 @@ async def get_business_summary(session: SessionDep) -> Response[BusinessSummary]
     return Response(data=BusinessSummary(**summary))
 
 
-@router.get("/activities/paginate", summary="活动日志分页查询")
-async def get_activities_paginated(
-    query: Annotated[ActivityPaginatedQuery, Query(...)],
-    crud: ActivityLogCrudDep,
-) -> Response[PaginatedResponse[ActivityResponse]]:
-    """分页查询活动日志，支持按事件类型、用户、时间范围过滤。"""
-    result = await crud.get_paginated(
-        event_type=query.event_type,
-        user_id=query.user_id,
-        start_time=query.start_time,
-        end_time=query.end_time,
-        page=query.page,
-        size=query.page_size,
-    )
-    return Response(data=result)
-
-
 @router.get("/activities", summary="最近系统活动")
-async def get_activities(crud: ActivityLogCrudDep) -> Response[list[ActivityResponse]]:
-    """获取最近 15 条系统活动日志。"""
-    records = await crud.get_recent(limit=15)
-    data = [ActivityResponse.model_validate(r) for r in records]
+async def get_activities(
+    query: Annotated[ActivityCursorQuery, Query(...)],
+    crud: ActivityEventCrudDep,
+) -> Response[CursorPaginatedResponse[ActivityResponse]]:
+    """Return cursor-paginated, explicitly curated dashboard activity."""
+    data = await crud.get_cursor_page(
+        categories=query.categories,
+        levels=query.levels,
+        cursor=query.cursor,
+        size=query.size,
+    )
     return Response(data=data)
+
+
+@router.get("/audit-logs/paginate", summary="审计日志分页查询")
+async def get_audit_logs(
+    query: Annotated[AuditLogQuery, Query(...)],
+    crud: AuditLogCrudDep,
+) -> Response[PaginatedResponse[AuditLogListItem]]:
+    return Response(data=await crud.get_audit_page(query))
+
+
+@router.get("/audit-logs/{item_id}", summary="审计日志详情")
+async def get_audit_log_detail(item_id: UUID, crud: AuditLogCrudDep) -> Response[AuditLogDetail | None]:
+    record = await crud.get(item_id)
+    return Response(data=AuditLogDetail.model_validate(record) if record else None)
 
 
 @router.get("/plugins", summary="插件状态列表")

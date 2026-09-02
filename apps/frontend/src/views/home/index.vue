@@ -98,7 +98,11 @@
       order: 70,
       component: ActivityFeed,
       className: "col-span-24 md:col-span-9",
-      props: () => ({ activities: dashboard.activities.value, auditDict: dashboard.auditDict.value }),
+      props: () => ({
+        activities: dashboard.activities.value,
+        category: dashboard.activityCategory.value,
+        onCategoryChange: dashboard.onActivityCategoryChange,
+      }),
     },
   ])
   const knownKeys = registry.value.map((item) => item.key)

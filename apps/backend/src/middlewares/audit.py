@@ -1,5 +1,5 @@
 """
-审计中间件 — 自动捕获变更操作并写入 ActivityLog。
+审计中间件 — 自动捕获变更操作并写入 AuditLog。
 
 拦截 POST/PUT/PATCH/DELETE 请求，提取用户上下文、请求体（脱敏），
 通过 AsyncBatchQueue 异步批量写入数据库。
@@ -16,6 +16,7 @@ from uuid import UUID
 from rapidkit_common.protocols.auth import TokenDecoder
 from rapidkit_core.config import settings
 from rapidkit_core.log import logger
+from rapidkit_core.timezone import timezone
 from rapidkit_framework.context import ctx
 from rapidkit_framework.services import get_service_optional
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -29,25 +30,67 @@ if TYPE_CHECKING:
 audit_queue: "AsyncBatchQueue[dict] | None" = None
 
 _MUTATION_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+_DEFAULT_EXCLUDED_PATHS = (
+    "/health",
+    "/metrics",
+    "/socket.io",
+    "/docs",
+    "/openapi.json",
+    "/redoc",
+    "/api/v1/auth/refreshToken",
+)
+_DEFAULT_SENSITIVE_FIELDS = (
+    "password",
+    "token",
+    "secret",
+    "key",
+    "authorization",
+    "cookie",
+    "verification_code",
+)
 
 
-def _is_excluded_path(path: str) -> bool:
+def _is_excluded_path(path: str, prefixes: list[str] | tuple[str, ...] | None = None) -> bool:
     """检查路径是否在排除列表中。"""
-    return any(path.startswith(prefix) for prefix in settings.AUDIT_EXCLUDE_PATHS)
+    return any(path.startswith(prefix) for prefix in (prefixes or _DEFAULT_EXCLUDED_PATHS))
 
 
-def _redact_sensitive(data: dict, sensitive_fields: list[str] | None = None) -> dict:
-    """递归脱敏敏感字段。"""
-    fields = sensitive_fields or settings.AUDIT_SENSITIVE_FIELDS
-    redacted = {}
+def _normalize_key(value: str) -> str:
+    return "".join(character for character in value.casefold() if character.isalnum())
+
+
+def _sanitize_mapping(
+    data: dict,
+    sensitive_fields: list[str] | None = None,
+    *,
+    _depth: int = 0,
+    _counter: list[int] | None = None,
+) -> dict:
+    """Remove sensitive values and bound the retained request summary."""
+    fields = {_normalize_key(item) for item in (sensitive_fields or _DEFAULT_SENSITIVE_FIELDS)}
+    counter = _counter or [0]
+    sanitized: dict = {}
+    if _depth >= 5:
+        return sanitized
     for key, value in data.items():
-        if any(s in key.lower() for s in fields):
-            redacted[key] = "[REDACTED]"
-        elif isinstance(value, dict):
-            redacted[key] = _redact_sensitive(value, fields)
-        else:
-            redacted[key] = value
-    return redacted
+        normalized = _normalize_key(str(key))
+        if any(normalized == field or normalized.endswith(field) for field in fields):
+            continue
+        if counter[0] >= 100:
+            break
+        counter[0] += 1
+        if isinstance(value, dict):
+            sanitized[key] = _sanitize_mapping(value, sensitive_fields, _depth=_depth + 1, _counter=counter)
+        elif isinstance(value, list):
+            sanitized[key] = [
+                _sanitize_mapping(item, sensitive_fields, _depth=_depth + 1, _counter=counter)
+                if isinstance(item, dict)
+                else item
+                for item in value[:100]
+            ]
+        elif value is None or isinstance(value, str | int | float | bool):
+            sanitized[key] = value
+    return sanitized
 
 
 def _truncate_body(body_dict: dict) -> dict | None:
@@ -170,8 +213,49 @@ def _extract_target(body_dict: dict | None, username: str | None) -> str:
     return username or ""
 
 
+def _build_audit_record(
+    *,
+    method: str,
+    path: str,
+    actor_id: UUID | None,
+    actor_name: str | None,
+    ip: str | None,
+    user_agent: str | None,
+    request_summary: dict | None,
+    response_code: int | None,
+    http_status: int,
+    request_id: str | None = None,
+    resource_name: str | None = None,
+) -> dict:
+    """Build the technical audit persistence shape, never an activity shape."""
+    action = _parse_event_type(method, path)
+    resource_type = action.partition(".")[0]
+    return {
+        "actor_id": actor_id,
+        "actor_name": actor_name,
+        "action": action,
+        "resource_type": resource_type,
+        "resource_id": None,
+        "resource_name": resource_name,
+        "result": "success" if http_status < 400 else "failure",
+        "risk_level": "normal",
+        "source": "http",
+        "request_id": request_id,
+        "correlation_id": request_id,
+        "ip": ip,
+        "user_agent": user_agent,
+        "http_method": method,
+        "path": path,
+        "request_summary": request_summary,
+        "response_code": response_code,
+        "error_message": None,
+        "extra_data": {},
+        "occurred_at": timezone.now(),
+    }
+
+
 class AuditMiddleware(BaseHTTPMiddleware):
-    """审计中间件：自动记录变更操作到 ActivityLog。"""
+    """审计中间件：自动记录变更操作到 AuditLog。"""
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         if not settings.AUDIT_ENABLED:
@@ -180,7 +264,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
         if request.method not in _MUTATION_METHODS:
             return await call_next(request)
 
-        if _is_excluded_path(request.url.path):
+        if _is_excluded_path(request.url.path, settings.AUDIT_EXCLUDE_PATHS):
             return await call_next(request)
 
         # 读取请求体
@@ -211,25 +295,25 @@ class AuditMiddleware(BaseHTTPMiddleware):
         # 构建审计记录
         redacted_body = None
         if body_dict:
-            redacted_body = _truncate_body(_redact_sensitive(body_dict))
+            redacted_body = _truncate_body(
+                _sanitize_mapping(body_dict, settings.AUDIT_SENSITIVE_FIELDS)
+            )
 
-        # 生成结构化 event_type：resource.action
-        event_type = _parse_event_type(request.method, request.url.path)
         target = _extract_target(body_dict, username)
 
-        audit_record = {
-            "event_type": event_type,
-            "params": {"target": target} if target else {},
-            "detail": None,
-            "source_ip": source_ip,
-            "user_id": user_id,
-            "username": username,
-            "http_method": request.method,
-            "path": request.url.path,
-            "user_agent": user_agent_str,
-            "request_body": redacted_body,
-            "response_code": response_code,
-        }
+        audit_record = _build_audit_record(
+            method=request.method,
+            path=request.url.path,
+            actor_id=user_id,
+            actor_name=username,
+            ip=source_ip,
+            user_agent=user_agent_str,
+            request_summary=redacted_body,
+            response_code=response_code,
+            http_status=response.status_code,
+            request_id=request.headers.get("x-request-id"),
+            resource_name=target or None,
+        )
 
         # 异步写入队列
         if audit_queue is not None:

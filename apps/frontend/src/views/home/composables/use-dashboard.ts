@@ -14,7 +14,6 @@ import {
   fetchUserActivityTrend,
   fetchUserStatsSummary,
   fetchGetAllWorkers,
-  fetchGetAuditDictList,
   fetchTaskStatsSummary,
 } from "@/service/api"
 
@@ -117,11 +116,7 @@ export function useDashboard() {
   })
 
   const activities = ref<Api.Dashboard.ActivityItem[]>([])
-
-  const auditDict = ref<{
-    resource: Record<string, { zh: string; en: string }>
-    action: Record<string, { zh: string; en: string }>
-  }>({ resource: {}, action: {} })
+  const activityCategory = ref<"all" | Api.Dashboard.ActivityCategory>("all")
 
   // API Monitoring data
   const apiDistribution = ref<Api.Monitoring.ApiDistributionItem[]>([])
@@ -153,7 +148,7 @@ export function useDashboard() {
       "dashboard.business": loadBusinessSummary,
       "dashboard.api-monitoring": () => Promise.all([loadApiDistribution(), loadApiTopFailures(), loadApiTrend()]),
       "dashboard.trends": loadUserTrend,
-      "dashboard.activity": () => Promise.all([loadActivities(), loadAuditDict()]),
+      "dashboard.activity": loadActivities,
     }
     const results = await Promise.allSettled(
       moduleKeys.map((key) => loaders[key]?.()).filter((result): result is Promise<unknown> => Boolean(result)),
@@ -226,24 +221,16 @@ export function useDashboard() {
   }
 
   async function loadActivities() {
-    const { data, error } = await fetchActivities()
+    const categories = activityCategory.value === "all" ? undefined : [activityCategory.value]
+    const { data, error } = await fetchActivities({ categories, size: 20 })
     if (!error) {
-      activities.value = data
+      activities.value = data.items
     }
   }
 
-  async function loadAuditDict() {
-    const { data, error } = await fetchGetAuditDictList()
-    if (!error) {
-      const resource: Record<string, { zh: string; en: string }> = {}
-      const action: Record<string, { zh: string; en: string }> = {}
-      for (const item of data) {
-        const entry = { zh: item.labelZh, en: item.labelEn }
-        if (item.category === "resource") resource[item.key] = entry
-        else if (item.category === "action") action[item.key] = entry
-      }
-      auditDict.value = { resource, action }
-    }
+  function onActivityCategoryChange(category: "all" | Api.Dashboard.ActivityCategory) {
+    activityCategory.value = category
+    void loadActivities()
   }
 
   async function loadApiDistribution() {
@@ -373,8 +360,10 @@ export function useDashboard() {
       })
 
     if (enabled.has("dashboard.activity"))
-      socket.value?.on("dashboard:activity", (data: Api.Dashboard.ActivityEvent) => {
-        activities.value = [data, ...activities.value.slice(0, 14)]
+      socket.value?.on("dashboard:activity.created", (data: Api.Dashboard.ActivityCreatedEvent) => {
+        if (activityCategory.value !== "all" && activityCategory.value !== data.category) return
+        if (activities.value.some((item) => item.id === data.id)) return
+        activities.value = [data, ...activities.value.slice(0, 19)]
       })
 
     if (enabled.has("dashboard.api-monitoring"))
@@ -399,7 +388,7 @@ export function useDashboard() {
     instanceResources,
     selectedInstance,
     activities,
-    auditDict,
+    activityCategory,
     userTrend,
     trendRange,
     customRange,
@@ -414,5 +403,6 @@ export function useDashboard() {
     setupSocket,
     onTrendRangeChange,
     loadUserTrend,
+    onActivityCategoryChange,
   }
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import dayjs from "dayjs"
-  import relativeTime from "dayjs/plugin/relativeTime"
   import "dayjs/locale/zh-cn"
+  import relativeTime from "dayjs/plugin/relativeTime"
   import { $t } from "@/locales"
   import { useAppStore } from "@/store/modules/app"
 
@@ -9,72 +9,91 @@
 
   defineOptions({ name: "DashboardActivityFeed" })
 
-  const props = defineProps<{
+  type Category = "all" | Api.Dashboard.ActivityCategory
+  type TimelineType = "success" | "error" | "warning" | "info" | "default"
+
+  defineProps<{
     activities: Api.Dashboard.ActivityItem[]
-    auditDict: {
-      resource: Record<string, { zh: string; en: string }>
-      action: Record<string, { zh: string; en: string }>
-    }
+    category: Category
+  }>()
+
+  const emit = defineEmits<{
+    categoryChange: [category: Category]
   }>()
 
   const appStore = useAppStore()
+  const categories = [
+    { value: "all", label: "page.home.dashboard.activityCategory.all" },
+    { value: "task", label: "page.home.dashboard.activityCategory.task" },
+    { value: "user", label: "page.home.dashboard.activityCategory.user" },
+    { value: "system", label: "page.home.dashboard.activityCategory.system" },
+    { value: "alert", label: "page.home.dashboard.activityCategory.alert" },
+  ] as const
 
-  type TimelineType = "success" | "error" | "warning" | "info" | "default"
-
-  function eventColor(eventType: string): TimelineType {
-    if (eventType === "auth.login" || eventType === "auth.logout") return "info"
-    if (eventType.endsWith(".create")) return "success"
-    if (eventType.endsWith(".delete")) return "error"
-    if (eventType.endsWith(".update")) return "warning"
-    return "default"
+  const categoryIcons: Record<Api.Dashboard.ActivityCategory, string> = {
+    task: "carbon:task",
+    user: "carbon:user",
+    system: "carbon:settings",
+    alert: "carbon:warning-alt",
   }
 
-  function activityTitle(item: Api.Dashboard.ActivityItem) {
-    const parts = item.eventType.split(".")
-    if (parts.length < 2) return item.eventType
-
-    const [resource, action] = parts
-    const locale = appStore.locale === "zh-CN" ? "zh" : "en"
-
-    const resourceLabel = props.auditDict.resource[resource]?.[locale] ?? resource
-    const actionLabel = props.auditDict.action[action]?.[locale] ?? action
-    let operator = item.username ?? ""
-    let target = item.params?.target ?? ""
-
-    // Login has no JWT yet — target holds the username
-    if (!operator && target) {
-      operator = target
-      target = ""
-    } else if (operator === target) {
-      target = ""
-    }
-
-    return `${operator} ${actionLabel} ${resourceLabel} ${target}`.trim()
+  function timelineType(level: Api.Dashboard.ActivityLevel): TimelineType {
+    return level === "success" || level === "error" || level === "warning" || level === "info" ? level : "default"
   }
 
   function relativeTimeStr(time: string) {
-    const dayjsLocale = appStore.locale === "zh-CN" ? "zh-cn" : "en"
-    return dayjs(time).locale(dayjsLocale).fromNow()
+    return dayjs(time)
+      .locale(appStore.locale === "zh-CN" ? "zh-cn" : "en")
+      .fromNow()
   }
 </script>
 
 <template>
   <div class="card-wrapper h-400px flex flex-col overflow-hidden bg-container p-20px">
-    <div class="flex items-center gap-8px text-15px font-600 mb-16px shrink-0">
-      <SvgIcon icon="carbon:recently-viewed" class="text-16px text-primary" />
-      {{ $t("page.home.dashboard.activityFeed") }}
+    <div class="mb-12px flex shrink-0 items-center justify-between gap-12px">
+      <div class="flex items-center gap-8px text-15px font-600">
+        <SvgIcon icon="carbon:recently-viewed" class="text-16px text-primary" />
+        {{ $t("page.home.dashboard.activityFeed") }}
+      </div>
+      <div class="flex flex-wrap justify-end gap-4px">
+        <NButton
+          v-for="item in categories"
+          :key="item.value"
+          size="tiny"
+          :type="category === item.value ? 'primary' : 'default'"
+          :secondary="category === item.value"
+          @click="emit('categoryChange', item.value)"
+        >
+          {{ $t(item.label as any) }}
+        </NButton>
+      </div>
     </div>
 
     <NScrollbar class="flex-1 min-h-0">
-      <NTimeline v-if="activities.length">
+      <NTimeline v-if="activities.length" class="pt-4px">
         <NTimelineItem
           v-for="item in activities"
           :key="item.id"
-          :type="eventColor(item.eventType)"
-          :title="activityTitle(item)"
-          :time="relativeTimeStr(item.createTime)"
-          :content="item.detail || undefined"
-        />
+          :type="timelineType(item.level)"
+          :time="relativeTimeStr(item.occurredAt)"
+        >
+          <div class="flex items-start gap-8px">
+            <SvgIcon :icon="categoryIcons[item.category]" class="mt-2px shrink-0 text-16px" />
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-6px">
+                <NTag size="small" :type="timelineType(item.level)">
+                  {{ $t(`page.home.dashboard.activityCategory.${item.category}` as any) }}
+                </NTag>
+                <span class="text-13px text-[var(--text-color-1)]">
+                  {{ $t(item.titleKey as any, item.titleParams) }}
+                </span>
+              </div>
+              <div v-if="item.descriptionKey" class="mt-4px text-12px text-[var(--text-color-3)]">
+                {{ $t(item.descriptionKey as any, item.descriptionParams) }}
+              </div>
+            </div>
+          </div>
+        </NTimelineItem>
       </NTimeline>
       <div v-else class="flex-center flex-col gap-12px py-48px text-[var(--text-color-3)]">
         <SvgIcon icon="carbon:no-image" class="text-36px opacity-40" />

@@ -9,13 +9,16 @@ from rapidkit_common.events import (
     ScheduleDeletedEvent,
     ScheduleToggledEvent,
     ScriptExecutedEvent,
+    TaskSucceededEvent,
     UserCreatedEvent,
     UserDeletedEvent,
     UserLoginEvent,
     UserLogoutEvent,
     UserPasswordChangedEvent,
     UserRolesChangedEvent,
+    WorkerOfflineEvent,
 )
+from rapidkit_core.timezone import timezone
 
 
 class TestRbacEvents:
@@ -69,6 +72,44 @@ class TestAuthEvents:
         e = UserLogoutEvent(user_id="xyz-456")
         assert e.event_name == "user.logout"
         assert e.user_id == "xyz-456"
+
+    def test_user_login_carries_activity_identity(self):
+        occurred_at = timezone.now()
+        event = UserLoginEvent(
+            user_id="xyz-456",
+            event_id="018f5f8a-71a7-7b10-9e18-aad0de52c001",
+            occurred_at=occurred_at,
+            actor_name="Coke",
+        )
+        assert event.event_id == "018f5f8a-71a7-7b10-9e18-aad0de52c001"
+        assert event.occurred_at == occurred_at
+        assert event.actor_name == "Coke"
+
+
+class TestActivityEvents:
+    def test_task_succeeded_has_display_context(self):
+        occurred_at = timezone.now()
+        event = TaskSucceededEvent(
+            event_id="018f5f8a-71a7-7b10-9e18-aad0de52c002",
+            occurred_at=occurred_at,
+            task_id="task-1",
+            task_name="daily-sync",
+            runtime=12.4,
+            actor_id="user-1",
+            actor_name="Coke",
+        )
+        assert event.event_name == "task.succeeded"
+        assert event.task_name == "daily-sync"
+        assert event.occurred_at == occurred_at
+
+    def test_worker_offline_has_worker_identity(self):
+        event = WorkerOfflineEvent(
+            event_id="018f5f8a-71a7-7b10-9e18-aad0de52c003",
+            occurred_at=timezone.now(),
+            worker_hostname="worker-1",
+        )
+        assert event.event_name == "worker.offline"
+        assert event.worker_hostname == "worker-1"
 
 
 class TestScriptEvents:

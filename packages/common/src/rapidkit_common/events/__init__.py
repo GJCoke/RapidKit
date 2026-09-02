@@ -1,5 +1,16 @@
 """Cross-plugin event definitions — shared contracts for EventBus communication."""
 
+from rapidkit_common.events.activity import (
+    PluginLoadFailedEvent,
+    SystemStartedEvent,
+    TaskCancelledEvent,
+    TaskFailedEvent,
+    TaskRepeatedFailureAlertEvent,
+    TaskStartedEvent,
+    TaskSucceededEvent,
+    WorkerOfflineEvent,
+    WorkerOnlineEvent,
+)
 from rapidkit_common.events.auth import UserLoginEvent, UserLogoutEvent
 from rapidkit_common.events.department import DepartmentDeletedEvent
 from rapidkit_common.events.menu import MenuChangedEvent
@@ -21,12 +32,19 @@ from rapidkit_common.events.user import (
 __all__ = [
     "DepartmentDeletedEvent",
     "MenuChangedEvent",
+    "PluginLoadFailedEvent",
     "RoleDeletedEvent",
     "RolePermissionsChangedEvent",
     "ScheduleCreatedEvent",
     "ScheduleDeletedEvent",
     "ScheduleToggledEvent",
     "ScriptExecutedEvent",
+    "SystemStartedEvent",
+    "TaskCancelledEvent",
+    "TaskFailedEvent",
+    "TaskRepeatedFailureAlertEvent",
+    "TaskStartedEvent",
+    "TaskSucceededEvent",
     "UserCreatedEvent",
     "UserDeletedEvent",
     "UserInviteRequestedEvent",
@@ -34,4 +52,6 @@ __all__ = [
     "UserLogoutEvent",
     "UserPasswordChangedEvent",
     "UserRolesChangedEvent",
+    "WorkerOfflineEvent",
+    "WorkerOnlineEvent",
 ]

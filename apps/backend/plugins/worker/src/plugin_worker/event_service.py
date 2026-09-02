@@ -11,8 +11,11 @@ from datetime import timedelta
 
 from fastapi_sio_di import AsyncServer
 from rapidkit_common.enums import TaskStatus, WorkerStatus
+from rapidkit_common.events import TaskFailedEvent, TaskSucceededEvent, WorkerOfflineEvent
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
+from rapidkit_core.uuid7 import uuid7
+from rapidkit_framework.events import event_bus
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_worker.crud import TaskResultCRUD, WorkerCRUD
@@ -97,6 +100,13 @@ class EventService:
         worker.update_time = timezone.now()
         await self.session.flush()
         await self._emit_worker_status(worker)
+        event_bus.fire_and_forget(
+            WorkerOfflineEvent(
+                event_id=str(uuid7()),
+                occurred_at=worker.update_time,
+                worker_hostname=worker.hostname,
+            )
+        )
 
     async def handle_worker_heartbeat(self, data: dict) -> None:
         worker = await self.worker_crud.get_by_hostname(data["hostname"])
@@ -132,7 +142,6 @@ class EventService:
         await self._emit_task_update(task)
         if worker:
             await self._emit_worker_status(worker)
-
     async def handle_task_success(self, data: dict) -> None:
         task = await self.task_crud.get_by_task_id(data["task_id"])
         now = timezone.now()
@@ -164,6 +173,15 @@ class EventService:
         await self._emit_task_update(task, runtime=task.runtime)
         if worker:
             await self._emit_worker_status(worker)
+        event_bus.fire_and_forget(
+            TaskSucceededEvent(
+                event_id=str(uuid7()),
+                occurred_at=now,
+                task_id=str(task.task_id),
+                task_name=task.task_name,
+                runtime=task.runtime,
+            )
+        )
 
     async def handle_task_failure(self, data: dict) -> None:
         task = await self.task_crud.get_by_task_id(data["task_id"])
@@ -198,6 +216,15 @@ class EventService:
         await self._emit_task_update(task, exception=data.get("exception", ""))
         if worker:
             await self._emit_worker_status(worker)
+        event_bus.fire_and_forget(
+            TaskFailedEvent(
+                event_id=str(uuid7()),
+                occurred_at=now,
+                task_id=str(task.task_id),
+                task_name=task.task_name,
+                error_summary=data.get("exception", "")[:500],
+            )
+        )
 
     async def handle_task_retry(self, data: dict) -> None:
         task = await self.task_crud.get_by_task_id(data["task_id"])

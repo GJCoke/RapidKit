@@ -61,12 +61,21 @@
       "pending": "Pending",
       "activityFeed": "Activity Feed",
       "noActivity": "No Activity",
+      "activityCategory": {
+        "all": "All",
+        "task": "Tasks",
+        "user": "Users",
+        "system": "System",
+        "alert": "Alerts"
+      },
       "activity": {
-        "user_login": "{name} logged in",
-        "worker_online": "{name} came online",
-        "worker_offline": "{name} went offline",
-        "task_success": "{name} completed",
-        "task_failure": "{name} failed"
+        "userLogin": "{actor} logged in",
+        "taskSucceeded": "Task “{task}” succeeded in {duration} seconds",
+        "taskFailed": "Task “{task}” failed",
+        "taskFailedDescription": "Reason: {error}",
+        "workerOffline": "Worker “{worker}” went offline",
+        "pluginLoadFailed": "Plugin “{plugin}” failed to load",
+        "pluginLoadFailedDescription": "Reason: {error}"
       },
       "apiOverview": "API Overview",
       "apiDistribution": "Request Distribution",

@@ -44,25 +44,35 @@ declare global {
       /** 业务数据汇总 */
       type BusinessSummary = Service.ApiResponse<"/api/v1/system/stats/business">
 
-      /** 活动日志项 */
+      type ActivityCategory = "task" | "user" | "system" | "alert"
+      type ActivityLevel = "info" | "success" | "warning" | "error"
+
+      /** Curated dashboard activity item. */
       type ActivityItem = {
         id: string
-        eventType: string
-        params: Record<string, string>
-        detail: string | null
-        sourceIp: string | null
-        username: string | null
-        createTime: string
+        category: ActivityCategory
+        eventCode: string
+        level: ActivityLevel
+        actorId: string | null
+        actorName: string | null
+        subjectType: string
+        subjectId: string | null
+        subjectName: string | null
+        titleKey: string
+        titleParams: Record<string, string | number | null>
+        descriptionKey: string | null
+        descriptionParams: Record<string, string | number | null>
+        metadata: Record<string, unknown>
+        occurredAt: string
       }
 
-      /** 活动日志列表 */
-      type ActivityList = Service.ApiResponse<"/api/v1/system/activities">
-
-      /** 活动日志分页查询参数 */
-      type ActivityPaginateQuery = Service.ApiRequest<"/api/v1/system/activities/paginate", "get", "query">
-
-      /** 活动日志分页列表 */
-      type ActivityPaginateList = Service.ApiResponse<"/api/v1/system/activities/paginate">
+      type ActivityQuery = {
+        categories?: ActivityCategory[]
+        levels?: ActivityLevel[]
+        cursor?: string
+        size?: number
+      }
+      type ActivityPage = { items: ActivityItem[]; nextCursor: string | null; size: number }
 
       /** 用户统计摘要 */
       type UserStatsSummary = Service.ApiResponse<"/api/v1/users/stats/summary">
@@ -129,16 +139,8 @@ declare global {
         netRecv: number
       }
 
-      /** dashboard:activity event */
-      type ActivityEvent = {
-        id: string
-        eventType: string
-        params: Record<string, string>
-        detail: string | null
-        sourceIp: string | null
-        username: string | null
-        createTime: string
-      }
+      /** dashboard:activity.created event */
+      type ActivityCreatedEvent = ActivityItem
     }
   }
 }

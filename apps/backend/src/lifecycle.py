@@ -24,11 +24,11 @@ from src.sio.events.connection import renew_session_keys_loop
 
 async def _flush_audit_batch(batch: list[dict]) -> None:
     """批量写入审计日志到数据库。"""
-    from plugin_system.crud import ActivityLogCRUD
+    from plugin_system.audit_crud import AuditLogCRUD
     from rapidkit_core.database import AsyncSessionLocal
 
     async with AsyncSessionLocal() as session:
-        crud = ActivityLogCRUD(session)
+        crud = AuditLogCRUD(session)
         await crud.create_all(batch)
         await session.commit()
 
