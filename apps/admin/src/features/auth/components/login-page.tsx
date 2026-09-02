@@ -7,7 +7,6 @@ import {
   Label,
   Checkbox,
   Separator,
-  Badge,
   Select,
   SelectContent,
   SelectGroup,
@@ -74,19 +73,12 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Checkbox id="remember" checked={remember} onCheckedChange={(val) => setRemember(val as boolean)} />
-              <Label htmlFor="remember" className="text-sm font-normal">
-                {t("auth.rememberMe", "Remember me")}
-              </Label>
-            </div>
-            <Badge variant="secondary">v0.1.0</Badge>
+          <div className="flex items-center gap-2">
+            <Checkbox id="remember" checked={remember} onCheckedChange={(val) => setRemember(val as boolean)} />
+            <Label htmlFor="remember" className="text-sm font-normal">
+              {t("auth.rememberMe", "Remember me")}
+            </Label>
           </div>
-
-          <Button type="button" variant="default" className="w-full">
-            测试
-          </Button>
 
           <div className="flex items-center gap-2">
             <Button type="button" variant="outline" className="flex-1">
