@@ -15,6 +15,7 @@ interface MenuFlyoutValue {
 }
 
 const MenuFlyoutContext = createContext<MenuFlyoutValue>({ inFlyout: false })
+const SidebarCollapseContext = createContext<boolean | undefined>(undefined)
 
 export function isActive(item: MenuItem, pathname: string): boolean {
   if (item.path === pathname) return true
@@ -31,8 +32,10 @@ export function restoreMenuTriggerFocus(trigger: Pick<HTMLButtonElement, "focus"
 }
 
 function useCollapsedMenu() {
-  const collapsed = useAppStore((state) => state.siderCollapse)
+  const storedCollapsed = useAppStore((state) => state.siderCollapse)
+  const collapsedOverride = useContext(SidebarCollapseContext)
   const { inFlyout } = useContext(MenuFlyoutContext)
+  const collapsed = collapsedOverride ?? storedCollapsed
   return collapsed && !inFlyout
 }
 
@@ -155,16 +158,18 @@ function MenuNode({ item, depth }: { item: MenuItem; depth: number }) {
   return <MenuLeaf item={item} depth={depth} />
 }
 
-export function SidebarMenu() {
+export function SidebarMenu({ collapsed }: { collapsed?: boolean } = {}) {
   const menus = useRouteStore((state) => state.menus)
 
   return (
-    <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-2">
-      {menus
-        .filter((item) => !item.hideInMenu)
-        .map((item) => (
-          <MenuNode key={item.key} item={item} depth={0} />
-        ))}
-    </nav>
+    <SidebarCollapseContext.Provider value={collapsed}>
+      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-2">
+        {menus
+          .filter((item) => !item.hideInMenu)
+          .map((item) => (
+            <MenuNode key={item.key} item={item} depth={0} />
+          ))}
+      </nav>
+    </SidebarCollapseContext.Provider>
   )
 }

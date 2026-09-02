@@ -30,5 +30,15 @@
     "close": "Close",
     "closeOthers": "Close Others",
     "closeAll": "Close All"
+  },
+  "layout": {
+    "toggleTheme": "Toggle theme",
+    "userMenu": "User menu",
+    "unknownUser": "User",
+    "openNavigation": "Open navigation",
+    "toggleSidebar": "Toggle sidebar",
+    "mobileNavigation": "Mobile navigation",
+    "closeNavigation": "Close navigation",
+    "breadcrumbs": "Breadcrumbs"
   }
 }

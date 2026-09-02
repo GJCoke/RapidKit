@@ -1,4 +1,5 @@
 import { create } from "zustand"
+import { useRouteStore } from "@/stores/route"
 
 interface UserInfo {
   id: string
@@ -29,6 +30,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   clearAuth: () => {
     localStorage.removeItem("accessToken")
     localStorage.removeItem("refreshToken")
+    useRouteStore.getState().clearRoutes()
     set({ token: "", refreshToken: "", userInfo: null })
   },
 }))

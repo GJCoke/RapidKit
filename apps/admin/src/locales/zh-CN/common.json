@@ -30,5 +30,15 @@
     "close": "关闭",
     "closeOthers": "关闭其他",
     "closeAll": "关闭全部"
+  },
+  "layout": {
+    "toggleTheme": "切换主题",
+    "userMenu": "用户菜单",
+    "unknownUser": "用户",
+    "openNavigation": "打开导航",
+    "toggleSidebar": "切换侧边栏",
+    "mobileNavigation": "移动端导航",
+    "closeNavigation": "关闭导航",
+    "breadcrumbs": "面包屑导航"
   }
 }

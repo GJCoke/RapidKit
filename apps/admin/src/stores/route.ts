@@ -15,6 +15,7 @@ interface RouteState {
   menus: MenuItem[]
   flat: Record<string, MenuItem>
   setRoutes: (routes: BackendRoute[]) => void
+  clearRoutes: () => void
 }
 
 function normalize(routes: BackendRoute[], flat: Record<string, MenuItem>): MenuItem[] {
@@ -43,4 +44,5 @@ export const useRouteStore = create<RouteState>((set) => ({
     const menus = normalize(routes, flat)
     set({ menus, flat })
   },
+  clearRoutes: () => set({ menus: [], flat: {} }),
 }))
