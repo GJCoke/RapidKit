@@ -1,5 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
+import { createElement } from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 import type { MenuItem } from "@/stores/route"
 
 const storage = {
@@ -56,4 +58,26 @@ test("mobile navigation close restores focus to its trigger", async () => {
   )
 
   assert.deepEqual(events, ["prevent-default", "focus-trigger"])
+})
+
+test("PageHeader keeps a block description out of paragraph markup", async () => {
+  const { PageHeader } = await import("./page-header")
+  const markup = renderToStaticMarkup(
+    createElement(PageHeader, {
+      title: "Dashboard",
+      description: createElement("div", null, "Live status"),
+    }),
+  )
+
+  assert.doesNotMatch(markup, /<p[^>]*><div/)
+  assert.match(markup, /<div class="mt-1 text-sm text-muted-foreground"><div>Live status<\/div><\/div>/)
+})
+
+test("PageHeader continues to render a text description", async () => {
+  const { PageHeader } = await import("./page-header")
+  const markup = renderToStaticMarkup(
+    createElement(PageHeader, { title: "Dashboard", description: "Overview" }),
+  )
+
+  assert.match(markup, />Overview<\/div>/)
 })
