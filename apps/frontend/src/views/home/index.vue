@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, ref, type Component } from "vue"
+  import { computed, onMounted, type Component } from "vue"
   import { $t } from "@/locales"
   import { useAuthStore } from "@/store/modules/auth"
   import { selectDashboardModules } from "./dashboard-registry"
@@ -26,7 +26,6 @@
 
   const dashboard = useDashboard()
   const authStore = useAuthStore()
-  const refreshing = ref(false)
   const displayName = computed(() => authStore.userInfo.name || authStore.userInfo.username || $t("route.home"))
   const formattedDate = computed(() =>
     new Intl.DateTimeFormat(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" }).format(
@@ -125,20 +124,6 @@
     if (authStore.userInfo.isAdmin) dashboard.setupSocket(keys)
   }
 
-  async function refreshHome() {
-    refreshing.value = true
-    try {
-      await initializeHome()
-      window.$message?.success($t("page.home.dashboard.permission.retry"))
-    } finally {
-      refreshing.value = false
-    }
-  }
-
-  function scrollToDashboard() {
-    document.querySelector("[data-dashboard-module]")?.scrollIntoView({ behavior: "smooth" })
-  }
-
   onMounted(initializeHome)
 </script>
 
@@ -169,16 +154,6 @@
           </span>
         </div>
         <p class="m-0 mt-5px text-12px text-base-text-3">{{ formattedDate }} · Asia / Shanghai</p>
-      </div>
-      <div class="flex items-center gap-8px">
-        <NButton size="small" :loading="refreshing" @click="refreshHome">
-          <template #icon><SvgIcon icon="carbon:renew" /></template>
-          {{ $t("page.home.dashboard.permission.retry") }}
-        </NButton>
-        <NButton type="primary" size="small" @click="scrollToDashboard">
-          <template #icon><SvgIcon icon="carbon:dashboard" /></template>
-          {{ $t("page.home.dashboard.businessData") }}
-        </NButton>
       </div>
     </header>
 
