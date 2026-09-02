@@ -6,7 +6,7 @@ export function useDashboardCapabilities() {
   const token = useAuthStore((s) => s.token)
 
   return useQuery({
-    queryKey: ["dashboard-capabilities"],
+    queryKey: ["dashboard-capabilities", token],
     queryFn: fetchDashboardCapabilities,
     enabled: Boolean(token),
   })
