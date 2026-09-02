@@ -1,6 +1,8 @@
 import { Suspense, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router"
 import type { RouteObject } from "react-router"
+import { Button } from "@rapidkit/ui/components/button"
 import { useAuthStore } from "@/stores/auth"
 import { useUserRoutes } from "@/services/hooks/use-routes"
 import { AuthGuard } from "@/features/auth"
@@ -9,12 +11,13 @@ import { constantRoutes, generateRoutes, HOME_PATH } from "@/features/router"
 import { AppProviders } from "./providers"
 
 function AppRouter() {
+  const { t } = useTranslation()
   const { token } = useAuthStore()
-  const { data: routeResponse, isLoading } = useUserRoutes()
+  const { data: routeResponse, isLoading, isError, refetch } = useUserRoutes()
   const backendRoutes = routeResponse?.data?.routes
 
   const router = useMemo(() => {
-    if (token && isLoading) return null
+    if (token && (isLoading || isError)) return null
 
     const homePath = HOME_PATH.replace(/^\/+|\/+$/g, "")
     const dynamicRoutes = backendRoutes?.filter((route) => route.path.replace(/^\/+|\/+$/g, "") !== homePath) ?? []
@@ -43,15 +46,30 @@ function AppRouter() {
     ]
 
     return createBrowserRouter([...authRoutes, ...constantRoutes])
-  }, [token, isLoading, backendRoutes])
+  }, [token, isLoading, isError, backendRoutes])
 
   const loadingFallback = (
     <div className="flex h-screen w-screen items-center justify-center">
-      <div className="text-muted-foreground">Loading...</div>
+      <div className="text-muted-foreground">{t("common.loading")}</div>
     </div>
   )
 
-  if (!router) return loadingFallback
+  if (!router) {
+    if (isError) {
+      return (
+        <div className="flex h-screen w-screen items-center justify-center bg-background p-6">
+          <div role="alert" className="flex max-w-sm flex-col items-center gap-3 text-center">
+            <p className="text-sm text-muted-foreground">{t("common.failed")}</p>
+            <Button type="button" variant="outline" onClick={() => void refetch()}>
+              {t("common.retry")}
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    return loadingFallback
+  }
 
   return (
     <Suspense fallback={loadingFallback}>
