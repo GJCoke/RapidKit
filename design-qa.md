@@ -37,3 +37,30 @@
 - None required for this scope.
 
 final result: passed
+
+---
+
+# Operations Overview Design QA
+
+- Reference: `/tmp/codex-clipboard-32313eff-d86c-488d-9683-cf5259e795bc.png`
+- Rendered capture: `/tmp/operations-overview-rendered.png`
+- Side-by-side comparison: `/tmp/operations-overview-comparison.png`
+- Viewport: 713 × 493, light theme, seven-day data.
+
+## Findings and fixes
+
+- P1 — Metrics initially collapsed to two columns at the reference viewport. Fixed with a four-column compact layout from 680px upward while preserving tablet/mobile fallbacks.
+- P1 — Both chart series initially rendered black because RapidKit color tokens expose RGB channel values. Fixed by converting token values to valid ECharts RGB colors.
+- P2 — Compact trend suffixes wrapped. Fixed to match the reference's percent form.
+- P2 — Card and footer separators used an unavailable global border token. Fixed by using the Naive UI card border token.
+- P2 — Chart axes differed from the reference. Fixed at 0–20K requests and 0–800ms response time, with compact K labels.
+- P3 — The application font renders slightly heavier than the supplied raster. The project font stack remains unchanged for consistency.
+- P3 — The reference includes a “查看详情” action without a corresponding product route. It remains omitted to avoid a nonfunctional control.
+
+## Verification
+
+- Header, four metric columns, dual-series chart, axes, legend, footer status row, card border, and responsive separators were compared side by side.
+- The seven-day selector remains interactive.
+- Loading, empty, and retry states remain available.
+
+final result: passed
