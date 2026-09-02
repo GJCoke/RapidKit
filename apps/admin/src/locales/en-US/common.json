@@ -25,5 +25,10 @@
     "loginSuccess": "Login successful",
     "loginFailed": "Login failed",
     "sessionExpired": "Session expired, please login again"
+  },
+  "tabs": {
+    "close": "Close",
+    "closeOthers": "Close Others",
+    "closeAll": "Close All"
   }
 }

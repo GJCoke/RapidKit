@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useLayoutEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { fetchUserRoutes } from "@/services/api/route"
 import { useAuthStore } from "@/stores/auth"
@@ -14,8 +14,8 @@ export function useUserRoutes() {
     staleTime: Infinity,
   })
   const routes = query.data?.data?.routes
-  useEffect(() => {
-    if (routes) setRoutes(routes)
-  }, [routes, setRoutes])
+  useLayoutEffect(() => {
+    setRoutes(token ? (routes ?? []) : [])
+  }, [routes, setRoutes, token])
   return query
 }
