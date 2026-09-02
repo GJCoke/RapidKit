@@ -5,7 +5,31 @@
   "home": {
     "trendChart": "趋势图：{{title}}",
     "welcome": "欢迎使用 RapidKit",
-    "restricted": "当前账号仅有有限的仪表盘访问权限。如需使用更多模块，请联系管理员。"
+    "restricted": "当前账号仅有有限的仪表盘访问权限。如需使用更多模块，请联系管理员。",
+    "statusReady": "仪表盘访问已就绪",
+    "statusRefreshing": "正在刷新仪表盘",
+    "currentDate": "今天：{{date}}",
+    "revision": "版本 {{revision}}",
+    "refresh": "刷新",
+    "userTotal": "用户总数",
+    "onlineUsers": "在线用户",
+    "workerCount": "在线 Worker",
+    "todayTasks": "今日任务",
+    "apiErrorRate": "API 错误率",
+    "todayNew": "今日新增 +{{count}}",
+    "taskSuccess": "成功 {{count}}",
+    "userTrend": "用户活跃趋势",
+    "activityFeed": "最近活动",
+    "activity": {
+      "userLogin": "{{actor}} 登录了系统",
+      "taskSucceeded": "任务「{{task}}」执行成功，耗时 {{duration}} 秒",
+      "taskFailed": "任务「{{task}}」执行失败",
+      "taskFailedDescription": "失败原因：{{error}}",
+      "workerOffline": "Worker「{{worker}}」已离线",
+      "pluginLoadFailed": "插件「{{plugin}}」加载失败",
+      "pluginLoadFailedDescription": "失败原因：{{error}}",
+      "unknown": "系统活动"
+    }
   },
   "common": {
     "confirm": "确定",

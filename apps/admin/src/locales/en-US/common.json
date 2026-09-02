@@ -5,7 +5,31 @@
   "home": {
     "trendChart": "Trend chart: {{title}}",
     "welcome": "Welcome to RapidKit",
-    "restricted": "Your account has limited dashboard access. Contact an administrator if you need additional modules."
+    "restricted": "Your account has limited dashboard access. Contact an administrator if you need additional modules.",
+    "statusReady": "Dashboard access ready",
+    "statusRefreshing": "Refreshing dashboard",
+    "currentDate": "Today: {{date}}",
+    "revision": "Revision {{revision}}",
+    "refresh": "Refresh",
+    "userTotal": "Total users",
+    "onlineUsers": "Online users",
+    "workerCount": "Online workers",
+    "todayTasks": "Today's tasks",
+    "apiErrorRate": "API error rate",
+    "todayNew": "+{{count}} new today",
+    "taskSuccess": "{{count}} succeeded",
+    "userTrend": "User activity trend",
+    "activityFeed": "Recent activity",
+    "activity": {
+      "userLogin": "{{actor}} logged in",
+      "taskSucceeded": "Task “{{task}}” succeeded in {{duration}} seconds",
+      "taskFailed": "Task “{{task}}” failed",
+      "taskFailedDescription": "Reason: {{error}}",
+      "workerOffline": "Worker “{{worker}}” went offline",
+      "pluginLoadFailed": "Plugin “{{plugin}}” failed to load",
+      "pluginLoadFailedDescription": "Reason: {{error}}",
+      "unknown": "System activity"
+    }
   },
   "common": {
     "confirm": "Confirm",

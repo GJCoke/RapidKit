@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next"
-import { Card, CardContent } from "@rapidkit/ui/components/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@rapidkit/ui/components/card"
 import { EmptyState } from "@/features/layout/components/states/empty-state"
 
 interface ActivityItem {
@@ -13,6 +13,9 @@ export function ActivityFeed({ items }: { items: ActivityItem[] }) {
 
   return (
     <Card>
+      <CardHeader>
+        <CardTitle>{t("home.activityFeed")}</CardTitle>
+      </CardHeader>
       <CardContent>
         {items.length === 0 ? (
           <EmptyState message={t("state.empty")} />

@@ -1,4 +1,4 @@
-import { createElement, lazy } from "react"
+import { lazy } from "react"
 import type { ComponentType } from "react"
 
 export interface DashboardModule {
@@ -9,33 +9,18 @@ export interface DashboardModule {
 }
 
 const StatCardsModule = lazy(async () => {
-  const { StatCards } = await import("./modules/stat-cards")
-
-  return {
-    default: function DashboardStatCards() {
-      return createElement(StatCards, { stats: [] })
-    },
-  }
+  const { StatCardsModule } = await import("./modules/stat-cards-module")
+  return { default: StatCardsModule }
 })
 
 const TrendChartsModule = lazy(async () => {
-  const { TrendCharts } = await import("./modules/trend-charts")
-
-  return {
-    default: function DashboardTrendCharts() {
-      return createElement(TrendCharts, { title: "", data: [] })
-    },
-  }
+  const { TrendChartsModule } = await import("./modules/trend-charts-module")
+  return { default: TrendChartsModule }
 })
 
 const ActivityFeedModule = lazy(async () => {
-  const { ActivityFeed } = await import("./modules/activity-feed")
-
-  return {
-    default: function DashboardActivityFeed() {
-      return createElement(ActivityFeed, { items: [] })
-    },
-  }
+  const { ActivityFeedModule } = await import("./modules/activity-feed-module")
+  return { default: ActivityFeedModule }
 })
 
 export const dashboardModules: DashboardModule[] = [

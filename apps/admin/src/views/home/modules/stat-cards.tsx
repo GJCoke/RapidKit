@@ -4,7 +4,7 @@ import { Card } from "@rapidkit/ui/components/card"
 import { cn } from "@rapidkit/ui/lib/utils"
 import { EmptyState } from "@/features/layout/components/states/empty-state"
 
-interface Stat {
+export interface Stat {
   label: string
   value: string
   delta?: string
@@ -28,7 +28,7 @@ export function StatCards({ stats }: { stats: Stat[] }) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {stats.map((s) => (
         <Card key={s.label} className="gap-3 p-4">
           <div className="flex items-center justify-between">
@@ -39,7 +39,7 @@ export function StatCards({ stats }: { stats: Stat[] }) {
           </div>
           <div className="flex items-end gap-2">
             <span className="text-2xl font-bold tabular-nums">{s.value}</span>
-            {s.delta && (
+            {s.delta !== undefined && (
               <span className={cn("text-xs font-medium", s.deltaTone === "destructive" ? "text-destructive" : "text-success")}>
                 {s.delta}
               </span>
