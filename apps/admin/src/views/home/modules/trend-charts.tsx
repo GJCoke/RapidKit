@@ -1,9 +1,14 @@
 import { useTranslation } from "react-i18next"
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@rapidkit/ui/components/card"
+import { EmptyState } from "@/features/layout/components/states/empty-state"
 
 export function TrendCharts({ title, data }: { title: string; data: Array<{ name: string; value: number }> }) {
   const { t } = useTranslation()
+
+  if (data.length === 0) {
+    return <EmptyState message={t("state.empty")} />
+  }
 
   return (
     <Card>

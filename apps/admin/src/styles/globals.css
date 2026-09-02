@@ -53,6 +53,8 @@
   --spacing-tab: var(--tab-height);
   --spacing-sidebar: var(--sidebar-width);
   --spacing-sidebar-collapsed: var(--sidebar-width-collapsed);
+  /* dashboard grid */
+  --grid-template-columns-24: repeat(24, minmax(0, 1fr));
   /* shadows */
   --shadow-header: var(--shadow-header-val);
   --shadow-sidebar: var(--shadow-sidebar-val);

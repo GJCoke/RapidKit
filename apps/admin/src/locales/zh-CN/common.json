@@ -3,7 +3,9 @@
     "title": "RapidKit Admin"
   },
   "home": {
-    "trendChart": "趋势图：{{title}}"
+    "trendChart": "趋势图：{{title}}",
+    "welcome": "欢迎使用 RapidKit",
+    "restricted": "当前账号仅有有限的仪表盘访问权限。如需使用更多模块，请联系管理员。"
   },
   "common": {
     "confirm": "确定",

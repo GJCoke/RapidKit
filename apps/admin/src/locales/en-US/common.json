@@ -3,7 +3,9 @@
     "title": "RapidKit Admin"
   },
   "home": {
-    "trendChart": "Trend chart: {{title}}"
+    "trendChart": "Trend chart: {{title}}",
+    "welcome": "Welcome to RapidKit",
+    "restricted": "Your account has limited dashboard access. Contact an administrator if you need additional modules."
   },
   "common": {
     "confirm": "Confirm",

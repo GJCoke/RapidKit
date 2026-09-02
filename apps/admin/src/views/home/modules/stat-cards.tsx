@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next"
 import type { LucideIcon } from "lucide-react"
 import { Card } from "@rapidkit/ui/components/card"
 import { cn } from "@rapidkit/ui/lib/utils"
+import { EmptyState } from "@/features/layout/components/states/empty-state"
 
 interface Stat {
   label: string
@@ -19,6 +21,12 @@ const TONE_CHIP: Record<Stat["tone"], string> = {
 }
 
 export function StatCards({ stats }: { stats: Stat[] }) {
+  const { t } = useTranslation()
+
+  if (stats.length === 0) {
+    return <EmptyState message={t("state.empty")} />
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((s) => (
