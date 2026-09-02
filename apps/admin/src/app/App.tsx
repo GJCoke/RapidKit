@@ -10,11 +10,15 @@ import { AppProviders } from "./providers"
 
 function AppRouter() {
   const { token } = useAuthStore()
-  const { data: routeResponse } = useUserRoutes()
-  const backendRoutes = routeResponse?.data
+  const { data: routeResponse, isLoading } = useUserRoutes()
+  const backendRoutes = routeResponse?.data?.routes
 
   const router = useMemo(() => {
-    const dynamicChildren = backendRoutes ? generateRoutes(backendRoutes) : []
+    if (token && isLoading) return null
+
+    const homePath = HOME_PATH.replace(/^\/+|\/+$/g, "")
+    const dynamicRoutes = backendRoutes?.filter((route) => route.path.replace(/^\/+|\/+$/g, "") !== homePath) ?? []
+    const dynamicChildren = generateRoutes(dynamicRoutes)
     const authRoutes: RouteObject[] = [
       {
         path: "/",
@@ -39,16 +43,18 @@ function AppRouter() {
     ]
 
     return createBrowserRouter([...authRoutes, ...constantRoutes])
-  }, [token, backendRoutes])
+  }, [token, isLoading, backendRoutes])
+
+  const loadingFallback = (
+    <div className="flex h-screen w-screen items-center justify-center">
+      <div className="text-muted-foreground">Loading...</div>
+    </div>
+  )
+
+  if (!router) return loadingFallback
 
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-screen w-screen items-center justify-center">
-          <div className="text-muted-foreground">Loading...</div>
-        </div>
-      }
-    >
+    <Suspense fallback={loadingFallback}>
       <RouterProvider router={router} />
     </Suspense>
   )

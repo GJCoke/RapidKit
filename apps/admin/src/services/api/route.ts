@@ -8,8 +8,13 @@ export interface BackendRoute {
   children?: BackendRoute[]
 }
 
+export interface UserRouteResponse {
+  routes: BackendRoute[]
+  home: string
+}
+
 export function fetchUserRoutes() {
-  return request<BackendRoute[]>({ url: "/route/user" })
+  return request<UserRouteResponse>({ url: "/route/user" })
 }
 
 export function fetchConstantRoutes() {

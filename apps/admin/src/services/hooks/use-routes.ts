@@ -13,8 +13,9 @@ export function useUserRoutes() {
     enabled: Boolean(token),
     staleTime: Infinity,
   })
+  const routes = query.data?.data?.routes
   useEffect(() => {
-    if (query.data?.data) setRoutes(query.data.data)
-  }, [query.data, setRoutes])
+    if (routes) setRoutes(routes)
+  }, [routes, setRoutes])
   return query
 }
