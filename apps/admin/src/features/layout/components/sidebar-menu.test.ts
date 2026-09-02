@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import type { MenuItem } from "@/stores/route"
-import { isActive } from "./sidebar-menu"
+import { isActive, navigateToMenuItem, restoreMenuTriggerFocus } from "./sidebar-menu"
 
 function menu(overrides: Partial<MenuItem>): MenuItem {
   return {
@@ -32,4 +32,24 @@ test("isActive finds an active descendant recursively", () => {
 
   assert.equal(isActive(item, "/manage/users"), true)
   assert.equal(isActive(item, "/other"), false)
+})
+
+test("navigateToMenuItem closes its flyout after navigation", () => {
+  const events: string[] = []
+
+  navigateToMenuItem(
+    (path) => events.push(`navigate:${path}`),
+    "/manage/users",
+    () => events.push("close"),
+  )
+
+  assert.deepEqual(events, ["navigate:/manage/users", "close"])
+})
+
+test("restoreMenuTriggerFocus returns focus to the collapsed group", () => {
+  let focused = false
+
+  restoreMenuTriggerFocus({ focus: () => (focused = true) })
+
+  assert.equal(focused, true)
 })

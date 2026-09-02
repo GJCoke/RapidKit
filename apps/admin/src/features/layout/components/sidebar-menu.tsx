@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router"
 import { ChevronDown } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@rapidkit/ui/components/collapsible"
@@ -9,22 +9,37 @@ import { useAppStore } from "@/stores/app"
 import { useRouteStore, type MenuItem } from "@/stores/route"
 import { resolveIcon } from "./icon-map"
 
-const MenuFlyoutContext = createContext(false)
+interface MenuFlyoutValue {
+  inFlyout: boolean
+  closeFlyout?: () => void
+}
+
+const MenuFlyoutContext = createContext<MenuFlyoutValue>({ inFlyout: false })
 
 export function isActive(item: MenuItem, pathname: string): boolean {
   if (item.path === pathname) return true
   return item.children?.some((child) => isActive(child, pathname)) ?? false
 }
 
+export function navigateToMenuItem(navigate: (path: string) => void, path: string, closeFlyout?: () => void) {
+  navigate(path)
+  closeFlyout?.()
+}
+
+export function restoreMenuTriggerFocus(trigger: Pick<HTMLButtonElement, "focus"> | null) {
+  trigger?.focus()
+}
+
 function useCollapsedMenu() {
   const collapsed = useAppStore((state) => state.siderCollapse)
-  const inFlyout = useContext(MenuFlyoutContext)
+  const { inFlyout } = useContext(MenuFlyoutContext)
   return collapsed && !inFlyout
 }
 
 function MenuLeaf({ item, depth }: { item: MenuItem; depth: number }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { closeFlyout } = useContext(MenuFlyoutContext)
   const collapsed = useCollapsedMenu()
   const Icon = resolveIcon(item.icon)
   const active = item.path === pathname
@@ -33,7 +48,7 @@ function MenuLeaf({ item, depth }: { item: MenuItem; depth: number }) {
       type="button"
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? item.title : undefined}
-      onClick={() => navigate(item.path)}
+      onClick={() => navigateToMenuItem(navigate, item.path, closeFlyout)}
       className={cn(
         "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         active
@@ -65,6 +80,8 @@ function MenuGroup({ item, depth }: { item: MenuItem; depth: number }) {
   const collapsed = useCollapsedMenu()
   const branchActive = isActive(item, pathname)
   const [expanded, setExpanded] = useState(branchActive)
+  const [popoverOpen, setPopoverOpen] = useState(false)
+  const popoverTriggerRef = useRef<HTMLButtonElement>(null)
   const Icon = resolveIcon(item.icon)
   const visibleChildren = item.children?.filter((child) => !child.hideInMenu) ?? []
 
@@ -74,9 +91,10 @@ function MenuGroup({ item, depth }: { item: MenuItem; depth: number }) {
 
   if (collapsed) {
     return (
-      <Popover>
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
           <button
+            ref={popoverTriggerRef}
             type="button"
             aria-label={item.title}
             className={cn(
@@ -87,9 +105,17 @@ function MenuGroup({ item, depth }: { item: MenuItem; depth: number }) {
             <Icon className="size-4 shrink-0" aria-hidden="true" />
           </button>
         </PopoverTrigger>
-        <PopoverContent side="right" align="start" className="w-56 p-2">
+        <PopoverContent
+          side="right"
+          align="start"
+          className="w-56 p-2"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault()
+            restoreMenuTriggerFocus(popoverTriggerRef.current)
+          }}
+        >
           <div className="px-3 pb-2 pt-1 text-xs font-semibold text-muted-foreground">{item.title}</div>
-          <MenuFlyoutContext.Provider value>
+          <MenuFlyoutContext.Provider value={{ inFlyout: true, closeFlyout: () => setPopoverOpen(false) }}>
             <div className="space-y-1">
               {visibleChildren.map((child) => (
                 <MenuNode key={child.key} item={child} depth={0} />
