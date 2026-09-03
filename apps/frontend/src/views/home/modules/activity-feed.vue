@@ -80,13 +80,20 @@
 </script>
 
 <template>
-  <section class="activity-card card-wrapper h-full overflow-hidden bg-container" aria-labelledby="recent-activity-title">
+  <section
+    class="activity-card card-wrapper h-full overflow-hidden bg-container"
+    aria-labelledby="recent-activity-title"
+  >
     <header class="activity-header flex flex-wrap items-center gap-12px px-18px pb-10px pt-15px">
       <h2 id="recent-activity-title" class="m-0 mr-10px text-16px font-700 text-base-text-1">
         {{ $t("page.home.dashboard.recentActivity") }}
       </h2>
 
-      <div class="flex flex-wrap items-center gap-8px" role="group" :aria-label="$t('page.home.dashboard.activityFeed')">
+      <div
+        class="flex flex-wrap items-center gap-8px"
+        role="group"
+        :aria-label="$t('page.home.dashboard.activityFeed')"
+      >
         <NButton
           v-for="item in categories"
           :key="item.value"
@@ -179,7 +186,12 @@
     </NDrawerContent>
   </NDrawer>
 
-  <NDrawer :show="Boolean(selectedActivity)" width="min(520px, 92vw)" placement="right" @update:show="!$event && (selectedActivity = null)">
+  <NDrawer
+    :show="Boolean(selectedActivity)"
+    width="min(520px, 92vw)"
+    placement="right"
+    @update:show="!$event && (selectedActivity = null)"
+  >
     <NDrawerContent :title="$t('page.home.dashboard.activityDetails')" closable>
       <NDescriptions v-if="selectedActivity" :column="1" label-placement="left" bordered>
         <NDescriptionsItem :label="$t('page.home.dashboard.activityTable.time')">

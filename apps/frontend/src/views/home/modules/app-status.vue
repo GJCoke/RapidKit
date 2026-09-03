@@ -63,11 +63,19 @@
 </script>
 
 <template>
-  <NCard bordered class="app-status-card h-full" content-style="padding: 0; height: 100%; display: flex; flex-direction: column">
+  <NCard
+    bordered
+    class="app-status-card h-full"
+    content-style="padding: 0; height: 100%; display: flex; flex-direction: column"
+  >
     <div class="flex items-center justify-between gap-16px px-18px py-14px sm:px-20px sm:py-16px">
       <div class="flex min-w-0 items-center gap-11px">
         <span class="flex-center size-34px flex-shrink-0 rd-10px bg-theme-modal">
-          <SvgIcon icon="carbon:security-services" class="text-19px" :class="appHealthy ? 'text-success' : 'text-warning'" />
+          <SvgIcon
+            icon="carbon:security-services"
+            class="text-19px"
+            :class="appHealthy ? 'text-success' : 'text-warning'"
+          />
         </span>
         <div class="min-w-0">
           <h2 class="m-0 text-16px font-700 text-base-text-1">{{ $t("page.home.dashboard.appStatus") }}</h2>
@@ -76,7 +84,10 @@
           </p>
         </div>
       </div>
-      <span class="inline-flex flex-shrink-0 items-center gap-6px text-12px" :class="appHealthy ? 'text-success' : 'text-warning'">
+      <span
+        class="inline-flex flex-shrink-0 items-center gap-6px text-12px"
+        :class="appHealthy ? 'text-success' : 'text-warning'"
+      >
         <span class="size-7px rd-full" :class="appHealthy ? 'bg-success' : 'bg-warning'" />
         {{ appHealthy ? $t("page.home.dashboard.healthy") : $t("page.home.dashboard.degraded") }}
       </span>
@@ -107,7 +118,10 @@
       </div>
     </section>
 
-    <section v-if="businessMetrics.length" class="mt-auto border-t border-theme-naive px-18px pb-15px pt-12px sm:px-20px">
+    <section
+      v-if="businessMetrics.length"
+      class="mt-auto border-t border-theme-naive px-18px pb-15px pt-12px sm:px-20px"
+    >
       <div class="mb-11px flex items-center gap-7px text-12px font-600 text-base-text-2">
         <SvgIcon icon="carbon:data-structured" class="text-15px text-primary" />
         {{ $t("page.home.dashboard.businessScale") }}

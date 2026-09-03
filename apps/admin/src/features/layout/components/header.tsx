@@ -17,7 +17,13 @@ export function Header() {
         {isMobile ? (
           <MobileNav />
         ) : (
-          <Button type="button" variant="ghost" size="icon" aria-label={t("layout.toggleSidebar")} onClick={toggleSider}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t("layout.toggleSidebar")}
+            onClick={toggleSider}
+          >
             <Menu className="size-4" aria-hidden="true" />
           </Button>
         )}

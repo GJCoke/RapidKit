@@ -11,13 +11,7 @@ export function ActivityFeedModule() {
 
   if (state === "loading") return <LoadingState label={t("state.loading")} />
   if (state === "error") {
-    return (
-      <ErrorState
-        message={t("state.error")}
-        retryLabel={t("state.retry")}
-        onRetry={() => void query.refetch()}
-      />
-    )
+    return <ErrorState message={t("state.error")} retryLabel={t("state.retry")} onRetry={() => void query.refetch()} />
   }
 
   const page = query.data?.data

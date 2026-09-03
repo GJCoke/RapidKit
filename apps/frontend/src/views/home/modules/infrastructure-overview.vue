@@ -70,7 +70,11 @@
 </script>
 
 <template>
-  <NCard bordered class="infrastructure-card h-full" content-style="padding: 0; height: 100%; display: flex; flex-direction: column">
+  <NCard
+    bordered
+    class="infrastructure-card h-full"
+    content-style="padding: 0; height: 100%; display: flex; flex-direction: column"
+  >
     <header class="flex items-center justify-between gap-12px px-18px pb-10px pt-15px">
       <div class="flex items-center gap-8px">
         <SvgIcon icon="carbon:cloud-monitoring" class="text-17px text-primary" />
@@ -106,7 +110,11 @@
 
     <section class="flex flex-1 items-center border-t border-theme-naive px-18px py-9px">
       <div class="w-full flex flex-col gap-7px">
-        <div v-for="metric in resourceMetrics" :key="metric.label" class="grid grid-cols-[62px_minmax(0,1fr)_42px] items-center gap-8px">
+        <div
+          v-for="metric in resourceMetrics"
+          :key="metric.label"
+          class="grid grid-cols-[62px_minmax(0,1fr)_42px] items-center gap-8px"
+        >
           <span class="flex items-center gap-6px text-12px text-base-text-2">
             <SvgIcon :icon="metric.icon" class="text-14px text-base-text-3" />
             {{ metric.label }}

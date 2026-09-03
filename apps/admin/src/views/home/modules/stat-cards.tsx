@@ -40,7 +40,12 @@ export function StatCards({ stats }: { stats: Stat[] }) {
           <div className="flex items-end gap-2">
             <span className="text-2xl font-bold tabular-nums">{s.value}</span>
             {s.delta !== undefined && (
-              <span className={cn("text-xs font-medium", s.deltaTone === "destructive" ? "text-destructive" : "text-success")}>
+              <span
+                className={cn(
+                  "text-xs font-medium",
+                  s.deltaTone === "destructive" ? "text-destructive" : "text-success",
+                )}
+              >
                 {s.delta}
               </span>
             )}

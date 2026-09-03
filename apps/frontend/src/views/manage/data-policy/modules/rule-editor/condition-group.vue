@@ -85,11 +85,7 @@
 </script>
 
 <template>
-  <div
-    class="rd-8px p-12px"
-    :class="depth ? 'bg-theme-modal' : ''"
-    :style="{ border: `1px solid ${bandColor}` }"
-  >
+  <div class="rd-8px p-12px" :class="depth ? 'bg-theme-modal' : ''" :style="{ border: `1px solid ${bandColor}` }">
     <!-- Group header -->
     <div class="flex items-center gap-8px mb-8px">
       <NButton quaternary size="tiny" class="w-20px h-20px" @click="collapsed = !collapsed">

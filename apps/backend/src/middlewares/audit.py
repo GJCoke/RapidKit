@@ -13,11 +13,11 @@ import re
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from rapidkit_common.protocols.auth import TokenDecoder
+from rapidkit_common.protocols.auth import CurrentUserProvider
+from rapidkit_common.request import get_client_ip, parse_user_agent
 from rapidkit_core.config import settings
 from rapidkit_core.log import logger
 from rapidkit_core.timezone import timezone
-from rapidkit_framework.context import ctx
 from rapidkit_framework.services import get_service_optional
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -110,14 +110,16 @@ async def _extract_user_from_token(request: Request) -> tuple[UUID | None, str |
     auth_header = request.headers.get("authorization", "")
     if not auth_header.startswith("Bearer "):
         return None, None
-    decoder = get_service_optional(TokenDecoder)
-    if decoder is None:
+    provider = get_service_optional(CurrentUserProvider)
+    if provider is None:
         return None, None
     try:
-        user_id = await decoder.decode_user_id(auth_header[7:])
-        if user_id is None:
+        user = await provider.get_current_user(auth_header[7:])
+        if user is None:
             return None, None
-        return UUID(user_id) if isinstance(user_id, str) else user_id, None
+        user_id = UUID(user.id) if isinstance(user.id, str) else user.id
+        actor_name = getattr(user, "name", None) or user.username
+        return user_id, actor_name
     except Exception:
         return None, None
 
@@ -130,20 +132,6 @@ def _parse_request_body(raw: bytes) -> dict | None:
         return json.loads(raw)
     except json.JSONDecodeError, UnicodeDecodeError:
         return None
-
-
-def _extract_response_code(response: Response) -> int | None:
-    """尝试从响应体中提取业务 code（仅适用于 JSON 响应）。"""
-    content_type = response.headers.get("content-type", "")
-    if "application/json" not in content_type:
-        return None
-    try:
-        if hasattr(response, "body"):
-            data = json.loads(bytes(response.body))
-            return data.get("code")
-    except Exception:
-        pass
-    return None
 
 
 _UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE)
@@ -274,23 +262,13 @@ class AuditMiddleware(BaseHTTPMiddleware):
         # 提取用户信息
         user_id, username = await _extract_user_from_token(request)
 
-        # 获取上下文信息（由 StateMiddleware 设置）
-        source_ip: str | None = None
-        user_agent_str: str | None = None
-        try:
-            source_ip = ctx.ip
-        except Exception:
-            pass
-        try:
-            user_agent_str = ctx.user_agent
-        except Exception:
-            pass
+        # 直接从请求提取客户端信息，避免依赖 StateMiddleware 的执行顺序
+        source_ip = get_client_ip(request)
+        user_agent = parse_user_agent(request)
+        user_agent_str = user_agent.user_agent if user_agent else None
 
         # 调用下游
         response = await call_next(request)
-
-        # 提取响应 code
-        response_code = _extract_response_code(response)
 
         # 构建审计记录
         redacted_body = None
@@ -307,7 +285,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
             ip=source_ip,
             user_agent=user_agent_str,
             request_summary=redacted_body,
-            response_code=response_code,
+            response_code=response.status_code,
             http_status=response.status_code,
             request_id=request.headers.get("x-request-id"),
             resource_name=target or None,

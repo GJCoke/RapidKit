@@ -1,9 +1,5 @@
 import { Activity, ServerCog, TriangleAlert, UserRoundCheck, UsersRound } from "lucide-react"
-import type {
-  ActivityItem,
-  DashboardOverviewData,
-  UserActivityTrend,
-} from "@/services/api/dashboard"
+import type { ActivityItem, DashboardOverviewData, UserActivityTrend } from "@/services/api/dashboard"
 import type { Stat } from "./stat-cards"
 
 type Translate = (key: string, params?: Record<string, unknown>) => string
@@ -64,10 +60,7 @@ export function createOverviewStats(
   ]
 }
 
-export function mapTrendPoints(
-  points: readonly UserActivityTrend[],
-  formatDate: (value: string) => string,
-) {
+export function mapTrendPoints(points: readonly UserActivityTrend[], formatDate: (value: string) => string) {
   return points.map((point) => ({ name: formatDate(point.timeBucket), value: point.newUsers }))
 }
 

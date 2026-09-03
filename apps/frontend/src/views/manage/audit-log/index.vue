@@ -55,7 +55,7 @@
         title: $t("page.manage.auditLog.actor"),
         width: 130,
         ellipsis: { tooltip: true },
-        render: (row) => row.actorName || "system",
+        render: (row) => row.actorName || "-",
       },
       { key: "action", title: $t("page.manage.auditLog.action"), width: 120, ellipsis: { tooltip: true } },
       {

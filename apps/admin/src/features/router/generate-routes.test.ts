@@ -15,7 +15,12 @@ const payload: UserRouteResponse = {
       component: "layout.base",
       meta: { title: "System", i18nKey: "route.manage" },
       children: [
-        { name: "manage_user", path: "/manage/user", component: "view.manage_user", meta: { title: "Users", i18nKey: "route.manage_user" } },
+        {
+          name: "manage_user",
+          path: "/manage/user",
+          component: "view.manage_user",
+          meta: { title: "Users", i18nKey: "route.manage_user" },
+        },
       ],
     },
   ],
@@ -27,8 +32,14 @@ test("backend component grammar maps views and keeps layout directories renderab
   assert.deepEqual(parseBackendComponent("layout.base"), { kind: "container" })
 
   const matches = matchRoutes(generateRoutes(payload.routes), "/manage/user")
-  assert.deepEqual(matches?.map((match) => match.route.path), ["/manage", "/manage/user"])
-  assert.ok(matches?.every((match) => match.route.element), "both directory and leaf must render")
+  assert.deepEqual(
+    matches?.map((match) => match.route.path),
+    ["/manage", "/manage/user"],
+  )
+  assert.ok(
+    matches?.every((match) => match.route.element),
+    "both directory and leaf must render",
+  )
 })
 
 test("authorized home resolves the backend route name and never invents /home", () => {

@@ -48,9 +48,7 @@
 <template>
   <div class="mx-auto min-h-520px max-w-1080px w-full px-16px py-36px sm:px-24px lg:py-52px">
     <div class="flex-col-center text-center">
-      <div
-        class="size-72px flex-center rounded-20px bg-primary-50 text-34px text-primary dark:bg-primary-950"
-      >
+      <div class="size-72px flex-center rounded-20px bg-primary-50 text-34px text-primary dark:bg-primary-950">
         <SvgIcon icon="carbon:security" />
       </div>
       <h2 class="mb-8px mt-20px text-26px font-600 text-base-text-1">
@@ -75,9 +73,7 @@
           </div>
           <div class="min-w-0 text-left">
             <div class="flex items-center gap-8px">
-              <span
-                class="size-20px flex-center rounded-full bg-primary text-11px text-white"
-              >
+              <span class="size-20px flex-center rounded-full bg-primary text-11px text-white">
                 {{ index + 1 }}
               </span>
               <span class="text-15px font-600 text-base-text-1">{{ step.title }}</span>

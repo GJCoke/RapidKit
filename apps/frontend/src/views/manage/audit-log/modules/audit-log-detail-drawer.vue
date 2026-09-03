@@ -48,7 +48,7 @@
               formatTime(detail.occurredAt)
             }}</NDescriptionsItem>
             <NDescriptionsItem :label="$t('page.manage.auditLog.actor')">{{
-              detail.actorName || "system"
+              detail.actorName || "-"
             }}</NDescriptionsItem>
             <NDescriptionsItem :label="$t('page.manage.auditLog.action')">{{ detail.action }}</NDescriptionsItem>
             <NDescriptionsItem :label="$t('page.manage.auditLog.resourceType')">{{

@@ -38,11 +38,7 @@
               size: 40,
             }),
             h("div", { class: "min-w-0 flex-1" }, [
-              h(
-                "div",
-                { class: "truncate text-14px text-base-text-1 font-600 leading-20px" },
-                authStore.userInfo.name,
-              ),
+              h("div", { class: "truncate text-14px text-base-text-1 font-600 leading-20px" }, authStore.userInfo.name),
               h(
                 "div",
                 { class: "mt-2px truncate text-12px text-base-text-3 leading-18px" },

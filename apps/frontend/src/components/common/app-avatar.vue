@@ -57,11 +57,7 @@
 
 <style scoped>
   .app-avatar {
-    background: linear-gradient(
-      145deg,
-      var(--avatar-gradient-start) 0%,
-      var(--avatar-gradient-end) 100%
-    );
+    background: linear-gradient(145deg, var(--avatar-gradient-start) 0%, var(--avatar-gradient-end) 100%);
     font-size: var(--avatar-font-size);
   }
 </style>

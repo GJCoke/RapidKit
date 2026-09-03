@@ -31,9 +31,7 @@
 <template>
   <div class="rd-8px border border-dashed border-theme-primary p-12px bg-theme-modal">
     <div class="flex items-center gap-8px mb-8px">
-      <span class="text-12px text-base-text-3"
-        >{{ $t("page.manage.dataPolicy.ruleEditor.addSubquery") }}:</span
-      >
+      <span class="text-12px text-base-text-3">{{ $t("page.manage.dataPolicy.ruleEditor.addSubquery") }}:</span>
       <NSelect
         v-model:value="model.field"
         :options="currentFields.map((f) => ({ label: f.label || f.name, value: f.name }))"

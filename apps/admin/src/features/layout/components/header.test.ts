@@ -75,9 +75,7 @@ test("PageHeader keeps a block description out of paragraph markup", async () =>
 
 test("PageHeader continues to render a text description", async () => {
   const { PageHeader } = await import("./page-header")
-  const markup = renderToStaticMarkup(
-    createElement(PageHeader, { title: "Dashboard", description: "Overview" }),
-  )
+  const markup = renderToStaticMarkup(createElement(PageHeader, { title: "Dashboard", description: "Overview" }))
 
   assert.match(markup, />Overview<\/div>/)
 })

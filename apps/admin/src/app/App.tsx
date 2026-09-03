@@ -37,10 +37,7 @@ function AppRouter() {
         children: [
           {
             Component: AdminLayout,
-            children: [
-              { index: true, element: <Navigate to={authorizedHome} replace /> },
-              ...dynamicChildren,
-            ],
+            children: [{ index: true, element: <Navigate to={authorizedHome} replace /> }, ...dynamicChildren],
           },
         ],
       },

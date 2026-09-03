@@ -105,9 +105,7 @@
   const knownKeys = registry.value.map((item) => item.key)
   const permissions = useHomePermissions(knownKeys)
   const permittedModules = computed(() => selectDashboardModules(registry.value, permissions.allowedModules.value))
-  const canShowBusinessSummary = computed(() =>
-    permissions.allowedModules.value.includes("dashboard.business"),
-  )
+  const canShowBusinessSummary = computed(() => permissions.allowedModules.value.includes("dashboard.business"))
   const activeModules = computed(() => {
     const hasApplicationHealth = permittedModules.value.some((item) => item.key === "dashboard.application-health")
     return hasApplicationHealth

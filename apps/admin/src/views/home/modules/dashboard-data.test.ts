@@ -2,8 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { createOverviewStats, mapActivityItems, mapTrendPoints, resolveDashboardQueries } from "./dashboard-data"
 
-const translate = (key: string, params?: Record<string, unknown>) =>
-  params ? `${key}:${JSON.stringify(params)}` : key
+const translate = (key: string, params?: Record<string, unknown>) => (params ? `${key}:${JSON.stringify(params)}` : key)
 
 test("overview payloads map to five real stat card values", () => {
   const stats = createOverviewStats(

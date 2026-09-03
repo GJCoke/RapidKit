@@ -60,11 +60,7 @@
 <template>
   <div
     class="flex items-center gap-8px px-10px py-6px rd-6px transition-colors hover:bg-theme-modal"
-    :class="
-      isIncomplete
-        ? 'border border-dashed border-theme-error bg-[rgba(239,71,111,0.04)]'
-        : 'bg-theme-body'
-    "
+    :class="isIncomplete ? 'border border-dashed border-theme-error bg-[rgba(239,71,111,0.04)]' : 'bg-theme-body'"
   >
     <icon-carbon-warning-alt v-if="isIncomplete" class="text-14px text-error shrink-0 op-60" />
     <NSelect

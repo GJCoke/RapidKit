@@ -89,8 +89,5 @@ export function useDashboardRefresh() {
   const token = useAuthStore((s) => s.token)
   const client = useQueryClient()
 
-  return useCallback(
-    () => invalidateDashboardQueries(client, token),
-    [client, token],
-  )
+  return useCallback(() => invalidateDashboardQueries(client, token), [client, token])
 }
