@@ -1,12 +1,19 @@
 <script setup lang="ts">
-  import { computed, ref, shallowRef, watch } from "vue"
+  import { computed, nextTick, ref, shallowRef, watch } from "vue"
   import { jsonClone } from "@rapidkit/utils"
   import { enableStatusOptions } from "@/constants/business"
-  import type { TreeSelectOption } from "naive-ui"
-  import { fetchCreateUser, fetchGetAllRoles, fetchGetDepartmentTree, fetchUpdateUser } from "@/service/api"
+  import type { InputInst, TreeSelectOption } from "naive-ui"
+  import {
+    fetchCreateUser,
+    fetchGetAllRoles,
+    fetchGetDepartmentTree,
+    fetchUpdateUser,
+    fetchValidateUsernamePinyin,
+  } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
   import { useAuthStore } from "@/store/modules/auth"
+  import { createUsernamePinyinState } from "../composables/use-username-pinyin"
 
   defineOptions({
     name: "UserOperateDrawer",
@@ -34,6 +41,10 @@
   const { formRef, validate, restoreValidation } = useNaiveForm()
   const { defaultRequiredRule, formRules, patternRules } = useFormRules()
   const authStore = useAuthStore()
+  const usernameInputRef = ref<InputInst | null>(null)
+  const submitting = ref(false)
+  const pinyinState = createUsernamePinyinState(props.operateType)
+  let validationTimer: ReturnType<typeof setTimeout> | undefined
 
   const title = computed(() => {
     const titles: Record<NaiveUI.TableOperateType, string> = {
@@ -154,9 +165,7 @@
     visible.value = false
   }
 
-  async function handleSubmit() {
-    await validate()
-
+  async function submitUser() {
     const commonFields = {
       username: model.value.username,
       name: model.value.name,
@@ -185,25 +194,121 @@
     emit("submitted")
   }
 
+  async function runPinyinValidation(allowAutofill = true) {
+    const name = model.value.name
+    const username = model.value.username
+    const requestId = pinyinState.beginRequest()
+    const { data, error } = await fetchValidateUsernamePinyin({ name, username })
+
+    if (name !== model.value.name || username !== model.value.username) return null
+    if (error) {
+      pinyinState.reject(requestId)
+      return null
+    }
+
+    const update = pinyinState.accept(requestId, data, allowAutofill)
+    if (update.username !== undefined && update.username !== model.value.username) {
+      model.value.username = update.username
+    }
+    return data
+  }
+
+  function schedulePinyinValidation() {
+    if (validationTimer !== undefined) clearTimeout(validationTimer)
+    if (model.value.name.trim().length < 2) {
+      pinyinState.clearValidation()
+      return
+    }
+    validationTimer = setTimeout(() => runPinyinValidation(), 300)
+  }
+
+  function handleUsernameUpdate(username: string) {
+    pinyinState.markUsernameEdited()
+    model.value.username = username
+  }
+
+  function confirmPinyinSubmission(result: Api.SystemManage.UsernamePinyinValidation | null) {
+    const content = result
+      ? $t("page.manage.user.usernamePinyinConfirmContent", {
+          current: model.value.username,
+          suggested: result.suggestedUsername,
+        })
+      : $t("page.manage.user.usernamePinyinCheckFailed")
+
+    return new Promise<boolean>((resolve) => {
+      if (!window.$dialog) {
+        resolve(window.confirm(content))
+        return
+      }
+      window.$dialog.warning({
+        title: result
+          ? $t("page.manage.user.usernamePinyinConfirmTitle")
+          : $t("page.manage.user.usernamePinyinCheckFailed"),
+        content,
+        positiveText: $t("page.manage.user.submitAnyway"),
+        negativeText: $t("page.manage.user.returnToEdit"),
+        onPositiveClick: () => resolve(true),
+        onNegativeClick: () => {
+          resolve(false)
+          nextTick(() => usernameInputRef.value?.focus())
+        },
+        onClose: () => resolve(false),
+      })
+    })
+  }
+
+  async function handleSubmit() {
+    if (submitting.value) return
+    await validate()
+
+    if (validationTimer !== undefined) clearTimeout(validationTimer)
+    submitting.value = true
+    try {
+      const result = await runPinyinValidation(false)
+      if ((!result || !result.consistent) && !(await confirmPinyinSubmission(result))) return
+      await submitUser()
+    } finally {
+      submitting.value = false
+    }
+  }
+
   watch(visible, () => {
     if (visible.value) {
+      if (validationTimer !== undefined) clearTimeout(validationTimer)
+      pinyinState.reset(props.operateType)
       handleInitModel()
       restoreValidation()
       getRoleOptions()
       loadDeptTree()
     }
   })
+
+  watch(() => [model.value.name, model.value.username], schedulePinyinValidation, { flush: "post" })
 </script>
 
 <template>
   <NDrawer v-model:show="visible" display-directive="show" :width="360">
     <NDrawerContent :title="title" :native-scrollbar="false" closable>
       <NForm ref="formRef" :model="model" :rules="rules">
-        <NFormItem :label="$t('page.manage.user.username')" path="username">
-          <NInput v-model:value="model.username" :placeholder="$t('page.manage.user.form.username')" />
-        </NFormItem>
         <NFormItem :label="$t('page.manage.user.name')" path="name">
           <NInput v-model:value="model.name" :placeholder="$t('page.manage.user.form.name')" />
+        </NFormItem>
+        <NFormItem :label="$t('page.manage.user.username')" path="username">
+          <div class="w-full flex-col-stretch gap-6px">
+            <NInput
+              ref="usernameInputRef"
+              :value="model.username"
+              :placeholder="$t('page.manage.user.form.username')"
+              @update:value="handleUsernameUpdate"
+            />
+            <div v-if="pinyinState.consistent.value === false" class="text-12px text-warning">
+              {{
+                $t("page.manage.user.usernamePinyinWarning", {
+                  username: pinyinState.suggestedUsername.value,
+                })
+              }}
+            </div>
+          </div>
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.userEmail')" path="email">
           <NInput v-model:value="model.email" :placeholder="$t('page.manage.user.form.userEmail')" />
@@ -256,7 +361,9 @@
       <template #footer>
         <NSpace :size="16">
           <NButton @click="closeDrawer">{{ $t("common.cancel") }}</NButton>
-          <NButton type="primary" @click="handleSubmit">{{ $t("common.confirm") }}</NButton>
+          <NButton type="primary" :loading="submitting" :disabled="submitting" @click="handleSubmit">
+            {{ $t("common.confirm") }}
+          </NButton>
         </NSpace>
       </template>
     </NDrawerContent>

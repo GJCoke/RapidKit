@@ -108,6 +108,15 @@ export function fetchCreateUser(data: Api.SystemManage.CreateUserBody) {
   })
 }
 
+/** validate whether username exactly matches canonical name pinyin */
+export function fetchValidateUsernamePinyin(data: Api.SystemManage.UsernamePinyinValidationBody) {
+  return request<Api.SystemManage.UsernamePinyinValidation>({
+    url: "/users/validate-username-pinyin",
+    method: "post",
+    data,
+  })
+}
+
 /** resend the invite email for a pending user */
 export function fetchResendInvite(userId: string) {
   return request<boolean>({

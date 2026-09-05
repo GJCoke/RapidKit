@@ -1,0 +1,9 @@
+{
+  "notification.error.invalidCommand": "通知命令无效",
+  "notification.error.emptyAudience": "通知没有有效接收人",
+  "notification.error.invalidChannel": "存在不支持的通知渠道",
+  "notification.error.invalidAudienceType": "存在未知的受众类型",
+  "notification.error.invalidActionRoute": "站内跳转路由非法",
+  "notification.error.invalidStateTransition": "非法的消息状态流转",
+  "notification.error.notificationNotFound": "通知不存在"
+}

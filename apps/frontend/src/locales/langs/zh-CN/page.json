@@ -433,6 +433,12 @@
       "inviteNote": "系统将发送邀请邮件，用户可自行设置密码。",
       "resendInvite": "重新邀请",
       "resendInviteSuccess": "邀请邮件已重新发送",
+      "returnToEdit": "返回修改",
+      "submitAnyway": "仍然提交",
+      "usernamePinyinCheckFailed": "暂时无法校验姓名拼音",
+      "usernamePinyinConfirmContent": "当前用户名：{current}；建议用户名：{suggested}",
+      "usernamePinyinConfirmTitle": "用户名与姓名拼音不一致",
+      "usernamePinyinWarning": "用户名与姓名拼音不一致，建议使用 {username}",
       "status": {
         "pending": "待激活"
       }
