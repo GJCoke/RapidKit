@@ -20,7 +20,7 @@ class UserManageSchema(BaseModel):
 
     name: str = Field(..., min_length=2, max_length=100)
     email: EmailStr = Field(..., max_length=254)
-    username: str = Field("", max_length=100)
+    username: str = Field(..., min_length=5, max_length=100)
     phone: str | None = None
     avatar: str | None = None
     nickname: str | None = None
@@ -81,7 +81,7 @@ class UsernamePinyinValidationRequest(BaseRequest):
     """姓名拼音与用户名一致性校验请求。"""
 
     name: str = Field(..., min_length=2, max_length=100)
-    username: str = Field(..., min_length=5, max_length=100)
+    username: str = Field("", max_length=100)
 
 
 class UsernamePinyinValidationResponse(BaseModel):

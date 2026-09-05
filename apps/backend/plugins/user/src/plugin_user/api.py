@@ -283,6 +283,7 @@ async def update_user(
         target_user = await user_crud.get(user_id, nullable=False)
 
     if {"name", "username"} & update_data.keys():
+        assert target_user is not None
         _warn_username_pinyin_mismatch(
             operation="update",
             name=update_data.get("name", target_user.name),
@@ -291,6 +292,7 @@ async def update_user(
         )
 
     if "roles" in update_data:
+        assert target_user is not None
         if set(update_data["roles"]) != set(target_user.roles or []):
             after_commit(session, invalidate_user_permission_cache, redis, user_id)
             event_bus.fire_and_forget(UserRolesChangedEvent(user_id=str(user_id), role_codes=update_data["roles"]))

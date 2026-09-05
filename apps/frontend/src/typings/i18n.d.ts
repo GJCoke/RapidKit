@@ -238,6 +238,7 @@ declare namespace I18nKeys {
     | "login.common.userNamePlaceholder"
     | "login.common.validateSuccess"
     | "login.common.welcomeBack"
+    | "login.pwdLogin.cooldown"
     | "login.pwdLogin.forgetPassword"
     | "login.pwdLogin.rememberMe"
     | "login.pwdLogin.title"

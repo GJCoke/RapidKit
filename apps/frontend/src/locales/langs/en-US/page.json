@@ -233,6 +233,7 @@
       "welcomeBack": "Welcome back, {name} !"
     },
     "pwdLogin": {
+      "cooldown": "Too many failed login attempts. Try again in {time}",
       "forgetPassword": "Forget password?",
       "rememberMe": "Remember me",
       "title": "Password Login"

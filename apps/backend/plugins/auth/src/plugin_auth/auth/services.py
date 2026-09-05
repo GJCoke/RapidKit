@@ -79,8 +79,9 @@ async def user_login(
     attempts_key = login_attempts_structure.format(username=username)
     attempts = await redis.get(attempts_key)
     if attempts and int(attempts) >= auth_settings.LOGIN_MAX_ATTEMPTS:
-        logger.warning("Account locked due to too many failed attempts: {username}", username=username)
-        raise AppException(AuthStatusCode.ACCOUNT_LOCKED)
+        retry_after_seconds = await _get_login_retry_after(redis, attempts_key)
+        logger.warning("Login temporarily limited after too many failed attempts")
+        raise AppException(AuthStatusCode.ACCOUNT_LOCKED, data={"retryAfterSeconds": retry_after_seconds})
 
     # Fix 5: Prevent user enumeration — catch user-not-found and use dummy hash
     try:
@@ -136,3 +137,13 @@ async def _increment_login_attempts(redis: AsyncRedisClient, key: str) -> None:
     count = await redis.incr(key)
     if count == 1:
         await redis.expire(key, auth_settings.LOGIN_LOCKOUT_SECONDS)
+
+
+async def _get_login_retry_after(redis: AsyncRedisClient, key: str) -> int:
+    """Return a positive retry delay even when Redis has no usable TTL."""
+    try:
+        ttl = int(await redis.ttl(key))
+    except Exception:
+        logger.debug("Unable to read login attempt TTL; using minimum retry delay")
+        return 1
+    return max(ttl, 1)

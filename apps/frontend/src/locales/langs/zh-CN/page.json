@@ -233,6 +233,7 @@
       "welcomeBack": "欢迎回来，{name} ！"
     },
     "pwdLogin": {
+      "cooldown": "登录失败次数过多，请在 {time} 后重试",
       "forgetPassword": "忘记密码？",
       "rememberMe": "记住我",
       "title": "密码登录"

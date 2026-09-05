@@ -10,6 +10,7 @@ import type { RequestInstanceState } from "./type"
 import { Service } from "@/typings/service"
 
 const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === "Y"
+const LOGIN_COOLDOWN_CODE = "14010"
 const { baseURL, otherBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy)
 
 export const request = createFlatRequest(
@@ -118,6 +119,10 @@ export const request = createFlatRequest(
       // the error message is displayed in the modal
       const modalLogoutCodes = import.meta.env.VITE_SERVICE_MODAL_LOGOUT_CODES?.split(",") || []
       if (modalLogoutCodes.includes(backendErrorCode)) {
+        return
+      }
+
+      if (backendErrorCode === LOGIN_COOLDOWN_CODE) {
         return
       }
 

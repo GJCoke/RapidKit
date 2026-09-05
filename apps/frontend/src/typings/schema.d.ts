@@ -6144,10 +6144,7 @@ export interface components {
              * Format: email
              */
             email: string;
-            /**
-             * Username
-             * @default
-             */
+            /** Username */
             username: string;
             /** Phone */
             phone?: string | null;
@@ -6216,10 +6213,7 @@ export interface components {
              * Format: email
              */
             email: string;
-            /**
-             * Username
-             * @default
-             */
+            /** Username */
             username: string;
             /** Phone */
             phone?: string | null;
@@ -6310,7 +6304,10 @@ export interface components {
         UsernamePinyinValidationRequest: {
             /** Name */
             name: string;
-            /** Username */
+            /**
+             * Username
+             * @default
+             */
             username: string;
         };
         /**

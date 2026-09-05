@@ -51,7 +51,7 @@
     "workerOffline": "Worker is currently offline",
     "departmentHasChildren": "Cannot delete department with sub-departments",
     "taskRetryNotAllowed": "Only failed or revoked tasks can be retried",
-    "accountLocked": "Account has been locked"
+    "accountLocked": "Too many failed login attempts"
   },
   "error": {
     "success": "Successful",
