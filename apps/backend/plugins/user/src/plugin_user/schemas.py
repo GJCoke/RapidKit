@@ -77,6 +77,20 @@ class UserManageUpdate(BaseRequest):
     remark: str | None = None
 
 
+class UsernamePinyinValidationRequest(BaseRequest):
+    """姓名拼音与用户名一致性校验请求。"""
+
+    name: str = Field(..., min_length=2, max_length=100)
+    username: str = Field("", max_length=100)
+
+
+class UsernamePinyinValidationResponse(BaseModel):
+    """姓名拼音与用户名一致性校验结果。"""
+
+    suggested_username: str
+    consistent: bool
+
+
 class UserManageQueriesSchema(BaseModel):
     """用户查询数据结构。"""
 

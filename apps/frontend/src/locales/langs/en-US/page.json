@@ -233,6 +233,7 @@
       "welcomeBack": "Welcome back, {name} !"
     },
     "pwdLogin": {
+      "cooldown": "Too many failed login attempts. Try again in {time}",
       "forgetPassword": "Forget password?",
       "rememberMe": "Remember me",
       "title": "Password Login"
@@ -433,6 +434,12 @@
       "inviteNote": "An invite email will be sent so the user can set their own password.",
       "resendInvite": "Resend invite",
       "resendInviteSuccess": "Invite email re-sent",
+      "returnToEdit": "Return to edit",
+      "submitAnyway": "Submit anyway",
+      "usernamePinyinCheckFailed": "Name pinyin validation is temporarily unavailable",
+      "usernamePinyinConfirmContent": "Current username: {current}; suggested username: {suggested}",
+      "usernamePinyinConfirmTitle": "Username and name pinyin do not match",
+      "usernamePinyinWarning": "Username does not match the name pinyin. Suggested: {username}",
       "status": {
         "pending": "Pending"
       }

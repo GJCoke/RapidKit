@@ -148,6 +148,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/validate-username-pinyin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 校验用户名与姓名拼音
+         * @description 返回标准全拼建议以及严格一致性结果。
+         */
+        post: operations["validate_username_pinyin_api_v1_users_validate_username_pinyin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users": {
         parameters: {
             query?: never;
@@ -850,6 +870,130 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Notifications
+         * @description 列出当前用户的收件箱。
+         */
+        get: operations["list_notifications_api_v1_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Unread Count
+         * @description 返回当前用户未读通知数。
+         */
+        get: operations["get_unread_count_api_v1_notifications_unread_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark All Read
+         * @description 把当前用户所有未删除的未读通知标记为已读。
+         */
+        post: operations["mark_all_read_api_v1_notifications_read_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{notification_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Notification
+         * @description 获取当前用户的一条通知。
+         */
+        get: operations["get_notification_api_v1_notifications__notification_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Notification
+         * @description 软删除当前用户的一条通知。
+         */
+        delete: operations["delete_notification_api_v1_notifications__notification_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Mark Read
+         * @description 把当前用户的一条通知标记为已读。
+         */
+        patch: operations["mark_read_api_v1_notifications__notification_id__read_patch"];
+        trace?: never;
+    };
+    "/api/v1/notifications/{notification_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Archive Notification
+         * @description 归档当前用户的一条通知。
+         */
+        patch: operations["archive_notification_api_v1_notifications__notification_id__archive_patch"];
         trace?: never;
     };
     "/api/v1/auth/keys/public": {
@@ -2610,6 +2754,18 @@ export interface components {
             wsConnections: number;
         };
         /**
+         * InboxPage
+         * @description 收件箱游标分页响应。
+         */
+        InboxPage: {
+            /** Items */
+            items: components["schemas"]["NotificationItem"][];
+            /** Nextcursor */
+            nextCursor?: string | null;
+            /** Size */
+            size: number;
+        };
+        /**
          * InfrastructureHealth
          * @description 基础设施健康状态。
          */
@@ -3209,6 +3365,50 @@ export interface components {
             /** Instances */
             instances: components["schemas"]["InstanceResourceStats"][];
             summary: components["schemas"]["InstanceResourceStats"];
+        };
+        /**
+         * NotificationItem
+         * @description 一条当前用户可见的站内通知。
+         */
+        NotificationItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Messageid
+             * Format: uuid
+             */
+            messageId: string;
+            /** Contentmode */
+            contentMode: string;
+            /** Title */
+            title: string;
+            /** Content */
+            content: string;
+            /** Contentparams */
+            contentParams?: {
+                [key: string]: unknown;
+            } | null;
+            /** Contentformat */
+            contentFormat?: string | null;
+            /** Level */
+            level: string;
+            /** Category */
+            category: string;
+            /** Mandatory */
+            mandatory: boolean;
+            /** Action */
+            action?: {
+                [key: string]: unknown;
+            } | null;
+            /** Readat */
+            readAt?: string | null;
+            /** Archivedat */
+            archivedAt?: string | null;
+            /** Createtime */
+            createTime: string;
         };
         /** OperationsDayComparison */
         OperationsDayComparison: {
@@ -4100,6 +4300,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["HealthStats"] | null;
         };
+        /** Response[InboxPage] */
+        Response_InboxPage_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["InboxPage"] | null;
+        };
         /** Response[InfrastructureHealth] */
         Response_InfrastructureHealth_: {
             /**
@@ -4182,6 +4398,22 @@ export interface components {
              * @description 响应数据。
              */
             data?: null;
+        };
+        /** Response[NotificationItem] */
+        Response_NotificationItem_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["NotificationItem"] | null;
         };
         /** Response[OperationsOverviewResponse] */
         Response_OperationsOverviewResponse_: {
@@ -4615,6 +4847,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["AuditLogDetail"] | null;
         };
+        /** Response[UnreadCount] */
+        Response_UnreadCount_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["UnreadCount"] | null;
+        };
         /** Response[UserInfoResponse] */
         Response_UserInfoResponse_: {
             /**
@@ -4678,6 +4926,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["UserStatsSummary"] | null;
+        };
+        /** Response[UsernamePinyinValidationResponse] */
+        Response_UsernamePinyinValidationResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["UsernamePinyinValidationResponse"] | null;
         };
         /** Response[WorkerControlResponse] */
         Response_WorkerControlResponse_: {
@@ -5795,6 +6059,14 @@ export interface components {
             taskId: string;
         };
         /**
+         * UnreadCount
+         * @description 当前用户未读通知数。
+         */
+        UnreadCount: {
+            /** Count */
+            count: number;
+        };
+        /**
          * UserActivityTrend
          * @description 用户活跃趋势。
          */
@@ -6024,6 +6296,29 @@ export interface components {
             yesterdayNew: number;
             /** Onlinecount */
             onlineCount: number;
+        };
+        /**
+         * UsernamePinyinValidationRequest
+         * @description 姓名拼音与用户名一致性校验请求。
+         */
+        UsernamePinyinValidationRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Username
+             * @default
+             */
+            username: string;
+        };
+        /**
+         * UsernamePinyinValidationResponse
+         * @description 姓名拼音与用户名一致性校验结果。
+         */
+        UsernamePinyinValidationResponse: {
+            /** Suggestedusername */
+            suggestedUsername: string;
+            /** Consistent */
+            consistent: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -6337,6 +6632,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_list_UserManageOptionResponse__"];
+                };
+            };
+        };
+    };
+    validate_username_pinyin_api_v1_users_validate_username_pinyin_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsernamePinyinValidationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_UsernamePinyinValidationResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -7890,6 +8218,204 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_PaginatedResponse_ScriptExecutionResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notifications_api_v1_notifications_get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                size?: number;
+                unreadOnly?: boolean;
+                includeArchived?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_InboxPage_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_unread_count_api_v1_notifications_unread_count_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_UnreadCount_"];
+                };
+            };
+        };
+    };
+    mark_all_read_api_v1_notifications_read_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+        };
+    };
+    get_notification_api_v1_notifications__notification_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NotificationItem_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_notification_api_v1_notifications__notification_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_read_api_v1_notifications__notification_id__read_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_notification_api_v1_notifications__notification_id__archive_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
                 };
             };
             /** @description Validation Error */

@@ -1,0 +1,9 @@
+{
+  "notification.error.invalidCommand": "Invalid notification command",
+  "notification.error.emptyAudience": "Notification has no valid recipients",
+  "notification.error.invalidChannel": "Unsupported notification channel",
+  "notification.error.invalidAudienceType": "Unknown audience type",
+  "notification.error.invalidActionRoute": "Invalid in-app action route",
+  "notification.error.invalidStateTransition": "Invalid message state transition",
+  "notification.error.notificationNotFound": "Notification not found"
+}

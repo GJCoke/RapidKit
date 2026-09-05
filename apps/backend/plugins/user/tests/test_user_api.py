@@ -4,8 +4,27 @@ from typing import cast
 
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from httpx import AsyncClient
-
 from tests.testing.utils import random_email, random_lowercase, random_uuid
+
+
+class TestUsernamePinyinValidation:
+    async def test_validate_exact_username(self, client: AsyncClient, init, auth_headers: dict):
+        response = await client.post(
+            "/users/validate-username-pinyin",
+            json={"name": "张三", "username": "zhangsan"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["data"] == {"suggestedUsername": "zhangsan", "consistent": True}
+
+    async def test_validate_mismatch_is_successful(self, client: AsyncClient, init, auth_headers: dict):
+        response = await client.post(
+            "/users/validate-username-pinyin",
+            json={"name": "张三", "username": "zhangsan1"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["data"] == {"suggestedUsername": "zhangsan", "consistent": False}
 
 
 class TestCreateUser:

@@ -8,6 +8,7 @@ Date   : 2026-05-11
 from typing import cast
 from uuid import UUID
 
+from rapidkit_common.enums import Status
 from rapidkit_common.protocols.user import UserProtocol
 from rapidkit_core.database import AsyncSessionLocal
 from sqlmodel import col, select
@@ -52,3 +53,8 @@ class UserQueryServiceImpl:
             crud = UserManageCRUD(session)
             users = await crud.get_all(col(User.department_id) == dept_id)
             return cast(list[UserProtocol], users)
+
+    async def get_all_active_user_ids(self) -> list[UUID]:
+        async with self._session_factory() as session:
+            result = await session.exec(select(User.id).where(col(User.status) == Status.ON))
+            return list(result.all())

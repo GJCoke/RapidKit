@@ -20,6 +20,7 @@ dependencies = [
     "rapidkit-plugin-permission",
     "rapidkit-plugin-auth",
     "rapidkit-plugin-user",
+    "rapidkit-plugin-notification",
     "rapidkit-security",
 ]
 
@@ -48,6 +49,7 @@ rapidkit-plugin-department = { workspace = true }
 rapidkit-plugin-permission = { workspace = true }
 rapidkit-plugin-auth = { workspace = true }
 rapidkit-plugin-user = { workspace = true }
+rapidkit-plugin-notification = { workspace = true }
 rapidkit-security = { workspace = true }
 
 [tool.uv.workspace]

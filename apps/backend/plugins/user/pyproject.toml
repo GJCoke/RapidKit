@@ -8,6 +8,7 @@ dependencies = [
     "rapidkit-common",
     "rapidkit-framework",
     "rapidkit-security",
+    "pypinyin>=0.55,<1.0",
 ]
 
 [project.entry-points."rapidkit.plugins"]

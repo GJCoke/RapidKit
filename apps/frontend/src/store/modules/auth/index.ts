@@ -11,6 +11,8 @@ import { $t } from "@/locales"
 import { useRouteStore } from "../route"
 import { useTabStore } from "../tab"
 import { clearAuthStorage, connectGlobalSocket, disconnectGlobalSocket, getToken } from "./shared"
+import { getLoginCooldown } from "./login-result"
+import type { LoginResult } from "./login-result"
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const route = useRoute()
@@ -103,12 +105,12 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
    * @param password Password
    * @param [redirect=true] Whether to redirect after login. Default is `true`
    */
-  async function login(username: string, password: string, redirect = true) {
+  async function login(username: string, password: string, redirect = true): Promise<LoginResult> {
     startLoading()
 
     const { data: publicKey } = await fetchGetPublicKey()
 
-    const { data: loginToken, error } = await fetchLogin({
+    const { data: loginToken, error, response } = await fetchLogin({
       username,
       password: await rsaEncrypt(publicKey!, password),
     })
@@ -132,12 +134,18 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
           content: $t("page.login.common.welcomeBack", { name: userInfo.name }),
           duration: 4500,
         })
+        endLoading()
+        return { kind: "success" }
       }
     } else {
-      resetStore()
+      const retryAfterSeconds = getLoginCooldown(response?.data)
+      await resetStore()
+      endLoading()
+      return retryAfterSeconds === null ? { kind: "failure" } : { kind: "cooldown", retryAfterSeconds }
     }
 
     endLoading()
+    return { kind: "failure" }
   }
 
   async function loginByToken(loginToken: Api.Auth.LoginToken) {

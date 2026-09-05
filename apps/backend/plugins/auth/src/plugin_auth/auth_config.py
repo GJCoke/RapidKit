@@ -40,8 +40,8 @@ class AuthConfig(BaseSettings):
     RSA_PRIVATE_KEY: RSAPrivateKey
     RSA_PUBLIC_KEY: Secret[str]
 
-    LOGIN_MAX_ATTEMPTS: int = 5
-    LOGIN_LOCKOUT_SECONDS: int = 900  # 15 minutes
+    LOGIN_MAX_ATTEMPTS: int = 10
+    LOGIN_LOCKOUT_SECONDS: int = 300  # 15 minutes
 
     # noinspection PyNestedDecorators
     @field_validator("ACCESS_TOKEN_EXP", "REFRESH_TOKEN_EXP", "POLICY_CACHE_TTL", mode="before")

@@ -1,10 +1,12 @@
 <script setup lang="ts">
   import { computed, reactive } from "vue"
+  import { useCountDown } from "@rapidkit/hooks"
   import { loginModuleRecord } from "@/constants/app"
   import { useAuthStore } from "@/store/modules/auth"
   import { useRouterPush } from "@/hooks/common/router"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
+  import { formatCooldown } from "./login-cooldown"
 
   defineOptions({
     name: "PwdLogin",
@@ -13,6 +15,8 @@
   const authStore = useAuthStore()
   const { toggleLoginModule } = useRouterPush()
   const { formRef, validate } = useNaiveForm()
+  const { count: cooldownSeconds, isCounting: isCoolingDown, start: startCooldown } = useCountDown(0)
+  const cooldownText = computed(() => formatCooldown(cooldownSeconds.value))
 
   interface FormModel {
     username: string
@@ -35,8 +39,10 @@
   })
 
   async function handleSubmit() {
+    if (isCoolingDown.value) return
     await validate()
-    await authStore.login(model.username, model.password)
+    const result = await authStore.login(model.username, model.password)
+    if (result.kind === "cooldown") startCooldown(result.retryAfterSeconds)
   }
 </script>
 
@@ -53,6 +59,9 @@
         :placeholder="$t('page.login.common.passwordPlaceholder')"
       />
     </NFormItem>
+    <NAlert v-if="isCoolingDown" type="warning" :bordered="false" class="mb-16px">
+      {{ $t("page.login.pwdLogin.cooldown", { time: cooldownText }) }}
+    </NAlert>
     <NSpace vertical :size="24">
       <div class="flex-y-center justify-between">
         <NCheckbox>{{ $t("page.login.pwdLogin.rememberMe") }}</NCheckbox>
@@ -60,7 +69,15 @@
           {{ $t("page.login.pwdLogin.forgetPassword") }}
         </NButton>
       </div>
-      <NButton type="primary" size="large" round block :loading="authStore.loginLoading" @click="handleSubmit">
+      <NButton
+        type="primary"
+        size="large"
+        round
+        block
+        :loading="authStore.loginLoading"
+        :disabled="isCoolingDown"
+        @click="handleSubmit"
+      >
         {{ $t("common.confirm") }}
       </NButton>
     </NSpace>

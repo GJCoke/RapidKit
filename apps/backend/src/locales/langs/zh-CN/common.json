@@ -51,7 +51,7 @@
     "workerOffline": "Worker 当前离线，无法执行操作",
     "departmentHasChildren": "该部门下存在子部门，无法删除",
     "taskRetryNotAllowed": "仅失败或被撤销的任务可以重试",
-    "accountLocked": "账号已被锁定"
+    "accountLocked": "登录失败次数过多"
   },
   "error": {
     "success": "请求成功",

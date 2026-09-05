@@ -42,6 +42,8 @@ from plugin_user.schemas import (
     UserManagePageQuery,
     UserManageResponse,
     UserManageUpdate,
+    UsernamePinyinValidationRequest,
+    UsernamePinyinValidationResponse,
     UserStatsSummary,
 )
 from plugin_user.services import (
@@ -53,6 +55,7 @@ from plugin_user.services import (
     process_password,
 )
 from plugin_user.status_codes import UserStatusCode
+from plugin_user.username_pinyin import check_username_pinyin
 
 logger = get_plugin_logger("User")
 
@@ -64,6 +67,23 @@ router = APIRouter(
 )
 
 contact_router = APIRouter(prefix="/users", tags=["User"])
+
+
+def _warn_username_pinyin_mismatch(
+    *,
+    operation: str,
+    name: str,
+    username: str,
+    target_user_id: UUID | None = None,
+) -> None:
+    """Log a privacy-safe warning without blocking persistence."""
+    if check_username_pinyin(name, username).consistent:
+        return
+    logger.bind(
+        operation=operation,
+        target_user_id=str(target_user_id) if target_user_id else None,
+        pinyin_mismatch=True,
+    ).warning("Username does not match the canonical name pinyin")
 
 
 @contact_router.get("/admin-contacts", summary="系统管理员联系方式")
@@ -117,6 +137,20 @@ async def get_all_users(user_crud: UserManageCrudDep) -> Response[list[UserManag
     """获取全部用户（精简字段，用于下拉选项）。"""
     users = await user_crud.get_all(schema=UserManageOptionResponse)
     return Response(data=users)
+
+
+@router.post("/validate-username-pinyin", summary="校验用户名与姓名拼音")
+async def validate_username_pinyin(
+    body: UsernamePinyinValidationRequest,
+) -> Response[UsernamePinyinValidationResponse]:
+    """返回标准全拼建议以及严格一致性结果。"""
+    result = check_username_pinyin(body.name, body.username)
+    return Response(
+        data=UsernamePinyinValidationResponse(
+            suggested_username=result.suggested_username,
+            consistent=result.consistent,
+        )
+    )
 
 
 @router.get("")
@@ -203,6 +237,8 @@ async def create_user(
     if not current_user.is_admin:
         body.is_admin = False
 
+    _warn_username_pinyin_mismatch(operation="create", name=body.name, username=body.username)
+
     create_data = body.model_dump()
     create_data["status"] = Status.PENDING
     create_data["password"] = hash_password(secrets.token_urlsafe(32))
@@ -242,8 +278,21 @@ async def update_user(
     if not current_user.is_admin:
         update_data.pop("is_admin", None)
 
-    if "roles" in update_data:
+    target_user = None
+    if {"name", "username", "roles"} & update_data.keys():
         target_user = await user_crud.get(user_id, nullable=False)
+
+    if {"name", "username"} & update_data.keys():
+        assert target_user is not None
+        _warn_username_pinyin_mismatch(
+            operation="update",
+            name=update_data.get("name", target_user.name),
+            username=update_data.get("username", target_user.username),
+            target_user_id=user_id,
+        )
+
+    if "roles" in update_data:
+        assert target_user is not None
         if set(update_data["roles"]) != set(target_user.roles or []):
             after_commit(session, invalidate_user_permission_cache, redis, user_id)
             event_bus.fire_and_forget(UserRolesChangedEvent(user_id=str(user_id), role_codes=update_data["roles"]))

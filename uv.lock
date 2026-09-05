@@ -13,6 +13,7 @@ members = [
     "rapidkit-plugin-department",
     "rapidkit-plugin-menu",
     "rapidkit-plugin-monitoring",
+    "rapidkit-plugin-notification",
     "rapidkit-plugin-permission",
     "rapidkit-plugin-schedule",
     "rapidkit-plugin-script",
@@ -935,6 +936,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pypinyin"
+version = "0.55.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b4/a4/784cf98c09e0dc22776b0d7d8a4a5b761218bcae4608c2416ce1e167c8af/pypinyin-0.55.0.tar.gz", hash = "sha256:b5711b3a0c6f76e67408ec6b2e3c4987a3a806b7c528076e7c7b86fcf0eaa66b", size = 839836, upload-time = "2025-07-20T12:01:50.657Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/7b/4cabc76fcc21c3c7d5c671d8783984d30ac9d3bb387c4ba784fca3cdfa3a/pypinyin-0.55.0-py2.py3-none-any.whl", hash = "sha256:d53b1e8ad2cdb815fb2cb604ed3123372f5a28c6f447571244aca36fc62a286f", size = 840203, upload-time = "2025-07-20T12:01:48.535Z" },
+]
+
+[[package]]
 name = "pytest"
 version = "9.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1030,6 +1040,7 @@ dependencies = [
     { name = "rapidkit-plugin-department" },
     { name = "rapidkit-plugin-menu" },
     { name = "rapidkit-plugin-monitoring" },
+    { name = "rapidkit-plugin-notification" },
     { name = "rapidkit-plugin-permission" },
     { name = "rapidkit-plugin-schedule" },
     { name = "rapidkit-plugin-script" },
@@ -1059,6 +1070,7 @@ requires-dist = [
     { name = "rapidkit-plugin-department", editable = "apps/backend/plugins/department" },
     { name = "rapidkit-plugin-menu", editable = "apps/backend/plugins/menu" },
     { name = "rapidkit-plugin-monitoring", editable = "apps/backend/plugins/monitoring" },
+    { name = "rapidkit-plugin-notification", editable = "apps/backend/plugins/notification" },
     { name = "rapidkit-plugin-permission", editable = "apps/backend/plugins/permission" },
     { name = "rapidkit-plugin-schedule", editable = "apps/backend/plugins/schedule" },
     { name = "rapidkit-plugin-script", editable = "apps/backend/plugins/script" },
@@ -1105,6 +1117,7 @@ dependencies = [
     { name = "rapidkit-plugin-department" },
     { name = "rapidkit-plugin-menu" },
     { name = "rapidkit-plugin-monitoring" },
+    { name = "rapidkit-plugin-notification" },
     { name = "rapidkit-plugin-permission" },
     { name = "rapidkit-plugin-schedule" },
     { name = "rapidkit-plugin-script" },
@@ -1158,6 +1171,7 @@ requires-dist = [
     { name = "rapidkit-plugin-department", editable = "apps/backend/plugins/department" },
     { name = "rapidkit-plugin-menu", editable = "apps/backend/plugins/menu" },
     { name = "rapidkit-plugin-monitoring", editable = "apps/backend/plugins/monitoring" },
+    { name = "rapidkit-plugin-notification", editable = "apps/backend/plugins/notification" },
     { name = "rapidkit-plugin-permission", editable = "apps/backend/plugins/permission" },
     { name = "rapidkit-plugin-schedule", editable = "apps/backend/plugins/schedule" },
     { name = "rapidkit-plugin-script", editable = "apps/backend/plugins/script" },
@@ -1341,6 +1355,23 @@ requires-dist = [
 ]
 
 [[package]]
+name = "rapidkit-plugin-notification"
+version = "0.1.0"
+source = { editable = "apps/backend/plugins/notification" }
+dependencies = [
+    { name = "rapidkit-common" },
+    { name = "rapidkit-core" },
+    { name = "rapidkit-framework" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "rapidkit-common" },
+    { name = "rapidkit-core" },
+    { name = "rapidkit-framework" },
+]
+
+[[package]]
 name = "rapidkit-plugin-permission"
 version = "0.1.0"
 source = { editable = "apps/backend/plugins/permission" }
@@ -1415,6 +1446,7 @@ name = "rapidkit-plugin-user"
 version = "0.1.0"
 source = { editable = "apps/backend/plugins/user" }
 dependencies = [
+    { name = "pypinyin" },
     { name = "rapidkit-common" },
     { name = "rapidkit-core" },
     { name = "rapidkit-framework" },
@@ -1423,6 +1455,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "pypinyin", specifier = ">=0.55,<1.0" },
     { name = "rapidkit-common" },
     { name = "rapidkit-core" },
     { name = "rapidkit-framework" },

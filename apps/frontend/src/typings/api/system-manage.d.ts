@@ -89,6 +89,14 @@ declare global {
       /** create user body */
       type CreateUserBody = Service.ApiRequest<"/api/v1/users", "post", "body">
 
+      type UsernamePinyinValidationBody = Service.ApiRequest<
+        "/api/v1/users/validate-username-pinyin",
+        "post",
+        "body"
+      >
+
+      type UsernamePinyinValidation = Service.ApiResponse<"/api/v1/users/validate-username-pinyin", "post">
+
       type ResendInvitePath = Service.ApiRequest<"/api/v1/users/{user_id}/resend-invite", "post", "path">
 
       /** user option (for select dropdowns) */
