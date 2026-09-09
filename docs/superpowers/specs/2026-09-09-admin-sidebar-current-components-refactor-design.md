@@ -164,6 +164,7 @@ reconcileExpandedKeys(input: {
   collapsed: boolean
   current: ReadonlySet<string>
   selectedPath: readonly string[]
+  restoreSelectedPath: boolean
 }): Set<string>
 ```
 
