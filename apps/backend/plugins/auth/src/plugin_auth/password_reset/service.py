@@ -6,6 +6,7 @@ from rapidkit_common.enums import Status
 from rapidkit_common.events import UserPasswordChangedEvent
 from rapidkit_common.protocols.auth import PasswordDecryptor, SessionInvalidator
 from rapidkit_common.transaction import after_commit
+from rapidkit_core.config import settings
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.exceptions import AppException
@@ -19,10 +20,12 @@ from plugin_auth.status_codes import AuthStatusCode
 logger = get_plugin_logger("Auth")
 
 
-def _enqueue_password_reset_email(*, email: str, user_name: str, reset_link: str) -> None:
+def _enqueue_password_reset_email(*, email: str, platform_name: str, user_name: str, reset_link: str) -> None:
     from plugin_auth.password_reset.tasks import send_password_reset_email
 
-    send_password_reset_email.apply_async(kwargs={"email": email, "user_name": user_name, "reset_link": reset_link})
+    send_password_reset_email.apply_async(
+        kwargs={"email": email, "platform_name": platform_name, "user_name": user_name, "reset_link": reset_link}
+    )
 
 
 async def request_password_reset(
@@ -41,7 +44,9 @@ async def request_password_reset(
         return
     token = await store.issue(user.id)
     reset_link = f"{invite_settings.FRONTEND_BASE_URL.rstrip('/')}/login/reset-password?token={token}"
-    _enqueue_password_reset_email(email=user.email, user_name=user.name, reset_link=reset_link)
+    _enqueue_password_reset_email(
+        email=user.email, platform_name=settings.APP_NAME, user_name=user.name, reset_link=reset_link
+    )
 
 
 async def confirm_password_reset(

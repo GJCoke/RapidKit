@@ -2,9 +2,9 @@
 
 from typing import Literal, TypeAlias
 
-LANGUAGE_TYPE: TypeAlias = Literal['en-US', 'zh-CN']
+LANGUAGE_TYPE: TypeAlias = Literal['zh-CN', 'en-US']
 
-languages: set[LANGUAGE_TYPE] = {'en-US', 'zh-CN'}
+languages: set[LANGUAGE_TYPE] = {'zh-CN', 'en-US'}
 
 I18nKey = Literal[
     "auth.error.accountLocked",
@@ -110,6 +110,29 @@ I18nKey = Literal[
     "common.response.workerNotFound",
     "common.response.workerOffline",
     "department.error.hasChildren",
+    "notification.notification.category.adminAnnouncement",
+    "notification.notification.category.systemSecurity",
+    "notification.notification.category.taskCompleted",
+    "notification.notification.category.userInvited",
+    "notification.notification.category.userMention",
+    "notification.notification.error.categoryNotClosable",
+    "notification.notification.error.categoryReserved",
+    "notification.notification.error.contentHtmlNotAllowed",
+    "notification.notification.error.emptyAudience",
+    "notification.notification.error.invalidActionRoute",
+    "notification.notification.error.invalidAudienceType",
+    "notification.notification.error.invalidChannel",
+    "notification.notification.error.invalidCommand",
+    "notification.notification.error.invalidStateTransition",
+    "notification.notification.error.messageNotCancellable",
+    "notification.notification.error.messageNotPublishable",
+    "notification.notification.error.messageNotRecallable",
+    "notification.notification.error.scheduleNotDue",
+    "notification.notification.error.notificationNotFound",
+    "notification.notification.error.templateCodeExists",
+    "notification.notification.error.templateDisabled",
+    "notification.notification.error.templateNotFound",
+    "notification.notification.error.templateVariableInvalid",
     "permission.error.createPermissionDenied",
     "permission.error.dataWriteDenied",
     "permission.error.fieldWriteDenied",

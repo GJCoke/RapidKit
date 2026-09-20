@@ -14,7 +14,18 @@ class NotificationStatusCode(BaseStatusCode):
     INVALID_CHANNEL = (92003, "notification.error.invalidChannel")
     INVALID_AUDIENCE_TYPE = (92004, "notification.error.invalidAudienceType")
     INVALID_ACTION_ROUTE = (92005, "notification.error.invalidActionRoute")
+    TEMPLATE_NOT_FOUND = (92010, "notification.error.templateNotFound")
+    TEMPLATE_DISABLED = (92011, "notification.error.templateDisabled")
+    TEMPLATE_VARIABLE_INVALID = (92012, "notification.error.templateVariableInvalid")
+    CONTENT_HTML_NOT_ALLOWED = (92013, "notification.error.contentHtmlNotAllowed")
+    TEMPLATE_CODE_EXISTS = (92014, "notification.error.templateCodeExists")
+    CATEGORY_NOT_CLOSABLE = (92020, "notification.error.categoryNotClosable")
+    CATEGORY_RESERVED = (92021, "notification.error.categoryReserved")
 
     INVALID_STATE_TRANSITION = (93001, "notification.error.invalidStateTransition")
+    MESSAGE_NOT_PUBLISHABLE = (93010, "notification.error.messageNotPublishable")
+    MESSAGE_NOT_CANCELLABLE = (93011, "notification.error.messageNotCancellable")
+    MESSAGE_NOT_RECALLABLE = (93012, "notification.error.messageNotRecallable")
+    SCHEDULE_NOT_DUE = (93013, "notification.error.scheduleNotDue")
 
     NOTIFICATION_NOT_FOUND = (95001, "notification.error.notificationNotFound")

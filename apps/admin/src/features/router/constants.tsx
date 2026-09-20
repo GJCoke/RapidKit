@@ -1,12 +1,14 @@
 import type { RouteObject } from "react-router"
-import { Navigate } from "react-router"
+import { UnknownRoute } from "./unknown-route"
+import { RouteErrorBoundary } from "./route-error-boundary"
 
 export const LOGIN_PATH = "/login"
-export const HOME_PATH = "/home"
+export const HOME_PATH = "/"
 
 export const constantRoutes: RouteObject[] = [
   {
     path: "/login",
+    errorElement: <RouteErrorBoundary />,
     lazy: async () => {
       const mod = await import("@/features/auth/components/login-page")
       return { Component: mod.default }
@@ -14,6 +16,7 @@ export const constantRoutes: RouteObject[] = [
   },
   {
     path: "/403",
+    errorElement: <RouteErrorBoundary />,
     lazy: async () => {
       const mod = await import("@/shared/pages/403")
       return { Component: mod.default }
@@ -21,6 +24,7 @@ export const constantRoutes: RouteObject[] = [
   },
   {
     path: "/404",
+    errorElement: <RouteErrorBoundary />,
     lazy: async () => {
       const mod = await import("@/shared/pages/404")
       return { Component: mod.default }
@@ -28,6 +32,7 @@ export const constantRoutes: RouteObject[] = [
   },
   {
     path: "/500",
+    errorElement: <RouteErrorBoundary />,
     lazy: async () => {
       const mod = await import("@/shared/pages/500")
       return { Component: mod.default }
@@ -35,6 +40,7 @@ export const constantRoutes: RouteObject[] = [
   },
   {
     path: "*",
-    element: <Navigate to="/404" replace />,
+    errorElement: <RouteErrorBoundary />,
+    element: <UnknownRoute />,
   },
 ]

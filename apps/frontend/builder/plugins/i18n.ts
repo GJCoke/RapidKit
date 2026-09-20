@@ -1,7 +1,7 @@
 /* oxlint-disable @typescript-eslint/no-explicit-any */
 import path from "path"
 import { fileURLToPath } from "url"
-import { HmrContext } from "vite"
+import type { HmrContext } from "vite"
 import crypto from "crypto"
 import fs from "fs"
 

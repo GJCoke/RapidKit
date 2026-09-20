@@ -1,0 +1,67 @@
+.chromeTab {
+  transition: all 300ms;
+}
+
+.chromeTab:hover {
+  z-index: 9;
+}
+
+.active {
+  z-index: 10;
+  color: var(--primary);
+}
+
+.background {
+  color: transparent;
+  transition: color 300ms;
+}
+
+.chromeTab:hover .background {
+  color: #dee1e6;
+}
+
+.active .background,
+.active:hover .background {
+  color: color-mix(in oklab, var(--primary) 10%, var(--background) 90%);
+}
+
+.closeButton:hover {
+  color: #fff;
+  background-color: #9ca3af;
+}
+
+.closeButton svg {
+  width: 14px;
+  height: 14px;
+}
+
+.closeButton:hover svg {
+  width: 12px;
+  height: 12px;
+}
+
+.active .closeButton:hover {
+  background-color: var(--primary);
+}
+
+.active .divider,
+.chromeTab:hover .divider {
+  opacity: 0;
+}
+
+:global(.dark) .chromeTab:hover .background {
+  color: #333333;
+}
+
+:global(.dark) .active .background,
+:global(.dark) .active:hover .background {
+  color: color-mix(in oklab, var(--primary) 30%, var(--background) 70%);
+}
+
+:global(.dark) .closeButton:hover {
+  color: #000;
+}
+
+:global(.dark) .divider {
+  background-color: rgb(255 255 255 / 90%);
+}

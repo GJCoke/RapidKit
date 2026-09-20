@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback } from "@rapidkit/ui/components/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -46,17 +47,19 @@ export function UserMenu() {
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-foreground">{displayName}</span>
-            {userInfo?.email && <span className="text-xs text-muted-foreground">{userInfo.email}</span>}
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
-          <LogOut className="size-4" aria-hidden="true" />
-          {t("auth.logout")}
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-foreground">{displayName}</span>
+              {userInfo?.email && <span className="text-xs text-muted-foreground">{userInfo.email}</span>}
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleLogout}>
+            <LogOut className="size-4" aria-hidden="true" />
+            {t("auth.logout")}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )

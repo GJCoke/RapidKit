@@ -13,6 +13,7 @@ from fastapi.routing import APIRoute
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
 from rapidkit_core.distributed_lock import DistributedLock
 from rapidkit_core.log import get_plugin_logger
+from rapidkit_core.redis_client import AsyncRedisClient
 from starlette.routing import BaseRoute as StarletteRoute
 
 from plugin_permission.models import InterfaceRouter
@@ -21,6 +22,15 @@ from plugin_permission.router.schemas import FastAPIRouterCreate
 from plugin_permission.utils import build_route_key
 
 logger = get_plugin_logger("Permission")
+
+_PERMISSION_CACHE_PATTERN = "auth:permission:<*>"
+
+
+async def invalidate_all_permission_caches(redis: AsyncRedisClient) -> None:
+    """Invalidate user permission caches after the available route set changes."""
+    async for key in redis.scan_iter(match=_PERMISSION_CACHE_PATTERN):
+        await redis.delete(key)
+
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -83,6 +93,8 @@ async def store_router_in_db(routes: list[StarletteRoute | APIRoute]) -> None:
                         await router_db.create_all(add_routes)
 
                     await session.commit()
+                    if add_routes or remove_routes or update_routes:
+                        await invalidate_all_permission_caches(redis)
             finally:
                 await lock.release()
             return

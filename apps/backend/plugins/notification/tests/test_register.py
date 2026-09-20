@@ -1,37 +1,71 @@
 """Notification 插件注册测试。"""
 
-from rapidkit_common.protocols.notification import Notifier
-from rapidkit_framework.services import ServiceRegistry
-
+from fastapi.routing import APIRoute
 from plugin_notification import register
+from plugin_notification.admin_service import AdminNotificationService
 from plugin_notification.service import NotificationService
+from rapidkit_common.protocols.notification import AdminNotifier, Notifier
+from rapidkit_framework.services import ServiceRegistry
 
 
 def test_register_returns_manifest_with_name():
     manifest = register()
 
     assert manifest.name == "notification"
-    assert manifest.version == "0.1.0"
+    assert manifest.version == "0.3.0"
 
 
 def test_register_wires_notification_runtime_integrations():
     manifest = register()
 
     assert manifest.router is not None
-    assert len(manifest.models) == 4
+    assert len(manifest.models) == 6
     assert manifest.dependencies == ["user"]
-    assert [permission.code for permission in manifest.permissions] == [
-        "GET:/api/v1/notifications"
-    ]
-    assert manifest.provides == [Notifier]
+    permission_codes = {permission.code for permission in manifest.permissions}
+    assert "GET:/api/v1/notifications" in permission_codes
+    preference_route_codes = {
+        f"{method}:/api/v1{route.path}"
+        for route in manifest.router.routes
+        if isinstance(route, APIRoute)
+        and route.path.startswith("/notification-preferences")
+        for method in route.methods
+    }
+    assert preference_route_codes == {
+        "GET:/api/v1/notification-preferences",
+        "PUT:/api/v1/notification-preferences/{category}",
+    }
+    assert preference_route_codes <= permission_codes
+    admin_route_codes = {
+        f"{method}:/api/v1{route.path}"
+        for route in manifest.router.routes
+        if isinstance(route, APIRoute) and route.path.startswith("/admin/")
+        for method in route.methods
+    }
+    assert admin_route_codes <= permission_codes
+    assert manifest.provides == [Notifier, AdminNotifier]
     assert manifest.task_modules == ["plugin_notification.tasks"]
-    assert manifest.beat_schedule == {
-        "notification-cleanup-outbox": {
-            "task": "cleanup_notification_outbox",
-            "schedule": 47.0,
-        }
+    assert {value["task"] for value in manifest.beat_schedule.values()} == {
+        "cleanup_notification_outbox",
+        "publish_scheduled_notifications",
+        "expire_notifications",
     }
     assert manifest.sio_modules == ["plugin_notification.events"]
+
+
+def test_register_includes_notification_template_model():
+    manifest = register()
+
+    model_names = [model.__name__ for model in manifest.models]
+    assert model_names == [
+        "NotificationMessage",
+        "NotificationAudience",
+        "UserNotification",
+        "NotificationOutbox",
+        "NotificationTemplate",
+        "NotificationPreference",
+    ]
+    assert len(model_names) == len(set(model_names))
+    assert model_names.count("NotificationPreference") == 1
 
 
 def test_register_service_factory_registers_notifier():
@@ -41,3 +75,4 @@ def test_register_service_factory_registers_notifier():
     manifest.service_factories[Notifier](registry)
 
     assert isinstance(registry.get(Notifier), NotificationService)
+    assert isinstance(registry.get(AdminNotifier), AdminNotificationService)

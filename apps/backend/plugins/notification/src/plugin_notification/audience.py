@@ -28,20 +28,27 @@ class AudienceResolver:
                 seen.add(user_id)
                 user_ids.append(user_id)
 
+        explicit_ids = [UUID(rule.value) for rule in rules if rule.type == "user" and rule.value]
+        active_explicit_ids = set(await self._query_service.get_active_user_ids(explicit_ids))
+
         for rule in rules:
             if rule.type == "user":
                 if rule.value:
-                    add_user_id(UUID(rule.value))
+                    user_id = UUID(rule.value)
+                    if user_id in active_explicit_ids:
+                        add_user_id(user_id)
             elif rule.type == "role":
                 if rule.value:
-                    users = await self._query_service.get_users_by_role(rule.value)
-                    for user in users:
-                        add_user_id(user.id)
+                    for user_id in await self._query_service.get_active_user_ids_by_role(rule.value):
+                        add_user_id(user_id)
             elif rule.type == "department":
                 if rule.value:
-                    users = await self._query_service.get_users_by_department(UUID(rule.value))
-                    for user in users:
-                        add_user_id(user.id)
+                    resolved = await self._query_service.get_active_user_ids_by_department(
+                        UUID(rule.value),
+                        rule.include_descendants,
+                    )
+                    for user_id in resolved:
+                        add_user_id(user_id)
             elif rule.type == "all":
                 for user_id in await self._query_service.get_all_active_user_ids():
                     add_user_id(user_id)

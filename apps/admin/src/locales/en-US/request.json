@@ -1,0 +1,8 @@
+{
+  "request": {
+    "networkError": "Network connection failed. Check your connection and try again.",
+    "serverError": "The service is temporarily unavailable. Try again later.",
+    "unknownError": "The request failed. Try again later.",
+    "sessionExpired": "Your session has expired. Sign in again."
+  }
+}

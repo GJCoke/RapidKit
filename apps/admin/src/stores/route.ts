@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import type { BackendRoute } from "@/services/api/route"
+import { EMPTY_ROUTE_SNAPSHOT, type NormalizedRoute, type RouteSnapshot } from "@/features/router/route-model"
 
 export interface MenuItem {
   key: string
@@ -7,44 +7,63 @@ export interface MenuItem {
   title: string
   i18nKey?: string
   icon?: string
+  localIcon?: string
+  activeMenu?: string
+  href?: string
   order: number
   hideInMenu: boolean
   children?: MenuItem[]
 }
 
 interface RouteState {
+  revision: number
+  homeName: string
+  snapshot: RouteSnapshot
   menus: MenuItem[]
   flat: Record<string, MenuItem>
-  setRoutes: (routes: BackendRoute[]) => void
+  replaceSnapshot: (snapshot: RouteSnapshot, homeName?: string) => void
   clearRoutes: () => void
 }
 
-function normalize(routes: BackendRoute[], flat: Record<string, MenuItem>): MenuItem[] {
-  return routes
-    .map((r) => {
-      const item: MenuItem = {
-        key: r.name,
-        path: r.path,
-        title: r.meta?.title ?? r.name,
-        i18nKey: r.meta?.i18nKey,
-        icon: r.meta?.icon,
-        order: r.meta?.order ?? 0,
-        hideInMenu: r.meta?.hideInMenu ?? false,
-        children: r.children?.length ? normalize(r.children, flat) : undefined,
-      }
-      flat[item.path] = item
-      return item
-    })
-    .sort((a, b) => a.order - b.order)
+function projectMenus(routes: NormalizedRoute[], flat: Record<string, MenuItem>): MenuItem[] {
+  const items: MenuItem[] = []
+  routes.forEach((route) => {
+    const item: MenuItem = {
+      key: route.name,
+      path: route.fullPath,
+      title: route.title,
+      ...(route.i18nKey ? { i18nKey: route.i18nKey } : {}),
+      ...(route.icon ? { icon: route.icon } : {}),
+      ...(route.localIcon ? { localIcon: route.localIcon } : {}),
+      ...(route.activeMenu ? { activeMenu: route.activeMenu } : {}),
+      ...(route.href ? { href: route.href } : {}),
+      order: route.order,
+      hideInMenu: route.hideInMenu,
+      children: projectMenus(route.children, flat),
+    }
+    flat[item.path] = item
+    if (!item.hideInMenu) items.push(item)
+  })
+  return items
 }
 
 export const useRouteStore = create<RouteState>((set) => ({
+  revision: 0,
+  homeName: "",
+  snapshot: EMPTY_ROUTE_SNAPSHOT,
   menus: [],
   flat: {},
-  setRoutes: (routes) => {
+  replaceSnapshot: (snapshot, homeName = "") => {
     const flat: Record<string, MenuItem> = {}
-    const menus = normalize(routes, flat)
-    set({ menus, flat })
+    const menus = projectMenus(snapshot.tree, flat)
+    set((state) => ({ revision: state.revision + 1, homeName, snapshot, menus, flat }))
   },
-  clearRoutes: () => set({ menus: [], flat: {} }),
+  clearRoutes: () =>
+    set((state) => ({
+      revision: state.revision + 1,
+      homeName: "",
+      snapshot: EMPTY_ROUTE_SNAPSHOT,
+      menus: [],
+      flat: {},
+    })),
 }))

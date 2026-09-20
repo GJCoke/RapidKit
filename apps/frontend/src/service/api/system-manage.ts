@@ -198,6 +198,17 @@ export function fetchGetAllPages() {
   })
 }
 
+/** get eligible visible ancestor pages for a hidden child page */
+export function fetchGetActiveMenuOptions(parentId: string, constant: boolean) {
+  const params: Api.SystemManage.ActiveMenuOptionsParams = { parentId, constant }
+
+  return request<Api.SystemManage.ActiveMenuOption[]>({
+    url: "/manage/menus/active-menu-options",
+    method: "get",
+    params,
+  })
+}
+
 /** get menu tree */
 export function fetchGetMenuTree() {
   return request<Api.SystemManage.MenuTree[]>({

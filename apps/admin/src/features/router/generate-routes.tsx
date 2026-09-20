@@ -1,17 +1,39 @@
-import { lazy } from "react"
 import type { RouteObject } from "react-router"
-import type { BackendRoute, UserRouteResponse } from "@/services/api/route"
+import { findFirstNavigablePath, type NormalizedRoute, type RouteSnapshot } from "./route-model"
 import { lazyImport } from "./lazy-import"
+import { RouteErrorBoundary } from "./route-error-boundary"
+import { DefaultSearchRedirect } from "./default-search-redirect"
+import { ExternalRoute } from "./external-route"
+import { IframeRoute } from "./iframe-route"
 
-export function generateRoutes(backendRoutes: BackendRoute[]): RouteObject[] {
+export function generateRoutes(backendRoutes: NormalizedRoute[]): RouteObject[] {
   return backendRoutes.map((route) => {
     const routeObject: RouteObject = {
       path: route.path,
+      errorElement: <RouteErrorBoundary />,
     }
 
-    if (route.component) {
-      const LazyComponent = lazy(lazyImport(route.component))
-      routeObject.element = <LazyComponent />
+    if (route.kind === "external" && route.href) {
+      routeObject.element = <ExternalRoute href={route.href} />
+    } else if (route.kind === "iframe") {
+      routeObject.element = (
+        <DefaultSearchRedirect defaultSearch={route.defaultSearch}>
+          <IframeRoute src={route.href} title={route.title} />
+        </DefaultSearchRedirect>
+      )
+    } else if (route.component) {
+      const loadComponent = lazyImport(route.component)
+      routeObject.lazy = async () => {
+        const module = await loadComponent()
+        const Page = module.default
+        return {
+          Component: () => (
+            <DefaultSearchRedirect defaultSearch={route.defaultSearch}>
+              <Page />
+            </DefaultSearchRedirect>
+          ),
+        }
+      }
     }
 
     if (route.children?.length) {
@@ -22,22 +44,8 @@ export function generateRoutes(backendRoutes: BackendRoute[]): RouteObject[] {
   })
 }
 
-function findRoutePath(routes: BackendRoute[], name: string): string | undefined {
-  for (const route of routes) {
-    if (route.name === name) return route.path
-    const childPath = route.children?.length ? findRoutePath(route.children, name) : undefined
-    if (childPath) return childPath
-  }
-}
-
-function findFirstLeafPath(routes: BackendRoute[]): string | undefined {
-  for (const route of routes) {
-    const childPath = route.children?.length ? findFirstLeafPath(route.children) : undefined
-    if (childPath) return childPath
-    if (!route.children?.length) return route.path
-  }
-}
-
-export function resolveAuthorizedHomePath(response: UserRouteResponse): string {
-  return findRoutePath(response.routes, response.home) ?? findFirstLeafPath(response.routes) ?? "/404"
+export function resolveAuthorizedHomePath(snapshot: RouteSnapshot, homeName: string): string {
+  const configured = snapshot.byName[homeName]
+  if (configured && (configured.kind === "view" || configured.kind === "iframe")) return configured.fullPath
+  return findFirstNavigablePath(snapshot.tree) ?? "/404"
 }

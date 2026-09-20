@@ -38,7 +38,16 @@ def _to_item(row: UserNotification, message: NotificationMessage) -> Notificatio
         level=message.level,
         category=message.category,
         mandatory=message.mandatory,
-        action=message.action,
+        action=(
+            None
+            if message.status in {"recalled", "expired"}
+            or message.expire_at is not None
+            and message.expire_at <= timezone.now()
+            else message.action
+        ),
+        status=message.status,
+        expire_at=message.expire_at,
+        recalled_at=message.recalled_at,
         read_at=row.read_at,
         archived_at=row.archived_at,
         create_time=row.create_time,
@@ -52,19 +61,18 @@ async def list_notifications(
     crud: InboxCrudDep,
 ) -> Response[InboxPage]:
     """列出当前用户的收件箱。"""
-    rows, next_cursor = await crud.paginate_inbox(
+    rows, next_cursor = await crud.paginate_inbox_items(
         user.id,
         cursor=query.cursor,
         size=query.size,
         unread_only=query.unread_only,
-        include_archived=query.include_archived,
+        archived=query.archived,
+        category=query.category,
+        level=query.level,
+        created_from=query.created_from,
+        created_to=query.created_to,
     )
-    message_crud = MessageCRUD(crud.session)
-    items: list[NotificationItem] = []
-    for row in rows:
-        message = await message_crud.get(row.message_id)
-        if message is not None:
-            items.append(_to_item(row, message))
+    items = [_to_item(row, message) for row, message in rows]
     return Response(data=InboxPage(items=items, next_cursor=next_cursor, size=query.size))
 
 

@@ -5,6 +5,7 @@ import { useLoading } from "@rapidkit/hooks"
 import { rsaEncrypt } from "@rapidkit/utils"
 import { fetchGetPublicKey, fetchGetUserInfo, fetchLogin } from "@/service/api"
 import { useRouterPush } from "@/hooks/common/router"
+import { connectNotificationSocket, disconnectNotificationSocket } from "@/store/modules/notification/shared"
 import { localStg } from "@/utils/storage"
 import { SetupStoreId } from "@/enum"
 import { $t } from "@/locales"
@@ -46,10 +47,18 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   /** Is login */
   const isLogin = computed(() => Boolean(token.value))
 
+  /** Synchronize refreshed credentials with reactive auth state and sockets. */
+  function syncAccessToken(accessToken: string) {
+    token.value = accessToken
+    connectGlobalSocket()
+    connectNotificationSocket(accessToken)
+  }
+
   /** Reset auth store */
   async function resetStore() {
     recordUserId()
 
+    disconnectNotificationSocket()
     disconnectGlobalSocket()
     clearAuthStorage()
 
@@ -159,6 +168,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     if (pass) {
       token.value = loginToken.accessToken
       connectGlobalSocket()
+      connectNotificationSocket(loginToken.accessToken)
 
       return true
     }
@@ -190,6 +200,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         resetStore()
       } else {
         connectGlobalSocket()
+        connectNotificationSocket(maybeToken)
       }
     }
   }
@@ -199,6 +210,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     userInfo,
     isStaticSuper,
     isLogin,
+    syncAccessToken,
     loginLoading,
     resetStore,
     login,

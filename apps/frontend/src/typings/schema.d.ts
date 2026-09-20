@@ -996,6 +996,239 @@ export interface paths {
         patch: operations["archive_notification_api_v1_notifications__notification_id__archive_patch"];
         trace?: never;
     };
+    "/api/v1/admin/notification-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Templates */
+        get: operations["list_templates_api_v1_admin_notification_templates_get"];
+        put?: never;
+        /** Create Template */
+        post: operations["create_template_api_v1_admin_notification_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notification-templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Template */
+        get: operations["get_template_api_v1_admin_notification_templates__template_id__get"];
+        /** Update Template */
+        put: operations["update_template_api_v1_admin_notification_templates__template_id__put"];
+        post?: never;
+        /** Delete Template */
+        delete: operations["delete_template_api_v1_admin_notification_templates__template_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Announcements */
+        get: operations["list_announcements_api_v1_admin_notifications_get"];
+        put?: never;
+        /** Create Announcement */
+        post: operations["create_announcement_api_v1_admin_notifications_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{message_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Announcement */
+        get: operations["get_announcement_api_v1_admin_notifications__message_id__get"];
+        /** Update Announcement */
+        put: operations["update_announcement_api_v1_admin_notifications__message_id__put"];
+        post?: never;
+        /** Delete Announcement */
+        delete: operations["delete_announcement_api_v1_admin_notifications__message_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{message_id}/audience-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Audience */
+        post: operations["preview_audience_api_v1_admin_notifications__message_id__audience_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{message_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Announcement */
+        post: operations["publish_announcement_api_v1_admin_notifications__message_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{message_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Announcement */
+        post: operations["cancel_announcement_api_v1_admin_notifications__message_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{message_id}/recall": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recall Announcement */
+        post: operations["recall_announcement_api_v1_admin_notifications__message_id__recall_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notification-deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Deliveries */
+        get: operations["list_deliveries_api_v1_admin_notification_deliveries_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notification-deliveries/{message_id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delivery Summary */
+        get: operations["delivery_summary_api_v1_admin_notification_deliveries__message_id__summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notification-deliveries/{message_id}/retry-failed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Failed */
+        post: operations["retry_failed_api_v1_admin_notification_deliveries__message_id__retry_failed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Preferences
+         * @description List effective built-in preferences for the current user.
+         */
+        get: operations["list_preferences_api_v1_notification_preferences_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notification-preferences/{category}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Preference
+         * @description Upsert one preference owned by the current user.
+         */
+        put: operations["update_preference_api_v1_notification_preferences__category__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/keys/public": {
         parameters: {
             query?: never;
@@ -1539,6 +1772,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/manage/menus/active-menu-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Menu Active Menu Options
+         * @description 获取当前父菜单链上可绑定的可见页面菜单。
+         */
+        get: operations["get_menu_active_menu_options_api_v1_manage_menus_active_menu_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/manage/pages": {
         parameters: {
             query?: never;
@@ -1898,6 +2151,32 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActionIn */
+        ActionIn: {
+            /** Route */
+            route: string;
+            /** Params */
+            params?: {
+                [key: string]: unknown;
+            };
+            /** Label */
+            label?: string | null;
+        };
+        /**
+         * ActiveMenuOption
+         * @description 可作为侧边栏高亮目标的菜单。
+         */
+        ActiveMenuOption: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Routename */
+            routeName: string;
+            /** Menuname */
+            menuName: string;
+        };
         /**
          * ActiveTaskInfo
          * @description 活跃任务信息（来自 Celery inspect）。
@@ -2013,6 +2292,56 @@ export interface components {
             /** Status */
             status: string;
             infrastructure: components["schemas"]["InfrastructureHealth"];
+        };
+        /** AnnouncementCreateRequest */
+        AnnouncementCreateRequest: {
+            /**
+             * Category
+             * @default admin.announcement
+             */
+            category: string;
+            /**
+             * Level
+             * @default info
+             * @enum {string}
+             */
+            level: "info" | "success" | "warning" | "error";
+            /** Templatecode */
+            templateCode?: string | null;
+            /** Templatevariables */
+            templateVariables?: {
+                [key: string]: unknown;
+            };
+            /** I18Nkey */
+            i18NKey?: string | null;
+            /** I18Nparams */
+            i18NParams?: {
+                [key: string]: unknown;
+            };
+            /** Rawtitle */
+            rawTitle?: string | null;
+            /** Rawcontent */
+            rawContent?: string | null;
+            /**
+             * Rawformat
+             * @default plain_text
+             * @enum {string}
+             */
+            rawFormat: "plain_text" | "markdown";
+            /** Audience */
+            audience: components["schemas"]["AudienceRuleIn"][];
+            /**
+             * Mandatory
+             * @default false
+             */
+            mandatory: boolean;
+            /** Channels */
+            channels?: "in_app"[];
+            action?: components["schemas"]["ActionIn"] | null;
+            /** Publishat */
+            publishAt?: string | null;
+            /** Expireat */
+            expireAt?: string | null;
         };
         /**
          * ApiDistributionItem
@@ -2167,6 +2496,35 @@ export interface components {
              * @default 0
              */
             errorCount: number;
+        };
+        /** AudiencePreviewRequest */
+        AudiencePreviewRequest: {
+            /** Audience */
+            audience: components["schemas"]["AudienceRuleIn"][];
+        };
+        /** AudiencePreviewResponse */
+        AudiencePreviewResponse: {
+            /** Total */
+            total: number;
+            /** Bytype */
+            byType?: {
+                [key: string]: number;
+            };
+        };
+        /** AudienceRuleIn */
+        AudienceRuleIn: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "user" | "role" | "department" | "all";
+            /** Value */
+            value?: string | null;
+            /**
+             * Includedescendants
+             * @default false
+             */
+            includeDescendants: boolean;
         };
         /** AuditLogDetail */
         AuditLogDetail: {
@@ -2480,6 +2838,62 @@ export interface components {
             timestamp: string;
             /** Source */
             source?: string | null;
+        };
+        /** DeliveryResponse */
+        DeliveryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /**
+             * Messageid
+             * Format: uuid
+             */
+            messageId: string;
+            /**
+             * Userid
+             * Format: uuid
+             */
+            userId: string;
+            /**
+             * Channel
+             * @constant
+             */
+            channel: "in_app";
+            status: components["schemas"]["OutboxStatus"];
+            /** Attemptcount */
+            attemptCount: number;
+            /** Lasterrorcode */
+            lastErrorCode?: string | null;
+            /** Nextattemptat */
+            nextAttemptAt?: string | null;
+            /** Lockeduntil */
+            lockedUntil?: string | null;
+            /** Sentat */
+            sentAt?: string | null;
+        };
+        /** DeliverySummaryResponse */
+        DeliverySummaryResponse: {
+            /**
+             * Messageid
+             * Format: uuid
+             */
+            messageId: string;
+            /** Bystatus */
+            byStatus?: {
+                [key: string]: number;
+            };
         };
         /**
          * DepartmentCreate
@@ -2958,6 +3372,11 @@ export interface components {
              * @default []
              */
             interfaces: string[];
+            /**
+             * Activemenu
+             * @description 高亮祖先菜单的路由名称
+             */
+            activeMenu?: string | null;
         };
         /**
          * MenuIconType
@@ -3089,6 +3508,11 @@ export interface components {
              * @default []
              */
             interfaces: string[];
+            /**
+             * Activemenu
+             * @description 高亮祖先菜单的路由名称
+             */
+            activeMenu?: string | null;
             /** Children */
             children?: components["schemas"]["MenuListResponse"][] | null;
         };
@@ -3220,6 +3644,11 @@ export interface components {
              * @default []
              */
             interfaces: string[];
+            /**
+             * Activemenu
+             * @description 高亮祖先菜单的路由名称
+             */
+            activeMenu?: string | null;
         };
         /**
          * MenuRouteResponse
@@ -3252,28 +3681,27 @@ export interface components {
              * Menuname
              * @description 菜单名称
              */
-            menuName: string;
+            menuName?: string;
             /**
+             * Menutype
              * @description 菜单类型: 1-目录, 2-菜单
-             * @default 1
              */
-            menuType: components["schemas"]["MenuType"];
+            menuType?: components["schemas"]["MenuType"];
             /**
              * Order
              * @description 排序序号
-             * @default 0
              */
-            order: number;
+            order?: number;
             /**
              * Routename
              * @description 路由名称
              */
-            routeName: string;
+            routeName?: string;
             /**
              * Routepath
              * @description 路由路径
              */
-            routePath: string;
+            routePath?: string;
             /**
              * Component
              * @description 组件路径
@@ -3285,21 +3713,17 @@ export interface components {
              */
             icon?: string | null;
             /**
+             * Icontype
              * @description 图标类型
-             * @default 1
              */
-            iconType: components["schemas"]["MenuIconType"];
-            /**
-             * @description 状态
-             * @default 1
-             */
-            status: components["schemas"]["Status"];
+            iconType?: components["schemas"]["MenuIconType"];
+            /** @description 状态 */
+            status?: components["schemas"]["Status"];
             /**
              * Hideinmenu
              * @description 是否隐藏
-             * @default false
              */
-            hideInMenu: boolean;
+            hideInMenu?: boolean;
             /**
              * Parentid
              * @description 父级ID
@@ -3313,15 +3737,13 @@ export interface components {
             /**
              * Keepalive
              * @description 是否缓存
-             * @default false
              */
-            keepAlive: boolean;
+            keepAlive?: boolean;
             /**
              * Constant
              * @description 是否常量路由
-             * @default false
              */
-            constant: boolean;
+            constant?: boolean;
             /**
              * Href
              * @description 外链
@@ -3330,9 +3752,8 @@ export interface components {
             /**
              * Multitab
              * @description 是否支持多页签
-             * @default false
              */
-            multiTab: boolean;
+            multiTab?: boolean;
             /**
              * Fixedindexintab
              * @description 固定页签次序
@@ -3341,22 +3762,143 @@ export interface components {
             /**
              * Query
              * @description 路由参数
-             * @default []
              */
-            query: components["schemas"]["Query"][];
+            query?: components["schemas"]["Query"][];
             /**
              * Buttons
              * @description 按钮权限
-             * @default []
              */
-            buttons: components["schemas"]["Button"][];
+            buttons?: components["schemas"]["Button"][];
             /**
              * Interfaces
              * @description 绑定的接口权限码列表
-             * @default []
              */
-            interfaces: string[];
+            interfaces?: string[];
+            /**
+             * Activemenu
+             * @description 高亮祖先菜单的路由名称
+             */
+            activeMenu?: string | null;
         };
+        /** MessageAdminDetailResponse */
+        MessageAdminDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /** Source */
+            source: string;
+            /** Category */
+            category: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "info" | "success" | "warning" | "error";
+            /** Contentmode */
+            contentMode: string;
+            /** Title */
+            title: string;
+            /** Content */
+            content: string;
+            status: components["schemas"]["MessageStatus"];
+            /** Mandatory */
+            mandatory: boolean;
+            /** Publishat */
+            publishAt?: string | null;
+            /** Publishedat */
+            publishedAt?: string | null;
+            /** Expireat */
+            expireAt?: string | null;
+            /** Recalledat */
+            recalledAt?: string | null;
+            /** Cancelledat */
+            cancelledAt?: string | null;
+            /** Contentparams */
+            contentParams?: {
+                [key: string]: unknown;
+            } | null;
+            /** Contentformat */
+            contentFormat?: ("plain_text" | "markdown") | null;
+            /** Channels */
+            channels: "in_app"[];
+            /** Action */
+            action?: {
+                [key: string]: unknown;
+            } | null;
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+            /** Templateid */
+            templateId?: string | null;
+            /** Templatecode */
+            templateCode?: string | null;
+            /** Audiences */
+            audiences: components["schemas"]["AudienceRuleIn"][];
+        };
+        /** MessageAdminResponse */
+        MessageAdminResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /** Source */
+            source: string;
+            /** Category */
+            category: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "info" | "success" | "warning" | "error";
+            /** Contentmode */
+            contentMode: string;
+            /** Title */
+            title: string;
+            /** Content */
+            content: string;
+            status: components["schemas"]["MessageStatus"];
+            /** Mandatory */
+            mandatory: boolean;
+            /** Publishat */
+            publishAt?: string | null;
+            /** Publishedat */
+            publishedAt?: string | null;
+            /** Expireat */
+            expireAt?: string | null;
+            /** Recalledat */
+            recalledAt?: string | null;
+            /** Cancelledat */
+            cancelledAt?: string | null;
+        };
+        /**
+         * MessageStatus
+         * @enum {string}
+         */
+        MessageStatus: "draft" | "scheduled" | "publishing" | "published" | "expired" | "cancelled" | "recalled";
         /**
          * MultiResourceStats
          * @description 多实例资源统计汇总。
@@ -3403,6 +3945,12 @@ export interface components {
             action?: {
                 [key: string]: unknown;
             } | null;
+            /** Status */
+            status: string;
+            /** Expireat */
+            expireAt?: string | null;
+            /** Recalledat */
+            recalledAt?: string | null;
             /** Readat */
             readAt?: string | null;
             /** Archivedat */
@@ -3499,6 +4047,11 @@ export interface components {
             /** Avgresponsems */
             avgResponseMs: number | null;
         };
+        /**
+         * OutboxStatus
+         * @enum {string}
+         */
+        OutboxStatus: "pending" | "processing" | "retrying" | "sent" | "dead" | "cancelled";
         /** PaginatedResponse[ApiListItem] */
         PaginatedResponse_ApiListItem_: {
             /**
@@ -3568,6 +4121,29 @@ export interface components {
              */
             records: components["schemas"]["DataPolicyResponse"][];
         };
+        /** PaginatedResponse[DeliveryResponse] */
+        PaginatedResponse_DeliveryResponse_: {
+            /**
+             * Page
+             * @description 页码。
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @description 每页条数。
+             */
+            pageSize: number;
+            /**
+             * Total
+             * @description 总条数。
+             */
+            total: number;
+            /**
+             * Records
+             * @description 记录列表。
+             */
+            records: components["schemas"]["DeliveryResponse"][];
+        };
         /** PaginatedResponse[FieldPolicyResponse] */
         PaginatedResponse_FieldPolicyResponse_: {
             /**
@@ -3613,6 +4189,29 @@ export interface components {
              * @description 记录列表。
              */
             records: components["schemas"]["MenuListResponse"][];
+        };
+        /** PaginatedResponse[MessageAdminResponse] */
+        PaginatedResponse_MessageAdminResponse_: {
+            /**
+             * Page
+             * @description 页码。
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @description 每页条数。
+             */
+            pageSize: number;
+            /**
+             * Total
+             * @description 总条数。
+             */
+            total: number;
+            /**
+             * Records
+             * @description 记录列表。
+             */
+            records: components["schemas"]["MessageAdminResponse"][];
         };
         /** PaginatedResponse[PeriodicTaskListResponse] */
         PaginatedResponse_PeriodicTaskListResponse_: {
@@ -3728,6 +4327,29 @@ export interface components {
              * @description 记录列表。
              */
             records: components["schemas"]["TaskListResponse"][];
+        };
+        /** PaginatedResponse[TemplateResponse] */
+        PaginatedResponse_TemplateResponse_: {
+            /**
+             * Page
+             * @description 页码。
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @description 每页条数。
+             */
+            pageSize: number;
+            /**
+             * Total
+             * @description 总条数。
+             */
+            total: number;
+            /**
+             * Records
+             * @description 记录列表。
+             */
+            records: components["schemas"]["TemplateResponse"][];
         };
         /** PaginatedResponse[UserManageResponse] */
         PaginatedResponse_UserManageResponse_: {
@@ -4098,6 +4720,30 @@ export interface components {
              */
             n: number;
         };
+        /**
+         * PreferenceItemResponse
+         * @description One effective notification category preference.
+         */
+        PreferenceItemResponse: {
+            /** Category */
+            category: string;
+            /** Namekey */
+            nameKey: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Closable */
+            closable: boolean;
+            /** Reserved */
+            reserved: boolean;
+        };
+        /**
+         * PreferenceUpdateRequest
+         * @description Strict update payload that rejects truthy strings and integers.
+         */
+        PreferenceUpdateRequest: {
+            /** Enabled */
+            enabled: boolean;
+        };
         /** Query */
         Query: {
             /** Key */
@@ -4155,6 +4801,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["ApiOverviewResponse"] | null;
+        };
+        /** Response[AudiencePreviewResponse] */
+        Response_AudiencePreviewResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["AudiencePreviewResponse"] | null;
         };
         /** Response[BusinessSummary] */
         Response_BusinessSummary_: {
@@ -4219,6 +4881,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["DataPolicyResponse"] | null;
+        };
+        /** Response[DeliverySummaryResponse] */
+        Response_DeliverySummaryResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["DeliverySummaryResponse"] | null;
         };
         /** Response[DepartmentResponse] */
         Response_DepartmentResponse_: {
@@ -4364,6 +5042,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["MenuResponse"] | null;
         };
+        /** Response[MessageAdminDetailResponse] */
+        Response_MessageAdminDetailResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["MessageAdminDetailResponse"] | null;
+        };
         /** Response[MultiResourceStats] */
         Response_MultiResourceStats_: {
             /**
@@ -4479,6 +5173,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_DataPolicyResponse_"] | null;
         };
+        /** Response[PaginatedResponse[DeliveryResponse]] */
+        Response_PaginatedResponse_DeliveryResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PaginatedResponse_DeliveryResponse_"] | null;
+        };
         /** Response[PaginatedResponse[FieldPolicyResponse]] */
         Response_PaginatedResponse_FieldPolicyResponse__: {
             /**
@@ -4510,6 +5220,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_MenuListResponse_"] | null;
+        };
+        /** Response[PaginatedResponse[MessageAdminResponse]] */
+        Response_PaginatedResponse_MessageAdminResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PaginatedResponse_MessageAdminResponse_"] | null;
         };
         /** Response[PaginatedResponse[PeriodicTaskListResponse]] */
         Response_PaginatedResponse_PeriodicTaskListResponse__: {
@@ -4590,6 +5316,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_TaskListResponse_"] | null;
+        };
+        /** Response[PaginatedResponse[TemplateResponse]] */
+        Response_PaginatedResponse_TemplateResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PaginatedResponse_TemplateResponse_"] | null;
         };
         /** Response[PaginatedResponse[UserManageResponse]] */
         Response_PaginatedResponse_UserManageResponse__: {
@@ -4686,6 +5428,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["PolicySimulateResponse"] | null;
+        };
+        /** Response[PreferenceItemResponse] */
+        Response_PreferenceItemResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PreferenceItemResponse"] | null;
         };
         /** Response[RegisteredTaskResponse] */
         Response_RegisteredTaskResponse_: {
@@ -4798,6 +5556,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["TaskStatsSummary"] | null;
+        };
+        /** Response[TemplateResponse] */
+        Response_TemplateResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["TemplateResponse"] | null;
         };
         /** Response[TokenResponse] */
         Response_TokenResponse_: {
@@ -4993,6 +5767,67 @@ export interface components {
              * @description 响应数据。
              */
             data?: boolean | null;
+        };
+        /** Response[dict[str, int]] */
+        Response_dict_str__int__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: {
+                [key: string]: number;
+            } | null;
+        };
+        /** Response[dict[str, str]] */
+        Response_dict_str__str__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: {
+                [key: string]: string;
+            } | null;
+        };
+        /** Response[list[ActiveMenuOption]] */
+        Response_list_ActiveMenuOption__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["ActiveMenuOption"][] | null;
         };
         /** Response[list[ActiveTaskInfo]] */
         Response_list_ActiveTaskInfo__: {
@@ -5221,6 +6056,25 @@ export interface components {
              * @description 响应数据。
              */
             data?: components["schemas"]["PluginStatusItem"][] | null;
+        };
+        /** Response[list[PreferenceItemResponse]] */
+        Response_list_PreferenceItemResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["PreferenceItemResponse"][] | null;
         };
         /** Response[list[RoleResponse]] */
         Response_list_RoleResponse__: {
@@ -5606,6 +6460,8 @@ export interface components {
              * @default false
              */
             hideInMenu: boolean;
+            /** Activemenu */
+            activeMenu?: string | null;
             /**
              * Keepalive
              * @default false
@@ -6015,6 +6871,143 @@ export interface components {
          * @enum {string}
          */
         TaskType: "interval" | "crontab" | "solar";
+        /** TemplateCreateRequest */
+        TemplateCreateRequest: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Category */
+            category: string;
+            /**
+             * Level
+             * @default info
+             * @enum {string}
+             */
+            level: "info" | "success" | "warning" | "error";
+            /**
+             * Contentmode
+             * @enum {string}
+             */
+            contentMode: "i18n" | "raw";
+            /** Titletemplate */
+            titleTemplate: string;
+            /** Contenttemplate */
+            contentTemplate: string;
+            /** Contentformat */
+            contentFormat?: ("plain_text" | "markdown") | null;
+            /** Variableschema */
+            variableSchema?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Defaultchannels */
+            defaultChannels?: "in_app"[];
+            /** Defaultaction */
+            defaultAction?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Mandatory
+             * @default false
+             */
+            mandatory: boolean;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+        };
+        /** TemplateResponse */
+        TemplateResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createtime
+             * @example 2024-07-31 16:07:34
+             */
+            createTime: string;
+            /**
+             * Updatetime
+             * @example 2024-07-31 16:07:34
+             */
+            updateTime: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Category */
+            category: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "info" | "success" | "warning" | "error";
+            /**
+             * Contentmode
+             * @enum {string}
+             */
+            contentMode: "i18n" | "raw";
+            /** Titletemplate */
+            titleTemplate: string;
+            /** Contenttemplate */
+            contentTemplate: string;
+            /** Contentformat */
+            contentFormat?: ("plain_text" | "markdown") | null;
+            /** Variableschema */
+            variableSchema: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Defaultchannels */
+            defaultChannels: "in_app"[];
+            /** Defaultaction */
+            defaultAction?: {
+                [key: string]: unknown;
+            } | null;
+            /** Mandatory */
+            mandatory: boolean;
+            /** Enabled */
+            enabled: boolean;
+            /** Version */
+            version: number;
+        };
+        /** TemplateUpdateRequest */
+        TemplateUpdateRequest: {
+            /** Name */
+            name?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Level */
+            level?: ("info" | "success" | "warning" | "error") | null;
+            /** Titletemplate */
+            titleTemplate?: string | null;
+            /** Contenttemplate */
+            contentTemplate?: string | null;
+            /** Contentformat */
+            contentFormat?: ("plain_text" | "markdown") | null;
+            /** Variableschema */
+            variableSchema?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            } | null;
+            /** Defaultchannels */
+            defaultChannels?: "in_app"[] | null;
+            /** Defaultaction */
+            defaultAction?: {
+                [key: string]: unknown;
+            } | null;
+            /** Mandatory */
+            mandatory?: boolean | null;
+            /** Enabled */
+            enabled?: boolean | null;
+        };
         /**
          * TokenResponse
          * @description 令牌响应。
@@ -8237,7 +9230,11 @@ export interface operations {
                 cursor?: string | null;
                 size?: number;
                 unreadOnly?: boolean;
-                includeArchived?: boolean;
+                archived?: "active" | "archived" | "all";
+                category?: string | null;
+                level?: ("info" | "success" | "warning" | "error") | null;
+                createdFrom?: string | null;
+                createdTo?: string | null;
             };
             header?: never;
             path?: never;
@@ -8416,6 +9413,619 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_templates_api_v1_admin_notification_templates_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                keyword?: string | null;
+                enabled?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_TemplateResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_template_api_v1_admin_notification_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_TemplateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_template_api_v1_admin_notification_templates__template_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_TemplateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_template_api_v1_admin_notification_templates__template_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_TemplateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_template_api_v1_admin_notification_templates__template_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_announcements_api_v1_admin_notifications_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                status?: components["schemas"]["MessageStatus"] | null;
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_MessageAdminResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_announcement_api_v1_admin_notifications_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_dict_str__str__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_announcement_api_v1_admin_notifications__message_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_MessageAdminDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_announcement_api_v1_admin_notifications__message_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_MessageAdminDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_announcement_api_v1_admin_notifications__message_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_audience_api_v1_admin_notifications__message_id__audience_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudiencePreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_AudiencePreviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_announcement_api_v1_admin_notifications__message_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_dict_str__int__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_announcement_api_v1_admin_notifications__message_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recall_announcement_api_v1_admin_notifications__message_id__recall_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_deliveries_api_v1_admin_notification_deliveries_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                messageId?: string | null;
+                status?: components["schemas"]["OutboxStatus"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_DeliveryResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delivery_summary_api_v1_admin_notification_deliveries__message_id__summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DeliverySummaryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_failed_api_v1_admin_notification_deliveries__message_id__retry_failed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_dict_str__int__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_preferences_api_v1_notification_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_PreferenceItemResponse__"];
+                };
+            };
+        };
+    };
+    update_preference_api_v1_notification_preferences__category__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferenceUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PreferenceItemResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -9540,6 +11150,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_list_MenuListResponse__"];
+                };
+            };
+        };
+    };
+    get_menu_active_menu_options_api_v1_manage_menus_active_menu_options_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页面的父菜单 ID */
+                parentId?: string | null;
+                /** @description 当前页面是否为常量路由 */
+                constant?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_ActiveMenuOption__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

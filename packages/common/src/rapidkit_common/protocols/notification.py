@@ -6,6 +6,7 @@ Business plugins depend only on this module's ``Notifier`` protocol and
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Literal, Protocol, runtime_checkable
 from uuid import UUID
 
@@ -13,7 +14,7 @@ from pydantic import BaseModel, Field, model_validator
 
 NotificationLevel = Literal["info", "success", "warning", "error"]
 AudienceType = Literal["user", "role", "department", "all"]
-ContentMode = Literal["i18n", "raw"]
+ContentMode = Literal["template", "i18n", "raw"]
 ContentFormat = Literal["plain_text", "markdown"]
 NotificationChannel = Literal["in_app"]
 
@@ -37,6 +38,22 @@ class AudienceRule(BaseModel):
     value: str | None = None
     include_descendants: bool = False
 
+    @model_validator(mode="after")
+    def _validate_shape(self) -> AudienceRule:
+        if self.type == "all":
+            if self.value is not None or self.include_descendants:
+                raise ValueError("all audience does not accept value or include_descendants")
+        elif not self.value:
+            raise ValueError("user, role, and department audiences require value")
+        elif self.type != "department" and self.include_descendants:
+            raise ValueError("include_descendants is valid only for department audiences")
+        if self.type in {"user", "department"} and self.value:
+            try:
+                UUID(self.value)
+            except ValueError as exc:
+                raise ValueError(f"{self.type} audience value must be a UUID") from exc
+        return self
+
 
 class NotificationCommand(BaseModel):
     """The normalized notification command submitted by a business plugin."""
@@ -52,6 +69,9 @@ class NotificationCommand(BaseModel):
     raw_content: str | None = None
     raw_format: ContentFormat = "plain_text"
 
+    template_code: str | None = Field(default=None, max_length=128)
+    template_variables: dict = Field(default_factory=dict)
+
     audience: list[AudienceRule] = Field(default_factory=list)
     mandatory: bool = False
     channels: list[NotificationChannel] = Field(default_factory=_default_channels)
@@ -62,16 +82,20 @@ class NotificationCommand(BaseModel):
 
     @property
     def content_mode(self) -> ContentMode:
+        if self.template_code is not None:
+            return "template"
         return "i18n" if self.i18n_key is not None else "raw"
 
     @model_validator(mode="after")
     def _validate(self) -> NotificationCommand:
+        has_template = self.template_code is not None
         has_i18n = self.i18n_key is not None
         has_raw = self.raw_title is not None or self.raw_content is not None
-        if has_i18n and has_raw:
-            raise ValueError("content sources are mutually exclusive: provide either i18n or raw, not both")
-        if not has_i18n and not has_raw:
-            raise ValueError("missing content source: provide either i18n_key or raw_title+raw_content")
+        provided = sum((has_template, has_i18n, has_raw))
+        if provided > 1:
+            raise ValueError("content sources are mutually exclusive: provide exactly one of template / i18n / raw")
+        if provided == 0:
+            raise ValueError("missing content source: provide one of template_code / i18n_key / raw_title+raw_content")
         if has_raw and (self.raw_title is None or self.raw_content is None):
             raise ValueError("raw mode requires both raw_title and raw_content")
         if not self.audience:
@@ -94,3 +118,32 @@ class Notifier(Protocol):
     """The notification service protocol provided by plugin_notification."""
 
     async def send(self, command: NotificationCommand) -> NotificationResult: ...
+
+
+class AudiencePreview(BaseModel):
+    """An estimated audience breakdown, not a publication authorization."""
+
+    total: int
+    by_type: dict[str, int] = Field(default_factory=dict)
+
+
+@runtime_checkable
+class AdminNotifier(Protocol):
+    """The administrative notification service provided by the notification plugin."""
+
+    async def create_message(
+        self,
+        command: NotificationCommand,
+        *,
+        created_by: UUID,
+        publish_at: datetime | None = None,
+        expire_at: datetime | None = None,
+    ) -> NotificationResult: ...
+
+    async def publish(self, message_id: UUID, *, operator_id: UUID) -> NotificationResult: ...
+
+    async def cancel(self, message_id: UUID, *, operator_id: UUID) -> None: ...
+
+    async def recall(self, message_id: UUID, *, operator_id: UUID) -> None: ...
+
+    async def preview_audience(self, audience: list[AudienceRule]) -> AudiencePreview: ...

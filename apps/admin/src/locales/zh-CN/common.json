@@ -31,29 +31,6 @@
       "unknown": "系统活动"
     }
   },
-  "route": {
-    "home": "首页",
-    "manage": "系统管理",
-    "manage_user": "用户管理",
-    "manage_role": "角色管理",
-    "manage_menu": "菜单管理",
-    "manage_department": "部门管理",
-    "manage_data-policy": "数据策略",
-    "manage_field-policy": "字段策略",
-    "manage_audit-dict": "审计字典",
-    "socketio": "即时通讯",
-    "socketio_chat": "聊天室",
-    "socketio_debug": "调试面板",
-    "socketio_instrument": "仪表盘",
-    "queue": "任务队列",
-    "queue_dashboard": "队列概览",
-    "queue_schedule": "定时任务",
-    "queue_task": "任务历史",
-    "script": "脚本管理",
-    "monitoring": "监控中心",
-    "monitoring_api": "API 监控",
-    "monitoring_plugin": "插件管理"
-  },
   "common": {
     "confirm": "确定",
     "cancel": "取消",
@@ -79,13 +56,24 @@
   "error": {
     "403": "无权限访问此页面",
     "404": "页面不存在",
-    "500": "服务器发生意外错误"
+    "500": "服务器发生意外错误",
+    "routeTitle": "页面加载失败",
+    "routeDescription": "页面运行时发生错误，请重试或返回首页。",
+    "iframe": "嵌入页面加载失败"
   },
   "auth": {
     "login": "登录",
+    "loggingIn": "正在登录...",
     "logout": "退出登录",
     "username": "用户名",
     "password": "密码",
+    "rememberMe": "记住我",
+    "validation": {
+      "usernameRequired": "请输入用户名",
+      "usernameInvalid": "用户名格式不正确",
+      "passwordRequired": "请输入密码",
+      "passwordInvalid": "密码格式不正确，6-18位字符，包含字母、数字、下划线"
+    },
     "loginSuccess": "登录成功",
     "loginFailed": "登录失败",
     "sessionExpired": "会话已过期，请重新登录"
@@ -93,7 +81,14 @@
   "tabs": {
     "close": "关闭",
     "closeOthers": "关闭其他",
-    "closeAll": "关闭全部"
+    "closeLeft": "关闭左侧",
+    "closeRight": "关闭右侧",
+    "closeAll": "关闭全部",
+    "pin": "固定页签",
+    "unpin": "取消固定",
+    "reload": "刷新当前页面",
+    "fullscreen": "全屏显示内容",
+    "exitFullscreen": "退出内容全屏"
   },
   "layout": {
     "toggleTheme": "切换主题",
@@ -103,6 +98,20 @@
     "toggleSidebar": "切换侧边栏",
     "mobileNavigation": "移动端导航",
     "closeNavigation": "关闭导航",
-    "breadcrumbs": "面包屑导航"
+    "sectionNavigation": "分区导航",
+    "mainNavigation": "主导航",
+    "breadcrumbs": "面包屑导航",
+    "moreTools": "更多页头工具",
+    "switchLanguage": "切换语言",
+    "browserFullscreen": {
+      "enter": "进入浏览器全屏",
+      "exit": "退出浏览器全屏",
+      "unavailable": "浏览器全屏不可用"
+    },
+    "globalSearch": {
+      "title": "搜索页面",
+      "placeholder": "搜索页面",
+      "empty": "未找到页面"
+    }
   }
 }

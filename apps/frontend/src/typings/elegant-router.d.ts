@@ -35,6 +35,13 @@ declare module "@elegant-router/types" {
     "monitoring": "/monitoring";
     "monitoring_api": "/monitoring/api";
     "monitoring_plugin": "/monitoring/plugin";
+    "notification": "/notification";
+    "notification_center": "/notification/center";
+    "notification_manage": "/notification/manage";
+    "notification_manage_announcements": "/notification/manage/announcements";
+    "notification_manage_deliveries": "/notification/manage/deliveries";
+    "notification_manage_templates": "/notification/manage/templates";
+    "notification_preferences": "/notification/preferences";
     "queue": "/queue";
     "queue_dashboard": "/queue/dashboard";
     "queue_schedule": "/queue/schedule";
@@ -83,6 +90,7 @@ declare module "@elegant-router/types" {
     | "login"
     | "manage"
     | "monitoring"
+    | "notification"
     | "queue"
     | "script"
     | "socketio"
@@ -118,6 +126,11 @@ declare module "@elegant-router/types" {
     | "manage_user"
     | "monitoring_api"
     | "monitoring_plugin"
+    | "notification_center"
+    | "notification_manage_announcements"
+    | "notification_manage_deliveries"
+    | "notification_manage_templates"
+    | "notification_preferences"
     | "queue_dashboard"
     | "queue_schedule"
     | "queue_task"

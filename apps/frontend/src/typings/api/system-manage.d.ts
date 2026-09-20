@@ -163,6 +163,16 @@ declare global {
 
       type MenuSearchParams = Service.ApiRequest<"/api/v1/manage/menus", "get", "query">
 
+      /** Query parameters for the active-menu ancestor candidates endpoint. */
+      type ActiveMenuOptionsParams = Service.ApiRequest<
+        "/api/v1/manage/menus/active-menu-options",
+        "get",
+        "query"
+      >
+
+      /** An eligible visible ancestor page that can be highlighted for a hidden child page. */
+      type ActiveMenuOption = Service.ApiResponse<"/api/v1/manage/menus/active-menu-options">[number]
+
       type Menu = Common.CommonRecord<{
         /** parent menu id */
         parentId?: string | null

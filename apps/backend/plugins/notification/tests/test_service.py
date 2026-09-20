@@ -17,10 +17,13 @@ class _StubQueryService:
     def __init__(self, all_user_ids):
         self._all_user_ids = all_user_ids
 
-    async def get_users_by_role(self, role_code):
+    async def get_active_user_ids(self, user_ids):
+        return list(user_ids)
+
+    async def get_active_user_ids_by_role(self, role_code):
         return []
 
-    async def get_users_by_department(self, department_id):
+    async def get_active_user_ids_by_department(self, department_id, include_descendants=False):
         return []
 
     async def get_all_active_user_ids(self):
@@ -99,6 +102,32 @@ def test_command_rejects_empty_audience():
             raw_title="t",
             raw_content="c",
             audience=[],
+        )
+
+
+def test_command_template_mode_valid():
+    command = NotificationCommand(
+        source="user",
+        category="user.invited",
+        level="info",
+        template_code="user.invited",
+        template_variables={"username": "alice"},
+        audience=[AudienceRule(type="all")],
+    )
+
+    assert command.content_mode == "template"
+    assert command.template_variables == {"username": "alice"}
+
+
+def test_command_template_conflicts_with_i18n():
+    with pytest.raises(ValueError):
+        NotificationCommand(
+            source="x",
+            category="c",
+            level="info",
+            template_code="t",
+            i18n_key="a.b",
+            audience=[AudienceRule(type="all")],
         )
 
 

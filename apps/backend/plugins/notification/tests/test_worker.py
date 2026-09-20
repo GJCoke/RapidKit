@@ -72,7 +72,7 @@ async def _seed_message_and_outbox(
     return message, inbox, outbox
 
 
-def _worker(session, channel, *, batch_size=100):
+def _worker(session, channel, *, batch_size=100, jitter=lambda _low, _high: 0):
     registry = ChannelRegistry()
     registry.register("in_app", channel)
     return DeliveryWorker(
@@ -81,6 +81,7 @@ def _worker(session, channel, *, batch_size=100):
         registry=registry,
         worker_id="w1",
         batch_size=batch_size,
+        jitter=jitter,
     )
 
 
@@ -181,3 +182,30 @@ async def test_success_marks_only_matching_inbox_delivered(db_session):
     untouched = await UserNotificationCRUD(db_session).get(other_inbox.id)
     assert delivered.one().delivered_at is not None
     assert untouched.delivered_at is None
+
+
+@pytest.mark.asyncio
+async def test_inactive_message_cancels_delivery_without_calling_adapter(db_session):
+    message, _, outbox = await _seed_message_and_outbox(db_session)
+    message.status = "recalled"
+    db_session.add(message)
+    await db_session.commit()
+
+    processed = await _worker(db_session, _OKChannel()).run_once()
+    await db_session.commit()
+
+    refreshed = await OutboxCRUD(db_session).get(outbox.id)
+    assert processed == 1
+    assert refreshed.status == OutboxStatus.CANCELLED.value
+
+
+@pytest.mark.asyncio
+async def test_retry_adds_bounded_jitter(db_session):
+    _, _, outbox = await _seed_message_and_outbox(db_session)
+
+    await _worker(db_session, _FailChannel(), jitter=lambda _low, high: high).run_once()
+    await db_session.commit()
+
+    refreshed = await OutboxCRUD(db_session).get(outbox.id)
+    actual_backoff = (refreshed.next_attempt_at - refreshed.update_time).total_seconds()
+    assert BASE_BACKOFF_SECONDS * 1.24 <= actual_backoff <= BASE_BACKOFF_SECONDS * 1.26

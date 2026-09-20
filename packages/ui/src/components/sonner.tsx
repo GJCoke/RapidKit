@@ -1,4 +1,5 @@
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import * as React from "react"
+import { Toaster as Sonner, toast, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 interface RapidKitToasterProps extends ToasterProps {
@@ -35,5 +36,5 @@ const Toaster = ({ theme = "system", ...props }: RapidKitToasterProps) => {
   )
 }
 
-export { Toaster }
+export { Toaster, toast }
 export type { RapidKitToasterProps }

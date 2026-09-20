@@ -1,0 +1,33 @@
+{
+  "route": {
+    "404": "Not found",
+    "500": "Server error",
+    "iframe-page": "Embedded page",
+    "home": "Home",
+    "manage": "System management",
+    "manage_user": "Users",
+    "manage_role": "Roles",
+    "manage_menu": "Menus",
+    "manage_department": "Departments",
+    "manage_data-policy": "Data policies",
+    "manage_field-policy": "Field policies",
+    "manage_audit-dict": "Audit dictionary",
+    "manage_audit-log": "Audit logs",
+    "socketio": "Realtime communication",
+    "socketio_chat": "Chat",
+    "socketio_debug": "Debug console",
+    "socketio_instrument": "Dashboard",
+    "queue": "Task queue",
+    "queue_dashboard": "Queue overview",
+    "queue_schedule": "Schedules",
+    "queue_task": "Task history",
+    "script": "Scripts",
+    "monitoring": "Monitoring",
+    "monitoring_api": "API monitoring",
+    "monitoring_plugin": "Plugins",
+    "notification_manage": "Notification management",
+    "notification_manage_templates": "Templates",
+    "notification_manage_announcements": "Announcements",
+    "notification_manage_deliveries": "Delivery status"
+  }
+}

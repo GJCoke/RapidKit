@@ -174,6 +174,63 @@ export const generatedRoutes: GeneratedRoute[] = [{
     }
   }]
 }, {
+  name: 'notification',
+  path: '/notification',
+  component: 'layout.base',
+  meta: {
+    title: 'notification',
+    i18nKey: 'route.notification'
+  },
+  children: [{
+    name: 'notification_center',
+    path: '/notification/center',
+    component: 'view.notification_center',
+    meta: {
+      title: 'notification_center',
+      i18nKey: 'route.notification_center'
+    }
+  }, {
+    name: 'notification_manage',
+    path: '/notification/manage',
+    meta: {
+      title: 'notification_manage',
+      i18nKey: 'route.notification_manage'
+    },
+    children: [{
+      name: 'notification_manage_announcements',
+      path: '/notification/manage/announcements',
+      component: 'view.notification_manage_announcements',
+      meta: {
+        title: 'notification_manage_announcements',
+        i18nKey: 'route.notification_manage_announcements'
+      }
+    }, {
+      name: 'notification_manage_deliveries',
+      path: '/notification/manage/deliveries',
+      component: 'view.notification_manage_deliveries',
+      meta: {
+        title: 'notification_manage_deliveries',
+        i18nKey: 'route.notification_manage_deliveries'
+      }
+    }, {
+      name: 'notification_manage_templates',
+      path: '/notification/manage/templates',
+      component: 'view.notification_manage_templates',
+      meta: {
+        title: 'notification_manage_templates',
+        i18nKey: 'route.notification_manage_templates'
+      }
+    }]
+  }, {
+    name: 'notification_preferences',
+    path: '/notification/preferences',
+    component: 'view.notification_preferences',
+    meta: {
+      title: 'notification_preferences',
+      i18nKey: 'route.notification_preferences'
+    }
+  }]
+}, {
   name: 'queue',
   path: '/queue',
   component: 'layout.base',

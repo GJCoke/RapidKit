@@ -102,6 +102,7 @@ async def test_audit_middleware_extracts_client_info_from_request(monkeypatch):
         ),
     )
     monkeypatch.setattr("src.middlewares.audit.timezone", SimpleNamespace(now=lambda: None))
+
     async def receive():
         return {"type": "http.request", "body": b"", "more_body": False}
 

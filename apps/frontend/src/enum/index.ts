@@ -4,4 +4,5 @@ export enum SetupStoreId {
   Auth = "auth-store",
   Route = "route-store",
   Tab = "tab-store",
+  Notification = "notification-store",
 }

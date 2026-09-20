@@ -1,0 +1,33 @@
+{
+  "route": {
+    "404": "页面不存在",
+    "500": "服务器错误",
+    "iframe-page": "嵌入页面",
+    "home": "首页",
+    "manage": "系统管理",
+    "manage_user": "用户管理",
+    "manage_role": "角色管理",
+    "manage_menu": "菜单管理",
+    "manage_department": "部门管理",
+    "manage_data-policy": "数据策略",
+    "manage_field-policy": "字段策略",
+    "manage_audit-dict": "审计字典",
+    "manage_audit-log": "审计日志",
+    "socketio": "即时通讯",
+    "socketio_chat": "聊天室",
+    "socketio_debug": "调试面板",
+    "socketio_instrument": "仪表盘",
+    "queue": "任务队列",
+    "queue_dashboard": "队列概览",
+    "queue_schedule": "定时任务",
+    "queue_task": "任务历史",
+    "script": "脚本管理",
+    "monitoring": "监控中心",
+    "monitoring_api": "API 监控",
+    "monitoring_plugin": "插件管理",
+    "notification_manage": "通知管理",
+    "notification_manage_templates": "模板管理",
+    "notification_manage_announcements": "公告管理",
+    "notification_manage_deliveries": "投递状态"
+  }
+}

@@ -36,10 +36,12 @@ _CORE_BEAT_SCHEDULE: dict[str, dict] = {
 
 def configure_from_plugins() -> None:
     """Configure plugin tasks and schedules before Celery finalizes its registry."""
-    from rapidkit_framework.loader import discover_and_load_plugins
+    from rapidkit_framework.loader import discover_and_load_plugins, resolve_services
+    from rapidkit_framework.services import service_registry
 
     result = discover_and_load_plugins(register_event_listeners=False)
     plugins = result.plugins
+    resolve_services(service_registry, plugins)
 
     task_modules = list(_CORE_TASK_MODULES)
     beat_schedule = dict(_CORE_BEAT_SCHEDULE)

@@ -10,13 +10,14 @@ export function getAuthorization() {
 
 /** refresh token */
 async function handleRefreshToken() {
-  const { resetStore } = useAuthStore()
+  const { resetStore, syncAccessToken } = useAuthStore()
 
   const rToken = localStg.get("refreshToken") || ""
   const { error, data } = await fetchRefreshToken(rToken)
   if (!error) {
     localStg.set("token", data.accessToken)
     localStg.set("refreshToken", data.refreshToken)
+    syncAccessToken(data.accessToken)
     return true
   }
 

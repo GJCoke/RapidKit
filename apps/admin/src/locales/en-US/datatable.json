@@ -1,0 +1,20 @@
+{
+  "datatable": {
+    "pageSize": "{{size}} per page",
+    "total": "{{total}} total",
+    "pageSizeLabel": "Rows per page",
+    "previousPage": "Previous",
+    "nextPage": "Next",
+    "loadFailed": "Failed to load data",
+    "retry": "Retry",
+    "empty": "No data",
+    "dragColumn": "Drag {{title}}",
+    "pinColumn": "Pin {{title}}",
+    "pinnedLeft": "Left",
+    "pinnedRight": "Right",
+    "columnSettings": "Column settings",
+    "allColumns": "All columns",
+    "resetColumns": "Restore defaults",
+    "refresh": "Refresh"
+  }
+}

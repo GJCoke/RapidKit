@@ -1,0 +1,19 @@
+.activeLeaf {
+  color: var(--sidebar-primary);
+  background: color-mix(in oklab, var(--sidebar-primary) 10%, var(--sidebar) 90%);
+}
+
+.activeLeaf:hover {
+  color: var(--sidebar-primary);
+  background: color-mix(in oklab, var(--sidebar-primary) 10%, var(--sidebar) 90%);
+}
+
+.activeBranch {
+  color: var(--sidebar-primary);
+  background: color-mix(in oklab, var(--sidebar-primary) 6%, var(--sidebar) 94%);
+}
+
+.activeBranch:hover {
+  color: var(--sidebar-primary);
+  background: color-mix(in oklab, var(--sidebar-primary) 6%, var(--sidebar) 94%);
+}

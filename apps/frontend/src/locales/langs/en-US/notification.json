@@ -1,0 +1,9 @@
+{
+  "category": {
+    "adminAnnouncement": "System announcements",
+    "systemSecurity": "System security",
+    "userInvited": "User invitations",
+    "userMention": "Mentions",
+    "taskCompleted": "Completed tasks"
+  }
+}

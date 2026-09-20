@@ -1,11 +1,17 @@
 """编排器与偏好/受众相关测试。"""
 
+from typing import cast
 from uuid import uuid4
 
 import pytest
 from plugin_notification.audience import AudienceResolver
-from plugin_notification.crud import MessageCRUD, OutboxCRUD
-from plugin_notification.models import NotificationAudience, NotificationMessage, UserNotification
+from plugin_notification.crud import MessageCRUD, OutboxCRUD, PreferenceCRUD, TemplateCRUD
+from plugin_notification.models import (
+    NotificationAudience,
+    NotificationMessage,
+    NotificationOutbox,
+    UserNotification,
+)
 from plugin_notification.orchestrator import MessageOrchestrator
 from plugin_notification.preference import PreferenceResolver
 from rapidkit_common.protocols.notification import (
@@ -13,16 +19,20 @@ from rapidkit_common.protocols.notification import (
     NotificationAction,
     NotificationCommand,
 )
+from rapidkit_common.protocols.user import UserQueryService
 from rapidkit_framework.exceptions import AppException
 from sqlmodel import col, select
 
 
 def _orchestrator(session, audience_ids):
     class _QueryService:
-        async def get_users_by_role(self, role_code):
+        async def get_active_user_ids(self, user_ids):
+            return list(user_ids)
+
+        async def get_active_user_ids_by_role(self, role_code):
             return []
 
-        async def get_users_by_department(self, department_id):
+        async def get_active_user_ids_by_department(self, department_id, include_descendants=False):
             return []
 
         async def get_all_active_user_ids(self):
@@ -30,31 +40,11 @@ def _orchestrator(session, audience_ids):
 
     return MessageOrchestrator(
         session=session,
-        audience_resolver=AudienceResolver(query_service=_QueryService()),
-        preference_resolver=PreferenceResolver(),
+        audience_resolver=AudienceResolver(
+            query_service=cast(UserQueryService, _QueryService())
+        ),
+        preference_resolver=PreferenceResolver(session=session),
     )
-
-
-@pytest.mark.asyncio
-async def test_preference_resolver_is_passthrough_for_non_mandatory():
-    """P1 keeps every recipient for non-mandatory notifications."""
-    resolver = PreferenceResolver()
-    user_ids = [uuid4(), uuid4()]
-
-    allowed = await resolver.filter_allowed(user_ids, category="any.category", mandatory=False)
-
-    assert allowed == user_ids
-
-
-@pytest.mark.asyncio
-async def test_preference_resolver_is_passthrough_for_mandatory():
-    """Mandatory messages also preserve every recipient."""
-    resolver = PreferenceResolver()
-    user_ids = [uuid4()]
-
-    allowed = await resolver.filter_allowed(user_ids, category="any.category", mandatory=True)
-
-    assert allowed == user_ids
 
 
 @pytest.mark.asyncio
@@ -87,6 +77,108 @@ async def test_orchestrator_writes_message_inbox_and_outbox(db_session):
 
     outbox = await OutboxCRUD(db_session).get_all()
     assert len(outbox) == 2
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_filters_only_new_fanout_and_preserves_historical_inbox(db_session):
+    disabled_user_id, enabled_user_id = uuid4(), uuid4()
+    orchestrator = _orchestrator(db_session, [disabled_user_id, enabled_user_id])
+    historical = await orchestrator.process(
+        NotificationCommand(
+            source="user",
+            category="user.invited",
+            level="info",
+            raw_title="Earlier invitation",
+            raw_content="Already delivered",
+            audience=[AudienceRule(type="all")],
+        )
+    )
+    await db_session.commit()
+    await PreferenceCRUD(db_session).create(
+        {
+            "user_id": disabled_user_id,
+            "category": "user.invited",
+            "enabled": False,
+        }
+    )
+    await db_session.commit()
+
+    current = await orchestrator.process(
+        NotificationCommand(
+            source="user",
+            category="user.invited",
+            level="info",
+            raw_title="Current invitation",
+            raw_content="New delivery",
+            audience=[AudienceRule(type="all")],
+        )
+    )
+    await db_session.commit()
+
+    historical_inbox = (
+        await db_session.exec(
+            select(UserNotification).where(
+                col(UserNotification.message_id) == historical.message_id,
+                col(UserNotification.user_id) == disabled_user_id,
+            )
+        )
+    ).all()
+    current_inbox = (
+        await db_session.exec(
+            select(UserNotification).where(col(UserNotification.message_id) == current.message_id)
+        )
+    ).all()
+    current_outbox = (
+        await db_session.exec(
+            select(NotificationOutbox).where(col(NotificationOutbox.message_id) == current.message_id)
+        )
+    ).all()
+
+    assert current.recipient_count == 1
+    assert {row.user_id for row in current_inbox} == {enabled_user_id}
+    assert {row.user_id for row in current_outbox} == {enabled_user_id}
+    assert len(historical_inbox) == 1
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_mandatory_message_fans_out_to_disabled_user(db_session):
+    disabled_user_id, enabled_user_id = uuid4(), uuid4()
+    await PreferenceCRUD(db_session).create(
+        {
+            "user_id": disabled_user_id,
+            "category": "user.invited",
+            "enabled": False,
+        }
+    )
+    await db_session.commit()
+    orchestrator = _orchestrator(db_session, [disabled_user_id, enabled_user_id])
+
+    result = await orchestrator.process(
+        NotificationCommand(
+            source="system",
+            category="user.invited",
+            level="warning",
+            raw_title="Mandatory notice",
+            raw_content="Cannot be disabled",
+            audience=[AudienceRule(type="all")],
+            mandatory=True,
+        )
+    )
+    await db_session.commit()
+
+    inbox = (
+        await db_session.exec(
+            select(UserNotification).where(col(UserNotification.message_id) == result.message_id)
+        )
+    ).all()
+    outbox = (
+        await db_session.exec(
+            select(NotificationOutbox).where(col(NotificationOutbox.message_id) == result.message_id)
+        )
+    ).all()
+    assert result.recipient_count == 2
+    assert {row.user_id for row in inbox} == {disabled_user_id, enabled_user_id}
+    assert {row.user_id for row in outbox} == {disabled_user_id, enabled_user_id}
 
 
 @pytest.mark.asyncio
@@ -179,3 +271,45 @@ async def test_orchestrator_empty_audience_raises(db_session):
 
     with pytest.raises(AppException):
         await orchestrator.process(command)
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_process_renders_template_content_before_immediate_fanout(db_session):
+    await TemplateCRUD(db_session).create(
+        {
+            "code": "user.invited",
+            "name": "Invitation",
+            "category": "user.invited",
+            "level": "info",
+            "content_mode": "raw",
+            "title_template": "Invite {username}",
+            "content_template": "Welcome {username}",
+            "content_format": "plain_text",
+            "variable_schema": {"username": {"type": "string", "required": True}},
+            "default_channels": ["in_app"],
+            "default_action": None,
+            "mandatory": False,
+            "enabled": True,
+            "version": 1,
+        }
+    )
+    user_id = uuid4()
+    orchestrator = _orchestrator(db_session, [user_id])
+    command = NotificationCommand(
+        source="user",
+        category="user.invited",
+        level="info",
+        template_code="user.invited",
+        template_variables={"username": "alice"},
+        audience=[AudienceRule(type="all")],
+    )
+
+    result = await orchestrator.process(command)
+    await db_session.commit()
+
+    message = await MessageCRUD(db_session).get(result.message_id)
+    assert message is not None
+    assert message.content_mode == "raw"
+    assert message.title == "Invite alice"
+    assert message.content == "Welcome alice"
+    assert message.template_id is not None

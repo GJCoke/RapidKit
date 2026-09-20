@@ -13,9 +13,10 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@test/*": ["./tests/*"]
     }
   },
-  "include": ["src/**/*", "src/vite-env.d.ts"],
+  "include": ["src/**/*", "tests/**/*", "src/vite-env.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

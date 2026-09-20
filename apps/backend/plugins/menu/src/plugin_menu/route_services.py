@@ -14,7 +14,7 @@ from uuid import UUID
 if TYPE_CHECKING:
     from rapidkit_common.auth import UserProtocol
 
-from rapidkit_common.enums import MenuIconType, Status
+from rapidkit_common.enums import MenuIconType, MenuType, Status
 from rapidkit_common.protocols.permission import PermissionCacheManager
 from rapidkit_framework.services import get_service
 from sqlmodel import col, select
@@ -24,7 +24,7 @@ from plugin_menu.models import Menu
 from plugin_menu.route_schemas import MenuRouteResponse, RouteMeta, UserRouteResponse
 
 
-def menu_to_route(menu: Menu) -> MenuRouteResponse:
+def menu_to_route(menu: Menu, route_names: dict[UUID, str]) -> MenuRouteResponse:
     """将 Menu 模型转换为前端路由响应格式。"""
     icon = None
     local_icon = None
@@ -46,6 +46,7 @@ def menu_to_route(menu: Menu) -> MenuRouteResponse:
         order=menu.order,
         constant=menu.constant,
         hide_in_menu=menu.hide_in_menu,
+        active_menu=route_names.get(menu.active_menu_id) if menu.active_menu_id else None,
         keep_alive=menu.keep_alive,
         href=menu.href,
         multi_tab=menu.multi_tab,
@@ -64,11 +65,12 @@ def menu_to_route(menu: Menu) -> MenuRouteResponse:
 
 def build_route_tree(menus: list[Menu]) -> list[MenuRouteResponse]:
     """将菜单列表构建为路由树。"""
+    route_names = {menu.id: menu.route_name for menu in menus}
     route_map: dict[UUID, MenuRouteResponse] = {}
     tree: list[MenuRouteResponse] = []
 
     for menu in menus:
-        route = menu_to_route(menu)
+        route = menu_to_route(menu, route_names)
         route_map[menu.id] = route
 
     for menu in menus:
@@ -125,6 +127,25 @@ async def get_user_routes(
 
         for menu in all_menus:
             if menu.route_name in permitted_routes:
+                if menu.active_menu_id is not None:
+                    active_target_found = False
+                    page_ancestors_permitted = True
+                    ancestor_id = menu.parent_id
+                    visited: set[UUID] = set()
+                    while ancestor_id is not None and ancestor_id not in visited:
+                        visited.add(ancestor_id)
+                        ancestor = menu_map.get(ancestor_id)
+                        if ancestor is None:
+                            page_ancestors_permitted = False
+                            break
+                        if ancestor.menu_type == MenuType.MENU and ancestor.route_name not in permitted_routes:
+                            page_ancestors_permitted = False
+                            break
+                        if ancestor.id == menu.active_menu_id:
+                            active_target_found = True
+                        ancestor_id = ancestor.parent_id
+                    if not active_target_found or not page_ancestors_permitted:
+                        continue
                 permitted_menu_ids.add(menu.id)
                 parent_id = menu.parent_id
                 while parent_id and parent_id in menu_map:

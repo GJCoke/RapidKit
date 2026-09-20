@@ -93,6 +93,8 @@ class AuthPolicyLoader:
                     description=cached.description,
                     target_model=cached.target_model,
                     rule=cached.rule,
+                    effect=cached.effect,
+                    actions=cached.actions,
                     status=cached.status,
                 )
                 p.id = pid

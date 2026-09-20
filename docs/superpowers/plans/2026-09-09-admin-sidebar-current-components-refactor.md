@@ -613,8 +613,8 @@ apps/admin/src/features/layout/components/
   Assert:
 
   ```ts
-  expect(getMenuIconClasses(false)).toContain("size-4")
-  expect(getMenuIconClasses(true)).toContain("size-[22px]")
+  expect(getMenuIconClasses(false)).toContain("size-[18px]")
+  expect(getMenuIconClasses(true)).toContain("size-[18px]")
   expect(getMenuIndentStyle(0, false)).toEqual({ paddingLeft: "12px" })
   expect(getMenuIndentStyle(1, false)).toEqual({ paddingLeft: "30px" })
   expect(getMenuButtonClasses({ collapsed: false, active: true, branchActive: false })).toContain("text-sidebar-primary")
@@ -635,7 +635,7 @@ apps/admin/src/features/layout/components/
 
 - [ ] **Step 3: Implement frontend-aligned dimensions**
 
-  Use 36px tokenized height, 16px expanded icons, 22px collapsed top-level icons, 18px per nested depth, 8px sidebar padding, and 300ms transitions. Keep depth-zero expanded padding at 12px so the first nested level becomes 30px.
+  Use 36px tokenized height, stable 18px icons in both sidebar states, 18px per nested depth, 8px sidebar padding, and 300ms transitions. Keep depth-zero expanded padding at 12px so the first nested level becomes 30px.
 
 - [ ] **Step 4: Implement semantic active and hover classes**
 
@@ -650,7 +650,7 @@ apps/admin/src/features/layout/components/
 
 - [ ] **Step 5: Adopt the style helpers in leaf and group components**
 
-  Remove duplicated class construction from both components. Apply 22px only to collapsed top-level triggers; Popover descendants use the expanded 16px sizing.
+  Remove duplicated class construction from both components. Keep icons at 18px for expanded items, collapsed top-level triggers, and Popover descendants.
 
 - [ ] **Step 6: Run style and menu DOM tests and verify GREEN**
 
@@ -846,7 +846,7 @@ apps/admin/src/features/layout/components/
   Start `pnpm --filter @rapidkit/admin dev`, authenticate, and inspect at least one three-level menu in:
 
   - Expanded light mode: selected path open, active leaf stable on hover, ancestor visibly weaker.
-  - Collapsed light mode: 22px top-level icons, Tooltip for leaf, Popover for group.
+  - Collapsed light mode: stable 18px top-level icons, Tooltip for leaf, Popover for group.
   - Expanded dark mode: semantic active/hover contrast remains distinct.
   - Collapsed dark mode: Popover uses popover tokens rather than constrained sidebar colors.
   - Mobile width below 640px: Sheet closes after navigation.

@@ -1,0 +1,20 @@
+{
+  "datatable": {
+    "pageSize": "{{size}} 条/页",
+    "total": "共 {{total}} 条",
+    "pageSizeLabel": "每页条数",
+    "previousPage": "上一页",
+    "nextPage": "下一页",
+    "loadFailed": "数据加载失败",
+    "retry": "重试",
+    "empty": "暂无数据",
+    "dragColumn": "拖动{{title}}",
+    "pinColumn": "固定{{title}}",
+    "pinnedLeft": "左",
+    "pinnedRight": "右",
+    "columnSettings": "列设置",
+    "allColumns": "全部列",
+    "resetColumns": "恢复默认",
+    "refresh": "刷新"
+  }
+}

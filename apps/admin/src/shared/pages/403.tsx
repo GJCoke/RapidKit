@@ -8,7 +8,7 @@ export default function Forbidden() {
   const navigate = useNavigate()
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+    <div className="flex h-full flex-col items-center justify-center gap-4">
       <h1 className="text-7xl font-bold text-primary">403</h1>
       <p className="text-sm text-muted-foreground">{t("error.403")}</p>
       <Button type="button" variant="outline" onClick={() => navigate(HOME_PATH)}>

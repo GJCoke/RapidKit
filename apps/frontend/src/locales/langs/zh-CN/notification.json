@@ -1,0 +1,9 @@
+{
+  "category": {
+    "adminAnnouncement": "系统公告",
+    "systemSecurity": "系统安全",
+    "userInvited": "用户邀请",
+    "userMention": "提及我的消息",
+    "taskCompleted": "任务完成"
+  }
+}

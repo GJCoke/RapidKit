@@ -5,7 +5,8 @@
 """
 
 from datetime import timedelta
-from typing import Any
+from random import uniform
+from typing import Any, Callable
 from uuid import UUID
 
 from rapidkit_core.log import get_plugin_logger
@@ -15,6 +16,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_notification.channels import ChannelRegistry
 from plugin_notification.enums import (
+    BACKOFF_JITTER_RATIO,
     BASE_BACKOFF_SECONDS,
     DELIVERY_BATCH_SIZE,
     MAX_ATTEMPTS,
@@ -36,21 +38,21 @@ class DeliveryWorker:
         registry: ChannelRegistry,
         worker_id: str,
         batch_size: int = DELIVERY_BATCH_SIZE,
+        jitter: Callable[[float, float], float] = uniform,
     ) -> None:
         self.session = session
         self.redis = redis
         self.registry = registry
         self.worker_id = worker_id
         self.batch_size = batch_size
+        self.jitter = jitter
 
     async def _claim(self) -> list[NotificationOutbox]:
         now = timezone.now()
         statement = (
             select(NotificationOutbox)
             .where(
-                col(NotificationOutbox.status).in_(
-                    [OutboxStatus.PENDING.value, OutboxStatus.RETRYING.value]
-                ),
+                col(NotificationOutbox.status).in_([OutboxStatus.PENDING.value, OutboxStatus.RETRYING.value]),
                 or_(
                     col(NotificationOutbox.next_attempt_at).is_(None),
                     col(NotificationOutbox.next_attempt_at) <= now,
@@ -90,6 +92,9 @@ class DeliveryWorker:
             "category": message.category,
             "mandatory": message.mandatory,
             "action": message.action,
+            "status": message.status,
+            "expireAt": timezone.f_datetime(message.expire_at) if message.expire_at is not None else None,
+            "recalledAt": timezone.f_datetime(message.recalled_at) if message.recalled_at is not None else None,
             "createTime": timezone.f_datetime(message.create_time),
         }
 
@@ -113,6 +118,18 @@ class DeliveryWorker:
         rows = await self._claim()
         processed = 0
         for row in rows:
+            message = await self.session.get(NotificationMessage, row.message_id)
+            now = timezone.now()
+            if (
+                message is None
+                or message.status != "published"
+                or (message.expire_at is not None and message.expire_at <= now)
+            ):
+                row.status = OutboxStatus.CANCELLED.value
+                self._clear_lock(row)
+                self.session.add(row)
+                processed += 1
+                continue
             adapter = self.registry.get(row.channel)
             if adapter is None:
                 row.status = OutboxStatus.DEAD.value
@@ -144,7 +161,8 @@ class DeliveryWorker:
                 else:
                     row.status = OutboxStatus.RETRYING.value
                     backoff = BASE_BACKOFF_SECONDS * (2 ** (row.attempt_count - 1))
-                    row.next_attempt_at = timezone.now() + timedelta(seconds=backoff)
+                    jitter = self.jitter(0, backoff * BACKOFF_JITTER_RATIO)
+                    row.next_attempt_at = timezone.now() + timedelta(seconds=backoff + jitter)
             self.session.add(row)
             processed += 1
 

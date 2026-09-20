@@ -203,6 +203,7 @@ def build_menus() -> list[Menu]:
             "DELETE:/api/v1/manage/menus/{menu_id}",
             "DELETE:/api/v1/manage/menus",
             "GET:/api/v1/manage/menus/tree",
+            "GET:/api/v1/manage/menus/active-menu-options",
             "GET:/api/v1/manage/menus/pages",
         ],
     )
@@ -555,6 +556,124 @@ def build_menus() -> list[Menu]:
         ],
     )
 
+    notification_manage_id = uuid8()
+
+    # 7. 通知管理（动态路由由数据库菜单驱动）
+    notification_manage = Menu(
+        id=notification_manage_id,
+        menu_name="通知管理",
+        menu_type=MenuType.DIRECTORY,
+        order=9,
+        # Elegant Router treats names containing "_" as nested routes.  This
+        # database root must remain a first-level route so layout.base wraps
+        # all notification administration pages.
+        route_name="notificationManage",
+        route_path="/notification/manage",
+        component="layout.base",
+        icon="majesticons:bell-line",
+        icon_type=MenuIconType.ICONIFY,
+        i18n_key="route.notification_manage",
+    )
+
+    notification_manage_templates = Menu(
+        id=uuid8(),
+        parent_id=notification_manage_id,
+        menu_name="模板管理",
+        menu_type=MenuType.MENU,
+        order=1,
+        route_name="notification_manage_templates",
+        route_path="/notification/manage/templates",
+        component="view.notification_manage_templates",
+        icon="material-symbols:dashboard-customize-outline",
+        i18n_key="route.notification_manage_templates",
+        buttons=[
+            Button(code="POST:/api/v1/admin/notification-templates", desc="创建通知模板").model_dump(),
+            Button(
+                code="PUT:/api/v1/admin/notification-templates/{template_id}",
+                desc="编辑通知模板",
+            ).model_dump(),
+            Button(
+                code="DELETE:/api/v1/admin/notification-templates/{template_id}",
+                desc="删除通知模板",
+            ).model_dump(),
+        ],
+        interfaces=[
+            "GET:/api/v1/admin/notification-templates",
+            "GET:/api/v1/admin/notification-templates/{template_id}",
+            "POST:/api/v1/admin/notification-templates",
+            "PUT:/api/v1/admin/notification-templates/{template_id}",
+            "DELETE:/api/v1/admin/notification-templates/{template_id}",
+        ],
+    )
+
+    notification_manage_announcements = Menu(
+        id=uuid8(),
+        parent_id=notification_manage_id,
+        menu_name="公告管理",
+        menu_type=MenuType.MENU,
+        order=2,
+        route_name="notification_manage_announcements",
+        route_path="/notification/manage/announcements",
+        component="view.notification_manage_announcements",
+        icon="material-symbols:campaign-outline",
+        i18n_key="route.notification_manage_announcements",
+        buttons=[
+            Button(code="POST:/api/v1/admin/notifications", desc="创建公告").model_dump(),
+            Button(
+                code="POST:/api/v1/admin/notifications/{message_id}/audience-preview",
+                desc="预览公告受众",
+            ).model_dump(),
+            Button(
+                code="POST:/api/v1/admin/notifications/{message_id}/publish",
+                desc="发布公告",
+            ).model_dump(),
+            Button(
+                code="POST:/api/v1/admin/notifications/{message_id}/cancel",
+                desc="取消公告",
+            ).model_dump(),
+            Button(
+                code="POST:/api/v1/admin/notifications/{message_id}/recall",
+                desc="撤回公告",
+            ).model_dump(),
+        ],
+        interfaces=[
+            "GET:/api/v1/admin/notifications",
+            "POST:/api/v1/admin/notifications",
+            "POST:/api/v1/admin/notifications/{message_id}/audience-preview",
+            "POST:/api/v1/admin/notifications/{message_id}/publish",
+            "POST:/api/v1/admin/notifications/{message_id}/cancel",
+            "POST:/api/v1/admin/notifications/{message_id}/recall",
+        ],
+    )
+
+    notification_manage_deliveries = Menu(
+        id=uuid8(),
+        parent_id=notification_manage_id,
+        menu_name="投递状态",
+        menu_type=MenuType.MENU,
+        order=3,
+        route_name="notification_manage_deliveries",
+        route_path="/notification/manage/deliveries",
+        component="view.notification_manage_deliveries",
+        icon="material-symbols:send-outline",
+        i18n_key="route.notification_manage_deliveries",
+        buttons=[
+            Button(
+                code="GET:/api/v1/admin/notification-deliveries/{message_id}/summary",
+                desc="查看投递汇总",
+            ).model_dump(),
+            Button(
+                code="POST:/api/v1/admin/notification-deliveries/{message_id}/retry-failed",
+                desc="重试失败投递",
+            ).model_dump(),
+        ],
+        interfaces=[
+            "GET:/api/v1/admin/notification-deliveries",
+            "GET:/api/v1/admin/notification-deliveries/{message_id}/summary",
+            "POST:/api/v1/admin/notification-deliveries/{message_id}/retry-failed",
+        ],
+    )
+
     return [
         # 常量路由
         login,
@@ -584,4 +703,8 @@ def build_menus() -> list[Menu]:
         monitoring,
         monitoring_api,
         monitoring_plugin,
+        notification_manage,
+        notification_manage_templates,
+        notification_manage_announcements,
+        notification_manage_deliveries,
     ]

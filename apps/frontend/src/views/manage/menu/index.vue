@@ -161,7 +161,7 @@
         width: 230,
         render: (row) => (
           <div class="flex-center justify-end gap-8px">
-            {row.menuType === "1" && hasAuth("manage_menu:add") && (
+            {hasAuth("manage_menu:add") && (
               <NButton type="primary" ghost size="small" onClick={() => handleAddChildMenu(row)}>
                 {$t("page.manage.menu.addChildMenu")}
               </NButton>

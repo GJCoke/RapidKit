@@ -780,6 +780,141 @@
       "shell": "Shell"
     }
   },
+  "notification": {
+    "title": "Notifications",
+    "listTitle": "Message list",
+    "readAll": "Mark all read",
+    "empty": "No messages",
+    "viewAll": "View all",
+    "loadMore": "Load more",
+    "noMore": "No more",
+    "mandatory": "Required",
+    "recalled": "This message has been recalled",
+    "archive": "Archive",
+    "delete": "Delete",
+    "tabs": {
+      "all": "All",
+      "unread": "Unread",
+      "announcement": "Announcements"
+    },
+    "level": {
+      "info": "Info",
+      "success": "Success",
+      "warning": "Warning",
+      "error": "Error"
+    },
+    "filters": {
+      "unreadOnly": "Unread only",
+      "active": "Active",
+      "archived": "Archived",
+      "all": "All archive states",
+      "category": "Category",
+      "createdFrom": "Created from",
+      "createdTo": "Created to",
+      "level": "Level",
+      "loadedOnly": "Filters currently loaded messages only"
+    },
+    "preferences": {
+      "title": "Notification preferences",
+      "mandatoryHint": "This category is mandatory or reserved and cannot be turned off",
+      "optionalHint": "Choose whether to receive messages in this category"
+    },
+    "manage": {
+      "templates": {
+        "title": "Templates",
+        "add": "New template",
+        "edit": "Edit template",
+        "code": "Code",
+        "name": "Name",
+        "category": "Category",
+        "level": "Level",
+        "mode": "Content mode",
+        "titleTemplate": "Title template",
+        "contentTemplate": "Content template",
+        "variableSchema": "Variable schema",
+        "variableSchemaInvalid": "Variable schema and each variable definition must be JSON objects",
+        "mandatory": "Required",
+        "enabled": "Enabled",
+        "keyword": "Keyword",
+        "keywordPlaceholder": "Search by code or name",
+        "modeOptions": {
+          "raw": "Raw content",
+          "i18n": "Localized content"
+        }
+      },
+      "announcements": {
+        "pageTitle": "Announcements",
+        "add": "New announcement",
+        "edit": "Edit announcement",
+        "title": "Title",
+        "content": "Content",
+        "category": "Category",
+        "categoryPlaceholder": "Enter a category",
+        "level": "Level",
+        "contentMode": "Content mode",
+        "contentModeOptions": {
+          "raw": "Raw content",
+          "i18n": "Localized content",
+          "template": "Notification template"
+        },
+        "i18nKey": "Localization key",
+        "templateCode": "Template code",
+        "status": "Status",
+        "audience": "Audience",
+        "audienceValue": "Value (role code / department ID / user ID)",
+        "audienceRequired": "Enter an audience value",
+        "audienceAll": "Everyone",
+        "audienceRole": "Role",
+        "audienceDept": "Department",
+        "audienceUser": "Specific user",
+        "includeDescendants": "Include subdepartments",
+        "addAudience": "Add audience",
+        "mandatory": "Required",
+        "publishAt": "Scheduled at",
+        "expireAt": "Expires at",
+        "action": "Navigation action",
+        "actionRoute": "Route",
+        "actionParams": "Parameters (JSON)",
+        "actionParamsInvalid": "Action parameters must be a valid JSON object",
+        "preview": "Preview count",
+        "previewResult": "About {total} recipients",
+        "saveDraft": "Save draft",
+        "draftSaved": "Draft saved",
+        "publish": "Publish",
+        "publishNow": "Publish now",
+        "published": "Published",
+        "cancel": "Cancel",
+        "recall": "Recall",
+        "statusOptions": {
+          "draft": "Draft",
+          "scheduled": "Scheduled",
+          "publishing": "Publishing",
+          "published": "Published",
+          "expired": "Expired",
+          "cancelled": "Cancelled",
+          "recalled": "Recalled"
+        }
+      },
+      "deliveries": {
+        "title": "Deliveries",
+        "resultTitle": "Delivery summary",
+        "messageId": "Message ID",
+        "messageIdPlaceholder": "Enter message ID",
+        "messageIdInvalid": "Enter a valid UUID message ID",
+        "retryFailed": "Retry failed",
+        "retried": "Queued {count} failed deliveries for retry",
+        "empty": "Enter a message ID to see delivery summary",
+        "noResult": "No delivery data found",
+        "status": {
+          "pending": "Pending",
+          "processing": "Processing",
+          "retrying": "Retrying",
+          "sent": "Sent",
+          "dead": "Failed"
+        }
+      }
+    }
+  },
   "socketio": {
     "common": {
       "connect": "Connect",

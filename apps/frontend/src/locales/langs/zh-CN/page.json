@@ -780,6 +780,141 @@
       "shell": "Shell"
     }
   },
+  "notification": {
+    "title": "消息通知",
+    "listTitle": "消息列表",
+    "readAll": "全部已读",
+    "empty": "暂无消息",
+    "viewAll": "查看全部",
+    "loadMore": "加载更多",
+    "noMore": "没有更多了",
+    "mandatory": "强制",
+    "recalled": "该消息已被撤回",
+    "archive": "归档",
+    "delete": "删除",
+    "tabs": {
+      "all": "全部",
+      "unread": "未读",
+      "announcement": "公告"
+    },
+    "level": {
+      "info": "信息",
+      "success": "成功",
+      "warning": "警告",
+      "error": "错误"
+    },
+    "filters": {
+      "unreadOnly": "只看未读",
+      "active": "未归档",
+      "archived": "已归档",
+      "all": "全部归档状态",
+      "category": "分类",
+      "createdFrom": "开始时间",
+      "createdTo": "结束时间",
+      "level": "级别",
+      "loadedOnly": "仅筛选当前已加载消息"
+    },
+    "preferences": {
+      "title": "通知偏好",
+      "mandatoryHint": "该分类为强制或保留通知，不可关闭",
+      "optionalHint": "可按需接收该分类的消息"
+    },
+    "manage": {
+      "templates": {
+        "title": "通知模板",
+        "add": "新增模板",
+        "edit": "编辑模板",
+        "code": "编码",
+        "name": "名称",
+        "category": "分类",
+        "level": "级别",
+        "mode": "内容模式",
+        "titleTemplate": "标题模板",
+        "contentTemplate": "正文模板",
+        "variableSchema": "变量约束",
+        "variableSchemaInvalid": "变量约束必须是 JSON 对象，且每个变量定义也必须是对象",
+        "mandatory": "强制",
+        "enabled": "启用",
+        "keyword": "关键字",
+        "keywordPlaceholder": "按编码或名称搜索",
+        "modeOptions": {
+          "raw": "原始内容",
+          "i18n": "国际化内容"
+        }
+      },
+      "announcements": {
+        "pageTitle": "公告管理",
+        "add": "新建公告",
+        "edit": "编辑公告",
+        "title": "标题",
+        "content": "正文",
+        "category": "分类",
+        "categoryPlaceholder": "请输入分类",
+        "level": "级别",
+        "contentMode": "内容模式",
+        "contentModeOptions": {
+          "raw": "原始内容",
+          "i18n": "国际化内容",
+          "template": "通知模板"
+        },
+        "i18nKey": "国际化键",
+        "templateCode": "模板编码",
+        "status": "状态",
+        "audience": "受众",
+        "audienceValue": "受众值（角色编码/部门 ID/用户 ID）",
+        "audienceRequired": "请输入受众值",
+        "audienceAll": "全体",
+        "audienceRole": "角色",
+        "audienceDept": "部门",
+        "audienceUser": "指定用户",
+        "includeDescendants": "包含子部门",
+        "addAudience": "添加受众",
+        "mandatory": "强制",
+        "publishAt": "定时发布时间",
+        "expireAt": "过期时间",
+        "action": "跳转动作",
+        "actionRoute": "路由",
+        "actionParams": "参数（JSON）",
+        "actionParamsInvalid": "动作参数必须是有效的 JSON 对象",
+        "preview": "预览人数",
+        "previewResult": "预计送达 {total} 人",
+        "saveDraft": "存草稿",
+        "draftSaved": "草稿已保存",
+        "publish": "发布",
+        "publishNow": "立即发布",
+        "published": "已发布",
+        "cancel": "取消",
+        "recall": "撤回",
+        "statusOptions": {
+          "draft": "草稿",
+          "scheduled": "待发布",
+          "publishing": "发布中",
+          "published": "已发布",
+          "expired": "已过期",
+          "cancelled": "已取消",
+          "recalled": "已撤回"
+        }
+      },
+      "deliveries": {
+        "title": "投递状态",
+        "resultTitle": "投递汇总",
+        "messageId": "消息 ID",
+        "messageIdPlaceholder": "输入消息 ID 查询",
+        "messageIdInvalid": "请输入有效的 UUID 消息 ID",
+        "retryFailed": "重试失败",
+        "retried": "已提交 {count} 条失败投递重试",
+        "empty": "输入消息 ID 查看投递汇总",
+        "noResult": "暂未查询到投递数据",
+        "status": {
+          "pending": "等待中",
+          "processing": "处理中",
+          "retrying": "重试中",
+          "sent": "已送达",
+          "dead": "失败"
+        }
+      }
+    }
+  },
   "socketio": {
     "common": {
       "connect": "连接",

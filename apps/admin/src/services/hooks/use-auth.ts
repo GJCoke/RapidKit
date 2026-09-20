@@ -1,21 +1,24 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
+import { rsaEncrypt } from "@rapidkit/utils"
 import { useAuthStore } from "@/stores/auth"
-import { fetchLogin, fetchUserInfo } from "@/services/api/auth"
+import { fetchLogin, fetchPublicKey, fetchUserInfo } from "@/services/api/auth"
+import { authenticate } from "@/services/authenticate"
 
 export function useLogin() {
-  const { setToken, setUserInfo } = useAuthStore()
+  const { setToken, setUserInfo, clearAuth } = useAuthStore()
 
   return useMutation({
-    mutationFn: fetchLogin,
-    onSuccess: async (res) => {
-      if (res.data) {
-        setToken(res.data.accessToken, res.data.refreshToken)
-        // Fetch user info after login
-        const userRes = await fetchUserInfo()
-        if (userRes.data) {
-          setUserInfo(userRes.data)
-        }
-      }
+    mutationFn: async (credentials: Parameters<typeof fetchLogin>[0]) => {
+      const result = await authenticate(credentials, {
+        fetchPublicKey,
+        encrypt: rsaEncrypt,
+        login: fetchLogin,
+        setToken,
+        clearAuth,
+        fetchUserInfo,
+        setUserInfo,
+      })
+      if (!result.ok) throw result.error
     },
   })
 }

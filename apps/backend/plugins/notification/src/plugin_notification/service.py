@@ -46,7 +46,7 @@ class NotificationService:
             orchestrator = MessageOrchestrator(
                 session=session,
                 audience_resolver=AudienceResolver(query_service=query_service),
-                preference_resolver=PreferenceResolver(),
+                preference_resolver=PreferenceResolver(session=session),
             )
             result = await orchestrator.process(command)
             await session.commit()

@@ -1,7 +1,7 @@
 import { request } from "@/services/request"
 
-interface LoginParams {
-  userName: string
+export interface LoginParams {
+  username: string
   password: string
 }
 
@@ -37,7 +37,7 @@ export function fetchUserInfo() {
 }
 
 export function fetchPublicKey() {
-  return request<{ publicKey: string }>({
+  return request<string>({
     url: "/auth/keys/public",
   })
 }

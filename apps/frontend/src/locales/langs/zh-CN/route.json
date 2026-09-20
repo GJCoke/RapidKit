@@ -25,5 +25,12 @@
   "socketio": "即时通讯",
   "socketio_chat": "聊天室",
   "socketio_debug": "调试面板",
-  "socketio_instrument": "仪表盘"
+  "socketio_instrument": "仪表盘",
+  "notification": "消息中心",
+  "notification_center": "我的消息",
+  "notification_preferences": "通知偏好",
+  "notification_manage": "通知管理",
+  "notification_manage_templates": "模板管理",
+  "notification_manage_announcements": "公告管理",
+  "notification_manage_deliveries": "投递状态"
 }

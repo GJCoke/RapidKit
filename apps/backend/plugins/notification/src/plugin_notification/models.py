@@ -12,9 +12,7 @@ class NotificationMessage(SQLModel, table=True):
     """一条待投递或已发布的通知内容。"""
 
     __tablename__ = "notification_messages"
-    __table_args__ = (
-        UniqueConstraint("source", "deduplication_key", name="uq_notification_messages_source_dedup"),
-    )
+    __table_args__ = (UniqueConstraint("source", "deduplication_key", name="uq_notification_messages_source_dedup"),)
 
     source: str = Field(max_length=64, index=True)
     category: str = Field(max_length=128, index=True)
@@ -34,6 +32,28 @@ class NotificationMessage(SQLModel, table=True):
     status: str = Field(max_length=16, default="publishing", index=True)
     deduplication_key: str | None = Field(default=None, max_length=256)
     correlation_id: str = Field(max_length=64, index=True)
+    publish_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=False), nullable=True),
+    )
+    published_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=False), nullable=True),
+    )
+    expire_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=False), nullable=True),
+    )
+    recalled_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=False), nullable=True),
+    )
+    cancelled_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=False), nullable=True),
+    )
+    template_id: UUID | None = Field(default=None)
+    template_code: str | None = Field(default=None, max_length=128)
 
 
 class NotificationAudience(SQLModel, table=True):
@@ -51,9 +71,7 @@ class UserNotification(SQLModel, table=True):
     """用户收件箱记录。"""
 
     __tablename__ = "notification_user_notifications"
-    __table_args__ = (
-        UniqueConstraint("message_id", "user_id", name="uq_notification_user_notifications_msg_user"),
-    )
+    __table_args__ = (UniqueConstraint("message_id", "user_id", name="uq_notification_user_notifications_msg_user"),)
 
     message_id: UUID = Field(index=True)
     user_id: UUID = Field(index=True)
@@ -67,9 +85,7 @@ class NotificationOutbox(SQLModel, table=True):
     """Transactional Outbox 中的一次渠道投递。"""
 
     __tablename__ = "notification_outbox"
-    __table_args__ = (
-        UniqueConstraint("idempotency_key", name="uq_notification_outbox_idempotency"),
-    )
+    __table_args__ = (UniqueConstraint("idempotency_key", name="uq_notification_outbox_idempotency"),)
 
     message_id: UUID = Field(index=True)
     user_id: UUID = Field(index=True)
@@ -82,3 +98,39 @@ class NotificationOutbox(SQLModel, table=True):
     next_attempt_at: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=False), nullable=True))
     locked_until: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=False), nullable=True))
     sent_at: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=False), nullable=True))
+
+
+class NotificationTemplate(SQLModel, table=True):
+    """Reusable i18n-key or raw-text notification template."""
+
+    __tablename__ = "notification_templates"
+    __table_args__ = (UniqueConstraint("code", name="uq_notification_templates_code"),)
+
+    code: str = Field(max_length=128, index=True)
+    name: str = Field(max_length=128)
+    category: str = Field(max_length=128)
+    level: str = Field(max_length=16, default="info")
+    content_mode: str = Field(max_length=8)
+    title_template: str = Field(max_length=512)
+    content_template: str = Field()
+    content_format: str | None = Field(default=None, max_length=16)
+    variable_schema: dict[str, dict[str, object]] = Field(
+        default_factory=dict,
+        sa_column=Column(JSON),
+    )
+    default_channels: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    default_action: dict[str, object] | None = Field(default=None, sa_column=Column(JSON))
+    mandatory: bool = Field(default=False)
+    enabled: bool = Field(default=True)
+    version: int = Field(default=1)
+
+
+class NotificationPreference(SQLModel, table=True):
+    """A user's explicit enabled/disabled setting for one notification category."""
+
+    __tablename__ = "notification_preferences"
+    __table_args__ = (UniqueConstraint("user_id", "category", name="uq_notification_preferences_user_category"),)
+
+    user_id: UUID = Field(index=True)
+    category: str = Field(max_length=128, index=True)
+    enabled: bool = Field(default=True)

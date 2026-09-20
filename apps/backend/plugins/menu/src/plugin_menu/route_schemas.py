@@ -19,6 +19,7 @@ class RouteMeta(BaseModel):
     order: int = 0
     constant: bool = False
     hide_in_menu: bool = False
+    active_menu: str | None = None
     keep_alive: bool = False
     href: str | None = None
     multi_tab: bool = False

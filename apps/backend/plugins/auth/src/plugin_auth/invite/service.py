@@ -4,6 +4,7 @@ from uuid import UUID
 
 from rapidkit_common.enums import Status
 from rapidkit_common.protocols.auth import PasswordDecryptor
+from rapidkit_core.config import settings
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.services import get_service
@@ -15,6 +16,20 @@ from plugin_auth.invite.token_store import InviteTokenStore
 from plugin_auth.status_codes import AuthStatusCode
 
 logger = get_plugin_logger("Auth")
+
+
+def _enqueue_invite_email(*, email: str, platform_name: str, user_name: str, username: str, invite_link: str) -> None:
+    from plugin_auth.invite.tasks import send_invite_email
+
+    send_invite_email.apply_async(
+        kwargs={
+            "email": email,
+            "platform_name": platform_name,
+            "user_name": user_name,
+            "username": username,
+            "invite_link": invite_link,
+        }
+    )
 
 
 async def set_password_with_token(
@@ -49,9 +64,13 @@ async def issue_and_send_invite(user_id: UUID) -> None:
             return
         token = await InviteTokenStore(redis).issue(user_id)
         link = f"{invite_settings.FRONTEND_BASE_URL.rstrip('/')}/login/set-password?token={token}"
-        from plugin_auth.invite.tasks import send_invite_email
-
-        send_invite_email.apply_async(kwargs={"email": user.email, "user_name": user.name, "invite_link": link})
+        _enqueue_invite_email(
+            email=user.email,
+            platform_name=settings.APP_NAME,
+            user_name=user.name,
+            username=user.username,
+            invite_link=link,
+        )
 
 
 def build_email_sender() -> EmailSender:

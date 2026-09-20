@@ -30,6 +30,54 @@ final result: passed
 
 ---
 
+# Header Notification Drawer Design QA
+
+## Comparison target
+
+- Source visual truth: `browser://rapidkit/notification-drawer/baseline-2026-09-07` — authenticated home page, original drawer state captured before this change.
+- Implementation screenshot: `/home/coke/gitrepo/RapidKit/apps/frontend/notification-drawer-optimized.png` (`1280 × 720` px).
+- Viewport: `1280 × 720` CSS px, device scale factor 1; source and implementation use the same authenticated home route, light theme, and “全部” tab.
+- Full-view comparison evidence: the original and updated drawer were reviewed at the same right-edge placement and viewport. The drawer grew from 400px to 420px while retaining the existing page overlay and full-height placement.
+- Focused region comparison evidence: header, tab strip, two message rows, and footer were inspected at readable scale in the browser; no additional crop was needed because the complete 420px drawer is legible in the full-view capture.
+
+## Findings and fixes
+
+- P2 — The original header had weak hierarchy and separated the title, read-all action, and close control without a clear notification identity. Added the existing Carbon notification icon, live unread summary, and check icon while preserving Naive UI controls.
+- P2 — Original message rows used heavy full-width dividers and placed type, unread state, title, and time on one dense axis. Drawer rows now use a compact card treatment, semantic level icon, clearer title/body/meta hierarchy, and a distinct unread surface.
+- P2 — The original list had no bounded scrolling treatment and left a large visually unstructured area. The existing `NScrollbar` now bounds long lists while the footer action remains persistent.
+- P2 — The original footer action read as a neutral secondary control. It now uses the project primary token with Naive UI's secondary button treatment, making the route to the complete message center clearer.
+
+## Required fidelity surfaces
+
+- Fonts and typography: existing project font stack, 16px drawer title, 14px item titles, 13px content, 12px metadata, weights, truncation, and line heights are preserved or normalized through existing utility tokens.
+- Spacing and layout rhythm: 420px drawer, 16px primary gutters, 12px header grouping, 10–12px card rhythm, 10px radii, and persistent footer align with the existing dashboard density.
+- Colors and visual tokens: all surfaces use existing primary, semantic status, modal, border, and base text tokens; light/dark theme compatibility is retained without hard-coded colors or gradients.
+- Image quality and asset fidelity: the module contains no raster imagery. All visible icons use the project's existing Iconify/Carbon pipeline and all controls use Naive UI or existing project components.
+- Copy and content: existing internationalized labels and API-backed title, body, time, unread count, and message level remain intact.
+
+## Interaction and accessibility checks
+
+- Message trigger opens the drawer and retains its localized accessible name.
+- “全部”, “未读”, and “公告” tabs switch successfully against the existing store behavior.
+- The read-all action retains disabled-state behavior at zero unread messages.
+- Drawer width is 420px with `scrollWidth === clientWidth`, so the verified desktop state has no horizontal overflow.
+- Browser verification reported no console warnings or errors.
+- Type checking passes; notification tests pass (48 tests across 13 files).
+
+## Comparison history
+
+- Initial comparison found weak header identity, heavy row dividers, low unread salience, and an under-emphasized footer action.
+- First implementation added the structured header, compact message cards, semantic icons, unread count, scroll container, and primary footer treatment.
+- Final browser pass removed the redundant tab-strip border and found no remaining actionable P0/P1/P2 issue.
+
+## Follow-up polish
+
+- P3 — Validate the same compact drawer with a larger production message set to tune the preferred maximum visible row count.
+
+final result: passed
+
+---
+
 # Recent Activity Screenshot Fidelity QA
 
 ## Comparison target

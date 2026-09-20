@@ -19,10 +19,12 @@ class OutboxStatus(str, Enum):
     RETRYING = "retrying"
     SENT = "sent"
     DEAD = "dead"
+    CANCELLED = "cancelled"
 
 
 # 投递参数（P1 固定值；后续可迁移到配置）
 MAX_ATTEMPTS = 5
 BASE_BACKOFF_SECONDS = 30
+BACKOFF_JITTER_RATIO = 0.25
 OUTBOX_LOCK_TTL_SECONDS = 120
 DELIVERY_BATCH_SIZE = 100

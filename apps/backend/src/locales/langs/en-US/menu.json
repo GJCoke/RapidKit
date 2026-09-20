@@ -1,0 +1,10 @@
+{
+  "error": {
+    "activeMenuInvalidSource": "Only hidden child pages can bind a sidebar menu",
+    "activeMenuNotAncestor": "The selected sidebar menu is not an ancestor of this page",
+    "activeMenuTargetUnavailable": "The selected sidebar menu must be an enabled, visible page menu",
+    "referencedTargetConflict": "This menu is still used as a child-page sidebar binding",
+    "moveInvalidatesBinding": "This move would invalidate an existing child-page sidebar binding",
+    "activeMenuTargetNotFound": "The selected sidebar menu does not exist"
+  }
+}

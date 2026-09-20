@@ -31,29 +31,6 @@
       "unknown": "System activity"
     }
   },
-  "route": {
-    "home": "Home",
-    "manage": "System management",
-    "manage_user": "Users",
-    "manage_role": "Roles",
-    "manage_menu": "Menus",
-    "manage_department": "Departments",
-    "manage_data-policy": "Data policies",
-    "manage_field-policy": "Field policies",
-    "manage_audit-dict": "Audit dictionary",
-    "socketio": "Realtime communication",
-    "socketio_chat": "Chat",
-    "socketio_debug": "Debug console",
-    "socketio_instrument": "Dashboard",
-    "queue": "Task queue",
-    "queue_dashboard": "Queue overview",
-    "queue_schedule": "Schedules",
-    "queue_task": "Task history",
-    "script": "Scripts",
-    "monitoring": "Monitoring",
-    "monitoring_api": "API monitoring",
-    "monitoring_plugin": "Plugins"
-  },
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
@@ -79,13 +56,24 @@
   "error": {
     "403": "You do not have permission to access this page",
     "404": "The page you are looking for does not exist",
-    "500": "The server encountered an unexpected error"
+    "500": "The server encountered an unexpected error",
+    "routeTitle": "Page failed to load",
+    "routeDescription": "The page encountered a runtime error. Retry or return home.",
+    "iframe": "The embedded page failed to load"
   },
   "auth": {
     "login": "Login",
+    "loggingIn": "Logging in...",
     "logout": "Logout",
     "username": "Username",
     "password": "Password",
+    "rememberMe": "Remember me",
+    "validation": {
+      "usernameRequired": "Please enter user name",
+      "usernameInvalid": "User name format is incorrect",
+      "passwordRequired": "Please enter password",
+      "passwordInvalid": "6-18 characters, including letters, numbers, and underscores"
+    },
     "loginSuccess": "Login successful",
     "loginFailed": "Login failed",
     "sessionExpired": "Session expired, please login again"
@@ -93,7 +81,14 @@
   "tabs": {
     "close": "Close",
     "closeOthers": "Close Others",
-    "closeAll": "Close All"
+    "closeLeft": "Close Left",
+    "closeRight": "Close Right",
+    "closeAll": "Close All",
+    "pin": "Pin Tab",
+    "unpin": "Unpin Tab",
+    "reload": "Refresh current page",
+    "fullscreen": "Show content fullscreen",
+    "exitFullscreen": "Exit content fullscreen"
   },
   "layout": {
     "toggleTheme": "Toggle theme",
@@ -103,6 +98,20 @@
     "toggleSidebar": "Toggle sidebar",
     "mobileNavigation": "Mobile navigation",
     "closeNavigation": "Close navigation",
-    "breadcrumbs": "Breadcrumbs"
+    "sectionNavigation": "Section navigation",
+    "mainNavigation": "Main navigation",
+    "breadcrumbs": "Breadcrumbs",
+    "moreTools": "More header tools",
+    "switchLanguage": "Switch language",
+    "browserFullscreen": {
+      "enter": "Enter browser fullscreen",
+      "exit": "Exit browser fullscreen",
+      "unavailable": "Browser fullscreen is unavailable"
+    },
+    "globalSearch": {
+      "title": "Search pages",
+      "placeholder": "Search pages",
+      "empty": "No pages found"
+    }
   }
 }

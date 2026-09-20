@@ -213,6 +213,8 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     if (!error) {
       const { routes, home } = data
 
+      // Dynamic mode is database-authoritative: an unconfigured menu must not
+      // become visible merely because a matching frontend page exists.
       addAuthRoutes(routes)
 
       handleConstantAndAuthRoutes()

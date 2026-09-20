@@ -220,8 +220,8 @@ The current vertical sidebar uses Admin semantic tokens and frontend measurement
 - Expanded width: `var(--sidebar-width)`, default 220px.
 - Collapsed width: `var(--sidebar-width-collapsed)`, default 64px.
 - Menu item height: `var(--menu-item-height)`, default 36px.
-- Expanded leaf/group icon: 16px.
-- Collapsed top-level icon: 22px.
+- Expanded leaf/group icon: 18px.
+- Collapsed top-level icon: 18px; collapse changes layout and label visibility, not icon scale.
 - Brand logo: 32px.
 - Menu tree indentation: 18px per depth level.
 - Sidebar horizontal padding: 8px.
@@ -279,7 +279,7 @@ DOM tests cover:
 
 - Active leaf and active ancestor styling hooks.
 - Hover state class contracts.
-- 16px expanded and 22px collapsed icons.
+- Stable 18px icons in both expanded and collapsed states.
 - 18px depth indentation.
 - Label and chevron collapse transitions.
 - Collapsible open/close behavior.

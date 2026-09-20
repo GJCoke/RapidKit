@@ -33,6 +33,13 @@ class Menu(SQLModel, table=True):
     hide_in_menu: bool = Field(default=False, description="是否在菜单中隐藏")
 
     parent_id: UUID | None = Field(default=None, description="父级菜单ID (UUID string)")
+    active_menu_id: UUID | None = Field(
+        default=None,
+        foreign_key="menu_menus.id",
+        ondelete="RESTRICT",
+        index=True,
+        description="隐藏子页面绑定的侧边栏菜单 ID",
+    )
     i18n_key: str | None = Field(default=None, description="国际x化Key")
 
     keep_alive: bool = Field(default=False, description="是否缓存页面")

@@ -6,6 +6,7 @@
   import GlobalLogo from "../global-logo/index.vue"
   import GlobalBreadcrumb from "../global-breadcrumb/index.vue"
   import GlobalSearch from "../global-search/index.vue"
+  import MessagesButton from "./components/messages-button.vue"
   import ThemeButton from "./components/theme-button.vue"
   import UserMenu from "./components/user-menu.vue"
 
@@ -52,6 +53,7 @@
         @switch="themeStore.toggleThemeScheme"
       />
       <ThemeButton />
+      <MessagesButton />
       <UserMenu />
     </div>
   </DarkModeContainer>

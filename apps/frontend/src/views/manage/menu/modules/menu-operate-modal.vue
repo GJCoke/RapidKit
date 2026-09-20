@@ -3,11 +3,12 @@
   import type { SelectOption, SelectRenderLabel, SelectRenderTag } from "naive-ui"
   import { NTag } from "naive-ui"
   import { enableStatusOptions, menuIconTypeOptions, menuTypeOptions } from "@/constants/business"
-  import { fetchCreateMenu, fetchGetBackendRouters, fetchUpdateMenu } from "@/service/api"
+  import { fetchCreateMenu, fetchGetActiveMenuOptions, fetchGetBackendRouters, fetchUpdateMenu } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { getLocalIcons } from "@/utils/icon"
   import { $t } from "@/locales"
   import SvgIcon from "@/components/custom/svg-icon.vue"
+  import { createActiveMenuOptionsLoader, watchActiveMenuPartition } from "./active-menu-options"
   import {
     getLayoutAndPage,
     getPathParamFromRoutePath,
@@ -138,6 +139,8 @@
   }))
 
   const backendRouters = ref<Api.SystemManage.BackendRouter[]>([])
+  const { activeMenuOptions, load: loadActiveMenuOptions } = createActiveMenuOptionsLoader(fetchGetActiveMenuOptions)
+  let hydratingModel = false
 
   async function getBackendRouters() {
     const { error, data } = await fetchGetBackendRouters()
@@ -226,33 +229,39 @@
   ]
 
   function handleInitModel() {
-    model.value = createDefaultModel()
+    hydratingModel = true
 
-    if (!props.rowData) return
+    try {
+      model.value = createDefaultModel()
 
-    if (props.operateType === "addChild") {
-      const { id } = props.rowData
+      if (!props.rowData) return
 
-      Object.assign(model.value, { parentId: id })
-    }
+      if (props.operateType === "addChild") {
+        const { id } = props.rowData
 
-    if (props.operateType === "edit") {
-      const { component, ...rest } = props.rowData
+        Object.assign(model.value, { parentId: id })
+      }
 
-      const { layout, page } = getLayoutAndPage(component)
-      const { path, param } = getPathParamFromRoutePath(rest.routePath)
+      if (props.operateType === "edit") {
+        const { component, ...rest } = props.rowData
 
-      Object.assign(model.value, rest, { layout, page, routePath: path, pathParam: param })
-    }
+        const { layout, page } = getLayoutAndPage(component)
+        const { path, param } = getPathParamFromRoutePath(rest.routePath)
 
-    if (!model.value.query) {
-      model.value.query = []
-    }
-    if (!model.value.buttons) {
-      model.value.buttons = []
-    }
-    if (!model.value.interfaces) {
-      model.value.interfaces = []
+        Object.assign(model.value, rest, { layout, page, routePath: path, pathParam: param })
+      }
+
+      if (!model.value.query) {
+        model.value.query = []
+      }
+      if (!model.value.buttons) {
+        model.value.buttons = []
+      }
+      if (!model.value.interfaces) {
+        model.value.interfaces = []
+      }
+    } finally {
+      hydratingModel = false
     }
   }
 
@@ -319,9 +328,21 @@
     if (visible.value) {
       handleInitModel()
       getBackendRouters()
+      loadActiveMenuOptions(model.value.parentId, model.value.constant === true)
       restoreValidation()
+    } else {
+      loadActiveMenuOptions(null, false)
     }
   })
+
+  watchActiveMenuPartition(model, visible, () => hydratingModel, loadActiveMenuOptions)
+
+  watch(
+    () => model.value.hideInMenu,
+    (hideInMenu) => {
+      if (!hideInMenu) model.value.activeMenu = null
+    },
+  )
 
   watch(
     () => model.value.routeName,
@@ -439,7 +460,7 @@
           >
             <NSelect
               v-model:value="model.activeMenu"
-              :options="pageOptions"
+              :options="activeMenuOptions"
               clearable
               :placeholder="$t('page.manage.menu.form.activeMenu')"
             />

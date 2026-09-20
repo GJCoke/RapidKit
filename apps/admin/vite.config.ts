@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+
 import { resolve } from "node:path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
@@ -12,6 +14,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": resolve(__dirname, "src"),
+        "@test": resolve(__dirname, "tests"),
       },
     },
     server: {
@@ -22,6 +25,16 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
       },
+    },
+    test: {
+      alias: {
+        "@rapidkit/axios": resolve(__dirname, "../../packages/axios/src/index.ts"),
+        "@rapidkit/utils": resolve(__dirname, "../../packages/utils/src/index.ts"),
+      },
+      environment: "node",
+      globals: false,
+      setupFiles: ["./tests/setup/setup.ts"],
+      testTimeout: 10_000,
     },
     build: {
       target: "esnext",
