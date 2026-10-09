@@ -96,6 +96,17 @@ class CeleryConfigMixin(RedisConfigMixin):
         description="是否启用 Celery 任务队列管理（事件消费、Worker 监控、管理 API）",
     )
     TASK_RESULT_RETENTION_DAYS: int = 30
+    CELERY_WORKER_NAMES: list[str] = Field(
+        default_factory=list,
+        description="当前受管理的 Celery 节点全名；空列表表示自动发现所有节点",
+    )
+
+    @field_validator("CELERY_WORKER_NAMES")
+    @classmethod
+    def validate_worker_names(cls, names: list[str]) -> list[str]:
+        if any(not name or name != name.strip() for name in names) or len(set(names)) != len(names):
+            raise ValueError("Worker names must be nonempty, unique and have no surrounding whitespace")
+        return names
 
     @property
     def CELERY_REDIS_URL(self) -> RedisDsn:

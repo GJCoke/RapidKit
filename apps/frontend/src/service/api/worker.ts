@@ -19,7 +19,7 @@ export function fetchGetAllWorkers() {
 
 /** get worker detail */
 export function fetchGetWorkerDetail(workerId: string) {
-  return request<Api.Worker.WorkerInfo>({
+  return request<Api.Worker.WorkerDetail>({
     url: `/workers/${workerId}`,
     method: "get",
   })
@@ -86,8 +86,8 @@ export function fetchTaskStatsTimeline(params?: Api.Worker.TaskStatsQuery) {
 }
 
 /** get task stats by name */
-export function fetchTaskStatsByName(params?: Api.Worker.TaskStatsQuery) {
-  return request<Api.Worker.TaskStatsByName[]>({
+export function fetchTaskStatsByName(params?: Api.Worker.TaskGroupQuery) {
+  return request<Api.Worker.TaskGroupList>({
     url: "/tasks/stats/by-name",
     method: "get",
     params,
@@ -104,6 +104,24 @@ export function fetchTaskStatsByWorker(params?: Api.Worker.TaskStatsQuery) {
 }
 
 // ==================== Schedule APIs ====================
+
+/** Validate and preview Celery Crontab executions in the configured timezone. */
+export function fetchGetCrontabPreview(data: Api.Worker.CrontabPreviewRequest) {
+  return request<Api.Worker.CrontabPreviewResponse>({
+    url: "/schedules/crontab/preview",
+    method: "post",
+    data,
+  })
+}
+
+/** preview any periodic schedule using the server's timezone */
+export function fetchGetSchedulePreview(data: Api.Worker.SchedulePreviewRequest) {
+  return request<Api.Worker.SchedulePreviewResponse>({
+    url: "/schedules/preview",
+    method: "post",
+    data,
+  })
+}
 
 /** get schedule list (paginated) */
 export function fetchGetScheduleList(params?: Api.Worker.PeriodicTaskSearchParams) {
@@ -224,4 +242,9 @@ export function fetchReservedTasksOfWorker(workerId: string) {
     url: `/workers/${workerId}/tasks/reserved`,
     method: "get",
   })
+}
+
+/** Broker state and completion-based Celery overview. */
+export function fetchQueueDashboard(params: Api.Worker.QueueDashboardQuery) {
+  return request<Api.Worker.QueueDashboard>({ url: "/tasks/stats/dashboard", method: "get", params })
 }

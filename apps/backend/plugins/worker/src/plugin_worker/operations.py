@@ -11,11 +11,13 @@ from rapidkit_common.protocols.operations import (
     TaskSuccessComparison,
     WorkerOperationsProvider,
 )
+from rapidkit_core.config import settings
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
 from rapidkit_core.redis_client import AsyncRedisClient
 from sqlalchemy import case
 from sqlmodel import col, func, select
 
+from plugin_worker.inventory import scoped_worker_filters
 from plugin_worker.models import CeleryTaskResult, CeleryWorker, QueueDepthSnapshot
 
 HEARTBEAT_TIMEOUT_SECONDS = 60
@@ -47,8 +49,10 @@ class WorkerOperationsProviderImpl(WorkerOperationsProvider):
                     col(CeleryWorker.last_heartbeat) >= cutoff,
                 ),
             )
+            statement = statement.where(*scoped_worker_filters())
             total, healthy = (await session.exec(statement)).one()
-        return ServerSnapshot(healthy=int(healthy or 0), total=int(total or 0))
+        expected_total = len(settings.CELERY_WORKER_NAMES) if settings.CELERY_WORKER_NAMES else int(total or 0)
+        return ServerSnapshot(healthy=int(healthy or 0), total=expected_total)
 
     async def get_task_comparison(self, today_start: datetime, tomorrow_start: datetime) -> DayComparison:
         yesterday_start = today_start - timedelta(days=1)
@@ -78,12 +82,14 @@ class WorkerOperationsProviderImpl(WorkerOperationsProvider):
                 .limit(1)
             )
             historical = (await session.exec(historical_statement)).first()
-            workers = list((await session.exec(select(CeleryWorker))).all())
+            workers = list((await session.exec(select(CeleryWorker).where(*scoped_worker_filters()))).all())
         queues = {"celery"}
         for worker in workers:
             queues.update(str(queue) for queue in (worker.active_queues or []))
         redis: AsyncRedisClient = self._redis_factory()
-        current_depth = sum(int(await cast(Awaitable[int], redis.llen(queue)) or 0) for queue in queues)
+        current_depth = 0
+        for queue in queues:
+            current_depth += int(await cast(Awaitable[int], redis.llen(queue)) or 0)
         return QueueSnapshot(
             current_depth=current_depth,
             yesterday_depth=historical.depth if historical else None,

@@ -1,15 +1,16 @@
 export function createTokenRefreshCoordinator(refreshToken: () => Promise<boolean>) {
-  let inFlight: Promise<boolean> | null = null
+  const inFlight = new Map<number, Promise<boolean>>()
 
   return {
-    refresh() {
-      if (!inFlight) {
-        inFlight = refreshToken().finally(() => {
-          inFlight = null
+    refresh(session = 0) {
+      let promise = inFlight.get(session)
+      if (!promise) {
+        promise = refreshToken().finally(() => {
+          inFlight.delete(session)
         })
+        inFlight.set(session, promise)
       }
-
-      return inFlight
+      return promise
     },
   }
 }

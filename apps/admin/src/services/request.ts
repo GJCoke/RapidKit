@@ -1,19 +1,15 @@
 import type { AxiosResponse } from "@rapidkit/axios"
 import { BACKEND_ERROR_CODE, createFlatRequest } from "@rapidkit/axios"
+import { getAuthSession, recordTokenRotation } from "@/services/auth-session"
 import { resolveAuthErrorCodes } from "@/services/auth-error-codes"
 import { notifyRequestError, notifySessionExpired } from "@/services/request-error-notifier"
 import { createTokenRefreshCoordinator } from "@/services/token-refresh"
 import { useAuthStore } from "@/stores/auth"
-import { useLocaleStore } from "@/stores/locale"
+import { fetchRefreshToken } from "@/services/api/auth"
+import { getRequestLocale, SERVICE_BASE_URL, SUCCESS_CODE } from "@/services/request-config"
+import type { BackendResponse } from "@/services/request-config"
 
-const SUCCESS_CODE = import.meta.env.VITE_SERVICE_SUCCESS_CODE || "0"
-const SERVICE_BASE_URL = import.meta.env.VITE_SERVICE_BASE_URL
-
-interface BackendResponse<T = unknown> {
-  code: number
-  message: string
-  data: T
-}
+export { getRequestLocale } from "@/services/request-config"
 
 interface RequestState extends Record<string, unknown> {
   refreshTokenPromise: null
@@ -31,10 +27,6 @@ function getRefreshToken() {
   return localStorage.getItem("refreshToken") || ""
 }
 
-export function getRequestLocale() {
-  return useLocaleStore.getState().locale
-}
-
 export const request = createFlatRequest<BackendResponse, unknown, RequestState>(
   {
     baseURL: SERVICE_BASE_URL,
@@ -47,6 +39,13 @@ export const request = createFlatRequest<BackendResponse, unknown, RequestState>
       return response.data.data
     },
     async onRequest(config) {
+      const authConfig = config as typeof config & { authSession?: number }
+      const session = getAuthSession()
+      authConfig.authSession ??= session
+      if (authConfig.authSession !== session) {
+        config.signal = AbortSignal.abort()
+        return config
+      }
       const token = getToken()
       if (token) {
         config.headers.set("Authorization", `Bearer ${token}`)
@@ -67,44 +66,59 @@ export const request = createFlatRequest<BackendResponse, unknown, RequestState>
     },
     async onBackendFail(response, instance) {
       const responseCode = String(response.data.code)
+      const config = response.config as typeof response.config & { authRetried?: boolean; authSession?: number }
+      const session = getAuthSession()
+      if (config.authSession !== session) return null
 
       if (expiredTokenCodes.has(responseCode)) {
+        if (config.authRetried) {
+          notifySessionExpired()
+          useAuthStore.getState().clearAuth("expired")
+          return null
+        }
+        config.authRetried = true
+        const currentToken = getToken()
+        if (currentToken && config.headers.Authorization !== `Bearer ${currentToken}`) {
+          config.headers.set("Authorization", `Bearer ${currentToken}`)
+          return instance.request(config) as Promise<AxiosResponse>
+        }
         runRefreshRequest = async () => {
           const refreshToken = getRefreshToken()
-          if (!refreshToken) return false
+          if (!refreshToken) {
+            if (getToken()) {
+              notifySessionExpired()
+              useAuthStore.getState().clearAuth("expired")
+            }
+            return false
+          }
 
-          const refreshResponse = await fetch(`${SERVICE_BASE_URL}/auth/token/refresh`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Accept-Language": getRequestLocale() },
-            body: JSON.stringify({ refreshToken }),
-          })
-          if (!refreshResponse.ok) return false
-
-          const refreshPayload = (await refreshResponse.json()) as BackendResponse<{
-            accessToken: string
-            refreshToken: string
-          }>
-          if (String(refreshPayload.code) !== SUCCESS_CODE) return false
-          const tokens = refreshPayload.data
-          if (!tokens) return false
-
-          useAuthStore.getState().setToken(tokens.accessToken, tokens.refreshToken)
-          return true
+          try {
+            const { data: tokens, error } = await fetchRefreshToken(refreshToken)
+            if (getAuthSession() !== session) return false
+            if (!error && tokens?.accessToken && tokens?.refreshToken) {
+              recordTokenRotation(tokens.refreshToken)
+              useAuthStore.getState().setToken(tokens.accessToken, tokens.refreshToken)
+              return true
+            }
+          } catch {
+            if (getAuthSession() !== session) return false
+          }
+          notifySessionExpired()
+          useAuthStore.getState().clearAuth("expired")
+          return false
         }
 
         try {
-          const refreshed = await tokenRefreshCoordinator.refresh()
-          if (refreshed) {
+          const refreshed = await tokenRefreshCoordinator.refresh(session)
+          if (refreshed && config.authSession === getAuthSession()) {
             const Authorization = `Bearer ${getToken()}`
             Object.assign(response.config.headers, { Authorization })
             return instance.request(response.config) as Promise<AxiosResponse>
           }
         } catch {
-          // The shared cleanup below handles refresh failures for every waiter.
+          // Refresh failures are handled inside the shared operation.
         }
 
-        notifySessionExpired()
-        useAuthStore.getState().clearAuth("expired")
         return null
       }
 

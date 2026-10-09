@@ -6,6 +6,7 @@ import { localStg } from "@/utils/storage"
 import { getServiceBaseURL } from "@/utils/service"
 import { $t } from "@/locales"
 import { getAuthorization, handleExpiredRequest, showErrorMsg } from "./shared"
+import { getAuthSession } from "./auth-session"
 import type { RequestInstanceState } from "./type"
 import { Service } from "@/typings/service"
 
@@ -26,6 +27,13 @@ export const request = createFlatRequest(
       return response.data.data
     },
     async onRequest(config) {
+      const authConfig = config as typeof config & { authSession?: number }
+      const session = getAuthSession()
+      authConfig.authSession ??= session
+      if (authConfig.authSession !== session) {
+        config.signal = AbortSignal.abort()
+        return config
+      }
       const Authorization = getAuthorization()
       const language = localStg.get("lang") || "zh-CN"
       Object.assign(config.headers, { Authorization, "Accept-Language": language })
@@ -45,6 +53,8 @@ export const request = createFlatRequest(
     async onBackendFail(response, instance) {
       const authStore = useAuthStore()
       const responseCode = String(response.data.code)
+      const config = response.config as typeof response.config & { authRetried?: boolean; authSession?: number }
+      if (config.authSession !== getAuthSession()) return null
 
       function handleLogout() {
         authStore.resetStore()
@@ -90,15 +100,20 @@ export const request = createFlatRequest(
       }
 
       // when the backend response code is in `expiredTokenCodes`, it means the token is expired, and refresh token
-      // the api `refreshToken` can not return error code in `expiredTokenCodes`, otherwise it will be a dead loop, should return `logoutCodes` or `modalLogoutCodes`
       const expiredTokenCodes = import.meta.env.VITE_SERVICE_EXPIRED_TOKEN_CODES?.split(",") || []
       if (expiredTokenCodes.includes(responseCode)) {
-        const success = await handleExpiredRequest(request.state)
-        if (success) {
-          const Authorization = getAuthorization()
-          Object.assign(response.config.headers, { Authorization })
-
-          return instance.request(response.config) as Promise<AxiosResponse>
+        if (config.authRetried) {
+          await authStore.resetStore()
+          return null
+        }
+        config.authRetried = true
+        const currentAuthorization = getAuthorization()
+        // Late responses sent with the old token can reuse a completed refresh.
+        const alreadyRefreshed = currentAuthorization && config.headers.Authorization !== currentAuthorization
+        const success = alreadyRefreshed || (await handleExpiredRequest(request.state))
+        if (success && config.authSession === getAuthSession()) {
+          Object.assign(config.headers, { Authorization: getAuthorization() })
+          return instance.request(config) as Promise<AxiosResponse>
         }
       }
 

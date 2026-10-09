@@ -20,7 +20,7 @@ test("auth requests use paths relative to the API base", async () => {
   const [authApi, request] = await Promise.all([read("src/services/api/auth.ts"), read("src/services/request.ts")])
 
   assert.match(authApi, /url: "\/auth\/login"/)
-  assert.match(request, /fetch\(`\$\{SERVICE_BASE_URL\}\/auth\/token\/refresh`/)
-  assert.match(request, /body: JSON\.stringify\(\{ refreshToken \}\)/)
+  assert.match(authApi, /url: "\/auth\/token\/refresh"/)
+  assert.match(authApi, /"X-Refresh-Token": refreshToken/)
   assert.doesNotMatch(request, /\/auth\/refreshToken/)
 })

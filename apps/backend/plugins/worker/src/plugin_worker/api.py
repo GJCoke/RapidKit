@@ -5,21 +5,28 @@ Author  : Claude
 Date    : 2026-03-30
 """
 
+from asyncio import gather, to_thread
 from datetime import date
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 from rapidkit_common.auth import verify_user_permission
+from rapidkit_common.deps import SessionDep
 from rapidkit_common.schemas.response import PaginatedResponse, Response
+from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
 
+from plugin_worker.dashboard import get_queue_dashboard, resolve_worker_subscriptions
 from plugin_worker.deps import TaskResultCrudDep, WorkerCrudDep
+from plugin_worker.runtime import inspect_worker_runtime
 from plugin_worker.schemas import (
     ActiveTaskInfo,
     PoolResizeRequest,
+    QueueDashboardResponse,
     QueueOperateRequest,
     RegisteredTaskResponse,
+    TaskGroupQuery,
     TaskListResponse,
     TaskQueryRequest,
     TaskResponse,
@@ -72,11 +79,19 @@ async def get_all_workers(crud: WorkerCrudDep) -> Response[list[WorkerResponse]]
 
 
 @router.get("/{worker_id}")
-async def get_worker(worker_id: UUID, crud: WorkerCrudDep) -> Response[WorkerResponse]:
+async def get_worker(worker_id: UUID, crud: WorkerCrudDep, request: Request) -> Response[WorkerResponse]:
     worker = await crud.get(worker_id)
     if not worker:
         raise AppException(WorkerStatusCode.WORKER_NOT_FOUND)
-    return Response(data=WorkerResponse.model_validate(worker))
+    celery_app = getattr(request.app.state, "celery_app", None)
+    runtime = {}
+    if celery_app is not None:
+        (enriched, _), runtime = await gather(
+            resolve_worker_subscriptions(celery_app, [worker], timezone.now()),
+            inspect_worker_runtime(celery_app, worker.hostname),
+        )
+        worker = enriched[0]
+    return Response(data=WorkerResponse.model_validate(worker).model_copy(update=runtime))
 
 
 @router.post("/{worker_id}/ping")
@@ -114,7 +129,7 @@ async def pool_grow_endpoint(
 ) -> Response[WorkerControlResponse]:
     celery_app = request.app.state.celery_app
     worker = await crud.get(worker_id, nullable=False)
-    pool_grow(celery_app, worker.hostname, body.n)
+    await to_thread(pool_grow, celery_app, worker.hostname, body.n)
     return Response(data=WorkerControlResponse(success=True, message=f"Pool grow +{body.n} command sent"))
 
 
@@ -124,7 +139,7 @@ async def pool_shrink_endpoint(
 ) -> Response[WorkerControlResponse]:
     celery_app = request.app.state.celery_app
     worker = await crud.get(worker_id, nullable=False)
-    pool_shrink(celery_app, worker.hostname, body.n)
+    await to_thread(pool_shrink, celery_app, worker.hostname, body.n)
     return Response(data=WorkerControlResponse(success=True, message=f"Pool shrink -{body.n} command sent"))
 
 
@@ -156,7 +171,7 @@ async def get_active_tasks_endpoint(
 ) -> Response[list[ActiveTaskInfo]]:
     celery_app = request.app.state.celery_app
     worker = await crud.get(worker_id, nullable=False)
-    tasks = get_active_tasks(celery_app, worker.hostname)
+    tasks = await to_thread(get_active_tasks, celery_app, worker.hostname)
     return Response(data=parse_task_info_list(tasks))
 
 
@@ -168,7 +183,7 @@ async def get_reserved_tasks_endpoint(
 ) -> Response[list[ActiveTaskInfo]]:
     celery_app = request.app.state.celery_app
     worker = await crud.get(worker_id, nullable=False)
-    tasks = get_reserved_tasks(celery_app, worker.hostname)
+    tasks = await to_thread(get_reserved_tasks, celery_app, worker.hostname)
     return Response(data=parse_task_info_list(tasks))
 
 
@@ -184,6 +199,13 @@ async def get_tasks(
 ) -> Response[PaginatedResponse[TaskListResponse]]:
     data = await crud.get_paginate_tasks(query)
     return Response(data=data)
+
+
+@task_router.get("/stats/dashboard")
+async def get_queue_dashboard_endpoint(
+    request: Request, session: SessionDep, days: int = Query(1, ge=1, le=90)
+) -> Response[QueueDashboardResponse]:
+    return Response(data=await get_queue_dashboard(session, request.app.state.celery_app, days))
 
 
 @task_router.get("/stats/summary")
@@ -209,9 +231,9 @@ async def get_task_stats_timeline(
 @task_router.get("/stats/by-name")
 async def get_task_stats_by_name(
     crud: TaskResultCrudDep,
-    days: int = Query(7, ge=1, le=90),
-) -> Response[list[TaskStatsByName]]:
-    data = await crud.get_stats_by_name(days)
+    query: Annotated[TaskGroupQuery, Query(...)],
+) -> Response[PaginatedResponse[TaskStatsByName]]:
+    data = await crud.get_stats_by_name(query)
     return Response(data=data)
 
 

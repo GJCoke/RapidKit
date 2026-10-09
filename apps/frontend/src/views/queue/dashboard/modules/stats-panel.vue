@@ -1,509 +1,484 @@
 <script setup lang="ts">
-  import { ref, watch } from "vue"
-  import { useEcharts } from "@/hooks/common/echarts"
+  import { computed, onMounted, onUnmounted, ref, watch } from "vue"
+  import { useRouter } from "vue-router"
+  import { fetchQueueDashboard, fetchTaskStatsByName, fetchTaskStatsByWorker } from "@/service/api"
   import { $t } from "@/locales"
-  import {
-    fetchTaskStatsByName,
-    fetchTaskStatsByWorker,
-    fetchTaskStatsSummary,
-    fetchTaskStatsTimeline,
-  } from "@/service/api"
+  import { queueState, sortQueues, utilization } from "../composables/metrics"
+  import { reconcileDashboard, reconcileRows } from "../composables/reconcile"
+  import OverviewChart from "./overview-chart.vue"
 
-  defineOptions({
-    name: "StatsPanel",
-  })
-
-  // ==================== State ====================
-  const days = ref(7)
+  defineOptions({ name: "StatsPanel" })
+  const props = defineProps<{ connected: boolean }>()
+  const emit = defineEmits<{ refreshWorkers: []; viewWorkers: [] }>()
+  const router = useRouter()
+  const days = ref(1)
+  const dashboard = ref<Api.Worker.QueueDashboard | null>(null)
+  const tasks = ref<Api.Worker.TaskGroupItem[]>([])
+  const workerRanking = ref<Api.Worker.TaskStatsByWorker[]>([])
   const loading = ref(false)
-  const summary = ref<Api.Worker.TaskStatsSummary>({
-    total: 0,
-    success: 0,
-    failure: 0,
-    retry: 0,
-    revoked: 0,
-    successRate: 0,
-    avgRuntime: null,
+  const failed = ref(false)
+  const rankingFailed = ref(false)
+  const now = ref(Date.now())
+  const stale = computed(() => dashboard.value && now.value - new Date(dashboard.value.sampledAt).getTime() > 60000)
+  const queues = computed(() => sortQueues(dashboard.value?.queues ?? []))
+  const blocked = computed(() => queues.value.filter((row) => queueState(row) === "blocked"))
+  const offline = computed(() =>
+    Math.max(0, (dashboard.value?.totalWorkers ?? 0) - (dashboard.value?.onlineWorkers ?? 0)),
+  )
+  const attention = computed(
+    () =>
+      failed.value ||
+      stale.value ||
+      !dashboard.value ||
+      dashboard.value.onlineWorkers === 0 ||
+      offline.value > 0 ||
+      blocked.value.length > 0 ||
+      dashboard.value.queueDepth === null ||
+      dashboard.value.queues.some((queue) => queue.consumers === null),
+  )
+  const occupied = computed(() => utilization(dashboard.value?.activeTasks ?? 0, dashboard.value?.concurrency ?? 0))
+  const number = (value: number | null | undefined, digits = 2) =>
+    value === null || value === undefined ? "—" : value.toLocaleString(undefined, { maximumFractionDigits: digits })
+  const metrics = computed(() => {
+    const d = dashboard.value
+    return [
+      {
+        label: $t("page.manage.worker.overview.depth"),
+        value: number(d?.queueDepth),
+        unit: "",
+        icon: "carbon:query-queue",
+        tone: blocked.value.length ? "text-warning" : "text-primary",
+        hint: $t("page.manage.worker.overview.depthHint"),
+        live: true,
+      },
+      {
+        label: $t("page.manage.worker.overview.active"),
+        value: number(d?.activeTasks),
+        unit: "",
+        icon: "carbon:activity",
+        tone: "text-info",
+        hint: $t("page.manage.worker.overview.capacity", { count: number(d?.concurrency) }),
+        live: true,
+      },
+      {
+        label: $t("page.manage.worker.overview.throughput"),
+        value: number(d?.throughput),
+        unit: $t("page.manage.worker.overview.perMinute"),
+        icon: "carbon:meter",
+        tone: "text-primary",
+        hint: $t("page.manage.worker.overview.throughputHint"),
+        live: true,
+      },
+      {
+        label: $t("page.manage.worker.overview.successRate"),
+        value: number(d?.successRate),
+        unit: !d || d.successRate === null ? "" : "%",
+        icon: "carbon:checkmark-outline",
+        tone: "text-success",
+        hint: d
+          ? $t("page.manage.worker.overview.successHint", { success: number(d.success), failure: number(d.failure) })
+          : $t("page.manage.worker.overview.noSamples"),
+        live: false,
+      },
+      {
+        label: $t("page.manage.worker.overview.p95"),
+        value: number(d?.p95Runtime, 3),
+        unit: !d || d.p95Runtime === null ? "" : "s",
+        icon: "carbon:timer",
+        tone: "text-base-text-1",
+        hint:
+          !d || d.avgRuntime === null
+            ? $t("page.manage.worker.overview.noSamples")
+            : $t("page.manage.worker.overview.avg", { value: number(d.avgRuntime, 3) }),
+        live: false,
+      },
+    ]
   })
-
-  // ==================== Timeline Chart ====================
-  const {
-    domRef: timelineRef,
-    updateOptions: updateTimeline,
-    setOptions: setTimeline,
-  } = useEcharts(() => ({
-    tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "cross", label: { backgroundColor: "#6a7985" } },
-    },
-    legend: {
-      data: [$t("page.manage.worker.taskStatusMaps.success"), $t("page.manage.worker.taskStatusMaps.failure")],
-      top: "0",
-    },
-    grid: { left: "3%", right: "4%", bottom: "3%", top: "15%", containLabel: true },
-    xAxis: { type: "category", boundaryGap: false, data: [] as string[] },
-    yAxis: { type: "value" },
-    series: [
-      {
-        color: "#18a058",
-        name: $t("page.manage.worker.taskStatusMaps.success"),
-        type: "line",
-        smooth: true,
-        areaStyle: {
-          color: {
-            type: "linear",
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0.25, color: "rgba(24, 160, 88, 0.4)" },
-              { offset: 1, color: "rgba(24, 160, 88, 0)" },
-            ],
-          },
-        },
-        data: [] as number[],
-      },
-      {
-        color: "#d03050",
-        name: $t("page.manage.worker.taskStatusMaps.failure"),
-        type: "line",
-        smooth: true,
-        areaStyle: {
-          color: {
-            type: "linear",
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0.25, color: "rgba(208, 48, 80, 0.4)" },
-              { offset: 1, color: "rgba(208, 48, 80, 0)" },
-            ],
-          },
-        },
-        data: [] as number[],
-      },
-    ],
-  }))
-
-  // ==================== Pie Chart ====================
-  const {
-    domRef: pieRef,
-    updateOptions: updatePie,
-    setOptions: setPie,
-  } = useEcharts(() => ({
-    tooltip: { trigger: "item" },
-    legend: { bottom: "1%", left: "center", itemStyle: { borderWidth: 0 } },
-    series: [
-      {
-        color: ["#18a058", "#d03050", "#f0a020", "#909399"],
-        name: $t("page.manage.worker.stats.statusDistribution"),
-        type: "pie",
-        radius: ["45%", "75%"],
-        avoidLabelOverlap: false,
-        itemStyle: { borderRadius: 10, borderColor: "#fff", borderWidth: 1 },
-        label: { show: false, position: "center" },
-        emphasis: { label: { show: true, fontSize: "12" } },
-        labelLine: { show: false },
-        data: [] as { name: string; value: number }[],
-      },
-    ],
-  }))
-
-  // ==================== Bar Chart (by task name) ====================
-  const {
-    domRef: taskBarRef,
-    updateOptions: updateTaskBar,
-    setOptions: setTaskBar,
-  } = useEcharts(() => ({
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: {
-      data: [$t("page.manage.worker.taskStatusMaps.success"), $t("page.manage.worker.taskStatusMaps.failure")],
-      top: "0",
-    },
-    grid: { left: "3%", right: "4%", bottom: "3%", top: "15%", containLabel: true },
-    xAxis: { type: "value" },
-    yAxis: { type: "category", data: [] as string[], inverse: true },
-    series: [
-      {
-        name: $t("page.manage.worker.taskStatusMaps.success"),
-        type: "bar",
-        stack: "total",
-        color: "#18a058",
-        data: [] as number[],
-      },
-      {
-        name: $t("page.manage.worker.taskStatusMaps.failure"),
-        type: "bar",
-        stack: "total",
-        color: "#d03050",
-        data: [] as number[],
-      },
-    ],
-  }))
-
-  // ==================== Bar Chart (by worker) ====================
-  const {
-    domRef: workerBarRef,
-    updateOptions: updateWorkerBar,
-    setOptions: setWorkerBar,
-  } = useEcharts(() => ({
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: {
-      data: [$t("page.manage.worker.taskStatusMaps.success"), $t("page.manage.worker.taskStatusMaps.failure")],
-      top: "0",
-    },
-    grid: { left: "3%", right: "4%", bottom: "3%", top: "15%", containLabel: true },
-    xAxis: { type: "value" },
-    yAxis: { type: "category", data: [] as string[], inverse: true },
-    series: [
-      {
-        name: $t("page.manage.worker.taskStatusMaps.success"),
-        type: "bar",
-        stack: "total",
-        color: "#18a058",
-        data: [] as number[],
-      },
-      {
-        name: $t("page.manage.worker.taskStatusMaps.failure"),
-        type: "bar",
-        stack: "total",
-        color: "#d03050",
-        data: [] as number[],
-      },
-    ],
-  }))
-
-  // ==================== Local State for Incremental Updates ====================
-
-  /** 时间线数据（按小时桶） */
-  const timelineData = ref<{ bucket: string; success: number; failure: number }[]>([])
-
-  /** 按任务名统计 */
-  const byNameData = ref<Map<string, { success: number; failure: number }>>(new Map())
-
-  /** 按 Worker 统计 */
-  const byWorkerData = ref<Map<string, { success: number; failure: number }>>(new Map())
-
-  /** 成功任务的 runtime 累加（用于计算平均值） */
-  let runtimeSum = 0
-  let runtimeCount = 0
-
-  // ==================== Data Fetch (初始加载 / 切换天数) ====================
+  let requestId = 0
+  let disposed = false
+  let poll: ReturnType<typeof setInterval> | undefined
+  let debounce: ReturnType<typeof setTimeout> | undefined
+  let pendingEvent = false
 
   async function loadStats() {
+    const id = ++requestId
+    const selectedDays = days.value
+    const end = new Date()
     loading.value = true
-    const params = { days: days.value }
-
-    const [summaryRes, timelineRes, byNameRes, byWorkerRes] = await Promise.all([
-      fetchTaskStatsSummary(params),
-      fetchTaskStatsTimeline(params),
-      fetchTaskStatsByName(params),
-      fetchTaskStatsByWorker(params),
+    pendingEvent = false
+    const results = await Promise.allSettled([
+      fetchQueueDashboard({ days: selectedDays }),
+      fetchTaskStatsByName({
+        startTime: new Date(end.getTime() - selectedDays * 86400000).toISOString(),
+        endTime: end.toISOString(),
+        page: 1,
+        pageSize: 10,
+        sortBy: "total",
+        sortOrder: "desc",
+      }),
+      fetchTaskStatsByWorker({ days: selectedDays }),
     ])
-
-    // Summary
-    if (!summaryRes.error) {
-      summary.value = summaryRes.data
-      // 初始化 runtime 累加器
-      if (summaryRes.data.avgRuntime !== null) {
-        runtimeCount = summaryRes.data.success
-        runtimeSum = summaryRes.data.avgRuntime * runtimeCount
-      } else {
-        runtimeCount = 0
-        runtimeSum = 0
-      }
+    if (disposed || id !== requestId) return
+    const [overview, byName, byWorker] = results
+    if (overview.status === "fulfilled" && !overview.value.error && overview.value.data) {
+      if (dashboard.value) reconcileDashboard(dashboard.value, overview.value.data)
+      else dashboard.value = overview.value.data
+      failed.value = false
+    } else failed.value = true
+    rankingFailed.value =
+      byName.status === "rejected" ||
+      byWorker.status === "rejected" ||
+      !!(byName.status === "fulfilled" && byName.value.error) ||
+      !!(byWorker.status === "fulfilled" && byWorker.value.error)
+    if (byName.status === "fulfilled" && !byName.value.error) {
+      reconcileRows(tasks.value, byName.value.data.records, (row) => row.taskName)
     }
-
-    // Timeline
-    if (!timelineRes.error) {
-      timelineData.value = timelineRes.data.map((d) => ({
-        bucket: d.timeBucket,
-        success: d.success,
-        failure: d.failure,
-      }))
-      renderTimeline()
+    if (byWorker.status === "fulfilled" && !byWorker.value.error) {
+      const ranked = [...byWorker.value.data].sort((a, b) => b.total - a.total).slice(0, 10)
+      reconcileRows(workerRanking.value, ranked, (row) => row.workerHostname)
     }
-
-    // By Name
-    if (!byNameRes.error) {
-      byNameData.value = new Map(byNameRes.data.map((d) => [d.taskName, { success: d.success, failure: d.failure }]))
-      renderByName()
-    }
-
-    // By Worker
-    if (!byWorkerRes.error) {
-      byWorkerData.value = new Map(
-        byWorkerRes.data.map((d) => [d.workerHostname, { success: d.success, failure: d.failure }]),
-      )
-      renderByWorker()
-    }
-
-    // Pie
-    renderPie()
-
+    now.value = Date.now()
     loading.value = false
+    if (pendingEvent) scheduleRefresh()
   }
-
-  // ==================== Incremental Update (Socket 事件驱动) ====================
-
-  /**
-   * 处理 task:update 事件，纯前端增量更新，无 HTTP 请求。
-   * 只处理终态事件（success/failure/retry/revoked），started 不计入统计。
-   */
-  function handleTaskUpdate(event: Api.Worker.TaskUpdateEvent) {
-    const { status, taskName, workerHostname, runtime } = event
-    const s = summary.value
-
-    // started 不计入统计面板
-    if (status === "2") return
-
-    // 1. Summary 卡片增量
-    s.total += 1
-    if (status === "3") {
-      s.success += 1
-      if (runtime) {
-        runtimeCount += 1
-        runtimeSum += runtime
-        s.avgRuntime = Math.round((runtimeSum / runtimeCount) * 1000) / 1000
-      }
-    } else if (status === "4") {
-      s.failure += 1
-    } else if (status === "5") {
-      s.retry += 1
-    } else if (status === "6") {
-      s.revoked += 1
-    }
-    s.successRate = s.total > 0 ? Math.round((s.success / s.total) * 10000) / 100 : 0
-
-    // 2. 时间线增量：找到当前小时桶
-    const nowBucket = formatHourBucket(new Date())
-    const bucketItem = timelineData.value.find((d) => d.bucket === nowBucket)
-    if (bucketItem) {
-      if (status === "3") bucketItem.success += 1
-      else if (status === "4") bucketItem.failure += 1
-    } else {
-      // 新的小时桶
-      timelineData.value.push({
-        bucket: nowBucket,
-        success: status === "3" ? 1 : 0,
-        failure: status === "4" ? 1 : 0,
-      })
-    }
-    renderTimeline(false)
-
-    // 3. 按任务名增量
-    if (taskName && (status === "3" || status === "4")) {
-      const existing = byNameData.value.get(taskName)
-      if (existing) {
-        if (status === "3") existing.success += 1
-        else existing.failure += 1
-      } else {
-        byNameData.value.set(taskName, {
-          success: status === "3" ? 1 : 0,
-          failure: status === "4" ? 1 : 0,
-        })
-      }
-      renderByName(false)
-    }
-
-    // 4. 按 Worker 增量
-    if (workerHostname && (status === "3" || status === "4")) {
-      const existing = byWorkerData.value.get(workerHostname)
-      if (existing) {
-        if (status === "3") existing.success += 1
-        else existing.failure += 1
-      } else {
-        byWorkerData.value.set(workerHostname, {
-          success: status === "3" ? 1 : 0,
-          failure: status === "4" ? 1 : 0,
-        })
-      }
-      renderByWorker(false)
-    }
-
-    // 5. 饼图增量
-    renderPie(false)
+  function scheduleRefresh() {
+    pendingEvent = true
+    if (loading.value || debounce) return
+    debounce = setTimeout(() => {
+      debounce = undefined
+      if (!disposed) void loadStats()
+    }, 1500)
   }
-
-  // ==================== Chart Render Helpers ====================
-
-  function formatHourBucket(date: Date): string {
-    const y = date.getFullYear()
-    const m = String(date.getMonth() + 1).padStart(2, "0")
-    const d = String(date.getDate()).padStart(2, "0")
-    const h = String(date.getHours()).padStart(2, "0")
-    return `${y}-${m}-${d} ${h}:00`
+  function refresh() {
+    emit("refreshWorkers")
+    void loadStats()
   }
-
-  function renderTimeline(fullRender = true) {
-    const data = timelineData.value
-    const opts = {
-      xAxis: { data: data.map((d) => d.bucket.slice(5)) },
-      series: [{ data: data.map((d) => d.success) }, { data: data.map((d) => d.failure) }],
-    }
-    if (fullRender) {
-      updateTimeline((o) => {
-        o.xAxis.data = opts.xAxis.data
-        o.series[0].data = opts.series[0].data
-        o.series[1].data = opts.series[1].data
-        return o
-      })
-    } else {
-      setTimeline(opts)
-    }
+  function handleTaskUpdate(_event: Api.Worker.TaskUpdateEvent) {
+    scheduleRefresh()
   }
-
-  function renderPie(fullRender = true) {
-    const s = summary.value
-    const pieData = [
-      { name: $t("page.manage.worker.taskStatusMaps.success"), value: s.success },
-      { name: $t("page.manage.worker.taskStatusMaps.failure"), value: s.failure },
-      { name: $t("page.manage.worker.taskStatusMaps.retry"), value: s.retry },
-      { name: $t("page.manage.worker.taskStatusMaps.revoked"), value: s.revoked },
-    ].filter((d) => d.value > 0)
-    if (fullRender) {
-      updatePie((o) => {
-        o.series[0].data = pieData
-        return o
-      })
-    } else {
-      setPie({ series: [{ data: pieData }] })
-    }
+  function viewRanking(kind: "tasks" | "workers", name: string) {
+    const end = new Date()
+    void router.push({
+      path: "/queue/task",
+      query: {
+        view: "records",
+        range: "custom",
+        startTime: new Date(end.getTime() - days.value * 86400000).toISOString(),
+        endTime: end.toISOString(),
+        ...(kind === "tasks" ? { task: name } : { worker: name }),
+      },
+    })
   }
-
-  function renderByName(fullRender = true) {
-    const sorted = [...byNameData.value.entries()]
-      .sort((a, b) => b[1].success + b[1].failure - (a[1].success + a[1].failure))
-      .slice(0, 10)
-    const opts = {
-      yAxis: { data: sorted.map(([name]) => name.split(".").pop() || name) },
-      series: [{ data: sorted.map(([, v]) => v.success) }, { data: sorted.map(([, v]) => v.failure) }],
-    }
-    if (fullRender) {
-      updateTaskBar((o) => {
-        o.yAxis.data = opts.yAxis.data
-        o.series[0].data = opts.series[0].data
-        o.series[1].data = opts.series[1].data
-        return o
-      })
-    } else {
-      setTaskBar(opts)
-    }
+  function viewFailures() {
+    void router.push({
+      path: "/queue/task",
+      query: {
+        status: "4",
+        startTime: new Date(Date.now() - days.value * 86400000).toISOString(),
+        endTime: new Date().toISOString(),
+        view: "records",
+        range: "custom",
+      },
+    })
   }
-
-  function renderByWorker(fullRender = true) {
-    const sorted = [...byWorkerData.value.entries()].sort(
-      (a, b) => b[1].success + b[1].failure - (a[1].success + a[1].failure),
-    )
-    const opts = {
-      yAxis: { data: sorted.map(([name]) => name) },
-      series: [{ data: sorted.map(([, v]) => v.success) }, { data: sorted.map(([, v]) => v.failure) }],
-    }
-    if (fullRender) {
-      updateWorkerBar((o) => {
-        o.yAxis.data = opts.yAxis.data
-        o.series[0].data = opts.series[0].data
-        o.series[1].data = opts.series[1].data
-        return o
-      })
-    } else {
-      setWorkerBar(opts)
-    }
-  }
-
-  // ==================== Watch & Init ====================
-  watch(days, () => loadStats())
-  loadStats()
-
-  defineExpose({ handleTaskUpdate })
+  watch(days, () => {
+    dashboard.value = null
+    tasks.value = []
+    workerRanking.value = []
+    void loadStats()
+  })
+  watch(
+    () => props.connected,
+    (connected) => {
+      if (connected) refresh()
+    },
+  )
+  onMounted(() => {
+    void loadStats()
+    poll = setInterval(() => {
+      now.value = Date.now()
+      if (!loading.value) refresh()
+    }, 30000)
+  })
+  onUnmounted(() => {
+    disposed = true
+    requestId++
+    clearInterval(poll)
+    clearTimeout(debounce)
+  })
+  defineExpose({ handleTaskUpdate, refresh: scheduleRefresh })
 </script>
 
 <template>
-  <NCard :title="$t('page.manage.worker.stats.title')" :bordered="false" size="small" class="card-wrapper">
-    <template #header-extra>
-      <NRadioGroup v-model:value="days" size="small">
-        <NRadioButton :value="1">{{ $t("page.manage.worker.stats.last24h") }}</NRadioButton>
-        <NRadioButton :value="7">{{ $t("page.manage.worker.stats.last7d") }}</NRadioButton>
-        <NRadioButton :value="30">{{ $t("page.manage.worker.stats.last30d") }}</NRadioButton>
-      </NRadioGroup>
-    </template>
+  <div class="flex-col-stretch gap-16px">
+    <NCard :bordered="false" class="card-wrapper">
+      <div class="flex flex-wrap items-center justify-between gap-12px">
+        <div>
+          <div class="text-20px font-700">{{ $t("page.manage.worker.overview.title") }}</div>
+          <div class="mt-4px text-13px text-base-text-3">{{ $t("page.manage.worker.overview.subtitle") }}</div>
+        </div>
+        <div class="flex flex-wrap items-center gap-12px">
+          <NTag :type="connected ? 'success' : 'warning'" size="small" :bordered="false">
+            {{ connected ? $t("page.manage.worker.overview.live") : $t("page.manage.worker.overview.disconnected") }}
+          </NTag>
+          <NRadioGroup v-model:value="days" size="small">
+            <NRadioButton :value="1">{{ $t("page.manage.worker.stats.last24h") }}</NRadioButton>
+            <NRadioButton :value="7">{{ $t("page.manage.worker.stats.last7d") }}</NRadioButton>
+            <NRadioButton :value="30">{{ $t("page.manage.worker.stats.last30d") }}</NRadioButton>
+          </NRadioGroup>
+          <NButton size="small" :loading="loading" @click="refresh">
+            <template #icon><SvgIcon icon="carbon:renew" /></template>
+            {{ $t("page.manage.worker.overview.refresh") }}
+          </NButton>
+        </div>
+      </div>
+      <div
+        class="mt-16px flex flex-wrap items-center gap-x-24px gap-y-8px border-t border-theme-default pt-12px text-12px text-base-text-3"
+      >
+        <NButton text size="small" @click="emit('viewWorkers')"
+          >{{ $t("page.manage.worker.overview.workers") }}
+          <span class="ml-8px font-700 tabular-nums"
+            >{{ number(dashboard?.onlineWorkers) }} / {{ number(dashboard?.totalWorkers) }}</span
+          ></NButton
+        >
+        <span
+          >{{ $t("page.manage.worker.overview.utilization") }}
+          <strong class="ml-8px text-base-text-1 tabular-nums">{{
+            occupied === null ? "—" : `${occupied}%`
+          }}</strong></span
+        >
+        <span class="ml-auto"
+          >{{ $t("page.manage.worker.overview.updated") }}
+          {{ dashboard ? new Date(dashboard.sampledAt).toLocaleTimeString() : "—" }}</span
+        >
+      </div>
+    </NCard>
 
-    <NSpin :show="loading">
-      <!-- Summary Cards -->
-      <NGrid :x-gap="16" :y-gap="16" responsive="screen" item-responsive class="mb-16px">
-        <NGridItem span="24 s:12 m:6">
-          <NCard size="small" embedded>
-            <NStatistic :label="$t('page.manage.worker.stats.totalTasks')" :value="summary.total" />
-          </NCard>
-        </NGridItem>
-        <NGridItem span="24 s:12 m:6">
-          <NCard size="small" embedded>
-            <NStatistic :label="$t('page.manage.worker.stats.successRate')">
-              <template #default>
-                <span
-                  :class="
-                    summary.successRate >= 90
-                      ? 'text-green-500'
-                      : summary.successRate >= 70
-                        ? 'text-orange-500'
-                        : 'text-red-500'
-                  "
-                >
-                  {{ summary.successRate }}%
-                </span>
-              </template>
-            </NStatistic>
-          </NCard>
-        </NGridItem>
-        <NGridItem span="24 s:12 m:6">
-          <NCard size="small" embedded>
-            <NStatistic :label="$t('page.manage.worker.stats.avgRuntime')">
-              <template #default>
-                {{ summary.avgRuntime !== null ? `${summary.avgRuntime}s` : "-" }}
-              </template>
-            </NStatistic>
-          </NCard>
-        </NGridItem>
-        <NGridItem span="24 s:12 m:6">
-          <NCard size="small" embedded>
-            <NStatistic :label="$t('page.manage.worker.stats.failureCount')">
-              <template #default>
-                <span :class="summary.failure > 0 ? 'text-red-500' : ''">{{ summary.failure }}</span>
-              </template>
-            </NStatistic>
-          </NCard>
-        </NGridItem>
-      </NGrid>
+    <NAlert
+      :type="attention ? 'warning' : 'success'"
+      :title="attention ? $t('page.manage.worker.overview.attention') : $t('page.manage.worker.overview.healthy')"
+    >
+      <div class="flex flex-wrap gap-x-24px gap-y-6px text-13px">
+        <span v-if="failed">{{ $t("page.manage.worker.overview.unavailable") }}</span>
+        <span v-if="stale">{{ $t("page.manage.worker.overview.stale") }}</span>
+        <template v-if="dashboard">
+          <span v-if="!dashboard.onlineWorkers">{{ $t("page.manage.worker.overview.noWorkers") }}</span>
+          <NButton v-else-if="offline" text size="small" type="warning" @click="emit('viewWorkers')">{{
+            $t("page.manage.worker.overview.offline", { count: offline })
+          }}</NButton>
+          <span v-for="queue in blocked" :key="queue.name">{{
+            $t("page.manage.worker.overview.blocked", { name: queue.name, count: queue.depth })
+          }}</span>
+          <NButton v-if="dashboard.failure" text size="small" type="error" @click="viewFailures">{{
+            $t("page.manage.worker.overview.failures", { count: dashboard.failure })
+          }}</NButton>
+          <span v-if="dashboard.queues.some((queue) => queue.consumers === null)">{{
+            $t("page.manage.worker.overview.consumersUnknown")
+          }}</span>
+          <span v-if="dashboard.queueDepth === null">{{ $t("page.manage.worker.overview.brokerUnknown") }}</span>
+        </template>
+        <span v-if="!attention">{{ $t("page.manage.worker.overview.normalHint") }}</span>
+      </div>
+    </NAlert>
 
-      <!-- Charts Row 1: Timeline + Pie -->
-      <NGrid :x-gap="16" :y-gap="16" responsive="screen" item-responsive class="mb-16px">
-        <NGridItem span="24 m:16">
-          <NCard size="small" :title="$t('page.manage.worker.stats.timeline')" embedded>
-            <div ref="timelineRef" class="h-300px"></div>
-          </NCard>
-        </NGridItem>
-        <NGridItem span="24 m:8">
-          <NCard size="small" :title="$t('page.manage.worker.stats.statusDistribution')" embedded>
-            <div ref="pieRef" class="h-300px"></div>
-          </NCard>
-        </NGridItem>
-      </NGrid>
-
-      <!-- Charts Row 2: By Name + By Worker -->
-      <NGrid :x-gap="16" :y-gap="16" responsive="screen" item-responsive>
-        <NGridItem span="24 m:12">
-          <NCard size="small" :title="$t('page.manage.worker.stats.topTasks')" embedded>
-            <div ref="taskBarRef" class="h-300px"></div>
-          </NCard>
-        </NGridItem>
-        <NGridItem span="24 m:12">
-          <NCard size="small" :title="$t('page.manage.worker.stats.workerLoad')" embedded>
-            <div ref="workerBarRef" class="h-300px"></div>
-          </NCard>
-        </NGridItem>
-      </NGrid>
+    <NSpin :show="loading && !dashboard">
+      <div class="grid grid-cols-1 gap-12px sm:grid-cols-2 xl:grid-cols-5">
+        <NCard v-for="metric in metrics" :key="metric.label" :bordered="false" class="card-wrapper" size="small">
+          <div class="flex items-center justify-between gap-8px text-13px text-base-text-2">
+            <span>{{ metric.label }}</span
+            ><SvgIcon :icon="metric.icon" class="text-20px" :class="metric.tone" />
+          </div>
+          <div class="my-12px flex items-baseline gap-6px" :class="metric.tone">
+            <span class="text-34px font-700 tabular-nums leading-tight">{{ metric.value }}</span
+            ><span class="text-12px">{{ metric.unit }}</span>
+          </div>
+          <div class="min-h-32px text-12px text-base-text-3">{{ metric.hint }}</div>
+          <NTag size="tiny" :bordered="false" class="mt-8px">{{
+            metric.live ? $t("page.manage.worker.overview.current") : $t("page.manage.worker.overview.window")
+          }}</NTag>
+        </NCard>
+      </div>
     </NSpin>
-  </NCard>
+
+    <div class="grid grid-cols-1 gap-12px xl:grid-cols-5">
+      <div class="xl:col-span-3">
+        <NCard
+          :bordered="false"
+          class="card-wrapper h-full"
+          :title="$t('page.manage.worker.overview.completionTrend')"
+          size="small"
+        >
+          <div class="mb-8px text-12px text-base-text-3">{{ $t("page.manage.worker.overview.completionHint") }}</div>
+          <OverviewChart v-if="dashboard?.timeline.length" kind="completion" :dashboard="dashboard" />
+          <NEmpty v-else class="h-280px flex-center" :description="$t('page.manage.worker.overview.emptyTasks')" />
+        </NCard>
+      </div>
+      <div class="xl:col-span-2">
+        <NCard
+          :bordered="false"
+          class="card-wrapper h-full"
+          :title="$t('page.manage.worker.overview.depthTrend')"
+          size="small"
+        >
+          <div class="mb-8px text-12px text-base-text-3">
+            {{ $t("page.manage.worker.overview.depthTrendHint") }} · {{ $t("page.manage.worker.overview.historyGap") }}
+          </div>
+          <OverviewChart v-if="dashboard?.depthTimeline.length" kind="depth" :dashboard="dashboard" />
+          <NEmpty v-else class="h-280px flex-center" :description="$t('page.manage.worker.overview.emptyHistory')" />
+        </NCard>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 items-stretch gap-12px xl:grid-cols-5">
+      <div class="relative xl:min-h-280px xl:col-span-3">
+        <NCard
+          :bordered="false"
+          class="card-wrapper queue-status-card xl:absolute xl:inset-0"
+          :title="$t('page.manage.worker.overview.queues')"
+          size="small"
+        >
+          <div class="queue-table-scroll min-h-0 flex-1 overflow-auto">
+            <NTable :bordered="false" single-line size="small">
+              <thead>
+                <tr>
+                  <th>{{ $t("page.manage.worker.overview.queueName") }}</th>
+                  <th>{{ $t("page.manage.worker.overview.depth") }}</th>
+                  <th>{{ $t("page.manage.worker.overview.consumers") }}</th>
+                  <th>{{ $t("page.manage.worker.overview.state") }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="queue in queues" :key="queue.name">
+                  <td class="font-600 break-all">{{ queue.name }}</td>
+                  <td class="font-700 tabular-nums" :class="queueState(queue) === 'blocked' ? 'text-warning' : ''">
+                    {{ number(queue.depth) }}
+                  </td>
+                  <td class="tabular-nums">{{ number(queue.consumers) }}</td>
+                  <td>
+                    <NTag
+                      size="small"
+                      :bordered="false"
+                      :type="
+                        queueState(queue) === 'blocked' || queueState(queue) === 'unknown'
+                          ? 'warning'
+                          : queueState(queue) === 'healthy'
+                            ? 'success'
+                            : 'default'
+                      "
+                      >{{
+                        queueState(queue) === "blocked"
+                          ? $t("page.manage.worker.overview.queueBlocked")
+                          : queueState(queue) === "unknown"
+                            ? $t("page.manage.worker.overview.queueUnknown")
+                            : queueState(queue) === "healthy"
+                              ? $t("page.manage.worker.overview.queueHealthy")
+                              : $t("page.manage.worker.overview.queueIdle")
+                      }}</NTag
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </NTable>
+            <NEmpty v-if="!queues.length" class="py-24px" :description="$t('page.manage.worker.overview.noQueues')" />
+          </div>
+          <div class="mt-12px shrink-0 text-12px text-base-text-3">
+            {{ $t("page.manage.worker.overview.queueNote") }}
+          </div>
+        </NCard>
+      </div>
+      <div class="xl:col-span-2">
+        <NCard
+          :bordered="false"
+          class="card-wrapper h-full"
+          :title="$t('page.manage.worker.overview.outcomes')"
+          size="small"
+        >
+          <div class="flex-col-stretch gap-12px">
+            <div class="flex justify-between">
+              <span>{{ $t("page.manage.worker.overview.success") }}</span
+              ><strong class="text-success tabular-nums">{{ number(dashboard?.success) }}</strong>
+            </div>
+            <div class="flex justify-between">
+              <span>{{ $t("page.manage.worker.overview.failure") }}</span
+              ><NButton text type="error" :disabled="!dashboard?.failure" @click="viewFailures"
+                >{{ number(dashboard?.failure) }} <SvgIcon icon="carbon:arrow-up-right" class="ml-4px"
+              /></NButton>
+            </div>
+            <div class="flex justify-between">
+              <span>{{ $t("page.manage.worker.overview.retry") }}</span
+              ><strong class="text-warning tabular-nums">{{ number(dashboard?.retry) }}</strong>
+            </div>
+            <div class="flex justify-between">
+              <span>{{ $t("page.manage.worker.overview.revoked") }}</span
+              ><strong class="tabular-nums">{{ number(dashboard?.revoked) }}</strong>
+            </div>
+            <NButton v-if="dashboard?.failure" size="small" secondary type="error" @click="viewFailures">{{
+              $t("page.manage.worker.overview.viewFailures")
+            }}</NButton>
+            <div class="text-12px text-base-text-3">{{ $t("page.manage.worker.overview.retryHint") }}</div>
+          </div>
+        </NCard>
+      </div>
+    </div>
+
+    <NGrid :x-gap="16" :y-gap="16" responsive="screen" item-responsive>
+      <NGridItem v-for="kind in ['tasks', 'workers'] as const" :key="kind" span="24 m:12">
+        <NCard
+          :bordered="false"
+          class="card-wrapper"
+          :title="
+            kind === 'tasks'
+              ? $t('page.manage.worker.overview.taskRanking')
+              : $t('page.manage.worker.overview.workerRanking')
+          "
+          size="small"
+        >
+          <div class="mb-8px text-12px text-base-text-3">{{ $t("page.manage.worker.overview.rankingHint") }}</div>
+          <div v-if="rankingFailed" class="mb-8px text-12px text-warning">
+            {{ $t("page.manage.worker.overview.partial") }}
+          </div>
+          <OverviewChart
+            v-if="kind === 'tasks' ? tasks.length : workerRanking.length"
+            :kind="kind"
+            :dashboard="dashboard"
+            :tasks="tasks"
+            :workers="workerRanking"
+            @select="viewRanking(kind, $event)"
+          />
+          <NEmpty
+            v-else
+            class="h-280px flex-center"
+            :description="
+              rankingFailed ? $t('page.manage.worker.overview.partial') : $t('page.manage.worker.overview.noSamples')
+            "
+          />
+        </NCard>
+      </NGridItem>
+    </NGrid>
+  </div>
 </template>
+
+<style scoped>
+  .queue-status-card :deep(.n-card-content) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .queue-table-scroll {
+    max-height: 280px;
+  }
+
+  .queue-table-scroll :deep(th) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  @media (min-width: 1280px) {
+    .queue-table-scroll {
+      max-height: none;
+    }
+  }
+</style>

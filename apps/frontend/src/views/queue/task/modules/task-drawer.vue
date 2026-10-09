@@ -3,6 +3,8 @@
   import { taskStatusRecord } from "@/constants/business"
   import { fetchGetTaskDetail } from "@/service/api"
   import { $t } from "@/locales"
+  import PythonArgumentsViewer from "@/components/common/python-arguments-viewer/index.vue"
+  import TaskOutput from "./task-output.vue"
 
   defineOptions({
     name: "TaskDrawer",
@@ -34,16 +36,6 @@
   function formatTime(time: string | null | undefined) {
     if (!time) return "-"
     return new Date(time).toLocaleString()
-  }
-
-  // oxlint-disable-next-line @typescript-eslint/no-explicit-any
-  function formatJson(value: any) {
-    if (!value) return "-"
-    try {
-      return JSON.stringify(value, null, 2)
-    } catch {
-      return String(value)
-    }
   }
 
   const tagTypeMap: Record<Api.Worker.TaskStatus, NaiveUI.ThemeColor> = {
@@ -92,33 +84,14 @@
 
           <NDivider />
 
-          <div class="mb-8px font-bold">{{ $t("page.manage.worker.args") }}</div>
-          <NCode :code="formatJson(taskDetail.args)" language="json" />
+          <PythonArgumentsViewer
+            :key="taskDetail.taskId"
+            :args="taskDetail.args"
+            :kwargs="taskDetail.kwargs"
+            :function-name="taskDetail.taskName"
+          />
 
-          <div class="mt-12px mb-8px font-bold">{{ $t("page.manage.worker.kwargs") }}</div>
-          <NCode :code="formatJson(taskDetail.kwargs)" language="json" />
-
-          <template v-if="taskDetail.result != null">
-            <div class="mt-12px mb-8px font-bold">{{ $t("page.manage.worker.result") }}</div>
-            <NCode :code="formatJson(taskDetail.result)" language="json" />
-          </template>
-
-          <template v-if="taskDetail.logs">
-            <div class="mt-12px mb-8px font-bold">{{ $t("page.manage.worker.logs") }}</div>
-            <NCode :code="taskDetail.logs" language="text" />
-          </template>
-
-          <template v-if="taskDetail.exception">
-            <div class="mt-12px mb-8px font-bold text-red-500">{{ $t("page.manage.worker.exception") }}</div>
-            <NAlert type="error" :bordered="false">
-              {{ taskDetail.exception }}
-            </NAlert>
-          </template>
-
-          <template v-if="taskDetail.traceback">
-            <div class="mt-12px mb-8px font-bold text-red-500">{{ $t("page.manage.worker.traceback") }}</div>
-            <NCode :code="taskDetail.traceback" language="python" class="bg-red-50 p-8px rounded" />
-          </template>
+          <TaskOutput :key="taskDetail.taskId" :task="taskDetail" class="mt-16px" />
         </template>
       </NSpin>
     </NDrawerContent>

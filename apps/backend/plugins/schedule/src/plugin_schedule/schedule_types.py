@@ -13,8 +13,9 @@ from uuid import UUID
 
 from celery.schedules import crontab as Crontab
 from celery.schedules import schedule as Schedule
-from celery.schedules import solar as Solar
 from pydantic import BaseModel
+
+from plugin_schedule.solar import Solar
 
 
 class Period(Enum):
@@ -106,8 +107,8 @@ class SolarSchedule(BaseSchedule):
     """Celery 天文调度模型。"""
 
     event: SolarEvent
-    latitude: int
-    longitude: int
+    latitude: float
+    longitude: float
 
     @property
     def schedule(self) -> Solar:
@@ -131,9 +132,11 @@ class TaskType(Enum):
     CRONTAB = ("crontab", CrontabSchedule)
     SOLAR = ("solar", SolarSchedule)
 
-    def __init__(self, value: str, model: type[BaseSchedule]):
-        self._value_ = value
-        self._model_ = model
+    def __new__(cls, value: str, model: type[BaseSchedule]):
+        member = object.__new__(cls)
+        member._value_ = value
+        member._model_ = model
+        return member
 
     @property
     def model(self) -> type[BaseSchedule]:

@@ -2,7 +2,6 @@
 
 import pytest
 from httpx import AsyncClient
-
 from tests.testing.utils import random_uuid
 
 
@@ -110,9 +109,10 @@ class TestWorkerControl:
             pytest.skip("No worker records in DB")
         worker_id = resp.json()["data"]["records"][0]["id"]
 
-        # Set up mock inspector to return empty task list
+        hostname = resp.json()["data"]["records"][0]["hostname"]
+        # An empty list from this Worker is distinct from a missing reply.
         mock_inspector = mock_celery_app.control.inspect.return_value
-        mock_inspector.active.return_value = {}
+        mock_inspector.active.return_value = {hostname: []}
 
         resp = await client.get(
             f"/workers/{worker_id}/tasks/active",
@@ -127,8 +127,9 @@ class TestWorkerControl:
             pytest.skip("No worker records in DB")
         worker_id = resp.json()["data"]["records"][0]["id"]
 
+        hostname = resp.json()["data"]["records"][0]["hostname"]
         mock_inspector = mock_celery_app.control.inspect.return_value
-        mock_inspector.reserved.return_value = {}
+        mock_inspector.reserved.return_value = {hostname: []}
 
         resp = await client.get(
             f"/workers/{worker_id}/tasks/reserved",

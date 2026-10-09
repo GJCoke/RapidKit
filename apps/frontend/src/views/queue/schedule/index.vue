@@ -24,20 +24,10 @@
   })
 
   function formatScheduleDetail(row: Api.Worker.PeriodicTaskListItem): string {
-    if (row.taskType === "interval" && row.interval) {
-      const periodMap: Record<string, string> = {
-        seconds: $t("page.manage.worker.schedule.periodOptions.seconds"),
-        minutes: $t("page.manage.worker.schedule.periodOptions.minutes"),
-        hours: $t("page.manage.worker.schedule.periodOptions.hours"),
-        days: $t("page.manage.worker.schedule.periodOptions.days"),
-        weeks: $t("page.manage.worker.schedule.periodOptions.weeks"),
-      }
-      return `${$t("page.manage.worker.schedule.every")} ${row.interval.every} ${periodMap[row.interval.period] || row.interval.period}`
-    }
-    if (row.taskType === "crontab" && row.crontab) {
-      return `${row.crontab.minute} ${row.crontab.hour} ${row.crontab.dayOfMonth} ${row.crontab.monthOfYear} ${row.crontab.dayOfWeek}`
-    }
-    return "-"
+    const value = row.schedule
+    if (value.type === "interval") return $t("common.scheduleEditor.intervalSummary", {count:value.every, unit:$t(`common.scheduleEditor.periods.${value.period}`)})
+    if (value.type === "crontab") return `${value.minute} ${value.hour} ${value.dayOfMonth} ${value.monthOfYear} ${value.dayOfWeek}`
+    return `${$t(`common.scheduleEditor.events.${value.event}`)} · ${value.latitude}°, ${value.longitude}°`
   }
 
   const { columns, columnChecks, data, loading, getData, getDataByPage, mobilePagination } = useNaivePaginatedTable({
@@ -68,17 +58,17 @@
         ellipsis: { tooltip: true },
       },
       {
-        key: "taskType",
+        key: "schedule",
         title: $t("page.manage.worker.schedule.scheduleType"),
         align: "center",
         width: 120,
         render: (row) => {
           const typeMap: Record<Api.Worker.ScheduleType, { label: string; type: NaiveUI.ThemeColor }> = {
-            interval: { label: $t("page.manage.worker.schedule.interval"), type: "info" },
-            crontab: { label: $t("page.manage.worker.schedule.crontab"), type: "warning" },
-            solar: { label: "Solar", type: "success" },
+            interval: { label: $t("common.scheduleEditor.types.interval"), type: "info" },
+            crontab: { label: $t("common.scheduleEditor.types.crontab"), type: "warning" },
+            solar: { label: $t("common.scheduleEditor.types.solar"), type: "success" },
           }
-          const config = typeMap[row.taskType]
+          const config = typeMap[row.schedule.type]
           return <NTag type={config.type}>{config.label}</NTag>
         },
       },

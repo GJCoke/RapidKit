@@ -132,8 +132,12 @@ export function useEcharts<T extends ECOption>(optionsFactory: () => T, hooks: C
    * update chart options
    *
    * @param callback callback function
+   * @param options set clear to false to merge into the existing chart without clearing it
    */
-  async function updateOptions(callback: (opts: T, optsFactory: () => T) => ECOption = () => chartOptions) {
+  async function updateOptions(
+    callback: (opts: T, optsFactory: () => T) => ECOption = () => chartOptions,
+    options: { clear?: boolean } = {},
+  ) {
     const updatedOpts = callback(chartOptions, optionsFactory)
 
     Object.assign(chartOptions, updatedOpts)
@@ -142,7 +146,7 @@ export function useEcharts<T extends ECOption>(optionsFactory: () => T, hooks: C
 
     if (!isRendered()) return
 
-    if (isRendered()) {
+    if (options.clear !== false) {
       chart.value?.clear()
     }
 

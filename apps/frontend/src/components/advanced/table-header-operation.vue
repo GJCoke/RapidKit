@@ -8,9 +8,10 @@
   interface Props {
     itemAlign?: NaiveUI.Align
     loading?: boolean
+    showColumnSetting?: boolean
   }
 
-  defineProps<Props>()
+  withDefaults(defineProps<Props>(), { showColumnSetting: true })
 
   interface Emits {
     (e: "refresh"): void
@@ -37,7 +38,7 @@
       </template>
       {{ $t("common.refresh") }}
     </NButton>
-    <TableColumnSetting v-model:columns="columns" />
+    <TableColumnSetting v-if="showColumnSetting" v-model:columns="columns" />
     <slot name="suffix"></slot>
   </NSpace>
 </template>

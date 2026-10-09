@@ -76,11 +76,9 @@ def _check_pool_reply(reply: list | None, hostname: str, action: str) -> None:
     if not reply:
         logger.warning("No reply from worker {hostname} for {action}", hostname=hostname, action=action)
         raise AppException(WorkerStatusCode.WORKER_CONTROL_FAILED)
-    result = reply[0].get(hostname, {})
-    if isinstance(result, dict) and "error" in result:
-        logger.warning(
-            "Worker {hostname} rejected {action}: {error}", hostname=hostname, action=action, error=result["error"]
-        )
+    result = next((entry[hostname] for entry in reply if isinstance(entry, dict) and hostname in entry), None)
+    if not isinstance(result, dict) or "error" in result or not result.get("ok"):
+        logger.warning("Worker {hostname} did not acknowledge {action}", hostname=hostname, action=action)
         raise AppException(WorkerStatusCode.WORKER_CONTROL_FAILED)
 
 
@@ -100,28 +98,24 @@ def cancel_consumer(celery_app: Celery, hostname: str, queue: str) -> None:
         raise AppException(WorkerStatusCode.WORKER_CONTROL_FAILED)
 
 
-def get_active_tasks(celery_app: Celery, hostname: str) -> list[dict]:
+def _inspect_tasks(celery_app: Celery, hostname: str, kind: str) -> list[dict]:
     try:
         inspector = celery_app.control.inspect(destination=[hostname], timeout=CONTROL_TIMEOUT)
-        result = inspector.active()
-        if result and hostname in result:
-            return result[hostname]
-        return []
+        result = getattr(inspector, kind)()
     except Exception:
-        logger.exception("Failed to get active tasks: {hostname}", hostname=hostname)
-        return []
+        logger.exception("Failed to inspect {kind} tasks: {hostname}", kind=kind, hostname=hostname)
+        raise AppException(WorkerStatusCode.WORKER_CONTROL_FAILED)
+    if not isinstance(result, dict) or not isinstance(result.get(hostname), list):
+        raise AppException(WorkerStatusCode.WORKER_CONTROL_FAILED)
+    return result[hostname]
+
+
+def get_active_tasks(celery_app: Celery, hostname: str) -> list[dict]:
+    return _inspect_tasks(celery_app, hostname, "active")
 
 
 def get_reserved_tasks(celery_app: Celery, hostname: str) -> list[dict]:
-    try:
-        inspector = celery_app.control.inspect(destination=[hostname], timeout=CONTROL_TIMEOUT)
-        result = inspector.reserved()
-        if result and hostname in result:
-            return result[hostname]
-        return []
-    except Exception:
-        logger.exception("Failed to get reserved tasks: {hostname}", hostname=hostname)
-        return []
+    return _inspect_tasks(celery_app, hostname, "reserved")
 
 
 def parse_task_info_list(tasks: list[dict]) -> list[ActiveTaskInfo]:

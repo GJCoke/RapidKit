@@ -23,7 +23,14 @@ async def on_worker_connect(sid: SID, redis: RedisDep) -> Literal[False] | None:
 
     前端进入 Worker 管理页面时连接此 namespace。
     """
-    authenticated = await redis.exists(authenticated_sid_structure.format(sid=sid))
+    # Socket.IO namespace SIDs differ; authenticate against the root SID on the same transport.
+    eio_sid = socket.manager.eio_sid_from_sid(sid, "/worker")
+    if eio_sid is None:
+        return False
+    root_sid = socket.manager.sid_from_eio_sid(eio_sid, "/")
+    if root_sid is None:
+        return False
+    authenticated = await redis.exists(authenticated_sid_structure.format(sid=root_sid))
     if not authenticated:
         return False
     logger.info("Client {sid} connected to /worker namespace", sid=sid)

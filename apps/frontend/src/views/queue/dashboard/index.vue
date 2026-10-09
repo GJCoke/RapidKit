@@ -3,6 +3,7 @@
   import { useSocket } from "@/hooks/common/socket"
   import { fetchGetAllWorkers, fetchShutdownWorker } from "@/service/api"
   import { $t } from "@/locales"
+  import { reconcileRows } from "./composables/reconcile"
   import WorkerCards from "./modules/worker-cards.vue"
   import StatsPanel from "./modules/stats-panel.vue"
   import WorkerDrawer from "./modules/worker-drawer.vue"
@@ -19,7 +20,7 @@
     workersLoading.value = true
     const { data, error } = await fetchGetAllWorkers()
     if (!error) {
-      workers.value = data
+      reconcileRows(workers.value, data, (worker) => worker.id)
     }
     workersLoading.value = false
   }
@@ -46,7 +47,12 @@
   const statsPanelRef = ref<InstanceType<typeof StatsPanel> | null>(null)
 
   // ==================== Socket.IO ====================
-  const { socket, connect } = useSocket()
+  const { socket, connect, isConnected } = useSocket()
+  const workerSection = ref<HTMLElement | null>(null)
+
+  function viewWorkers() {
+    workerSection.value?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
 
   function setupSocket() {
     const baseUrl = new URL(import.meta.env.VITE_SERVICE_BASE_URL || "", window.location.origin).origin
@@ -58,17 +64,17 @@
     })
 
     socket.value?.on("worker:status", (data: Api.Worker.WorkerStatusEvent) => {
+      statsPanelRef.value?.refresh()
       const index = workers.value.findIndex((w) => w.hostname === data.hostname)
       if (index >= 0) {
-        workers.value[index] = {
-          ...workers.value[index],
+        Object.assign(workers.value[index], {
           status: data.status,
           concurrency: data.concurrency,
           activeTaskCount: data.activeTaskCount,
           processedCount: data.processedCount,
           activeQueues: data.activeQueues,
           lastHeartbeat: data.lastHeartbeat,
-        }
+        })
       } else {
         loadWorkers()
       }
@@ -88,8 +94,20 @@
 
 <template>
   <div class="flex-col-stretch gap-16px overflow-auto">
-    <WorkerCards :workers="workers" :loading="workersLoading" @select="handleWorkerSelect" @shutdown="handleShutdown" />
-    <StatsPanel ref="statsPanelRef" />
+    <StatsPanel
+      ref="statsPanelRef"
+      :connected="isConnected"
+      @refresh-workers="loadWorkers"
+      @view-workers="viewWorkers"
+    />
+    <div ref="workerSection">
+      <WorkerCards
+        :workers="workers"
+        :loading="workersLoading"
+        @select="handleWorkerSelect"
+        @shutdown="handleShutdown"
+      />
+    </div>
     <WorkerDrawer v-model:visible="workerDrawerVisible" :worker="selectedWorker" @updated="loadWorkers" />
   </div>
 </template>

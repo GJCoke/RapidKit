@@ -1,7 +1,6 @@
 """Schedule (Periodic Task) CRUD API tests."""
 
 from httpx import AsyncClient
-
 from tests.testing.utils import random_lowercase, random_uuid
 
 
@@ -12,8 +11,7 @@ class TestCreateSchedule:
             json={
                 "name": f"interval_{random_lowercase(6)}",
                 "task": "test.task",
-                "taskType": "interval",
-                "interval": {"every": 60, "period": "seconds"},
+                "schedule": {"type": "interval", "every": 60, "period": "seconds"},
                 "enabled": False,
             },
             headers=auth_headers,
@@ -21,8 +19,8 @@ class TestCreateSchedule:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        assert body["data"]["taskType"] == "interval"
-        assert body["data"]["interval"] is not None
+        assert body["data"]["schedule"]["type"] == "interval"
+        assert body["data"]["schedule"] is not None
 
     async def test_create_crontab_task(self, client: AsyncClient, init, auth_headers: dict):
         resp = await client.post(
@@ -30,8 +28,7 @@ class TestCreateSchedule:
             json={
                 "name": f"cron_{random_lowercase(6)}",
                 "task": "test.cron_task",
-                "taskType": "crontab",
-                "crontab": {"minute": "0", "hour": "*/2"},
+                "schedule": {"type": "crontab", "minute": "0", "hour": "*/2"},
                 "enabled": False,
             },
             headers=auth_headers,
@@ -39,8 +36,8 @@ class TestCreateSchedule:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        assert body["data"]["taskType"] == "crontab"
-        assert body["data"]["crontab"] is not None
+        assert body["data"]["schedule"]["type"] == "crontab"
+        assert body["data"]["schedule"] is not None
 
     async def test_create_interval_without_interval_body(self, client: AsyncClient, init, auth_headers: dict):
         """Creating an interval task without interval config should fail."""
@@ -49,12 +46,12 @@ class TestCreateSchedule:
             json={
                 "name": f"bad_{random_lowercase(6)}",
                 "task": "test.task",
-                "taskType": "interval",
+                "schedule": {"type": "interval"},
                 "enabled": False,
             },
             headers=auth_headers,
         )
-        assert resp.json()["code"] != 0
+        assert resp.status_code == 422
 
     async def test_create_crontab_without_crontab_body(self, client: AsyncClient, init, auth_headers: dict):
         """Creating a crontab task without crontab config should fail."""
@@ -63,12 +60,12 @@ class TestCreateSchedule:
             json={
                 "name": f"bad_{random_lowercase(6)}",
                 "task": "test.task",
-                "taskType": "crontab",
+                "schedule": {"type": "crontab", "minute": "60"},
                 "enabled": False,
             },
             headers=auth_headers,
         )
-        assert resp.json()["code"] != 0
+        assert resp.status_code == 422
 
 
 class TestReadSchedule:
@@ -84,8 +81,7 @@ class TestReadSchedule:
             json={
                 "name": f"get_{random_lowercase(6)}",
                 "task": "test.task",
-                "taskType": "interval",
-                "interval": {"every": 30, "period": "seconds"},
+                "schedule": {"type": "interval", "every": 30, "period": "seconds"},
                 "enabled": False,
             },
             headers=auth_headers,
@@ -109,8 +105,7 @@ class TestUpdateSchedule:
             json={
                 "name": f"upd_{random_lowercase(6)}",
                 "task": "test.task",
-                "taskType": "interval",
-                "interval": {"every": 60, "period": "seconds"},
+                "schedule": {"type": "interval", "every": 60, "period": "seconds"},
                 "enabled": False,
             },
             headers=auth_headers,
@@ -132,8 +127,7 @@ class TestUpdateSchedule:
             json={
                 "name": f"toggle_{random_lowercase(6)}",
                 "task": "test.task",
-                "taskType": "interval",
-                "interval": {"every": 60, "period": "seconds"},
+                "schedule": {"type": "interval", "every": 60, "period": "seconds"},
                 "enabled": False,
             },
             headers=auth_headers,
@@ -165,8 +159,7 @@ class TestDeleteSchedule:
             json={
                 "name": f"del_{random_lowercase(6)}",
                 "task": "test.task",
-                "taskType": "interval",
-                "interval": {"every": 60, "period": "seconds"},
+                "schedule": {"type": "interval", "every": 60, "period": "seconds"},
                 "enabled": False,
             },
             headers=auth_headers,

@@ -568,6 +568,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tasks/stats/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Queue Dashboard Endpoint */
+        get: operations["get_queue_dashboard_endpoint_api_v1_tasks_stats_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks/stats/summary": {
         parameters: {
             query?: never;
@@ -698,6 +715,46 @@ export interface paths {
         put?: never;
         /** Revoke Task Endpoint */
         post: operations["revoke_task_endpoint_api_v1_tasks__task_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedules/crontab/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Crontab Preview
+         * @description 校验 Crontab，并按当前调度时区返回未来五次计划执行时间。
+         */
+        post: operations["get_crontab_preview_api_v1_schedules_crontab_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedules/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Schedule Preview
+         * @description 按服务端时区预览调度；固定间隔以当前预览时间为示例起点。
+         */
+        post: operations["get_schedule_preview_api_v1_schedules_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2662,51 +2719,84 @@ export interface components {
             /** Newpassword */
             newPassword: string;
         };
-        /** CrontabScheduleCreate */
-        CrontabScheduleCreate: {
+        /** CrontabDefinition */
+        CrontabDefinition: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "crontab";
             /**
              * Minute
-             * @description 分钟
              * @default *
              */
             minute: string;
             /**
              * Hour
-             * @description 小时
              * @default *
              */
             hour: string;
             /**
              * Dayofweek
-             * @description 星期
              * @default *
              */
             dayOfWeek: string;
             /**
              * Dayofmonth
-             * @description 日
              * @default *
              */
             dayOfMonth: string;
             /**
              * Monthofyear
-             * @description 月
              * @default *
              */
             monthOfYear: string;
         };
-        /** CrontabScheduleResponse */
-        CrontabScheduleResponse: {
-            /** Minute */
+        /** CrontabPreviewRequest */
+        CrontabPreviewRequest: {
+            /**
+             * Minute
+             * @default *
+             */
             minute: string;
-            /** Hour */
+            /**
+             * Hour
+             * @default *
+             */
             hour: string;
-            /** Dayofweek */
+            /**
+             * Dayofweek
+             * @default *
+             */
             dayOfWeek: string;
-            /** Dayofmonth */
+            /**
+             * Dayofmonth
+             * @default *
+             */
             dayOfMonth: string;
-            /** Monthofyear */
+            /**
+             * Monthofyear
+             * @default *
+             */
             monthOfYear: string;
+        };
+        /** CrontabPreviewResponse */
+        CrontabPreviewResponse: {
+            /** Valid */
+            valid: boolean;
+            /** Errorfield */
+            errorField?: ("minute" | "hour" | "dayOfWeek" | "dayOfMonth" | "monthOfYear") | null;
+            /** Timezone */
+            timezone: string;
+            /** Evaluatedat */
+            evaluatedAt: string;
+            /** Nextruns */
+            nextRuns?: string[];
+            /**
+             * Horizonyears
+             * @default 5
+             */
+            horizonYears: number;
         };
         /** CursorPaginatedResponse[ActivityResponse] */
         CursorPaginatedResponse_ActivityResponse_: {
@@ -2735,6 +2825,22 @@ export interface components {
             allowedModules: string[];
             /** Revision */
             revision: string;
+        };
+        /** DashboardDepthPoint */
+        DashboardDepthPoint: {
+            /** Timebucket */
+            timeBucket: string;
+            /** Depth */
+            depth: number | null;
+        };
+        /** DashboardTimelinePoint */
+        DashboardTimelinePoint: {
+            /** Timebucket */
+            timeBucket: string;
+            /** Success */
+            success: number;
+            /** Failure */
+            failure: number;
         };
         /**
          * DataPolicyCreate
@@ -3214,18 +3320,13 @@ export interface components {
             /** Hostname */
             hostname: string;
         };
-        /** IntervalScheduleCreate */
-        IntervalScheduleCreate: {
+        /** IntervalDefinition */
+        IntervalDefinition: {
             /**
-             * Every
-             * @description 间隔数量
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
-            every: number;
-            /** @description 间隔周期单位 */
-            period: components["schemas"]["Period"];
-        };
-        /** IntervalScheduleResponse */
-        IntervalScheduleResponse: {
+            type: "interval";
             /** Every */
             every: number;
             period: components["schemas"]["Period"];
@@ -4328,6 +4429,29 @@ export interface components {
              */
             records: components["schemas"]["TaskListResponse"][];
         };
+        /** PaginatedResponse[TaskStatsByName] */
+        PaginatedResponse_TaskStatsByName_: {
+            /**
+             * Page
+             * @description 页码。
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @description 每页条数。
+             */
+            pageSize: number;
+            /**
+             * Total
+             * @description 总条数。
+             */
+            total: number;
+            /**
+             * Records
+             * @description 记录列表。
+             */
+            records: components["schemas"]["TaskStatsByName"][];
+        };
         /** PaginatedResponse[TemplateResponse] */
         PaginatedResponse_TemplateResponse_: {
             /**
@@ -4444,8 +4568,8 @@ export interface components {
              * @description 已注册的 Celery 任务名
              */
             task: string;
-            /** @description 调度类型 */
-            taskType: components["schemas"]["TaskType"];
+            /** Schedule */
+            schedule: components["schemas"]["IntervalDefinition"] | components["schemas"]["CrontabDefinition"] | components["schemas"]["SolarDefinition"];
             /**
              * Enabled
              * @description 是否启用
@@ -4472,10 +4596,6 @@ export interface components {
             kwargs: {
                 [key: string]: unknown;
             };
-            /** @description 间隔调度配置 */
-            interval?: components["schemas"]["IntervalScheduleCreate"] | null;
-            /** @description Crontab 调度配置 */
-            crontab?: components["schemas"]["CrontabScheduleCreate"] | null;
         };
         /** PeriodicTaskListResponse */
         PeriodicTaskListResponse: {
@@ -4498,18 +4618,12 @@ export interface components {
             name: string;
             /** Task */
             task: string;
-            taskType: components["schemas"]["TaskType"];
             /** Enabled */
             enabled: boolean;
             /** Description */
             description: string;
-            /**
-             * Scheduleid
-             * Format: uuid
-             */
-            scheduleId: string;
-            interval?: components["schemas"]["IntervalScheduleResponse"] | null;
-            crontab?: components["schemas"]["CrontabScheduleResponse"] | null;
+            /** Schedule */
+            schedule: components["schemas"]["IntervalDefinition"] | components["schemas"]["CrontabDefinition"] | components["schemas"]["SolarDefinition"];
         };
         /** PeriodicTaskResponse */
         PeriodicTaskResponse: {
@@ -4532,24 +4646,18 @@ export interface components {
             name: string;
             /** Task */
             task: string;
-            taskType: components["schemas"]["TaskType"];
             /** Enabled */
             enabled: boolean;
             /** Description */
             description: string;
-            /**
-             * Scheduleid
-             * Format: uuid
-             */
-            scheduleId: string;
+            /** Schedule */
+            schedule: components["schemas"]["IntervalDefinition"] | components["schemas"]["CrontabDefinition"] | components["schemas"]["SolarDefinition"];
             /** Args */
             args: unknown[];
             /** Kwargs */
             kwargs: {
                 [key: string]: unknown;
             };
-            interval?: components["schemas"]["IntervalScheduleResponse"] | null;
-            crontab?: components["schemas"]["CrontabScheduleResponse"] | null;
         };
         /** PeriodicTaskUpdate */
         PeriodicTaskUpdate: {
@@ -4567,8 +4675,8 @@ export interface components {
             kwargs?: {
                 [key: string]: unknown;
             } | null;
-            interval?: components["schemas"]["IntervalScheduleCreate"] | null;
-            crontab?: components["schemas"]["CrontabScheduleCreate"] | null;
+            /** Schedule */
+            schedule?: (components["schemas"]["IntervalDefinition"] | components["schemas"]["CrontabDefinition"] | components["schemas"]["SolarDefinition"]) | null;
         };
         /**
          * PluginDependencyGraph
@@ -4751,6 +4859,52 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** QueueDashboardResponse */
+        QueueDashboardResponse: {
+            /** Sampledat */
+            sampledAt: string;
+            /** Queues */
+            queues: components["schemas"]["QueueMetric"][];
+            /** Queuedepth */
+            queueDepth: number | null;
+            /** Onlineworkers */
+            onlineWorkers: number;
+            /** Totalworkers */
+            totalWorkers: number;
+            /** Activetasks */
+            activeTasks: number;
+            /** Concurrency */
+            concurrency: number;
+            /** Throughput */
+            throughput: number;
+            /** Success */
+            success: number;
+            /** Failure */
+            failure: number;
+            /** Retry */
+            retry: number;
+            /** Revoked */
+            revoked: number;
+            /** Successrate */
+            successRate: number | null;
+            /** Avgruntime */
+            avgRuntime: number | null;
+            /** P95Runtime */
+            p95Runtime: number | null;
+            /** Timeline */
+            timeline: components["schemas"]["DashboardTimelinePoint"][];
+            /** Depthtimeline */
+            depthTimeline: components["schemas"]["DashboardDepthPoint"][];
+        };
+        /** QueueMetric */
+        QueueMetric: {
+            /** Name */
+            name: string;
+            /** Depth */
+            depth: number | null;
+            /** Consumers */
+            consumers: number | null;
+        };
         /**
          * QueueOperateRequest
          * @description 队列操作请求。
@@ -4833,6 +4987,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["BusinessSummary"] | null;
+        };
+        /** Response[CrontabPreviewResponse] */
+        Response_CrontabPreviewResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["CrontabPreviewResponse"] | null;
         };
         /** Response[CursorPaginatedResponse[ActivityResponse]] */
         Response_CursorPaginatedResponse_ActivityResponse__: {
@@ -5317,6 +5487,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_TaskListResponse_"] | null;
         };
+        /** Response[PaginatedResponse[TaskStatsByName]] */
+        Response_PaginatedResponse_TaskStatsByName__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PaginatedResponse_TaskStatsByName_"] | null;
+        };
         /** Response[PaginatedResponse[TemplateResponse]] */
         Response_PaginatedResponse_TemplateResponse__: {
             /**
@@ -5445,6 +5631,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["PreferenceItemResponse"] | null;
         };
+        /** Response[QueueDashboardResponse] */
+        Response_QueueDashboardResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["QueueDashboardResponse"] | null;
+        };
         /** Response[RegisteredTaskResponse] */
         Response_RegisteredTaskResponse_: {
             /**
@@ -5492,6 +5694,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["RoleResponse"] | null;
+        };
+        /** Response[SchedulePreviewResponse] */
+        Response_SchedulePreviewResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["SchedulePreviewResponse"] | null;
         };
         /** Response[ScriptExecuteResponse] */
         Response_ScriptExecuteResponse_: {
@@ -6095,25 +6313,6 @@ export interface components {
              */
             data?: components["schemas"]["RoleResponse"][] | null;
         };
-        /** Response[list[TaskStatsByName]] */
-        Response_list_TaskStatsByName__: {
-            /**
-             * Code
-             * @description 状态码。
-             * @default 0
-             */
-            code: number;
-            /**
-             * Message
-             * @description 响应消息。
-             */
-            message?: string;
-            /**
-             * Data
-             * @description 响应数据。
-             */
-            data?: components["schemas"]["TaskStatsByName"][] | null;
-        };
         /** Response[list[TaskStatsByWorker]] */
         Response_list_TaskStatsByWorker__: {
             /**
@@ -6481,6 +6680,32 @@ export interface components {
                 [key: string]: unknown;
             }[] | null;
         };
+        /** SchedulePreviewRequest */
+        SchedulePreviewRequest: {
+            /** Schedule */
+            schedule: components["schemas"]["IntervalDefinition"] | components["schemas"]["CrontabDefinition"] | components["schemas"]["SolarDefinition"];
+        };
+        /** SchedulePreviewResponse */
+        SchedulePreviewResponse: {
+            /** Valid */
+            valid: boolean;
+            /** Errorfield */
+            errorField?: string | null;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Evaluatedat
+             * Format: date-time
+             */
+            evaluatedAt: string;
+            /** Nextruns */
+            nextRuns?: string[];
+            /**
+             * Horizonyears
+             * @default 5
+             */
+            horizonYears: number;
+        };
         /**
          * ScriptBatchBody
          * @description Script 批量操作请求。
@@ -6682,6 +6907,25 @@ export interface components {
             /** Newpassword */
             newPassword: string;
         };
+        /** SolarDefinition */
+        SolarDefinition: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "solar";
+            event: components["schemas"]["SolarEvent"];
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+        };
+        /**
+         * SolarEvent
+         * @description Celery 调度的天文事件枚举。
+         * @enum {string}
+         */
+        SolarEvent: "dawn_astronomical" | "dawn_nautical" | "dawn_civil" | "sunrise" | "solar_noon" | "sunset" | "dusk_civil" | "dusk_nautical" | "dusk_astronomical";
         /**
          * Status
          * @enum {string}
@@ -6807,6 +7051,12 @@ export interface components {
             success: number;
             /** Failure */
             failure: number;
+            /** Inprogress */
+            inProgress: number;
+            /** Successrate */
+            successRate: number | null;
+            /** Lastexecutedat */
+            lastExecutedAt: string;
             /** Avgruntime */
             avgRuntime: number | null;
         };
@@ -6865,12 +7115,6 @@ export interface components {
          * @enum {string}
          */
         TaskStatus: "1" | "2" | "3" | "4" | "5" | "6";
-        /**
-         * TaskType
-         * @description Celery 定时任务类型枚举。
-         * @enum {string}
-         */
-        TaskType: "interval" | "crontab" | "solar";
         /** TemplateCreateRequest */
         TemplateCreateRequest: {
             /** Code */
@@ -7341,7 +7585,7 @@ export interface components {
         };
         /**
          * WorkerResponse
-         * @description Worker 响应数据结构。
+         * @description Worker 响应数据结构；运行时字段仅在详情检查成功时存在。
          */
         WorkerResponse: {
             /**
@@ -7399,6 +7643,12 @@ export interface components {
             };
             /** Lastheartbeat */
             lastHeartbeat?: string | null;
+            /** Runtimeconcurrency */
+            runtimeConcurrency?: number | null;
+            /** Runtimeactivetasks */
+            runtimeActiveTasks?: number | null;
+            /** Runtimesampledat */
+            runtimeSampledAt?: string | null;
         };
         /**
          * WorkerStatus
@@ -8481,12 +8731,15 @@ export interface operations {
                 page?: number;
                 /** @description 每页条数。 */
                 pageSize?: number;
+                startTime?: string | null;
+                endTime?: string | null;
                 /** @description 任务状态筛选 */
                 status?: components["schemas"]["TaskStatus"] | null;
                 /** @description 任务名筛选 */
                 taskName?: string | null;
                 /** @description Worker 主机名筛选 */
                 workerHostname?: string | null;
+                taskNameMatch?: "contains" | "exact";
             };
             header?: never;
             path?: never;
@@ -8501,6 +8754,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_PaginatedResponse_TaskListResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_queue_dashboard_endpoint_api_v1_tasks_stats_dashboard_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_QueueDashboardResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -8582,7 +8866,16 @@ export interface operations {
     get_task_stats_by_name_api_v1_tasks_stats_by_name_get: {
         parameters: {
             query?: {
-                days?: number;
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                startTime?: string | null;
+                endTime?: string | null;
+                taskName?: string | null;
+                workerHostname?: string | null;
+                sortBy?: "lastExecutedAt" | "total" | "failure";
+                sortOrder?: "asc" | "desc";
             };
             header?: never;
             path?: never;
@@ -8596,7 +8889,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_list_TaskStatsByName__"];
+                    "application/json": components["schemas"]["Response_PaginatedResponse_TaskStatsByName__"];
                 };
             };
             /** @description Validation Error */
@@ -8743,6 +9036,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_crontab_preview_api_v1_schedules_crontab_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrontabPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_CrontabPreviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_schedule_preview_api_v1_schedules_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchedulePreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_SchedulePreviewResponse_"];
                 };
             };
             /** @description Validation Error */

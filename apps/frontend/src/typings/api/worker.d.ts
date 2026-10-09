@@ -44,6 +44,9 @@ declare global {
         updateTime: string
       }
 
+      /** Worker detail with independently nullable live inspection fields. */
+      type WorkerDetail = Service.ApiResponse<"/api/v1/workers/{worker_id}">
+
       /** worker search params */
       type WorkerSearchParams = Service.ApiRequest<"/api/v1/workers", "get", "query">
 
@@ -97,6 +100,9 @@ declare global {
       /** task stats query params */
       type TaskStatsQuery = Service.ApiRequest<"/api/v1/tasks/stats/summary", "get", "query">
 
+      type QueueDashboardQuery = Service.ApiRequest<"/api/v1/tasks/stats/dashboard", "get", "query">
+      type QueueDashboard = Service.ApiResponse<"/api/v1/tasks/stats/dashboard">
+
       /** task stats summary */
       type TaskStatsSummary = Service.ApiResponse<"/api/v1/tasks/stats/summary">
 
@@ -109,13 +115,9 @@ declare global {
       }
 
       /** task stats by task name */
-      type TaskStatsByName = {
-        taskName: string
-        total: number
-        success: number
-        failure: number
-        avgRuntime: number | null
-      }
+      type TaskGroupQuery = Service.ApiRequest<"/api/v1/tasks/stats/by-name", "get", "query">
+      type TaskGroupList = Service.ApiResponse<"/api/v1/tasks/stats/by-name">
+      type TaskGroupItem = TaskGroupList["records"][number]
 
       /** task stats by worker */
       type TaskStatsByWorker = {
@@ -138,41 +140,14 @@ declare global {
 
       // ==================== Schedule Types ====================
 
-      /** schedule type */
-      type ScheduleType = "interval" | "crontab" | "solar"
+      type CrontabPreviewRequest = Service.ApiRequest<"/api/v1/schedules/crontab/preview", "post", "body">
+      type CrontabPreviewResponse = Service.ApiResponse<"/api/v1/schedules/crontab/preview", "post">
 
-      /** interval schedule config */
-      type IntervalConfig = {
-        every: number
-        period: string
-      }
-
-      /** crontab schedule config */
-      type CrontabConfig = {
-        minute: string
-        hour: string
-        dayOfWeek: string
-        dayOfMonth: string
-        monthOfYear: string
-      }
-
-      /** periodic task info */
+      type SchedulePreviewRequest = Service.ApiRequest<"/api/v1/schedules/preview", "post", "body">
+      type SchedulePreviewResponse = Service.ApiResponse<"/api/v1/schedules/preview", "post">
+      type ScheduleType = PeriodicTaskCreate["schedule"]["type"]
       type PeriodicTaskInfo = Service.ApiResponse<"/api/v1/schedules/{schedule_id}">
-
-      /** periodic task list item */
-      type PeriodicTaskListItem = {
-        id: string
-        name: string
-        task: string
-        taskType: ScheduleType
-        enabled: boolean
-        description: string
-        scheduleId: string
-        interval?: IntervalConfig | null
-        crontab?: CrontabConfig | null
-        createTime: string
-        updateTime: string
-      }
+      type PeriodicTaskListItem = PeriodicTaskList["records"][number]
 
       /** periodic task search params */
       type PeriodicTaskSearchParams = Service.ApiRequest<"/api/v1/schedules", "get", "query">

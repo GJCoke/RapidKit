@@ -1,12 +1,8 @@
 <script setup lang="tsx">
-  import { reactive } from "vue"
+  import { computed, reactive, ref, watch, onBeforeUnmount } from "vue"
   import { NButton, NPopconfirm, NTag } from "naive-ui"
   import { taskStatusRecord } from "@/constants/business"
   import { fetchGetTaskList, fetchRevokeTask } from "@/service/api"
-  import { useAppStore } from "@/store/modules/app"
-  import { defaultTransform, useNaivePaginatedTable } from "@/hooks/common/table"
-  import { translateOptions } from "@/utils/common"
-  import { taskStatusOptions } from "@/constants/business"
   import { $t } from "@/locales"
   import { useAuth } from "@/hooks/business/auth"
 
@@ -16,34 +12,43 @@
 
   interface Emits {
     (e: "select", taskId: string): void
+    (e: "refresh"): void
   }
 
   const emit = defineEmits<Emits>()
   const { hasAuth } = useAuth()
-  const appStore = useAppStore()
 
-  const searchParams: Api.Worker.TaskSearchParams = reactive({
-    page: 1,
-    pageSize: 10,
-    status: undefined,
-    taskName: undefined,
-    workerHostname: undefined,
-  })
+  const props = defineProps<{ filters: Omit<Api.Worker.TaskSearchParams, "page" | "pageSize">; resetKey: string }>()
+  const searchParams = reactive({ page: 1, pageSize: 10 })
+  const data = ref<Api.Worker.TaskListItem[]>([])
+  const loading = ref(false)
+  let requestId = 0
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const pagination = reactive({ page: 1, pageSize: 10, itemCount: 0, showSizePicker: true, pageSizes: [10, 20, 50, 100], onUpdatePage: (page: number) => { searchParams.page = page; pagination.page = page; getData() }, onUpdatePageSize: (size: number) => { searchParams.pageSize = size; pagination.pageSize = size; searchParams.page = 1; pagination.page = 1; getData() } })
+  async function getData() {
+    const id = ++requestId
+    loading.value = true
+    const { data: result, error } = await fetchGetTaskList({ ...props.filters, ...searchParams })
+    if (id !== requestId) return
+    loading.value = false
+    if (!error && result) { data.value = result.records.map(row => ({ ...row, startedAt: row.startedAt ?? null, finishedAt: row.finishedAt ?? null, runtime: row.runtime ?? null })); pagination.itemCount = result.total }
+  }
+  let previousResetKey = props.resetKey
+  watch(() => [props.filters, props.resetKey], () => {
+    if (props.resetKey !== previousResetKey) { searchParams.page = 1; pagination.page = 1 }
+    previousResetKey = props.resetKey
+    data.value = []
+    getData()
+  }, { deep: true, immediate: true })
+  onBeforeUnmount(() => { requestId++; clearTimeout(timer) })
+  const columns = computed<import("naive-ui").DataTableColumns<Api.Worker.TaskListItem>>(() => [
 
-  const { columns, data, loading, getData, getDataByPage, pagination, mobilePagination } = useNaivePaginatedTable({
-    api: () => fetchGetTaskList(searchParams),
-    transform: (response) => defaultTransform(response),
-    onPaginationParamsChange: (params) => {
-      searchParams.page = params.page || 1
-      searchParams.pageSize = params.pageSize || 10
-    },
-    columns: () => [
       {
         key: "index",
         title: $t("common.index"),
         width: 64,
         align: "center",
-        render: (_, index) => index + 1,
+        render: (_, index) => (searchParams.page - 1) * searchParams.pageSize + index + 1,
       },
       {
         key: "taskName",
@@ -80,7 +85,7 @@
         title: $t("page.manage.worker.runtime"),
         width: 100,
         align: "center",
-        render: (row) => (row.runtime ? row.runtime.toFixed(2) : "-"),
+        render: (row) => (row.runtime !== null ? row.runtime.toFixed(2) : "-"),
       },
       {
         key: "startedAt",
@@ -119,8 +124,7 @@
           </div>
         ),
       },
-    ],
-  })
+    ])
 
   async function handleRevoke(taskId: string) {
     const { error } = await fetchRevokeTask(taskId)
@@ -130,120 +134,30 @@
     }
   }
 
-  function resetSearch() {
-    searchParams.status = undefined
-    searchParams.taskName = undefined
-    searchParams.workerHostname = undefined
-    getDataByPage()
-  }
-
-  function handleSearch() {
-    getDataByPage()
-  }
-
-  /**
-   * Socket 增量更新：就地更新已有行状态，第一页时新任务插入顶部。
-   * 无需 HTTP 请求。
-   */
-  function handleTaskUpdate(event: Api.Worker.TaskUpdateEvent) {
-    const existing = data.value.find((row) => row.taskId === event.taskId)
-
-    if (existing) {
-      // 就地更新已有行
-      existing.status = event.status
-      if (event.workerHostname) existing.workerHostname = event.workerHostname
-      if (event.runtime) existing.runtime = event.runtime
-      if (event.status === "2") existing.startedAt = new Date().toISOString()
-      if (event.status === "3" || event.status === "4" || event.status === "6") {
-        existing.finishedAt = new Date().toISOString()
-      }
-    } else if (event.status === "2" && searchParams.page === 1) {
-      // 新任务（started），仅在第一页时插入顶部
-      // 如果有筛选条件且不匹配，跳过
-      if (searchParams.status && searchParams.status !== event.status) return
-      if (searchParams.taskName && event.taskName && !event.taskName.includes(searchParams.taskName)) return
-      if (
-        searchParams.workerHostname &&
-        event.workerHostname &&
-        !event.workerHostname.includes(searchParams.workerHostname)
-      )
-        return
-
-      data.value.unshift({
-        id: event.taskId,
-        taskId: event.taskId,
-        taskName: event.taskName || "",
-        status: event.status,
-        workerHostname: event.workerHostname || "",
-        startedAt: new Date().toISOString(),
-        finishedAt: null,
-        runtime: null,
-        retries: 0,
-        createTime: new Date().toISOString(),
-        updateTime: new Date().toISOString(),
-      } as Api.Worker.TaskListItem)
-
-      // 更新分页总数
-      pagination.itemCount = (pagination.itemCount || 0) + 1
-
-      // 保持页面条数不超过 pageSize
-      if (data.value.length > (searchParams.pageSize ?? 10)) {
-        data.value.pop()
-      }
-    }
+  function handleTaskUpdate(_event: Api.Worker.TaskUpdateEvent) {
+    clearTimeout(timer)
+    timer = setTimeout(getData, 300)
   }
 
   defineExpose({ refresh: getData, handleTaskUpdate })
 </script>
 
 <template>
-  <NCard
-    :title="$t('page.manage.worker.taskStream')"
-    :bordered="false"
-    size="small"
-    class="card-wrapper sm:flex-1-hidden"
-  >
+  <NCard :title="$t('page.manage.worker.taskStream')" :bordered="false" size="small" class="card-wrapper">
     <template #header-extra>
-      <NSpace>
+      <TableHeaderOperation :loading="loading" :show-column-setting="false" @refresh="emit('refresh')">
         <slot name="header-extra" />
-        <NInput
-          v-model:value="searchParams.taskName"
-          :placeholder="$t('page.manage.worker.form.taskName')"
-          size="small"
-          clearable
-          style="width: 160px"
-        />
-        <NSelect
-          v-model:value="searchParams.status"
-          :placeholder="$t('page.manage.worker.form.status')"
-          :options="translateOptions(taskStatusOptions)"
-          size="small"
-          clearable
-          style="width: 120px"
-        />
-        <NButton size="small" type="primary" ghost @click="handleSearch">
-          <template #icon>
-            <icon-ic-round-search class="text-icon" />
-          </template>
-        </NButton>
-        <NButton size="small" @click="resetSearch">
-          <template #icon>
-            <icon-ic-round-refresh class="text-icon" />
-          </template>
-        </NButton>
-      </NSpace>
+      </TableHeaderOperation>
     </template>
     <NDataTable
       :columns="columns"
       :data="data"
       size="small"
-      :flex-height="!appStore.isMobile"
       :scroll-x="960"
       :loading="loading"
       remote
       :row-key="(row) => row.id"
-      :pagination="mobilePagination"
-      class="sm:h-full"
+      :pagination="pagination"
     />
   </NCard>
 </template>

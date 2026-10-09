@@ -1,3 +1,5 @@
+import type { ApiResponse } from "@/typings/service"
+import { refreshRequest } from "@/services/refresh-request"
 import { request } from "@/services/request"
 
 export interface LoginParams {
@@ -39,5 +41,16 @@ export function fetchUserInfo() {
 export function fetchPublicKey() {
   return request<string>({
     url: "/auth/keys/public",
+  })
+}
+
+export type RefreshTokenResponse = ApiResponse<"/api/v1/auth/token/refresh", "post">
+
+/** Rotate credentials using the refresh token, without ordinary auth recovery. */
+export function fetchRefreshToken(refreshToken: string) {
+  return refreshRequest<RefreshTokenResponse>({
+    url: "/auth/token/refresh",
+    method: "post",
+    headers: { "X-Refresh-Token": refreshToken },
   })
 }

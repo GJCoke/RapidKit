@@ -100,6 +100,10 @@ class Scheduler(_Scheduler):
         schedule = self._database_schedule()
         self.merge_inplace(schedule)
         self.install_default_entries(self._store)
+        # merge_inplace mutates entries shared with Celery's shallow snapshot.
+        # Its equality check cannot detect those changes, leaving heap timestamps
+        # in the old order. Rebuild the heap while preserving last_run_at/count.
+        self._heap = None
 
     def get_schedule(self) -> dict[str, ScheduleEntry]:
         """
@@ -143,11 +147,16 @@ class Scheduler(_Scheduler):
 
         now = timezone.now()
         # TODO: apscheduler ?
-        if self.refresh_interval and (now - self.last_updated) > timedelta(seconds=self.refresh_interval):
+        if self.refresh_interval and (now - self.last_updated) >= timedelta(seconds=self.refresh_interval):
             self.setup_schedule()
-            self.last_updated = now
+            self.last_updated = timezone.now()
 
-        return super().tick(*args, **kwargs)
+        delay = super().tick(*args, **kwargs)
+        if self.refresh_interval:
+            # Even an empty/daily schedule must poll for database changes on time.
+            until_refresh = self.refresh_interval - (timezone.now() - self.last_updated).total_seconds()
+            return min(delay, max(0.0, until_refresh))
+        return delay
 
 
 class AsyncDatabaseScheduler(Scheduler):

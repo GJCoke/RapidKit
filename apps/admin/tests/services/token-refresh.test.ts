@@ -39,3 +39,16 @@ test("a failed refresh is shared and the next request can try again", async () =
   assert.equal(await coordinator.refresh(), true)
   assert.equal(refreshCount, 2)
 })
+
+test("different sessions refresh independently while old cleanup preserves the new operation", async () => {
+  const releases: Array<(value: boolean) => void> = []
+  const coordinator = createTokenRefreshCoordinator(() => new Promise<boolean>((resolve) => releases.push(resolve)))
+  const old = coordinator.refresh(1)
+  const current = coordinator.refresh(2)
+  assert.equal(releases.length, 2)
+  releases[0](false)
+  assert.equal(await old, false)
+  assert.equal(coordinator.refresh(2), current)
+  releases[1](true)
+  assert.equal(await current, true)
+})

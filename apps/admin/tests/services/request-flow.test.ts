@@ -47,7 +47,10 @@ test("concurrent expired requests share one refresh and retry without error noti
       }
       return HttpResponse.json({ code: 14002, message: "Expired", data: null })
     }),
-    http.post(`${baseUrl}/auth/token/refresh`, async () => {
+    http.post(`${baseUrl}/auth/token/refresh`, async ({ request: refreshRequest }) => {
+      if (refreshRequest.headers.get("X-Refresh-Token") !== "old-refresh") {
+        return HttpResponse.json({ code: 14009, message: "Missing header", data: null })
+      }
       refreshCount += 1
       await delay(20)
       return HttpResponse.json({
@@ -90,4 +93,74 @@ test("a failed refresh clears auth and reports session expiry only once", async 
   expect(clearAuth).toHaveBeenCalledTimes(1)
   expect(notificationSpies.notifySessionExpired).toHaveBeenCalledTimes(1)
   useAuthStore.setState({ clearAuth: originalClearAuth })
+})
+
+test("refresh token expiry terminates without recursive refresh", async () => {
+  let refreshCount = 0
+  server.use(
+    http.get(`${baseUrl}/protected-expired`, () => HttpResponse.json({ code: 14002, data: null })),
+    http.post(`${baseUrl}/auth/token/refresh`, () => {
+      refreshCount++
+      return HttpResponse.json({ code: 14002, data: null })
+    }),
+  )
+  useAuthStore.getState().setToken("old-access", "old-refresh")
+  const results = await Promise.all([request({ url: "/protected-expired" }), request({ url: "/protected-expired" })])
+  expect(results.every((result) => result.error)).toBe(true)
+  expect(refreshCount).toBe(1)
+  expect(localStorage.getItem("accessToken")).toBeNull()
+  expect(notificationSpies.notifySessionExpired).toHaveBeenCalledTimes(1)
+})
+
+test("a rejected refreshed access token stops after one retry", async () => {
+  let refreshCount = 0
+  let protectedCount = 0
+  server.use(
+    http.get(`${baseUrl}/still-expired`, () => {
+      protectedCount++
+      return HttpResponse.json({ code: 14002, data: null })
+    }),
+    http.post(`${baseUrl}/auth/token/refresh`, () => {
+      refreshCount++
+      return HttpResponse.json({ code: 0, data: { accessToken: "new-access", refreshToken: "new-refresh" } })
+    }),
+  )
+  useAuthStore.getState().setToken("old-access", "old-refresh")
+  const result = await request({ url: "/still-expired" })
+  expect(result.error).not.toBeNull()
+  expect(refreshCount).toBe(1)
+  expect(protectedCount).toBe(2)
+  expect(localStorage.getItem("accessToken")).toBeNull()
+})
+
+test("a refresh response cannot restore a logged out session", async () => {
+  server.use(
+    http.get(`${baseUrl}/logout-during-refresh`, () => HttpResponse.json({ code: 14002, data: null })),
+    http.post(`${baseUrl}/auth/token/refresh`, () => {
+      useAuthStore.getState().clearAuth("manual")
+      return HttpResponse.json({ code: 0, data: { accessToken: "new-access", refreshToken: "new-refresh" } })
+    }),
+  )
+  useAuthStore.getState().setToken("old-access", "old-refresh")
+  const result = await request({ url: "/logout-during-refresh" })
+  expect(result.error).not.toBeNull()
+  expect(localStorage.getItem("accessToken")).toBeNull()
+  expect(notificationSpies.notifySessionExpired).not.toHaveBeenCalled()
+})
+
+test("an expired response cannot replay a mutation under a new login", async () => {
+  let requestCount = 0
+  server.use(
+    http.post(`${baseUrl}/switch-login`, () => {
+      requestCount++
+      useAuthStore.getState().setToken("other-access", "other-refresh")
+      return HttpResponse.json({ code: 14002, data: null })
+    }),
+  )
+  useAuthStore.getState().setToken("old-access", "old-refresh")
+  const result = await request({ url: "/switch-login", method: "post" })
+  expect(result.error).not.toBeNull()
+  expect(requestCount).toBe(1)
+  expect(localStorage.getItem("accessToken")).toBe("other-access")
+  expect(notificationSpies.notifySessionExpired).not.toHaveBeenCalled()
 })

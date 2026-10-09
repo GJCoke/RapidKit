@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/store/modules/auth"
 import { localStg } from "@/utils/storage"
 import { fetchRefreshToken } from "../api"
+import { getAuthSession, recordTokenRotation } from "./auth-session"
 import type { RequestInstanceState } from "./type"
 
 export function getAuthorization() {
@@ -9,35 +10,41 @@ export function getAuthorization() {
 }
 
 /** refresh token */
-async function handleRefreshToken() {
+async function handleRefreshToken(session: number) {
   const { resetStore, syncAccessToken } = useAuthStore()
 
-  const rToken = localStg.get("refreshToken") || ""
-  const { error, data } = await fetchRefreshToken(rToken)
-  if (!error) {
-    localStg.set("token", data.accessToken)
-    localStg.set("refreshToken", data.refreshToken)
-    syncAccessToken(data.accessToken)
-    return true
+  const rToken = localStg.get("refreshToken")
+  try {
+    if (rToken) {
+      const { error, data } = await fetchRefreshToken(rToken)
+      // A logout or another login may have happened while the refresh was pending.
+      if (getAuthSession() !== session) return false
+      if (!error && data?.accessToken && data?.refreshToken) {
+        localStg.set("token", data.accessToken)
+        localStg.set("refreshToken", data.refreshToken)
+        recordTokenRotation(data.refreshToken)
+        syncAccessToken(data.accessToken)
+        return true
+      }
+    }
+  } catch {
+    if (getAuthSession() !== session) return false
   }
 
-  resetStore()
-
+  await resetStore()
   return false
 }
 
-export async function handleExpiredRequest(state: RequestInstanceState) {
-  if (!state.refreshTokenPromise) {
-    state.refreshTokenPromise = handleRefreshToken()
+export function handleExpiredRequest(state: RequestInstanceState) {
+  const session = getAuthSession()
+  if (!state.refreshTokenPromise || state.refreshTokenSession !== session) {
+    const promise = handleRefreshToken(session).finally(() => {
+      if (state.refreshTokenPromise === promise) state.refreshTokenPromise = null
+    })
+    state.refreshTokenSession = session
+    state.refreshTokenPromise = promise
   }
-
-  const success = await state.refreshTokenPromise
-
-  setTimeout(() => {
-    state.refreshTokenPromise = null
-  }, 1000)
-
-  return success
+  return state.refreshTokenPromise
 }
 
 export function showErrorMsg(state: RequestInstanceState, message: string) {

@@ -2,6 +2,18 @@
 
 定时任务调度作为独立插件 `plugin_schedule` 实现，通过 Celery Beat 将任务配置持久化到 PostgreSQL 数据库，并提供完整的 CRUD API 进行管理。
 
+## 验证定时执行
+
+内置诊断任务 `schedule_test` 用于验证调度是否实际触发，执行时不读写业务数据。
+
+1. 更新代码后重启 Celery Worker，确保加载新任务，并保持 Celery Beat 和后端服务运行。
+2. 在定时任务页面新建计划，任务选择 `schedule_test`，固定间隔可先设为 30 秒，并启用计划。
+3. 参数可以留空，也可以填写关键字参数 `label`（例如 `every-30-seconds`），用于区分计划。
+4. 等待至少两个周期，在任务执行记录中确认 `SUCCESS`，检查结果和日志中的 `label`、`task_id`、`worker` 和 `executed_at`。执行时间为带时区的 ISO 时间，可用于核对触发间隔。
+5. 验证完成后停用或删除该计划。
+
+该任务也支持日历计划和天文事件计划；任务本身不预设自动执行频率。
+
 :::info 条件加载
 `plugin_schedule` 和 `plugin_worker` 仅在环境变量 `ENABLE_CELERY_MONITOR=true` 时注册。未启用时，相关路由和模型不会加载。
 :::

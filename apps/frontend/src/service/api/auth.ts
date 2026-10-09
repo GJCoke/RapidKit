@@ -1,4 +1,5 @@
 import { request } from "../request"
+import { refreshRequest } from "../request/refresh"
 
 /** login */
 export function fetchLogin(data: Api.Auth.LoginBody) {
@@ -62,12 +63,10 @@ export function fetchConfirmPasswordReset(data: Api.Auth.PasswordResetConfirmBod
  * @param refreshToken Refresh token
  */
 export function fetchRefreshToken(refreshToken: string) {
-  return request<Api.Auth.LoginToken>({
-    url: "/auth/refreshToken",
+  return refreshRequest<Api.Auth.LoginToken>({
+    url: "/auth/token/refresh",
     method: "post",
-    data: {
-      refreshToken,
-    },
+    headers: { "X-Refresh-Token": refreshToken },
   })
 }
 

@@ -116,6 +116,8 @@ FROM base AS prod
 关键设计：
 
 - **共用镜像**：`backend-api`、`celery-worker`、`celery-beat` 三个服务使用同一镜像（`target: prod`），仅通过 `command` 区分启动方式。
+- **稳定 Worker 标识**：生产 Compose 使用 `CELERY_WORKER_NAME`（默认 `celery@rapidkit-prod-celery-worker`）作为 Celery 节点名，容器重建后仍更新同一个节点。后端的 `CELERY_WORKER_NAMES` 由 Compose 使用同一名称生成，队列概览、首页服务状态和队列采样只统计当前配置的节点。旧容器留下的 Worker 和任务记录保留在数据库中，不再混入当前节点概览。
+- **真实离线监控**：配置的 Worker 停止或心跳超时后仍显示离线；尚未注册的配置节点也计入首页服务总数。非 Compose 部署中，`CELERY_WORKER_NAMES=[]` 表示自动发现；多 Worker 部署需给每个节点配置不同的稳定名称，并将所有名称写入后端的 `CELERY_WORKER_NAMES` JSON 数组。
 - **非 root 运行**：生产阶段创建 `app` 用户，以最小权限运行。
 - **uv 管理依赖**：利用 `uv sync --frozen` 保证锁文件一致性。
 

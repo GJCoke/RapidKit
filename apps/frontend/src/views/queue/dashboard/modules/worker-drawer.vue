@@ -1,349 +1,278 @@
 <script setup lang="ts">
-  import { computed, ref, watch } from "vue"
-  import { workerStatusRecord } from "@/constants/business"
-  import { $t } from "@/locales"
+  import { computed, onUnmounted, reactive, ref, watch } from "vue"
+  import { useWindowSize } from "@vueuse/core"
+  import { useRouter } from "vue-router"
+  import { fetchGetWorkerDetail } from "@/service/api/worker"
   import { useAuth } from "@/hooks/business/auth"
-  import {
-    fetchPingWorker,
-    fetchPoolGrow,
-    fetchPoolShrink,
-    fetchAddQueue,
-    fetchCancelQueue,
-    fetchActiveTasksOfWorker,
-    fetchReservedTasksOfWorker,
-  } from "@/service/api/worker"
+  import { $t } from "@/locales"
+  import { workerCapacity, workerHealth } from "../composables/worker-detail"
+  import { useWorkerInspection } from "../composables/use-worker-inspection"
+  import WorkerTaskList from "./worker-task-list.vue"
+  import WorkerEnvironment from "./worker-environment.vue"
+  import WorkerControls from "./worker-controls.vue"
 
-  defineOptions({
-    name: "WorkerDrawer",
-  })
-
-  const { hasAuth } = useAuth()
-
-  interface Props {
-    worker: Api.Worker.WorkerInfo | null
-  }
-
-  interface Emits {
-    (e: "updated"): void
-  }
-
-  const props = defineProps<Props>()
-  const emit = defineEmits<Emits>()
+  defineOptions({ name: "WorkerDrawer" })
+  const props = defineProps<{ worker: Api.Worker.WorkerInfo | null }>()
+  const emit = defineEmits<{ updated: [] }>()
   const visible = defineModel<boolean>("visible", { default: false })
-
-  function formatTime(time: string) {
-    if (!time) return "-"
+  const { hasAuth } = useAuth()
+  const router = useRouter()
+  const { width } = useWindowSize()
+  const tab = ref("overview")
+  const now = ref(Date.now())
+  const timer = setInterval(() => {
+    if (visible.value) now.value = Date.now()
+  }, 5000)
+  onUnmounted(() => {
+    clearInterval(timer)
+    detailRequest++
+  })
+  const health = computed(() => workerHealth(props.worker, now.value))
+  const online = computed(() => health.value === "online")
+  const runtime = reactive({
+    concurrency: null as number | null,
+    active: null as number | null,
+    sampledAt: null as string | null,
+  })
+  const runtimeReady = computed(() => online.value && runtime.concurrency !== null && runtime.active !== null)
+  const capacity = computed(() => workerCapacity(runtime.active ?? 0, runtime.concurrency ?? 0))
+  const controlWorker = computed(() =>
+    props.worker ? { ...props.worker, concurrency: runtime.concurrency ?? props.worker.concurrency } : null,
+  )
+  const subscriptionSnapshot = ref<string[] | null>(null)
+  let detailRequest = 0
+  async function loadSubscriptions() {
+    const id = props.worker?.id
+    if (!visible.value || !id) return
+    const generation = ++detailRequest
+    try {
+      const { data, error } = await fetchGetWorkerDetail(id)
+      if (generation !== detailRequest || !visible.value || id !== props.worker?.id) return
+      if (!error && data) {
+        const incoming = data.activeQueues.filter((queue): queue is string => typeof queue === "string")
+        if (
+          !subscriptionSnapshot.value ||
+          incoming.length !== subscriptionSnapshot.value.length ||
+          incoming.some((name, index) => name !== subscriptionSnapshot.value![index])
+        )
+          subscriptionSnapshot.value = incoming
+        runtime.concurrency = data.runtimeConcurrency ?? null
+        runtime.active = data.runtimeActiveTasks ?? null
+        runtime.sampledAt = data.runtimeSampledAt ?? null
+      }
+    } catch {
+      /* Existing snapshot is retained; empty inventory remains explicitly unknown. */
+    }
+  }
+  const queues = computed(() =>
+    (subscriptionSnapshot.value ?? props.worker?.activeQueues ?? []).filter(
+      (queue): queue is string => typeof queue === "string",
+    ),
+  )
+  const inspection = useWorkerInspection(
+    () => props.worker,
+    () => visible.value && tab.value === "tasks",
+    () => online.value,
+  )
+  const metrics = computed(() => [
+    {
+      label: $t("page.manage.worker.detail.executing"),
+      value: runtime.active,
+      icon: "carbon:activity",
+      hint: $t("page.manage.worker.detail.snapshotHint"),
+    },
+    {
+      label: $t("page.manage.worker.concurrency"),
+      value: runtime.concurrency,
+      icon: "carbon:layers",
+      hint: $t("page.manage.worker.detail.capacityHint"),
+    },
+    {
+      label: $t("page.manage.worker.detail.processed"),
+      value: props.worker?.processedCount,
+      icon: "carbon:checkmark-outline",
+      hint: $t("page.manage.worker.detail.processedHint"),
+    },
+  ])
+  function formatTime(time?: string | null) {
+    if (!time || !Number.isFinite(Date.parse(time))) return "—"
     return new Date(time).toLocaleString()
   }
-
-  const queues = computed(() => {
-    return props.worker?.activeQueues || []
-  })
-
-  const softwareEntries = computed(() => {
-    if (!props.worker?.softwareInfo) return []
-    return Object.entries(props.worker.softwareInfo)
-  })
-
-  const isOnline = computed(() => props.worker?.status === "1")
-
-  // ==================== Ping ====================
-  const pingLoading = ref(false)
-
-  async function handlePing() {
+  const runtimePoll = setInterval(() => {
+    if (visible.value) void loadSubscriptions()
+  }, 15000)
+  onUnmounted(() => clearInterval(runtimePoll))
+  function refresh() {
+    emit("updated")
+    void loadSubscriptions()
+    void inspection.refresh()
+  }
+  function viewRecords() {
     if (!props.worker) return
-    pingLoading.value = true
-    const { data, error } = await fetchPingWorker(props.worker.id)
-    pingLoading.value = false
-    if (!error && data) {
-      if (data.success) {
-        window.$message?.success($t("page.manage.worker.control.pingSuccess"))
-      } else {
-        window.$message?.warning($t("page.manage.worker.control.pingFailed"))
-      }
-    }
+    visible.value = false
+    void router.push({ path: "/queue/task", query: { view: "records", worker: props.worker.hostname, range: "7d" } })
   }
-
-  // ==================== Pool Control ====================
-  const poolResizeN = ref(1)
-  const poolLoading = ref(false)
-
-  async function handlePoolGrow() {
-    if (!props.worker) return
-    poolLoading.value = true
-    const { error } = await fetchPoolGrow(props.worker.id, { n: poolResizeN.value })
-    poolLoading.value = false
-    if (!error) {
-      window.$message?.success($t("page.manage.worker.control.poolResizeSuccess"))
-      emit("updated")
-    }
-  }
-
-  async function handlePoolShrink() {
-    if (!props.worker) return
-    poolLoading.value = true
-    const { error } = await fetchPoolShrink(props.worker.id, { n: poolResizeN.value })
-    poolLoading.value = false
-    if (!error) {
-      window.$message?.success($t("page.manage.worker.control.poolResizeSuccess"))
-      emit("updated")
-    }
-  }
-
-  // ==================== Queue Control ====================
-  const newQueueName = ref("")
-  const queueLoading = ref(false)
-
-  async function handleAddQueue() {
-    if (!props.worker || !newQueueName.value.trim()) return
-    queueLoading.value = true
-    const { error } = await fetchAddQueue(props.worker.id, { queue: newQueueName.value.trim() })
-    queueLoading.value = false
-    if (!error) {
-      window.$message?.success($t("page.manage.worker.control.queueOperateSuccess"))
-      newQueueName.value = ""
-      emit("updated")
-    }
-  }
-
-  async function handleCancelQueue(queue: string) {
-    if (!props.worker) return
-    queueLoading.value = true
-    const { error } = await fetchCancelQueue(props.worker.id, { queue })
-    queueLoading.value = false
-    if (!error) {
-      window.$message?.success($t("page.manage.worker.control.queueOperateSuccess"))
-      emit("updated")
-    }
-  }
-
-  // ==================== Active/Reserved Tasks ====================
-  const activeTab = ref("info")
-  const activeTasks = ref<Api.Worker.ActiveTaskInfo[]>([])
-  const reservedTasks = ref<Api.Worker.ActiveTaskInfo[]>([])
-  const tasksLoading = ref(false)
-
-  async function loadActiveTasks() {
-    if (!props.worker) return
-    tasksLoading.value = true
-    const { data, error } = await fetchActiveTasksOfWorker(props.worker.id)
-    if (!error && data) {
-      activeTasks.value = data
-    }
-    tasksLoading.value = false
-  }
-
-  async function loadReservedTasks() {
-    if (!props.worker) return
-    tasksLoading.value = true
-    const { data, error } = await fetchReservedTasksOfWorker(props.worker.id)
-    if (!error && data) {
-      reservedTasks.value = data
-    }
-    tasksLoading.value = false
-  }
-
-  function handleTabChange(name: string | number) {
-    if (name === "active") loadActiveTasks()
-    else if (name === "reserved") loadReservedTasks()
-  }
-
-  // Reset state when drawer opens
-  watch(visible, (val) => {
-    if (val) {
-      activeTab.value = "info"
-      activeTasks.value = []
-      reservedTasks.value = []
-      poolResizeN.value = 1
-      newQueueName.value = ""
-    }
-  })
-
-  // Re-fetch active/reserved tasks when worker data changes (e.g. from socket)
   watch(
-    () => props.worker?.activeTaskCount,
+    [visible, () => props.worker?.id],
     () => {
-      if (!visible.value || !props.worker) return
-      if (activeTab.value === "active") loadActiveTasks()
-      else if (activeTab.value === "reserved") loadReservedTasks()
+      tab.value = "overview"
+      now.value = Date.now()
+      detailRequest++
+      subscriptionSnapshot.value = null
+      runtime.concurrency = runtime.active = null
+      runtime.sampledAt = null
+      if (visible.value) void loadSubscriptions()
     },
+    { immediate: true },
   )
 </script>
 
 <template>
-  <NDrawer v-model:show="visible" :width="520">
-    <NDrawerContent :title="$t('page.manage.worker.workerDetail')" closable>
-      <template v-if="worker">
-        <NTabs v-model:value="activeTab" type="line" @update:value="handleTabChange">
-          <!-- 基本信息 Tab -->
-          <NTabPane name="info" :tab="$t('common.detail')">
-            <NDescriptions :column="1" label-placement="left" bordered size="small">
-              <NDescriptionsItem :label="$t('page.manage.worker.hostname')">
-                {{ worker.hostname }}
-              </NDescriptionsItem>
-              <NDescriptionsItem :label="$t('page.manage.worker.workerStatus')">
-                <NTag :type="worker.status === '1' ? 'success' : 'warning'" size="small">
-                  {{ $t(workerStatusRecord[worker.status]) }}
-                </NTag>
-              </NDescriptionsItem>
-              <NDescriptionsItem :label="$t('page.manage.worker.concurrency')">
-                {{ worker.concurrency }}
-              </NDescriptionsItem>
-              <NDescriptionsItem :label="$t('page.manage.worker.activeTaskCount')">
-                {{ worker.activeTaskCount }}
-              </NDescriptionsItem>
-              <NDescriptionsItem :label="$t('page.manage.worker.processedCount')">
-                {{ worker.processedCount }}
-              </NDescriptionsItem>
-              <NDescriptionsItem :label="$t('page.manage.worker.lastHeartbeat')">
-                {{ formatTime(worker.lastHeartbeat) }}
-              </NDescriptionsItem>
-            </NDescriptions>
-
-            <NDivider />
-
-            <div class="mb-8px font-bold">{{ $t("page.manage.worker.activeQueues") }}</div>
-            <NSpace v-if="queues.length > 0">
-              <NTag v-for="queue in queues" :key="queue" type="info" size="small">
-                {{ queue }}
-              </NTag>
-            </NSpace>
-            <span v-else class="text-gray-400">-</span>
-
-            <NDivider />
-
-            <div class="mb-8px font-bold">{{ $t("page.manage.worker.softwareInfo") }}</div>
-            <NDescriptions v-if="softwareEntries.length > 0" :column="1" label-placement="left" bordered size="small">
-              <NDescriptionsItem v-for="[key, value] in softwareEntries" :key="key" :label="key">
-                {{ value }}
-              </NDescriptionsItem>
-            </NDescriptions>
-            <span v-else class="text-gray-400">-</span>
+  <NDrawer v-model:show="visible" :width="Math.min(760, width)">
+    <NDrawerContent :native-scrollbar="false" :title="$t('page.manage.worker.workerDetail')" closable>
+      <div v-if="worker && visible" class="flex-col-stretch gap-16px">
+        <div>
+          <div class="flex flex-wrap items-center gap-8px">
+            <NTag :type="online ? 'success' : 'warning'" :bordered="false" size="small">
+              {{
+                $t(
+                  health === "online"
+                    ? "page.manage.worker.status.online"
+                    : health === "offline"
+                      ? "page.manage.worker.status.offline"
+                      : health === "stale"
+                        ? "page.manage.worker.detail.heartbeatStale"
+                        : "page.manage.worker.detail.heartbeatUnknown",
+                )
+              }}
+            </NTag>
+            <span class="text-12px text-base-text-3"
+              >{{ $t("page.manage.worker.lastHeartbeat") }} {{ formatTime(worker.lastHeartbeat) }}</span
+            >
+          </div>
+          <div class="mt-10px text-20px font-700 break-all">{{ worker.hostname }}</div>
+          <div class="mt-12px flex items-center justify-between gap-12px">
+            <NButton size="small" secondary type="primary" @click="viewRecords">
+              <template #icon><SvgIcon icon="carbon:document" /></template>{{ $t("page.manage.worker.viewRecords") }}
+            </NButton>
+            <NButton size="small" quaternary @click="refresh"
+              ><template #icon><SvgIcon icon="carbon:renew" /></template>{{ $t("common.refresh") }}</NButton
+            >
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-10px sm:grid-cols-3">
+          <div v-for="metric in metrics" :key="metric.label" class="rd-8px bg-theme-fill p-12px">
+            <div class="flex items-center gap-6px text-12px text-base-text-2">
+              <SvgIcon :icon="metric.icon" class="text-primary" />{{ metric.label }}
+            </div>
+            <div class="mt-6px text-28px font-700 tabular-nums">{{ metric.value?.toLocaleString() ?? "—" }}</div>
+            <div class="mt-4px text-11px text-base-text-3">{{ metric.hint }}</div>
+          </div>
+        </div>
+        <NAlert v-if="!online" type="warning" :bordered="false">{{
+          $t("page.manage.worker.detail.staleSnapshot")
+        }}</NAlert>
+        <NTabs v-model:value="tab" type="line" animated>
+          <NTabPane name="overview" :tab="$t('page.manage.worker.detail.overview')">
+            <div class="flex-col-stretch gap-12px">
+              <NCard
+                :bordered="false"
+                size="small"
+                class="card-wrapper"
+                :title="$t('page.manage.worker.overview.utilization')"
+              >
+                <div class="flex flex-wrap items-center gap-24px py-8px">
+                  <NProgress
+                    type="circle"
+                    :percentage="runtimeReady && capacity.percent !== null ? Math.min(100, capacity.percent) : 0"
+                    :status="capacity.overCapacity ? 'warning' : 'success'"
+                    :stroke-width="10"
+                    class="w-132px shrink-0"
+                  >
+                    <div class="text-center">
+                      <div class="text-26px font-700 tabular-nums">
+                        {{ runtimeReady && capacity.percent !== null ? `${Math.round(capacity.percent)}%` : "—" }}
+                      </div>
+                      <div class="mt-4px text-12px text-base-text-3">
+                        {{ $t("page.manage.worker.detail.capacityUsed") }}
+                      </div>
+                    </div>
+                  </NProgress>
+                  <div class="min-w-160px flex-1 flex-col-stretch gap-10px">
+                    <div class="flex justify-between text-14px">
+                      <span>{{ $t("page.manage.worker.detail.executing") }}</span
+                      ><strong class="text-primary tabular-nums">{{ runtimeReady ? runtime.active : "—" }}</strong>
+                    </div>
+                    <div class="flex justify-between text-14px">
+                      <span>{{ $t("page.manage.worker.detail.available") }}</span
+                      ><strong class="tabular-nums">{{ runtimeReady ? (capacity.available ?? "—") : "—" }}</strong>
+                    </div>
+                    <div class="text-12px text-base-text-3">{{ $t("page.manage.worker.detail.utilizationHint") }}</div>
+                  </div>
+                </div>
+                <div class="mt-8px min-h-20px text-12px text-base-text-3">
+                  {{
+                    runtime.sampledAt
+                      ? `${$t("page.manage.worker.detail.inspectedAt")} ${formatTime(runtime.sampledAt)}`
+                      : $t("page.manage.worker.detail.runtimeUnknown")
+                  }}
+                </div>
+                <NAlert v-if="capacity.overCapacity && runtimeReady" type="warning" :bordered="false" class="mt-12px">{{
+                  $t("page.manage.worker.detail.overCapacity")
+                }}</NAlert>
+              </NCard>
+              <NCard
+                :bordered="false"
+                size="small"
+                class="card-wrapper"
+                :title="$t('page.manage.worker.detail.subscriptions')"
+              >
+                <div v-if="queues.length" class="flex flex-wrap gap-8px">
+                  <NTag v-for="queue in queues" :key="queue" :bordered="false" type="info" class="max-w-full"
+                    ><span class="whitespace-normal break-all">{{ queue }}</span></NTag
+                  >
+                </div>
+                <div v-else class="text-13px text-base-text-3">{{ $t("page.manage.worker.detail.queuesUnknown") }}</div>
+                <div class="mt-12px text-12px text-base-text-3">
+                  {{ $t("page.manage.worker.detail.queueSnapshotHint") }}
+                </div>
+              </NCard>
+              <WorkerEnvironment :software="worker.softwareInfo" />
+            </div>
           </NTabPane>
-
-          <!-- 控制面板 Tab -->
+          <NTabPane name="tasks" :tab="$t('page.manage.worker.detail.taskScene')">
+            <div class="flex-col-stretch gap-12px">
+              <div class="text-12px text-base-text-3">{{ $t("page.manage.worker.detail.autoRefresh") }}</div>
+              <WorkerTaskList
+                v-for="kind in ['active', 'reserved'] as const"
+                :key="kind"
+                :kind="kind"
+                :rows="inspection[kind].rows"
+                :loading="inspection[kind].loading"
+                :failed="inspection[kind].failed"
+                :sampled-at="inspection[kind].sampledAt"
+                :online="online"
+                @refresh="inspection.refresh"
+              />
+            </div>
+          </NTabPane>
           <NTabPane
             v-if="hasAuth('queue_dashboard:workerControl')"
-            name="control"
-            :tab="$t('page.manage.worker.control.poolControl')"
+            name="operations"
+            :tab="$t('page.manage.worker.detail.operations')"
           >
-            <!-- Ping -->
-            <div class="mb-16px">
-              <NButton :loading="pingLoading" :disabled="!isOnline" @click="handlePing">
-                {{ $t("page.manage.worker.control.ping") }}
-              </NButton>
-            </div>
-
-            <NDivider />
-
-            <!-- Pool 扩缩容 -->
-            <div class="mb-8px font-bold">{{ $t("page.manage.worker.control.poolControl") }}</div>
-            <div class="mb-8px text-12px text-gray-500">
-              {{ $t("page.manage.worker.control.currentConcurrency") }}: {{ worker.concurrency }}
-            </div>
-            <NSpace align="center">
-              <NInputNumber v-model:value="poolResizeN" :min="1" :max="10" size="small" class="w-80px" />
-              <NButton type="primary" size="small" :loading="poolLoading" :disabled="!isOnline" @click="handlePoolGrow">
-                +{{ poolResizeN }} {{ $t("page.manage.worker.control.poolGrow") }}
-              </NButton>
-              <NButton
-                type="warning"
-                size="small"
-                :loading="poolLoading"
-                :disabled="!isOnline"
-                @click="handlePoolShrink"
-              >
-                -{{ poolResizeN }} {{ $t("page.manage.worker.control.poolShrink") }}
-              </NButton>
-            </NSpace>
-
-            <NDivider />
-
-            <!-- 队列管理 -->
-            <div class="mb-8px font-bold">{{ $t("page.manage.worker.control.queueControl") }}</div>
-            <div class="mb-8px">
-              <NSpace v-if="queues.length > 0" class="mb-8px">
-                <NTag
-                  v-for="queue in queues"
-                  :key="queue"
-                  type="info"
-                  size="small"
-                  closable
-                  :disabled="!isOnline"
-                  @close="handleCancelQueue(queue)"
-                >
-                  {{ queue }}
-                </NTag>
-              </NSpace>
-              <span v-else class="text-gray-400 text-12px">-</span>
-            </div>
-            <NSpace>
-              <NInput
-                v-model:value="newQueueName"
-                :placeholder="$t('page.manage.worker.control.queuePlaceholder')"
-                size="small"
-                class="w-200px"
-                @keyup.enter="handleAddQueue"
-              />
-              <NButton
-                type="primary"
-                size="small"
-                :loading="queueLoading"
-                :disabled="!isOnline || !newQueueName.trim()"
-                @click="handleAddQueue"
-              >
-                {{ $t("page.manage.worker.control.addQueue") }}
-              </NButton>
-            </NSpace>
-          </NTabPane>
-
-          <!-- 活跃任务 Tab -->
-          <NTabPane name="active" :tab="$t('page.manage.worker.control.activeTasks')">
-            <NSpin :show="tasksLoading">
-              <div v-if="activeTasks.length === 0 && !tasksLoading" class="py-32px text-center text-gray-400">
-                {{ $t("page.manage.worker.control.noActiveTasks") }}
-              </div>
-              <NList v-else bordered>
-                <NListItem v-for="task in activeTasks" :key="task.id">
-                  <div class="text-13px">
-                    <div class="font-bold mb-4px">{{ task.name }}</div>
-                    <div class="text-gray-500 text-12px space-y-2px">
-                      <div>
-                        ID: <span class="font-mono">{{ task.id }}</span>
-                      </div>
-                      <div v-if="task.args">Args: {{ task.args }}</div>
-                      <div v-if="task.kwargs">Kwargs: {{ task.kwargs }}</div>
-                      <div v-if="task.workerPid">PID: {{ task.workerPid }}</div>
-                    </div>
-                  </div>
-                </NListItem>
-              </NList>
-            </NSpin>
-          </NTabPane>
-
-          <!-- 预留任务 Tab -->
-          <NTabPane name="reserved" :tab="$t('page.manage.worker.control.reservedTasks')">
-            <NSpin :show="tasksLoading">
-              <div v-if="reservedTasks.length === 0 && !tasksLoading" class="py-32px text-center text-gray-400">
-                {{ $t("page.manage.worker.control.noActiveTasks") }}
-              </div>
-              <NList v-else bordered>
-                <NListItem v-for="task in reservedTasks" :key="task.id">
-                  <div class="text-13px">
-                    <div class="font-bold mb-4px">{{ task.name }}</div>
-                    <div class="text-gray-500 text-12px space-y-2px">
-                      <div>
-                        ID: <span class="font-mono">{{ task.id }}</span>
-                      </div>
-                      <div v-if="task.args">Args: {{ task.args }}</div>
-                    </div>
-                  </div>
-                </NListItem>
-              </NList>
-            </NSpin>
+            <WorkerControls
+              v-if="controlWorker"
+              :key="worker.id"
+              :worker="controlWorker"
+              :online="online"
+              :queues="queues"
+              @updated="refresh"
+            />
           </NTabPane>
         </NTabs>
-      </template>
+      </div>
+      <NEmpty v-else-if="visible" :description="$t('page.manage.worker.detail.workerUnavailable')" />
     </NDrawerContent>
   </NDrawer>
 </template>

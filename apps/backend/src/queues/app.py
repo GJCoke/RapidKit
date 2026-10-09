@@ -23,7 +23,7 @@ app.conf.update(
 )
 
 # Core cross-cutting task modules (always loaded)
-_CORE_TASK_MODULES = ["src.sio.tasks"]
+_CORE_TASK_MODULES = ["src.sio.tasks", "src.queues.tasks.schedule_test"]
 
 # Core beat schedule entries (cross-cutting concerns)
 _CORE_BEAT_SCHEDULE: dict[str, dict] = {

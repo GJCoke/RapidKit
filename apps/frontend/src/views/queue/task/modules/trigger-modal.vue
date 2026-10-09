@@ -1,5 +1,7 @@
 <script setup lang="ts">
   import { ref, watch } from "vue"
+  import PythonArgumentsEditor from "@/components/common/python-arguments-editor/index.vue"
+  import type { PythonArguments } from "@/components/common/python-arguments-editor/arguments"
   import { fetchGetRegisteredTasks, fetchTriggerTask } from "@/service/api"
   import { $t } from "@/locales"
 
@@ -18,8 +20,8 @@
   const registeredTasks = ref<string[]>([])
 
   const taskName = ref<string | null>(null)
-  const argsStr = ref("[]")
-  const kwargsStr = ref("{}")
+  const argumentsModel = ref<PythonArguments>({ args: [], kwargs: {} })
+  const argumentsRef = ref<InstanceType<typeof PythonArgumentsEditor> | null>(null)
 
   watch(visible, async (val) => {
     if (val) {
@@ -29,8 +31,7 @@
       }
     } else {
       taskName.value = null
-      argsStr.value = "[]"
-      kwargsStr.value = "{}"
+      argumentsModel.value = { args: [], kwargs: {} }
     }
   })
 
@@ -42,22 +43,8 @@
   async function handleSubmit() {
     if (!taskName.value) return
 
-    let args: unknown[]
-    let kwargs: Record<string, unknown>
-
-    try {
-      args = JSON.parse(argsStr.value)
-    } catch {
-      window.$message?.error("args: Invalid JSON")
-      return
-    }
-
-    try {
-      kwargs = JSON.parse(kwargsStr.value)
-    } catch {
-      window.$message?.error("kwargs: Invalid JSON")
-      return
-    }
+    if (!argumentsRef.value?.validate()) return
+    const { args, kwargs } = argumentsModel.value
 
     loading.value = true
     const { error } = await fetchTriggerTask({
@@ -76,7 +63,12 @@
 </script>
 
 <template>
-  <NModal v-model:show="visible" preset="card" :title="$t('page.manage.worker.triggerTask')" style="width: 520px">
+  <NModal
+    v-model:show="visible"
+    preset="card"
+    :title="$t('page.manage.worker.triggerTask')"
+    style="width: 640px; max-width: calc(100vw - 32px)"
+  >
     <NForm label-placement="left" :label-width="100">
       <NFormItem :label="$t('page.manage.worker.selectTask')">
         <NSelect
@@ -86,22 +78,12 @@
           filterable
         />
       </NFormItem>
-      <NFormItem :label="$t('page.manage.worker.args')">
-        <NInput
-          v-model:value="argsStr"
-          type="textarea"
-          placeholder='[1, "hello"]'
-          :autosize="{ minRows: 2, maxRows: 5 }"
-        />
-      </NFormItem>
-      <NFormItem :label="$t('page.manage.worker.kwargs')">
-        <NInput
-          v-model:value="kwargsStr"
-          type="textarea"
-          placeholder='{"key": "value"}'
-          :autosize="{ minRows: 2, maxRows: 5 }"
-        />
-      </NFormItem>
+      <PythonArgumentsEditor
+        ref="argumentsRef"
+        v-model="argumentsModel"
+        :function-name="taskName || 'task'"
+        :disabled="loading"
+      />
     </NForm>
     <template #footer>
       <NSpace justify="end">

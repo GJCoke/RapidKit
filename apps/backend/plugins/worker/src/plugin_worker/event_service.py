@@ -7,7 +7,7 @@ Author  : Claude
 Date    : 2026-04-02
 """
 
-from datetime import timedelta
+from datetime import UTC, timedelta
 
 from fastapi_sio_di import AsyncServer
 from rapidkit_common.enums import TaskStatus, WorkerStatus
@@ -19,6 +19,7 @@ from rapidkit_framework.events import event_bus
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_worker.crud import TaskResultCRUD, WorkerCRUD
+from plugin_worker.inventory import is_current_worker
 from plugin_worker.models import CeleryTaskResult, CeleryWorker
 
 logger = get_plugin_logger("Worker")
@@ -39,13 +40,15 @@ class EventService:
     # ==================== Socket.IO Helpers ====================
 
     async def _emit_worker_status(self, worker: CeleryWorker) -> None:
+        if not is_current_worker(worker.hostname):
+            return
         payload = {
             "hostname": worker.hostname,
             "status": worker.status,
             "concurrency": worker.concurrency,
             "activeTaskCount": worker.active_task_count or 0,
             "activeQueues": worker.active_queues or [],
-            "lastHeartbeat": worker.last_heartbeat.isoformat() if worker.last_heartbeat else "",
+            "lastHeartbeat": worker.last_heartbeat.replace(tzinfo=UTC).isoformat() if worker.last_heartbeat else "",
             "processedCount": worker.processed_count or 0,
         }
         try:
@@ -100,6 +103,8 @@ class EventService:
         worker.update_time = timezone.now()
         await self.session.flush()
         await self._emit_worker_status(worker)
+        if not is_current_worker(worker.hostname):
+            return
         event_bus.fire_and_forget(
             WorkerOfflineEvent(
                 event_id=str(uuid7()),

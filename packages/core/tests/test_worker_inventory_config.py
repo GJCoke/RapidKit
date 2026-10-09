@@ -1,0 +1,44 @@
+"""Managed worker identities survive Docker container replacement."""
+
+import json
+import re
+from pathlib import Path
+
+import pytest
+from pydantic import ValidationError
+from rapidkit_core.config import CeleryConfigMixin
+
+
+def config(**values):
+    return CeleryConfigMixin(_env_file=None, REDIS_HOST="localhost", REDIS_ROOT_PASSWORD="test", **values)
+
+
+def test_default_uses_worker_discovery():
+    assert config().CELERY_WORKER_NAMES == []
+
+
+def test_managed_roster_preserves_distinct_names():
+    assert config(CELERY_WORKER_NAMES=["celery@node1", "celery@node2"]).CELERY_WORKER_NAMES == [
+        "celery@node1",
+        "celery@node2",
+    ]
+
+
+@pytest.mark.parametrize("names", [[""], ["  "], ["node", "node"], [" celery@node "]])
+def test_invalid_worker_names_are_rejected(names):
+    with pytest.raises(ValidationError):
+        config(CELERY_WORKER_NAMES=names)
+
+
+def test_compose_worker_identity_matches_backend_roster():
+    root = Path(__file__).resolve().parents[3]
+    compose = (root / "docker/prod/docker-compose.yml").read_text()
+    worker = re.search(r"^  celery-worker:\n(.*?)(?=^  [a-z]|\Z)", compose, re.MULTILINE | re.DOTALL).group(1)
+    command = json.loads(re.search(r"^    command: (\[.*\])$", worker, re.MULTILINE).group(1))
+    name = command[command.index("--hostname") + 1]
+    assert "%h" not in name
+    assert "celery@rapidkit-prod-celery-worker" in name
+    for service in ("backend-api", "celery-worker", "celery-beat"):
+        block = re.search(rf"^  {service}:\n(.*?)(?=^  [a-z]|\Z)", compose, re.MULTILINE | re.DOTALL).group(1)
+        roster = block.split("CELERY_WORKER_NAMES:", 1)[1].splitlines()[0].strip().strip("'")
+        assert json.loads(roster) == [name]

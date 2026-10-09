@@ -14,8 +14,10 @@ from rapidkit_core.timezone import timezone
 from sqlalchemy import select as sa_select
 from sqlmodel import case, col, func, select
 
+from plugin_worker.inventory import scoped_worker_filters
 from plugin_worker.models import CeleryTaskResult, CeleryWorker
 from plugin_worker.schemas import (
+    TaskGroupQuery,
     TaskListResponse,
     TaskQueryRequest,
     TaskStatsByName,
@@ -38,7 +40,7 @@ class WorkerCRUD(BaseCRUD[CeleryWorker]):
         return result.first()
 
     async def get_paginate_workers(self, query: WorkerQueryRequest) -> PaginatedResponse[WorkerResponse]:
-        filters = []
+        filters = scoped_worker_filters()
         if query.status is not None:
             filters.append(col(self.model.status) == query.status)
         if query.hostname:
@@ -53,6 +55,7 @@ class WorkerCRUD(BaseCRUD[CeleryWorker]):
 
     async def get_all_workers(self) -> list[WorkerResponse]:
         return await self.get_all(
+            *scoped_worker_filters(),
             order_by=col(self.model.last_heartbeat).desc(),
             schema=WorkerResponse,
         )
@@ -60,6 +63,7 @@ class WorkerCRUD(BaseCRUD[CeleryWorker]):
     async def get_offline_workers(self, threshold: float) -> list[CeleryWorker]:
         cutoff = timezone.now() - timedelta(seconds=threshold)
         statement = select(self.model).filter(
+            *scoped_worker_filters(),
             col(self.model.status) == WorkerStatus.ONLINE,
             col(self.model.last_heartbeat) < cutoff,
         )
@@ -102,13 +106,9 @@ class TaskResultCRUD(BaseCRUD[CeleryTaskResult]):
         return task
 
     async def get_paginate_tasks(self, query: TaskQueryRequest) -> PaginatedResponse[TaskListResponse]:
-        filters = []
+        filters = self._task_filters(query)
         if query.status is not None:
             filters.append(col(self.model.status) == query.status)
-        if query.task_name:
-            filters.append(col(self.model.task_name).contains(query.task_name))
-        if query.worker_hostname:
-            filters.append(col(self.model.worker_hostname).contains(query.worker_hostname))
         return await self.get_paginate(
             *filters,
             page=query.page,
@@ -116,6 +116,20 @@ class TaskResultCRUD(BaseCRUD[CeleryTaskResult]):
             order_by=col(self.model.create_time).desc(),
             schema=TaskListResponse,
         )
+
+    def _task_filters(self, query: TaskQueryRequest | TaskGroupQuery):
+        filters = [
+            col(self.model.create_time) >= query.start_time,
+            col(self.model.create_time) < query.end_time,
+        ]
+        if query.task_name:
+            if isinstance(query, TaskQueryRequest) and query.task_name_match == "exact":
+                filters.append(col(self.model.task_name) == query.task_name)
+            else:
+                filters.append(col(self.model.task_name).contains(query.task_name, autoescape=True))
+        if query.worker_hostname:
+            filters.append(col(self.model.worker_hostname).contains(query.worker_hostname, autoescape=True))
+        return filters
 
     def _time_filter(self, days: int):
         cutoff = timezone.now() - timedelta(days=days)
@@ -182,34 +196,47 @@ class TaskResultCRUD(BaseCRUD[CeleryTaskResult]):
             for row in results
         ]
 
-    async def get_stats_by_name(self, days: int, *, limit: int = 10) -> list[TaskStatsByName]:
-        total_col = func.count().label("total")
-        statement = (
+    async def get_stats_by_name(self, query: TaskGroupQuery) -> PaginatedResponse[TaskStatsByName]:
+        grouped = (
             sa_select(
                 col(self.model.task_name),
-                total_col,
+                func.count().label("total"),
                 func.count(case((col(self.model.status) == TaskStatus.SUCCESS, 1))).label("success"),
                 func.count(case((col(self.model.status) == TaskStatus.FAILURE, 1))).label("failure"),
+                func.count(
+                    case((col(self.model.status).in_([TaskStatus.PENDING, TaskStatus.STARTED, TaskStatus.RETRY]), 1))
+                ).label("in_progress"),
+                func.max(col(self.model.create_time)).label("last_executed_at"),
                 func.avg(case((col(self.model.status) == TaskStatus.SUCCESS, col(self.model.runtime)))).label(
                     "avg_runtime"
                 ),
             )
-            .filter(self._time_filter(days))
+            .filter(*self._task_filters(query))
             .group_by(col(self.model.task_name))
-            .order_by(total_col.desc())
-            .limit(limit)
+            .subquery()
         )
-        results = (await self.session.exec(statement)).all()  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
-        return [
-            TaskStatsByName(
-                task_name=row.task_name,
-                total=row.total,
-                success=row.success,
-                failure=row.failure,
-                avg_runtime=round(row.avg_runtime, 3) if row.avg_runtime is not None else None,
-            )
-            for row in results
+        total = (await self.session.exec(sa_select(func.count()).select_from(grouped))).scalar_one()
+        sort_column = grouped.c[
+            {"lastExecutedAt": "last_executed_at", "total": "total", "failure": "failure"}[query.sort_by]
         ]
+        statement = (
+            sa_select(grouped)
+            .order_by(sort_column.asc() if query.sort_order == "asc" else sort_column.desc(), grouped.c.task_name.asc())
+            .offset((query.page - 1) * query.page_size)
+            .limit(query.page_size)
+        )
+        rows = (await self.session.exec(statement)).mappings().all()
+        records = [
+            TaskStatsByName(
+                **{key: value for key, value in row.items() if key != "avg_runtime"},
+                success_rate=round(row["success"] / (row["success"] + row["failure"]) * 100, 2)
+                if row["success"] + row["failure"]
+                else None,
+                avg_runtime=round(row["avg_runtime"], 3) if row["avg_runtime"] is not None else None,
+            )
+            for row in rows
+        ]
+        return PaginatedResponse(records=records, total=total, page=query.page, page_size=query.page_size)
 
     async def get_stats_by_worker(self, days: int) -> list[TaskStatsByWorker]:
         statement = (

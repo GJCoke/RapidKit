@@ -5,13 +5,15 @@ Author  : Claude
 Date    : 2026-03-30
 """
 
-from typing import Any
+from datetime import UTC, datetime, timedelta
+from typing import Any, Literal, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from rapidkit_common.enums import TaskStatus, WorkerStatus
 from rapidkit_common.schemas import BaseModel, BaseRequest
 from rapidkit_common.schemas.request import PaginatedRequest
 from rapidkit_common.schemas.response import BaseSchema, LocalDatetime
+from rapidkit_core.timezone import timezone
 
 # ==================== Worker Schemas ====================
 
@@ -39,7 +41,11 @@ class WorkerUpdate(WorkerSchema, BaseRequest):
 
 
 class WorkerResponse(WorkerSchema, BaseSchema):
-    """Worker 响应数据结构。"""
+    """Worker 响应数据结构；运行时字段仅在详情检查成功时存在。"""
+
+    runtime_concurrency: int | None = None
+    runtime_active_tasks: int | None = None
+    runtime_sampled_at: LocalDatetime | None = None
 
 
 # ==================== Task Schemas ====================
@@ -156,7 +162,31 @@ class WorkerQueryRequest(WorkerQueriesSchema, PaginatedRequest):
     """Worker 分页查询请求。"""
 
 
-class TaskQueriesSchema(BaseModel):
+class TaskTimeRange(BaseModel):
+    """Creation-time interval, stored as naive UTC for database queries."""
+
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+
+    @model_validator(mode="after")
+    def validate_time_range(self) -> Self:
+        if (self.start_time is None) != (self.end_time is None):
+            raise ValueError("startTime and endTime must be provided together")
+        if self.start_time is None:
+            self.end_time = timezone.now()
+            self.start_time = self.end_time - timedelta(days=7)
+        else:
+            for field in ("start_time", "end_time"):
+                value = getattr(self, field)
+                if value.tzinfo is not None:
+                    setattr(self, field, value.astimezone(UTC).replace(tzinfo=None))
+        duration = self.end_time - self.start_time
+        if duration <= timedelta(0) or duration > timedelta(days=90):
+            raise ValueError("time range must be positive and no longer than 90 days")
+        return self
+
+
+class TaskQueriesSchema(TaskTimeRange):
     """Task 查询字段。"""
 
     status: TaskStatus | None = Field(None, description="任务状态筛选")
@@ -166,6 +196,17 @@ class TaskQueriesSchema(BaseModel):
 
 class TaskQueryRequest(TaskQueriesSchema, PaginatedRequest):
     """任务分页查询请求。"""
+
+    task_name_match: Literal["contains", "exact"] = "contains"
+
+
+class TaskGroupQuery(TaskTimeRange, PaginatedRequest):
+    """Paginated task-function aggregates within the shared creation interval."""
+
+    task_name: str | None = None
+    worker_hostname: str | None = None
+    sort_by: Literal["lastExecutedAt", "total", "failure"] = "lastExecutedAt"
+    sort_order: Literal["asc", "desc"] = "desc"
 
 
 # ==================== Stats Schemas ====================
@@ -205,6 +246,9 @@ class TaskStatsByName(BaseModel):
     total: int
     success: int
     failure: int
+    in_progress: int
+    success_rate: float | None
+    last_executed_at: LocalDatetime
     avg_runtime: float | None
 
 
@@ -216,3 +260,40 @@ class TaskStatsByWorker(BaseModel):
     success: int
     failure: int
     avg_runtime: float | None
+
+
+class QueueMetric(BaseModel):
+    name: str
+    depth: int | None
+    consumers: int | None
+
+
+class DashboardTimelinePoint(BaseModel):
+    time_bucket: LocalDatetime
+    success: int
+    failure: int
+
+
+class DashboardDepthPoint(BaseModel):
+    time_bucket: LocalDatetime
+    depth: float | None
+
+
+class QueueDashboardResponse(BaseModel):
+    sampled_at: LocalDatetime
+    queues: list[QueueMetric]
+    queue_depth: int | None
+    online_workers: int
+    total_workers: int
+    active_tasks: int
+    concurrency: int
+    throughput: float
+    success: int
+    failure: int
+    retry: int
+    revoked: int
+    success_rate: float | None
+    avg_runtime: float | None
+    p95_runtime: float | None
+    timeline: list[DashboardTimelinePoint]
+    depth_timeline: list[DashboardDepthPoint]
