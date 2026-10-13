@@ -5,33 +5,27 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "rapidkit-backend",
-    "rapidkit-core",
-    "rapidkit-common",
-    "rapidkit-framework",
-    "rapidkit-policy-engine",
-    "rapidkit-plugin-script",
-    "rapidkit-plugin-monitoring",
-    "rapidkit-plugin-system",
-    "rapidkit-plugin-worker",
-    "rapidkit-plugin-schedule",
-    "rapidkit-plugin-menu",
-    "rapidkit-plugin-department",
-    "rapidkit-plugin-permission",
-    "rapidkit-plugin-auth",
-    "rapidkit-plugin-user",
-    "rapidkit-plugin-notification",
-    "rapidkit-security",
+  "rapidkit-backend",
+  "rapidkit-core",
+  "rapidkit-common",
+  "rapidkit-framework",
+  "rapidkit-policy-engine",
+  "rapidkit-plugin-script",
+  "rapidkit-plugin-monitoring",
+  "rapidkit-plugin-system",
+  "rapidkit-plugin-worker",
+  "rapidkit-plugin-schedule",
+  "rapidkit-plugin-menu",
+  "rapidkit-plugin-department",
+  "rapidkit-plugin-permission",
+  "rapidkit-plugin-auth",
+  "rapidkit-plugin-user",
+  "rapidkit-plugin-notification",
+  "rapidkit-security",
 ]
 
 [dependency-groups]
-dev = [
-    "ruff>=0.15.9",
-    "coverage==7.13.5",
-    "ty>=0.0.29",
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.25.0",
-]
+dev = ["ruff>=0.15.9", "coverage==7.13.5", "ty>=0.0.29", "pytest>=8.0.0", "pytest-asyncio>=0.25.0"]
 
 [tool.uv.sources]
 rapidkit-backend = { workspace = true }
@@ -54,21 +48,17 @@ rapidkit-security = { workspace = true }
 
 [tool.uv.workspace]
 members = [
-    "apps/backend",
-    "apps/backend/plugins/*",
-    "packages/core",
-    "packages/common",
-    "packages/framework",
-    "packages/policy-engine",
-    "packages/security",
+  "apps/backend",
+  "apps/backend/plugins/*",
+  "packages/core",
+  "packages/common",
+  "packages/framework",
+  "packages/policy-engine",
+  "packages/security",
 ]
 
 [tool.ty.src]
-exclude = [
-    "**/alembic/",
-    "**/tests/",
-    "**/migrations/",
-]
+exclude = ["**/alembic/", "**/tests/", "**/migrations/"]
 
 [tool.ty.rules]
 invalid-method-override = "ignore"
@@ -80,47 +70,42 @@ indent-width = 4
 
 # Directories or files that do not need to be checked.
 exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".ipynb_checkpoints",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pyenv",
-    ".pytest_cache",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    ".vscode",
-    ".idea",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "site-packages",
-    "venv",
-    "apps/backend/src/locales/types.py",
-    "apps/backend/alembic",
-    "**/tests/",
-    "**/migrations/"
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".ipynb_checkpoints",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pyenv",
+  ".pytest_cache",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  ".vscode",
+  ".idea",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "site-packages",
+  "venv",
+  "apps/backend/src/locales/types.py",
+  "apps/backend/alembic",
+  "**/tests/",
+  "**/migrations/",
 ]
 
 [tool.ruff.lint]
-select = [
-    "F",
-    "E",
-    "W",
-    "I001",
-]
-per-file-ignores = { }
+select = ["F", "E", "W", "I001"]
+per-file-ignores = {}
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.mccabe]

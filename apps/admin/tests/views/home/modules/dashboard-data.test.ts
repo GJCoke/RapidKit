@@ -1,6 +1,11 @@
 import assert from "node:assert/strict"
 import { test } from "vitest"
-import { createOverviewStats, mapActivityItems, mapTrendPoints, resolveDashboardQueries } from "@/views/home/modules/dashboard-data"
+import {
+  createOverviewStats,
+  mapActivityItems,
+  mapTrendPoints,
+  resolveDashboardQueries,
+} from "@/views/home/modules/dashboard-data"
 
 const translate = (key: string, params?: Record<string, unknown>) => (params ? `${key}:${JSON.stringify(params)}` : key)
 

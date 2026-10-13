@@ -67,6 +67,22 @@ def test_render_raw_substitutes_declared_variables() -> None:
     assert rendered.content_format == "plain_text"
 
 
+def test_saved_examples_never_replace_actual_delivery_variables() -> None:
+    template = _raw_template(
+        variable_schema={
+            "username": {"type": "string", "required": True, "example": "Preview user"},
+            "count": {"type": "integer", "required": True, "example": 0},
+        }
+    )
+    renderer = TemplateRenderer()
+    with pytest.raises(AppException) as exc_info:
+        renderer.render(template, {})
+    _assert_status(exc_info, NotificationStatusCode.TEMPLATE_VARIABLE_INVALID)
+    rendered = renderer.render(template, {"username": "Actual user", "count": 8})
+    assert rendered.title == "Hi Actual user"
+    assert rendered.content == "You have 8 messages"
+
+
 def test_render_i18n_keeps_keys_and_validated_params() -> None:
     rendered = TemplateRenderer().render(_i18n_template(), {"username": "alice"})
 

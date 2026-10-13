@@ -118,20 +118,20 @@
   watch(() => props.data, updateChart, { deep: true, immediate: true })
 
   function formatNumber(value: number | null | undefined) {
-    return value == null ? "—" : new Intl.NumberFormat().format(value)
+    return value === null || value === undefined ? "—" : new Intl.NumberFormat().format(value)
   }
 
   function formatPercent(value: number | null | undefined) {
-    return value == null ? "—" : `${value.toFixed(2)}%`
+    return value === null || value === undefined ? "—" : `${value.toFixed(2)}%`
   }
 
   function changeText(value: number | null | undefined, unit = "%") {
-    if (value == null) return "—"
+    if (value === null || value === undefined) return "—"
     return `${Math.abs(value).toFixed(2)}${unit}`
   }
 
   function changeClass(value: number | null | undefined, inverted = false) {
-    if (value == null || value === 0) return "text-base-text-3"
+    if (value === null || value === undefined || value === 0) return "text-base-text-3"
     const positive = inverted ? value < 0 : value > 0
     return positive ? "text-success" : "text-error"
   }
@@ -142,7 +142,7 @@
   }
 
   function formatDuration(seconds: number | undefined) {
-    if (seconds == null) return "—"
+    if (seconds === null || seconds === undefined) return "—"
     const days = Math.floor(seconds / 86400)
     const hours = Math.floor((seconds % 86400) / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)

@@ -14,13 +14,20 @@ def audit(
     target_id: UUID,
     correlation_id: str | None = None,
     audience_summary: str | None = None,
+    banner_revision: int | None = None,
+    previous_active_id: UUID | None = None,
+    previous_scheduled_id: UUID | None = None,
 ) -> None:
     """Record only stable identifiers and audience-type metadata."""
     logger.warning(
-        "AUDIT notification action={} operator_id={} target_id={} correlation_id={} audience={}",
+        "AUDIT notification action={} user_id={} target_id={} correlation_id={} audience={} "
+        "banner_revision={} previous_active_id={} previous_scheduled_id={}",
         action,
         operator_id,
         target_id,
         correlation_id,
         audience_summary,
+        banner_revision,
+        previous_active_id,
+        previous_scheduled_id,
     )

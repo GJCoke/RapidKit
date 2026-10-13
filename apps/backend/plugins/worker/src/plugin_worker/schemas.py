@@ -170,17 +170,19 @@ class TaskTimeRange(BaseModel):
 
     @model_validator(mode="after")
     def validate_time_range(self) -> Self:
-        if (self.start_time is None) != (self.end_time is None):
-            raise ValueError("startTime and endTime must be provided together")
-        if self.start_time is None:
-            self.end_time = timezone.now()
-            self.start_time = self.end_time - timedelta(days=7)
+        start_time, end_time = self.start_time, self.end_time
+        if start_time is None or end_time is None:
+            if start_time is not None or end_time is not None:
+                raise ValueError("startTime and endTime must be provided together")
+            end_time = timezone.now()
+            start_time = end_time - timedelta(days=7)
         else:
-            for field in ("start_time", "end_time"):
-                value = getattr(self, field)
-                if value.tzinfo is not None:
-                    setattr(self, field, value.astimezone(UTC).replace(tzinfo=None))
-        duration = self.end_time - self.start_time
+            if start_time.tzinfo is not None:
+                start_time = start_time.astimezone(UTC).replace(tzinfo=None)
+            if end_time.tzinfo is not None:
+                end_time = end_time.astimezone(UTC).replace(tzinfo=None)
+        self.start_time, self.end_time = start_time, end_time
+        duration = end_time - start_time
         if duration <= timedelta(0) or duration > timedelta(days=90):
             raise ValueError("time range must be positive and no longer than 90 days")
         return self

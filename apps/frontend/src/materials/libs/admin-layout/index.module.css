@@ -6,11 +6,12 @@
 }
 
 .layout-header {
+  top: var(--soy-banner-height);
   z-index: var(--soy-header-z-index);
 }
 
 .layout-tab {
-  top: var(--soy-header-height);
+  top: calc(var(--soy-visible-header-height) + var(--soy-banner-height));
   height: var(--soy-tab-height);
   z-index: var(--soy-tab-z-index);
 }
@@ -55,9 +56,14 @@
 }
 
 .sider-padding-top {
-  padding-top: var(--soy-header-height);
+  padding-top: var(--soy-visible-header-height);
 }
 
 .sider-padding-bottom {
   padding-bottom: var(--soy-footer-height);
+}
+
+.layout-banner {
+  top: 0;
+  z-index: var(--soy-header-z-index);
 }

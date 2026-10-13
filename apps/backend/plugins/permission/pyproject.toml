@@ -3,12 +3,7 @@ name = "rapidkit-plugin-permission"
 version = "0.1.0"
 description = "Permission (RBAC/ABAC) authorization plugin"
 requires-python = ">=3.14"
-dependencies = [
-    "rapidkit-core",
-    "rapidkit-common",
-    "rapidkit-framework",
-    "rapidkit-policy-engine",
-]
+dependencies = ["rapidkit-core", "rapidkit-common", "rapidkit-framework", "rapidkit-policy-engine"]
 
 [project.entry-points."rapidkit.plugins"]
 permission = "plugin_permission:register"

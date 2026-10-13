@@ -88,9 +88,7 @@ test("refresh remounts the selected route without keepAlive", () => {
   )
   fireEvent.change(screen.getByLabelText("plain"), { target: { value: "reset me" } })
 
-  act(() =>
-    useRouteCacheStore.getState().refresh(getRouteInstanceKey(snapshot.byName.plain!, "/plain")),
-  )
+  act(() => useRouteCacheStore.getState().refresh(getRouteInstanceKey(snapshot.byName.plain!, "/plain")))
 
   expect(screen.getByLabelText("plain")).toHaveValue("")
   expect(unmounts.plain).toBe(1)

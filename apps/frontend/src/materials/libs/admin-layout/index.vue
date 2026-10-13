@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { computed } from "vue"
+  import { computed, ref } from "vue"
+  import { useResizeObserver } from "@vueuse/core"
   import type { AdminLayoutProps } from "../../types"
   import { LAYOUT_MAX_Z_INDEX, LAYOUT_SCROLL_EL_ID, createLayoutCssVars } from "./shared"
   import styleModule from "./index.module.css"
@@ -18,6 +19,7 @@
     fixedTop: true,
     maxZIndex: LAYOUT_MAX_Z_INDEX,
     headerVisible: true,
+    bannerVisible: false,
     headerHeight: 56,
     tabVisible: true,
     tabHeight: 48,
@@ -44,6 +46,7 @@
     default?: SlotFn
     /** Header */
     header?: SlotFn
+    banner?: SlotFn
     /** Tab */
     tab?: SlotFn
     /** Sider */
@@ -54,7 +57,21 @@
 
   const slots = defineSlots<Slots>()
 
-  const cssVars = computed(() => createLayoutCssVars(props))
+  const bannerElement = ref<HTMLElement>()
+  const bannerHeight = ref(0)
+  useResizeObserver(bannerElement, ([entry]) => {
+    bannerHeight.value = entry?.borderBoxSize[0]?.blockSize ?? entry?.contentRect.height ?? 0
+  })
+  const showBanner = computed(() => Boolean(slots.banner) && props.bannerVisible)
+  const siderPositionStyle = {
+    top: "var(--soy-banner-height)",
+    height: "calc(100% - var(--soy-banner-height))",
+  }
+  const cssVars = computed(() => ({
+    ...createLayoutCssVars(props),
+    "--soy-banner-height": `${showBanner.value ? bannerHeight.value : 0}px`,
+    "--soy-visible-header-height": `${!props.fullContent && showHeader.value ? props.headerHeight : 0}px`,
+  }))
 
   // config visible
   const showHeader = computed(() => Boolean(slots.header) && props.headerVisible)
@@ -71,7 +88,9 @@
   const isVertical = computed(() => props.mode === "vertical")
   const isHorizontal = computed(() => props.mode === "horizontal")
 
-  const fixedHeaderAndTab = computed(() => props.fixedTop || (isHorizontal.value && isWrapperScroll.value))
+  const fixedHeaderAndTab = computed(
+    () => showBanner.value || props.fixedTop || (isHorizontal.value && isWrapperScroll.value),
+  )
 
   // css
   const leftGapClass = computed(() => {
@@ -121,6 +140,13 @@
       class="h-full flex flex-col"
       :class="[commonClass, scrollWrapperClass, { 'overflow-y-auto': isWrapperScroll }]"
     >
+      <template v-if="showBanner">
+        <div ref="bannerElement" class="absolute left-0 w-full bg-container" :class="style['layout-banner']">
+          <slot name="banner"></slot>
+        </div>
+        <div class="shrink-0" :style="{ height: `${bannerHeight}px` }"></div>
+      </template>
+
       <!-- Header -->
       <template v-if="showHeader">
         <header
@@ -130,7 +156,7 @@
             style['layout-header'],
             commonClass,
             headerLeftGapClass,
-            { 'absolute top-0 left-0 w-full': fixedHeaderAndTab },
+            { 'absolute left-0 w-full': fixedHeaderAndTab },
           ]"
         >
           <slot name="header"></slot>
@@ -150,7 +176,6 @@
             style['layout-tab'],
             commonClass,
             tabClass,
-            { 'top-0!': fullContent || !showHeader },
             leftGapClass,
             { 'absolute left-0 w-full': fixedHeaderAndTab },
           ]"
@@ -168,7 +193,8 @@
       <template v-if="showSider">
         <aside
           v-show="!fullContent"
-          class="absolute left-0 top-0 h-full"
+          class="absolute left-0"
+          :style="siderPositionStyle"
           :class="[
             commonClass,
             siderClass,
@@ -183,7 +209,8 @@
       <!-- Mobile Sider -->
       <template v-if="showMobileSider">
         <aside
-          class="absolute left-0 top-0 h-full w-0 bg-white"
+          class="absolute left-0 w-0 bg-white"
+          :style="siderPositionStyle"
           :class="[
             commonClass,
             mobileSiderClass,
@@ -195,7 +222,8 @@
         </aside>
         <div
           v-show="!siderCollapse"
-          class="absolute left-0 top-0 h-full w-full bg-[rgba(0,0,0,0.2)]"
+          class="absolute left-0 w-full bg-[rgba(0,0,0,0.2)]"
+          :style="siderPositionStyle"
           :class="[style['layout-mobile-sider-mask']]"
           @click="handleClickMask"
         ></div>

@@ -4,12 +4,12 @@ version = "0.1.0"
 description = "RapidKit authentication, role & router management plugin"
 requires-python = ">=3.14"
 dependencies = [
-    "rapidkit-core",
-    "rapidkit-common",
-    "rapidkit-framework",
-    "rapidkit-security",
-    "rapidkit-plugin-permission",
-    "authlib",
+  "rapidkit-core",
+  "rapidkit-common",
+  "rapidkit-framework",
+  "rapidkit-security",
+  "rapidkit-plugin-permission",
+  "authlib",
 ]
 
 [project.entry-points."rapidkit.plugins"]

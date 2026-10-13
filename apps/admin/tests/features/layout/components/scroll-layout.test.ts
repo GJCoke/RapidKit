@@ -2,11 +2,26 @@ import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
 import { test } from "vitest"
 
-const adminLayout = await readFile(new URL("../../../../src/features/layout/components/admin-layout.tsx", import.meta.url), "utf8")
-const layoutShell = await readFile(new URL("../../../../src/features/layout/components/layout-shell.tsx", import.meta.url), "utf8")
-const pageContainer = await readFile(new URL("../../../../src/features/layout/components/page-container.tsx", import.meta.url), "utf8")
-const routeTransition = await readFile(new URL("../../../../src/features/layout/components/route-transition.tsx", import.meta.url), "utf8")
-const sidebarMenu = await readFile(new URL("../../../../src/features/layout/components/sidebar/sidebar-menu.tsx", import.meta.url), "utf8")
+const adminLayout = await readFile(
+  new URL("../../../../src/features/layout/components/admin-layout.tsx", import.meta.url),
+  "utf8",
+)
+const layoutShell = await readFile(
+  new URL("../../../../src/features/layout/components/layout-shell.tsx", import.meta.url),
+  "utf8",
+)
+const pageContainer = await readFile(
+  new URL("../../../../src/features/layout/components/page-container.tsx", import.meta.url),
+  "utf8",
+)
+const routeTransition = await readFile(
+  new URL("../../../../src/features/layout/components/route-transition.tsx", import.meta.url),
+  "utf8",
+)
+const sidebarMenu = await readFile(
+  new URL("../../../../src/features/layout/components/sidebar/sidebar-menu.tsx", import.meta.url),
+  "utf8",
+)
 
 test("main route content owns an independent shadcn scroll viewport", () => {
   assert.match(layoutShell, /import \{ ScrollArea \} from "@rapidkit\/ui\/components\/scroll-area"/)

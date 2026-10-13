@@ -1,5 +1,5 @@
 import { useState } from "react"
-import {Button, Input, Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@rapidkit/ui"
+import { Button, Input, Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@rapidkit/ui"
 
 export interface UserFilters {
   keyword?: string

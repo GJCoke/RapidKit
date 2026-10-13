@@ -1,5 +1,9 @@
 import { expect, test } from "vitest"
-import { getMenuButtonClasses, getMenuIconClasses, getMenuIndentStyle } from "@/features/layout/components/sidebar/sidebar-menu-styles"
+import {
+  getMenuButtonClasses,
+  getMenuIconClasses,
+  getMenuIndentStyle,
+} from "@/features/layout/components/sidebar/sidebar-menu-styles"
 
 test("keeps menu icons at 18px in both sidebar states", () => {
   expect(getMenuIconClasses(false)).toContain("size-[18px]")

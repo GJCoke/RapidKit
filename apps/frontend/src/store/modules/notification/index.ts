@@ -16,8 +16,9 @@ export const useNotificationStore = defineStore(SetupStoreId.Notification, () =>
   const activeTab = ref<DrawerTab>("all")
   const latest = ref<Api.Notification.Message[]>([])
   const loading = ref(false)
+  const recalledMessageIds = ref<ReadonlySet<string>>(new Set())
+  const sessionEpoch = ref(0)
 
-  let requestEpoch = 0
   let unreadRequestId = 0
   let latestRequestId = 0
   let pendingLatestRequests = 0
@@ -25,15 +26,65 @@ export const useNotificationStore = defineStore(SetupStoreId.Notification, () =>
   const badgeText = computed(() => (unreadCount.value > 99 ? "99+" : String(unreadCount.value)))
   const hasUnread = computed(() => unreadCount.value > 0)
 
+  function isRecalled(message: Api.Notification.Message) {
+    return message.status === "recalled" || recalledMessageIds.value.has(message.messageId)
+  }
+
+  function sanitizeMessage(message: Api.Notification.Message): Api.Notification.Message {
+    if (!isRecalled(message)) return message
+    return {
+      ...message,
+      status: "recalled",
+      contentMode: "raw",
+      title: "",
+      content: "",
+      contentParams: null,
+      action: null,
+      mandatory: false,
+    }
+  }
+
+  function filterLatest(messages: Api.Notification.Message[]) {
+    if (activeTab.value === "unread") return messages.filter((message) => !message.readAt && !isRecalled(message))
+    if (activeTab.value === "announcement")
+      return messages.filter((message) => message.category === "admin.announcement")
+    return messages
+  }
+
+  function rememberRecalls(messageIds: string[], cachedMessages: Api.Notification.Message[] = []) {
+    const added = messageIds.filter((messageId) => !recalledMessageIds.value.has(messageId))
+    if (!added.length) return
+    const recalledUnreadIds = new Set(
+      [...latest.value, ...cachedMessages]
+        .filter((message) => added.includes(message.messageId) && !message.readAt && !isRecalled(message))
+        .map((message) => message.id),
+    )
+    unreadCount.value = Math.max(0, unreadCount.value - recalledUnreadIds.size)
+    recalledMessageIds.value = new Set([...recalledMessageIds.value, ...added])
+    latest.value = filterLatest(latest.value.map(sanitizeMessage))
+    return refreshUnreadCount().catch(() => {
+      // Keep cached recalls authoritative when defensive unread calibration is unavailable.
+    })
+  }
+
+  /** Apply session recalls to every HTTP page before it enters an inbox cache. */
+  function normalizeMessages(messages: Api.Notification.Message[], cachedMessages: Api.Notification.Message[] = []) {
+    void rememberRecalls(
+      messages.filter((message) => message.status === "recalled").map((message) => message.messageId),
+      cachedMessages,
+    )
+    return messages.map(sanitizeMessage)
+  }
+
   async function refreshUnreadCount() {
-    const epoch = requestEpoch
+    const epoch = sessionEpoch.value
     const requestId = ++unreadRequestId
     const { data, error } = await fetchGetUnreadCount()
-    if (epoch === requestEpoch && requestId === unreadRequestId && !error && data) unreadCount.value = data.count
+    if (epoch === sessionEpoch.value && requestId === unreadRequestId && !error && data) unreadCount.value = data.count
   }
 
   async function refreshLatest() {
-    const epoch = requestEpoch
+    const epoch = sessionEpoch.value
     const requestId = ++latestRequestId
     const tab = activeTab.value
     pendingLatestRequests += 1
@@ -44,14 +95,11 @@ export const useNotificationStore = defineStore(SetupStoreId.Notification, () =>
 
       const { data, error } = await fetchGetNotifications(query)
       if (error || !data) return
-      if (epoch !== requestEpoch || requestId !== latestRequestId || tab !== activeTab.value) return
+      if (epoch !== sessionEpoch.value || requestId !== latestRequestId || tab !== activeTab.value) return
 
-      latest.value =
-        tab === "announcement"
-          ? data.items.filter((item) => item.category === "admin.announcement")
-          : data.items
+      latest.value = filterLatest(normalizeMessages(data.items))
     } finally {
-      if (epoch === requestEpoch) {
+      if (epoch === sessionEpoch.value) {
         pendingLatestRequests = Math.max(0, pendingLatestRequests - 1)
         loading.value = pendingLatestRequests > 0
       }
@@ -78,6 +126,7 @@ export const useNotificationStore = defineStore(SetupStoreId.Notification, () =>
 
   async function markRead(id: string) {
     const target = latest.value.find((message) => message.id === id)
+    if (target && isRecalled(target)) return
     if (target && !target.readAt) {
       target.readAt = new Date().toISOString()
       unreadCount.value = Math.max(0, unreadCount.value - 1)
@@ -103,7 +152,7 @@ export const useNotificationStore = defineStore(SetupStoreId.Notification, () =>
       unreadCount.value = 0
       latest.value = latest.value.map((message) => ({
         ...message,
-        readAt: message.readAt ?? new Date().toISOString(),
+        readAt: isRecalled(message) ? message.readAt : (message.readAt ?? new Date().toISOString()),
       }))
     } catch (error) {
       await calibrate()
@@ -112,24 +161,27 @@ export const useNotificationStore = defineStore(SetupStoreId.Notification, () =>
   }
 
   function onRealtimeNew(message: Api.Notification.Message) {
+    if (isRecalled(message)) {
+      void rememberRecalls([message.messageId])
+      return
+    }
     const isDuplicate = latest.value.some((cached) => cached.id === message.id)
     latest.value = [message, ...latest.value.filter((cached) => cached.id !== message.id)]
     if (!isDuplicate && !message.readAt) unreadCount.value += 1
   }
 
   async function onRealtimeRecalled(messageId: string) {
-    latest.value = latest.value.map((message) =>
-      message.messageId === messageId ? { ...message, status: "recalled", action: null } : message,
-    )
-    await refreshUnreadCount()
+    await rememberRecalls([messageId])
   }
 
   function onRealtimeUnreadCount(count: number) {
+    unreadRequestId += 1
     unreadCount.value = count
   }
 
   function reset() {
-    requestEpoch += 1
+    sessionEpoch.value += 1
+    recalledMessageIds.value = new Set()
     pendingLatestRequests = 0
     unreadCount.value = 0
     drawerVisible.value = false
@@ -146,6 +198,10 @@ export const useNotificationStore = defineStore(SetupStoreId.Notification, () =>
     loading,
     badgeText,
     hasUnread,
+    recalledMessageIds,
+    sessionEpoch,
+    isRecalled,
+    normalizeMessages,
     refreshUnreadCount,
     refreshLatest,
     calibrate,

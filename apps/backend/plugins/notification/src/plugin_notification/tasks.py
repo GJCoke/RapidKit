@@ -12,6 +12,7 @@ from src.queues.app import app
 from src.queues.deps import TaskRedis, TaskSession
 
 from plugin_notification.audience import AudienceResolver
+from plugin_notification.banner_service import BannerAnnouncementService
 from plugin_notification.crud import MessageCRUD, OutboxCRUD
 from plugin_notification.enums import MessageStatus
 from plugin_notification.orchestrator import MessageOrchestrator
@@ -135,6 +136,17 @@ async def publish_scheduled_notifications(
     if not await lock.acquire():
         return
     try:
+        try:
+            banner = BannerAnnouncementService()
+            async with session() as banner_session:
+                state, _, _ = await banner.advance_due(banner_session)
+                revision = state.revision
+                changed = banner.transitioned
+                await banner_session.commit()
+            if changed:
+                await banner.broadcast(revision)
+        except Exception as exc:  # noqa: BLE001 - banner failures cannot starve inbox publishing
+            logger.warning("Banner transition failed; next beat will retry: {}", exc)
         async with session() as database_session:
             orchestrator = _build_orchestrator(database_session)
             count = await _publish_due(database_session, orchestrator)

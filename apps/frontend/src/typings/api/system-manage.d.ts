@@ -89,11 +89,7 @@ declare global {
       /** create user body */
       type CreateUserBody = Service.ApiRequest<"/api/v1/users", "post", "body">
 
-      type UsernamePinyinValidationBody = Service.ApiRequest<
-        "/api/v1/users/validate-username-pinyin",
-        "post",
-        "body"
-      >
+      type UsernamePinyinValidationBody = Service.ApiRequest<"/api/v1/users/validate-username-pinyin", "post", "body">
 
       type UsernamePinyinValidation = Service.ApiResponse<"/api/v1/users/validate-username-pinyin", "post">
 
@@ -164,11 +160,7 @@ declare global {
       type MenuSearchParams = Service.ApiRequest<"/api/v1/manage/menus", "get", "query">
 
       /** Query parameters for the active-menu ancestor candidates endpoint. */
-      type ActiveMenuOptionsParams = Service.ApiRequest<
-        "/api/v1/manage/menus/active-menu-options",
-        "get",
-        "query"
-      >
+      type ActiveMenuOptionsParams = Service.ApiRequest<"/api/v1/manage/menus/active-menu-options", "get", "query">
 
       /** An eligible visible ancestor page that can be highlighted for a hidden child page. */
       type ActiveMenuOption = Service.ApiResponse<"/api/v1/manage/menus/active-menu-options">[number]

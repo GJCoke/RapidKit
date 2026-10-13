@@ -1,11 +1,16 @@
 """Administrative notification schemas, CRUD, and endpoint tests."""
 
-from datetime import timedelta
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast, get_type_hints
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 import plugin_notification.admin_api as admin_api_module
+import plugin_notification.admin_schemas as admin_schemas_module
 import pytest
+from fastapi import FastAPI, HTTPException, Request
+from httpx import ASGITransport, AsyncClient
 from plugin_notification.admin_api import (
     cancel_announcement,
     create_announcement,
@@ -20,10 +25,13 @@ from plugin_notification.admin_api import (
     publish_announcement,
     recall_announcement,
     retry_failed,
+    update_announcement,
     update_template,
 )
+from plugin_notification.admin_deps import get_admin_service, get_message_crud
 from plugin_notification.admin_schemas import (
     AnnouncementCreateRequest,
+    AnnouncementUpdateRequest,
     AudiencePreviewRequest,
     AudienceRuleIn,
     DeliveryListQuery,
@@ -32,13 +40,15 @@ from plugin_notification.admin_schemas import (
     TemplateListQuery,
     TemplateUpdateRequest,
 )
+from plugin_notification.admin_service import AdminNotificationService
 from plugin_notification.crud import MessageCRUD, OutboxCRUD, TemplateCRUD
 from plugin_notification.enums import MessageStatus, OutboxStatus
 from plugin_notification.models import NotificationOutbox
-from rapidkit_common.auth import UserProtocol, VerifyPermissionDep
+from rapidkit_common.auth import UserProtocol, VerifyPermissionDep, verify_user_permission
 from rapidkit_common.protocols.notification import AudiencePreview, NotificationResult
+from rapidkit_common.protocols.user import UserQueryService
 from rapidkit_common.transaction import run_after_commit_hooks
-from rapidkit_core.timezone import timezone
+from rapidkit_core.timezone import TimeZone, timezone
 from rapidkit_framework.exceptions import AppException
 from sqlmodel import col
 
@@ -56,8 +66,8 @@ class _AdminService:
         self.calls: list[tuple[str, Any]] = []
         self.enqueue_count = 0
 
-    async def create_message(self, command, *, created_by, publish_at, expire_at):
-        self.calls.append(("create", (command, created_by, publish_at, expire_at)))
+    async def create_message(self, command, *, created_by, publish_at, expire_at, save_as_draft=False):
+        self.calls.append(("create", (command, created_by, publish_at, expire_at, save_as_draft)))
         return NotificationResult(
             message_id=uuid4(),
             recipient_count=0,
@@ -78,8 +88,8 @@ class _AdminService:
     async def recall(self, message_id, *, operator_id):
         self.calls.append(("recall", (message_id, operator_id)))
 
-    async def preview_audience(self, audience):
-        self.calls.append(("preview", audience))
+    async def preview_audience(self, audience, *, message_id=None):
+        self.calls.append(("preview", (audience, message_id)))
         return AudiencePreview(total=2, by_type={"all": 2})
 
     def enqueue_delivery(self):
@@ -254,6 +264,48 @@ async def test_template_crud_and_filtered_pagination(db_session):
 
 
 @pytest.mark.asyncio
+async def test_template_examples_persist_across_create_update_and_database_reload(db_session):
+    crud = TemplateCRUD(db_session)
+    user = _user()
+    schema = {
+        "username": {"type": "string", "required": True, "example": "张三"},
+        "count": {"type": "integer", "example": 0},
+        "flag": {"type": "boolean", "example": False},
+    }
+    body = _template_body(code="examples.persisted")
+    body.variable_schema = schema
+    created = await create_template(body=body, current_user=user, crud=crud, session=db_session)
+    assert created.data is not None
+    template_id = created.data.id
+    await db_session.commit()
+    db_session.expunge_all()
+
+    detail = await get_template(template_id=template_id, current_user=user, crud=crud)
+    assert detail.data is not None
+    assert detail.data.variable_schema == schema
+    assert detail.data.variable_schema["count"]["example"] == 0
+    assert detail.data.variable_schema["flag"]["example"] is False
+    page = await list_templates(query=TemplateListQuery(keyword="examples.persisted"), current_user=user, crud=crud)
+    assert page.data is not None
+    assert page.data.records[0].variable_schema == schema
+
+    updated_schema = {**schema, "username": {**schema["username"], "example": "李四"}}
+    await update_template(
+        template_id=template_id,
+        body=TemplateUpdateRequest(variable_schema=updated_schema),
+        current_user=user,
+        crud=crud,
+        session=db_session,
+    )
+    await db_session.commit()
+    db_session.expunge_all()
+    reloaded = await get_template(template_id=template_id, current_user=user, crud=crud)
+    assert reloaded.data is not None
+    assert reloaded.data.variable_schema == updated_schema
+    assert reloaded.data.version == 2
+
+
+@pytest.mark.asyncio
 async def test_template_create_conflict_and_missing_detail_raise(db_session):
     crud = TemplateCRUD(db_session)
     user = _user()
@@ -317,7 +369,7 @@ async def test_announcement_list_filters_status_and_category(db_session):
 
 
 @pytest.mark.asyncio
-async def test_announcement_lifecycle_endpoints_forward_verified_operator():
+async def test_announcement_lifecycle_endpoints_forward_verified_operator(db_session):
     user = _user()
     service = _AdminService()
     message_id = uuid4()
@@ -331,6 +383,8 @@ async def test_announcement_lifecycle_endpoints_forward_verified_operator():
         body=body,
         current_user=user,
         service=service,
+        session=db_session,
+        request=Request({"type": "http"}),
     )
     preview = await preview_audience(
         message_id=message_id,
@@ -366,10 +420,206 @@ async def test_announcement_lifecycle_endpoints_forward_verified_operator():
     ]
     assert service.calls[0][1][1] == user.id
     assert service.calls[2][1] == (message_id, user.id)
+    assert service.calls[1][1][1] == message_id
 
 
 @pytest.mark.asyncio
-async def test_delivery_list_summary_and_retry_enqueue(db_session):
+@pytest.mark.parametrize("draft_flag", [None, False, True])
+async def test_create_announcement_forwards_optional_camel_case_draft_flag(db_session, draft_flag):
+    service = _AdminService()
+    payload = {
+        "rawTitle": "Title",
+        "rawContent": "Body",
+        "publishAt": "2030-01-01T10:00:00",
+        "audience": [{"type": "all"}],
+    }
+    if draft_flag is not None:
+        payload["saveAsDraft"] = draft_flag
+    body = AnnouncementCreateRequest.model_validate(payload)
+
+    await create_announcement(
+        body=body, current_user=_user(), service=service, session=db_session, request=Request({"type": "http"})
+    )
+
+    assert service.calls[0][1][4] is (draft_flag is True)
+    assert service.calls[0][1][2] == body.publish_at
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("draft_flag", [None, False, True])
+async def test_update_announcement_forwards_optional_camel_case_draft_flag(db_session, draft_flag):
+    message = await _create_message(
+        db_session, category="admin.announcement", status=MessageStatus.DRAFT.value, title="Title"
+    )
+
+    class _UpdateService(_AdminService):
+        async def update_message(self, message_id, command, *, operator_id, publish_at, expire_at, save_as_draft=False):
+            self.calls.append(("update", (message_id, operator_id, publish_at, save_as_draft)))
+
+        async def get_message(self, message_id):
+            assert message_id == message.id
+            return message, []
+
+    service = _UpdateService()
+    payload = {
+        "rawTitle": "Title",
+        "rawContent": "Body",
+        "publishAt": "2030-01-01T10:00:00",
+        "audience": [{"type": "all"}],
+    }
+    if draft_flag is not None:
+        payload["saveAsDraft"] = draft_flag
+    body = AnnouncementUpdateRequest.model_validate(payload)
+    user = _user()
+
+    response = await update_announcement(
+        message_id=message.id,
+        body=body,
+        current_user=user,
+        service=service,
+        session=db_session,
+        request=Request({"type": "http"}),
+    )
+
+    assert response.data is not None
+    assert service.calls == [("update", (message.id, user.id, body.publish_at, draft_flag is True))]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("authorized", [True, False])
+async def test_unsaved_audience_preview_only_resolves_audience_without_message_id(authorized):
+    class _PreviewOnlyService:
+        def __init__(self):
+            self.audiences = []
+
+        async def preview_audience(self, audience):
+            self.audiences.append(audience)
+            return AudiencePreview(total=7, by_type={"department": 7})
+
+    service = _PreviewOnlyService()
+    department_id = str(uuid4())
+    app = FastAPI()
+    app.include_router(admin_api_module.router)
+
+    async def permission_check():
+        if not authorized:
+            raise HTTPException(status_code=403)
+        return _user()
+
+    app.dependency_overrides[verify_user_permission] = permission_check
+    app.dependency_overrides[get_admin_service] = lambda: service
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/admin/notifications/audience-preview",
+            json={"audience": [{"type": "department", "value": department_id, "includeDescendants": True}]},
+        )
+
+    if not authorized:
+        assert response.status_code == 403
+        assert service.audiences == []
+        return
+    assert response.status_code == 200
+    assert response.json()["data"] == {"total": 7, "byType": {"department": 7}}
+    assert len(service.audiences) == 1
+    rule = service.audiences[0][0]
+    assert (rule.type, rule.value, rule.include_descendants) == ("department", department_id, True)
+    hints = get_type_hints(admin_api_module.preview_unsaved_audience, include_extras=True)
+    assert hints["current_user"] == VerifyPermissionDep
+    assert "message_id" not in hints
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("browser_timezone", ["UTC", "America/New_York"])
+async def test_announcement_detail_dates_keep_the_same_instant_through_edit_update(
+    db_session, monkeypatch, browser_timezone
+):
+    local_timezone = TimeZone("Asia/Shanghai")
+    monkeypatch.setattr("rapidkit_core.timezone.timezone", local_timezone)
+    monkeypatch.setattr(admin_schemas_module, "timezone", local_timezone, raising=False)
+
+    class _QueryService:
+        async def get_active_user_ids(self, user_ids):
+            return list(user_ids)
+
+        async def get_active_user_ids_by_role(self, role_code):
+            return []
+
+        async def get_active_user_ids_by_department(self, department_id, include_descendants=False):
+            return []
+
+        async def get_all_active_user_ids(self):
+            return []
+
+    @asynccontextmanager
+    async def session_factory():
+        yield db_session
+
+    service = AdminNotificationService(
+        session_factory=session_factory,
+        query_service=cast(UserQueryService, _QueryService()),
+        enqueue_delivery=lambda: None,
+    )
+    app = FastAPI()
+    app.include_router(admin_api_module.router)
+    app.dependency_overrides[verify_user_permission] = _user
+    app.dependency_overrides[get_admin_service] = lambda: service
+    app.dependency_overrides[get_message_crud] = lambda: MessageCRUD(db_session)
+    payload = {
+        "rawTitle": "Planned draft",
+        "rawContent": "Body",
+        "audience": [{"type": "all"}],
+        "saveAsDraft": True,
+        "publishAt": "2030-01-01T01:30:00",
+        "expireAt": "2030-01-02T03:45:00",
+    }
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        created = await client.post("/admin/notifications", json=payload)
+        assert created.status_code == 200
+        message_id = UUID(created.json()["data"]["messageId"])
+        message = await MessageCRUD(db_session).get(message_id)
+        assert message is not None
+        message.create_time = datetime(2030, 1, 1, 0, 15)
+        await db_session.commit()
+
+        detail = await client.get(f"/admin/notifications/{message_id}")
+        assert detail.status_code == 200
+        data = detail.json()["data"]
+        assert data["publishAt"] == "2030-01-01T09:30:00+08:00"
+        assert data["expireAt"] == "2030-01-02T11:45:00+08:00"
+        assert data["createTime"] == "2030-01-01 08:15:00"
+
+        listing = await client.get("/admin/notifications")
+        assert listing.status_code == 200
+        list_data = listing.json()["data"]["records"][0]
+        assert list_data["publishAt"] == "2030-01-01 09:30:00"
+        assert list_data["expireAt"] == "2030-01-02 11:45:00"
+        assert list_data["createTime"] == "2030-01-01 08:15:00"
+
+        # The picker shows browser-local wall time and submits its naive UTC instant.
+        browser_zone = ZoneInfo(browser_timezone)
+        for field in ("publishAt", "expireAt"):
+            picker_time = datetime.fromisoformat(data[field]).astimezone(browser_zone).replace(tzinfo=None)
+            payload[field] = picker_time.replace(tzinfo=browser_zone).astimezone(UTC).replace(tzinfo=None).isoformat()
+        updated = await client.put(f"/admin/notifications/{message_id}", json=payload)
+        assert updated.status_code == 200
+        assert updated.json()["data"]["publishAt"] == "2030-01-01T09:30:00+08:00"
+        assert updated.json()["data"]["expireAt"] == "2030-01-02T11:45:00+08:00"
+
+    db_session.expunge_all()
+    reloaded = await MessageCRUD(db_session).get(message_id)
+    assert reloaded is not None
+    assert reloaded.publish_at == datetime(2030, 1, 1, 1, 30)
+    assert reloaded.expire_at == datetime(2030, 1, 2, 3, 45)
+    assert reloaded.status == MessageStatus.DRAFT.value
+
+
+@pytest.mark.asyncio
+async def test_delivery_list_summary_and_retry_enqueue(db_session, monkeypatch):
+    class _DisplayUsers:
+        async def get_display_profiles(self, user_ids):
+            return {}
+
+    monkeypatch.setattr(admin_api_module, "get_service", lambda protocol: _DisplayUsers())
     first_message = await _create_message(
         db_session,
         category="ops.notice",

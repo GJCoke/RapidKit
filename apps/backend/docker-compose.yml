@@ -16,7 +16,7 @@ services:
     ports:
       - "16000:8006"
 
-    depends_on:  # Make sure that app postgresql starts first by depending on it.
+    depends_on: # Make sure that app postgresql starts first by depending on it.
       - app_postgresql
 
   app_postgresql:
@@ -32,7 +32,7 @@ services:
     ports:
       - "35432:5432"
 
-  app_redis:  # redis config.
+  app_redis: # redis config.
     image: redis:6.2-alpine
     restart: always
     hostname: app_redis
@@ -45,15 +45,15 @@ services:
       - app_redis_data:/var/lib/redis
 
     command:
-      - 'redis-server'  # start redis server.
-      - '--requirepass 123456'  # set redis password.
+      - "redis-server" # start redis server.
+      - "--requirepass 123456" # set redis password.
 
     ports:
-      - "36379:6379"  # Map the host's port 36379 to the container's port 6379.
+      - "36379:6379" # Map the host's port 36379 to the container's port 6379.
 
-  app_minio:  # minio config.
+  app_minio: # minio config.
     image: minio/minio:latest
-#    restart: always
+    #    restart: always
     container_name: app_minio
 
     env_file:
@@ -68,7 +68,7 @@ services:
       - "9000:9000"
       - "9001:9001"
 
-volumes:  # data persistence.
+volumes: # data persistence.
   app_postgresql_data:
     driver: "local"
 
@@ -81,4 +81,4 @@ volumes:  # data persistence.
 networks:
   default:
     external: true
-    name: app_network  # network name.
+    name: app_network # network name.

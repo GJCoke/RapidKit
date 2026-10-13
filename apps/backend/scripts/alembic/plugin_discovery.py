@@ -31,9 +31,7 @@ class PluginDiscoveryResult:
     table_to_plugin: dict[str, str]
 
 
-def enum_type_owners(
-    metadata: MetaData, table_to_plugin: dict[str, str]
-) -> dict[str, str]:
+def enum_type_owners(metadata: MetaData, table_to_plugin: dict[str, str]) -> dict[str, str]:
     """Assign every cross-plugin PostgreSQL enum to one deterministic plugin."""
     enum_plugins: dict[str, set[str]] = {}
     enum_values: dict[str, tuple[str, ...]] = {}
@@ -49,15 +47,10 @@ def enum_type_owners(
             previous_values = enum_values.setdefault(column_type.name, values)
             if previous_values != values:
                 raise PluginDiscoveryError(
-                    f"enum {column_type.name} has conflicting values: "
-                    f"{previous_values} != {values}"
+                    f"enum {column_type.name} has conflicting values: {previous_values} != {values}"
                 )
             enum_plugins.setdefault(column_type.name, set()).add(plugin)
-    return {
-        enum_name: min(plugins)
-        for enum_name, plugins in enum_plugins.items()
-        if len(plugins) > 1
-    }
+    return {enum_name: min(plugins) for enum_name, plugins in enum_plugins.items() if len(plugins) > 1}
 
 
 def object_belongs_to_plugin(
@@ -102,9 +95,7 @@ def discover_migration_plugins(
     installed = {
         entry.name: entry
         for entry in (
-            entry_points
-            if entry_points is not None
-            else importlib.metadata.entry_points(group="rapidkit.plugins")
+            entry_points if entry_points is not None else importlib.metadata.entry_points(group="rapidkit.plugins")
         )
     }
     plugins: dict[str, PluginMigrationDescriptor] = {}
@@ -123,9 +114,7 @@ def discover_migration_plugins(
         except Exception as error:
             raise PluginDiscoveryError(f"failed to load local plugin {name}: {error}") from error
         if manifest.name != name:
-            raise PluginDiscoveryError(
-                f"plugin manifest name mismatch: entry point {name}, manifest {manifest.name}"
-            )
+            raise PluginDiscoveryError(f"plugin manifest name mismatch: entry point {name}, manifest {manifest.name}")
         versions_dir = plugins_root / directory_name / "migrations" / "versions"
         if not versions_dir.is_dir():
             raise PluginDiscoveryError(f"local plugin has no migration directory: {name}")
@@ -134,9 +123,7 @@ def discover_migration_plugins(
             table_overrides.get(name, [])
             if table_overrides is not None and name in table_overrides
             else sorted(
-                table_name
-                for model in manifest.models
-                if (table_name := getattr(model, "__tablename__", None))
+                table_name for model in manifest.models if (table_name := getattr(model, "__tablename__", None))
             )
         )
         descriptor = PluginMigrationDescriptor(
@@ -150,9 +137,7 @@ def discover_migration_plugins(
         for table in tables:
             previous = ownership.get(table)
             if previous is not None and previous != name:
-                raise PluginDiscoveryError(
-                    f"table {table} is owned by multiple plugins: {previous}, {name}"
-                )
+                raise PluginDiscoveryError(f"table {table} is owned by multiple plugins: {previous}, {name}")
             ownership[table] = name
 
     for name, entry in sorted(installed.items()):

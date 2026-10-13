@@ -2,6 +2,8 @@
 
 import hashlib
 import secrets
+from collections.abc import Awaitable
+from typing import cast
 from uuid import UUID
 
 from rapidkit_core.redis_client import AsyncRedisClient
@@ -66,10 +68,14 @@ class PasswordResetTokenStore:
     async def allow_request(self, email: str, ip: str) -> bool:
         normalized = email.strip().casefold()
         digest = hashlib.sha256(normalized.encode()).hexdigest()
-        allowed = await self._redis.eval(
-            _ALLOW_REQUEST_SCRIPT,
-            2,
-            _EMAIL_RATE_KEY.format(digest=digest),
-            _IP_RATE_KEY.format(ip=ip),
+        # Redis shares sync/async eval annotations; this async client runs an integer-returning script.
+        allowed = await cast(
+            Awaitable[int],
+            self._redis.eval(
+                _ALLOW_REQUEST_SCRIPT,
+                2,
+                _EMAIL_RATE_KEY.format(digest=digest),
+                _IP_RATE_KEY.format(ip=ip),
+            ),
         )
         return bool(allowed)

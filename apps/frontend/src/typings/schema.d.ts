@@ -929,363 +929,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/notifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Notifications
-         * @description 列出当前用户的收件箱。
-         */
-        get: operations["list_notifications_api_v1_notifications_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/notifications/unread-count": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Unread Count
-         * @description 返回当前用户未读通知数。
-         */
-        get: operations["get_unread_count_api_v1_notifications_unread_count_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/notifications/read-all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Mark All Read
-         * @description 把当前用户所有未删除的未读通知标记为已读。
-         */
-        post: operations["mark_all_read_api_v1_notifications_read_all_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/notifications/{notification_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Notification
-         * @description 获取当前用户的一条通知。
-         */
-        get: operations["get_notification_api_v1_notifications__notification_id__get"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Notification
-         * @description 软删除当前用户的一条通知。
-         */
-        delete: operations["delete_notification_api_v1_notifications__notification_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/notifications/{notification_id}/read": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Mark Read
-         * @description 把当前用户的一条通知标记为已读。
-         */
-        patch: operations["mark_read_api_v1_notifications__notification_id__read_patch"];
-        trace?: never;
-    };
-    "/api/v1/notifications/{notification_id}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Archive Notification
-         * @description 归档当前用户的一条通知。
-         */
-        patch: operations["archive_notification_api_v1_notifications__notification_id__archive_patch"];
-        trace?: never;
-    };
-    "/api/v1/admin/notification-templates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Templates */
-        get: operations["list_templates_api_v1_admin_notification_templates_get"];
-        put?: never;
-        /** Create Template */
-        post: operations["create_template_api_v1_admin_notification_templates_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/notification-templates/{template_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Template */
-        get: operations["get_template_api_v1_admin_notification_templates__template_id__get"];
-        /** Update Template */
-        put: operations["update_template_api_v1_admin_notification_templates__template_id__put"];
-        post?: never;
-        /** Delete Template */
-        delete: operations["delete_template_api_v1_admin_notification_templates__template_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/notifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Announcements */
-        get: operations["list_announcements_api_v1_admin_notifications_get"];
-        put?: never;
-        /** Create Announcement */
-        post: operations["create_announcement_api_v1_admin_notifications_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/notifications/{message_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Announcement */
-        get: operations["get_announcement_api_v1_admin_notifications__message_id__get"];
-        /** Update Announcement */
-        put: operations["update_announcement_api_v1_admin_notifications__message_id__put"];
-        post?: never;
-        /** Delete Announcement */
-        delete: operations["delete_announcement_api_v1_admin_notifications__message_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/notifications/{message_id}/audience-preview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Preview Audience */
-        post: operations["preview_audience_api_v1_admin_notifications__message_id__audience_preview_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/notifications/{message_id}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Publish Announcement */
-        post: operations["publish_announcement_api_v1_admin_notifications__message_id__publish_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/notifications/{message_id}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cancel Announcement */
-        post: operations["cancel_announcement_api_v1_admin_notifications__message_id__cancel_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/notifications/{message_id}/recall": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Recall Announcement */
-        post: operations["recall_announcement_api_v1_admin_notifications__message_id__recall_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/notification-deliveries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Deliveries */
-        get: operations["list_deliveries_api_v1_admin_notification_deliveries_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/notification-deliveries/{message_id}/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Delivery Summary */
-        get: operations["delivery_summary_api_v1_admin_notification_deliveries__message_id__summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/notification-deliveries/{message_id}/retry-failed": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Retry Failed */
-        post: operations["retry_failed_api_v1_admin_notification_deliveries__message_id__retry_failed_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/notification-preferences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Preferences
-         * @description List effective built-in preferences for the current user.
-         */
-        get: operations["list_preferences_api_v1_notification_preferences_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/notification-preferences/{category}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Preference
-         * @description Upsert one preference owned by the current user.
-         */
-        put: operations["update_preference_api_v1_notification_preferences__category__put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/auth/keys/public": {
         parameters: {
             query?: never;
@@ -1953,6 +1596,468 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Notifications
+         * @description 列出当前用户的收件箱。
+         */
+        get: operations["list_notifications_api_v1_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Unread Count
+         * @description 返回当前用户未读通知数。
+         */
+        get: operations["get_unread_count_api_v1_notifications_unread_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark All Read
+         * @description 把当前用户所有未删除、未撤回的未读通知标记为已读。
+         */
+        post: operations["mark_all_read_api_v1_notifications_read_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/top-banner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Top Banner */
+        get: operations["get_top_banner_api_v1_notifications_top_banner_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{notification_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Notification
+         * @description 获取当前用户的一条通知。
+         */
+        get: operations["get_notification_api_v1_notifications__notification_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Notification
+         * @description 软删除当前用户的一条通知。
+         */
+        delete: operations["delete_notification_api_v1_notifications__notification_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Mark Read
+         * @description 把当前用户的一条未撤回通知标记为已读。
+         */
+        patch: operations["mark_read_api_v1_notifications__notification_id__read_patch"];
+        trace?: never;
+    };
+    "/api/v1/notifications/{notification_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Archive Notification
+         * @description 归档当前用户的一条通知。
+         */
+        patch: operations["archive_notification_api_v1_notifications__notification_id__archive_patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/notification-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Templates */
+        get: operations["list_templates_api_v1_admin_notification_templates_get"];
+        put?: never;
+        /** Create Template */
+        post: operations["create_template_api_v1_admin_notification_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notification-templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Template */
+        get: operations["get_template_api_v1_admin_notification_templates__template_id__get"];
+        /** Update Template */
+        put: operations["update_template_api_v1_admin_notification_templates__template_id__put"];
+        post?: never;
+        /** Delete Template */
+        delete: operations["delete_template_api_v1_admin_notification_templates__template_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Announcements */
+        get: operations["list_announcements_api_v1_admin_notifications_get"];
+        put?: never;
+        /** Create Announcement */
+        post: operations["create_announcement_api_v1_admin_notifications_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/audience-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Unsaved Audience */
+        post: operations["preview_unsaved_audience_api_v1_admin_notifications_audience_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/content-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Content
+         * @description Render an unsaved announcement without persisting messages or recipients.
+         */
+        post: operations["preview_content_api_v1_admin_notifications_content_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/action-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Action Targets */
+        get: operations["list_action_targets_api_v1_admin_notifications_action_targets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/action-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Action */
+        post: operations["preview_action_api_v1_admin_notifications_action_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/banner-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check Banner */
+        post: operations["check_banner_api_v1_admin_notifications_banner_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{message_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Announcement */
+        get: operations["get_announcement_api_v1_admin_notifications__message_id__get"];
+        /** Update Announcement */
+        put: operations["update_announcement_api_v1_admin_notifications__message_id__put"];
+        post?: never;
+        /** Delete Announcement */
+        delete: operations["delete_announcement_api_v1_admin_notifications__message_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{message_id}/audience-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Audience */
+        post: operations["preview_audience_api_v1_admin_notifications__message_id__audience_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{message_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Announcement */
+        post: operations["publish_announcement_api_v1_admin_notifications__message_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{message_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Announcement */
+        post: operations["cancel_announcement_api_v1_admin_notifications__message_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{message_id}/recall": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recall Announcement */
+        post: operations["recall_announcement_api_v1_admin_notifications__message_id__recall_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notification-deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Deliveries */
+        get: operations["list_deliveries_api_v1_admin_notification_deliveries_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notification-deliveries/{message_id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delivery Summary */
+        get: operations["delivery_summary_api_v1_admin_notification_deliveries__message_id__summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notification-deliveries/{message_id}/retry-failed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Failed */
+        post: operations["retry_failed_api_v1_admin_notification_deliveries__message_id__retry_failed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Preferences
+         * @description List effective built-in preferences for the current user.
+         */
+        get: operations["list_preferences_api_v1_notification_preferences_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notification-preferences/{category}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Preference
+         * @description Upsert one preference owned by the current user.
+         */
+        put: operations["update_preference_api_v1_notification_preferences__category__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/stats/operations-overview": {
         parameters: {
             query?: never;
@@ -2210,14 +2315,63 @@ export interface components {
     schemas: {
         /** ActionIn */
         ActionIn: {
+            /** Type */
+            type?: ("menu" | "external") | null;
+            /** Menuid */
+            menuId?: string | null;
             /** Route */
-            route: string;
+            route?: string | null;
             /** Params */
             params?: {
                 [key: string]: unknown;
             };
+            /** Query */
+            query?: {
+                [key: string]: unknown;
+            };
+            /** Url */
+            url?: string | null;
+            /** Path */
+            path?: string | null;
             /** Label */
             label?: string | null;
+            localizedLabel?: components["schemas"]["LocalizedActionLabel"] | null;
+        };
+        /** ActionParameter */
+        ActionParameter: {
+            /** Name */
+            name: string;
+            /**
+             * Location
+             * @enum {string}
+             */
+            location: "path" | "query";
+            /** Required */
+            required: boolean;
+            /** Defaultvalue */
+            defaultValue?: string | null;
+            /** Descriptionkey */
+            descriptionKey?: string | null;
+            /** Example */
+            example?: string | null;
+        };
+        /** ActionTarget */
+        ActionTarget: {
+            /**
+             * Menuid
+             * Format: uuid
+             */
+            menuId: string;
+            /** Label */
+            label: string;
+            /** Breadcrumb */
+            breadcrumb: string[];
+            /** Route */
+            route: string;
+            /** Path */
+            path: string;
+            /** Parameters */
+            parameters?: components["schemas"]["ActionParameter"][];
         };
         /**
          * ActiveMenuOption
@@ -2353,6 +2507,26 @@ export interface components {
         /** AnnouncementCreateRequest */
         AnnouncementCreateRequest: {
             /**
+             * Displaymode
+             * @default inbox
+             * @enum {string}
+             */
+            displayMode: "inbox" | "top_banner";
+            /** Clientrequestid */
+            clientRequestId?: string | null;
+            /** Bannerrevision */
+            bannerRevision?: number | null;
+            /**
+             * Replacecurrent
+             * @default false
+             */
+            replaceCurrent: boolean;
+            /**
+             * Replacescheduled
+             * @default false
+             */
+            replaceScheduled: boolean;
+            /**
              * Category
              * @default admin.announcement
              */
@@ -2369,12 +2543,17 @@ export interface components {
             templateVariables?: {
                 [key: string]: unknown;
             };
+            /** Variablebindings */
+            variableBindings?: {
+                [key: string]: components["schemas"]["RecipientVariableBinding"];
+            };
             /** I18Nkey */
             i18NKey?: string | null;
             /** I18Nparams */
             i18NParams?: {
                 [key: string]: unknown;
             };
+            localizedContent?: components["schemas"]["LocalizedContent"] | null;
             /** Rawtitle */
             rawTitle?: string | null;
             /** Rawcontent */
@@ -2386,7 +2565,7 @@ export interface components {
              */
             rawFormat: "plain_text" | "markdown";
             /** Audience */
-            audience: components["schemas"]["AudienceRuleIn"][];
+            audience?: components["schemas"]["AudienceRuleIn"][];
             /**
              * Mandatory
              * @default false
@@ -2399,6 +2578,11 @@ export interface components {
             publishAt?: string | null;
             /** Expireat */
             expireAt?: string | null;
+            /**
+             * Saveasdraft
+             * @default false
+             */
+            saveAsDraft: boolean;
         };
         /**
          * ApiDistributionItem
@@ -2686,6 +2870,76 @@ export interface components {
          * @enum {string}
          */
         AuditSource: "http" | "domain_event" | "system";
+        /** BannerCheckRequest */
+        BannerCheckRequest: {
+            /** Publishat */
+            publishAt?: string | null;
+            /** Expireat */
+            expireAt?: string | null;
+            /** Messageid */
+            messageId?: string | null;
+        };
+        /** BannerCheckResponse */
+        BannerCheckResponse: {
+            /** Revision */
+            revision: number;
+            /** Servernow */
+            serverNow: string;
+            current?: components["schemas"]["BannerSummary"] | null;
+            scheduled?: components["schemas"]["BannerSummary"] | null;
+        };
+        /** BannerPublishRequest */
+        BannerPublishRequest: {
+            /** Bannerrevision */
+            bannerRevision?: number | null;
+            /**
+             * Replacecurrent
+             * @default false
+             */
+            replaceCurrent: boolean;
+            /**
+             * Replacescheduled
+             * @default false
+             */
+            replaceScheduled: boolean;
+        };
+        /** BannerSummary */
+        BannerSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "info" | "success" | "warning" | "error";
+            /** Contentmode */
+            contentMode: string;
+            /** Contentparams */
+            contentParams?: {
+                [key: string]: unknown;
+            } | null;
+            /** Content */
+            content: string;
+            /** Contentformat */
+            contentFormat?: string | null;
+            /** Action */
+            action?: {
+                [key: string]: unknown;
+            } | null;
+            /** Publishat */
+            publishAt?: string | null;
+            /** Publishedat */
+            publishedAt?: string | null;
+            /** Expireat */
+            expireAt?: string | null;
+            /** Status */
+            status: string;
+        };
         /**
          * BusinessSummary
          * @description 业务数据汇总。
@@ -2718,6 +2972,41 @@ export interface components {
             oldPassword?: string | null;
             /** Newpassword */
             newPassword: string;
+        };
+        /** ContentPreviewRequest */
+        ContentPreviewRequest: {
+            /** Templatecode */
+            templateCode: string;
+            /** Templatevariables */
+            templateVariables?: {
+                [key: string]: unknown;
+            };
+            /** Variablebindings */
+            variableBindings?: {
+                [key: string]: components["schemas"]["RecipientVariableBinding"];
+            };
+            /** Audience */
+            audience: components["schemas"]["AudienceRuleIn"][];
+            /** Previewuserid */
+            previewUserId?: string | null;
+        };
+        /** ContentPreviewResponse */
+        ContentPreviewResponse: {
+            /**
+             * Contentmode
+             * @enum {string}
+             */
+            contentMode: "i18n" | "raw";
+            /** Title */
+            title: string;
+            /** Content */
+            content: string;
+            /** Contentparams */
+            contentParams?: {
+                [key: string]: unknown;
+            } | null;
+            /** Contentformat */
+            contentFormat?: ("plain_text" | "markdown") | null;
         };
         /** CrontabDefinition */
         CrontabDefinition: {
@@ -2945,6 +3234,63 @@ export interface components {
             /** Source */
             source?: string | null;
         };
+        /** DeliveryMessageResponse */
+        DeliveryMessageResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Category */
+            category: string;
+            /** Contentmode */
+            contentMode: string;
+            /** Titleparams */
+            titleParams?: {
+                [key: string]: unknown;
+            } | null;
+            /** Titles */
+            titles?: {
+                [key: string]: string;
+            };
+            /** Defaultlocale */
+            defaultLocale?: string | null;
+            status: components["schemas"]["MessageStatus"];
+            /** Publishedat */
+            publishedAt?: string | null;
+            /** Expireat */
+            expireAt?: string | null;
+            /** Createtime */
+            createTime: string;
+        };
+        /** DeliveryRecipientResponse */
+        DeliveryRecipientResponse: {
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Username
+             * @default
+             */
+            username: string;
+            /** Avatar */
+            avatar?: string | null;
+            /**
+             * Department
+             * @default
+             */
+            department: string;
+            /**
+             * State
+             * @default deleted
+             * @enum {string}
+             */
+            state: "active" | "disabled" | "pending" | "deleted";
+        };
         /** DeliveryResponse */
         DeliveryResponse: {
             /**
@@ -2988,6 +3334,8 @@ export interface components {
             lockedUntil?: string | null;
             /** Sentat */
             sentAt?: string | null;
+            recipient?: components["schemas"]["DeliveryRecipientResponse"];
+            message?: components["schemas"]["DeliveryMessageResponse"] | null;
         };
         /** DeliverySummaryResponse */
         DeliverySummaryResponse: {
@@ -3000,6 +3348,7 @@ export interface components {
             byStatus?: {
                 [key: string]: number;
             };
+            message?: components["schemas"]["DeliveryMessageResponse"] | null;
         };
         /**
          * DepartmentCreate
@@ -3338,6 +3687,56 @@ export interface components {
         InviteValidateResponse: {
             /** Valid */
             valid: boolean;
+        };
+        /**
+         * LocalizedActionLabel
+         * @description Author-provided button names, independent of the shared navigation target.
+         */
+        LocalizedActionLabel: {
+            /**
+             * Defaultlocale
+             * @enum {string}
+             */
+            defaultLocale: "zh-CN" | "en-US";
+            /** Translations */
+            translations: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * LocalizedContent
+         * @description Portable language envelope stored intact in existing notification JSON.
+         */
+        LocalizedContent: {
+            /**
+             * Defaultlocale
+             * @enum {string}
+             */
+            defaultLocale: "zh-CN" | "en-US";
+            /** Translations */
+            translations: {
+                [key: string]: components["schemas"]["LocalizedTranslation"];
+            };
+            /** Parameters */
+            parameters?: {
+                [key: string]: string | number | boolean;
+            };
+        };
+        /**
+         * LocalizedTranslation
+         * @description One author-provided language; an optional language may be entirely blank.
+         */
+        LocalizedTranslation: {
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
         };
         /**
          * LoginRequest
@@ -3898,6 +4297,16 @@ export interface components {
              * @example 2024-07-31 16:07:34
              */
             updateTime: string;
+            /**
+             * Displaymode
+             * @default inbox
+             * @enum {string}
+             */
+            displayMode: "inbox" | "top_banner";
+            /** Supersededat */
+            supersededAt?: string | null;
+            /** Supersededbyid */
+            supersededById?: string | null;
             /** Source */
             source: string;
             /** Category */
@@ -3926,6 +4335,10 @@ export interface components {
             recalledAt?: string | null;
             /** Cancelledat */
             cancelledAt?: string | null;
+            /** Variablebindings */
+            variableBindings?: {
+                [key: string]: components["schemas"]["RecipientVariableBinding"];
+            };
             /** Contentparams */
             contentParams?: {
                 [key: string]: unknown;
@@ -3966,6 +4379,16 @@ export interface components {
              * @example 2024-07-31 16:07:34
              */
             updateTime: string;
+            /**
+             * Displaymode
+             * @default inbox
+             * @enum {string}
+             */
+            displayMode: "inbox" | "top_banner";
+            /** Supersededat */
+            supersededAt?: string | null;
+            /** Supersededbyid */
+            supersededById?: string | null;
             /** Source */
             source: string;
             /** Category */
@@ -3999,7 +4422,7 @@ export interface components {
          * MessageStatus
          * @enum {string}
          */
-        MessageStatus: "draft" | "scheduled" | "publishing" | "published" | "expired" | "cancelled" | "recalled";
+        MessageStatus: "draft" | "scheduled" | "publishing" | "published" | "expired" | "cancelled" | "recalled" | "superseded";
         /**
          * MultiResourceStats
          * @description 多实例资源统计汇总。
@@ -4917,12 +5340,44 @@ export interface components {
             queue: string;
         };
         /**
+         * RecipientVariableBinding
+         * @description A supported public recipient field, never an expression.
+         */
+        RecipientVariableBinding: {
+            /**
+             * Source
+             * @constant
+             */
+            source: "recipient";
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "name" | "email" | "roles" | "department";
+        };
+        /**
          * RegisteredTaskResponse
          * @description 已注册任务列表响应数据结构。
          */
         RegisteredTaskResponse: {
             /** Tasks */
             tasks: string[];
+        };
+        /** Response[ActionIn] */
+        Response_ActionIn_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["ActionIn"] | null;
         };
         /** Response[AggregatedHealth] */
         Response_AggregatedHealth_: {
@@ -4972,6 +5427,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["AudiencePreviewResponse"] | null;
         };
+        /** Response[BannerCheckResponse] */
+        Response_BannerCheckResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["BannerCheckResponse"] | null;
+        };
         /** Response[BusinessSummary] */
         Response_BusinessSummary_: {
             /**
@@ -4987,6 +5458,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["BusinessSummary"] | null;
+        };
+        /** Response[ContentPreviewResponse] */
+        Response_ContentPreviewResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["ContentPreviewResponse"] | null;
         };
         /** Response[CrontabPreviewResponse] */
         Response_CrontabPreviewResponse_: {
@@ -5807,6 +6294,22 @@ export interface components {
             /** @description 响应数据。 */
             data?: components["schemas"]["TokenResponse"] | null;
         };
+        /** Response[TopBannerResponse] */
+        Response_TopBannerResponse_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["TopBannerResponse"] | null;
+        };
         /** Response[TriggerTaskResponse] */
         Response_TriggerTaskResponse_: {
             /**
@@ -6027,6 +6530,25 @@ export interface components {
             data?: {
                 [key: string]: string;
             } | null;
+        };
+        /** Response[list[ActionTarget]] */
+        Response_list_ActionTarget__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["ActionTarget"][] | null;
         };
         /** Response[list[ActiveMenuOption]] */
         Response_list_ActiveMenuOption__: {
@@ -7261,6 +7783,16 @@ export interface components {
             accessToken: string;
             /** Refreshtoken */
             refreshToken: string;
+        };
+        /** TopBannerResponse */
+        TopBannerResponse: {
+            current?: components["schemas"]["BannerSummary"] | null;
+            /** Revision */
+            revision: number;
+            /** Servernow */
+            serverNow: string;
+            /** Nextchangeat */
+            nextChangeAt?: string | null;
         };
         /**
          * TriggerTaskRequest
@@ -9583,821 +10115,6 @@ export interface operations {
             };
         };
     };
-    list_notifications_api_v1_notifications_get: {
-        parameters: {
-            query?: {
-                cursor?: string | null;
-                size?: number;
-                unreadOnly?: boolean;
-                archived?: "active" | "archived" | "all";
-                category?: string | null;
-                level?: ("info" | "success" | "warning" | "error") | null;
-                createdFrom?: string | null;
-                createdTo?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_InboxPage_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_unread_count_api_v1_notifications_unread_count_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_UnreadCount_"];
-                };
-            };
-        };
-    };
-    mark_all_read_api_v1_notifications_read_all_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_NoneType_"];
-                };
-            };
-        };
-    };
-    get_notification_api_v1_notifications__notification_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                notification_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_NotificationItem_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_notification_api_v1_notifications__notification_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                notification_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_NoneType_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    mark_read_api_v1_notifications__notification_id__read_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                notification_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_NoneType_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    archive_notification_api_v1_notifications__notification_id__archive_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                notification_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_NoneType_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_templates_api_v1_admin_notification_templates_get: {
-        parameters: {
-            query?: {
-                /** @description 当前页码。 */
-                page?: number;
-                /** @description 每页条数。 */
-                pageSize?: number;
-                keyword?: string | null;
-                enabled?: boolean | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_TemplateResponse__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_template_api_v1_admin_notification_templates_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TemplateCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_TemplateResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_template_api_v1_admin_notification_templates__template_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_TemplateResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_template_api_v1_admin_notification_templates__template_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TemplateUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_TemplateResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_template_api_v1_admin_notification_templates__template_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_NoneType_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_announcements_api_v1_admin_notifications_get: {
-        parameters: {
-            query?: {
-                /** @description 当前页码。 */
-                page?: number;
-                /** @description 每页条数。 */
-                pageSize?: number;
-                status?: components["schemas"]["MessageStatus"] | null;
-                category?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_MessageAdminResponse__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_announcement_api_v1_admin_notifications_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnnouncementCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_dict_str__str__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_announcement_api_v1_admin_notifications__message_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                message_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_MessageAdminDetailResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_announcement_api_v1_admin_notifications__message_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                message_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnnouncementCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_MessageAdminDetailResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_announcement_api_v1_admin_notifications__message_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                message_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_NoneType_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    preview_audience_api_v1_admin_notifications__message_id__audience_preview_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                message_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AudiencePreviewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_AudiencePreviewResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    publish_announcement_api_v1_admin_notifications__message_id__publish_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                message_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_dict_str__int__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    cancel_announcement_api_v1_admin_notifications__message_id__cancel_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                message_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_NoneType_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    recall_announcement_api_v1_admin_notifications__message_id__recall_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                message_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_NoneType_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_deliveries_api_v1_admin_notification_deliveries_get: {
-        parameters: {
-            query?: {
-                /** @description 当前页码。 */
-                page?: number;
-                /** @description 每页条数。 */
-                pageSize?: number;
-                messageId?: string | null;
-                status?: components["schemas"]["OutboxStatus"] | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PaginatedResponse_DeliveryResponse__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delivery_summary_api_v1_admin_notification_deliveries__message_id__summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                message_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_DeliverySummaryResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    retry_failed_api_v1_admin_notification_deliveries__message_id__retry_failed_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                message_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_dict_str__int__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_preferences_api_v1_notification_preferences_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_PreferenceItemResponse__"];
-                };
-            };
-        };
-    };
-    update_preference_api_v1_notification_preferences__category__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                category: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PreferenceUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PreferenceItemResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_public_key_api_v1_auth_keys_public_get: {
         parameters: {
             query?: never;
@@ -11691,6 +11408,998 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notifications_api_v1_notifications_get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                size?: number;
+                unreadOnly?: boolean;
+                archived?: "active" | "archived" | "all";
+                category?: string | null;
+                level?: ("info" | "success" | "warning" | "error") | null;
+                createdFrom?: string | null;
+                createdTo?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_InboxPage_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_unread_count_api_v1_notifications_unread_count_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_UnreadCount_"];
+                };
+            };
+        };
+    };
+    mark_all_read_api_v1_notifications_read_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+        };
+    };
+    get_top_banner_api_v1_notifications_top_banner_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_TopBannerResponse_"];
+                };
+            };
+        };
+    };
+    get_notification_api_v1_notifications__notification_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NotificationItem_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_notification_api_v1_notifications__notification_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_read_api_v1_notifications__notification_id__read_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_notification_api_v1_notifications__notification_id__archive_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_templates_api_v1_admin_notification_templates_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                keyword?: string | null;
+                enabled?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_TemplateResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_template_api_v1_admin_notification_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_TemplateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_template_api_v1_admin_notification_templates__template_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_TemplateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_template_api_v1_admin_notification_templates__template_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_TemplateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_template_api_v1_admin_notification_templates__template_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_announcements_api_v1_admin_notifications_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                displayMode?: ("inbox" | "top_banner") | null;
+                status?: components["schemas"]["MessageStatus"] | null;
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_MessageAdminResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_announcement_api_v1_admin_notifications_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_dict_str__str__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_unsaved_audience_api_v1_admin_notifications_audience_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudiencePreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_AudiencePreviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_content_api_v1_admin_notifications_content_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_ContentPreviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_action_targets_api_v1_admin_notifications_action_targets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_ActionTarget__"];
+                };
+            };
+        };
+    };
+    preview_action_api_v1_admin_notifications_action_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_ActionIn_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_banner_api_v1_admin_notifications_banner_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BannerCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_BannerCheckResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_announcement_api_v1_admin_notifications__message_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_MessageAdminDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_announcement_api_v1_admin_notifications__message_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_MessageAdminDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_announcement_api_v1_admin_notifications__message_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_audience_api_v1_admin_notifications__message_id__audience_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudiencePreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_AudiencePreviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_announcement_api_v1_admin_notifications__message_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["BannerPublishRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_dict_str__int__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_announcement_api_v1_admin_notifications__message_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recall_announcement_api_v1_admin_notifications__message_id__recall_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_deliveries_api_v1_admin_notification_deliveries_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                messageId?: string | null;
+                status?: components["schemas"]["OutboxStatus"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_DeliveryResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delivery_summary_api_v1_admin_notification_deliveries__message_id__summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_DeliverySummaryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_failed_api_v1_admin_notification_deliveries__message_id__retry_failed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_dict_str__int__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_preferences_api_v1_notification_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_PreferenceItemResponse__"];
+                };
+            };
+        };
+    };
+    update_preference_api_v1_notification_preferences__category__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferenceUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PreferenceItemResponse_"];
                 };
             };
             /** @description Validation Error */

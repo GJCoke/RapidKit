@@ -4,74 +4,72 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rapidkit-backend"
-authors = [
-    { name = "Coke", email = "jock74608@gmail.com" }
-]
+authors = [{ name = "Coke", email = "jock74608@gmail.com" }]
 description = "Async-FastAPI-MultiDB is an asynchronous FastAPI template project designed to seamlessly integrate both SQL (e.g., PostgreSQL, MySQL) and NoSQL (e.g., MongoDB) databases. This template offers a modern and efficient web framework solution supporting asynchronous request handling, making it ideal for building scalable API services."
 requires-python = ">= 3.14"
 version = "0.1.0"
 dependencies = [
-    # Core & Common packages
-    "rapidkit-core",
-    "rapidkit-common",
-    # Plugins
-    "rapidkit-plugin-script",
-    "rapidkit-plugin-monitoring",
-    "rapidkit-plugin-system",
-    "rapidkit-plugin-worker",
-    "rapidkit-plugin-schedule",
-    "rapidkit-plugin-menu",
-    "rapidkit-plugin-department",
-    "rapidkit-plugin-permission",
-    "rapidkit-plugin-auth",
-    "rapidkit-plugin-user",
-    "rapidkit-plugin-notification",
-    # Server
-    "fastapi>=0.135.3,<1.0",
-    "uvicorn>=0.44.0,<1.0",
-    "greenlet>=3.3.2,<4.0",
-    # In FastAPI, if you want to use Form or File to receive form data or file uploads, you must install the python-multipart dependency.
-    "python-multipart>=0.0.24,<0.1",
-    # Security
-    "rapidkit-security",
-    # Python Type
-    "pydantic-settings>=2.13.1,<3.0",
-    "pydantic[email]>=2.12.4,<3.0",
-    "sqlmodel>=0.0.38,<0.1",
-    # Socket
-    "python-socketio>=5.14.3,<6.0",
-    "websocket-client>=1.9.0,<2.0",
-    # Database
-    "redis>=7.4.0,<8.0",
-    # In theory, psycopg alone is sufficient to handle both synchronous and asynchronous connections.
-    # However, asyncpg typically offers better performance in asynchronous scenarios.
-    "asyncpg>=0.30.0,<1.0",
-    "psycopg[binary,pool]>=3.3.3,<4.0",
-    "alembic>=1.18.4,<2.0",
-    "minio>=7.2.18,<8.0",
-    # Celery
-    "celery>=5.6.3,<6.0",
-    "babel>=2.18.0,<3.0",
-    "watchfiles>=1.1.1,<2.0",
-    "starlette-context>=0.5.1,<1.0",
-    "user-agents>=2.2.0,<3.0",
-    "nanoid>=2.0.0",
-    "loguru>=0.7.3",
-    "slowapi>=0.1.9",
-    "fastapi-sio-di>=0.5.3",
-    "psutil>=7.0.0,<8.0",
+  # Core & Common packages
+  "rapidkit-core",
+  "rapidkit-common",
+  # Plugins
+  "rapidkit-plugin-script",
+  "rapidkit-plugin-monitoring",
+  "rapidkit-plugin-system",
+  "rapidkit-plugin-worker",
+  "rapidkit-plugin-schedule",
+  "rapidkit-plugin-menu",
+  "rapidkit-plugin-department",
+  "rapidkit-plugin-permission",
+  "rapidkit-plugin-auth",
+  "rapidkit-plugin-user",
+  "rapidkit-plugin-notification",
+  # Server
+  "fastapi>=0.135.3,<1.0",
+  "uvicorn>=0.44.0,<1.0",
+  "greenlet>=3.3.2,<4.0",
+  # In FastAPI, if you want to use Form or File to receive form data or file uploads, you must install the python-multipart dependency.
+  "python-multipart>=0.0.24,<0.1",
+  # Security
+  "rapidkit-security",
+  # Python Type
+  "pydantic-settings>=2.13.1,<3.0",
+  "pydantic[email]>=2.12.4,<3.0",
+  "sqlmodel>=0.0.38,<0.1",
+  # Socket
+  "python-socketio>=5.14.3,<6.0",
+  "websocket-client>=1.9.0,<2.0",
+  # Database
+  "redis>=7.4.0,<8.0",
+  # In theory, psycopg alone is sufficient to handle both synchronous and asynchronous connections.
+  # However, asyncpg typically offers better performance in asynchronous scenarios.
+  "asyncpg>=0.30.0,<1.0",
+  "psycopg[binary,pool]>=3.3.3,<4.0",
+  "alembic>=1.18.4,<2.0",
+  "minio>=7.2.18,<8.0",
+  # Celery
+  "celery>=5.6.3,<6.0",
+  "babel>=2.18.0,<3.0",
+  "watchfiles>=1.1.1,<2.0",
+  "starlette-context>=0.5.1,<1.0",
+  "user-agents>=2.2.0,<3.0",
+  "nanoid>=2.0.0",
+  "loguru>=0.7.3",
+  "slowapi>=0.1.9",
+  "fastapi-sio-di>=0.5.3",
+  "psutil>=7.0.0,<8.0",
 ]
 
 [dependency-groups]
 dev = [
-    "ruff>=0.15.9",
-    "pytest>=9.0.1,<10.0",
-    "pytest-asyncio>=1.3.0,<2.0",
-    "coverage>=7.13.5,<8.0",
-    "aiosqlite>=0.22.1,<1.0",
-    "httpx>=0.28.1,<1.0",
-    "asgi-lifespan>=2.1.0,<3.0",
-    "ty>=0.0.29",
+  "ruff>=0.15.9",
+  "pytest>=9.0.1,<10.0",
+  "pytest-asyncio>=1.3.0,<2.0",
+  "coverage>=7.13.5,<8.0",
+  "aiosqlite>=0.22.1,<1.0",
+  "httpx>=0.28.1,<1.0",
+  "asgi-lifespan>=2.1.0,<3.0",
+  "ty>=0.0.29",
 ]
 
 [tool.uv.sources]
@@ -100,6 +98,6 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
-    "ignore:The application is currently running in the local environment.*:RuntimeWarning",
-    "ignore::pydantic.warnings.PydanticDeprecatedSince211"
+  "ignore:The application is currently running in the local environment.*:RuntimeWarning",
+  "ignore::pydantic.warnings.PydanticDeprecatedSince211",
 ]

@@ -19,15 +19,14 @@ def test_register_wires_notification_runtime_integrations():
     manifest = register()
 
     assert manifest.router is not None
-    assert len(manifest.models) == 6
-    assert manifest.dependencies == ["user"]
+    assert len(manifest.models) == 7
+    assert manifest.dependencies == ["user", "menu"]
     permission_codes = {permission.code for permission in manifest.permissions}
     assert "GET:/api/v1/notifications" in permission_codes
     preference_route_codes = {
         f"{method}:/api/v1{route.path}"
         for route in manifest.router.routes
-        if isinstance(route, APIRoute)
-        and route.path.startswith("/notification-preferences")
+        if isinstance(route, APIRoute) and route.path.startswith("/notification-preferences")
         for method in route.methods
     }
     assert preference_route_codes == {
@@ -41,6 +40,7 @@ def test_register_wires_notification_runtime_integrations():
         if isinstance(route, APIRoute) and route.path.startswith("/admin/")
         for method in route.methods
     }
+    assert "POST:/api/v1/admin/notifications/audience-preview" in admin_route_codes
     assert admin_route_codes <= permission_codes
     assert manifest.provides == [Notifier, AdminNotifier]
     assert manifest.task_modules == ["plugin_notification.tasks"]
@@ -58,6 +58,7 @@ def test_register_includes_notification_template_model():
     model_names = [model.__name__ for model in manifest.models]
     assert model_names == [
         "NotificationMessage",
+        "NotificationBannerState",
         "NotificationAudience",
         "UserNotification",
         "NotificationOutbox",

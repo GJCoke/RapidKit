@@ -11,6 +11,7 @@ class MessageStatus(str, Enum):
     EXPIRED = "expired"
     CANCELLED = "cancelled"
     RECALLED = "recalled"
+    SUPERSEDED = "superseded"
 
 
 class OutboxStatus(str, Enum):

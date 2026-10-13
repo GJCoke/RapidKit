@@ -1,6 +1,4 @@
 <script setup lang="ts">
-  import { toRaw } from "vue"
-  import { jsonClone } from "@rapidkit/utils"
   import { useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
 
@@ -9,7 +7,6 @@
   const emit = defineEmits<{ search: [] }>()
   const model = defineModel<Api.Notification.AnnouncementListQuery>("model", { required: true })
   const { formRef, restoreValidation } = useNaiveForm()
-  const defaultModel = jsonClone(toRaw(model.value))
 
   const statusOptions: Array<{ label: string; value: Api.Notification.AnnouncementItem["status"] }> = [
     "draft",
@@ -19,6 +16,7 @@
     "expired",
     "cancelled",
     "recalled",
+    "superseded",
   ].map((status) => ({
     label: $t(`page.notification.manage.announcements.statusOptions.${status}` as I18nFullKey),
     value: status as Api.Notification.AnnouncementItem["status"],
@@ -26,15 +24,16 @@
 
   async function reset() {
     await restoreValidation()
-    Object.assign(model.value, defaultModel)
+    Object.assign(model.value, { category: undefined, status: undefined, displayMode: undefined })
+    emit("search")
   }
 </script>
 
 <template>
   <NCard :bordered="false" size="small" class="card-wrapper">
-    <NCollapse>
+    <NCollapse :default-expanded-names="['announcement-search']">
       <NCollapseItem :title="$t('common.search')" name="announcement-search">
-        <NForm ref="formRef" :model="model" label-placement="left" :label-width="90">
+        <NForm ref="formRef" :model="model" label-placement="left" :label-width="90" @submit.prevent="emit('search')">
           <NGrid responsive="screen" item-responsive>
             <NFormItemGi
               span="24 s:12 m:8"
@@ -43,7 +42,8 @@
               class="pr-24px"
             >
               <NInput
-                v-model:value="model.category"
+                :value="model.category ?? ''"
+                @update:value="model.category = $event || undefined"
                 clearable
                 :placeholder="$t('page.notification.manage.announcements.categoryPlaceholder' as I18nFullKey)"
               />
@@ -54,9 +54,30 @@
               path="status"
               class="pr-24px"
             >
-              <NSelect v-model:value="model.status" clearable :options="statusOptions" />
+              <NSelect
+                :value="model.status ?? null"
+                clearable
+                :options="statusOptions"
+                @update:value="model.status = $event ?? undefined"
+              />
             </NFormItemGi>
-            <NFormItemGi span="24 m:8" class="pr-24px">
+            <NFormItemGi
+              span="24 s:12 m:8"
+              :label="$t('page.notification.banner.displayMode' as I18nFullKey)"
+              path="displayMode"
+              class="pr-24px"
+            >
+              <NSelect
+                :value="model.displayMode ?? null"
+                @update:value="model.displayMode = $event ?? undefined"
+                clearable
+                :options="[
+                  { label: $t('page.notification.manage.announcements.editor.inApp' as I18nFullKey), value: 'inbox' },
+                  { label: $t('page.notification.banner.topBanner' as I18nFullKey), value: 'top_banner' },
+                ]"
+              />
+            </NFormItemGi>
+            <NFormItemGi span="24" class="pr-24px">
               <NSpace class="w-full" justify="end">
                 <NButton @click="reset">
                   <template #icon><icon-ic-round-refresh class="text-icon" /></template>

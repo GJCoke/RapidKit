@@ -48,7 +48,7 @@ def test_command_i18n_mode_defaults_to_in_app_channel():
         level="info",
         i18n_key="notification.user.invited",
         i18n_params={"username": "alice"},
-        audience=[AudienceRule(type="user", value="018f-user-uuid")],
+        audience=[AudienceRule(type="user", value="018f0000-0000-7000-8000-000000000001")],
         action=NotificationAction(route="user-detail", params={"id": "018f-user-uuid"}),
     )
 

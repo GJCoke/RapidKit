@@ -68,15 +68,24 @@ test("navigateToMenuItem opens external links safely without internal navigation
 })
 
 test("collapsed menu delegates focus restoration to Base UI", async () => {
-  const source = await readFile(new URL("../../../../src/features/layout/components/sidebar/sidebar-menu-group.tsx", import.meta.url), "utf8")
+  const source = await readFile(
+    new URL("../../../../src/features/layout/components/sidebar/sidebar-menu-group.tsx", import.meta.url),
+    "utf8",
+  )
 
   assert.match(source, /finalFocus=\{popoverTriggerRef\}/)
   assert.doesNotMatch(source, /onCloseAutoFocus|asChild/)
 })
 
 test("sidebar collapse keeps one stable menu tree", async () => {
-  const groupSource = await readFile(new URL("../../../../src/features/layout/components/sidebar/sidebar-menu-group.tsx", import.meta.url), "utf8")
-  const leafSource = await readFile(new URL("../../../../src/features/layout/components/sidebar/sidebar-menu-leaf.tsx", import.meta.url), "utf8")
+  const groupSource = await readFile(
+    new URL("../../../../src/features/layout/components/sidebar/sidebar-menu-group.tsx", import.meta.url),
+    "utf8",
+  )
+  const leafSource = await readFile(
+    new URL("../../../../src/features/layout/components/sidebar/sidebar-menu-leaf.tsx", import.meta.url),
+    "utf8",
+  )
 
   assert.doesNotMatch(groupSource, /useState\(branchActive\)|resolveMenuGroupExpanded/)
   assert.match(leafSource, /<Tooltip disabled=\{!collapsed\}>/)

@@ -215,7 +215,7 @@ class TaskResultCRUD(BaseCRUD[CeleryTaskResult]):
             .group_by(col(self.model.task_name))
             .subquery()
         )
-        total = (await self.session.exec(sa_select(func.count()).select_from(grouped))).scalar_one()
+        total = (await self.session.execute(sa_select(func.count()).select_from(grouped))).scalar_one()
         sort_column = grouped.c[
             {"lastExecutedAt": "last_executed_at", "total": "total", "failure": "failure"}[query.sort_by]
         ]
@@ -225,7 +225,7 @@ class TaskResultCRUD(BaseCRUD[CeleryTaskResult]):
             .offset((query.page - 1) * query.page_size)
             .limit(query.page_size)
         )
-        rows = (await self.session.exec(statement)).mappings().all()
+        rows = (await self.session.execute(statement)).mappings().all()
         records = [
             TaskStatsByName(
                 **{key: value for key, value in row.items() if key != "avg_runtime"},

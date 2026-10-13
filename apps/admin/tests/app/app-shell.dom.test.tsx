@@ -181,7 +181,9 @@ test("searching an authorized multi-tab route then switching language synchroniz
   await user.click(screen.getByRole("button", { name: "搜索页面" }))
   await user.click(screen.getByRole("option", { name: "用户管理" }))
 
-  await waitFor(() => expect(within(screen.getByTestId("page-tabs-scroller")).getByText("用户管理")).toBeInTheDocument())
+  await waitFor(() =>
+    expect(within(screen.getByTestId("page-tabs-scroller")).getByText("用户管理")).toBeInTheDocument(),
+  )
   expect(useTabStore.getState().activeKey).toBe("route:manage_user:/manage/user")
   expect(useRouteCacheStore.getState().entries).toHaveProperty("route:manage_user:/manage/user")
 

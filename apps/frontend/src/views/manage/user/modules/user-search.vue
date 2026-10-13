@@ -38,12 +38,12 @@
 
 <template>
   <NCard :bordered="false" size="small" class="card-wrapper">
-    <NCollapse>
+    <NCollapse :default-expanded-names="['user-search']">
       <NCollapseItem :title="$t('common.search')" name="user-search">
         <NForm ref="formRef" :model="model" label-placement="left" :label-width="100">
           <NGrid responsive="screen" item-responsive>
-            <NFormItemGi span="24 s:12 m:6" label="Keyword" path="keyword" class="pr-24px">
-              <NInput v-model:value="model.keyword" placeholder="Search by name/username/email" />
+            <NFormItemGi span="24 s:12 m:6" :label="$t('page.manage.user.keyword')" path="keyword" class="pr-24px">
+              <NInput v-model:value="model.keyword" :placeholder="$t('page.manage.user.form.keyword')" />
             </NFormItemGi>
             <NFormItemGi span="24 s:12 m:6" :label="$t('page.manage.user.userStatus')" path="status" class="pr-24px">
               <NSelect

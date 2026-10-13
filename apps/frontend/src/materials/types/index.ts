@@ -157,6 +157,8 @@ export interface AdminLayoutProps
    *
    * - {@link LayoutMode}
    */
+  /** Persistent announcement slot visibility. */
+  bannerVisible?: boolean
   mode?: LayoutMode
   /** Is mobile layout */
   isMobile?: boolean

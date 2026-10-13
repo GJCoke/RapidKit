@@ -93,8 +93,8 @@ async def get_admin_contacts(
 ) -> Response[list[AdminContactResponse]]:
     """Return enabled super administrators without user-management fields."""
     users = await user_crud.get_all(
-        User.is_admin.is_(True),
-        User.status == Status.ON,
+        col(User.is_admin).is_(True),
+        col(User.status) == Status.ON,
     )
     contacts = [
         AdminContactResponse.model_validate(user) for user in sorted(users, key=lambda item: (item.name, item.id))

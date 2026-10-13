@@ -3,9 +3,7 @@ name = "rapidkit-policy-engine"
 version = "0.1.0"
 description = "Rule engine that resolves JSON policy trees into SQLAlchemy WHERE clauses"
 requires-python = ">=3.14"
-dependencies = [
-    "sqlmodel>=0.0.24",
-]
+dependencies = ["sqlmodel>=0.0.24"]
 
 [build-system]
 requires = ["hatchling"]

@@ -3,11 +3,7 @@ name = "rapidkit-plugin-notification"
 version = "0.1.0"
 description = "RapidKit 通用通知系统（站内渠道核心）"
 requires-python = ">=3.14"
-dependencies = [
-    "rapidkit-core",
-    "rapidkit-common",
-    "rapidkit-framework",
-]
+dependencies = ["rapidkit-core", "rapidkit-common", "rapidkit-framework"]
 
 [project.entry-points."rapidkit.plugins"]
 notification = "plugin_notification:register"

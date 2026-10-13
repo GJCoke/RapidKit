@@ -15,7 +15,7 @@ class Solar(solar):
     def next_event(self, after: datetime) -> datetime:
         after = self.maybe_make_aware(after).astimezone(UTC)
         self.cal.date = after
-        kwargs = {"start": after}
+        kwargs: dict[str, datetime | bool] = {"start": after}
         if self.use_center:
             kwargs["use_center"] = True
         date = getattr(self.cal, self.method)(self.ephem.Sun(), **kwargs)

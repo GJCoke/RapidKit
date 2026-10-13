@@ -6,7 +6,13 @@ const api = vi.hoisted(() => ({
   fetchGetNotifications: vi.fn(),
   fetchReadNotification: vi.fn(),
 }))
-const notificationStore = vi.hoisted(() => ({ refreshUnreadCount: vi.fn() }))
+const notificationStore = vi.hoisted(() => ({
+  refreshUnreadCount: vi.fn(),
+  normalizeMessages: (items: Api.Notification.Message[]) => items,
+  isRecalled: (item: Api.Notification.Message) => item.status === "recalled",
+  recalledMessageIds: new Set<string>(),
+  sessionEpoch: 0,
+}))
 
 vi.mock("@/service/api", () => api)
 vi.mock("@/store/modules/notification", () => ({ useNotificationStore: () => notificationStore }))

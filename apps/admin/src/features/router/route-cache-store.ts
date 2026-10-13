@@ -79,8 +79,7 @@ export const useRouteCacheStore = create<RouteCacheState>((set, get) => ({
           : state.entries,
       }
     }),
-  requestRefresh: (pendingRefreshKey) =>
-    set((state) => (state.pendingRefreshKey ? state : { pendingRefreshKey })),
+  requestRefresh: (pendingRefreshKey) => set((state) => (state.pendingRefreshKey ? state : { pendingRefreshKey })),
   completeRefresh: () => set({ pendingRefreshKey: null }),
   evict: (keys) =>
     set((state) => {

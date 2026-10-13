@@ -28,8 +28,14 @@ test("getTabChromeClasses exposes themed active and inactive Chrome states", () 
 })
 
 test("PageTabs delegates custom tab rendering and context menus without dropdown triggers", async () => {
-  const source = await readFile(new URL("../../../../src/features/layout/components/page-tabs.tsx", import.meta.url), "utf8")
-  const contextMenuSource = await readFile(new URL("../../../../src/features/layout/components/page-tab-context-menu.tsx", import.meta.url), "utf8")
+  const source = await readFile(
+    new URL("../../../../src/features/layout/components/page-tabs.tsx", import.meta.url),
+    "utf8",
+  )
+  const contextMenuSource = await readFile(
+    new URL("../../../../src/features/layout/components/page-tab-context-menu.tsx", import.meta.url),
+    "utf8",
+  )
 
   assert.match(source, /addLocation\(currentRoute, `\$\{pathname\}\$\{search\}`, \(key\) => t\(key\)\)/)
   assert.match(source, /resolveMenuIcon\(\{ icon: tab\.icon, localIcon: tab\.localIcon \}\)/)

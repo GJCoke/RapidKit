@@ -3,8 +3,14 @@
 import json
 import math
 import re
-from typing import Any
+import unicodedata
+from ipaddress import ip_address
+from typing import Any, NoReturn
+from urllib.parse import urlsplit
+from uuid import UUID
 
+from pydantic import ValidationError
+from rapidkit_common.protocols.notification import LocalizedActionLabel, LocalizedContent
 from rapidkit_framework.exceptions import AppException
 
 from plugin_notification.status_codes import NotificationStatusCode
@@ -31,7 +37,7 @@ ALLOWED_ACTION_ROUTES = frozenset(
 )
 
 
-def _invalid(status: NotificationStatusCode = NotificationStatusCode.INVALID_COMMAND) -> None:
+def _invalid(status: NotificationStatusCode = NotificationStatusCode.INVALID_COMMAND) -> NoReturn:
     raise AppException(status)
 
 
@@ -67,7 +73,7 @@ def validate_json_shape(value: Any) -> None:
     visit(value, 0)
     try:
         encoded = json.dumps(value, ensure_ascii=False, allow_nan=False).encode()
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         _invalid()
     if len(encoded) > MAX_JSON_BYTES:
         _invalid()
@@ -94,16 +100,90 @@ def validate_i18n_key(value: str) -> None:
         _invalid()
 
 
+def validate_localized_content(localized: LocalizedContent) -> tuple[str, str, dict]:
+    """Validate every authored and substituted locale before storing its envelope."""
+    envelope = localized.model_dump(mode="json", by_alias=True)
+    validate_json_shape(envelope)
+    rendered = {}
+    for locale, translation in localized.translations.items():
+        validate_content(translation.title, content_format="plain_text")
+        validate_content(translation.content, content_format="plain_text")
+        title, content = localized.render(locale)
+        if len(title) > 256:
+            _invalid()
+        validate_content(title, content_format="plain_text")
+        validate_content(content, content_format="plain_text")
+        rendered[locale] = (title, content)
+    title, content = rendered[localized.default_locale]
+    return title, content, envelope
+
+
+def validate_external_url(url: Any) -> None:
+    """Allow only credential-free HTTP(S) URLs with a valid host."""
+    if (
+        not isinstance(url, str)
+        or len(url) > 2048
+        or any(c.isspace() or unicodedata.category(c) == "Cc" for c in url)
+        or "\\" in url
+    ):
+        _invalid(NotificationStatusCode.INVALID_ACTION_ROUTE)
+    try:
+        parsed = urlsplit(url)
+        if (
+            parsed.scheme.lower() not in {"http", "https"}
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+        ):
+            _invalid(NotificationStatusCode.INVALID_ACTION_ROUTE)
+        host = parsed.hostname
+        _ = parsed.port
+        try:
+            ip_address(host)
+        except ValueError:
+            ascii_host = host.encode("idna").decode().rstrip(".")
+            if len(ascii_host) > 253 or any(
+                not re.fullmatch(r"[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?", label)
+                for label in ascii_host.split(".")
+            ):
+                _invalid(NotificationStatusCode.INVALID_ACTION_ROUTE)
+    except ValueError, UnicodeError:
+        _invalid(NotificationStatusCode.INVALID_ACTION_ROUTE)
+
+
 def validate_action(action: dict[str, Any] | None) -> None:
     if action is None:
         return
-    route = action.get("route")
-    if not isinstance(route, str) or not _ROUTE_RE.fullmatch(route) or route not in ALLOWED_ACTION_ROUTES:
-        _invalid(NotificationStatusCode.INVALID_ACTION_ROUTE)
-    params = action.get("params", {})
-    if not isinstance(params, dict):
+    if not isinstance(action, dict):
         _invalid()
-    for value in params.values():
-        if not isinstance(value, (str, bool, int, float)) or isinstance(value, float) and not math.isfinite(value):
+    action_type = action.get("type")
+    if action_type == "external":
+        validate_external_url(action.get("url"))
+    elif action_type == "menu":
+        try:
+            UUID(str(action.get("menu_id")))
+        except ValueError, TypeError:
+            _invalid(NotificationStatusCode.INVALID_ACTION_ROUTE)
+    elif action_type is None:
+        route = action.get("route")
+        if not isinstance(route, str) or not _ROUTE_RE.fullmatch(route) or route not in ALLOWED_ACTION_ROUTES:
+            _invalid(NotificationStatusCode.INVALID_ACTION_ROUTE)
+    else:
+        _invalid(NotificationStatusCode.INVALID_ACTION_ROUTE)
+    for field in ("params", "query"):
+        values = action.get(field, {})
+        if not isinstance(values, dict):
             _invalid()
-    validate_json_shape(params)
+        for value in values.values():
+            if not isinstance(value, (str, bool, int, float)) or isinstance(value, float) and not math.isfinite(value):
+                _invalid()
+        validate_json_shape(values)
+    label = action.get("label")
+    if label is not None and (not isinstance(label, str) or len(label) > 64):
+        _invalid()
+    localized_label = action.get("localized_label")
+    if localized_label is not None:
+        try:
+            LocalizedActionLabel.model_validate(localized_label)
+        except ValidationError:
+            _invalid()

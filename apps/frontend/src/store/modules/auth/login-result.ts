@@ -1,9 +1,6 @@
 export const LOGIN_COOLDOWN_CODE = "14010"
 
-export type LoginResult =
-  | { kind: "success" }
-  | { kind: "failure" }
-  | { kind: "cooldown"; retryAfterSeconds: number }
+export type LoginResult = { kind: "success" } | { kind: "failure" } | { kind: "cooldown"; retryAfterSeconds: number }
 
 type BackendErrorEnvelope = {
   code?: unknown

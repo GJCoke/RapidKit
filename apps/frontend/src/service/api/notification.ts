@@ -88,8 +88,32 @@ export function fetchPreviewAudience(messageId: string, audience: Api.Notificati
   })
 }
 
-export function fetchPublishAnnouncement(messageId: string) {
-  return request<{ recipientCount: number }>({ url: `/admin/notifications/${messageId}/publish`, method: "post" })
+/** Estimate an unsaved audience without persisting or scheduling an announcement. */
+export function fetchPreviewUnsavedAudience(data: Api.Notification.AudiencePreviewBody) {
+  return request<Api.Notification.UnsavedAudiencePreview>({
+    url: "/admin/notifications/audience-preview",
+    method: "post",
+    data,
+  })
+}
+
+export function fetchPublishAnnouncement(messageId: string, data?: Api.Notification.BannerConfirmation) {
+  return request<{ recipientCount: number }>({ url: `/admin/notifications/${messageId}/publish`, method: "post", data })
+}
+
+/** Render for one recipient without saving or sending the announcement. */
+export function fetchPreviewAnnouncementContent(data: Api.Notification.ContentPreviewBody) {
+  return request<Api.Notification.ContentPreview>({ url: "/admin/notifications/content-preview", method: "post", data })
+}
+
+/** Read authorized navigation targets without changing menus or notifications. */
+export function fetchGetAnnouncementActionTargets() {
+  return request<Api.Notification.ActionTargets>({ url: "/admin/notifications/action-targets", method: "get" })
+}
+
+/** Validate and resolve one unsaved action without opening or sending anything. */
+export function fetchPreviewAnnouncementAction(data: Api.Notification.ActionInput) {
+  return request<Api.Notification.ResolvedAction>({ url: "/admin/notifications/action-preview", method: "post", data })
 }
 
 export function fetchCancelAnnouncement(messageId: string) {
@@ -100,6 +124,10 @@ export function fetchRecallAnnouncement(messageId: string) {
   return request<null>({ url: `/admin/notifications/${messageId}/recall`, method: "post" })
 }
 
+export function fetchGetNotificationDeliveries(params: Api.Notification.DeliveryQuery) {
+  return request<Api.Notification.DeliveryPage>({ url: "/admin/notification-deliveries", method: "get", params })
+}
+
 export function fetchDeliverySummary(messageId: string) {
   return request<Api.Notification.DeliverySummary>({
     url: `/admin/notification-deliveries/${messageId}/summary`,
@@ -108,8 +136,17 @@ export function fetchDeliverySummary(messageId: string) {
 }
 
 export function fetchRetryFailedDeliveries(messageId: string) {
-  return request<{ retried: number }>({
+  return request<Api.Notification.DeliveryRetry>({
     url: `/admin/notification-deliveries/${messageId}/retry-failed`,
     method: "post",
   })
+}
+
+/** Global banner has no inbox or unread side effects. */
+export function fetchGetTopBanner() {
+  return request<Api.Notification.TopBanner>({ url: "/notifications/top-banner", method: "get" })
+}
+
+export function fetchCheckBanner(data: Api.Notification.BannerCheckBody = {}) {
+  return request<Api.Notification.BannerCheck>({ url: "/admin/notifications/banner-check", method: "post", data })
 }

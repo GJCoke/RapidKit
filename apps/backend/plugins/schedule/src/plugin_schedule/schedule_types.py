@@ -128,6 +128,8 @@ class SolarSchedule(BaseSchedule):
 class TaskType(Enum):
     """Celery 定时任务类型枚举。"""
 
+    _model_: type[BaseSchedule]
+
     INTERVAL = ("interval", IntervalSchedule)
     CRONTAB = ("crontab", CrontabSchedule)
     SOLAR = ("solar", SolarSchedule)

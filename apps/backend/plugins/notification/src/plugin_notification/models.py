@@ -4,7 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from rapidkit_common.models import SQLModel
-from sqlalchemy import JSON, Column, DateTime, UniqueConstraint
+from sqlalchemy import JSON, Column, DateTime, String, UniqueConstraint
 from sqlmodel import Field
 
 
@@ -16,6 +16,7 @@ class NotificationMessage(SQLModel, table=True):
 
     source: str = Field(max_length=64, index=True)
     category: str = Field(max_length=128, index=True)
+    display_mode: str = Field(default="inbox", sa_column=Column(String(16), nullable=False, server_default="inbox"))
     level: str = Field(max_length=16, default="info")
 
     content_mode: str = Field(max_length=8)
@@ -23,6 +24,8 @@ class NotificationMessage(SQLModel, table=True):
     content: str = Field()
     content_params: dict | None = Field(default=None, sa_column=Column(JSON))
     content_format: str | None = Field(default=None, max_length=16)
+
+    personalization: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
 
     mandatory: bool = Field(default=False)
     channels: list = Field(default_factory=list, sa_column=Column(JSON))
@@ -52,6 +55,8 @@ class NotificationMessage(SQLModel, table=True):
         default=None,
         sa_column=Column(DateTime(timezone=False), nullable=True),
     )
+    superseded_at: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=False), nullable=True))
+    superseded_by_id: UUID | None = Field(default=None)
     template_id: UUID | None = Field(default=None)
     template_code: str | None = Field(default=None, max_length=128)
 
@@ -75,6 +80,7 @@ class UserNotification(SQLModel, table=True):
 
     message_id: UUID = Field(index=True)
     user_id: UUID = Field(index=True)
+    rendered_content: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
     read_at: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=False), nullable=True))
     archived_at: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=False), nullable=True))
     deleted_at: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=False), nullable=True))
@@ -134,3 +140,16 @@ class NotificationPreference(SQLModel, table=True):
     user_id: UUID = Field(index=True)
     category: str = Field(max_length=128, index=True)
     enabled: bool = Field(default=True)
+
+
+BANNER_STATE_ID = UUID("00000000-0000-7000-8000-000000000001")
+
+
+class NotificationBannerState(SQLModel, table=True):
+    """Migration-seeded global slot; every banner write locks this fixed row."""
+
+    __tablename__ = "notification_banner_state"
+
+    active_message_id: UUID | None = Field(default=None)
+    scheduled_message_id: UUID | None = Field(default=None)
+    revision: int = Field(default=0)

@@ -6,5 +6,7 @@ export function formatCooldown(seconds: number): string {
   const paddedMinutes = String(minutes).padStart(2, "0")
   const paddedSeconds = String(remainingSeconds).padStart(2, "0")
 
-  return hours > 0 ? `${String(hours).padStart(2, "0")}:${paddedMinutes}:${paddedSeconds}` : `${paddedMinutes}:${paddedSeconds}`
+  return hours > 0
+    ? `${String(hours).padStart(2, "0")}:${paddedMinutes}:${paddedSeconds}`
+    : `${paddedMinutes}:${paddedSeconds}`
 }

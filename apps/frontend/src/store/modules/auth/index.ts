@@ -119,7 +119,11 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
     const { data: publicKey } = await fetchGetPublicKey()
 
-    const { data: loginToken, error, response } = await fetchLogin({
+    const {
+      data: loginToken,
+      error,
+      response,
+    } = await fetchLogin({
       username,
       password: await rsaEncrypt(publicKey!, password),
     })

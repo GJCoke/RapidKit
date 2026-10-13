@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import { test } from "vitest"
 
-import { canonicalizePathSearch, joinRoutePath, mergeDefaultSearch, parseSafeExternalUrl } from "@/features/router/route-url"
+import {
+  canonicalizePathSearch,
+  joinRoutePath,
+  mergeDefaultSearch,
+  parseSafeExternalUrl,
+} from "@/features/router/route-url"
 
 test("normalizes nested route paths", () => {
   assert.equal(joinRoutePath("/manage", "user"), "/manage/user")

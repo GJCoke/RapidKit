@@ -11,6 +11,7 @@ from rapidkit_core.timezone import timezone
 from redis.asyncio import Redis
 from sqlalchemy import case
 from sqlmodel import col, func, select
+from sqlmodel.sql.expression import Select
 
 from plugin_worker.inventory import scoped_worker_filters
 from plugin_worker.models import CeleryTaskResult, CeleryWorker, QueueDepthSnapshot
@@ -140,7 +141,7 @@ async def get_queue_dashboard(session, celery_app, days: int) -> QueueDashboardR
 
     task = CeleryTaskResult
     finished = (col(task.finished_at) >= start, col(task.finished_at) <= now)
-    outcome = select(
+    outcome = Select(
         func.count().filter(col(task.status) == TaskStatus.SUCCESS),
         func.count().filter(col(task.status) == TaskStatus.FAILURE),
         func.count().filter(col(task.status) == TaskStatus.REVOKED),

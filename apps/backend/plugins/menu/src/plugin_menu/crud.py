@@ -82,13 +82,15 @@ class MenuCRUD(BaseCRUD[Menu]):
         )
 
         if not root_pagination.records:
-            return root_pagination
+            return PaginatedResponse[MenuListResponse](
+                records=[], total=root_pagination.total, page=root_pagination.page, page_size=root_pagination.page_size
+            )
 
         all_menus = await self.get_all(order_by=col(self.model.order))
         route_names = {menu.id: menu.route_name for menu in all_menus}
         menu_list = [to_menu_list_response(menu, route_names) for menu in all_menus]
 
-        menu_map = {menu.id: menu for menu in menu_list}
+        menu_map: dict[UUID, MenuListResponse] = {menu.id: menu for menu in menu_list}
         for menu in menu_list:
             if menu.parent_id:
                 parent = menu_map.get(menu.parent_id)
@@ -98,10 +100,13 @@ class MenuCRUD(BaseCRUD[Menu]):
                     if menu not in parent.children:
                         parent.children.append(menu)
 
-        root_ids = [menu.id for menu in root_pagination.records]
-        root_pagination.records = [menu_map[rid] for rid in root_ids if rid in menu_map]
-
-        return root_pagination
+        root_ids = [root.id for root in root_pagination.records]
+        return PaginatedResponse[MenuListResponse](
+            records=[menu_map[rid] for rid in root_ids if rid in menu_map],
+            total=root_pagination.total,
+            page=root_pagination.page,
+            page_size=root_pagination.page_size,
+        )
 
     async def get_menu_tree(self) -> list[MenuListResponse]:
         """获取整个菜单树"""

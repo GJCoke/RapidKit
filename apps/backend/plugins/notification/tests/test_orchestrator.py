@@ -20,7 +20,6 @@ from rapidkit_common.protocols.notification import (
     NotificationCommand,
 )
 from rapidkit_common.protocols.user import UserQueryService
-from rapidkit_framework.exceptions import AppException
 from sqlmodel import col, select
 
 
@@ -258,7 +257,7 @@ async def test_orchestrator_recovers_stale_dedup_conflict_without_rolling_back_o
 
 
 @pytest.mark.asyncio
-async def test_orchestrator_empty_audience_raises(db_session):
+async def test_orchestrator_empty_audience_persists_without_deliveries(db_session):
     orchestrator = _orchestrator(db_session, [])
     command = NotificationCommand(
         source="admin",
@@ -269,8 +268,9 @@ async def test_orchestrator_empty_audience_raises(db_session):
         audience=[AudienceRule(type="all")],
     )
 
-    with pytest.raises(AppException):
-        await orchestrator.process(command)
+    result = await orchestrator.process(command)
+    assert result.recipient_count == 0
+    assert (await MessageCRUD(db_session).get(result.message_id)).status == "published"
 
 
 @pytest.mark.asyncio

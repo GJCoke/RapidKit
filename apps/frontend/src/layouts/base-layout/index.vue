@@ -4,6 +4,8 @@
   import type { LayoutMode } from "@/materials"
   import { useAppStore } from "@/store/modules/app"
   import { useThemeStore } from "@/store/modules/theme"
+  import { useBannerStore } from "@/store/modules/banner"
+  import GlobalAnnouncement from "../modules/global-announcement/index.vue"
   import GlobalHeader from "../modules/global-header/index.vue"
   import GlobalSider from "../modules/global-sider/index.vue"
   import GlobalTab from "../modules/global-tab/index.vue"
@@ -17,6 +19,7 @@
   })
 
   const appStore = useAppStore()
+  const bannerStore = useBannerStore()
   const themeStore = useThemeStore()
   const { secondLevelMenus, childLevelMenus, isActiveFirstLevelMenuHasChildren } = provideMixMenuContext()
 
@@ -126,6 +129,7 @@
     :full-content="appStore.fullContent"
     :fixed-top="themeStore.fixedHeaderAndTab"
     :header-height="themeStore.header.height"
+    :banner-visible="Boolean(bannerStore.current)"
     :tab-visible="themeStore.tab.visible"
     :tab-height="themeStore.tab.height"
     :content-class="appStore.contentXScrollable ? 'overflow-x-hidden' : ''"
@@ -140,6 +144,7 @@
     <template #header>
       <GlobalHeader v-bind="headerProps" />
     </template>
+    <template #banner><GlobalAnnouncement /></template>
     <template #tab>
       <GlobalTab />
     </template>

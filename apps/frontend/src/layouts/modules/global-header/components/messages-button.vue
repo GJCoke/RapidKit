@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, onMounted } from "vue"
-  import MessageDrawer from "@/components/notification/message-drawer.vue"
+  import MessagePopover from "@/components/notification/message-popover.vue"
   import { useNotificationStore } from "@/store/modules/notification"
   import { $t } from "@/locales"
 
@@ -15,16 +15,49 @@
 </script>
 
 <template>
-  <div class="h-full flex-y-center px-2px">
-    <NBadge :value="store.badgeText" :show="store.hasUnread" type="error" :offset="[-3, 4]" :max="99">
-      <ButtonIcon
-        icon="majesticons:bell-line"
-        :tooltip-content="title"
-        :aria-label="title"
-        class="transition-colors duration-200"
-        @click="store.openDrawer()"
-      />
-    </NBadge>
-    <MessageDrawer />
+  <div class="h-full flex-y-center shrink-0">
+    <MessagePopover>
+      <template #trigger="{ visible }">
+        <ButtonIcon
+          :tooltip-content="visible ? '' : title"
+          :aria-label="title"
+          aria-haspopup="dialog"
+          :aria-expanded="visible"
+          aria-controls="notification-popover"
+          class="shrink-0 rounded-8px transition-colors duration-200"
+          :class="visible ? 'bg-primary/10 text-primary' : ''"
+        >
+          <NBadge
+            class="message-badge"
+            :value="store.badgeText"
+            :show="store.hasUnread"
+            type="error"
+            :max="99"
+            :offset="[-2, 0]"
+            :theme-overrides="{ fontSize: '10px' }"
+          >
+            <template #value>
+              <span class="block leading-14px">{{ store.badgeText }}</span>
+            </template>
+            <span class="h-18px w-18px flex-center">
+              <SvgIcon :icon="store.hasUnread ? 'line-md:bell-loop' : 'line-md:bell'" class="text-18px" />
+            </span>
+          </NBadge>
+        </ButtonIcon>
+      </template>
+    </MessagePopover>
   </div>
 </template>
+
+<style scoped>
+  .message-badge :deep(.n-badge-sup) {
+    box-sizing: border-box;
+    justify-content: center;
+    align-items: center;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    line-height: 14px;
+    bottom: calc(100% - 7px);
+  }
+</style>

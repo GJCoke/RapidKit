@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import type { ColumnPinningState } from "@tanstack/react-table"
 import { test } from "vitest"
-import { cycleColumnPinning, moveColumn, nextPageAfterDelete, reconcileColumnOrder } from "@/shared/data-table/table-state"
+import {
+  cycleColumnPinning,
+  moveColumn,
+  nextPageAfterDelete,
+  reconcileColumnOrder,
+} from "@/shared/data-table/table-state"
 
 test("column pinning cycles from unpinned to left, right, then unpinned", () => {
   let state: ColumnPinningState = { left: [], right: [] }

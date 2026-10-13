@@ -77,11 +77,4 @@ function ContextMenuSeparator({ className, ...props }: ContextMenuPrimitive.Sepa
   )
 }
 
-export {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuGroup,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-}
+export { ContextMenu, ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger }

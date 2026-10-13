@@ -61,13 +61,12 @@ class AuditLog(SQLModel, table=True):
     resource_type: str | None = Field(default=None, max_length=50, index=True)
     resource_id: str | None = Field(default=None, max_length=100)
     resource_name: str | None = Field(default=None, max_length=200)
-    result: AuditResult = Field(index=True, sa_type=_varchar_enum(AuditResult))
+    result: AuditResult = Field(sa_column=Column(_varchar_enum(AuditResult), index=True, nullable=False))
     risk_level: AuditRiskLevel = Field(
         default=AuditRiskLevel.NORMAL,
-        index=True,
-        sa_type=_varchar_enum(AuditRiskLevel),
+        sa_column=Column(_varchar_enum(AuditRiskLevel), index=True, nullable=False, default=AuditRiskLevel.NORMAL),
     )
-    source: AuditSource = Field(index=True, sa_type=_varchar_enum(AuditSource))
+    source: AuditSource = Field(sa_column=Column(_varchar_enum(AuditSource), index=True, nullable=False))
     request_id: str | None = Field(default=None, max_length=100, index=True)
     correlation_id: str | None = Field(default=None, max_length=100, index=True)
     ip: str | None = Field(default=None, max_length=45)
@@ -87,9 +86,9 @@ class ActivityEvent(SQLModel, table=True):
     __tablename__ = "system_activity_events"
     __table_args__ = (UniqueConstraint("source_event_id", name="uq_system_activity_source_event_id"),)
 
-    category: ActivityCategory = Field(index=True, sa_type=_varchar_enum(ActivityCategory))
+    category: ActivityCategory = Field(sa_column=Column(_varchar_enum(ActivityCategory), index=True, nullable=False))
     event_code: str = Field(max_length=100, index=True)
-    level: ActivityLevel = Field(index=True, sa_type=_varchar_enum(ActivityLevel))
+    level: ActivityLevel = Field(sa_column=Column(_varchar_enum(ActivityLevel), index=True, nullable=False))
     actor_id: UUID | None = Field(default=None, index=True)
     actor_name: str | None = Field(default=None, max_length=100)
     subject_type: str = Field(max_length=50, index=True)

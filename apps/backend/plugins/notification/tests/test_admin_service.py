@@ -1,6 +1,6 @@
 """Administrative notification service and audit tests."""
 
-from types import SimpleNamespace
+from datetime import timedelta
 from typing import Any, cast
 from uuid import UUID, uuid4
 
@@ -11,9 +11,10 @@ from plugin_notification.admin_service import AdminNotificationService
 from plugin_notification.audit import audit
 from plugin_notification.crud import MessageCRUD
 from plugin_notification.enums import MessageStatus
-from plugin_notification.models import UserNotification
+from plugin_notification.models import NotificationAudience, NotificationMessage, NotificationOutbox, UserNotification
 from rapidkit_common.protocols.notification import AudienceRule, NotificationCommand
 from rapidkit_common.protocols.user import UserQueryService
+from rapidkit_core.timezone import timezone
 from sqlmodel import select
 
 
@@ -33,9 +34,7 @@ class _StubQueryService:
     async def get_active_user_ids_by_role(self, role_code: str) -> list[UUID]:
         return list(self._role_users.get(role_code, []))
 
-    async def get_active_user_ids_by_department(
-        self, department_id: UUID, include_descendants: bool = False
-    ) -> list:
+    async def get_active_user_ids_by_department(self, department_id: UUID, include_descendants: bool = False) -> list:
         return []
 
     async def get_all_active_user_ids(self) -> list[UUID]:
@@ -127,6 +126,56 @@ async def test_create_commits_before_audit_without_exposing_content(db_session, 
     assert audit_calls[0][1]["correlation_id"] == message.correlation_id
     assert audit_calls[0][1]["audience_summary"] == "all"
     assert "TOP-SECRET" not in repr(audit_calls)
+
+
+@pytest.mark.asyncio
+async def test_service_planned_draft_stays_out_of_queue_until_explicit_scheduling(db_session):
+    enqueued = []
+    service = _service(db_session, [uuid4()], enqueue_delivery=lambda: enqueued.append(True))
+    operator_id = uuid4()
+    future = timezone.now() + timedelta(hours=1)
+    result = await service.create_message(_command(), created_by=operator_id, publish_at=future, save_as_draft=True)
+    message, _ = await service.get_message(result.message_id)
+    assert message.status == MessageStatus.DRAFT.value
+    assert message.publish_at == future
+    assert await MessageCRUD(db_session).get_due_scheduled(future) == []
+
+    updated = await service.update_message(
+        result.message_id,
+        _command(),
+        operator_id=operator_id,
+        publish_at=future,
+        expire_at=None,
+        save_as_draft=True,
+    )
+    assert updated.status == MessageStatus.DRAFT.value
+    assert updated.publish_at == future
+    assert await MessageCRUD(db_session).get_due_scheduled(future) == []
+
+    scheduled = await service.update_message(
+        result.message_id,
+        _command(),
+        operator_id=operator_id,
+        publish_at=future,
+        expire_at=None,
+        save_as_draft=False,
+    )
+    assert scheduled.status == MessageStatus.SCHEDULED.value
+    assert [row.id for row in await MessageCRUD(db_session).get_due_scheduled(future)] == [result.message_id]
+    assert (await db_session.exec(select(UserNotification))).all() == []
+    assert enqueued == []
+
+
+@pytest.mark.asyncio
+async def test_unsaved_audience_preview_does_not_persist_any_notification_rows(db_session):
+    service = _service(db_session, [uuid4(), uuid4()])
+
+    preview = await service.preview_audience([AudienceRule(type="all")])
+
+    assert preview.total == 2
+    assert preview.by_type == {"all": 2}
+    for model in (NotificationMessage, NotificationAudience, UserNotification, NotificationOutbox):
+        assert (await db_session.exec(select(model))).all() == []
 
 
 @pytest.mark.asyncio

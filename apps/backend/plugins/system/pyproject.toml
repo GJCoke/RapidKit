@@ -3,13 +3,7 @@ name = "rapidkit-plugin-system"
 version = "0.1.0"
 description = "RapidKit system dashboard plugin"
 requires-python = ">=3.14"
-dependencies = [
-    "rapidkit-core",
-    "rapidkit-common",
-    "minio>=7.2.18,<8.0",
-    "psutil>=7.0.0,<8.0",
-    "urllib3>=2.6.0,<3.0",
-]
+dependencies = ["rapidkit-core", "rapidkit-common", "minio>=7.2.18,<8.0", "psutil>=7.0.0,<8.0", "urllib3>=2.6.0,<3.0"]
 
 [project.entry-points."rapidkit.plugins"]
 system = "plugin_system:register"

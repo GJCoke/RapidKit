@@ -12,7 +12,10 @@ test("sidebar width uses the same 300ms transition in both states", () => {
 })
 
 test("sidebar passes collapse state directly without a delayed tree swap", async () => {
-  const source = await readFile(new URL("../../../../src/features/layout/components/sidebar.tsx", import.meta.url), "utf8")
+  const source = await readFile(
+    new URL("../../../../src/features/layout/components/sidebar.tsx", import.meta.url),
+    "utf8",
+  )
 
   assert.doesNotMatch(source, /setTimeout|compact/)
   assert.match(source, /<SidebarMenu collapsed=\{collapsed\} menus=\{menus\} \/>/)

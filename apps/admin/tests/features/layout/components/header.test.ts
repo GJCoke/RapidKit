@@ -26,7 +26,10 @@ test("user identity follows the backend name, username, email contract", async (
 })
 
 test("the Base UI user menu keeps its label inside a menu group", async () => {
-  const source = await readFile(new URL("../../../../src/features/layout/components/user-menu.tsx", import.meta.url), "utf8")
+  const source = await readFile(
+    new URL("../../../../src/features/layout/components/user-menu.tsx", import.meta.url),
+    "utf8",
+  )
 
   assert.match(
     source,
@@ -35,7 +38,10 @@ test("the Base UI user menu keeps its label inside a menu group", async () => {
 })
 
 test("mobile navigation delegates focus restoration to Base UI", async () => {
-  const source = await readFile(new URL("../../../../src/features/layout/components/mobile-nav.tsx", import.meta.url), "utf8")
+  const source = await readFile(
+    new URL("../../../../src/features/layout/components/mobile-nav.tsx", import.meta.url),
+    "utf8",
+  )
 
   assert.match(source, /finalFocus=\{triggerRef\}/)
   assert.doesNotMatch(source, /onCloseAutoFocus|asChild/)
@@ -69,12 +75,18 @@ test("sidebar toggle icon points toward the next sidebar state", async () => {
 }, 15_000)
 
 test("header always exposes the developer theme workbench", async () => {
-  const source = await readFile(new URL("../../../../src/features/layout/components/header-tools.tsx", import.meta.url), "utf8")
+  const source = await readFile(
+    new URL("../../../../src/features/layout/components/header-tools.tsx", import.meta.url),
+    "utf8",
+  )
   assert.match(source, /<ThemeWorkbenchTrigger key=\{tool\} \/>/)
 })
 
 test("header exposes the global route search trigger", async () => {
-  const source = await readFile(new URL("../../../../src/features/layout/components/header-tools.tsx", import.meta.url), "utf8")
+  const source = await readFile(
+    new URL("../../../../src/features/layout/components/header-tools.tsx", import.meta.url),
+    "utf8",
+  )
   assert.match(source, /<GlobalSearch key=\{tool\} \/>/)
 })
 

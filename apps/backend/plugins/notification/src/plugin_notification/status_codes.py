@@ -28,4 +28,8 @@ class NotificationStatusCode(BaseStatusCode):
     MESSAGE_NOT_RECALLABLE = (93012, "notification.error.messageNotRecallable")
     SCHEDULE_NOT_DUE = (93013, "notification.error.scheduleNotDue")
 
+    BANNER_REVISION_CONFLICT = (93020, "notification.error.bannerRevisionConflict")
+    BANNER_REPLACEMENT_REQUIRED = (93021, "notification.error.bannerReplacementRequired")
+    BANNER_STATE_MISSING = (93022, "notification.error.bannerStateMissing")
+
     NOTIFICATION_NOT_FOUND = (95001, "notification.error.notificationNotFound")

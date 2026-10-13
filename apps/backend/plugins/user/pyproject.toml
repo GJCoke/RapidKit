@@ -3,13 +3,7 @@ name = "rapidkit-plugin-user"
 version = "0.1.0"
 description = "RapidKit user management plugin"
 requires-python = ">=3.14"
-dependencies = [
-    "rapidkit-core",
-    "rapidkit-common",
-    "rapidkit-framework",
-    "rapidkit-security",
-    "pypinyin>=0.55,<1.0",
-]
+dependencies = ["rapidkit-core", "rapidkit-common", "rapidkit-framework", "rapidkit-security", "pypinyin>=0.55,<1.0"]
 
 [project.entry-points."rapidkit.plugins"]
 user = "plugin_user:register"

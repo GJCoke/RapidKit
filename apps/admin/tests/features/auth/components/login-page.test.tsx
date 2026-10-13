@@ -9,9 +9,17 @@ import { initReactI18next } from "react-i18next"
 import enUS from "@/locales/en-US/common.json"
 import zhCN from "@/locales/zh-CN/common.json"
 
-import { createLoginSchema, LoginForm, resolveAuthenticatedLoginRedirect, resolveLoginSuccessPath } from "@/features/auth/components/login-form"
+import {
+  createLoginSchema,
+  LoginForm,
+  resolveAuthenticatedLoginRedirect,
+  resolveLoginSuccessPath,
+} from "@/features/auth/components/login-form"
 
-const loginFormSource = await readFile(new URL("../../../../src/features/auth/components/login-form.tsx", import.meta.url), "utf8")
+const loginFormSource = await readFile(
+  new URL("../../../../src/features/auth/components/login-form.tsx", import.meta.url),
+  "utf8",
+)
 const validationMessages = {
   passwordInvalid: "password invalid",
   passwordRequired: "password required",

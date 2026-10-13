@@ -10,11 +10,7 @@ import {
 } from "./sidebar/sidebar-menu-styles"
 
 export { getMenuChevronClasses, getMenuLabelClasses, getSubmenuPanelClasses }
-export {
-  findMenuPath,
-  reconcileExpandedKeys,
-  resolveSelectedMenuKey,
-} from "./sidebar/sidebar-menu-selection"
+export { findMenuPath, reconcileExpandedKeys, resolveSelectedMenuKey } from "./sidebar/sidebar-menu-selection"
 
 export function getMenuButtonClasses(collapsed: boolean) {
   return getControlledMenuButtonClasses({ collapsed, active: false, branchActive: false })

@@ -23,6 +23,7 @@ from plugin_notification.enums import (
     OUTBOX_LOCK_TTL_SECONDS,
     OutboxStatus,
 )
+from plugin_notification.inbox_projection import to_inbox_item
 from plugin_notification.models import NotificationMessage, NotificationOutbox, UserNotification
 
 logger = get_plugin_logger("Notification")
@@ -77,26 +78,23 @@ class DeliveryWorker:
         await self.session.flush()
         return rows
 
-    async def _build_payload(self, message_id: UUID) -> dict[str, Any]:
-        message = await self.session.get(NotificationMessage, message_id)
-        if message is None:
+    async def _build_payload(self, message_id: UUID, user_id: UUID) -> dict[str, Any]:
+        recipient = (
+            await self.session.exec(
+                select(UserNotification, NotificationMessage)
+                .join(NotificationMessage, col(UserNotification.message_id) == col(NotificationMessage.id))
+                .where(
+                    col(UserNotification.message_id) == message_id,
+                    col(UserNotification.user_id) == user_id,
+                    col(UserNotification.deleted_at).is_(None),
+                )
+                .execution_options(populate_existing=True)
+            )
+        ).first()
+        if recipient is None:
             return {}
-        return {
-            "id": str(message.id),
-            "contentMode": message.content_mode,
-            "title": message.title,
-            "content": message.content,
-            "contentParams": message.content_params,
-            "contentFormat": message.content_format,
-            "level": message.level,
-            "category": message.category,
-            "mandatory": message.mandatory,
-            "action": message.action,
-            "status": message.status,
-            "expireAt": timezone.f_datetime(message.expire_at) if message.expire_at is not None else None,
-            "recalledAt": timezone.f_datetime(message.recalled_at) if message.recalled_at is not None else None,
-            "createTime": timezone.f_datetime(message.create_time),
-        }
+        inbox, message = recipient
+        return to_inbox_item(inbox, message).model_dump(mode="json", by_alias=True)
 
     async def _mark_delivered_inbox(self, message_id: UUID, user_id: UUID) -> None:
         statement = select(UserNotification).where(
@@ -139,7 +137,14 @@ class DeliveryWorker:
                 processed += 1
                 continue
 
-            payload = await self._build_payload(row.message_id)
+            payload = await self._build_payload(row.message_id, row.user_id)
+            # Refresh during projection may observe a recall after the initial guard.
+            if not payload or payload["status"] != "published":
+                row.status = OutboxStatus.CANCELLED.value
+                self._clear_lock(row)
+                self.session.add(row)
+                processed += 1
+                continue
             result = await adapter.deliver(
                 redis=self.redis,
                 user_id=row.user_id,

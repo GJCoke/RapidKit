@@ -117,9 +117,7 @@ export function ThemeSelect({
   disabled?: boolean
   label: string
 }) {
-  const items = options.map((option) =>
-    typeof option === "string" ? { value: option, label: option } : option,
-  )
+  const items = options.map((option) => (typeof option === "string" ? { value: option, label: option } : option))
 
   return (
     <Select

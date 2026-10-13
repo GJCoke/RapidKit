@@ -6,7 +6,9 @@ import Page from "../../src/views/queue/task/index.vue"
 const queries = vi.hoisted(() => [] as Record<string, unknown>[])
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
 vi.mock("@/hooks/business/auth", () => ({ useAuth: () => ({ hasAuth: () => false }) }))
-vi.mock("@/hooks/common/socket", () => ({ useSocket: () => ({ socket: { value: null }, connect: vi.fn() }) }))
+vi.mock("@/hooks/business/worker-socket", () => ({
+  useWorkerSocket: () => ({ socket: { value: null }, connect: vi.fn() }),
+}))
 vi.mock("../../src/views/queue/task/modules/task-drawer.vue", () => ({
   default: defineComponent({ render: () => null }),
 }))

@@ -1,4 +1,4 @@
-import { computed, ref } from "vue"
+import { computed, ref, watch } from "vue"
 import {
   fetchArchiveNotification,
   fetchDeleteNotification,
@@ -26,7 +26,31 @@ export function useInbox() {
   let generation = 0
   let pendingRequests = 0
 
-  const visibleItems = computed(() => items.value)
+  const visibleItems = computed(() =>
+    filters.value.unreadOnly
+      ? items.value.filter((item) => !item.readAt && !notificationStore.isRecalled(item))
+      : items.value,
+  )
+
+  watch(
+    () => notificationStore.recalledMessageIds,
+    () => {
+      items.value = notificationStore.normalizeMessages(items.value)
+    },
+    { flush: "sync" },
+  )
+
+  watch(
+    () => notificationStore.sessionEpoch,
+    () => {
+      generation += 1
+      pendingRequests = 0
+      items.value = []
+      nextCursor.value = null
+      loading.value = false
+    },
+    { flush: "sync" },
+  )
 
   async function load(reset = false) {
     if (!reset && pendingRequests > 0) return
@@ -53,12 +77,13 @@ export function useInbox() {
     try {
       const { data, error } = await fetchGetNotifications(query)
       if (requestGeneration !== generation || error || !data) return
+      const normalized = notificationStore.normalizeMessages(data.items, items.value)
 
       if (reset) {
-        items.value = [...new Map(data.items.map((item) => [item.id, item])).values()]
+        items.value = [...new Map(normalized.map((item) => [item.id, item])).values()]
       } else {
         const merged = new Map(items.value.map((item) => [item.id, item]))
-        for (const item of data.items) merged.set(item.id, item)
+        for (const item of normalized) merged.set(item.id, item)
         items.value = [...merged.values()]
       }
       nextCursor.value = data.nextCursor ?? null
@@ -76,11 +101,14 @@ export function useInbox() {
   }
 
   async function readOne(id: string): Promise<boolean> {
+    const target = items.value.find((item) => item.id === id)
+    if (target && notificationStore.isRecalled(target)) return true
+    const epoch = notificationStore.sessionEpoch
     try {
       const { error } = await fetchReadNotification(id)
-      if (error) return false
+      if (error || epoch !== notificationStore.sessionEpoch) return false
       const target = items.value.find((item) => item.id === id)
-      if (target && !target.readAt) target.readAt = new Date().toISOString()
+      if (target && !target.readAt && !notificationStore.isRecalled(target)) target.readAt = new Date().toISOString()
       return true
     } catch {
       return false
@@ -102,7 +130,9 @@ export function useInbox() {
     try {
       const { error } = await fetchDeleteNotification(id)
       if (error) return false
-      const wasUnread = items.value.some((item) => item.id === id && !item.readAt)
+      const wasUnread = items.value.some(
+        (item) => item.id === id && !item.readAt && !notificationStore.isRecalled(item),
+      )
       items.value = items.value.filter((item) => item.id !== id)
       if (wasUnread) {
         try {

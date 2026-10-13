@@ -18,10 +18,15 @@
   })
 
   async function onClick(message: Api.Notification.Message) {
+    if (store.isRecalled(message)) return
+    const sessionEpoch = store.sessionEpoch
     const read = await readOne(message.id)
-    if (!read) return
+    if (!read || sessionEpoch !== store.sessionEpoch || store.isRecalled(message)) return
     await store.refreshUnreadCount()
-    if (isNotificationActionable(message) && message.action) await navigateToAction(message.action)
+    if (sessionEpoch !== store.sessionEpoch || store.isRecalled(message)) return
+    if (isNotificationActionable(message) && message.action && !(await navigateToAction(message.action))) {
+      window.$message?.warning($t("page.notification.actionUnavailable" as I18nFullKey))
+    }
   }
 
   async function markAllRead() {

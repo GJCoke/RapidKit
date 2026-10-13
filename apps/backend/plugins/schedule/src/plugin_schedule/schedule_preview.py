@@ -10,21 +10,27 @@ from datetime import UTC, datetime, timedelta
 from rapidkit_core.timezone import timezone
 
 from plugin_schedule.cron_preview import preview_crontab
-from plugin_schedule.schemas import CrontabPreviewRequest, SchedulePreviewRequest, SchedulePreviewResponse
+from plugin_schedule.schemas import (
+    CrontabDefinition,
+    CrontabPreviewRequest,
+    IntervalDefinition,
+    SchedulePreviewRequest,
+    SchedulePreviewResponse,
+)
 from plugin_schedule.solar import Solar
 
 
 def preview_schedule(body: SchedulePreviewRequest, *, start: datetime | None = None) -> SchedulePreviewResponse:
     cursor = timezone.to_local(start) if start is not None else timezone.now_local()
     definition = body.schedule
-    if definition.type == "crontab":
+    if isinstance(definition, CrontabDefinition):
         cron = preview_crontab(CrontabPreviewRequest(**definition.model_dump(exclude={"type"})), start=cursor)
         return SchedulePreviewResponse(**cron.model_dump())
     result = SchedulePreviewResponse(valid=True, timezone=timezone.tz_info.key, evaluated_at=cursor)
     cursor = cursor.astimezone(UTC)
     year = cursor.year + result.horizon_years
     horizon = cursor.replace(year=year, day=min(cursor.day, monthrange(year, cursor.month)[1]))
-    if definition.type == "interval":
+    if isinstance(definition, IntervalDefinition):
         delta = timedelta(**{definition.period.value: definition.every})
         for _ in range(5):
             try:

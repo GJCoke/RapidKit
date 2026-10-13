@@ -9,7 +9,7 @@
     businessSummary: Api.Dashboard.BusinessSummary | null
   }>()
 
-  const fmt = (v: number | null | undefined, suffix = "") => (v == null ? "—" : `${v}${suffix}`)
+  const fmt = (v: number | null | undefined, suffix = "") => (v === null || v === undefined ? "—" : `${v}${suffix}`)
   const appHealthy = computed(() => props.healthStats.http5Xx1H === 0 && props.healthStats.bizErrors1H === 0)
 
   const healthMetrics = computed(() => [

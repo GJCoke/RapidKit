@@ -45,11 +45,9 @@ function deferred<T>() {
 describe("notification store", () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    vi.clearAllMocks()
+    vi.resetAllMocks()
     api.fetchGetUnreadCount.mockResolvedValue(success({ count: 3 }))
-    api.fetchGetNotifications.mockResolvedValue(
-      success({ items: [message("1")], nextCursor: null, size: 20 }),
-    )
+    api.fetchGetNotifications.mockResolvedValue(success({ items: [message("1")], nextCursor: null, size: 20 }))
     api.fetchReadAllNotifications.mockResolvedValue(success(null))
     api.fetchReadNotification.mockResolvedValue(success(null))
   })
@@ -109,9 +107,7 @@ describe("notification store", () => {
     store.unreadCount = 5
     api.fetchReadNotification.mockResolvedValue({ data: null, error: new Error("failed") })
     api.fetchGetUnreadCount.mockResolvedValue(success({ count: 4 }))
-    api.fetchGetNotifications.mockResolvedValue(
-      success({ items: [message("1")], nextCursor: null, size: 20 }),
-    )
+    api.fetchGetNotifications.mockResolvedValue(success({ items: [message("1")], nextCursor: null, size: 20 }))
 
     await store.markRead("1")
 
@@ -142,6 +138,175 @@ describe("notification store", () => {
 
     expect(store.latest).toMatchObject([{ messageId: "message-1", status: "recalled", action: null }])
     expect(store.unreadCount).toBe(0)
+  })
+
+  it.each(["raw", "local", "i18n"])("scrubs %s recalled content while retaining read state", async (contentMode) => {
+    const store = useNotificationStore()
+    store.latest = [
+      message("1", {
+        contentMode,
+        contentParams: { secret: "hidden-value" },
+        action: { type: "route", routeName: "home" },
+        mandatory: true,
+        readAt: "2026-09-05T01:00:00Z",
+      }),
+    ]
+
+    await store.onRealtimeRecalled("message-1")
+
+    expect(store.latest[0]).toMatchObject({
+      status: "recalled",
+      contentMode: "raw",
+      title: "",
+      content: "",
+      contentParams: null,
+      action: null,
+      mandatory: false,
+      readAt: "2026-09-05T01:00:00Z",
+    })
+  })
+
+  it("removes recalled items immediately from unread and ignores duplicate recall", async () => {
+    const store = useNotificationStore()
+    store.activeTab = "unread"
+    store.latest = [message("1"), message("2")]
+    store.unreadCount = 2
+    api.fetchGetUnreadCount.mockResolvedValue(success({ count: 1 }))
+
+    const recall = store.onRealtimeRecalled("message-1")
+    expect(store.latest.map((item) => item.id)).toEqual(["2"])
+    await recall
+    await store.onRealtimeRecalled("message-1")
+
+    expect(store.unreadCount).toBe(1)
+    expect(store.latest.map((item) => item.id)).toEqual(["2"])
+  })
+
+  it("ignores delayed pushes for a recalled message until the auth session resets", async () => {
+    const store = useNotificationStore()
+    api.fetchGetUnreadCount.mockResolvedValue(success({ count: 0 }))
+    await store.onRealtimeRecalled("message-1")
+
+    store.onRealtimeNew(message("1"))
+    expect(store.latest).toEqual([])
+    expect(store.unreadCount).toBe(0)
+
+    store.reset()
+    store.onRealtimeNew(message("1"))
+    expect(store.latest[0].status).toBe("published")
+    expect(store.unreadCount).toBe(1)
+  })
+
+  it("sanitizes a latest response that was fetched before recall", async () => {
+    const pending = deferred<ReturnType<typeof success<Api.Notification.InboxPage>>>()
+    api.fetchGetNotifications.mockReturnValue(pending.promise)
+    const store = useNotificationStore()
+    const request = store.refreshLatest()
+
+    await store.onRealtimeRecalled("message-1")
+    pending.resolve(success({ items: [message("1")], nextCursor: null, size: 20 }))
+    await request
+
+    expect(store.latest[0]).toMatchObject({ status: "recalled", title: "", content: "", readAt: null })
+  })
+
+  it("remembers recalls discovered by HTTP before a delayed push", async () => {
+    api.fetchGetUnreadCount.mockResolvedValue(success({ count: 0 }))
+    api.fetchGetNotifications.mockResolvedValue(
+      success({ items: [message("1", { status: "recalled" })], nextCursor: null, size: 20 }),
+    )
+    const store = useNotificationStore()
+    await store.refreshLatest()
+    store.onRealtimeNew(message("1"))
+
+    expect(store.latest[0]).toMatchObject({ status: "recalled", title: "", content: "" })
+    expect(store.unreadCount).toBe(0)
+  })
+
+  it("immediately removes an HTTP-discovered recall from the known unread count", async () => {
+    const pending = deferred<ReturnType<typeof success<{ count: number }>>>()
+    api.fetchGetUnreadCount.mockReturnValueOnce(pending.promise)
+    api.fetchGetNotifications.mockResolvedValueOnce(
+      success({ items: [message("1", { status: "recalled" })], nextCursor: null, size: 20 }),
+    )
+    const store = useNotificationStore()
+    store.latest = [message("1")]
+    store.unreadCount = 1
+
+    await store.refreshLatest()
+
+    expect(store.unreadCount).toBe(0)
+    pending.resolve(success({ count: 0 }))
+    await pending.promise
+  })
+
+  it("invalidates pre-recall unread requests when HTTP discovers the recall", async () => {
+    const stale = deferred<ReturnType<typeof success<{ count: number }>>>()
+    const calibration = deferred<ReturnType<typeof success<{ count: number }>>>()
+    api.fetchGetUnreadCount.mockReturnValueOnce(stale.promise).mockReturnValueOnce(calibration.promise)
+    api.fetchGetNotifications.mockResolvedValueOnce(
+      success({ items: [message("1", { status: "recalled" })], nextCursor: null, size: 20 }),
+    )
+    const store = useNotificationStore()
+    store.latest = [message("1")]
+    store.unreadCount = 1
+    const oldRequest = store.refreshUnreadCount()
+
+    await store.refreshLatest()
+    stale.resolve(success({ count: 1 }))
+    await oldRequest
+
+    expect(store.unreadCount).toBe(0)
+    calibration.resolve(success({ count: 0 }))
+    await calibration.promise
+  })
+
+  it("prevents an old unread request from overwriting recall calibration", async () => {
+    const stale = deferred<ReturnType<typeof success<{ count: number }>>>()
+    api.fetchGetUnreadCount.mockReturnValueOnce(stale.promise).mockResolvedValueOnce(success({ count: 0 }))
+    const store = useNotificationStore()
+    const oldRequest = store.refreshUnreadCount()
+    await store.onRealtimeRecalled("message-1")
+    stale.resolve(success({ count: 1 }))
+    await oldRequest
+
+    expect(store.unreadCount).toBe(0)
+  })
+
+  it("keeps the newer realtime unread count when a pending recall calibration returns", async () => {
+    const pending = deferred<ReturnType<typeof success<{ count: number }>>>()
+    api.fetchGetUnreadCount.mockReturnValueOnce(pending.promise)
+    const store = useNotificationStore()
+    const recall = store.onRealtimeRecalled("message-1")
+    store.onRealtimeUnreadCount(2)
+    pending.resolve(success({ count: 3 }))
+    await recall
+
+    expect(store.unreadCount).toBe(2)
+  })
+
+  it("excludes recalled items from a stale unread HTTP response", async () => {
+    const pending = deferred<ReturnType<typeof success<Api.Notification.InboxPage>>>()
+    api.fetchGetNotifications.mockReturnValueOnce(pending.promise)
+    const store = useNotificationStore()
+    store.activeTab = "unread"
+    const request = store.refreshLatest()
+    await store.onRealtimeRecalled("message-1")
+    pending.resolve(success({ items: [message("1"), message("2")], nextCursor: null, size: 20 }))
+    await request
+
+    expect(store.latest.map((item) => item.id)).toEqual(["2"])
+  })
+
+  it("preserves recalled readAt for individual and bulk read operations", async () => {
+    const store = useNotificationStore()
+    store.latest = [message("1", { status: "recalled" }), message("2")]
+    await store.markRead("1")
+    await store.markAllRead()
+
+    expect(api.fetchReadNotification).not.toHaveBeenCalled()
+    expect(store.latest[0].readAt).toBeNull()
+    expect(store.latest[1].readAt).not.toBeNull()
   })
 
   it("always ends loading when latest refresh throws", async () => {

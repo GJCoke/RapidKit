@@ -1,4 +1,5 @@
 declare const styles: {
+  readonly "layout-banner": string
   readonly "layout-header": string
   readonly "layout-header-placement": string
   readonly "layout-tab": string

@@ -1,6 +1,7 @@
 import { io } from "socket.io-client"
 import type { Socket } from "socket.io-client"
 import { useNotificationStore } from "./index"
+import { useBannerStore } from "../banner"
 
 let socket: Socket | null = null
 let socketToken: string | null = null
@@ -25,6 +26,8 @@ export function connectNotificationSocket(token: string): Socket | undefined {
   destroySocket()
 
   const store = useNotificationStore()
+  const banner = useBannerStore()
+  banner.start(token)
   socketToken = token
   socket = io(`${getSocketBaseUrl()}/notifications`, {
     path: "/socket.io",
@@ -34,6 +37,10 @@ export function connectNotificationSocket(token: string): Socket | undefined {
 
   socket.on("connect", () => {
     void store.calibrate()
+    void banner.refresh()
+  })
+  socket.on("announcement:banner_changed", (payload: { revision: number }) => {
+    banner.invalidate(payload.revision)
   })
   socket.on("notification:new", (message: Api.Notification.Message) => {
     store.onRealtimeNew(message)
@@ -51,4 +58,5 @@ export function connectNotificationSocket(token: string): Socket | undefined {
 export function disconnectNotificationSocket() {
   destroySocket()
   useNotificationStore().reset()
+  useBannerStore().reset()
 }

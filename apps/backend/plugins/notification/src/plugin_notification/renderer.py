@@ -90,6 +90,8 @@ class TemplateRenderer:
                 logger.warning("Template raw render failed: {}", exc)
                 raise AppException(NotificationStatusCode.TEMPLATE_VARIABLE_INVALID) from exc
 
+            if len(title) > 256:
+                raise AppException(NotificationStatusCode.INVALID_COMMAND)
             validate_content(title, content_format="plain_text")
             validate_content(content, content_format=template.content_format or "plain_text")
             return RenderedContent(

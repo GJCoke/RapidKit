@@ -22,17 +22,30 @@ class FakeSocket {
   }
 
   async emitFromServer(event: string, payload?: unknown) {
-    await Promise.all([...this.listeners.get(event) ?? []].map((listener) => listener(payload)))
+    await Promise.all([...(this.listeners.get(event) ?? [])].map((listener) => listener(payload)))
   }
 }
 
 const mocks = vi.hoisted(() => ({
+  bannerStart: vi.fn(),
+  bannerReset: vi.fn(),
+  bannerRefresh: vi.fn(),
+  bannerInvalidate: vi.fn(),
   io: vi.fn(),
   calibrate: vi.fn(),
   onRealtimeNew: vi.fn(),
   onRealtimeRecalled: vi.fn(),
   onRealtimeUnreadCount: vi.fn(),
   reset: vi.fn(),
+}))
+
+vi.mock("@/store/modules/banner", () => ({
+  useBannerStore: () => ({
+    start: mocks.bannerStart,
+    reset: mocks.bannerReset,
+    refresh: mocks.bannerRefresh,
+    invalidate: mocks.bannerInvalidate,
+  }),
 }))
 
 vi.mock("socket.io-client", () => ({ io: mocks.io }))
@@ -80,6 +93,9 @@ describe("notification socket", () => {
     await sockets[0].emitFromServer("notification:recalled", { messageId: "message-1" })
     await sockets[0].emitFromServer("notification:unread-count", { count: 7 })
 
+    await sockets[0].emitFromServer("announcement:banner_changed", { revision: 5 })
+    expect(mocks.bannerRefresh).toHaveBeenCalledOnce()
+    expect(mocks.bannerInvalidate).toHaveBeenCalledWith(5)
     expect(mocks.calibrate).toHaveBeenCalledOnce()
     expect(mocks.onRealtimeNew).toHaveBeenCalledWith(message)
     expect(mocks.onRealtimeRecalled).toHaveBeenCalledWith("message-1")
@@ -96,6 +112,7 @@ describe("notification socket", () => {
     expect(socket.disconnect).toHaveBeenCalledOnce()
     expect(socket.listeners.size).toBe(0)
     expect(mocks.reset).toHaveBeenCalledOnce()
+    expect(mocks.bannerReset).toHaveBeenCalledOnce()
   })
 
   it("rebuilds an unconnected socket when the auth token changes", () => {

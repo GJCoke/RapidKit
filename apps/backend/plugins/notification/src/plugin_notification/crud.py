@@ -51,6 +51,7 @@ class MessageCRUD(BaseCRUD[NotificationMessage]):
         statement = (
             select(NotificationMessage)
             .where(
+                col(NotificationMessage.display_mode) == "inbox",
                 col(NotificationMessage.status) == MessageStatus.SCHEDULED.value,
                 col(NotificationMessage.publish_at).is_not(None),
                 col(NotificationMessage.publish_at) <= now,
@@ -70,6 +71,7 @@ class MessageCRUD(BaseCRUD[NotificationMessage]):
         statement = (
             select(NotificationMessage)
             .where(
+                col(NotificationMessage.display_mode) == "inbox",
                 col(NotificationMessage.status) == MessageStatus.PUBLISHED.value,
                 col(NotificationMessage.expire_at).is_not(None),
                 col(NotificationMessage.expire_at) <= now,
@@ -143,9 +145,7 @@ class OutboxCRUD(BaseCRUD[NotificationOutbox]):
         """Cancel delivery work that has not started."""
         rows = await self.get_all(
             col(NotificationOutbox.message_id) == message_id,
-            col(NotificationOutbox.status).in_(
-                [OutboxStatus.PENDING.value, OutboxStatus.RETRYING.value]
-            ),
+            col(NotificationOutbox.status).in_([OutboxStatus.PENDING.value, OutboxStatus.RETRYING.value]),
         )
         for row in rows:
             row.status = OutboxStatus.CANCELLED.value
@@ -199,10 +199,12 @@ class UserNotificationCRUD(BaseCRUD[UserNotification]):
         statement = (
             select(func.count())
             .select_from(UserNotification)
+            .join(NotificationMessage, col(UserNotification.message_id) == col(NotificationMessage.id))
             .where(
                 col(UserNotification.user_id) == user_id,
                 col(UserNotification.read_at).is_(None),
                 col(UserNotification.deleted_at).is_(None),
+                col(NotificationMessage.status) != MessageStatus.RECALLED.value,
             )
         )
         result = await self.session.exec(statement)
@@ -233,6 +235,13 @@ class UserNotificationCRUD(BaseCRUD[UserNotification]):
         ]
         if unread_only:
             filters.append(col(UserNotification.read_at).is_(None))
+            filters.append(
+                col(UserNotification.message_id).in_(
+                    select(NotificationMessage.id).where(
+                        col(NotificationMessage.status) != MessageStatus.RECALLED.value
+                    )
+                )
+            )
         if not include_archived:
             filters.append(col(UserNotification.archived_at).is_(None))
         if cursor is not None:
@@ -268,6 +277,7 @@ class UserNotificationCRUD(BaseCRUD[UserNotification]):
         ]
         if unread_only:
             filters.append(col(UserNotification.read_at).is_(None))
+            filters.append(col(NotificationMessage.status) != MessageStatus.RECALLED.value)
         if archived == "active":
             filters.append(col(UserNotification.archived_at).is_(None))
         elif archived == "archived":

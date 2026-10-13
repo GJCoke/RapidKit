@@ -3,6 +3,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
+from rapidkit_common.protocols.menu import MenuNavigationProvider
 from rapidkit_common.protocols.notification import AudienceRule, NotificationCommand, NotificationResult
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
@@ -11,14 +12,19 @@ from rapidkit_framework.status_codes import StatusCode
 from sqlmodel import col, delete
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from plugin_notification.actions import resolve_action
 from plugin_notification.audience import AudienceResolver
-from plugin_notification.crud import AudienceCRUD, MessageCRUD, OutboxCRUD, TemplateCRUD, UserNotificationCRUD
+from plugin_notification.content import resolve_content
+from plugin_notification.crud import AudienceCRUD, MessageCRUD, OutboxCRUD, UserNotificationCRUD
 from plugin_notification.enums import MessageStatus, OutboxStatus
 from plugin_notification.models import NotificationAudience, NotificationMessage, UserNotification
+from plugin_notification.personalization import content_snapshot, render_personalized
 from plugin_notification.preference import PreferenceResolver
-from plugin_notification.renderer import RenderedContent, TemplateRenderer
+from plugin_notification.renderer import RenderedContent
 from plugin_notification.status_codes import NotificationStatusCode
-from plugin_notification.validation import validate_action, validate_content, validate_i18n_key, validate_json_shape
+from plugin_notification.validation import (
+    validate_json_shape,
+)
 
 logger = get_plugin_logger("Notification")
 
@@ -33,48 +39,15 @@ class MessageOrchestrator:
         session: AsyncSession,
         audience_resolver: AudienceResolver,
         preference_resolver: PreferenceResolver,
+        menu_provider: MenuNavigationProvider | None = None,
     ) -> None:
         self.session = session
         self.audience = audience_resolver
         self.preference = preference_resolver
-        self.renderer = TemplateRenderer()
+        self.menu_provider = menu_provider
 
-    async def _resolve_content(self, command: NotificationCommand) -> tuple[RenderedContent, UUID | None]:
-        """Resolve command content into the immutable snapshot stored on a message."""
-        if command.content_mode == "template":
-            if command.template_code is None:
-                raise AppException(NotificationStatusCode.INVALID_COMMAND)
-            template = await TemplateCRUD(self.session).get_by_code(command.template_code)
-            if template is None:
-                raise AppException(NotificationStatusCode.TEMPLATE_NOT_FOUND)
-            return self.renderer.render(template, command.template_variables), template.id
-
-        if command.content_mode == "i18n":
-            validate_i18n_key(command.i18n_key or "")
-            validate_json_shape(command.i18n_params)
-            return (
-                RenderedContent(
-                    content_mode="i18n",
-                    title=command.i18n_key or "",
-                    content=command.i18n_key or "",
-                    content_params=command.i18n_params,
-                    content_format=None,
-                ),
-                None,
-            )
-
-        validate_content(command.raw_title or "", content_format="plain_text")
-        validate_content(command.raw_content or "", content_format=command.raw_format)
-        return (
-            RenderedContent(
-                content_mode="raw",
-                title=command.raw_title or "",
-                content=command.raw_content or "",
-                content_params=None,
-                content_format=command.raw_format,
-            ),
-            None,
-        )
+    async def _resolve_content(self, command: NotificationCommand) -> tuple[RenderedContent, UUID | None, dict | None]:
+        return await resolve_content(self.session, command)
 
     async def _fanout(
         self,
@@ -103,8 +76,19 @@ class MessageOrchestrator:
             )
             return 0
 
+        snapshots = {}
+        if message.personalization is not None:
+            profiles = await self.audience.get_public_profiles(user_ids)
+            # Render every recipient before writing any inbox or outbox row.
+            snapshots = {
+                user_id: content_snapshot(render_personalized(message.personalization, profiles.get(user_id)))
+                for user_id in user_ids
+            }
         await UserNotificationCRUD(self.session).create_all(
-            [{"message_id": message.id, "user_id": user_id} for user_id in user_ids]
+            [
+                {"message_id": message.id, "user_id": user_id, "rendered_content": snapshots.get(user_id)}
+                for user_id in user_ids
+            ]
         )
         await OutboxCRUD(self.session).create_all(
             [
@@ -151,30 +135,39 @@ class MessageOrchestrator:
         created_by: UUID,
         publish_at: datetime | None = None,
         expire_at: datetime | None = None,
+        save_as_draft: bool = False,
     ) -> NotificationMessage:
         """Persist a draft or future-scheduled message without fan-out."""
-        validate_action(command.action.model_dump() if command.action is not None else None)
+        action = await resolve_action(
+            command.action.model_dump(mode="json") if command.action is not None else None,
+            session=self.session,
+            provider=self.menu_provider,
+            snapshot=False,
+        )
         validate_json_shape(command.meta)
         for channel in command.channels:
             if channel not in _ALLOWED_CHANNELS:
                 logger.warning("Invalid channel in command: {}", channel)
                 raise AppException(NotificationStatusCode.INVALID_CHANNEL)
 
-        rendered, template_id = await self._resolve_content(command)
-        status = MessageStatus.SCHEDULED.value if publish_at is not None else MessageStatus.DRAFT.value
+        rendered, template_id, personalization = await self._resolve_content(command)
+        status = MessageStatus.DRAFT.value if save_as_draft or publish_at is None else MessageStatus.SCHEDULED.value
         message = await MessageCRUD(self.session).create(
             {
                 "source": command.source,
+                "display_mode": "inbox",
                 "category": command.category,
                 "level": command.level,
                 "content_mode": rendered.content_mode,
                 "title": rendered.title,
                 "content": rendered.content,
-                "content_params": rendered.content_params,
+                "content_params": command.template_variables
+                if command.content_mode == "template"
+                else rendered.content_params,
                 "content_format": rendered.content_format,
                 "mandatory": command.mandatory,
                 "channels": list(command.channels),
-                "action": command.action.model_dump() if command.action is not None else None,
+                "action": action,
                 "meta": command.meta,
                 "status": status,
                 "deduplication_key": command.deduplication_key,
@@ -184,6 +177,7 @@ class MessageOrchestrator:
                 "expire_at": expire_at,
                 "template_id": template_id,
                 "template_code": command.template_code,
+                "personalization": personalization,
             }
         )
         await AudienceCRUD(self.session).create_all(
@@ -206,6 +200,7 @@ class MessageOrchestrator:
         *,
         publish_at: datetime | None,
         expire_at: datetime | None,
+        save_as_draft: bool = False,
     ) -> NotificationMessage:
         """Replace one editable announcement and its audience snapshot."""
         message_crud = MessageCRUD(self.session)
@@ -214,34 +209,43 @@ class MessageOrchestrator:
             raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
         if message.status not in {MessageStatus.DRAFT.value, MessageStatus.SCHEDULED.value}:
             raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
-        rendered, template_id = await self._resolve_content(command)
-        validate_action(command.action.model_dump() if command.action is not None else None)
+        if message.display_mode == "top_banner" and message.status == MessageStatus.SCHEDULED.value:
+            raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
+        rendered, template_id, personalization = await self._resolve_content(command)
+        action = await resolve_action(
+            command.action.model_dump(mode="json") if command.action is not None else None,
+            session=self.session,
+            provider=self.menu_provider,
+            snapshot=False,
+        )
         validate_json_shape(command.meta)
-        status = MessageStatus.SCHEDULED.value if publish_at is not None else MessageStatus.DRAFT.value
+        status = MessageStatus.DRAFT.value if save_as_draft or publish_at is None else MessageStatus.SCHEDULED.value
         message = await message_crud.update_by_id(
             message_id,
             {
+                "display_mode": "inbox",
                 "category": command.category,
                 "level": command.level,
                 "content_mode": rendered.content_mode,
                 "title": rendered.title,
                 "content": rendered.content,
-                "content_params": rendered.content_params,
+                "content_params": command.template_variables
+                if command.content_mode == "template"
+                else rendered.content_params,
                 "content_format": rendered.content_format,
                 "mandatory": command.mandatory,
                 "channels": list(command.channels),
-                "action": command.action.model_dump() if command.action is not None else None,
+                "action": action,
                 "meta": command.meta,
                 "status": status,
                 "publish_at": publish_at,
                 "expire_at": expire_at,
                 "template_id": template_id,
                 "template_code": command.template_code,
+                "personalization": personalization,
             },
         )
-        await self.session.exec(
-            delete(NotificationAudience).where(col(NotificationAudience.message_id) == message_id)
-        )
+        await self.session.exec(delete(NotificationAudience).where(col(NotificationAudience.message_id) == message_id))
         await AudienceCRUD(self.session).create_all(
             [
                 {
@@ -261,11 +265,11 @@ class MessageOrchestrator:
         message = await message_crud.get_for_update(message_id)
         if message is None:
             raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
+        if message.display_mode != "inbox":
+            raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
         if message.status not in {MessageStatus.DRAFT.value, MessageStatus.SCHEDULED.value}:
             raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
-        await self.session.exec(
-            delete(NotificationAudience).where(col(NotificationAudience.message_id) == message_id)
-        )
+        await self.session.exec(delete(NotificationAudience).where(col(NotificationAudience.message_id) == message_id))
         await message_crud.delete(message_id)
 
     async def publish_message(self, message_id: UUID, *, scheduled_run: bool = False) -> int:
@@ -274,6 +278,8 @@ class MessageOrchestrator:
         message = await message_crud.get_for_update(message_id)
         if message is None:
             raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
+        if message.display_mode != "inbox":
+            raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
         if message.status not in {
             MessageStatus.DRAFT.value,
             MessageStatus.SCHEDULED.value,
@@ -289,16 +295,11 @@ class MessageOrchestrator:
         ):
             raise AppException(NotificationStatusCode.SCHEDULE_NOT_DUE)
 
+        action = await resolve_action(message.action, session=self.session, provider=self.menu_provider)
         audience_rules = await self._load_audience_rules(message_id)
-        recipients = await self.audience.resolve(audience_rules)
-        recipients = await self.preference.filter_allowed(
-            recipients,
-            category=message.category,
-            mandatory=message.mandatory,
+        message = await message_crud.update_by_id(
+            message_id, {"status": MessageStatus.PUBLISHING.value, "action": action}
         )
-        if not recipients:
-            raise AppException(NotificationStatusCode.EMPTY_AUDIENCE)
-        message = await message_crud.update_by_id(message_id, {"status": MessageStatus.PUBLISHING.value})
         return await self._fanout(message, audience_rules)
 
     async def cancel_message(self, message_id: UUID) -> None:
@@ -307,6 +308,8 @@ class MessageOrchestrator:
         message = await message_crud.get_for_update(message_id)
         if message is None:
             raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
+        if message.display_mode != "inbox":
+            raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
         if message.status not in {
             MessageStatus.DRAFT.value,
             MessageStatus.SCHEDULED.value,
@@ -327,6 +330,8 @@ class MessageOrchestrator:
         message = await message_crud.get_for_update(message_id)
         if message is None:
             raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
+        if message.display_mode != "inbox":
+            raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
         if message.status != MessageStatus.PUBLISHED.value:
             raise AppException(NotificationStatusCode.MESSAGE_NOT_RECALLABLE)
 
@@ -341,7 +346,11 @@ class MessageOrchestrator:
 
     async def process(self, command: NotificationCommand) -> NotificationResult:
         """Resolve, deduplicate, and persist a notification without committing."""
-        validate_action(command.action.model_dump() if command.action is not None else None)
+        action = await resolve_action(
+            command.action.model_dump(mode="json") if command.action is not None else None,
+            session=self.session,
+            provider=self.menu_provider,
+        )
         validate_json_shape(command.meta)
         for channel in command.channels:
             if channel not in _ALLOWED_CHANNELS:
@@ -361,7 +370,7 @@ class MessageOrchestrator:
                     deduplicated=True,
                 )
 
-        rendered, template_id = await self._resolve_content(command)
+        rendered, template_id, personalization = await self._resolve_content(command)
 
         try:
             message = await message_crud.create(
@@ -376,7 +385,7 @@ class MessageOrchestrator:
                     "content_format": rendered.content_format,
                     "mandatory": command.mandatory,
                     "channels": list(command.channels),
-                    "action": command.action.model_dump() if command.action is not None else None,
+                    "action": action,
                     "meta": command.meta,
                     "status": MessageStatus.PUBLISHING.value,
                     "deduplication_key": command.deduplication_key,
@@ -384,6 +393,7 @@ class MessageOrchestrator:
                     "created_by": None,
                     "template_id": template_id,
                     "template_code": command.template_code,
+                    "personalization": personalization,
                 }
             )
         except AppException as exc:

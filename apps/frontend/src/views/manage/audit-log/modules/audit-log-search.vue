@@ -36,7 +36,7 @@
 
 <template>
   <NCard :bordered="false" size="small" class="card-wrapper">
-    <NCollapse>
+    <NCollapse :default-expanded-names="['audit-log-search']">
       <NCollapseItem :title="$t('common.search')" name="audit-log-search">
         <NForm ref="formRef" :model="model" label-placement="left" :label-width="90">
           <NGrid responsive="screen" item-responsive>

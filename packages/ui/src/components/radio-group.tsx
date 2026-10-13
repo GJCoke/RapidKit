@@ -10,7 +10,14 @@ function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
 
 function RadioGroupItem({ className, ...props }: RadioPrimitive.Root.Props) {
   return (
-    <RadioPrimitive.Root data-slot="radio-group-item" className={cn("size-4 shrink-0 rounded-full border border-input outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-checked:border-primary", className)} {...props}>
+    <RadioPrimitive.Root
+      data-slot="radio-group-item"
+      className={cn(
+        "size-4 shrink-0 rounded-full border border-input outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-checked:border-primary",
+        className,
+      )}
+      {...props}
+    >
       <RadioPrimitive.Indicator className="grid size-full place-items-center text-primary">
         <CircleIcon className="size-2 fill-current" />
       </RadioPrimitive.Indicator>

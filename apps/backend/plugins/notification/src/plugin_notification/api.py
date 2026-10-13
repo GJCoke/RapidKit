@@ -8,14 +8,18 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query
 from rapidkit_common.auth import UserDBDep
+from rapidkit_common.deps import SessionDep
 from rapidkit_common.schemas.response import Response
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
-from sqlmodel import col, update
+from sqlmodel import col, select, update
 
+from plugin_notification.admin_deps import BannerServiceDep
+from plugin_notification.banner_schemas import TopBannerResponse
 from plugin_notification.crud import MessageCRUD, UserNotificationCRUD
 from plugin_notification.deps import InboxCrudDep
+from plugin_notification.inbox_projection import to_inbox_item
 from plugin_notification.models import NotificationMessage, UserNotification
 from plugin_notification.schemas import InboxListQuery, InboxPage, NotificationItem, UnreadCount
 from plugin_notification.status_codes import NotificationStatusCode
@@ -27,31 +31,7 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 def _to_item(row: UserNotification, message: NotificationMessage) -> NotificationItem:
     """将收件箱记录与消息内容合并为公开响应。"""
-    return NotificationItem(
-        id=row.id,
-        message_id=row.message_id,
-        content_mode=message.content_mode,
-        title=message.title,
-        content=message.content,
-        content_params=message.content_params,
-        content_format=message.content_format,
-        level=message.level,
-        category=message.category,
-        mandatory=message.mandatory,
-        action=(
-            None
-            if message.status in {"recalled", "expired"}
-            or message.expire_at is not None
-            and message.expire_at <= timezone.now()
-            else message.action
-        ),
-        status=message.status,
-        expire_at=message.expire_at,
-        recalled_at=message.recalled_at,
-        read_at=row.read_at,
-        archived_at=row.archived_at,
-        create_time=row.create_time,
-    )
+    return to_inbox_item(row, message)
 
 
 @router.get("")
@@ -85,13 +65,16 @@ async def get_unread_count(user: UserDBDep, crud: InboxCrudDep) -> Response[Unre
 
 @router.post("/read-all")
 async def mark_all_read(user: UserDBDep, crud: InboxCrudDep) -> Response[None]:
-    """把当前用户所有未删除的未读通知标记为已读。"""
+    """把当前用户所有未删除、未撤回的未读通知标记为已读。"""
     statement = (
         update(UserNotification)
         .where(
             col(UserNotification.user_id) == user.id,
             col(UserNotification.read_at).is_(None),
             col(UserNotification.deleted_at).is_(None),
+            col(UserNotification.message_id).in_(
+                select(NotificationMessage.id).where(col(NotificationMessage.status) != "recalled")
+            ),
         )
         .values(read_at=timezone.now())
     )
@@ -99,6 +82,11 @@ async def mark_all_read(user: UserDBDep, crud: InboxCrudDep) -> Response[None]:
     await crud.session.flush()
     logger.info("All notifications marked read: user_id={user_id}", user_id=user.id)
     return Response(data=None)
+
+
+@router.get("/top-banner")
+async def get_top_banner(user: UserDBDep, session: SessionDep, banner: BannerServiceDep) -> Response[TopBannerResponse]:
+    return Response(data=await banner.snapshot(session, user=user))
 
 
 @router.get("/{notification_id}")
@@ -121,17 +109,28 @@ async def mark_read(
     user: UserDBDep,
     crud: InboxCrudDep,
 ) -> Response[None]:
-    """把当前用户的一条通知标记为已读。"""
+    """把当前用户的一条未撤回通知标记为已读。"""
     row = await _get_current_user_notification(crud, user.id, notification_id)
     if row.read_at is None:
-        row.read_at = timezone.now()
-        crud.session.add(row)
-        await crud.session.flush()
-        logger.info(
-            "Notification marked read: user_id={user_id}, notification_id={notification_id}",
-            user_id=user.id,
-            notification_id=notification_id,
+        statement = (
+            update(UserNotification)
+            .where(
+                col(UserNotification.id) == row.id,
+                col(UserNotification.read_at).is_(None),
+                col(UserNotification.message_id).in_(
+                    select(NotificationMessage.id).where(col(NotificationMessage.status) != "recalled")
+                ),
+            )
+            .values(read_at=timezone.now())
         )
+        result = await crud.session.exec(statement)
+        await crud.session.flush()
+        if result.rowcount:
+            logger.info(
+                "Notification marked read: user_id={user_id}, notification_id={notification_id}",
+                user_id=user.id,
+                notification_id=notification_id,
+            )
     return Response(data=None)
 
 

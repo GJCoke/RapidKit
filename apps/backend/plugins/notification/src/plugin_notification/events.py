@@ -18,6 +18,7 @@ from rapidkit_core.log import get_plugin_logger
 from src.sio.app import socket
 from src.sio.constants import authenticated_sid_structure, sid_user_structure
 
+from plugin_notification.banner_service import BANNER_ROOM
 from plugin_notification.channels import notification_user_room
 from plugin_notification.crud import UserNotificationCRUD
 
@@ -51,6 +52,7 @@ async def notifications_connect(sid: SID, redis: RedisDep) -> Literal[False] | N
         return False
 
     await socket.enter_room(sid, notification_user_room(user_id), namespace=_NS)
+    await socket.enter_room(sid, BANNER_ROOM, namespace=_NS)
     async with AsyncSessionLocal() as session:
         count = await UserNotificationCRUD(session).get_unread_count(user_id)
     await socket.emit("notification:unread-count", {"count": count}, to=sid, namespace=_NS)

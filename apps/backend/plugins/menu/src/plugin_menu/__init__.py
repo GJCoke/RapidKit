@@ -6,7 +6,11 @@ Date    : 2026-04-14
 """
 
 from rapidkit_common.events import RolePermissionsChangedEvent, UserRolesChangedEvent
+from rapidkit_common.protocols.menu import MenuNavigationProvider
 from rapidkit_framework.plugin import PluginManifest
+from rapidkit_framework.services import ServiceRegistry
+
+from plugin_menu.providers import MenuNavigationProvider as NavigationProvider
 
 
 async def _on_role_permissions_changed(event: RolePermissionsChangedEvent) -> None:
@@ -29,6 +33,10 @@ async def _on_user_roles_changed(event: UserRolesChangedEvent) -> None:
     await invalidate_menu_cache(redis)
 
 
+def register_services(registry: ServiceRegistry) -> None:
+    registry.register(MenuNavigationProvider, NavigationProvider())
+
+
 def register() -> PluginManifest:
     from fastapi import APIRouter
 
@@ -46,6 +54,8 @@ def register() -> PluginManifest:
         router=combined,
         models=[Menu],
         dependencies=["permission"],
+        provides=[MenuNavigationProvider],
+        service_factories={MenuNavigationProvider: register_services},
         event_listeners=[
             (RolePermissionsChangedEvent, _on_role_permissions_changed),
             (UserRolesChangedEvent, _on_user_roles_changed),

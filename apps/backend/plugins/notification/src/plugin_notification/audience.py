@@ -3,7 +3,7 @@
 from uuid import UUID
 
 from rapidkit_common.protocols.notification import AudienceRule
-from rapidkit_common.protocols.user import UserQueryService
+from rapidkit_common.protocols.user import UserPublicProfile, UserQueryService
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.exceptions import AppException
 
@@ -17,6 +17,9 @@ class AudienceResolver:
 
     def __init__(self, query_service: UserQueryService):
         self._query_service = query_service
+
+    async def get_public_profiles(self, user_ids: list[UUID]) -> dict[UUID, UserPublicProfile]:
+        return await self._query_service.get_public_profiles(user_ids)
 
     async def resolve(self, rules: list[AudienceRule]) -> list[UUID]:
         """Resolve user, role, department, and all-user rules into unique IDs."""

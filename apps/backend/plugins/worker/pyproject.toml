@@ -3,12 +3,7 @@ name = "rapidkit-plugin-worker"
 version = "0.1.0"
 description = "RapidKit Celery worker monitoring plugin"
 requires-python = ">=3.14"
-dependencies = [
-    "rapidkit-core",
-    "rapidkit-common",
-    "celery>=5.6.3,<6.0",
-    "fastapi-sio-di>=0.5.3",
-]
+dependencies = ["rapidkit-core", "rapidkit-common", "celery>=5.6.3,<6.0", "fastapi-sio-di>=0.5.3"]
 
 [project.entry-points."rapidkit.plugins"]
 worker = "plugin_worker:register"

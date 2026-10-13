@@ -44,9 +44,7 @@ describe("active menu binding", () => {
   })
 
   it("allows page rows to add a child and forwards the selected row as its parent", () => {
-    expect(menuIndexSource).not.toMatch(
-      /row\.menuType\s*===\s*["']1["']\s*&&\s*hasAuth\(["']manage_menu:add["']\)/,
-    )
+    expect(menuIndexSource).not.toMatch(/row\.menuType\s*===\s*["']1["']\s*&&\s*hasAuth\(["']manage_menu:add["']\)/)
     expect(menuIndexSource).toMatch(/hasAuth\(["']manage_menu:add["']\)\s*&&\s*\(/)
     expect(menuIndexSource).toContain("onClick={() => handleAddChildMenu(row)}")
     expect(menuIndexSource).toMatch(
@@ -64,9 +62,7 @@ describe("active menu binding", () => {
     await loader.load("parent-1", false)
 
     expect(fetchOptions).toHaveBeenCalledWith("parent-1", false)
-    expect(loader.activeMenuOptions.value).toEqual([
-      { label: "Users (manage_user)", value: "manage_user" },
-    ])
+    expect(loader.activeMenuOptions.value).toEqual([{ label: "Users (manage_user)", value: "manage_user" }])
   })
 
   it("clears options when a candidate request fails", async () => {
@@ -104,9 +100,7 @@ describe("active menu binding", () => {
 
     expect(fetchOptions).toHaveBeenNthCalledWith(1, "parent-a", false)
     expect(fetchOptions).toHaveBeenNthCalledWith(2, "parent-a", true)
-    expect(loader.activeMenuOptions.value).toEqual([
-      { label: "Roles (manage_role)", value: "manage_role" },
-    ])
+    expect(loader.activeMenuOptions.value).toEqual([{ label: "Roles (manage_role)", value: "manage_role" }])
   })
 
   it("clears options for a root menu and ignores an in-flight child response", async () => {

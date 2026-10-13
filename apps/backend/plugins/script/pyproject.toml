@@ -3,10 +3,7 @@ name = "rapidkit-plugin-script"
 version = "0.1.0"
 description = "RapidKit script management plugin"
 requires-python = ">=3.14"
-dependencies = [
-    "rapidkit-core",
-    "rapidkit-common",
-]
+dependencies = ["rapidkit-core", "rapidkit-common"]
 
 [project.entry-points."rapidkit.plugins"]
 script = "plugin_script:register"

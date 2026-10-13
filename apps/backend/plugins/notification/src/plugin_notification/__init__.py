@@ -1,5 +1,6 @@
 """通用通知插件 —— 注册入口。"""
 
+from rapidkit_common.protocols.menu import MenuNavigationProvider
 from rapidkit_framework.plugin import PermissionDef, PluginManifest
 from rapidkit_framework.services import ServiceRegistry
 
@@ -14,6 +15,7 @@ def register() -> PluginManifest:
     from plugin_notification.api import router as inbox_router
     from plugin_notification.models import (
         NotificationAudience,
+        NotificationBannerState,
         NotificationMessage,
         NotificationOutbox,
         NotificationPreference,
@@ -49,14 +51,31 @@ def register() -> PluginManifest:
         router=router,
         models=[
             NotificationMessage,
+            NotificationBannerState,
             NotificationAudience,
             UserNotification,
             NotificationOutbox,
             NotificationTemplate,
             NotificationPreference,
         ],
-        dependencies=["user"],
+        dependencies=["user", "menu"],
+        requires=[MenuNavigationProvider],
         permissions=[
+            PermissionDef(
+                code="POST:/api/v1/admin/notifications/banner-check",
+                name="检查顶部公告",
+                description="只读检查展示及预约",
+            ),
+            PermissionDef(
+                code="GET:/api/v1/admin/notifications/action-targets",
+                name="查看跳转菜单",
+                description="查看当前操作者可选菜单",
+            ),
+            PermissionDef(
+                code="POST:/api/v1/admin/notifications/action-preview",
+                name="验证公告跳转",
+                description="只读验证公告跳转目标",
+            ),
             PermissionDef(
                 code="GET:/api/v1/notifications",
                 name="查看站内通知",
@@ -95,6 +114,16 @@ def register() -> PluginManifest:
             ),
             PermissionDef(code="GET:/api/v1/admin/notifications", name="查看公告", description="查看公告列表"),
             PermissionDef(code="POST:/api/v1/admin/notifications", name="创建公告", description="创建草稿或定时公告"),
+            PermissionDef(
+                code="POST:/api/v1/admin/notifications/audience-preview",
+                name="预览未保存公告受众",
+                description="只读预览未保存公告的受众范围",
+            ),
+            PermissionDef(
+                code="POST:/api/v1/admin/notifications/content-preview",
+                name="预览公告内容",
+                description="只读预览公告模板与接收者参数",
+            ),
             PermissionDef(
                 code="GET:/api/v1/admin/notifications/{message_id}",
                 name="查看公告详情",

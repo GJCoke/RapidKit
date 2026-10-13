@@ -33,11 +33,7 @@ export function createUsernamePinyinState(initialMode: NaiveUI.TableOperateType)
     return latestRequestId
   }
 
-  function accept(
-    requestId: number,
-    result: UsernamePinyinValidation,
-    allowAutofill = true,
-  ): { username?: string } {
+  function accept(requestId: number, result: UsernamePinyinValidation, allowAutofill = true): { username?: string } {
     if (requestId !== latestRequestId) return {}
 
     suggestedUsername.value = result.suggestedUsername

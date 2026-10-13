@@ -20,7 +20,11 @@ function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
 
 function FieldError({ className, children, ...props }: React.ComponentProps<"p">) {
   if (!children) return null
-  return <p data-slot="field-error" role="alert" className={cn("text-xs text-destructive", className)} {...props}>{children}</p>
+  return (
+    <p data-slot="field-error" role="alert" className={cn("text-xs text-destructive", className)} {...props}>
+      {children}
+    </p>
+  )
 }
 
 export { Field, FieldDescription, FieldError, FieldGroup, FieldLabel }

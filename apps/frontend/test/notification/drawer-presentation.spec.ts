@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
 const drawerSource = readFileSync(
-  fileURLToPath(new URL("../../src/components/notification/message-drawer.vue", import.meta.url)),
+  fileURLToPath(new URL("../../src/components/notification/message-popover.vue", import.meta.url)),
   "utf8",
 )
 const itemSource = readFileSync(
@@ -11,9 +11,9 @@ const itemSource = readFileSync(
   "utf8",
 )
 
-describe("notification drawer presentation", () => {
-  it("uses project components for drawer states and actions", () => {
-    expect(drawerSource).toContain("<NDrawer")
+describe("notification popover presentation", () => {
+  it("uses project components for popover states and actions", () => {
+    expect(drawerSource).toContain("<NPopover")
     expect(drawerSource).toContain("<NSkeleton")
     expect(drawerSource).toContain("<NEmpty")
     expect(drawerSource).toContain("<NButton")
@@ -21,10 +21,12 @@ describe("notification drawer presentation", () => {
     expect(drawerSource).toContain("compact")
   })
 
-  it("keeps drawer-specific styling behind compact mode", () => {
+  it("keeps popover-specific styling behind compact mode", () => {
     expect(itemSource).toContain("compact?: boolean")
-    expect(itemSource).toContain('v-if="compact"')
+    expect(itemSource).toContain('v-else-if="compact"')
     expect(itemSource).toContain("isActionable")
-    expect(itemSource).toContain("carbon:chevron-right")
+    expect(itemSource).toContain("notification-preview-action")
+    expect(itemSource).toContain("actionLabel")
+    expect(itemSource).not.toContain("carbon:chevron-right")
   })
 })

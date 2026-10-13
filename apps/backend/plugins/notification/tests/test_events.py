@@ -92,12 +92,9 @@ async def test_connect_bridges_namespace_sid_to_root_identity_and_joins_user_roo
     assert result is None
     assert redis.exists_keys == [authenticated_sid_structure.format(sid=root_sid)]
     assert redis.hget_calls == [(sid_user_structure.format(sid=root_sid), "id")]
-    assert f"notification:user:<{user_id}>" in socket_harness.manager.get_rooms(
-        notification_sid, "/notifications"
-    )
-    assert socket_harness.emitted == [
-        ("notification:unread-count", {"count": 7}, notification_sid, "/notifications")
-    ]
+    assert f"notification:user:<{user_id}>" in socket_harness.manager.get_rooms(notification_sid, "/notifications")
+    assert "announcement:authenticated" in socket_harness.manager.get_rooms(notification_sid, "/notifications")
+    assert socket_harness.emitted == [("notification:unread-count", {"count": 7}, notification_sid, "/notifications")]
 
 
 @pytest.mark.asyncio
@@ -108,6 +105,4 @@ async def test_sync_bridges_namespace_sid_to_root_identity(monkeypatch):
     await events.notifications_sync(notification_sid, redis)
 
     assert redis.hget_calls == [(sid_user_structure.format(sid=root_sid), "id")]
-    assert socket_harness.emitted == [
-        ("notification:unread-count", {"count": 7}, notification_sid, "/notifications")
-    ]
+    assert socket_harness.emitted == [("notification:unread-count", {"count": 7}, notification_sid, "/notifications")]

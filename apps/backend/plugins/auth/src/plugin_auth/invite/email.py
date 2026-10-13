@@ -19,9 +19,12 @@ def render_invite_email(platform_name: str, user_name: str, username: str, invit
     body = f"""<!doctype html>
 <html lang="zh-CN">
   <body style="margin:0;background:#f3f5f9;color:#1f2937;font-family:Arial,'Microsoft YaHei',sans-serif;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f5f9;padding:32px 12px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+      style="background:#f3f5f9;padding:32px 12px;">
       <tr><td align="center">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 6px 24px rgba(15,23,42,.08);">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+          style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;
+            box-shadow:0 6px 24px rgba(15,23,42,.08);">
           <tr><td style="background:#4361ee;padding:28px 36px;color:#ffffff;">
             <div style="font-size:14px;opacity:.9;">{safe_platform_name}</div>
             <div style="font-size:24px;font-weight:700;margin-top:6px;">账号激活邀请</div>
@@ -29,12 +32,16 @@ def render_invite_email(platform_name: str, user_name: str, username: str, invit
           <tr><td style="padding:32px 36px;line-height:1.75;">
             <p style="margin:0 0 16px;">您好，{safe_name}：</p>
             <p style="margin:0 0 20px;">您在 {safe_platform_name} 的账号已创建，请设置密码完成激活。</p>
-            <div style="background:#eef2ff;border-left:4px solid #4361ee;border-radius:6px;padding:16px 18px;margin:0 0 24px;">
+            <div style="background:#eef2ff;border-left:4px solid #4361ee;border-radius:6px;
+              padding:16px 18px;margin:0 0 24px;">
               <div style="font-size:13px;color:#64748b;">登录账号（采用个人姓名拼音）</div>
               <div style="font-size:20px;font-weight:700;color:#1e3a8a;margin-top:4px;">{safe_username}</div>
             </div>
-            <p style="text-align:center;margin:28px 0;"><a href="{safe_link}" style="display:inline-block;background:#4361ee;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 28px;border-radius:8px;">设置密码并激活账号</a></p>
-            <div style="background:#fff7ed;color:#9a3412;border-radius:6px;padding:14px 16px;font-size:14px;">此链接在 48 小时内有效且仅可使用一次，请勿转发给他人。</div>
+            <p style="text-align:center;margin:28px 0;"><a href="{safe_link}"
+              style="display:inline-block;background:#4361ee;color:#ffffff;text-decoration:none;
+                font-weight:700;padding:12px 28px;border-radius:8px;">设置密码并激活账号</a></p>
+            <div style="background:#fff7ed;color:#9a3412;border-radius:6px;padding:14px 16px;font-size:14px;">
+              此链接在 48 小时内有效且仅可使用一次，请勿转发给他人。</div>
             <p style="margin:20px 0 0;color:#64748b;font-size:13px;">若您不了解此次邀请，请忽略本邮件或联系管理员。</p>
           </td></tr>
         </table>

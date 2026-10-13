@@ -136,6 +136,58 @@ async def test_create_message_with_past_publish_time_is_scheduled(db_session):
 
 
 @pytest.mark.asyncio
+async def test_planned_draft_is_not_due_until_explicitly_scheduled(db_session):
+    orchestrator = _orchestrator(db_session, [uuid4()])
+    future = timezone.now() + timedelta(hours=1)
+    message = await orchestrator.create_message(
+        _raw_command(),
+        created_by=uuid4(),
+        publish_at=future,
+        save_as_draft=True,
+    )
+    await db_session.commit()
+
+    assert message.status == MessageStatus.DRAFT.value
+    assert message.publish_at == future
+    assert await MessageCRUD(db_session).get_due_scheduled(future + timedelta(seconds=1)) == []
+    assert (await db_session.exec(select(UserNotification))).all() == []
+
+    scheduled = await orchestrator.update_message(
+        message.id,
+        _raw_command(),
+        publish_at=future,
+        expire_at=None,
+        save_as_draft=False,
+    )
+    await db_session.commit()
+
+    assert scheduled.status == MessageStatus.SCHEDULED.value
+    assert scheduled.publish_at == future
+    assert [row.id for row in await MessageCRUD(db_session).get_due_scheduled(future)] == [message.id]
+
+
+@pytest.mark.asyncio
+async def test_update_scheduled_message_as_draft_preserves_plan_without_worker_claim(db_session):
+    orchestrator = _orchestrator(db_session, [uuid4()])
+    future = timezone.now() + timedelta(hours=1)
+    message = await orchestrator.create_message(_raw_command(), created_by=uuid4(), publish_at=future)
+    await db_session.commit()
+
+    updated = await orchestrator.update_message(
+        message.id,
+        _raw_command(),
+        publish_at=future,
+        expire_at=None,
+        save_as_draft=True,
+    )
+    await db_session.commit()
+
+    assert updated.status == MessageStatus.DRAFT.value
+    assert updated.publish_at == future
+    assert await MessageCRUD(db_session).get_due_scheduled(future + timedelta(seconds=1)) == []
+
+
+@pytest.mark.asyncio
 async def test_message_crud_get_for_update_emits_postgresql_row_lock():
     class _EmptyResult:
         def first(self):
@@ -243,6 +295,57 @@ async def test_create_message_template_mode_persists_rendered_snapshot(db_sessio
     assert message.title == "Invite alice"
     assert message.content == "Welcome alice"
     assert message.template_id is not None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("initial_variables", "updated_variables", "initial_title", "initial_content", "updated_title"),
+    [
+        ({"count": 0, "enabled": False}, {"count": 8, "enabled": True}, "Count 0", "Enabled False", "Count 8"),
+        ({"count": 8, "enabled": True}, {"count": 0, "enabled": False}, "Count 8", "Enabled True", "Count 0"),
+    ],
+)
+async def test_template_variables_reload_after_create_and_update_including_zero_and_false(
+    db_session, initial_variables, updated_variables, initial_title, initial_content, updated_title
+):
+    template = _template_data()
+    template.update(
+        title_template="Count {count}",
+        content_template="Enabled {enabled}",
+        variable_schema={
+            "count": {"type": "integer", "required": True},
+            "enabled": {"type": "boolean", "required": True},
+        },
+    )
+    await TemplateCRUD(db_session).create(template)
+    orchestrator = _orchestrator(db_session, [uuid4()])
+    command = NotificationCommand(
+        source="admin",
+        category="admin.announcement",
+        template_code="user.invited",
+        template_variables=initial_variables,
+        audience=[AudienceRule(type="all")],
+    )
+    message = await orchestrator.create_message(command, created_by=uuid4())
+    message_id = message.id
+    await db_session.commit()
+    db_session.expunge_all()
+
+    reloaded = await MessageCRUD(db_session).get(message_id)
+    assert reloaded is not None
+    assert reloaded.content_params == initial_variables
+    assert reloaded.title == initial_title
+    assert reloaded.content == initial_content
+
+    command.template_variables = updated_variables
+    await orchestrator.update_message(message_id, command, publish_at=None, expire_at=None)
+    await db_session.commit()
+    db_session.expunge_all()
+
+    updated = await MessageCRUD(db_session).get(message_id)
+    assert updated is not None
+    assert updated.content_params == updated_variables
+    assert updated.title == updated_title
 
 
 @pytest.mark.asyncio

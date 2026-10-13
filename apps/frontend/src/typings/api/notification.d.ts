@@ -11,7 +11,9 @@ import type { Service } from "@/typings/service"
 declare global {
   namespace Api {
     namespace Notification {
-      type ContentMode = "i18n" | "raw"
+      type ContentMode = "i18n" | "raw" | "local"
+      type TemplateContentMode = Exclude<ContentMode, "local">
+      type LocalizedContent = NonNullable<AnnouncementCreate["localizedContent"]>
 
       type ContentFormat = "plain_text" | "markdown"
 
@@ -19,11 +21,11 @@ declare global {
 
       type Channel = "in_app"
 
-      interface ActionRef {
-        route: string
-        params?: Record<string, unknown>
-        label?: string | null
-      }
+      type ActionInput = Service.ApiRequest<"/api/v1/admin/notifications/action-preview", "post", "body">
+      type ActionTargets = Service.ApiResponse<"/api/v1/admin/notifications/action-targets", "get">
+      type ActionTarget = ActionTargets[number]
+      type ResolvedAction = Service.ApiResponse<"/api/v1/admin/notifications/action-preview", "post">
+      type ActionRef = ActionInput
 
       type InboxQuery = Service.ApiRequest<"/api/v1/notifications", "get", "query">
 
@@ -70,7 +72,7 @@ declare global {
         name: string
         category: string
         level: Level
-        contentMode: ContentMode
+        contentMode: TemplateContentMode
         titleTemplate: string
         contentTemplate: string
         contentFormat?: ContentFormat | null
@@ -98,7 +100,7 @@ declare global {
         name: string
         category: string
         level: Level
-        contentMode: ContentMode
+        contentMode: TemplateContentMode
         titleTemplate: string
         contentTemplate: string
         contentFormat?: ContentFormat | null
@@ -129,65 +131,52 @@ declare global {
         includeDescendants?: boolean
       }
 
-      interface AnnouncementCreate {
-        category?: string
-        level?: Level
-        templateCode?: string | null
-        templateVariables?: Record<string, unknown>
-        i18NKey?: string | null
-        i18NParams?: Record<string, unknown>
-        rawTitle?: string | null
-        rawContent?: string | null
-        rawFormat?: ContentFormat
-        audience: AudienceRule[]
-        mandatory?: boolean
-        channels?: Channel[]
-        action?: ActionRef | null
-        publishAt?: string | null
-        expireAt?: string | null
-      }
+      type AnnouncementCreate = Service.ApiRequest<"/api/v1/admin/notifications", "post", "body">
 
       type AnnouncementUpdate = Service.ApiRequest<"/api/v1/admin/notifications/{message_id}", "put", "body">
 
       type AnnouncementDetail = Service.ApiResponse<"/api/v1/admin/notifications/{message_id}", "get">
 
-      interface AnnouncementItem {
-        id: string
-        source: string
-        category: string
-        level: Level
-        contentMode: string
-        title: string
-        content: string
-        status: "draft" | "scheduled" | "publishing" | "published" | "expired" | "cancelled" | "recalled"
-        mandatory: boolean
-        publishAt?: string | null
-        publishedAt?: string | null
-        expireAt?: string | null
-        recalledAt?: string | null
-        cancelledAt?: string | null
-        createTime: string
-        updateTime: string
+      type AnnouncementList = Service.ApiResponse<"/api/v1/admin/notifications", "get">
+      type AnnouncementItem = AnnouncementList["records"][number]
+      type AnnouncementListQuery = NonNullable<Service.ApiRequest<"/api/v1/admin/notifications", "get", "query">>
+      type BannerCheckBody = Service.ApiRequest<"/api/v1/admin/notifications/banner-check", "post", "body">
+      type RawTopBanner = Service.ApiResponse<"/api/v1/notifications/top-banner", "get">
+      type BannerSummary = Omit<NonNullable<RawTopBanner["current"]>, "contentMode" | "action"> & {
+        contentMode: ContentMode
+        action?: ActionRef | null
       }
-
-      interface AnnouncementListQuery {
-        page: number
-        pageSize: number
-        status?: AnnouncementItem["status"]
-        category?: string
+      type TopBanner = Omit<RawTopBanner, "current"> & { current?: BannerSummary | null }
+      type BannerCheck = Omit<
+        Service.ApiResponse<"/api/v1/admin/notifications/banner-check", "post">,
+        "current" | "scheduled"
+      > & {
+        current?: BannerSummary | null
+        scheduled?: BannerSummary | null
       }
-
-      type AnnouncementList = Api.Common.PaginatingQueryRecord<AnnouncementItem>
+      type BannerConfirmation = Pick<AnnouncementCreate, "bannerRevision" | "replaceCurrent" | "replaceScheduled">
 
       interface AudiencePreview {
         total: number
         byType: Record<string, number>
       }
 
-      interface DeliverySummary {
-        messageId: string
-        byStatus: Record<string, number>
-      }
+      type AudiencePreviewBody = Service.ApiRequest<"/api/v1/admin/notifications/audience-preview", "post", "body">
+      type UnsavedAudiencePreview = Service.ApiResponse<"/api/v1/admin/notifications/audience-preview", "post">
+      type ContentPreviewBody = Service.ApiRequest<"/api/v1/admin/notifications/content-preview", "post", "body">
+      type ContentPreview = Service.ApiResponse<"/api/v1/admin/notifications/content-preview", "post">
+
+      type DeliveryQuery = NonNullable<Service.ApiRequest<"/api/v1/admin/notification-deliveries", "get", "query">>
+      type DeliveryPage = Service.ApiResponse<"/api/v1/admin/notification-deliveries">
+      type Delivery = DeliveryPage["records"][number]
+      type DeliveryRecipient = NonNullable<Delivery["recipient"]>
+      type DeliveryMessage = NonNullable<Delivery["message"]>
+      type DeliveryStatus = Delivery["status"]
+      type DeliverySummary = Service.ApiResponse<"/api/v1/admin/notification-deliveries/{message_id}/summary">
+      type DeliveryRetry = Service.ApiResponse<
+        "/api/v1/admin/notification-deliveries/{message_id}/retry-failed",
+        "post"
+      >
     }
   }
 }
