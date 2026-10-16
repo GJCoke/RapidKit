@@ -1,19 +1,24 @@
 import { localStg } from "@/utils/storage"
 
-let observedRefreshToken = ""
+let observedIdentity = ""
 let session = 0
 
-/** Token rotation preserves the session; externally replaced credentials start another one. */
+function credentialIdentity() {
+  const impersonation = localStg.get("impersonation")
+  if (impersonation) return `impersonation:${impersonation.sessionId}`
+  return `normal:${localStg.get("refreshToken") || localStg.get("token") || ""}`
+}
+
 export function getAuthSession() {
-  const refreshToken = localStg.get("refreshToken") || ""
-  if (refreshToken !== observedRefreshToken) {
-    observedRefreshToken = refreshToken
+  const identity = credentialIdentity()
+  if (identity !== observedIdentity) {
+    observedIdentity = identity
     session++
   }
   return session
 }
 
-/** Called synchronously after this client accepts a successful rotation. */
+/** An accepted ordinary token rotation keeps its logical identity generation. */
 export function recordTokenRotation(refreshToken: string) {
-  observedRefreshToken = refreshToken
+  if (!localStg.get("impersonation")) observedIdentity = `normal:${refreshToken}`
 }

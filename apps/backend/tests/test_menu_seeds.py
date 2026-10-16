@@ -28,3 +28,13 @@ def test_notification_management_seed_has_ordered_route_tree_and_permissions() -
         child = by_name[route_name]
         assert child.parent_id == parent.id
         assert list_permission in child.interfaces
+
+
+def test_user_detail_seed_registers_hidden_authorized_page() -> None:
+    by_name = {menu.route_name: menu for menu in build_menus()}
+    detail = by_name["manage_user-detail"]
+    assert detail.parent_id == by_name["manage"].id
+    assert detail.route_path == "/manage/user-detail/:id"
+    assert detail.component == "view.manage_user-detail"
+    assert detail.hide_in_menu and not detail.constant
+    assert detail.interfaces == ["GET:/api/v1/users/{user_id}"]

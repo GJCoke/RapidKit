@@ -53,9 +53,11 @@
       {
         key: "actorName",
         title: $t("page.manage.auditLog.actor"),
-        width: 130,
+        minWidth: 280,
         ellipsis: { tooltip: true },
-        render: (row) => row.actorName || "-",
+        render: (row) => row.impersonationSessionId
+          ? $t("page.manage.auditLog.impersonatedAction", { actor: row.actorName || row.actorId || "-", subject: row.subjectName || row.subjectUserId || "-", action: row.action })
+          : row.actorName || "-",
       },
       { key: "action", title: $t("page.manage.auditLog.action"), width: 120, ellipsis: { tooltip: true } },
       {
@@ -124,7 +126,7 @@
         :data="data"
         size="small"
         :flex-height="!appStore.isMobile"
-        :scroll-x="1110"
+        :scroll-x="1260"
         :loading="loading"
         remote
         :row-key="(row) => row.id"

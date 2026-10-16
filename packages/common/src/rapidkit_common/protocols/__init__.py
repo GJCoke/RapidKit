@@ -1,6 +1,8 @@
 """Cross-plugin protocol definitions — the shared contracts between plugins."""
 
 from rapidkit_common.protocols.auth import (
+    AuthContext,
+    AuthContextResolver,
     Authenticator,
     CurrentUserProvider,
     PasswordDecryptor,
@@ -8,6 +10,11 @@ from rapidkit_common.protocols.auth import (
     TokenDecoder,
 )
 from rapidkit_common.protocols.department import DepartmentResolver
+from rapidkit_common.protocols.impersonation import (
+    ImpersonationAuditWriter,
+    ImpersonationRevoker,
+    ImpersonationSocketCloser,
+)
 from rapidkit_common.protocols.operations import (
     ApiErrorComparison,
     DayComparison,
@@ -24,7 +31,12 @@ from rapidkit_common.protocols.permission import PermissionChecker, PolicyLoader
 from rapidkit_common.protocols.user import UserProtocol, UserQueryService, UserResolver
 
 __all__ = [
+    "AuthContext",
+    "AuthContextResolver",
     "Authenticator",
+    "ImpersonationAuditWriter",
+    "ImpersonationRevoker",
+    "ImpersonationSocketCloser",
     "CurrentUserProvider",
     "DepartmentResolver",
     "ApiErrorComparison",

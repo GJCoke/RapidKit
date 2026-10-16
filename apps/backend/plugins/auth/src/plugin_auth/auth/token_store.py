@@ -11,9 +11,11 @@ Date   : 2026-05-07
 import time
 from uuid import UUID
 
+from rapidkit_common.protocols.impersonation import ImpersonationRevoker
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_core.uuid7 import uuid8
+from rapidkit_framework.services import get_service_optional
 from rapidkit_security import AccessJWT, RefreshJWT, create_token
 
 from plugin_auth.auth.schemas import RefreshTokenCache, TokenResponse
@@ -76,6 +78,9 @@ class TokenStore:
             await self._redis.delete(*keys)
         relogin_key = _FORCE_RELOGIN_KEY.format(user_id=user_id)
         await self._redis.set(relogin_key, "1", ex=auth_settings.REFRESH_TOKEN_EXP)
+        revoker = get_service_optional(ImpersonationRevoker)
+        if revoker is not None:
+            await revoker.revoke_user(user_id, self._redis)
 
     async def is_valid(self, user_id: UUID, jti: UUID) -> bool:
         """Check if a refresh token is still valid in Redis."""

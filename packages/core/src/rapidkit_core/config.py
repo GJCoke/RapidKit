@@ -180,7 +180,8 @@ class AuditMixin(BaseSettings):
         "/docs",
         "/openapi.json",
         "/redoc",
-        "/api/v1/auth/refreshToken",
+        "/api/v1/auth/token/refresh",
+        "/api/v1/auth/impersonations",
     ]
     AUDIT_SENSITIVE_FIELDS: list[str] = [
         "password",

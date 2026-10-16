@@ -83,6 +83,8 @@ declare global {
         "status"
       > & { status: UserStatus | null }
 
+      type UserDetail = Service.ApiResponse<"/api/v1/users/{user_id}">
+
       /** user search params */
       type UserSearchParams = Service.ApiRequest<"/api/v1/users", "get", "query">
 

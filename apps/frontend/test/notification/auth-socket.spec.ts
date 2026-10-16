@@ -2,6 +2,11 @@ import { createPinia, setActivePinia } from "pinia"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
+  storage: new Map<string, unknown>(),
+  fetchCreateImpersonation: vi.fn(),
+  fetchGetCurrentImpersonation: vi.fn(),
+  fetchDeleteCurrentImpersonation: vi.fn(),
+  fetchGetUserRoutes: vi.fn(),
   fetchGetPublicKey: vi.fn(),
   fetchGetUserInfo: vi.fn(),
   fetchLogin: vi.fn(),
@@ -22,6 +27,10 @@ vi.mock("@rapidkit/hooks", () => ({
 }))
 vi.mock("@rapidkit/utils", () => ({ rsaEncrypt: vi.fn(async () => "encrypted") }))
 vi.mock("@/service/api", () => ({
+  fetchCreateImpersonation: mocks.fetchCreateImpersonation,
+  fetchGetCurrentImpersonation: mocks.fetchGetCurrentImpersonation,
+  fetchDeleteCurrentImpersonation: mocks.fetchDeleteCurrentImpersonation,
+  fetchGetUserRoutes: mocks.fetchGetUserRoutes,
   fetchGetPublicKey: mocks.fetchGetPublicKey,
   fetchGetUserInfo: mocks.fetchGetUserInfo,
   fetchLogin: mocks.fetchLogin,
@@ -30,11 +39,28 @@ vi.mock("@/hooks/common/router", () => ({
   useRouterPush: () => ({ toLogin: vi.fn(), redirectFromLogin: vi.fn() }),
 }))
 vi.mock("@/utils/storage", () => ({
-  localStg: { get: vi.fn(() => "user-1"), set: vi.fn(), remove: vi.fn() },
+  localStg: {
+    get: (key: string) => mocks.storage.get(key) ?? null,
+    set: (key: string, value: unknown) => mocks.storage.set(key, value),
+    remove: (key: string) => mocks.storage.delete(key),
+  },
 }))
-vi.mock("@/store/modules/route", () => ({ useRouteStore: () => ({ resetStore: mocks.resetRouteStore }) }))
+vi.mock("@/store/modules/route", () => ({
+  useRouteStore: () => ({
+    resetStore: mocks.resetRouteStore,
+    resolveAuthRoutes: (_roles: string[], routes: unknown) => routes ?? [],
+    applyAuthRoutes: vi.fn(),
+    removeInaccessibleTabs: vi.fn(),
+    setIsInitAuthRoute: vi.fn(),
+  }),
+}))
 vi.mock("@/store/modules/tab", () => ({
-  useTabStore: () => ({ cacheTabs: mocks.cacheTabs, clearTabs: mocks.clearTabs }),
+  useTabStore: () => ({
+    cacheTabs: mocks.cacheTabs,
+    clearTabs: mocks.clearTabs,
+    $reset: vi.fn(),
+    initHomeTab: vi.fn(),
+  }),
 }))
 vi.mock("@/store/modules/auth/shared", () => ({
   clearAuthStorage: mocks.clearAuthStorage,
@@ -47,6 +73,10 @@ vi.mock("@/store/modules/notification/shared", () => ({
   connectNotificationSocket: mocks.connectNotificationSocket,
   disconnectNotificationSocket: mocks.disconnectNotificationSocket,
 }))
+
+vi.mock("@/store/modules/notification", () => ({ useNotificationStore: () => ({ reset: vi.fn() }) }))
+vi.mock("@/store/modules/banner", () => ({ useBannerStore: () => ({ reset: vi.fn() }) }))
+vi.mock("@/router", () => ({ router: { resolve: () => ({ name: "home" }), hasRoute: () => true, replace: vi.fn() } }))
 
 import { useAuthStore } from "@/store/modules/auth"
 
@@ -64,9 +94,19 @@ const userInfo = {
 
 describe("auth notification socket lifecycle", () => {
   beforeEach(() => {
-    vi.stubGlobal("window", { $notification: undefined })
+    vi.stubGlobal(
+      "window",
+      Object.assign(new EventTarget(), {
+        $notification: undefined,
+        location: { origin: "http://localhost", reload: vi.fn() },
+        localStorage: {},
+      }),
+    )
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    mocks.storage.clear()
+    mocks.resetRouteStore.mockResolvedValue(undefined)
+    mocks.fetchGetUserRoutes.mockResolvedValue({ data: { routes: [], home: "home" }, error: null })
     mocks.fetchGetPublicKey.mockResolvedValue({ data: "public-key", error: null })
     mocks.fetchLogin.mockResolvedValue({
       data: { accessToken: "login-token", refreshToken: "refresh-token" },

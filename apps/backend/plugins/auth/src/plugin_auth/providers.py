@@ -7,13 +7,14 @@ Date   : 2026-05-11
 
 from uuid import UUID
 
-from authlib.jose.errors import ExpiredTokenError, JoseError
+from rapidkit_common.protocols.impersonation import ImpersonationRevoker
 from rapidkit_common.protocols.user import UserProtocol, UserResolver
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.services import get_service_optional
 from rapidkit_framework.status_codes import StatusCode
-from rapidkit_security import decode_token, decrypt_message, hash_password
+from rapidkit_security import decrypt_message, hash_password
 
 from plugin_auth.auth_config import auth_settings
 
@@ -21,13 +22,13 @@ logger = get_plugin_logger("Auth")
 
 
 class TokenDecoderImpl:
-    """JWT token decoder — implements TokenDecoder protocol."""
+    def __init__(self, resolver):
+        self.resolver = resolver
 
     async def decode_user_id(self, token: str) -> UUID | None:
         try:
-            jwt_data = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
-            return jwt_data.sub
-        except ExpiredTokenError, JoseError:
+            return (await self.resolver.resolve(token)).subject.id
+        except AppException:
             return None
 
 
@@ -43,18 +44,18 @@ class AuthenticatorImpl:
 
 
 class CurrentUserProviderImpl:
-    """Resolve current user from token — implements CurrentUserProvider protocol."""
+    def __init__(self, resolver):
+        self.resolver = resolver
 
-    def __init__(self, user_resolver: UserResolver) -> None:
-        self._user_resolver = user_resolver
+    async def get_auth_context(self, token):
+        try:
+            return await self.resolver.resolve(token)
+        except AppException:
+            return None
 
     async def get_current_user(self, token: str) -> UserProtocol | None:
-        try:
-            jwt_data = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
-            user_id = jwt_data.sub if isinstance(jwt_data.sub, UUID) else UUID(jwt_data.sub)
-            return await self._user_resolver.get_by_id(user_id)
-        except ExpiredTokenError, JoseError:
-            return None
+        auth = await self.get_auth_context(token)
+        return auth.subject if auth else None
 
 
 class PasswordDecryptorImpl:
@@ -87,6 +88,9 @@ class SessionInvalidatorImpl:
             await redis.delete(key)
         relogin_key = self.FORCE_RELOGIN_KEY.format(user_id=user_id)
         await redis.set(relogin_key, "1", ex=self.CACHE_TTL)
+        revoker = get_service_optional(ImpersonationRevoker)
+        if revoker is not None:
+            await revoker.revoke_user(user_id, redis)
 
     async def invalidate_permission_cache(self, user_id: UUID, redis: AsyncRedisClient) -> None:
         redis_key = self.PERMISSION_CACHE_KEY.format(user_id=user_id)

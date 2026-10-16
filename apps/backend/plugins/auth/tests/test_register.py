@@ -33,9 +33,8 @@ class TestAuthRegister(unittest.TestCase):
         assert "/auth/password-reset/confirm" in routes
 
     def test_manifest_wires_invite_events_and_task(self):
-        from rapidkit_common.events import UserCreatedEvent, UserInviteRequestedEvent
-
         from plugin_auth import register
+        from rapidkit_common.events import UserCreatedEvent, UserInviteRequestedEvent
 
         manifest = register()
         assert "plugin_auth.invite.tasks" in manifest.task_modules
@@ -44,11 +43,11 @@ class TestAuthRegister(unittest.TestCase):
         assert UserCreatedEvent in events
         assert UserInviteRequestedEvent in events
 
-    def test_models_is_empty(self):
+    def test_models_include_impersonation_session(self):
         from plugin_auth import register
 
         m = register()
-        assert m.models == []
+        assert [model.__tablename__ for model in m.models] == ["auth_impersonation_sessions"]
 
     def test_no_cross_plugin_imports(self):
         """plugin_auth 允许导入 plugin_system 和 plugin_user（声明依赖）。"""
@@ -65,10 +64,13 @@ class TestAuthRegister(unittest.TestCase):
         assert violations == [], f"Cross-plugin imports found: {violations}"
 
     def test_dependency_overrides_in_manifest(self):
-        from rapidkit_common.auth import _get_current_user_placeholder
-
         from plugin_auth import register
         from plugin_auth.auth.deps import get_current_user_form_db
+        from plugin_auth.impersonation.deps import DenyImpersonation as deny_impersonation
+        from rapidkit_common.auth import DenyImpersonation, _get_current_user_placeholder
 
         m = register()
-        assert m.dependency_overrides == {_get_current_user_placeholder: get_current_user_form_db}
+        assert m.dependency_overrides == {
+            _get_current_user_placeholder: get_current_user_form_db,
+            DenyImpersonation: deny_impersonation,
+        }

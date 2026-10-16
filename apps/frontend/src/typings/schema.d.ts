@@ -88,6 +88,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/{user_id}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 修改用户密码
+         * @description 修改用户密码。仅本人或超管可操作。
+         */
+        put: operations["change_password_api_v1_users__user_id__password_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/stats/summary": {
         parameters: {
             query?: never;
@@ -219,26 +239,6 @@ export interface paths {
          * @description 删除单个用户。
          */
         delete: operations["delete_user_api_v1_users__user_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/users/{user_id}/password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 修改用户密码
-         * @description 修改用户密码。仅本人或超管可操作。
-         */
-        put: operations["change_password_api_v1_users__user_id__password_put"];
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1024,6 +1024,41 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/impersonations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Impersonation */
+        post: operations["create_impersonation_api_v1_auth_impersonations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/impersonations/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Current Impersonation */
+        get: operations["get_current_impersonation_api_v1_auth_impersonations_current_get"];
+        put?: never;
+        post?: never;
+        /** Stop Impersonation */
+        delete: operations["stop_impersonation_api_v1_auth_impersonations_current_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2784,6 +2819,12 @@ export interface components {
              * @example 2024-07-31 16:07:34
              */
             updateTime: string;
+            /** Subjectuserid */
+            subjectUserId?: string | null;
+            /** Impersonationsessionid */
+            impersonationSessionId?: string | null;
+            /** Subjectname */
+            subjectName?: string | null;
             /** Actorid */
             actorId?: string | null;
             /** Actorname */
@@ -2801,6 +2842,12 @@ export interface components {
             ip?: string | null;
             /** Occurredat */
             occurredAt: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /** Subjectusername */
+            subjectUsername?: string | null;
             /** Requestid */
             requestId?: string | null;
             /** Correlationid */
@@ -2837,6 +2884,12 @@ export interface components {
              * @example 2024-07-31 16:07:34
              */
             updateTime: string;
+            /** Subjectuserid */
+            subjectUserId?: string | null;
+            /** Impersonationsessionid */
+            impersonationSessionId?: string | null;
+            /** Subjectname */
+            subjectName?: string | null;
             /** Actorid */
             actorId?: string | null;
             /** Actorname */
@@ -3621,6 +3674,43 @@ export interface components {
             bizErrors1H: number;
             /** Wsconnections */
             wsConnections: number;
+        };
+        /** ImpersonationCreateBody */
+        ImpersonationCreateBody: {
+            /**
+             * Targetuserid
+             * Format: uuid
+             */
+            targetUserId: string;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** ImpersonationCreated */
+        ImpersonationCreated: {
+            /** Expiresat */
+            expiresAt: string;
+            /** Accesstoken */
+            accessToken: string;
+            /**
+             * Sessionid
+             * Format: uuid
+             */
+            sessionId: string;
+            subject: components["schemas"]["UserSummary"];
+        };
+        /** ImpersonationCurrent */
+        ImpersonationCurrent: {
+            /** Expiresat */
+            expiresAt: string;
+            /**
+             * Sessionid
+             * Format: uuid
+             */
+            sessionId: string;
+            actor: components["schemas"]["UserSummary"];
+            subject: components["schemas"]["UserSummary"];
+            /** Createdat */
+            createdAt: string;
         };
         /**
          * InboxPage
@@ -5634,6 +5724,38 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["HealthStats"] | null;
+        };
+        /** Response[ImpersonationCreated] */
+        Response_ImpersonationCreated_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["ImpersonationCreated"] | null;
+        };
+        /** Response[ImpersonationCurrent] */
+        Response_ImpersonationCurrent_: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["ImpersonationCurrent"] | null;
         };
         /** Response[InboxPage] */
         Response_InboxPage_: {
@@ -8066,6 +8188,18 @@ export interface components {
             /** Onlinecount */
             onlineCount: number;
         };
+        /** UserSummary */
+        UserSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username: string;
+        };
         /**
          * UsernamePinyinValidationRequest
          * @description 姓名拼音与用户名一致性校验请求。
@@ -8331,6 +8465,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_list_AdminContactResponse__"];
+                };
+            };
+        };
+    };
+    change_password_api_v1_users__user_id__password_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -8622,41 +8791,6 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    change_password_api_v1_users__user_id__password_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangePasswordBody"];
-            };
-        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -10235,6 +10369,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_UserInfoResponse_"];
+                };
+            };
+        };
+    };
+    create_impersonation_api_v1_auth_impersonations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImpersonationCreateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_ImpersonationCreated_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_current_impersonation_api_v1_auth_impersonations_current_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_ImpersonationCurrent_"];
+                };
+            };
+        };
+    };
+    stop_impersonation_api_v1_auth_impersonations_current_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_bool_"];
                 };
             };
         };

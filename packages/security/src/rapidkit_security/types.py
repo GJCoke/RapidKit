@@ -15,3 +15,10 @@ class RefreshSecret(SecretStr):
 
     def __str__(self) -> str:
         return "RefreshSecret(**********)"
+
+
+class ImpersonationSecret(SecretStr):
+    """模拟令牌专用密钥类型。"""
+
+    def __str__(self) -> str:
+        return "ImpersonationSecret(**********)"

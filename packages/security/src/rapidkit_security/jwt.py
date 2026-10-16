@@ -1,13 +1,13 @@
 """JWT token creation and decoding."""
 
 from datetime import UTC, datetime, timedelta
-from typing import overload
+from typing import Literal, overload
 from uuid import UUID
 
-from authlib.jose import jwt
-from pydantic import BaseModel
+from authlib.jose import JsonWebToken, jwt
+from pydantic import BaseModel, ConfigDict
 
-from rapidkit_security.types import AccessSecret, RefreshSecret
+from rapidkit_security.types import AccessSecret, ImpersonationSecret, RefreshSecret
 
 
 class AccessJWT(BaseModel):
@@ -75,3 +75,49 @@ def decode_token(token: str, key: AccessSecret | RefreshSecret) -> AccessJWT | R
     payload.validate()
 
     return AccessJWT(**payload) if isinstance(key, AccessSecret) else RefreshJWT(**payload)
+
+
+class ImpersonationJWT(BaseModel):
+    """模拟会话令牌；到期时间由会话创建者固定。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    token_type: Literal["impersonation"]
+    sub: UUID
+    act: UUID
+    sid: UUID
+    jti: UUID
+    exp: int
+
+
+def create_impersonation_token(claims: ImpersonationJWT, key: ImpersonationSecret, alg: str) -> str:
+    """使用独立密钥签发令牌，保留会话的固定到期时间。"""
+    codec = JsonWebToken([alg])
+    return codec.encode(
+        {"alg": alg, "typ": "JWT"},
+        claims.model_dump(mode="json"),
+        key.get_secret_value(),
+    ).decode("utf-8")
+
+
+def decode_impersonation_token(
+    token: str,
+    key: ImpersonationSecret,
+    alg: str,
+    *,
+    allow_expired: bool = False,
+) -> ImpersonationJWT:
+    """验证模拟令牌；停止会话时只允许跳过过期校验。"""
+    codec = JsonWebToken([alg])
+    payload = codec.decode(token, key.get_secret_value())
+    if allow_expired:
+        # Keep signature, algorithm and all other registered-claim checks active.
+        expiration = payload.pop("exp", None)
+        try:
+            payload.validate()
+        finally:
+            if expiration is not None:
+                payload["exp"] = expiration
+    else:
+        payload.validate()
+    return ImpersonationJWT.model_validate(dict(payload))

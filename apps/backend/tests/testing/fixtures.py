@@ -13,6 +13,7 @@ Usage in any conftest.py:
     from tests.testing.fixtures import *  # noqa: F401, F403
 """
 
+import os
 import socket
 from typing import Any, AsyncIterator, cast
 
@@ -37,9 +38,15 @@ class PytestSettings(BaseSettings):
     SQL_DATABASE_URL: str = "postgresql+asyncpg://test:test@localhost:5432/test"
     REDIS_DATABASE_URL: str = "redis://localhost:6379"
     ENVIRONMENT: str = ""
+    IMPERSONATION_TOKEN_KEY: str = "pytest-only-impersonation-secret"
+    IMPERSONATION_SESSION_EXP: int = 3600
 
 
 pytest_settings = PytestSettings()
+# Fixed test defaults also work for child processes inheriting the environment.
+# Explicit deployment/test environment values take precedence.
+os.environ.setdefault("IMPERSONATION_TOKEN_KEY", pytest_settings.IMPERSONATION_TOKEN_KEY)
+os.environ.setdefault("IMPERSONATION_SESSION_EXP", str(pytest_settings.IMPERSONATION_SESSION_EXP))
 
 
 # ---------------------------------------------------------------------------
@@ -103,18 +110,32 @@ def require_redis():
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture(scope="session")
-def pg_engine(require_postgres):
+@pytest_asyncio.fixture
+async def pg_engine(require_postgres):
     """Create an async engine for the test Postgres database."""
+    from rapidkit_core.database import _json_serializer
+
     engine = create_async_engine(
         pytest_settings.SQL_DATABASE_URL,
         echo=False,
+        json_serializer=_json_serializer,
     )
-    return engine
+    try:
+        yield engine
+    finally:
+        await engine.dispose()
+
+
+@pytest.fixture
+def loaded_app():
+    """Register all plugin model metadata before creating the test schema."""
+    from src.main import app
+
+    return app
 
 
 @pytest_asyncio.fixture
-async def session(pg_engine) -> AsyncIterator[AsyncSession]:
+async def session(pg_engine, loaded_app) -> AsyncIterator[AsyncSession]:
     """Provide an async DB session with tables created."""
     async with pg_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
@@ -143,6 +164,8 @@ async def redis(require_redis) -> AsyncIterator[Redis]:
     )
     client = Redis(connection_pool=pool)
 
+    # Start each test with empty dedicated Redis, including real limiter counters.
+    await client.flushdb()
     yield client
 
     await client.flushdb()
@@ -164,6 +187,10 @@ async def init(session: AsyncSession) -> None:
 
 @pytest_asyncio.fixture
 async def client(
+    pg_engine,
+    redis,
+    session,
+    loaded_app,
     require_postgres,
     require_redis,
     monkeypatch: pytest.MonkeyPatch,
@@ -173,23 +200,42 @@ async def client(
     from plugin_permission.router import sync
     from rapidkit_core import database
     from rapidkit_core.config import settings
-    from src.main import app
+    app = loaded_app
 
-    monkeypatch.setattr(database, "ASYNC_DATABASE_URL", pytest_settings.SQL_DATABASE_URL)
-    monkeypatch.setattr(database, "REDIS_URL", pytest_settings.REDIS_DATABASE_URL)
+    def reset_database() -> None:
+        database.reset_engines()
+        for proxy in (
+            database.async_engine,
+            database.sync_engine,
+            database.AsyncSessionLocal,
+            database.SyncSessionLocal,
+        ):
+            proxy.reset()
+
+    reset_database()
+    database.override_async_engine(pg_engine)
+    monkeypatch.setattr(database, "get_redis_url", lambda: pytest_settings.REDIS_DATABASE_URL)
 
     async def async_none(*_args: Any, **_kwargs: Any) -> None:
         return None
 
     monkeypatch.setattr(sync, "store_router_in_db", async_none)
+    original_overrides = app.dependency_overrides.copy()
     app.dependency_overrides[verify_user_permission] = lambda: None
 
-    async with LifespanManager(app) as manager:
-        transport = ASGITransport(app=manager.app)
-        async with AsyncClient(transport=transport, base_url=f"https://{settings.API_PREFIX_V1}") as c:
-            yield c
-
-    app.dependency_overrides.clear()
+    try:
+        await database.RedisManager.clear()
+        async with LifespanManager(app) as manager:
+            transport = ASGITransport(app=manager.app)
+            async with AsyncClient(transport=transport, base_url=f"https://{settings.API_PREFIX_V1}") as c:
+                yield c
+    finally:
+        app.dependency_overrides.clear()
+        app.dependency_overrides.update(original_overrides)
+        try:
+            await database.RedisManager.clear()
+        finally:
+            reset_database()
 
 
 @pytest_asyncio.fixture

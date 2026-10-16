@@ -20,6 +20,7 @@ from rapidkit_framework.events import event_bus
 from src.locales.watch import watch_locale_files
 from src.queues.consumer import check_worker_offline, consume_events
 from src.sio.events.connection import renew_session_keys_loop
+from src.sio.impersonation import register_socket_closer, shutdown_socket_timers
 
 
 async def _flush_audit_batch(batch: list[dict]) -> None:
@@ -46,6 +47,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if settings.ENVIRONMENT.is_dev:
         watch_task = asyncio.create_task(watch_locale_files())
 
+    register_socket_closer()
     RedisManager.connect()
     await event_bus.start_subscriber()
 
@@ -108,6 +110,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             await cb(app)
 
     renew_task.cancel()
+    await shutdown_socket_timers()
 
     if consumer_task:
         consumer_task.cancel()

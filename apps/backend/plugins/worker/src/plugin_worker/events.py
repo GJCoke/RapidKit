@@ -13,7 +13,7 @@ from rapidkit_common.protocols.auth import CurrentUserProvider
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.services import get_service
 from src.sio.app import socket
-from src.sio.constants import authenticated_sid_structure
+from src.sio.impersonation import inherit_root_identity, session_expiry, store_socket_identity, unregister_socket
 
 logger = get_plugin_logger("Worker")
 
@@ -32,29 +32,30 @@ async def on_worker_connect(sid: SID, redis: RedisDep, auth: dict[str, object] |
         token = auth.get("access_token")
         if not isinstance(token, str) or not token:
             return False
-        user = await get_service(CurrentUserProvider).get_current_user(token)
-        if user is None:
+        context = await get_service(CurrentUserProvider).get_auth_context(token)
+        if context is None:
             return False
+        data = {"id": str(context.subject.id), "name": context.subject.name}
+        if context.impersonation_session_id is not None:
+            data.update(
+                actor_id=str(context.actor.id),
+                impersonation_session_id=str(context.impersonation_session_id),
+                expires_at=str(await session_expiry(context.impersonation_session_id)),
+            )
+        await store_socket_identity(socket, redis, sid, "/worker", data)
     else:
-        # Compatibility for clients that reuse an already authenticated root connection.
-        eio_sid = socket.manager.eio_sid_from_sid(sid, "/worker")
-        if eio_sid is None:
-            return False
-        root_sid = socket.manager.sid_from_eio_sid(eio_sid, "/")
-        if root_sid is None:
-            return False
-        authenticated = await redis.exists(authenticated_sid_structure.format(sid=root_sid))
-        if not authenticated:
+        if await inherit_root_identity(socket, redis, sid, "/worker") is None:
             return False
     logger.info("Client {sid} connected to /worker namespace", sid=sid)
     return None
 
 
 @socket.on("disconnect", namespace="/worker")
-async def on_worker_disconnect(sid: SID) -> None:
+async def on_worker_disconnect(sid: SID, redis: RedisDep) -> None:
     """
     处理 /worker namespace 的断开连接事件。
 
     前端离开 Worker 管理页面时断开连接。
     """
+    await unregister_socket(socket, redis, sid, "/worker")
     logger.info("Client {sid} disconnected from /worker namespace", sid=sid)

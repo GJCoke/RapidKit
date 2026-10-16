@@ -23,6 +23,7 @@ from celery.canvas import Signature
 from celery.result import AsyncResult
 from kombu import Connection, Producer
 from rapidkit_core.timezone import timezone as tz
+from rapidkit_framework.identity import IDENTITY_HEADER_KEYS, identity_from_headers, identity_headers, identity_scope
 from typing_extensions import Annotated, Doc
 
 
@@ -277,6 +278,10 @@ class Task(_Task):
 
         # 若任务函数含 DI 参数（TaskRedis / TaskSession），跳过 Celery 的签名校验，
         # 因为这些参数由 __call__ 中的 _resolve_deps() 在 Worker 侧注入，不会通过 apply_async 传递。
+        options["headers"] = {
+            **{key: value for key, value in (options.get("headers") or {}).items() if key not in IDENTITY_HEADER_KEYS},
+            **identity_headers(),
+        }
         has_di = bool(self._resolve_deps_hints())
         if has_di:
             orig_typing = self.typing
@@ -382,6 +387,11 @@ class Task(_Task):
                     await engine.dispose()
 
     def __call__(self, *args: tuple[Any], **kwargs: dict[str, Any]) -> Any:
+        headers = dict(getattr(self.request, "headers", None) or {})
+        with identity_scope(identity_from_headers(headers)):
+            return self._call_in_identity(args, kwargs, headers)
+
+    def _call_in_identity(self, args, kwargs, saved_headers) -> Any:
         """
         执行任务，支持同步和异步 run 方法。
 
@@ -400,7 +410,7 @@ class Task(_Task):
         """
 
         _task_stack.push(self)
-        self.push_request(args=args, kwargs=kwargs)
+        self.push_request(args=args, kwargs=kwargs, headers=saved_headers)
 
         # 捕获任务执行期间的 stdout 输出作为日志。
         captured = io.StringIO()

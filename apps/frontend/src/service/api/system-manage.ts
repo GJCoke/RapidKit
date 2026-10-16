@@ -82,6 +82,11 @@ export function fetchUpdateRolePermissions(
 
 // ==================== User ====================
 
+/** get a user by ID */
+export function fetchGetUserDetail(id: string) {
+  return request<Api.SystemManage.UserDetail>({ url: `/users/${id}`, method: "get" })
+}
+
 /** get enabled super-administrator contacts */
 export function fetchGetAdminContacts() {
   return request<Api.SystemManage.AdminContacts>({

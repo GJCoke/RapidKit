@@ -5,24 +5,28 @@ Author : Coke
 Date   : 2025-04-17
 """
 
+from typing import cast
+
 from authlib.jose.errors import ExpiredTokenError, JoseError
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from plugin_user.models import User
 from rapidkit_common.deps import RedisDep, SessionDep
-from rapidkit_common.enums import Status
 from rapidkit_common.events import UserActivityObservedEvent
+from rapidkit_common.protocols.auth import AuthContext, AuthContextResolver
 from rapidkit_core.config import settings
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.context import ctx
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.services import get_service
 from rapidkit_framework.status_codes import StatusCode
 from rapidkit_security import AccessJWT, RefreshJWT, decode_token
 from typing_extensions import Annotated, Doc
 
 from plugin_auth.auth.crud import UserCRUD
+from plugin_auth.auth.resolver import force_relogin_structure, user_structure
 from plugin_auth.auth.token_store import TokenStore
 from plugin_auth.auth_config import auth_settings
 from plugin_auth.status_codes import AuthStatusCode
@@ -30,6 +34,7 @@ from plugin_auth.status_codes import AuthStatusCode
 logger = get_plugin_logger("Auth")
 
 __all__ = [
+    "AuthContextDep",
     "OAuth2Form",
     "HeaderRefreshTokenDep",
     "HeaderAccessTokenDep",
@@ -48,22 +53,6 @@ __all__ = [
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_PREFIX_V1}/auth/login/swagger", auto_error=False)
 refresh_structure = "auth:refresh:<{user_id}>:<{jti}>"
-user_structure = "auth:user:<{user_id}>"
-force_relogin_structure = "auth:force_relogin:<{user_id}>"
-
-USER_CACHE_FIELDS = {
-    "id",
-    "name",
-    "email",
-    "username",
-    "status",
-    "is_admin",
-    "roles",
-    "department_id",
-    "create_time",
-    "update_time",
-}
-
 OAuth2Form = Annotated[
     OAuth2PasswordRequestForm,
     Depends(),
@@ -146,32 +135,20 @@ async def get_auth_crud(session: SessionDep) -> UserCRUD:
 AuthCrudDep = Annotated[UserCRUD, Depends(get_auth_crud), Doc("Auth CRUD instance.")]
 
 
-async def get_current_user_form_db(user: UserAccessJWTDep, db_user: AuthCrudDep, redis: RedisDep) -> User:
-    cache_key = user_structure.format(user_id=user.sub)
-    cached = await redis.get(cache_key)
-    if cached:
-        user_info = User.model_validate_json(cached)
-    else:
-        user_info = await db_user.get(user.sub)
-        if not user_info:
-            logger.debug("No user found in the database.")
-            raise AppException(AuthStatusCode.USER_NOT_FOUND)
-        await redis.set(
-            cache_key,
-            user_info.model_dump_json(include=USER_CACHE_FIELDS),
-            ex=auth_settings.ACCESS_TOKEN_EXP,
-        )
+async def get_auth_context(token: HeaderAccessTokenDep, request: Request) -> AuthContext:
+    return await get_service(AuthContextResolver).resolve(token, request)
 
-    if user_info.status != Status.ON:
-        logger.debug("User found but is not active.")
-        if user_info.status == Status.PENDING:
-            raise AppException(AuthStatusCode.ACCOUNT_NOT_ACTIVATED)
-        raise AppException(AuthStatusCode.USER_DISABLED)
-    event_bus.fire_and_forget(
-        UserActivityObservedEvent(user_id=str(user_info.id), occurred_at=timezone.now()),
-        source="auth",
-    )
-    return user_info
+
+AuthContextDep = Annotated[AuthContext, Depends(get_auth_context)]
+
+
+async def get_current_user_form_db(auth: AuthContextDep) -> User:
+    if auth.impersonation_session_id is None:
+        event_bus.fire_and_forget(
+            UserActivityObservedEvent(user_id=str(auth.subject.id), occurred_at=timezone.now()),
+            source="auth",
+        )
+    return cast(User, auth.subject)
 
 
 async def get_current_user_form_redis_and_db(user: UserRefreshJWTDep, db_user: AuthCrudDep, redis: RedisDep) -> User:

@@ -33,6 +33,8 @@ export interface RequestOption<
    * @param response Axios response
    */
   transformBackendResponse: ResponseTransform<AxiosResponse<ResponseData>, ApiData>
+  /** Runs for every successful HTTP response before JSON or download transformation. */
+  onResponse?: (response: AxiosResponse<ResponseData>) => void | Promise<void>
   /**
    * The hook before request
    *

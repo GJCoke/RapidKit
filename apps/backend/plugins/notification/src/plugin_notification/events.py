@@ -17,6 +17,7 @@ from rapidkit_core.database import AsyncSessionLocal
 from rapidkit_core.log import get_plugin_logger
 from src.sio.app import socket
 from src.sio.constants import authenticated_sid_structure, sid_user_structure
+from src.sio.impersonation import inherit_root_identity, resolve_root_sid, unregister_socket
 
 from plugin_notification.banner_service import BANNER_ROOM
 from plugin_notification.channels import notification_user_room
@@ -29,10 +30,7 @@ _NS = "/notifications"
 
 async def _get_authenticated_user_id(sid: SID, redis: RedisDep) -> UUID | None:
     """Resolve a namespace SID to the authenticated identity on the root namespace."""
-    eio_sid = socket.manager.eio_sid_from_sid(sid, _NS)
-    if eio_sid is None:
-        return None
-    root_sid = socket.manager.sid_from_eio_sid(eio_sid, "/")
+    root_sid = resolve_root_sid(socket, sid, _NS)
     if root_sid is None:
         return None
     authenticated = await redis.exists(authenticated_sid_structure.format(sid=root_sid))
@@ -51,6 +49,9 @@ async def notifications_connect(sid: SID, redis: RedisDep) -> Literal[False] | N
     if user_id is None:
         return False
 
+    data = await inherit_root_identity(socket, redis, sid, _NS)
+    if data is None or data["id"] != str(user_id):
+        return False
     await socket.enter_room(sid, notification_user_room(user_id), namespace=_NS)
     await socket.enter_room(sid, BANNER_ROOM, namespace=_NS)
     async with AsyncSessionLocal() as session:
@@ -68,3 +69,8 @@ async def notifications_sync(sid: SID, redis: RedisDep) -> None:
     async with AsyncSessionLocal() as session:
         count = await UserNotificationCRUD(session).get_unread_count(user_id)
     await socket.emit("notification:unread-count", {"count": count}, to=sid, namespace=_NS)
+
+
+@socket.on("disconnect", namespace=_NS)
+async def notifications_disconnect(sid: SID, redis: RedisDep) -> None:
+    await unregister_socket(socket, redis, sid, _NS)

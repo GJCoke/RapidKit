@@ -19,7 +19,14 @@ from pydantic import Secret, field_validator, model_validator
 from rapidkit_core.config import BaseSettings, ConfigError, settings
 from rapidkit_core.constants import DAYS, WEEKS
 from rapidkit_core.path import BASE_PATH
-from rapidkit_security import AccessSecret, RefreshSecret, generate_rsa_key_pair, load_private_key, serialize_key
+from rapidkit_security import (
+    AccessSecret,
+    ImpersonationSecret,
+    RefreshSecret,
+    generate_rsa_key_pair,
+    load_private_key,
+    serialize_key,
+)
 
 _KEYS_DIR = BASE_PATH / ".keys"
 
@@ -35,6 +42,9 @@ class AuthConfig(BaseSettings):
     REFRESH_TOKEN_KEY: RefreshSecret
     REFRESH_TOKEN_EXP: timedelta = timedelta(seconds=1 * WEEKS)
 
+    IMPERSONATION_TOKEN_KEY: ImpersonationSecret
+    IMPERSONATION_SESSION_EXP: timedelta = timedelta(minutes=60)
+
     POLICY_CACHE_TTL: timedelta = timedelta(hours=4)
 
     RSA_PRIVATE_KEY: RSAPrivateKey
@@ -44,7 +54,9 @@ class AuthConfig(BaseSettings):
     LOGIN_LOCKOUT_SECONDS: int = 300  # 15 minutes
 
     # noinspection PyNestedDecorators
-    @field_validator("ACCESS_TOKEN_EXP", "REFRESH_TOKEN_EXP", "POLICY_CACHE_TTL", mode="before")
+    @field_validator(
+        "ACCESS_TOKEN_EXP", "REFRESH_TOKEN_EXP", "IMPERSONATION_SESSION_EXP", "POLICY_CACHE_TTL", mode="before"
+    )
     @classmethod
     def set_token_expires(cls, expires: str) -> timedelta:
         """
@@ -64,12 +76,29 @@ class AuthConfig(BaseSettings):
 
         return timedelta(seconds=int(expires))
 
+    @field_validator("IMPERSONATION_SESSION_EXP")
+    @classmethod
+    def validate_impersonation_duration(cls, value: timedelta) -> timedelta:
+        if value.total_seconds() <= 0:
+            raise ValueError("IMPERSONATION_SESSION_EXP must be positive")
+        return value
+
+    @model_validator(mode="after")
+    def validate_key_isolation(self) -> "AuthConfig":
+        impersonation_key = self.IMPERSONATION_TOKEN_KEY.get_secret_value()
+        if impersonation_key in {
+            self.ACCESS_TOKEN_KEY.get_secret_value(),
+            self.REFRESH_TOKEN_KEY.get_secret_value(),
+        }:
+            raise ValueError("IMPERSONATION_TOKEN_KEY must differ from access and refresh keys")
+        return self
+
     # noinspection PyNestedDecorators
     @model_validator(mode="before")
     @classmethod
     def ensure_keys_config(cls, auth: dict) -> dict:
         """
-        确保环境中已配置 ACCESS_TOKEN_KEY 和 REFRESH_TOKEN_KEY。
+        确保环境中已配置访问、刷新和模拟令牌的独立密钥。
 
         如果缺少密钥，在已部署环境中会引发错误；在非部署环境中会动态生成新的密钥。
 
@@ -83,6 +112,7 @@ class AuthConfig(BaseSettings):
         """
         cls.ensure_key_exists(auth, "ACCESS_TOKEN_KEY", message)
         cls.ensure_key_exists(auth, "REFRESH_TOKEN_KEY", message)
+        cls.ensure_key_exists(auth, "IMPERSONATION_TOKEN_KEY", message)
 
         rsa_private = auth.get("RSA_PRIVATE_KEY")
         rsa_public = auth.get("RSA_PUBLIC_KEY")

@@ -14,6 +14,10 @@ declare namespace StorageType {
     lang: I18n.LangType
     /** The token */
     token: string
+    impersonatorToken: string
+    impersonatorRefreshToken: string
+    impersonatorReturnPath: string
+    impersonation: Api.Impersonation.Snapshot
     /** Fixed sider with mix-menu */
     mixSiderFixed: CommonType.YesOrNo
     /** The refresh token */

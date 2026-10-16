@@ -19,7 +19,7 @@ import { handleExpiredRequest } from "@/service/request/shared"
 describe("request token refresh", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.get.mockReturnValue("old-refresh")
+    mocks.get.mockImplementation((key: string) => (key === "refreshToken" ? "old-refresh" : null))
     mocks.fetchRefreshToken.mockResolvedValue({
       data: { accessToken: "new-access", refreshToken: "new-refresh" },
       error: null,
@@ -61,7 +61,7 @@ describe("request token refresh", () => {
 
   it("does not overwrite a changed session", async () => {
     mocks.fetchRefreshToken.mockImplementation(async () => {
-      mocks.get.mockReturnValue("another-session")
+      mocks.get.mockImplementation((key: string) => (key === "refreshToken" ? "another-session" : null))
       return { data: { accessToken: "new-access", refreshToken: "new-refresh" }, error: null }
     })
     expect(await handleExpiredRequest({ refreshTokenPromise: null } as any)).toBe(false)

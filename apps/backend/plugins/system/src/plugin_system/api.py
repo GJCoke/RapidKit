@@ -224,7 +224,18 @@ async def get_audit_logs(
 @router.get("/audit-logs/{item_id}", summary="审计日志详情")
 async def get_audit_log_detail(item_id: UUID, crud: AuditLogCrudDep) -> Response[AuditLogDetail | None]:
     record = await crud.get(item_id)
-    return Response(data=AuditLogDetail.model_validate(record) if record else None)
+    return Response(
+        data=AuditLogDetail.model_validate(
+            {
+                **record.model_dump(),
+                "metadata": record.extra_data,
+                "subject_name": record.extra_data.get("subject_name"),
+                "subject_username": record.extra_data.get("subject_username"),
+            }
+        )
+        if record
+        else None
+    )
 
 
 @router.get("/plugins", summary="插件状态列表")

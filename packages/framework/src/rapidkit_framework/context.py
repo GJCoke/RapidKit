@@ -1,10 +1,15 @@
 from typing import Any, Protocol
+from uuid import UUID
 
 from starlette_context.ctx import _Context, context
 
 
 class TypedContextProtocol(Protocol):
     """上下文类型协议，定义了请求上下文中可用的属性。"""
+
+    user_id: UUID | None
+    actor_id: UUID | None
+    impersonation_session_id: UUID | None
 
     ip: str
 

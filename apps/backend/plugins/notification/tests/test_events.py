@@ -24,6 +24,9 @@ class _RootIdentityRedis:
         self.exists_keys.append(key)
         return key == authenticated_sid_structure.format(sid=self.root_sid)
 
+    async def hgetall(self, key: str):
+        return {"id": str(self.user_id), "name": "subject"}
+
     async def hget(self, key: str, field: str) -> str | None:
         self.hget_calls.append((key, field))
         if key == sid_user_structure.format(sid=self.root_sid) and field == "id":
@@ -51,6 +54,9 @@ class _SocketHarness:
     def __init__(self, manager: Any) -> None:
         self.manager = manager
         self.emitted: list[tuple[str, dict[str, int], str | None, str | None]] = []
+
+    async def save_session(self, sid, session, namespace):
+        self.session = session
 
     async def enter_room(self, sid: str, room: str, namespace: str | None = None) -> None:
         await self.manager.enter_room(sid, namespace or "/", room)
@@ -90,7 +96,7 @@ async def test_connect_bridges_namespace_sid_to_root_identity_and_joins_user_roo
     result = await events.notifications_connect(notification_sid, redis)
 
     assert result is None
-    assert redis.exists_keys == [authenticated_sid_structure.format(sid=root_sid)]
+    assert redis.exists_keys[:1] == [authenticated_sid_structure.format(sid=root_sid)]
     assert redis.hget_calls == [(sid_user_structure.format(sid=root_sid), "id")]
     assert f"notification:user:<{user_id}>" in socket_harness.manager.get_rooms(notification_sid, "/notifications")
     assert "announcement:authenticated" in socket_harness.manager.get_rooms(notification_sid, "/notifications")
@@ -106,3 +112,16 @@ async def test_sync_bridges_namespace_sid_to_root_identity(monkeypatch):
 
     assert redis.hget_calls == [(sid_user_structure.format(sid=root_sid), "id")]
     assert socket_harness.emitted == [("notification:unread-count", {"count": 7}, notification_sid, "/notifications")]
+
+
+@pytest.mark.asyncio
+async def test_connect_rejects_missing_root_hash_before_joining(monkeypatch):
+    root_sid, notification_sid, harness = await _namespace_connection(monkeypatch)
+    redis = _RootIdentityRedis(root_sid, uuid4())
+
+    async def missing_hash(key):
+        return {}
+
+    redis.hgetall = missing_hash
+    assert await events.notifications_connect(notification_sid, redis) is False
+    assert not harness.emitted

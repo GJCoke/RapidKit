@@ -71,3 +71,11 @@ VerifyPermissionDep = Annotated[
         """
     ),
 ]
+
+
+async def DenyImpersonation() -> None:
+    """Credential-route marker implemented by the auth plugin at startup."""
+    raise RuntimeError(
+        "DenyImpersonation has not been initialized. "
+        "Make sure the auth plugin has registered its dependency override."
+    )

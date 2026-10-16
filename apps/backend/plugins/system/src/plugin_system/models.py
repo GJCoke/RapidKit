@@ -56,6 +56,8 @@ class AuditLog(SQLModel, table=True):
     __tablename__ = "system_audit_logs"
 
     actor_id: UUID | None = Field(default=None, index=True)
+    subject_user_id: UUID | None = Field(default=None, index=True)
+    impersonation_session_id: UUID | None = Field(default=None, index=True)
     actor_name: str | None = Field(default=None, max_length=100)
     action: str = Field(max_length=100, index=True)
     resource_type: str | None = Field(default=None, max_length=50, index=True)

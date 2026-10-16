@@ -11,7 +11,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from rapidkit_common.auth import UserDBDep, VerifyPermissionDep, verify_user_permission
+from rapidkit_common.auth import DenyImpersonation, UserDBDep, VerifyPermissionDep, verify_user_permission
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.enums import Status
 from rapidkit_common.events import (
@@ -54,6 +54,7 @@ from plugin_user.services import (
     invalidate_user_permission_cache,
     invalidate_user_session,
     process_password,
+    revoke_impersonations_for_user,
 )
 from plugin_user.status_codes import UserStatusCode
 from plugin_user.username_pinyin import check_username_pinyin
@@ -191,7 +192,11 @@ async def get_user(
     return Response(data=response)
 
 
-@router.put("/{user_id}/password", summary="修改用户密码")
+@contact_router.put(
+    "/{user_id}/password",
+    summary="修改用户密码",
+    dependencies=[Depends(DenyImpersonation), Depends(verify_user_permission)],
+)
 async def change_password(
     user_id: UUID,
     body: ChangePasswordBody,
@@ -280,7 +285,7 @@ async def update_user(
         update_data.pop("is_admin", None)
 
     target_user = None
-    if {"name", "username", "roles", "is_admin"} & update_data.keys():
+    if {"name", "username", "roles", "is_admin", "status"} & update_data.keys():
         target_user = await user_crud.get(user_id, nullable=False)
 
     if {"name", "username"} & update_data.keys():
@@ -303,6 +308,11 @@ async def update_user(
     if "is_admin" in update_data:
         assert target_user is not None
         permission_changed = permission_changed or update_data["is_admin"] != target_user.is_admin
+
+    if target_user is not None and any(
+        key in update_data and update_data[key] != getattr(target_user, key) for key in ("status", "is_admin")
+    ):
+        after_commit(session, revoke_impersonations_for_user, user_id, redis)
 
     user = await user_crud.update_by_id(user_id, update_data)
     after_commit(session, invalidate_user_cache, redis, user_id)

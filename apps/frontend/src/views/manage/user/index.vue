@@ -9,6 +9,7 @@
     fetchGetUserList,
     fetchResendInvite,
   } from "@/service/api"
+  import { useRouterPush } from "@/hooks/common/router"
   import { useAppStore } from "@/store/modules/app"
   import { defaultTransform, useNaivePaginatedTable, useTableOperate } from "@/hooks/common/table"
   import { $t } from "@/locales"
@@ -18,25 +19,21 @@
   import ChangePasswordModal from "./modules/change-password-modal.vue"
   import UserSearch from "./modules/user-search.vue"
 
+  import ImpersonationButton from "@/components/impersonation/impersonation-button.vue"
+  import { createDepartmentMap } from "./composables/department-map"
+
+  defineOptions({ name: "ManageUser" })
+  const { routerPushByKey } = useRouterPush()
   const appStore = useAppStore()
   const { hasAuth } = useAuth()
   const authStore = useAuthStore()
 
   const deptMap = ref<Record<string, string>>({})
 
-  function flattenDeptTree(tree: Api.SystemManage.DepartmentTree[], map: Record<string, string>) {
-    for (const node of tree) {
-      map[node.id] = node.name
-      if (node.children?.length) flattenDeptTree(node.children, map)
-    }
-  }
-
   async function loadDeptMap() {
     const { data, error } = await fetchGetDepartmentTree()
     if (error) return
-    const map: Record<string, string> = {}
-    flattenDeptTree(data, map)
-    deptMap.value = map
+    deptMap.value = createDepartmentMap(data)
   }
 
   loadDeptMap()
@@ -76,9 +73,12 @@
       },
       {
         key: "name",
-        title: "Name",
+        title: $t("page.manage.user.name"),
         align: "center",
         minWidth: 100,
+        render: (row) => authStore.userInfo.isAdmin
+          ? <NButton text type="primary" onClick={() => routerPushByKey("manage_user-detail", { params: { id: row.id } })}>{row.name}</NButton>
+          : row.name,
       },
       {
         key: "email",
@@ -136,9 +136,10 @@
         key: "operate",
         title: $t("common.operate"),
         align: "center",
-        width: 300,
+        width: 400,
         render: (row) => (
           <div class="flex-center gap-8px">
+            <ImpersonationButton user={row} departmentName={row.departmentId ? deptMap.value[row.departmentId] : undefined} />
             {hasAuth("manage_user:edit") && (
               <NButton type="primary" ghost size="small" onClick={() => edit(row.id)}>
                 {$t("common.edit")}
@@ -237,7 +238,7 @@
         :data="data"
         size="small"
         :flex-height="!appStore.isMobile"
-        :scroll-x="982"
+        :scroll-x="1082"
         :loading="loading"
         remote
         :row-key="(row) => row.id"

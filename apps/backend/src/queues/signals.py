@@ -27,6 +27,7 @@ from celery.signals import (
 from rapidkit_core.config import settings
 from rapidkit_core.log import logger
 from rapidkit_core.timezone import timezone
+from rapidkit_framework.identity import identity_from_headers, identity_headers
 
 STREAM_KEY = "celery:events"
 STREAM_MAXLEN = 10000
@@ -108,6 +109,13 @@ def _heartbeat_loop(hostname: str) -> None:
         _heartbeat_stop.wait(HEARTBEAT_INTERVAL)
 
 
+def _request_identity(request) -> dict[str, str]:
+    headers = getattr(request, "headers", None)
+    if headers is None:
+        headers = getattr(request, "request_dict", None) or {}
+    return identity_headers(identity_from_headers(headers))
+
+
 # ==================== Task Signals ====================
 
 
@@ -117,6 +125,7 @@ def on_task_prerun(sender: celery.app.task.Task, task_id: str, args: tuple, kwar
     _publish_event(
         "task.started",
         {
+            **_request_identity(sender.request),
             "task_id": task_id,
             "task_name": sender.name,
             "args": list(args) if args else [],
@@ -141,6 +150,7 @@ def on_task_postrun(
     _publish_event(
         "task.success",
         {
+            **_request_identity(sender.request),
             "task_id": task_id,
             "task_name": sender.name,
             "state": state,
@@ -172,6 +182,7 @@ def on_task_failure(
     _publish_event(
         "task.failure",
         {
+            **_request_identity(sender.request),
             "task_id": task_id,
             "task_name": sender.name,
             "exception": str(exception),
@@ -188,6 +199,7 @@ def on_task_retry(sender: celery.app.task.Task, request: object, reason: object,
     _publish_event(
         "task.retry",
         {
+            **_request_identity(request),
             "task_id": sender.request.id,
             "task_name": sender.name,
             "reason": str(reason),
@@ -216,6 +228,7 @@ def on_task_revoked(
     _publish_event(
         "task.revoked",
         {
+            **_request_identity(request),
             "task_id": task_id,
             "terminated": terminated,
             "expired": expired,

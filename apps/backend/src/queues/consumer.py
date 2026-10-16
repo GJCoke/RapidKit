@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 from plugin_worker.event_service import EventService
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
 from rapidkit_core.log import logger
+from rapidkit_framework.identity import identity_from_headers, identity_scope
 from redis.asyncio import Redis
 from redis.exceptions import ResponseError
 
@@ -92,10 +93,11 @@ async def consume_events(sio: "AsyncServer") -> None:
                     handler_name = _EVENT_HANDLERS.get(event_type)
                     if handler_name:
                         try:
-                            async with AsyncSessionLocal() as session:
-                                service = EventService(session=session, sio=sio)
-                                await getattr(service, handler_name)(data)
-                                await session.commit()
+                            with identity_scope(identity_from_headers(data)):
+                                async with AsyncSessionLocal() as session:
+                                    service = EventService(session=session, sio=sio)
+                                    await getattr(service, handler_name)(data)
+                                    await session.commit()
                         except Exception:
                             logger.exception(
                                 "Error handling event {event_type}: {data}",

@@ -1,6 +1,6 @@
 /* oxlint-disable @typescript-eslint/no-explicit-any */
 import type { AxiosResponse } from "@rapidkit/axios"
-import { BACKEND_ERROR_CODE, createFlatRequest, createRequest } from "@rapidkit/axios"
+import { BACKEND_ERROR_CODE, CanceledError, createFlatRequest, createRequest } from "@rapidkit/axios"
 import { useAuthStore } from "@/store/modules/auth"
 import { localStg } from "@/utils/storage"
 import { getServiceBaseURL } from "@/utils/service"
@@ -14,6 +14,11 @@ const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === "
 const LOGIN_COOLDOWN_CODE = "14010"
 /** Backend code for a route permission denial; triggers a permission refresh */
 const PERMISSION_DENIED_CODE = "34001"
+const IMPERSONATION_INVALID_CODES = new Set(["14017", "14002", "14003", "14008"])
+
+function isImpersonationStop(config: { url?: string; method?: string } | undefined) {
+  return config?.url === "/auth/impersonations/current" && config.method?.toLowerCase() === "delete"
+}
 const { baseURL, otherBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy)
 
 export const request = createFlatRequest(
@@ -47,6 +52,11 @@ export const request = createFlatRequest(
 
       return config
     },
+    onResponse(response) {
+      const config = response.config as typeof response.config & { authSession?: number }
+      if (config.authSession !== getAuthSession())
+        throw new CanceledError("Identity changed")
+    },
     isBackendSuccess(response) {
       // when the backend response code is "0000"(default), it means the request is success
       // to change this logic by yourself, you can modify the `VITE_SERVICE_SUCCESS_CODE` in `.env` file
@@ -57,6 +67,10 @@ export const request = createFlatRequest(
       const responseCode = String(response.data.code)
       const config = response.config as typeof response.config & { authRetried?: boolean; authSession?: number }
       if (config.authSession !== getAuthSession()) return null
+      if (localStg.get("impersonation") && IMPERSONATION_INVALID_CODES.has(responseCode)) {
+        if (!isImpersonationStop(config)) await authStore.stopImpersonation()
+        return null
+      }
 
       if (responseCode === PERMISSION_DENIED_CODE) {
         authStore.syncPermissions()
@@ -125,7 +139,14 @@ export const request = createFlatRequest(
 
       return null
     },
-    onError(error) {
+    async onError(error) {
+      const config = error.config as (typeof error.config & { authSession?: number }) | undefined
+      if (error.code === "ERR_CANCELED") return
+      if (config?.authSession !== undefined && config.authSession !== getAuthSession()) return
+      if (error.response?.status === 401 && localStg.get("impersonation")) {
+        if (!isImpersonationStop(config)) await useAuthStore().stopImpersonation()
+        return
+      }
       // when the request is fail, you can show error message
 
       let message = error.message

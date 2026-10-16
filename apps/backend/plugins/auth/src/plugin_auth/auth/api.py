@@ -8,6 +8,7 @@ Date   : 2025-03-11
 from typing import cast
 
 from fastapi import APIRouter, Depends
+from rapidkit_common.auth import DenyImpersonation
 from rapidkit_common.deps import RedisDep, check_debug
 from rapidkit_common.events import UserLogoutEvent
 from rapidkit_common.protocols.permission import PermissionCacheManager
@@ -70,7 +71,7 @@ async def login(
     return Response(data=token)
 
 
-@router.post("/logout")
+@router.post("/logout", dependencies=[Depends(DenyImpersonation)])
 async def logout(auth: UserAccessJWTDep, token_store: TokenStoreDep, redis: RedisDep) -> Response[bool]:
     """登出当前用户。"""
     await token_store.revoke(auth.sub, auth.jti)
@@ -84,7 +85,7 @@ async def logout(auth: UserAccessJWTDep, token_store: TokenStoreDep, redis: Redi
     return Response(data=True)
 
 
-@router.post("/token/refresh")
+@router.post("/token/refresh", dependencies=[Depends(DenyImpersonation)])
 async def refresh_token(
     jwt_user: UserRefreshJWTDep,
     user: UserRefreshDep,

@@ -2,7 +2,8 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
+from rapidkit_common.auth import DenyImpersonation
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import Response
 
@@ -19,7 +20,7 @@ from plugin_auth.password_reset.service import confirm_password_reset, request_p
 router = APIRouter(prefix="/auth/password-reset", tags=["Auth Password Reset"])
 
 
-@router.post("/request")
+@router.post("/request", dependencies=[Depends(DenyImpersonation)])
 async def request_reset(
     body: PasswordResetRequestBody,
     request: Request,
@@ -31,7 +32,7 @@ async def request_reset(
     return Response(data=True)
 
 
-@router.get("/validate")
+@router.get("/validate", dependencies=[Depends(DenyImpersonation)])
 async def validate_reset(
     query: Annotated[PasswordResetValidateQuery, Query(...)],
     store: PasswordResetTokenStoreDep,
@@ -39,7 +40,7 @@ async def validate_reset(
     return Response(data=PasswordResetValidateResponse(valid=await store.exists(query.token)))
 
 
-@router.post("/confirm")
+@router.post("/confirm", dependencies=[Depends(DenyImpersonation)])
 async def confirm_reset(
     body: PasswordResetConfirmBody,
     store: PasswordResetTokenStoreDep,

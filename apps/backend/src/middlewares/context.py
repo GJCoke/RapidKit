@@ -1,6 +1,7 @@
 import json
 
 from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.identity import IdentityMetadata, identity_scope
 from rapidkit_framework.status_codes import StatusCode
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
@@ -36,7 +37,7 @@ class ContextMiddleware(StarletteContextMiddleware):
                 media_type="application/json",
             )
 
-        with request_cycle_context(context):
+        with request_cycle_context(context), identity_scope(IdentityMetadata()):
             response = await call_next(request)
             for plugin in self.plugins:
                 await plugin.enrich_response(response)

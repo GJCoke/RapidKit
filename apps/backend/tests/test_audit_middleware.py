@@ -6,8 +6,8 @@ from uuid import uuid4
 from src.middlewares.audit import (
     AuditMiddleware,
     _build_audit_record,
-    _extract_user_from_token,
     _is_excluded_path,
+    _read_auth_identity,
     _sanitize_mapping,
 )
 from starlette.requests import Request
@@ -23,7 +23,7 @@ class AuditQueueStub:
 
 
 def test_refresh_token_endpoint_is_excluded_from_audit():
-    assert _is_excluded_path("/api/v1/auth/refreshToken") is True
+    assert _is_excluded_path("/api/v1/auth/token/refresh") is True
 
 
 def test_sensitive_values_are_removed_recursively():
@@ -65,28 +65,14 @@ def test_audit_record_uses_technical_audit_shape():
     assert "request_body" not in record
 
 
-async def test_authenticated_request_resolves_actor_id_and_name(monkeypatch):
+def test_authenticated_request_reads_verified_actor():
     actor_id = uuid4()
-
-    class CurrentUserProviderStub:
-        async def get_current_user(self, token: str):
-            assert token == "access-token"
-            return SimpleNamespace(id=actor_id, username="admin")
-
-    monkeypatch.setattr(
-        "src.middlewares.audit.get_service_optional",
-        lambda _protocol: CurrentUserProviderStub(),
-    )
-    request = Request(
-        {
-            "type": "http",
-            "method": "PUT",
-            "path": "/api/v1/users/target-id",
-            "headers": [(b"authorization", b"Bearer access-token")],
-        }
-    )
-
-    assert await _extract_user_from_token(request) == (actor_id, "admin")
+    request = Request({"type": "http"})
+    request.state.auth = SimpleNamespace(actor=SimpleNamespace(id=actor_id, username="admin"))
+    identity = _read_auth_identity(request)
+    assert identity["actor_id"] == actor_id
+    assert identity["actor_name"] == "admin"
+    assert identity["subject_user_id"] is None
 
 
 async def test_audit_middleware_extracts_client_info_from_request(monkeypatch):

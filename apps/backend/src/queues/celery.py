@@ -8,6 +8,8 @@ Date    : 2025-04-10
 from typing import Any, Callable
 
 from celery import Celery as _Celery
+from celery.result import AsyncResult
+from rapidkit_framework.identity import IDENTITY_HEADER_KEYS, identity_headers
 from typing_extensions import Annotated, Doc
 
 from src.queues.task import Task
@@ -24,6 +26,14 @@ class Celery(_Celery):
 
     该类增强了 Celery 的 IDE 类型提示，并通过 asyncio 支持 async def 异步函数。
     """
+
+    def send_task(self, name: str, *args: Any, **options: Any) -> AsyncResult:
+        """Attach trusted identity to named publication as well as Task.apply_async."""
+        options["headers"] = {
+            **{key: value for key, value in (options.get("headers") or {}).items() if key not in IDENTITY_HEADER_KEYS},
+            **identity_headers(),
+        }
+        return super().send_task(name, *args, **options)
 
     def task(
         self,

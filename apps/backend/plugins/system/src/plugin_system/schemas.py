@@ -19,6 +19,7 @@ from plugin_system.models import (
     ActivityCategory,
     ActivityEvent,
     ActivityLevel,
+    AuditLog,
     AuditResult,
     AuditRiskLevel,
     AuditSource,
@@ -63,6 +64,21 @@ class AuditLogQuery(PaginatedRequest):
 
 
 class AuditLogListItem(BaseSchema):
+    subject_user_id: UUID | None = None
+    impersonation_session_id: UUID | None = None
+    subject_name: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def project_impersonation_metadata(cls, value):
+        if isinstance(value, AuditLog):
+            data = value.model_dump()
+            data["subject_name"] = value.extra_data.get("subject_name")
+            data["subject_username"] = value.extra_data.get("subject_username")
+            data["metadata"] = value.extra_data
+            return data
+        return value
+
     actor_id: UUID | None = None
     actor_name: str | None = None
     action: str
@@ -76,6 +92,8 @@ class AuditLogListItem(BaseSchema):
 
 
 class AuditLogDetail(AuditLogListItem):
+    metadata: dict = Field(default_factory=dict)
+    subject_username: str | None = None
     request_id: str | None = None
     correlation_id: str | None = None
     user_agent: str | None = None

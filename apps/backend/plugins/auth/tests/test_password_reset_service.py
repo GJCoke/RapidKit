@@ -5,6 +5,7 @@ from plugin_auth.password_reset import service
 from plugin_auth.status_codes import AuthStatusCode
 from rapidkit_common.enums import Status
 from rapidkit_common.protocols.auth import PasswordDecryptor
+from rapidkit_core.config import settings
 from rapidkit_framework.exceptions import AppException
 
 
@@ -103,6 +104,7 @@ async def test_request_normalizes_email_and_queues_active_user(monkeypatch) -> N
     assert queued[0] == {
         "email": user.email,
         "user_name": user.name,
+        "platform_name": settings.APP_NAME,
         "reset_link": "http://localhost:9527/login/reset-password?token=issued",
     }
 

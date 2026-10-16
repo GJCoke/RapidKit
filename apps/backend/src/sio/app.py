@@ -5,10 +5,11 @@ Date    : 2025-05-19
 
 import importlib
 
-from fastapi_sio_di import AsyncServer
 from rapidkit_core.config import settings
 from rapidkit_framework.plugin import PluginManifest
 from socketio import ASGIApp, AsyncRedisManager
+
+from src.sio.identity import IdentityAwareAsyncServer
 
 
 def auto_register_events(plugins: list[PluginManifest] | None = None) -> None:
@@ -30,7 +31,7 @@ def auto_register_events(plugins: list[PluginManifest] | None = None) -> None:
 
 
 redis_manager = AsyncRedisManager(url=str(settings.REDIS_URL))
-socket = AsyncServer(
+socket = IdentityAwareAsyncServer(
     async_mode="asgi",
     cors_allowed_origins=[],
     serializer="serializable_dict",

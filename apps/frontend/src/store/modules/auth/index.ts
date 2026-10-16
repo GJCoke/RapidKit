@@ -1,11 +1,23 @@
-import { computed, reactive, ref } from "vue"
+import { computed, onScopeDispose, reactive, ref, watch } from "vue"
 import { useRoute } from "vue-router"
 import { defineStore } from "pinia"
 import type { ElegantConstRoute, LastLevelRouteKey, RouteKey } from "@elegant-router/types"
 import { useLoading } from "@rapidkit/hooks"
 import { rsaEncrypt } from "@rapidkit/utils"
-import { fetchGetPublicKey, fetchGetUserInfo, fetchGetUserRoutes, fetchLogin } from "@/service/api"
+import {
+  fetchGetPublicKey,
+  fetchGetUserInfo,
+  fetchGetUserRoutes,
+  fetchLogin,
+  fetchCreateImpersonation,
+  fetchGetCurrentImpersonation,
+  fetchDeleteCurrentImpersonation,
+} from "@/service/api"
+import { getAuthSession } from "@/service/request/auth-session"
+import { useNotificationStore } from "@/store/modules/notification"
+import { useBannerStore } from "@/store/modules/banner"
 import { useRouterPush } from "@/hooks/common/router"
+import { router } from "@/router"
 import { connectNotificationSocket, disconnectNotificationSocket } from "@/store/modules/notification/shared"
 import { localStg } from "@/utils/storage"
 import { SetupStoreId } from "@/enum"
@@ -23,10 +35,11 @@ import { createPermissionRefresher } from "./permission-refresh"
 import { createPermissionSync } from "./permission-sync"
 import { getLoginCooldown } from "./login-result"
 import type { LoginResult } from "./login-result"
+import { createImpersonationSession } from "./impersonation-session"
+import { installIdentitySync } from "./identity-sync"
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const route = useRoute()
-  const authStore = useAuthStore()
   const routeStore = useRouteStore()
   const tabStore = useTabStore()
   const { toLogin, redirectFromLogin, toHome } = useRouterPush(false)
@@ -34,17 +47,23 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
   const token = ref("")
 
-  const userInfo: Api.Auth.UserInfo = reactive({
-    id: "",
-    createTime: "",
-    updateTime: "",
-    name: "",
-    email: "",
-    username: "",
-    isAdmin: false,
-    roles: [],
-    buttons: [],
-  })
+  function createEmptyUserInfo(): Api.Auth.UserInfo {
+    return {
+      id: "",
+      createTime: "",
+      updateTime: "",
+      name: "",
+      email: "",
+      username: "",
+      isAdmin: false,
+      roles: [],
+      buttons: [],
+    }
+  }
+  const userInfo = reactive(createEmptyUserInfo())
+  const impersonation = ref<Api.Impersonation.Snapshot | null>(localStg.get("impersonation"))
+  let runtimeVersion = 0
+  let clearing: Promise<void> | null = null
 
   /** is super role in static route */
   const isStaticSuper = computed(() => {
@@ -142,24 +161,90 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     connectNotificationSocket(accessToken)
   }
 
-  /** Reset auth store */
-  async function resetStore() {
-    recordUserId()
-
+  function resetIdentityState(): Promise<void> {
+    if (clearing) return clearing
+    runtimeVersion++
     permissionSync.reset()
     permissionRefresher.reset()
     disconnectNotificationSocket()
     disconnectGlobalSocket()
-    clearAuthStorage()
+    useNotificationStore().reset()
+    useBannerStore().reset()
+    token.value = ""
+    Object.assign(userInfo, createEmptyUserInfo())
+    localStg.remove("globalTabs")
+    tabStore.$reset()
+    clearing = routeStore.resetStore().finally(() => {
+      clearing = null
+    })
+    return clearing
+  }
 
-    authStore.$reset()
-
-    tabStore.cacheTabs()
-    await routeStore.resetStore()
-
-    if (!route.meta.constant) {
-      await toLogin()
+  async function loadIdentity(isCurrent: () => boolean = () => true): Promise<boolean> {
+    const generation = getAuthSession()
+    const version = runtimeVersion
+    token.value = getToken()
+    try {
+      const snapshot = await fetchPermissionSnapshot()
+      if (!snapshot || !isCurrent() || version !== runtimeVersion || generation !== getAuthSession()) return false
+      await applyPermissionSnapshot(snapshot, false)
+      if (!isCurrent() || version !== runtimeVersion || generation !== getAuthSession()) return false
+      routeStore.setIsInitAuthRoute(true)
+      tabStore.initHomeTab()
+      return true
+    } catch {
+      return false
     }
+  }
+
+  function reconnectIdentitySockets() {
+    token.value = getToken()
+    if (!token.value) return
+    connectGlobalSocket()
+    connectNotificationSocket(token.value)
+  }
+
+  async function navigateIdentity(path: string) {
+    if (path === "/") return toHome()
+    const destination = router.resolve(path)
+    if (!destination.name || destination.name === "not-found" || !router.hasRoute(destination.name)) return toHome()
+    return router.replace(path)
+  }
+
+  const coordinator = createImpersonationSession({
+    create: fetchCreateImpersonation,
+    validate: fetchGetCurrentImpersonation,
+    stop: fetchDeleteCurrentImpersonation,
+    clearRuntime: resetIdentityState,
+    loadIdentity,
+    navigate: navigateIdentity,
+    login: async () => {
+      clearAuthStorage()
+      impersonation.value = null
+      await resetIdentityState()
+      await toLogin()
+    },
+    reconnect: reconnectIdentitySockets,
+    changed: (snapshot) => {
+      impersonation.value = snapshot
+    },
+  })
+
+  function startImpersonation(body: Api.Impersonation.CreateBody, returnPath = route.fullPath) {
+    return coordinator.enter(body, returnPath)
+  }
+  const stopImpersonation = coordinator.stop
+  const validateImpersonation = coordinator.validate
+
+  /** Reset auth store */
+  async function resetStore() {
+    coordinator.cancel()
+    recordUserId()
+    clearAuthStorage()
+    impersonation.value = null
+    getAuthSession()
+    await resetIdentityState()
+    if (!route.meta.constant) await toLogin()
   }
 
   /** Record the user ID of the previous login session Used to compare with the current user ID on next login */
@@ -284,20 +369,59 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   async function initUserInfo() {
-    const maybeToken = getToken()
-
-    if (maybeToken) {
-      token.value = maybeToken
-      const pass = await getUserInfo()
-
-      if (!pass) {
-        resetStore()
-      } else {
-        connectGlobalSocket()
-        connectNotificationSocket(maybeToken)
-      }
+    if (localStg.get("impersonation")) {
+      if (!(await coordinator.validate())) return
+    } else if (localStg.get("impersonatorToken")) {
+      await coordinator.restore()
+      return
     }
+    if (!getToken()) return
+    if (!(await loadIdentity())) {
+      await resetStore()
+      return
+    }
+    reconnectIdentitySockets()
   }
+
+  const now = ref(Date.now())
+  const expiresInSeconds = computed(() => {
+    if (!impersonation.value) return 0
+    const expiry = Date.parse(impersonation.value.expiresAt)
+    return Number.isFinite(expiry) ? Math.max(0, Math.ceil((expiry - now.value) / 1000)) : 0
+  })
+  let expiryTimer: ReturnType<typeof setInterval> | undefined
+  function checkExpiry() {
+    now.value = Date.now()
+    if (impersonation.value && expiresInSeconds.value === 0) void stopImpersonation().catch(() => {})
+  }
+  const stopExpiryWatch = watch(
+    impersonation,
+    (snapshot) => {
+      clearInterval(expiryTimer)
+      now.value = Date.now()
+      if (snapshot) expiryTimer = setInterval(checkExpiry, 1000)
+    },
+    { immediate: true },
+  )
+
+  const disposeIdentitySync =
+    typeof window !== "undefined"
+      ? installIdentitySync(window, import.meta.env.VITE_STORAGE_PREFIX || "", () => window.location.reload())
+      : () => {}
+  function onVisibility() {
+    if (document.visibilityState === "visible") checkExpiry()
+  }
+  if (typeof window !== "undefined") window.addEventListener("focus", checkExpiry)
+  if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVisibility)
+  function disposeIdentityObservers() {
+    clearInterval(expiryTimer)
+    stopExpiryWatch()
+    disposeIdentitySync()
+    if (typeof window !== "undefined") window.removeEventListener("focus", checkExpiry)
+    if (typeof document !== "undefined") document.removeEventListener("visibilitychange", onVisibility)
+  }
+  onScopeDispose(disposeIdentityObservers)
+  import.meta.hot?.dispose(disposeIdentityObservers)
 
   return {
     token,
@@ -307,6 +431,12 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     syncAccessToken,
     loginLoading,
     resetStore,
+    resetIdentityState,
+    startImpersonation,
+    stopImpersonation,
+    validateImpersonation,
+    impersonation,
+    expiresInSeconds,
     login,
     initUserInfo,
     syncPermissions,

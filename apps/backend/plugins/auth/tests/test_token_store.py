@@ -20,7 +20,8 @@ def redis_mock():
 
 
 @pytest.fixture
-def token_store(redis_mock):
+def token_store(redis_mock, monkeypatch):
+    monkeypatch.setattr("plugin_auth.auth.token_store.get_service_optional", lambda protocol: None)
     return TokenStore(redis_mock)
 
 

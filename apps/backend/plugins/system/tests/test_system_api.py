@@ -45,13 +45,13 @@ class TestErrorStats:
         body = resp.json()
         assert body["code"] == 0
         data = body["data"]
-        assert "http5xxCount" in data
+        assert "http5XxCount" in data
         assert "bizErrorCount" in data
         assert "totalRequests" in data
         assert "errorRate" in data
-        assert "sparkline24h" in data
-        assert isinstance(data["sparkline24h"], list)
-        assert len(data["sparkline24h"]) == 24
+        assert "sparkline24H" in data
+        assert isinstance(data["sparkline24H"], list)
+        assert len(data["sparkline24H"]) == 24
 
 
 class TestHealthStats:
@@ -141,7 +141,8 @@ class TestActivityLog:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        assert isinstance(body["data"], list)
+        assert isinstance(body["data"]["items"], list)
+        assert "nextCursor" in body["data"]
 
 
 class TestPluginDependencies:

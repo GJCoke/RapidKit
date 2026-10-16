@@ -41,3 +41,10 @@ class AuthStatusCode(BaseStatusCode):
     ROLE_NOT_FOUND = (15002, "auth.error.roleNotFound")
     MENU_NOT_FOUND = (15003, "auth.error.menuNotFound")
     MENU_INVALID_PARENT = (15004, "auth.error.menuInvalidParent")
+
+    # Impersonation security and synchronous audit errors
+    IMPERSONATION_ADMIN_REQUIRED = (14015, "auth.error.impersonationAdminRequired")
+    IMPERSONATION_TARGET_INVALID = (14016, "auth.error.impersonationTargetInvalid")
+    IMPERSONATION_SESSION_INVALID = (14017, "auth.error.impersonationSessionInvalid")
+    IMPERSONATION_OPERATION_DENIED = (14018, "auth.error.impersonationOperationDenied")
+    IMPERSONATION_AUDIT_FAILED = (17001, "auth.error.impersonationAuditFailed")

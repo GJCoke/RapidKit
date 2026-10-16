@@ -444,6 +444,17 @@
       "usernamePinyinWarning": "Username does not match the name pinyin. Suggested: {username}",
       "status": {
         "pending": "Pending"
+      },
+      "detailTitle": "User details",
+      "detailEmpty": "Unable to load user details",
+      "impersonation": {
+        "start": "Impersonate",
+        "confirmTitle": "Confirm user impersonation",
+        "warning": "Actions will execute as this user. Both the administrator and target user will be audited.",
+        "reason": "Investigation reason (optional)",
+        "viewing": "Viewing as {name} ({username})",
+        "remaining": "Remaining",
+        "stop": "Stop impersonating"
       }
     },
     "department": {
@@ -508,8 +519,16 @@
         "event": "Event Information",
         "request": "Request Information",
         "trace": "Tracing and Diagnostics",
-        "empty": "No audit details"
-      }
+        "empty": "No audit details",
+        "identity": "Impersonation identity",
+        "actorId": "Administrator ID",
+        "subjectId": "Target user ID",
+        "subjectName": "Target user",
+        "sessionId": "Impersonation session ID",
+        "reason": "Reason",
+        "endReason": "End reason"
+      },
+      "impersonatedAction": "Administrator {actor} performed {action} as user {subject}"
     },
     "dataPolicy": {
       "title": "Data Policy",

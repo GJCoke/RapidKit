@@ -52,6 +52,7 @@ function createCommonRequest<
     async (response) => {
       const responseType: ResponseType = (response.config?.responseType as ResponseType) || "json"
 
+      await opts.onResponse?.(response)
       await transformResponse(response)
 
       if (responseType !== "json" || opts.isBackendSuccess(response)) {
@@ -175,3 +176,5 @@ export function createFlatRequest<ResponseData, ApiData, State extends Record<st
 export { BACKEND_ERROR_CODE, REQUEST_ID_KEY }
 export type * from "./type"
 export type { CreateAxiosDefaults, AxiosError, AxiosResponse }
+
+export { CanceledError } from "axios"

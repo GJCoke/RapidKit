@@ -68,6 +68,32 @@
             }}</NDescriptionsItem>
           </NDescriptions>
 
+          <template v-if="detail.impersonationSessionId">
+            <h3 class="mt-20px text-14px font-700 text-base-text-1">
+              {{ $t("page.manage.auditLog.detail.identity") }}
+            </h3>
+            <NDescriptions :column="1" label-placement="left" bordered size="small">
+              <NDescriptionsItem :label="$t('page.manage.auditLog.detail.actorId')"
+                ><span class="break-all">{{ valueOrDash(detail.actorId) }}</span></NDescriptionsItem
+              >
+              <NDescriptionsItem :label="$t('page.manage.auditLog.detail.subjectId')"
+                ><span class="break-all">{{ valueOrDash(detail.subjectUserId) }}</span></NDescriptionsItem
+              >
+              <NDescriptionsItem :label="$t('page.manage.auditLog.detail.subjectName')">{{
+                detail.subjectName || detail.subjectUserId || "-"
+              }}</NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.manage.auditLog.detail.sessionId')"
+                ><span class="break-all">{{ detail.impersonationSessionId }}</span></NDescriptionsItem
+              >
+              <NDescriptionsItem :label="$t('page.manage.auditLog.detail.reason')">{{
+                valueOrDash(detail.metadata?.reason)
+              }}</NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.manage.auditLog.detail.endReason')">{{
+                valueOrDash(detail.metadata?.end_reason)
+              }}</NDescriptionsItem>
+            </NDescriptions>
+          </template>
+
           <h3 class="mt-20px text-14px font-700 text-base-text-1">{{ $t("page.manage.auditLog.detail.request") }}</h3>
           <NDescriptions :column="1" label-placement="left" bordered size="small">
             <NDescriptionsItem :label="$t('page.manage.auditLog.httpMethod')">{{

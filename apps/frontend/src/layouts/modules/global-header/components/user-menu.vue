@@ -62,6 +62,10 @@
   })
 
   function logout() {
+    if (authStore.impersonation) {
+      window.$message?.warning($t("request.impersonationStopFirst"))
+      return
+    }
     window.$dialog?.info({
       title: $t("common.tip"),
       content: $t("common.logoutConfirm"),

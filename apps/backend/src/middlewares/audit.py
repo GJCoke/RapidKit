@@ -13,12 +13,10 @@ import re
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from rapidkit_common.protocols.auth import CurrentUserProvider
 from rapidkit_common.request import get_client_ip, parse_user_agent
 from rapidkit_core.config import settings
 from rapidkit_core.log import logger
 from rapidkit_core.timezone import timezone
-from rapidkit_framework.services import get_service_optional
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
@@ -37,7 +35,8 @@ _DEFAULT_EXCLUDED_PATHS = (
     "/docs",
     "/openapi.json",
     "/redoc",
-    "/api/v1/auth/refreshToken",
+    "/api/v1/auth/token/refresh",
+    "/api/v1/auth/impersonations",
 )
 _DEFAULT_SENSITIVE_FIELDS = (
     "password",
@@ -105,23 +104,24 @@ def _truncate_body(body_dict: dict) -> dict | None:
         return None
 
 
-async def _extract_user_from_token(request: Request) -> tuple[UUID | None, str | None]:
-    """从 Authorization header 中解码 JWT 获取用户信息。"""
-    auth_header = request.headers.get("authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return None, None
-    provider = get_service_optional(CurrentUserProvider)
-    if provider is None:
-        return None, None
-    try:
-        user = await provider.get_current_user(auth_header[7:])
-        if user is None:
-            return None, None
-        user_id = UUID(user.id) if isinstance(user.id, str) else user.id
-        actor_name = getattr(user, "name", None) or user.username
-        return user_id, actor_name
-    except Exception:
-        return None, None
+def _read_auth_identity(request: Request) -> dict:
+    """Read only identity verified and published by the downstream resolver."""
+    auth = getattr(request.state, "auth", None)
+    actor = getattr(auth, "actor", None)
+    subject = getattr(auth, "subject", None)
+    session_id = getattr(auth, "impersonation_session_id", None)
+    # ORM descriptors can lazy-load expired detached instances after rollback.
+    # Read loaded values only; IdentifiedAuth retains signed scalar IDs/snapshots.
+    actor_values = vars(actor) if actor is not None else {}
+    subject_values = vars(subject) if subject is not None else {}
+    return {
+        "actor_id": getattr(auth, "actor_id", None) or actor_values.get("id"),
+        "actor_name": getattr(auth, "actor_name", None) or actor_values.get("name") or actor_values.get("username"),
+        "subject_user_id": (getattr(auth, "subject_user_id", None) or subject_values.get("id"))
+        if session_id is not None
+        else None,
+        "impersonation_session_id": session_id,
+    }
 
 
 def _parse_request_body(raw: bytes) -> dict | None:
@@ -214,6 +214,9 @@ def _build_audit_record(
     http_status: int,
     request_id: str | None = None,
     resource_name: str | None = None,
+    subject_user_id: UUID | None = None,
+    impersonation_session_id: UUID | None = None,
+    audit_business_code: int | None = None,
 ) -> dict:
     """Build the technical audit persistence shape, never an activity shape."""
     action = _parse_event_type(method, path)
@@ -221,11 +224,13 @@ def _build_audit_record(
     return {
         "actor_id": actor_id,
         "actor_name": actor_name,
+        "subject_user_id": subject_user_id,
+        "impersonation_session_id": impersonation_session_id,
         "action": action,
         "resource_type": resource_type,
         "resource_id": None,
         "resource_name": resource_name,
-        "result": "success" if http_status < 400 else "failure",
+        "result": "success" if http_status < 400 and audit_business_code in (None, 0) else "failure",
         "risk_level": "normal",
         "source": "http",
         "request_id": request_id,
@@ -259,9 +264,6 @@ class AuditMiddleware(BaseHTTPMiddleware):
         raw_body = await request.body()
         body_dict = _parse_request_body(raw_body)
 
-        # 提取用户信息
-        user_id, username = await _extract_user_from_token(request)
-
         # 直接从请求提取客户端信息，避免依赖 StateMiddleware 的执行顺序
         source_ip = get_client_ip(request)
         user_agent = parse_user_agent(request)
@@ -269,6 +271,11 @@ class AuditMiddleware(BaseHTTPMiddleware):
 
         # 调用下游
         response = await call_next(request)
+
+        if getattr(request.state, "impersonation_lifecycle_audited", False):
+            return response
+        identity = _read_auth_identity(request)
+        username = identity["actor_name"]
 
         # 构建审计记录
         redacted_body = None
@@ -280,8 +287,8 @@ class AuditMiddleware(BaseHTTPMiddleware):
         audit_record = _build_audit_record(
             method=request.method,
             path=request.url.path,
-            actor_id=user_id,
-            actor_name=username,
+            **identity,
+            audit_business_code=getattr(request.state, "audit_business_code", None),
             ip=source_ip,
             user_agent=user_agent_str,
             request_summary=redacted_body,
@@ -290,6 +297,15 @@ class AuditMiddleware(BaseHTTPMiddleware):
             request_id=request.headers.get("x-request-id"),
             resource_name=target or None,
         )
+
+        if identity["impersonation_session_id"] is not None:
+            auth = request.state.auth
+            subject = getattr(auth, "subject", None)
+            subject_values = vars(subject) if subject is not None else {}
+            audit_record["extra_data"] = {
+                "subject_name": getattr(auth, "subject_name", None) or subject_values.get("name"),
+                "subject_username": getattr(auth, "subject_username", None) or subject_values.get("username"),
+            }
 
         # 异步写入队列
         if audit_queue is not None:

@@ -260,9 +260,14 @@ class TestDependencyOverridesIntegration:
         assert auth_ep is not None, "auth entry point not found"
 
         manifest = auth_ep.load()()
-        assert len(manifest.dependency_overrides) == 2, (
-            f"Expected 2 dependency_overrides, got {len(manifest.dependency_overrides)}"
-        )
+        from plugin_auth.auth.deps import get_current_user_form_db
+        from plugin_auth.impersonation.deps import DenyImpersonation as deny_impersonation
+        from rapidkit_common.auth import DenyImpersonation, _get_current_user_placeholder
+
+        assert manifest.dependency_overrides == {
+            _get_current_user_placeholder: get_current_user_form_db,
+            DenyImpersonation: deny_impersonation,
+        }
 
     def test_apply_overrides_to_mock_app(self):
         """apply_dependency_overrides populates app.dependency_overrides."""

@@ -11,6 +11,7 @@ export function getAuthorization() {
 
 /** refresh token */
 async function handleRefreshToken(session: number) {
+  if (localStg.get("impersonation") || getAuthSession() !== session) return false
   const { resetStore, syncAccessToken } = useAuthStore()
 
   const rToken = localStg.get("refreshToken")
@@ -18,7 +19,7 @@ async function handleRefreshToken(session: number) {
     if (rToken) {
       const { error, data } = await fetchRefreshToken(rToken)
       // A logout or another login may have happened while the refresh was pending.
-      if (getAuthSession() !== session) return false
+      if (getAuthSession() !== session || localStg.get("impersonation")) return false
       if (!error && data?.accessToken && data?.refreshToken) {
         localStg.set("token", data.accessToken)
         localStg.set("refreshToken", data.refreshToken)
@@ -28,7 +29,7 @@ async function handleRefreshToken(session: number) {
       }
     }
   } catch {
-    if (getAuthSession() !== session) return false
+    if (getAuthSession() !== session || localStg.get("impersonation")) return false
   }
 
   await resetStore()
@@ -36,6 +37,10 @@ async function handleRefreshToken(session: number) {
 }
 
 export function handleExpiredRequest(state: RequestInstanceState) {
+  if (localStg.get("impersonation"))
+    return useAuthStore()
+      .stopImpersonation()
+      .then(() => false)
   const session = getAuthSession()
   if (!state.refreshTokenPromise || state.refreshTokenSession !== session) {
     const promise = handleRefreshToken(session).finally(() => {

@@ -6,5 +6,6 @@
   "permissionChanged": "权限已变更",
   "permissionChangedMsg": "您的权限已被管理员调整，当前页面已无法访问，点击确定返回首页",
   "refreshToken": "请求的token已过期，刷新token",
-  "tokenExpired": "token已过期"
+  "tokenExpired": "token已过期",
+  "impersonationStopFirst": "请先停止模拟，再退出登录。"
 }

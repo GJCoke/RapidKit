@@ -11,7 +11,7 @@ import asyncio
 import inspect
 import json
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from dataclasses import fields as dc_fields
 from datetime import datetime
 from fnmatch import fnmatch
@@ -23,6 +23,14 @@ from rapidkit_core.database import RedisManager
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 
+from rapidkit_framework.identity import (
+    IdentityMetadata,
+    current_identity,
+    identity_from_headers,
+    identity_headers,
+    identity_scope,
+)
+
 logger = get_plugin_logger("EventBus")
 
 DISTRIBUTED_CHANNEL = "eventbus:distributed"
@@ -33,6 +41,24 @@ class Event:
     """事件基类。所有事件必须继承此类并定义 event_name。"""
 
     event_name: ClassVar[str]
+    identity_metadata: IdentityMetadata | None = field(default=None, kw_only=True, repr=False, compare=False)
+
+    @property
+    def impersonation_session_id(self) -> str | None:
+        return self.identity_metadata.impersonation_session_id if self.identity_metadata else None
+
+
+def _attach_identity(event: Event) -> None:
+    if event.identity_metadata is None:
+        current = current_identity()
+        explicit_actor = getattr(event, "actor_id", None)
+        event.identity_metadata = IdentityMetadata(
+            user_id=current.user_id,
+            actor_id=current.actor_id or (str(explicit_actor) if explicit_actor is not None else None),
+            impersonation_session_id=current.impersonation_session_id,
+        )
+    if hasattr(event, "actor_id") and event.actor_id is None and event.identity_metadata.actor_id is not None:
+        setattr(event, "actor_id", event.identity_metadata.actor_id)
 
 
 @dataclass
@@ -144,6 +170,7 @@ class EventBus:
 
         同优先级按注册顺序执行（sync 无法并发）。
         """
+        _attach_identity(event)
         entries = self._collect_handlers(event, source)
         if not entries:
             self._dead_letters.append(DeadLetter(event_name=event.event_name, timestamp=timezone.now(), source=source))
@@ -157,7 +184,8 @@ class EventBus:
                         event.event_name,
                     )
                     continue
-                entry_handler(event)
+                with identity_scope(event.identity_metadata or IdentityMetadata()):
+                    entry_handler(event)
             except Exception:
                 self._handler_errors[event.event_name] = self._handler_errors.get(event.event_name, 0) + 1
                 logger.exception(
@@ -170,6 +198,7 @@ class EventBus:
         """
         异步触发事件。同优先级 handler 并发执行，不同优先级按顺序。
         """
+        _attach_identity(event)
         entries = self._collect_handlers(event, source)
         if not entries:
             self._dead_letters.append(DeadLetter(event_name=event.event_name, timestamp=timezone.now(), source=source))
@@ -184,6 +213,7 @@ class EventBus:
         """
         发射事件但不等待 handler 完成。task 被追踪，shutdown 时会等待。
         """
+        _attach_identity(event)
         task = asyncio.create_task(self.async_emit(event, source=source))
         self._pending_tasks.add(task)
         task.add_done_callback(self._pending_tasks.discard)
@@ -225,7 +255,12 @@ class EventBus:
                 "instance_id": self._instance_id,
                 "event_name": event.event_name,
                 "source": source,
-                "data": {f.name: getattr(event, f.name) for f in dc_fields(event) if f.name != "event_name"},
+                "data": {
+                    f.name: getattr(event, f.name)
+                    for f in dc_fields(event)
+                    if f.name not in {"event_name", "identity_metadata"}
+                },
+                "identity": identity_headers(event.identity_metadata),
             }
         )
         redis = RedisManager.client()
@@ -274,7 +309,8 @@ class EventBus:
                             logger.debug("No registered class for distributed event '{}'", event_name)
                             continue
 
-                        event = event_cls(**data)
+                        metadata = identity_from_headers(payload.get("identity", {"actor_id": data.get("actor_id")}))
+                        event = event_cls(**data, identity_metadata=metadata)
                         await self.async_emit(event, source=source)
                     except Exception:
                         logger.exception("Error processing distributed event")
@@ -313,10 +349,11 @@ class EventBus:
     async def _call_handler(self, handler: Callable, event: Event) -> None:
         """安全调用单个 handler，异常不传播。"""
         try:
-            if inspect.iscoroutinefunction(handler):
-                await handler(event)
-            else:
-                handler(event)
+            with identity_scope(event.identity_metadata or IdentityMetadata()):
+                if inspect.iscoroutinefunction(handler):
+                    await handler(event)
+                else:
+                    handler(event)
         except Exception:
             self._handler_errors[event.event_name] = self._handler_errors.get(event.event_name, 0) + 1
             logger.exception(

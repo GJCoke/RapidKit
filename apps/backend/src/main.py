@@ -135,6 +135,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppException)
     async def handle_app_exception(request: Request, exc: AppException) -> JSONResponse:
         """应用业务异常处理，使用业务状态码。"""
+        request.state.audit_business_code = exc.code
         logger.warning(
             '{user} "{method} {path}" AppException[{code}]: {message}',
             user=_get_request_user(request),

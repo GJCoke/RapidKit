@@ -149,6 +149,22 @@ def build_menus() -> list[Menu]:
         ],
     )
 
+    # Hidden detail page: super administrators see all database routes;
+    # ordinary roles require an explicit router permission as before.
+    manage_user_detail = Menu(
+        id=uuid8(),
+        parent_id=manage_id,
+        menu_name="用户详情",
+        menu_type=MenuType.MENU,
+        order=1,
+        route_name="manage_user-detail",
+        route_path="/manage/user-detail/:id",
+        component="view.manage_user-detail",
+        i18n_key="route.manage_user-detail",
+        hide_in_menu=True,
+        interfaces=["GET:/api/v1/users/{user_id}"],
+    )
+
     # 2.2 角色管理
     manage_role = Menu(
         id=uuid8(),
@@ -685,6 +701,7 @@ def build_menus() -> list[Menu]:
         home,
         manage,
         manage_user,
+        manage_user_detail,
         manage_role,
         manage_menu,
         manage_department,

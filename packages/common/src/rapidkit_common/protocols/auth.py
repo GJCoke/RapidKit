@@ -1,5 +1,6 @@
 """Authentication domain protocols."""
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 from uuid import UUID
 
@@ -7,6 +8,22 @@ from rapidkit_common.protocols.user import UserProtocol
 
 if TYPE_CHECKING:
     from rapidkit_core.redis_client import AsyncRedisClient
+    from starlette.requests import Request
+
+
+@dataclass(frozen=True)
+class AuthContext:
+    """Authenticated subject and the actor responsible for the operation."""
+
+    subject: UserProtocol
+    actor: UserProtocol
+    impersonation_session_id: UUID | None = None
+
+
+class AuthContextResolver(Protocol):
+    """Resolve the effective and initiating identities from a token."""
+
+    async def resolve(self, token: str, request: "Request | None" = None) -> AuthContext: ...
 
 
 class TokenDecoder(Protocol):
@@ -27,6 +44,8 @@ class CurrentUserProvider(Protocol):
     """Resolve a full user object from a token. Provided by plugin_auth."""
 
     async def get_current_user(self, token: str) -> UserProtocol | None: ...
+
+    async def get_auth_context(self, token: str) -> AuthContext | None: ...
 
 
 class PasswordDecryptor(Protocol):

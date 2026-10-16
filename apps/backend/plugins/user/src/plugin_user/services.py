@@ -9,9 +9,10 @@ from uuid import UUID
 
 from rapidkit_common.enums import Status
 from rapidkit_common.protocols.auth import PasswordDecryptor, SessionInvalidator
+from rapidkit_common.protocols.impersonation import ImpersonationRevoker
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
-from rapidkit_framework.services import get_service
+from rapidkit_framework.services import get_service, get_service_optional
 from sqlalchemy import ColumnElement
 from sqlmodel import col, or_
 
@@ -68,3 +69,10 @@ async def invalidate_user_session(redis: AsyncRedisClient, user_id: UUID) -> Non
     """清除指定用户的权限缓存、所有刷新令牌，并标记强制重新登录。"""
     invalidator = get_service(SessionInvalidator)
     await invalidator.invalidate_user_sessions(user_id, redis)
+
+
+async def revoke_impersonations_for_user(user_id: UUID, redis: AsyncRedisClient) -> None:
+    """Run after commit so a rolled back user update cannot revoke sessions."""
+    revoker = get_service_optional(ImpersonationRevoker)
+    if revoker is not None:
+        await revoker.revoke_user(user_id, redis)

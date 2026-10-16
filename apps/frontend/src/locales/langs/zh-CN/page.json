@@ -444,6 +444,17 @@
       "usernamePinyinWarning": "用户名与姓名拼音不一致，建议使用 {username}",
       "status": {
         "pending": "待激活"
+      },
+      "detailTitle": "用户详情",
+      "detailEmpty": "无法加载用户详情",
+      "impersonation": {
+        "start": "模拟登录",
+        "confirmTitle": "确认模拟用户身份",
+        "warning": "后续操作将以该用户的身份真实执行，并记录管理员与目标用户。",
+        "reason": "填写排查原因（可选）",
+        "viewing": "正在以 {name}（{username}）身份查看",
+        "remaining": "剩余",
+        "stop": "停止模拟"
       }
     },
     "department": {
@@ -508,8 +519,16 @@
         "event": "事件信息",
         "request": "请求信息",
         "trace": "追踪与诊断",
-        "empty": "暂无审计详情"
-      }
+        "empty": "暂无审计详情",
+        "identity": "模拟身份",
+        "actorId": "管理员 ID",
+        "subjectId": "目标用户 ID",
+        "subjectName": "目标用户",
+        "sessionId": "模拟会话 ID",
+        "reason": "模拟原因",
+        "endReason": "结束原因"
+      },
+      "impersonatedAction": "管理员 {actor} 以用户 {subject} 的身份执行了 {action}"
     },
     "dataPolicy": {
       "title": "数据策略",

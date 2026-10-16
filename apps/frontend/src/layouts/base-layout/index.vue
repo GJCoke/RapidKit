@@ -5,6 +5,8 @@
   import { useAppStore } from "@/store/modules/app"
   import { useThemeStore } from "@/store/modules/theme"
   import { useBannerStore } from "@/store/modules/banner"
+  import { useAuthStore } from "@/store/modules/auth"
+  import ImpersonationBanner from "../modules/impersonation-banner/index.vue"
   import GlobalAnnouncement from "../modules/global-announcement/index.vue"
   import GlobalHeader from "../modules/global-header/index.vue"
   import GlobalSider from "../modules/global-sider/index.vue"
@@ -19,6 +21,7 @@
   })
 
   const appStore = useAppStore()
+  const auth = useAuthStore()
   const bannerStore = useBannerStore()
   const themeStore = useThemeStore()
   const { secondLevelMenus, childLevelMenus, isActiveFirstLevelMenuHasChildren } = provideMixMenuContext()
@@ -129,7 +132,7 @@
     :full-content="appStore.fullContent"
     :fixed-top="themeStore.fixedHeaderAndTab"
     :header-height="themeStore.header.height"
-    :banner-visible="Boolean(bannerStore.current)"
+    :banner-visible="Boolean(auth.impersonation || bannerStore.current)"
     :tab-visible="themeStore.tab.visible"
     :tab-height="themeStore.tab.height"
     :content-class="appStore.contentXScrollable ? 'overflow-x-hidden' : ''"
@@ -144,7 +147,7 @@
     <template #header>
       <GlobalHeader v-bind="headerProps" />
     </template>
-    <template #banner><GlobalAnnouncement /></template>
+    <template #banner><ImpersonationBanner /><GlobalAnnouncement /></template>
     <template #tab>
       <GlobalTab />
     </template>
