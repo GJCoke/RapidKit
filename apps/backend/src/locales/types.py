@@ -2,15 +2,20 @@
 
 from typing import Literal, TypeAlias
 
-LANGUAGE_TYPE: TypeAlias = Literal['zh-CN', 'en-US']
+LANGUAGE_TYPE: TypeAlias = Literal['en-US', 'zh-CN']
 
-languages: set[LANGUAGE_TYPE] = {'zh-CN', 'en-US'}
+languages: set[LANGUAGE_TYPE] = {'en-US', 'zh-CN'}
 
 I18nKey = Literal[
     "auth.error.accountLocked",
     "auth.error.accountNotActivated",
     "auth.error.authenticationFailed",
     "auth.error.departmentHasChildren",
+    "auth.error.impersonationAdminRequired",
+    "auth.error.impersonationAuditFailed",
+    "auth.error.impersonationOperationDenied",
+    "auth.error.impersonationSessionInvalid",
+    "auth.error.impersonationTargetInvalid",
     "auth.error.insufficientPermissions",
     "auth.error.invalidCredentials",
     "auth.error.invalidOperation",
