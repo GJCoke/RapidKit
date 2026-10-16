@@ -7,17 +7,19 @@ Date   : 2026-05-11
 
 from uuid import UUID
 
-from rapidkit_core.database import AsyncSessionLocal
+from rapidkit_core.database import AsyncSessionLocal, RedisManager
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 
 from plugin_permission.adapters import AuthRoleResolver, RedisPermissionCache
+from plugin_permission.cache import permission_structure
+from plugin_permission.data_policy.services import get_role_versions
 from plugin_permission.rbac_config import rbac_config
 from plugin_permission.role.crud import RoleCRUD
+from plugin_permission.role_snapshots import load_role_snapshots
+from plugin_permission.user_permissions import get_fresh_permissions
 
 logger = get_plugin_logger("Permission")
-
-permission_structure = "auth:permission:<{user_id}>"
 
 
 class PermissionCacheManagerImpl:
@@ -40,16 +42,8 @@ class PermissionCacheManagerImpl:
             await cache.set(user_id, permissions)
 
     async def get_buttons(self, user_id: UUID, roles: list[str], redis: AsyncRedisClient) -> list[str]:
-        cache = self._build_cache(redis)
-        cached = await cache.get(user_id)
-        if cached:
-            return cached.buttons
-
         async with self._session_factory() as session:
-            role_crud = RoleCRUD(session)
-            resolver = AuthRoleResolver(role_crud, redis)
-            permissions = await resolver.resolve(roles)
-            await cache.set(user_id, permissions)
+            permissions, _ = await get_fresh_permissions(user_id, roles, redis, RoleCRUD(session))
             return permissions.buttons
 
     async def invalidate(self, user_id: UUID, redis: AsyncRedisClient) -> None:
@@ -57,10 +51,8 @@ class PermissionCacheManagerImpl:
         await cache.invalidate(user_id)
 
     async def get_permitted_routes(self, roles: list[str]) -> set[str]:
+        redis = RedisManager.client()
         async with self._session_factory() as session:
-            role_crud = RoleCRUD(session)
-            role_objs = await role_crud.get_role_by_codes(roles)
-            permitted: set[str] = set()
-            for role in role_objs:
-                permitted.update(role.router_permissions or [])
-            return permitted
+            versions = await get_role_versions(redis, roles)
+            snapshots = await load_role_snapshots(redis, RoleCRUD(session), versions)
+        return {route for snapshot in snapshots if snapshot.active for route in snapshot.router_permissions}

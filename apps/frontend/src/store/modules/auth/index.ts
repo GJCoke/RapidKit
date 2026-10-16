@@ -1,9 +1,10 @@
 import { computed, reactive, ref } from "vue"
 import { useRoute } from "vue-router"
 import { defineStore } from "pinia"
+import type { ElegantConstRoute, LastLevelRouteKey, RouteKey } from "@elegant-router/types"
 import { useLoading } from "@rapidkit/hooks"
 import { rsaEncrypt } from "@rapidkit/utils"
-import { fetchGetPublicKey, fetchGetUserInfo, fetchLogin } from "@/service/api"
+import { fetchGetPublicKey, fetchGetUserInfo, fetchGetUserRoutes, fetchLogin } from "@/service/api"
 import { useRouterPush } from "@/hooks/common/router"
 import { connectNotificationSocket, disconnectNotificationSocket } from "@/store/modules/notification/shared"
 import { localStg } from "@/utils/storage"
@@ -11,7 +12,15 @@ import { SetupStoreId } from "@/enum"
 import { $t } from "@/locales"
 import { useRouteStore } from "../route"
 import { useTabStore } from "../tab"
-import { clearAuthStorage, connectGlobalSocket, disconnectGlobalSocket, getToken } from "./shared"
+import {
+  clearAuthStorage,
+  connectGlobalSocket,
+  disconnectGlobalSocket,
+  getToken,
+  setPermissionSignalHandler,
+} from "./shared"
+import { createPermissionRefresher } from "./permission-refresh"
+import { createPermissionSync } from "./permission-sync"
 import { getLoginCooldown } from "./login-result"
 import type { LoginResult } from "./login-result"
 
@@ -20,7 +29,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const authStore = useAuthStore()
   const routeStore = useRouteStore()
   const tabStore = useTabStore()
-  const { toLogin, redirectFromLogin } = useRouterPush(false)
+  const { toLogin, redirectFromLogin, toHome } = useRouterPush(false)
   const { loading: loginLoading, startLoading, endLoading } = useLoading()
 
   const token = ref("")
@@ -47,6 +56,85 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   /** Is login */
   const isLogin = computed(() => Boolean(token.value))
 
+  interface PermissionSnapshot {
+    info: Api.Auth.UserInfo
+    authRoutes: ElegantConstRoute[]
+    home: LastLevelRouteKey | null
+  }
+
+  /** Fetch the latest user info and routes without applying them */
+  async function fetchPermissionSnapshot(): Promise<PermissionSnapshot | null> {
+    const isDynamic = import.meta.env.VITE_AUTH_ROUTE_MODE === "dynamic"
+    const [infoResult, routesResult] = await Promise.all([
+      fetchGetUserInfo(),
+      isDynamic ? fetchGetUserRoutes() : Promise.resolve(null),
+    ])
+
+    if (infoResult.error || routesResult?.error) return null
+
+    return {
+      info: infoResult.data,
+      authRoutes: routeStore.resolveAuthRoutes(infoResult.data.roles, routesResult?.data.routes ?? null),
+      home: routesResult?.data.home ?? null,
+    }
+  }
+
+  /** Whether the current route stays accessible under the snapshot */
+  function canAccessCurrentRoute(snapshot: PermissionSnapshot) {
+    if (route.meta.constant || !route.name) return true
+
+    return routeStore.hasAuthRoute(route.name as RouteKey, snapshot.authRoutes)
+  }
+
+  /** Apply the snapshot to user info, routes, menus and tabs */
+  async function applyPermissionSnapshot(snapshot: PermissionSnapshot, leave: boolean) {
+    Object.assign(userInfo, snapshot.info)
+    routeStore.applyAuthRoutes(snapshot.authRoutes, snapshot.home)
+
+    if (leave) await toHome()
+
+    await routeStore.removeInaccessibleTabs()
+  }
+
+  /** Ask the user to confirm leaving the current page that is no longer accessible */
+  function confirmPermissionLoss(onConfirm: () => void) {
+    if (!window.$dialog) {
+      onConfirm()
+      return
+    }
+
+    window.$dialog.warning({
+      title: $t("request.permissionChanged"),
+      content: $t("request.permissionChangedMsg"),
+      positiveText: $t("common.confirm"),
+      closable: false,
+      maskClosable: false,
+      closeOnEsc: false,
+      onPositiveClick: onConfirm,
+    })
+  }
+
+  const permissionRefresher = createPermissionRefresher<PermissionSnapshot>({
+    fetchLatest: fetchPermissionSnapshot,
+    canAccessCurrent: canAccessCurrentRoute,
+    apply: applyPermissionSnapshot,
+    confirm: confirmPermissionLoss,
+  })
+
+  const permissionSync = createPermissionSync({
+    getUser: () => ({ isAdmin: userInfo.isAdmin, roles: userInfo.roles }),
+    refresh: permissionRefresher.refresh,
+  })
+
+  setPermissionSignalHandler(permissionSync)
+
+  /** Fallback permission refresh (e.g. backend responded 34001), throttled */
+  function syncPermissions() {
+    if (!token.value) return
+
+    permissionSync.trigger()
+  }
+
   /** Synchronize refreshed credentials with reactive auth state and sockets. */
   function syncAccessToken(accessToken: string) {
     token.value = accessToken
@@ -58,6 +146,8 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   async function resetStore() {
     recordUserId()
 
+    permissionSync.reset()
+    permissionRefresher.reset()
     disconnectNotificationSocket()
     disconnectGlobalSocket()
     clearAuthStorage()
@@ -219,5 +309,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     resetStore,
     login,
     initUserInfo,
+    syncPermissions,
   }
 })

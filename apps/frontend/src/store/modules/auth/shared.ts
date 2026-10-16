@@ -1,5 +1,6 @@
 import { localStg } from "@/utils/storage"
 import { io, Socket } from "socket.io-client"
+import type { PermissionChangedPayload, PermissionSync } from "./permission-sync"
 
 /** Get token */
 export function getToken() {
@@ -15,6 +16,13 @@ export function clearAuthStorage() {
 // ==================== Global Socket Connection ====================
 
 let globalSocket: Socket | null = null
+
+let permissionSignalHandler: Pick<PermissionSync, "signal" | "trigger"> | null = null
+
+/** Register the handler that receives permission change signals from the global socket */
+export function setPermissionSignalHandler(handler: Pick<PermissionSync, "signal" | "trigger"> | null) {
+  permissionSignalHandler = handler
+}
 
 /** Get global socket base URL */
 function getSocketBaseUrl() {
@@ -34,6 +42,10 @@ export function connectGlobalSocket() {
     auth: { access_token: token },
     transports: ["websocket", "polling"],
   })
+
+  globalSocket.on("permission:changed", (payload: PermissionChangedPayload) => permissionSignalHandler?.signal(payload))
+  // Signals may be missed while disconnected; the first connect is not a reconnect.
+  globalSocket.io.on("reconnect", () => permissionSignalHandler?.trigger())
 }
 
 /** Disconnect global socket */

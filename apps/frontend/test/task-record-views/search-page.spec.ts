@@ -1,11 +1,43 @@
 // @vitest-environment jsdom
 import { createApp, defineComponent, h, nextTick, watch } from "vue"
-import { createMemoryHistory, createRouter } from "vue-router"
+import { createMemoryHistory, createRouter, RouterView } from "vue-router"
+import { NConfigProvider } from "naive-ui"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import Page from "../../src/views/queue/task/index.vue"
+import SchedulePage from "../../src/views/queue/schedule/index.vue"
 const queries = vi.hoisted(() => [] as Record<string, unknown>[])
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
 vi.mock("@/hooks/business/auth", () => ({ useAuth: () => ({ hasAuth: () => false }) }))
+vi.mock("@/store/modules/app", () => ({ useAppStore: () => ({ isMobile: false, locale: "zh-CN" }) }))
+vi.mock("@/service/api/worker", () => ({
+  fetchGetScheduleList: vi.fn().mockResolvedValue({
+    data: {
+      records: [
+        {
+          id: "schedule-id",
+          createTime: "2026-10-13T00:00:00Z",
+          updateTime: "2026-10-13T00:00:00Z",
+          name: "Nightly sync",
+          task: "plugin.tasks.sync",
+          schedule: { type: "interval", every: 15, period: "minutes" },
+          enabled: true,
+          description: "",
+          args: [],
+          kwargs: {},
+        },
+      ],
+      page: 1,
+      pageSize: 10,
+      total: 1,
+    },
+    error: null,
+  }),
+  fetchDeleteSchedule: vi.fn(),
+  fetchToggleSchedule: vi.fn(),
+}))
+vi.mock("../../src/views/queue/schedule/modules/schedule-operate-drawer.vue", () => ({
+  default: defineComponent({ render: () => null }),
+}))
 vi.mock("@/hooks/business/worker-socket", () => ({
   useWorkerSocket: () => ({ socket: { value: null }, connect: vi.fn() }),
 }))
@@ -105,6 +137,36 @@ const flush = async () => {
   await Promise.resolve()
   await nextTick()
 }
+it.each(["Nightly sync", "plugin.tasks.sync"])(
+  "opens exact task records by clicking %s in schedules",
+  async (label) => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/queue/schedule", component: SchedulePage },
+        { path: "/queue/task", component: Page },
+      ],
+    })
+    await router.push("/queue/schedule")
+    await router.isReady()
+    const root = document.createElement("div")
+    document.body.append(root)
+    const app = createApp({ render: () => h(NConfigProvider, null, { default: () => h(RouterView) }) })
+    app.use(router)
+    app.mount(root)
+    unmount = () => app.unmount()
+    await flush()
+    await vi.waitFor(() => expect(root.textContent).toContain("plugin.tasks.sync"))
+    const task = Array.from(root.querySelectorAll("button")).find((button) => button.textContent?.trim() === label)
+    expect(task).toBeDefined()
+    task!.click()
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe("/queue/task"))
+    await flush()
+    expect(router.currentRoute.value.query).toMatchObject({ view: "records", task: "plugin.tasks.sync", range: "7d" })
+    expect(queries.at(-1)).toMatchObject({ taskName: "plugin.tasks.sync", taskNameMatch: "exact", status: undefined })
+    expect(root.querySelector(".n-tag")?.textContent).toContain("plugin.tasks.sync")
+  },
+)
 it("queries only on Search while typing and immediately restores the list on Reset", async () => {
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: "/", component: Page }] })
   await router.push("/?view=groups")

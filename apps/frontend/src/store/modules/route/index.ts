@@ -54,7 +54,9 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   const constantRoutes = shallowRef<ElegantConstRoute[]>([])
 
   function addConstantRoutes(routes: ElegantConstRoute[]) {
-    const constantRoutesMap = new Map<string, ElegantConstRoute>([])
+    const constantRoutesMap = new Map<string, ElegantConstRoute>(
+      constantRoutes.value.map((route) => [route.name, route]),
+    )
 
     routes.forEach((route) => {
       constantRoutesMap.set(route.name, route)
@@ -191,15 +193,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
 
   /** Init static auth route */
   function initStaticAuthRoute() {
-    const { authRoutes: staticAuthRoutes } = createStaticRoutes()
-
-    if (authStore.isStaticSuper) {
-      addAuthRoutes(staticAuthRoutes)
-    } else {
-      const filteredAuthRoutes = filterAuthRoutesByRoles(staticAuthRoutes, authStore.userInfo.roles)
-
-      addAuthRoutes(filteredAuthRoutes)
-    }
+    addAuthRoutes(resolveAuthRoutes(authStore.userInfo.roles, null))
 
     handleConstantAndAuthRoutes()
 
@@ -215,18 +209,64 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
 
       // Dynamic mode is database-authoritative: an unconfigured menu must not
       // become visible merely because a matching frontend page exists.
-      addAuthRoutes(routes)
-
-      handleConstantAndAuthRoutes()
-
-      setRouteHome(home)
-
-      handleUpdateRootRouteRedirect(home)
+      applyAuthRoutes(routes, home)
 
       setIsInitAuthRoute(true)
     } else {
       // if fetch user routes failed, reset store
       authStore.resetStore()
+    }
+  }
+
+  /**
+   * Resolve auth routes for the given roles: dynamic mode uses backend routes, static mode filters by roles
+   *
+   * @param roles User roles
+   * @param userRoutes Backend user routes (dynamic mode only)
+   */
+  function resolveAuthRoutes(roles: string[], userRoutes: ElegantConstRoute[] | null) {
+    if (authRouteMode.value === "dynamic") return userRoutes ?? []
+
+    const { authRoutes: staticAuthRoutes } = createStaticRoutes()
+    if (roles.includes(import.meta.env.VITE_STATIC_SUPER_ROLE)) return staticAuthRoutes
+
+    return filterAuthRoutesByRoles(staticAuthRoutes, roles)
+  }
+
+  /**
+   * Replace auth routes and rebuild vue routes and menus
+   *
+   * @param routes Auth routes
+   * @param home Home route key (dynamic mode only)
+   */
+  function applyAuthRoutes(routes: ElegantConstRoute[], home: LastLevelRouteKey | null) {
+    addAuthRoutes(routes)
+
+    handleConstantAndAuthRoutes()
+
+    if (home) {
+      setRouteHome(home)
+
+      handleUpdateRootRouteRedirect(home)
+    }
+  }
+
+  /**
+   * Whether the route name exists in the given auth routes
+   *
+   * @param routeName Route name
+   * @param routes Auth routes
+   */
+  function hasAuthRoute(routeName: RouteKey, routes: ElegantConstRoute[]) {
+    return isRouteExistByRouteName(routeName, routes)
+  }
+
+  /** Close tabs whose routes no longer exist */
+  async function removeInaccessibleTabs() {
+    const staleTabs = tabStore.tabs.filter((tab) => !router.hasRoute(tab.routeKey))
+
+    for (const tab of staleTabs) {
+      await tabStore.removeTabByRouteName(tab.routeKey)
     }
   }
 
@@ -341,6 +381,10 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     initAuthRoute,
     isInitAuthRoute,
     setIsInitAuthRoute,
+    resolveAuthRoutes,
+    applyAuthRoutes,
+    hasAuthRoute,
+    removeInaccessibleTabs,
     getIsAuthRouteExist,
     getSelectedMenuKeyPath,
     onRouteSwitchWhenLoggedIn,

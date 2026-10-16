@@ -36,6 +36,7 @@ from plugin_permission.data_policy.services import (
 )
 from plugin_permission.data_policy.simulator import simulate_policies
 from plugin_permission.models import DataPolicy
+from plugin_permission.role.services import publish_role_change
 from plugin_permission.status_codes import RbacStatusCode
 
 logger = get_plugin_logger("Permission")
@@ -131,8 +132,10 @@ async def delete_policy(
 ) -> Response[DataPolicyResponse]:
     """删除数据策略。"""
     policy = await crud.delete(policy_id)
-    await remove_policy_from_roles(policy_id, session)
+    role_codes = await remove_policy_from_roles(policy_id, session)
     after_commit(session, invalidate_policy_cache, redis, policy_id)
+    if role_codes:
+        after_commit(session, publish_role_change, redis, role_codes)
     logger.info("DataPolicy deleted: {policy_id}", policy_id=policy_id)
     return Response(data=DataPolicyResponse.model_validate(policy))
 

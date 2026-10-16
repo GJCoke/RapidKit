@@ -21,6 +21,7 @@ from plugin_permission.data_policy.services import get_role_versions
 from plugin_permission.models import DataPolicy
 from plugin_permission.rbac_config import rbac_config
 from plugin_permission.role.crud import RoleCRUD
+from plugin_permission.role_snapshots import load_role_snapshots
 
 
 class RedisPermissionCache(PermissionCache):
@@ -52,17 +53,14 @@ class AuthRoleResolver:
         self._redis = redis
 
     async def resolve(self, role_codes: list[str]) -> CachedPermissions:
-        roles = await self._crud.get_role_by_codes(role_codes)
-        permissions = [p for role_info in roles for p in role_info.interface_permissions]
-        buttons = list({b for role_info in roles for b in (role_info.button_permissions or [])})
-        data_policy_ids: list[UUID] = list({pid for role in roles for pid in (role.data_policy_ids or [])})
-        field_policy_ids: list[UUID] = list({pid for role in roles for pid in (role.field_policy_ids or [])})
         role_versions = await get_role_versions(self._redis, role_codes)
+        snapshots = await load_role_snapshots(self._redis, self._crud, role_versions)
+        active = [s for s in snapshots if s.active]
         return CachedPermissions(
-            permissions=permissions,
-            buttons=buttons,
-            data_policy_ids=data_policy_ids,
-            field_policy_ids=field_policy_ids,
+            permissions=[p for s in active for p in s.interface_permissions],
+            buttons=list({b for s in active for b in s.button_permissions}),
+            data_policy_ids=list({pid for s in active for pid in s.data_policy_ids}),
+            field_policy_ids=list({pid for s in active for pid in s.field_policy_ids}),
             role_versions=role_versions,
         )
 

@@ -10,6 +10,8 @@ from uuid import UUID
 
 from rapidkit_common.schemas.base import BaseModel
 
+permission_structure = "auth:permission:<{user_id}>"
+
 
 class CachedPermissions(BaseModel):
     """Cached permission data for a user."""
@@ -19,6 +21,18 @@ class CachedPermissions(BaseModel):
     data_policy_ids: list[UUID] = []
     field_policy_ids: list[UUID] = []
     role_versions: dict[str, int] = {}
+
+
+class RoleSnapshot(BaseModel):
+    """按角色版本缓存的角色效果快照。"""
+
+    code: str
+    active: bool = False
+    interface_permissions: list[str] = []
+    button_permissions: list[str] = []
+    router_permissions: list[str] = []
+    data_policy_ids: list[UUID] = []
+    field_policy_ids: list[UUID] = []
 
 
 class PolicyLike(Protocol):

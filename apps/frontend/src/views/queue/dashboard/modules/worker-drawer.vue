@@ -98,10 +98,6 @@
     if (!time || !Number.isFinite(Date.parse(time))) return "—"
     return new Date(time).toLocaleString()
   }
-  const runtimePoll = setInterval(() => {
-    if (visible.value) void loadSubscriptions()
-  }, 15000)
-  onUnmounted(() => clearInterval(runtimePoll))
   function refresh() {
     emit("updated")
     void loadSubscriptions()
@@ -155,7 +151,7 @@
             <NButton size="small" secondary type="primary" @click="viewRecords">
               <template #icon><SvgIcon icon="carbon:document" /></template>{{ $t("page.manage.worker.viewRecords") }}
             </NButton>
-            <NButton size="small" quaternary @click="refresh"
+            <NButton size="small" secondary @click="refresh"
               ><template #icon><SvgIcon icon="carbon:renew" /></template>{{ $t("common.refresh") }}</NButton
             >
           </div>
@@ -242,7 +238,7 @@
           </NTabPane>
           <NTabPane name="tasks" :tab="$t('page.manage.worker.detail.taskScene')">
             <div class="flex-col-stretch gap-12px">
-              <div class="text-12px text-base-text-3">{{ $t("page.manage.worker.detail.autoRefresh") }}</div>
+              <div class="text-12px text-base-text-3">{{ $t("page.manage.worker.detail.manualRefresh") }}</div>
               <WorkerTaskList
                 v-for="kind in ['active', 'reserved'] as const"
                 :key="kind"

@@ -725,6 +725,8 @@ async def test_user_route_cache_separates_admin_and_non_admin_with_same_roles(mo
 
     redis = AsyncMock()
     redis.get.return_value = None
+    redis.mget.return_value = ["1"]
+    redis.lock = MagicMock(return_value=MagicMock(acquire=AsyncMock(return_value=True), release=AsyncMock()))
     route_builder = AsyncMock(return_value=UserRouteResponse(routes=[], home="home"))
     monkeypatch.setattr("plugin_menu.services.get_user_routes", route_builder)
     session = AsyncMock()
@@ -733,8 +735,8 @@ async def test_user_route_cache_separates_admin_and_non_admin_with_same_roles(mo
     await get_cached_user_routes(SimpleNamespace(is_admin=True, roles=roles), redis, session)
     await get_cached_user_routes(SimpleNamespace(is_admin=False, roles=roles), redis, session)
 
-    keys = [call.args[0] for call in redis.get.await_args_list]
-    assert keys[0] != keys[1]
+    keys = list(dict.fromkeys(call.args[0] for call in redis.get.await_args_list))
+    assert len(keys) == 2
 
 
 @pytest.mark.asyncio
@@ -744,6 +746,8 @@ async def test_user_route_cache_role_hash_has_no_delimiter_collision(monkeypatch
 
     redis = AsyncMock()
     redis.get.return_value = None
+    redis.mget.return_value = ["1"]
+    redis.lock = MagicMock(return_value=MagicMock(acquire=AsyncMock(return_value=True), release=AsyncMock()))
     monkeypatch.setattr(
         "plugin_menu.services.get_user_routes",
         AsyncMock(return_value=UserRouteResponse(routes=[], home="home")),
@@ -753,8 +757,8 @@ async def test_user_route_cache_role_hash_has_no_delimiter_collision(monkeypatch
     await get_cached_user_routes(SimpleNamespace(is_admin=False, roles=["a:b", "c"]), redis, session)
     await get_cached_user_routes(SimpleNamespace(is_admin=False, roles=["a", "b:c"]), redis, session)
 
-    keys = [call.args[0] for call in redis.get.await_args_list]
-    assert keys[0] != keys[1]
+    keys = list(dict.fromkeys(call.args[0] for call in redis.get.await_args_list))
+    assert len(keys) == 2
 
 
 @pytest.mark.asyncio

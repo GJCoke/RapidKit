@@ -1,5 +1,6 @@
 <script setup lang="tsx">
   import { reactive } from "vue"
+  import { useRouter } from "vue-router"
   import { NButton, NPopconfirm, NSwitch, NTag } from "naive-ui"
   import { fetchDeleteSchedule, fetchGetScheduleList, fetchToggleSchedule } from "@/service/api/worker"
   import { useAppStore } from "@/store/modules/app"
@@ -14,6 +15,7 @@
   })
 
   const appStore = useAppStore()
+  const router = useRouter()
   const { hasAuth } = useAuth()
 
   const searchParams: Api.Worker.PeriodicTaskSearchParams = reactive({
@@ -50,12 +52,22 @@
         title: $t("page.manage.worker.schedule.name"),
         align: "center",
         minWidth: 140,
+        render: (row) => (
+          <NButton text type="primary" class="max-w-full" onClick={() => viewRecords(row.task)}>
+            <span class="ellipsis-text">{row.name}</span>
+          </NButton>
+        ),
       },
       {
         key: "task",
         title: $t("page.manage.worker.schedule.task"),
         minWidth: 200,
         ellipsis: { tooltip: true },
+        render: (row) => (
+          <NButton text type="primary" class="max-w-full" onClick={() => viewRecords(row.task)}>
+            <span class="ellipsis-text">{row.task}</span>
+          </NButton>
+        ),
       },
       {
         key: "schedule",
@@ -145,6 +157,10 @@
 
   function edit(id: string) {
     handleEdit(id)
+  }
+
+  function viewRecords(task: string) {
+    void router.push({ path: "/queue/task", query: { view: "records", task, range: "7d" } })
   }
 </script>
 

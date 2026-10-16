@@ -13,8 +13,7 @@ from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_framework.services import get_service
 from sqlalchemy import ColumnElement
-from sqlmodel import col, or_, select
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import col, or_
 
 from plugin_user.models import User
 
@@ -69,14 +68,3 @@ async def invalidate_user_session(redis: AsyncRedisClient, user_id: UUID) -> Non
     """清除指定用户的权限缓存、所有刷新令牌，并标记强制重新登录。"""
     invalidator = get_service(SessionInvalidator)
     await invalidator.invalidate_user_sessions(user_id, redis)
-
-
-async def invalidate_users_by_role_code(
-    redis: AsyncRedisClient,
-    role_code: str,
-    session: AsyncSession,
-) -> None:
-    """根据角色编码查找所有拥有该角色的用户，并清除其权限缓存。"""
-    result = await session.exec(select(User.id).where(col(User.roles).contains(role_code)))
-    for user_id in result.all():
-        await invalidate_user_permission_cache(redis, user_id)

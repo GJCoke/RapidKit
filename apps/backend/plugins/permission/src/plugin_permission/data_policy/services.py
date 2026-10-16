@@ -5,6 +5,7 @@ Author : Coke
 Date   : 2026-04-30
 """
 
+from rapidkit_core.cache import bump_version, get_versions
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_framework.i18n import t
 from rapidkit_framework.plugin import get_loaded_models
@@ -17,18 +18,22 @@ from sqlmodel import inspect as sa_inspect
 from plugin_permission.role.crud import RoleCRUD
 
 
+def role_version_key(role_code: str) -> str:
+    """角色版本号 key。"""
+    return f"auth:role_version:{role_code}"
+
+
 async def get_role_versions(redis: AsyncRedisClient, role_codes: list[str]) -> dict[str, int]:
-    """Fetch current version for each role code via mget."""
+    """批量读取角色版本号；缺失时以时间戳初始化，不再视为 0。"""
     if not role_codes:
         return {}
-    keys = [f"auth:role_version:{code}" for code in role_codes]
-    values = await redis.mget(keys)
-    return {code: int(val) if val else 0 for code, val in zip(role_codes, values)}
+    versions = await get_versions(redis, [role_version_key(code) for code in role_codes])
+    return dict(zip(role_codes, versions))
 
 
 async def incr_role_version(redis: AsyncRedisClient, role_code: str) -> int:
-    """Increment a role's version counter."""
-    return await redis.incr(f"auth:role_version:{role_code}")
+    """递增角色版本号。"""
+    return await bump_version(redis, role_version_key(role_code))
 
 
 def get_model_metadata() -> list[dict]:
@@ -75,11 +80,12 @@ async def invalidate_policy_cache(redis: AsyncRedisClient, policy_id, session=No
             await incr_role_version(redis, role.code)
 
 
-async def remove_policy_from_roles(policy_id, session) -> None:
-    """Remove a deleted policy ID from all roles that reference it."""
+async def remove_policy_from_roles(policy_id, session) -> list[str]:
+    """Remove a deleted policy ID from all roles that reference it; return affected role codes."""
 
     role_crud = RoleCRUD(session)
     roles = await role_crud.get_all()
+    affected: list[str] = []
 
     for role in roles:
         if not role.data_policy_ids:
@@ -88,6 +94,9 @@ async def remove_policy_from_roles(policy_id, session) -> None:
         if str_policy_id in [str(pid) for pid in role.data_policy_ids]:
             updated_ids = [pid for pid in role.data_policy_ids if str(pid) != str_policy_id]
             await role_crud.update_by_id(role.id, {"data_policy_ids": updated_ids})
+            affected.append(role.code)
+
+    return affected
 
 
 def _get_column_type_name(col_type) -> str:

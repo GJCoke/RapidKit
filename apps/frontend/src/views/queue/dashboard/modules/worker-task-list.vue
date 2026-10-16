@@ -25,19 +25,19 @@
     </template>
     <template #header-extra>
       <NButton
-        text
+        secondary
         size="small"
-        :loading="loading && sampledAt === null"
+        :loading="loading && sampledAt !== null"
         :disabled="!online || loading"
-        class="w-64px"
+        class="min-w-80px"
         @click="emit('refresh')"
-        >{{ $t("common.refresh") }}</NButton
+        ><template #icon><SvgIcon icon="carbon:renew" /></template>{{ $t("common.refresh") }}</NButton
       >
     </template>
     <div class="mb-12px text-12px text-base-text-3">
       {{ $t(kind === "active" ? "page.manage.worker.detail.activeHint" : "page.manage.worker.detail.reservedHint") }}
     </div>
-    <NSpin :show="loading && sampledAt === null">
+    <NSpin :show="loading && sampledAt === null" :delay="200">
       <NScrollbar class="h-240px" content-class="pr-12px">
         <NAlert v-if="failed" type="warning" :bordered="false" class="mb-12px">
           {{

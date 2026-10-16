@@ -8,24 +8,12 @@ Date    : 2026-05-11
 from rapidkit_common.events import (
     DepartmentDeletedEvent,
     RoleDeletedEvent,
-    RolePermissionsChangedEvent,
     UserActivityObservedEvent,
 )
 from rapidkit_common.protocols.operations import UserOperationsProvider
 from rapidkit_common.protocols.user import UserQueryService, UserResolver
 from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
 from rapidkit_framework.services import ServiceRegistry
-
-
-async def _on_role_permissions_changed(event: RolePermissionsChangedEvent) -> None:
-    """事件总线 role.permissions_changed 监听器。"""
-    from rapidkit_core.database import AsyncSessionLocal, RedisManager
-
-    from plugin_user.services import invalidate_users_by_role_code
-
-    redis = RedisManager.client()
-    async with AsyncSessionLocal() as session:
-        await invalidate_users_by_role_code(redis, event.role_code, session)
 
 
 async def _on_department_deleted(event: DepartmentDeletedEvent) -> None:
@@ -43,11 +31,12 @@ async def _on_department_deleted(event: DepartmentDeletedEvent) -> None:
 
 
 async def _on_role_deleted(event: RoleDeletedEvent) -> None:
-    """角色删除 → 从所有包含该 role 的用户 roles 数组中移除。"""
-    from rapidkit_core.database import AsyncSessionLocal
+    """角色删除 → 从所有包含该 role 的用户 roles 数组中移除，并清除这些用户的信息缓存。"""
+    from rapidkit_core.database import AsyncSessionLocal, RedisManager
     from sqlmodel import select
 
     from plugin_user.models import User
+    from plugin_user.services import invalidate_user_cache
 
     async with AsyncSessionLocal() as session:
         stmt = select(User).where(User.roles.contains(event.role_code))  # ty: ignore[unresolved-attribute]
@@ -55,8 +44,13 @@ async def _on_role_deleted(event: RoleDeletedEvent) -> None:
 
         for user in users:
             user.roles = [r for r in user.roles if r != event.role_code]
+        user_ids = [user.id for user in users]
 
         await session.commit()
+
+    redis = RedisManager.client()
+    for user_id in user_ids:
+        await invalidate_user_cache(redis, user_id)
 
 
 def register() -> PluginManifest:
@@ -90,7 +84,6 @@ def register() -> PluginManifest:
         provides=[UserResolver, UserQueryService, UserOperationsProvider],
         service_factories={UserResolver: register_services},
         event_listeners=[
-            (RolePermissionsChangedEvent, _on_role_permissions_changed),
             (DepartmentDeletedEvent, _on_department_deleted),
             (RoleDeletedEvent, _on_role_deleted),
             (UserActivityObservedEvent, record_user_activity),

@@ -42,7 +42,7 @@ from plugin_menu.services import (
     get_active_menu_options,
     get_cached_menu_tree,
     get_cached_pages,
-    invalidate_menu_cache,
+    publish_menu_change,
 )
 from plugin_menu.services import (
     update_menu as update_menu_service,
@@ -106,7 +106,7 @@ async def add_menu(
     menu = await create_menu_service(menu_crud, data)
     logger.info("Menu created: {menu_name}", menu_name=data.menu_name)
     event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(menu.id), action="created"))
-    after_commit(session, invalidate_menu_cache, redis)
+    after_commit(session, publish_menu_change, redis)
     return Response(data=menu)
 
 
@@ -122,7 +122,7 @@ async def update_menu(
     menu = await update_menu_service(menu_crud, menu_id, data)
     logger.info("Menu updated: {menu_id}", menu_id=menu_id)
     event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(menu_id), action="updated"))
-    after_commit(session, invalidate_menu_cache, redis)
+    after_commit(session, publish_menu_change, redis)
     return Response(data=menu)
 
 
@@ -132,7 +132,7 @@ async def delete_menu(menu_id: UUID, menu_crud: MenuCrudDep, redis: RedisDep, se
     await delete_menu_service(menu_crud, menu_id)
     logger.info("Menu deleted: {menu_id}", menu_id=menu_id)
     event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(menu_id), action="deleted"))
-    after_commit(session, invalidate_menu_cache, redis)
+    after_commit(session, publish_menu_change, redis)
     return Response(data=True)
 
 
@@ -145,5 +145,5 @@ async def batch_delete_menus(
     logger.info("Menus batch deleted: {count} items", count=len(data.ids))
     for mid in data.ids:
         event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(mid), action="deleted"))
-    after_commit(session, invalidate_menu_cache, redis)
+    after_commit(session, publish_menu_change, redis)
     return Response(data=True)

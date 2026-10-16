@@ -11,6 +11,7 @@ from rapidkit_common.deps import RedisDep
 from rapidkit_common.protocols.auth import CurrentUserProvider
 from rapidkit_common.schemas import BaseModel
 from rapidkit_core.log import logger
+from rapidkit_core.realtime import PERMISSION_BROADCAST_ROOM, permission_user_room
 from rapidkit_framework.services import get_service
 
 from src.sio.app import socket
@@ -71,6 +72,8 @@ async def connect(sid: SID, auth: AccessToken, redis: RedisDep) -> Literal[False
         return False
 
     user_id = str(user_info.id)
+    await socket.enter_room(sid, permission_user_room(user_id))
+    await socket.enter_room(sid, PERMISSION_BROADCAST_ROOM)
     sid_key = sid_user_structure.format(sid=sid)
     await redis.hset(sid_key, mapping=RedisUser(id=user_id, name=user_info.name))
     await redis.expire(sid_key, SESSION_TTL)

@@ -41,6 +41,7 @@ vi.mock("@/store/modules/auth/shared", () => ({
   connectGlobalSocket: mocks.connectGlobalSocket,
   disconnectGlobalSocket: mocks.disconnectGlobalSocket,
   getToken: mocks.getToken,
+  setPermissionSignalHandler: vi.fn(),
 }))
 vi.mock("@/store/modules/notification/shared", () => ({
   connectNotificationSocket: mocks.connectNotificationSocket,

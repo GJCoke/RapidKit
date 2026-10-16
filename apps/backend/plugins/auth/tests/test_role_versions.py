@@ -16,16 +16,18 @@ class TestGetRoleVersions:
         redis.mget.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_fetches_versions_via_mget(self):
+    async def test_missing_version_is_seeded_not_zero(self):
         redis = AsyncMock()
-        redis.mget.return_value = ["3", "7", None]
+        redis.mget.side_effect = [["3", "7", None], ["3", "7", "1760000000000"]]
         result = await get_role_versions(redis, ["ADMIN", "EDITOR", "VIEWER"])
-        assert result == {"ADMIN": 3, "EDITOR": 7, "VIEWER": 0}
-        redis.mget.assert_called_once_with([
+        assert result == {"ADMIN": 3, "EDITOR": 7, "VIEWER": 1760000000000}
+        redis.mget.assert_called_with([
             "auth:role_version:ADMIN",
             "auth:role_version:EDITOR",
             "auth:role_version:VIEWER",
         ])
+        assert redis.set.await_args.args[0] == "auth:role_version:VIEWER"
+        assert redis.set.await_args.kwargs == {"nx": True}
 
 
 class TestIncrRoleVersion:
@@ -35,4 +37,6 @@ class TestIncrRoleVersion:
         redis.incr.return_value = 4
         result = await incr_role_version(redis, "ADMIN")
         assert result == 4
+        redis.set.assert_awaited_once()
+        assert redis.set.await_args.kwargs == {"nx": True}
         redis.incr.assert_called_once_with("auth:role_version:ADMIN")

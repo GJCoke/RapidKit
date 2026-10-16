@@ -12,8 +12,9 @@ from uuid import UUID
 
 from pydantic import TypeAdapter
 from rapidkit_common.enums import MenuType, Status
-from rapidkit_core.cache import PluginCacheManager
+from rapidkit_core.cache import PluginCacheManager, bump_version, get_or_rebuild, get_versions
 from rapidkit_core.log import get_plugin_logger
+from rapidkit_core.realtime import emit_permission_changed
 from rapidkit_framework.exceptions import AppException
 from sqlalchemy import ColumnElement
 from sqlmodel import col, or_
@@ -35,6 +36,7 @@ from rapidkit_core.redis_client import AsyncRedisClient
 logger = get_plugin_logger("Menu")
 
 _cache = PluginCacheManager("menu")
+_VERSION_KEY = _cache.make_key("version")
 
 _CACHE_TTL = 3600  # 1 小时
 
@@ -329,55 +331,51 @@ async def get_active_menu_options(
     return options
 
 
+async def _versioned_key(redis: AsyncRedisClient, *parts: str) -> str:
+    """生成带菜单版本号的缓存 key，版本变更后旧 key 按 TTL 自然过期。"""
+    [version] = await get_versions(redis, [_VERSION_KEY])
+    return _cache.make_key(f"v{version}", *parts)
+
+
 async def get_cached_menu_tree(
     redis: AsyncRedisClient,
     session: AsyncSession,
 ) -> list[MenuListResponse]:
-    """获取完整菜单树（cache-aside）。"""
-    key = _cache.make_key("tree")
-    cached = await redis.get(key)
-    if cached:
-        return _menu_tree_adapter.validate_json(cached)
+    """获取完整菜单树（版本化缓存 + 单飞重建）。"""
 
-    crud = MenuCRUD(session)
-    tree = await crud.get_menu_tree()
+    async def load() -> str:
+        tree = await MenuCRUD(session).get_menu_tree()
+        return _menu_tree_adapter.dump_json(tree).decode()
 
-    await redis.set(key, _menu_tree_adapter.dump_json(tree).decode(), ex=_CACHE_TTL)
-    return tree
+    key = await _versioned_key(redis, "tree")
+    return _menu_tree_adapter.validate_json(await get_or_rebuild(redis, key, load, ttl=_CACHE_TTL))
 
 
 async def get_cached_pages(
     redis: AsyncRedisClient,
     session: AsyncSession,
 ) -> list[str]:
-    """获取所有页面组件名称（cache-aside）。"""
-    key = _cache.make_key("pages")
-    cached = await redis.get(key)
-    if cached:
-        return json.loads(cached)
+    """获取所有页面组件名称（版本化缓存 + 单飞重建）。"""
 
-    crud = MenuCRUD(session)
-    pages = await crud.get_all(col(Menu.menu_type) == MenuType.MENU)
-    result = [item.route_name for item in pages]
+    async def load() -> str:
+        pages = await MenuCRUD(session).get_all(col(Menu.menu_type) == MenuType.MENU)
+        return json.dumps([item.route_name for item in pages])
 
-    await redis.set(key, json.dumps(result), ex=_CACHE_TTL)
-    return result
+    key = await _versioned_key(redis, "pages")
+    return json.loads(await get_or_rebuild(redis, key, load, ttl=_CACHE_TTL))
 
 
 async def get_cached_constant_routes(
     redis: AsyncRedisClient,
     session: AsyncSession,
 ) -> list[MenuRouteResponse]:
-    """获取常量路由（cache-aside）。"""
-    key = _cache.make_key("route", "constant")
-    cached = await redis.get(key)
-    if cached:
-        return _route_list_adapter.validate_json(cached)
+    """获取常量路由（版本化缓存 + 单飞重建）。"""
 
-    routes = await get_constant_routes(session)
+    async def load() -> str:
+        return _route_list_adapter.dump_json(await get_constant_routes(session)).decode()
 
-    await redis.set(key, _route_list_adapter.dump_json(routes).decode(), ex=_CACHE_TTL)
-    return routes
+    key = await _versioned_key(redis, "route", "constant")
+    return _route_list_adapter.validate_json(await get_or_rebuild(redis, key, load, ttl=_CACHE_TTL))
 
 
 async def get_cached_user_routes(
@@ -385,23 +383,25 @@ async def get_cached_user_routes(
     redis: AsyncRedisClient,
     session: AsyncSession,
 ) -> UserRouteResponse:
-    """获取用户授权路由（按角色组合 cache-aside）。"""
+    """获取用户授权路由（按角色组合版本化缓存 + 单飞重建）。"""
     roles_payload = json.dumps(sorted(user.roles or []), separators=(",", ":"))
     roles_key = hashlib.md5(roles_payload.encode()).hexdigest()
     identity_scope = "admin" if user.is_admin else "non-admin"
-    key = _cache.make_key("route", "user", identity_scope, roles_key)
-    cached = await redis.get(key)
-    if cached:
-        return UserRouteResponse.model_validate_json(cached)
 
-    result = await get_user_routes(user, session)
+    async def load() -> str:
+        return (await get_user_routes(user, session)).model_dump_json()
 
-    await redis.set(key, result.model_dump_json(), ex=_CACHE_TTL)
-    return result
+    key = await _versioned_key(redis, "route", "user", identity_scope, roles_key)
+    return UserRouteResponse.model_validate_json(await get_or_rebuild(redis, key, load, ttl=_CACHE_TTL))
 
 
 async def invalidate_menu_cache(redis: AsyncRedisClient) -> None:
-    """清除所有菜单缓存。"""
-    deleted = await _cache.invalidate_all(redis)
-    if deleted:
-        logger.debug("Invalidated {count} cache keys", count=deleted)
+    """递增菜单缓存版本（O(1)），不再 SCAN + DEL。"""
+    version = await bump_version(redis, _VERSION_KEY)
+    logger.debug("Menu cache version bumped to {version}", version=version)
+
+
+async def publish_menu_change(redis: AsyncRedisClient) -> None:
+    """事务提交后递增菜单版本并推送 menu 范围的权限变更信号。"""
+    await invalidate_menu_cache(redis)
+    await emit_permission_changed("menu")

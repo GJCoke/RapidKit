@@ -3,7 +3,7 @@ import { fetchActiveTasksOfWorker, fetchReservedTasksOfWorker } from "@/service/
 import { reconcileRows } from "./reconcile"
 
 export function useWorkerInspection(
-  worker: () => { id: string; activeTaskCount: number } | null,
+  worker: () => { id: string } | null,
   enabled: () => boolean,
   online: () => boolean,
 ) {
@@ -17,12 +17,13 @@ export function useWorkerInspection(
   const reserved = reactive(createState())
   let session = 0
   let disposed = false
-  let debounce: ReturnType<typeof setTimeout> | undefined
+  let inspected = false
 
   async function refresh() {
     const id = worker()?.id
     if (disposed || !id || !enabled() || !online() || active.loading || reserved.loading) return
     const generation = session
+    inspected = true
     active.loading = reserved.loading = true
     const replies = await Promise.allSettled([fetchActiveTasksOfWorker(id), fetchReservedTasksOfWorker(id)])
     if (disposed || generation !== session) return
@@ -37,33 +38,29 @@ export function useWorkerInspection(
     }
   }
   watch(
-    [() => worker()?.id, enabled, online],
-    () => {
+    [() => worker()?.id, online],
+    ([id], [previousId]) => {
       session++
-      clearTimeout(debounce)
+      if (id !== previousId) inspected = false
       for (const state of [active, reserved]) {
         state.rows.splice(0)
         state.sampledAt = null
         state.failed = false
         state.loading = false
       }
-      void refresh()
     },
     { immediate: true },
   )
   watch(
-    () => worker()?.activeTaskCount,
+    [() => worker()?.id, enabled, online],
     () => {
-      clearTimeout(debounce)
-      debounce = setTimeout(() => void refresh(), 750)
+      if (!inspected) void refresh()
     },
+    { immediate: true },
   )
-  const poll = setInterval(() => void refresh(), 15000)
   onScopeDispose(() => {
     disposed = true
     session++
-    clearInterval(poll)
-    clearTimeout(debounce)
   })
   return { active, reserved, refresh }
 }

@@ -17,6 +17,7 @@ dependencies = [
   "loguru>=0.7.3",
   "nanoid>=2.0.0",
   "minio>=7.2.0",
+  "python-socketio>=5.14.3,<6.0",
 ]
 
 [dependency-groups]

@@ -885,7 +885,7 @@
         "noReserved": "当前没有已预取待执行的任务",
         "parameters": "任务参数",
         "inspectedAt": "最近采集",
-        "autoRefresh": "查看此页时每 15 秒刷新；任务状态变化时自动更新。",
+        "manualRefresh": "首次进入时采集一次，点击刷新按钮更新任务快照。",
         "controlsOffline": "Worker 离线或心跳不可用，暂不可发送操作指令。",
         "connectivity": "连通性检查",
         "pingHint": "检查 Worker 是否能够响应远程命令。",

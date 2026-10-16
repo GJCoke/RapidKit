@@ -25,6 +25,7 @@ from rapidkit_common.field_permission import FieldPermissionFilter, FieldRestric
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_common.transaction import after_commit
 from rapidkit_core.log import get_plugin_logger
+from rapidkit_core.realtime import emit_permission_changed
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.exceptions import AppException
 from rapidkit_security import check_password, hash_password
@@ -279,7 +280,7 @@ async def update_user(
         update_data.pop("is_admin", None)
 
     target_user = None
-    if {"name", "username", "roles"} & update_data.keys():
+    if {"name", "username", "roles", "is_admin"} & update_data.keys():
         target_user = await user_crud.get(user_id, nullable=False)
 
     if {"name", "username"} & update_data.keys():
@@ -291,14 +292,22 @@ async def update_user(
             target_user_id=user_id,
         )
 
+    permission_changed = False
     if "roles" in update_data:
         assert target_user is not None
         if set(update_data["roles"]) != set(target_user.roles or []):
+            permission_changed = True
             after_commit(session, invalidate_user_permission_cache, redis, user_id)
             event_bus.fire_and_forget(UserRolesChangedEvent(user_id=str(user_id), role_codes=update_data["roles"]))
 
+    if "is_admin" in update_data:
+        assert target_user is not None
+        permission_changed = permission_changed or update_data["is_admin"] != target_user.is_admin
+
     user = await user_crud.update_by_id(user_id, update_data)
     after_commit(session, invalidate_user_cache, redis, user_id)
+    if permission_changed:
+        after_commit(session, emit_permission_changed, "user", user_id=user_id)
     logger.info("User updated: {user_id}", user_id=user_id)
     return Response(data=UserManageResponse.model_validate(user))
 

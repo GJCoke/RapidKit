@@ -3,6 +3,7 @@ import { createApp, h, nextTick, reactive } from "vue"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import WorkerControls from "../../src/views/queue/dashboard/modules/worker-controls.vue"
 import WorkerDrawer from "../../src/views/queue/dashboard/modules/worker-drawer.vue"
+import WorkerTaskList from "../../src/views/queue/dashboard/modules/worker-task-list.vue"
 const api = vi.hoisted(() => ({
   detail: vi.fn(),
   grow: vi.fn(),
@@ -35,7 +36,12 @@ vi.mock("naive-ui", () => {
   }
   return Object.fromEntries(
     Object.entries({
-      NCard: slot,
+      NCard: {
+        setup:
+          (_: any, { slots }: any) =>
+          () =>
+            h("div", [slots.header?.(), slots["header-extra"]?.(), slots.default?.()]),
+      },
       NSpin: slot,
       NScrollbar: slot,
       NDrawer: slot,
@@ -138,7 +144,44 @@ beforeEach(() => {
     api[name].mockReset().mockResolvedValue({ data: { success: true }, error: null })
   api.push.mockClear()
 })
-afterEach(() => app?.unmount())
+afterEach(() => {
+  app?.unmount()
+  vi.useRealTimers()
+})
+
+it("retains task content during manual refresh and exposes a regular refresh button", async () => {
+  const refresh = vi.fn()
+  const props = reactive({
+    kind: "active",
+    rows: [{ id: "running", name: "running-task" }],
+    sampledAt: Date.now(),
+    loading: false,
+    failed: false,
+    online: true,
+    onRefresh: refresh,
+  })
+  mount(WorkerTaskList, props)
+  const refreshButton = button("common.refresh")
+  expect(refreshButton.hasAttribute("text")).toBe(false)
+  refreshButton.click()
+  expect(refresh).toHaveBeenCalledTimes(1)
+  props.loading = true
+  await flush()
+  expect(refreshButton.disabled).toBe(true)
+  expect(host.textContent).toContain("running-task")
+})
+
+it("does not poll Worker detail and refreshes through its button", async () => {
+  vi.useFakeTimers()
+  mount(WorkerDrawer, { worker: worker(), visible: true })
+  await flush()
+  expect(api.detail).toHaveBeenCalledTimes(1)
+  await vi.advanceTimersByTimeAsync(30000)
+  expect(api.detail).toHaveBeenCalledTimes(1)
+  button("common.refresh").click()
+  await flush()
+  expect(api.detail).toHaveBeenCalledTimes(2)
+})
 it("hides operation controls without permission and disables offline commands", async () => {
   api.allowed = false
   mount(WorkerControls, { worker: worker(), online: true, queues: ["celery"] })

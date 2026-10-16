@@ -35,7 +35,7 @@ function setup() {
   )!
   return { worker, visible, tab, online, state }
 }
-it("only inspects visible task pane and stops polling when hidden", async () => {
+it("loads the task pane once and only refreshes on request", async () => {
   const { tab, visible, state } = setup()
   await flush()
   expect(api.active).not.toHaveBeenCalled()
@@ -44,6 +44,8 @@ it("only inspects visible task pane and stops polling when hidden", async () => 
   expect(state.active.sampledAt).not.toBeNull()
   expect(api.active).toHaveBeenCalledWith("one")
   await vi.advanceTimersByTimeAsync(15000)
+  expect(api.active).toHaveBeenCalledTimes(1)
+  await state.refresh()
   expect(api.active).toHaveBeenCalledTimes(2)
   visible.value = false
   await flush()
@@ -93,6 +95,19 @@ it("clears the previous inspection when offline and makes no calls", async () =>
   expect(api.active).toHaveBeenCalledTimes(1)
   expect(state.active.sampledAt).toBeNull()
 })
+it("waits for manual refresh when an inspected Worker comes back online", async () => {
+  const { online, tab, state } = setup()
+  tab.value = "tasks"
+  await flush()
+  online.value = false
+  await flush()
+  online.value = true
+  await flush()
+  expect(api.active).toHaveBeenCalledTimes(1)
+  await state.refresh()
+  expect(api.active).toHaveBeenCalledTimes(2)
+  expect(state.active.sampledAt).not.toBeNull()
+})
 it("keeps task rows and sample timestamp when the same Worker receives a heartbeat", async () => {
   api.active.mockResolvedValue({ data: [{ id: "running", name: "task" }], error: null })
   const { worker, tab, state } = setup()
@@ -107,4 +122,64 @@ it("keeps task rows and sample timestamp when the same Worker receives a heartbe
   expect(api.active).toHaveBeenCalledTimes(1)
   await vi.advanceTimersByTimeAsync(750)
   expect(state.active.rows[0]).toBe(row)
+  expect(api.active).toHaveBeenCalledTimes(1)
+})
+
+it("retains the snapshot when switching tabs without loading or requesting again", async () => {
+  api.active.mockResolvedValue({ data: [{ id: "running", name: "task" }], error: null })
+  const { tab, state } = setup()
+  tab.value = "tasks"
+  await flush()
+  const row = state.active.rows[0]
+  const sampledAt = state.active.sampledAt
+  tab.value = "overview"
+  await flush()
+  expect(state.active.rows[0]).toBe(row)
+  expect(state.active.sampledAt).toBe(sampledAt)
+  tab.value = "tasks"
+  await flush()
+  expect(state.active.loading).toBe(false)
+  expect(state.active.rows[0]).toBe(row)
+  expect(state.active.sampledAt).toBe(sampledAt)
+  expect(api.active).toHaveBeenCalledTimes(1)
+  expect(api.reserved).toHaveBeenCalledTimes(1)
+})
+
+it("keeps an in-flight inspection across tab switches without duplicate requests", async () => {
+  let resolveActive: (value: any) => void = () => {}
+  api.active.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveActive = resolve
+      }),
+  )
+  const { tab, state } = setup()
+  tab.value = "tasks"
+  await flush()
+  tab.value = "overview"
+  await flush()
+  tab.value = "tasks"
+  await flush()
+  expect(api.active).toHaveBeenCalledTimes(1)
+  resolveActive({ data: [{ id: "running", name: "task" }], error: null })
+  await flush()
+  expect(state.active.rows.map((row) => row.id)).toEqual(["running"])
+  expect(state.active.loading).toBe(false)
+})
+
+it("waits for manual retry after the first inspection fails", async () => {
+  api.active.mockRejectedValueOnce(new Error("network"))
+  api.reserved.mockRejectedValueOnce(new Error("network"))
+  const { tab, state } = setup()
+  tab.value = "tasks"
+  await flush()
+  tab.value = "overview"
+  await flush()
+  tab.value = "tasks"
+  await flush()
+  expect(state.active.failed).toBe(true)
+  expect(api.active).toHaveBeenCalledTimes(1)
+  await state.refresh()
+  expect(state.active.failed).toBe(false)
+  expect(state.active.sampledAt).not.toBeNull()
 })

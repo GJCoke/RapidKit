@@ -885,7 +885,7 @@
         "noReserved": "No prefetched tasks waiting to execute",
         "parameters": "Task arguments",
         "inspectedAt": "Last inspected",
-        "autoRefresh": "Refreshes every 15 seconds while viewing this tab and when task state changes.",
+        "manualRefresh": "Loaded once on first visit. Use the refresh button to update the task snapshot.",
         "controlsOffline": "Worker offline or heartbeat unavailable. Commands cannot be sent.",
         "connectivity": "Connectivity",
         "pingHint": "Check whether the Worker responds to remote commands.",

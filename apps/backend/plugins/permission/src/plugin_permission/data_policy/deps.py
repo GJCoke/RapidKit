@@ -18,15 +18,14 @@ from sqlalchemy import ColumnElement
 from sqlmodel import or_, true
 from typing_extensions import Annotated, Doc
 
-from plugin_permission.adapters import AuthPolicyLoader, RedisPermissionCache
+from plugin_permission.adapters import AuthPolicyLoader
 from plugin_permission.audit import log_data_policy_result
 from plugin_permission.bypass import is_permission_bypass
 from plugin_permission.context import PermissionContext
 from plugin_permission.data_policy.crud import DataPolicyCRUD
 from plugin_permission.data_policy.filter_logic import build_filter_condition
-from plugin_permission.data_policy.services import get_role_versions
-from plugin_permission.rbac_config import rbac_config
-from plugin_permission.role.deps import RoleCrudDep, create_user_permission_cache, permission_structure
+from plugin_permission.role.deps import RoleCrudDep
+from plugin_permission.user_permissions import get_fresh_permissions
 
 logger = get_plugin_logger("Permission")
 
@@ -98,21 +97,7 @@ class DataPermissionFilter:
         perm_ctx: PermissionContext | None = getattr(request.state, "permission_ctx", None)
 
         if perm_ctx is None:
-            cache_adapter = RedisPermissionCache(redis, permission_structure, rbac_config.PERMISSION_CACHE_TTL)
-            cached = await cache_adapter.get(user.id)
-
-            current_versions = await get_role_versions(redis, user.roles)
-
-            if cached is not None:
-                stale = set(cached.role_versions.keys()) != set(current_versions.keys()) or any(
-                    cached.role_versions.get(k) != current_versions.get(k) for k in current_versions
-                )
-                if stale:
-                    cached = None
-
-            if cached is None:
-                cached = await create_user_permission_cache(user.id, user.roles, redis, role_crud)
-
+            cached, current_versions = await get_fresh_permissions(user.id, user.roles, redis, role_crud)
             perm_ctx = PermissionContext(
                 user=user,
                 cached_role_versions=cached.role_versions,

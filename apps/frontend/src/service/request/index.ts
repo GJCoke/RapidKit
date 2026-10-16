@@ -12,6 +12,8 @@ import { Service } from "@/typings/service"
 
 const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === "Y"
 const LOGIN_COOLDOWN_CODE = "14010"
+/** Backend code for a route permission denial; triggers a permission refresh */
+const PERMISSION_DENIED_CODE = "34001"
 const { baseURL, otherBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy)
 
 export const request = createFlatRequest(
@@ -55,6 +57,10 @@ export const request = createFlatRequest(
       const responseCode = String(response.data.code)
       const config = response.config as typeof response.config & { authRetried?: boolean; authSession?: number }
       if (config.authSession !== getAuthSession()) return null
+
+      if (responseCode === PERMISSION_DENIED_CODE) {
+        authStore.syncPermissions()
+      }
 
       function handleLogout() {
         authStore.resetStore()

@@ -3,6 +3,8 @@
   "logoutMsg": "User status is invalid, please log in again",
   "logoutWithModal": "Pop up modal after request failed and then log out user",
   "logoutWithModalMsg": "User status is invalid, please log in again",
+  "permissionChanged": "Permissions changed",
+  "permissionChangedMsg": "Your permissions were changed by an administrator. This page is no longer accessible. Click OK to return home.",
   "refreshToken": "The requested token has expired, refresh the token",
   "tokenExpired": "The requested token has expired"
 }
