@@ -21,7 +21,9 @@ from plugin_notification.preference import PreferenceResolver
 from plugin_notification.schemas import InboxListQuery
 from plugin_notification.status_codes import NotificationStatusCode
 from plugin_notification.worker import DeliveryWorker
-from rapidkit_common.auth import verify_user_permission
+from rapidkit_common.access import access_guard_dependency, inspect_route_access
+from rapidkit_common.access_testing import allow_access, deny_access
+from rapidkit_common.auth import _get_current_user_placeholder
 from rapidkit_common.protocols.notification import AudienceRule, NotificationCommand
 from rapidkit_common.protocols.user import UserQueryService
 from rapidkit_framework.exceptions import AppException
@@ -271,7 +273,8 @@ async def test_admin_create_edit_publish_inbox_and_socket_preserve_all_locales(d
     )
     app = FastAPI()
     app.include_router(router)
-    app.dependency_overrides[verify_user_permission] = lambda: user
+    app.dependency_overrides[access_guard_dependency] = allow_access(user)
+    app.dependency_overrides[_get_current_user_placeholder] = lambda: user
     app.dependency_overrides[get_admin_service] = lambda: service
     app.dependency_overrides[get_message_crud] = lambda: MessageCRUD(db_session)
     payload = {"localizedContent": _envelope(), "audience": [{"type": "all"}], "saveAsDraft": True}

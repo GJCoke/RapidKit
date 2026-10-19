@@ -11,7 +11,8 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from rapidkit_common.auth import DenyImpersonation, UserDBDep, VerifyPermissionDep, verify_user_permission
+from rapidkit_common.access import Authenticated, Require, Scope
+from rapidkit_common.auth import DenyImpersonation, UserDBDep
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.enums import Status
 from rapidkit_common.events import (
@@ -21,13 +22,13 @@ from rapidkit_common.events import (
     UserPasswordChangedEvent,
     UserRolesChangedEvent,
 )
-from rapidkit_common.field_permission import FieldPermissionFilter, FieldRestrictions, serialize_with_restrictions
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_common.transaction import after_commit
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.realtime import emit_permission_changed
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.status_codes import StatusCode
 from rapidkit_security import check_password, hash_password
 from sqlmodel import col
 
@@ -65,7 +66,6 @@ logger = get_plugin_logger("User")
 router = APIRouter(
     prefix="/users",
     tags=["User"],
-    dependencies=[Depends(verify_user_permission)],
 )
 
 contact_router = APIRouter(prefix="/users", tags=["User"])
@@ -78,7 +78,7 @@ def _warn_username_pinyin_mismatch(
     username: str,
     target_user_id: UUID | None = None,
 ) -> None:
-    """Log a privacy-safe warning without blocking persistence."""
+    """记录不含敏感信息的警告，不阻断数据保存。"""
     if check_username_pinyin(name, username).consistent:
         return
     logger.bind(
@@ -88,12 +88,12 @@ def _warn_username_pinyin_mismatch(
     ).warning("Username does not match the canonical name pinyin")
 
 
-@contact_router.get("/admin-contacts", summary="系统管理员联系方式")
+@contact_router.get("/admin-contacts", summary="系统管理员联系方式", dependencies=[Authenticated])
 async def get_admin_contacts(
     _: UserDBDep,
     user_crud: UserManageCrudDep,
 ) -> Response[list[AdminContactResponse]]:
-    """Return enabled super administrators without user-management fields."""
+    """获取已启用超级管理员的联系方式，仅返回联系所需字段。"""
     users = await user_crud.get_all(
         col(User.is_admin).is_(True),
         col(User.status) == Status.ON,
@@ -104,12 +104,9 @@ async def get_admin_contacts(
     return Response(data=contacts)
 
 
-@router.get("/stats/summary", summary="用户统计摘要")
-async def get_user_stats_summary(
-    user_crud: UserManageCrudDep,
-    redis: RedisDep,
-) -> Response[UserStatsSummary]:
-    """获取用户总数、今日新增、昨日新增和在线用户数。"""
+@router.get("/stats/summary", summary="用户统计摘要", dependencies=[Require("user:stats")])
+async def get_user_stats_summary(user_crud: UserManageCrudDep, redis: RedisDep) -> Response[UserStatsSummary]:
+    """获取数据范围内的用户总数、今日新增、昨日新增和在线用户数。"""
     summary = await user_crud.get_user_count_summary()
     online_count = await redis.scard("online_users") or 0
     return Response(
@@ -122,21 +119,21 @@ async def get_user_stats_summary(
     )
 
 
-@router.get("/stats/trend", summary="用户活跃趋势")
+@router.get("/stats/trend", summary="用户活跃趋势", dependencies=[Require("user:stats")])
 async def get_user_stats_trend(
     user_crud: UserManageCrudDep,
     start: date = Query(..., description="开始日期"),
     end: date = Query(..., description="结束日期"),
     granularity: str = Query("day", description="粒度: hour | day"),
 ) -> Response[list[UserActivityTrend]]:
-    """获取用户注册趋势数据。"""
+    """获取数据范围内的用户注册趋势。"""
     data = await user_crud.get_user_activity_trend(start, end, granularity)
     return Response(data=[UserActivityTrend(**item) for item in data])
 
 
-@router.get("/all", summary="全部用户选项")
+@router.get("/all", summary="全部用户选项", dependencies=[Require("user:options")])
 async def get_all_users(user_crud: UserManageCrudDep) -> Response[list[UserManageOptionResponse]]:
-    """获取全部用户（精简字段，用于下拉选项）。"""
+    """获取范围内全部用户（精简字段，用于下拉选项）。"""
     users = await user_crud.get_all(schema=UserManageOptionResponse)
     return Response(data=users)
 
@@ -144,6 +141,7 @@ async def get_all_users(user_crud: UserManageCrudDep) -> Response[list[UserManag
 @router.post("/validate-username-pinyin", summary="校验用户名与姓名拼音")
 async def validate_username_pinyin(
     body: UsernamePinyinValidationRequest,
+    _scope: Annotated[Scope, Require("user:validate-name")],
 ) -> Response[UsernamePinyinValidationResponse]:
     """返回标准全拼建议以及严格一致性结果。"""
     result = check_username_pinyin(body.name, body.username)
@@ -155,13 +153,12 @@ async def validate_username_pinyin(
     )
 
 
-@router.get("")
+@router.get("", dependencies=[Require("user:read")])
 async def get_users(
     query: Annotated[UserManagePageQuery, Query(...)],
     user_crud: UserManageCrudDep,
-    field_rules: Annotated[FieldRestrictions, Depends(FieldPermissionFilter(User))],
 ) -> Response[PaginatedResponse[UserManageResponse]]:
-    """获取分页的用户列表。"""
+    """获取范围内的分页用户列表。"""
     filters = filter_user(query.status, query.keyword)
     users = await user_crud.get_paginate(
         *filters,
@@ -170,42 +167,31 @@ async def get_users(
         order_by=col(User.create_time).desc(),
         schema=UserManageResponse,
     )
-    if not field_rules.is_empty:
-        users.records = [
-            UserManageResponse.model_validate(serialize_with_restrictions(r.model_dump(), field_rules))
-            for r in users.records
-        ]
     return Response(data=users)
 
 
-@router.get("/{user_id}")
-async def get_user(
-    user_id: UUID,
-    user_crud: UserManageCrudDep,
-    field_rules: Annotated[FieldRestrictions, Depends(FieldPermissionFilter(User))],
-) -> Response[UserManageResponse]:
-    """获取单个用户详情。"""
+@router.get("/{user_id}", dependencies=[Require("user:read")])
+async def get_user(user_id: UUID, user_crud: UserManageCrudDep) -> Response[UserManageResponse]:
+    """获取范围内单个用户详情；范围外与不存在同样返回 RESOURCE_NOT_FOUND。"""
     user = await user_crud.get(user_id, nullable=False)
-    response = UserManageResponse.model_validate(user)
-    if not field_rules.is_empty:
-        response = UserManageResponse.model_validate(serialize_with_restrictions(response.model_dump(), field_rules))
-    return Response(data=response)
+    return Response(data=UserManageResponse.model_validate(user))
 
 
 @contact_router.put(
     "/{user_id}/password",
     summary="修改用户密码",
-    dependencies=[Depends(DenyImpersonation), Depends(verify_user_permission)],
+    dependencies=[Depends(DenyImpersonation)],
 )
 async def change_password(
     user_id: UUID,
     body: ChangePasswordBody,
-    current_user: UserDBDep,
+    scope: Annotated[Scope, Require("user:reset-password")],
     user_crud: UserManageCrudDep,
     redis: RedisDep,
     session: SessionDep,
 ) -> Response[bool]:
     """修改用户密码。仅本人或超管可操作。"""
+    current_user = scope.user
     is_self = current_user.id == user_id
 
     if not is_self and not current_user.is_admin:
@@ -236,10 +222,11 @@ async def change_password(
 @router.post("")
 async def create_user(
     body: UserManageCreate,
-    current_user: VerifyPermissionDep,
     user_crud: UserManageCrudDep,
+    scope: Annotated[Scope, Require("user:create")],
 ) -> Response[UserManageResponse]:
-    """创建待激活用户，密码由邀请流程设置。"""
+    """创建待激活用户，密码由邀请流程设置；新用户必须落在数据范围内（由会话范围校验）。"""
+    current_user = scope.user
     if not current_user.is_admin:
         body.is_admin = False
 
@@ -257,15 +244,15 @@ async def create_user(
 @router.post("/{user_id}/resend-invite", summary="重新发送邀请")
 async def resend_invite(
     user_id: UUID,
-    current_user: VerifyPermissionDep,
     user_crud: UserManageCrudDep,
+    scope: Annotated[Scope, Require("user:create")],
 ) -> Response[bool]:
-    """为待激活用户重新发送邀请。"""
+    """为范围内的待激活用户重新发送邀请。"""
     target = await user_crud.get(user_id, nullable=False)
     if target.status != Status.PENDING:
         raise AppException(UserStatusCode.USER_NOT_PENDING)
     event_bus.fire_and_forget(UserInviteRequestedEvent(user_id=str(user_id)))
-    logger.info("Invite resend requested for {user_id} by {operator}", user_id=user_id, operator=current_user.id)
+    logger.info("Invite resend requested for {user_id} by {operator}", user_id=user_id, operator=scope.user.id)
     return Response(data=True)
 
 
@@ -273,23 +260,21 @@ async def resend_invite(
 async def update_user(
     user_id: UUID,
     body: UserManageUpdate,
-    current_user: VerifyPermissionDep,
+    scope: Annotated[Scope, Require("user:update")],
     user_crud: UserManageCrudDep,
     redis: RedisDep,
     session: SessionDep,
 ) -> Response[UserManageResponse]:
-    """更新用户信息。"""
+    """更新用户信息；目标与更新结果都必须在数据范围内（由会话范围校验）。"""
+    current_user = scope.user
     update_data = body.model_dump(exclude_unset=True)
 
     if not current_user.is_admin:
         update_data.pop("is_admin", None)
 
-    target_user = None
-    if {"name", "username", "roles", "is_admin", "status"} & update_data.keys():
-        target_user = await user_crud.get(user_id, nullable=False)
+    target_user = await user_crud.get(user_id, nullable=False)
 
     if {"name", "username"} & update_data.keys():
-        assert target_user is not None
         _warn_username_pinyin_mismatch(
             operation="update",
             name=update_data.get("name", target_user.name),
@@ -299,19 +284,15 @@ async def update_user(
 
     permission_changed = False
     if "roles" in update_data:
-        assert target_user is not None
         if set(update_data["roles"]) != set(target_user.roles or []):
             permission_changed = True
             after_commit(session, invalidate_user_permission_cache, redis, user_id)
             event_bus.fire_and_forget(UserRolesChangedEvent(user_id=str(user_id), role_codes=update_data["roles"]))
 
     if "is_admin" in update_data:
-        assert target_user is not None
         permission_changed = permission_changed or update_data["is_admin"] != target_user.is_admin
 
-    if target_user is not None and any(
-        key in update_data and update_data[key] != getattr(target_user, key) for key in ("status", "is_admin")
-    ):
+    if any(key in update_data and update_data[key] != getattr(target_user, key) for key in ("status", "is_admin")):
         after_commit(session, revoke_impersonations_for_user, user_id, redis)
 
     user = await user_crud.update_by_id(user_id, update_data)
@@ -325,12 +306,13 @@ async def update_user(
 @router.delete("/{user_id}")
 async def delete_user(
     user_id: UUID,
-    current_user: VerifyPermissionDep,
+    scope: Annotated[Scope, Require("user:delete")],
     user_crud: UserManageCrudDep,
     redis: RedisDep,
     session: SessionDep,
 ) -> Response[bool]:
     """删除单个用户。"""
+    current_user = scope.user
     if user_id == current_user.id:
         raise AppException(UserStatusCode.CANNOT_DELETE_SELF)
 
@@ -349,13 +331,16 @@ async def delete_user(
 @router.delete("")
 async def batch_delete_users(
     body: UserManageBatchBody,
-    current_user: VerifyPermissionDep,
+    scope: Annotated[Scope, Require("user:delete")],
     user_crud: UserManageCrudDep,
     redis: RedisDep,
     session: SessionDep,
 ) -> Response[bool]:
     """批量删除用户。"""
+    current_user = scope.user
     targets = await user_crud.get_by_ids(body.ids)
+    if len(targets) != len(set(body.ids)):
+        raise AppException(StatusCode.RESOURCE_NOT_FOUND)
     for target in targets:
         if target.id == current_user.id:
             raise AppException(UserStatusCode.BATCH_CONTAINS_SELF)

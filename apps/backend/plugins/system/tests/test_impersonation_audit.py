@@ -61,6 +61,6 @@ def test_manifest_registers_writer_and_preserves_existing_services():
     registry = ServiceRegistry()
     manifest.service_factories[ImpersonationAuditWriter](registry)
     assert isinstance(registry.get(ImpersonationAuditWriter), ImpersonationAuditWriterImpl)
-    assert manifest.dependencies == ["auth", "menu", "script"]
+    assert manifest.dependencies == ["auth", "menu"]
     assert len(manifest.event_listeners) == 5
     assert manifest.on_startup and manifest.on_shutdown

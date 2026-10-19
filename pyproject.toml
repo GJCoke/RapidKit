@@ -9,8 +9,6 @@ dependencies = [
   "rapidkit-core",
   "rapidkit-common",
   "rapidkit-framework",
-  "rapidkit-policy-engine",
-  "rapidkit-plugin-script",
   "rapidkit-plugin-monitoring",
   "rapidkit-plugin-system",
   "rapidkit-plugin-worker",
@@ -32,8 +30,6 @@ rapidkit-backend = { workspace = true }
 rapidkit-core = { workspace = true }
 rapidkit-common = { workspace = true }
 rapidkit-framework = { workspace = true }
-rapidkit-policy-engine = { workspace = true }
-rapidkit-plugin-script = { workspace = true }
 rapidkit-plugin-monitoring = { workspace = true }
 rapidkit-plugin-system = { workspace = true }
 rapidkit-plugin-worker = { workspace = true }
@@ -47,13 +43,13 @@ rapidkit-plugin-notification = { workspace = true }
 rapidkit-security = { workspace = true }
 
 [tool.uv.workspace]
+exclude = ["apps/backend/plugins/script"]
 members = [
   "apps/backend",
   "apps/backend/plugins/*",
   "packages/core",
   "packages/common",
   "packages/framework",
-  "packages/policy-engine",
   "packages/security",
 ]
 

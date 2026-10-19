@@ -10,7 +10,8 @@ from plugin_schedule.api import router
 from plugin_schedule.cron_preview import preview_crontab
 from plugin_schedule.schemas import CrontabPreviewRequest
 from pydantic.alias_generators import to_camel
-from rapidkit_common.auth import verify_user_permission
+from rapidkit_common.access import access_guard_dependency
+from rapidkit_common.access_testing import allow_access
 from rapidkit_core.timezone import timezone
 
 
@@ -84,7 +85,7 @@ def test_dst_arithmetic_matches_celery_real_time_estimate(monkeypatch):
 async def test_preview_route_uses_camel_case_and_needs_no_database():
     app = FastAPI()
     app.include_router(router)
-    app.dependency_overrides[verify_user_permission] = lambda: None
+    app.dependency_overrides[access_guard_dependency] = allow_access(None)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post("/schedules/crontab/preview", json={"minute": "0", "dayOfWeek": "0"})
         assert response.status_code == 200

@@ -5,6 +5,8 @@ Author : Coke
 Date   : 2025-03-13
 """
 
+from typing import Literal
+
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import EmailStr
 from rapidkit_common.schemas import BaseModel, BaseRequest, BaseResponse, ResponseSchema
@@ -32,6 +34,7 @@ class UserSchema(BaseModel):
     is_admin: bool = False
     roles: list[str] = []
     buttons: list[str] = []
+    restricted_fields: dict[str, dict[str, Literal["masked", "hidden"]]] = {}
 
 
 class UserInfoResponse(UserSchema, ResponseSchema):

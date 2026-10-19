@@ -9,8 +9,8 @@ import asyncio
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
-from rapidkit_common.auth import verify_user_permission
+from fastapi import APIRouter, Query, Request
+from rapidkit_common.access import Require
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import CursorPaginatedResponse, PaginatedResponse, Response
 from rapidkit_core.config import settings
@@ -63,28 +63,28 @@ from plugin_system.services import (
 router = APIRouter(
     prefix="/system",
     tags=["System"],
-    dependencies=[Depends(verify_user_permission)],
 )
 
 
-@router.get("/stats/operations-overview", summary="运营总览")
+@router.get("/stats/operations-overview", summary="运营总览", dependencies=[Require("dashboard:read")])
 async def get_operations_overview(
     request: Request,
     query: Annotated[OperationsOverviewQuery, Query(...)],
 ) -> Response[OperationsOverviewResponse]:
+    """按查询条件汇总用户、业务与系统运行状态，返回运营总览。"""
     started_at = getattr(request.app.state, "started_at", timezone.now())
     return Response(data=await build_operations_overview(query, started_at))
 
 
 def _plugin_status_to_schema(d: dict) -> dict:
-    """Convert a service-layer plugin status dict for PluginStatusItem construction."""
+    """转换服务层的插件状态字典，用于构造插件状态响应。"""
     d = dict(d)
     if d.get("error") is not None:
         d["error"] = PluginErrorResponse(**d["error"])
     return d
 
 
-@router.get("/stats/resources", summary="服务器资源统计")
+@router.get("/stats/resources", summary="服务器资源统计", dependencies=[Require("dashboard:infrastructure")])
 async def get_resource_stats(
     redis: RedisDep,
     instance: str | None = Query(None, description="实例 hostname，不传返回所有实例 + 汇总"),
@@ -114,7 +114,7 @@ async def get_resource_stats(
     return Response(data=MultiResourceStats(instances=instances, summary=summary))
 
 
-@router.get("/stats/errors", summary="错误统计")
+@router.get("/stats/errors", summary="错误统计", dependencies=[Require("dashboard:errors")])
 async def get_error_stats(redis: RedisDep) -> Response[ErrorStats]:
     """获取 HTTP 5xx 和业务异常统计。"""
     http_5xx, biz_errors = await get_error_counts(redis, hours=1)
@@ -136,7 +136,7 @@ async def get_error_stats(redis: RedisDep) -> Response[ErrorStats]:
     )
 
 
-@router.get("/stats/health", summary="应用健康统计")
+@router.get("/stats/health", summary="应用健康统计", dependencies=[Require("dashboard:health")])
 async def get_health_stats(request: Request, redis: RedisDep) -> Response[HealthStats]:
     """获取 QPS、响应时间 P50/P95 和错误计数。"""
     qps = await get_qps(redis)
@@ -162,7 +162,7 @@ async def get_health_stats(request: Request, redis: RedisDep) -> Response[Health
     )
 
 
-@router.get("/stats/infrastructure", summary="基础设施健康状态")
+@router.get("/stats/infrastructure", summary="基础设施健康状态", dependencies=[Require("dashboard:infrastructure")])
 async def get_infrastructure_health(session: SessionDep, redis: RedisDep) -> Response[InfrastructureHealth]:
     """检查 PostgreSQL、Redis、MinIO 的健康状态。"""
     pg_health, redis_health, minio_health = await asyncio.gather(
@@ -174,7 +174,7 @@ async def get_infrastructure_health(session: SessionDep, redis: RedisDep) -> Res
     return Response(data=InfrastructureHealth(pg=pg_health, redis=redis_health, minio=minio_health))
 
 
-@router.get("/health", summary="聚合健康状态")
+@router.get("/health", summary="聚合健康状态", dependencies=[Require("dashboard:infrastructure")])
 async def get_aggregated_health(
     session: SessionDep,
     redis: RedisDep,
@@ -191,19 +191,19 @@ async def get_aggregated_health(
     return Response(data=AggregatedHealth(status=overall, infrastructure=infra))
 
 
-@router.get("/stats/business", summary="业务数据汇总")
+@router.get("/stats/business", summary="业务数据汇总", dependencies=[Require("dashboard:business")])
 async def get_business_summary(session: SessionDep) -> Response[BusinessSummary]:
     """获取各业务模块的数据总量。"""
     summary = await build_business_summary(session, enable_celery=settings.ENABLE_CELERY_MONITOR)
     return Response(data=BusinessSummary(**summary))
 
 
-@router.get("/activities", summary="最近系统活动")
+@router.get("/activities", summary="最近系统活动", dependencies=[Require("dashboard:activity")])
 async def get_activities(
     query: Annotated[ActivityCursorQuery, Query(...)],
     crud: ActivityEventCrudDep,
 ) -> Response[CursorPaginatedResponse[ActivityResponse]]:
-    """Return cursor-paginated, explicitly curated dashboard activity."""
+    """使用游标分页返回纳入首页展示范围的系统活动。"""
     data = await crud.get_cursor_page(
         categories=query.categories,
         levels=query.levels,
@@ -213,16 +213,18 @@ async def get_activities(
     return Response(data=data)
 
 
-@router.get("/audit-logs/paginate", summary="审计日志分页查询")
+@router.get("/audit-logs/paginate", summary="审计日志分页查询", dependencies=[Require("audit-log:read")])
 async def get_audit_logs(
     query: Annotated[AuditLogQuery, Query(...)],
     crud: AuditLogCrudDep,
 ) -> Response[PaginatedResponse[AuditLogListItem]]:
+    """分页查询审计日志，支持按查询条件筛选。"""
     return Response(data=await crud.get_audit_page(query))
 
 
-@router.get("/audit-logs/{item_id}", summary="审计日志详情")
+@router.get("/audit-logs/{item_id}", summary="审计日志详情", dependencies=[Require("audit-log:read")])
 async def get_audit_log_detail(item_id: UUID, crud: AuditLogCrudDep) -> Response[AuditLogDetail | None]:
+    """获取单条审计日志及其关联对象信息，不存在时返回空。"""
     record = await crud.get(item_id)
     return Response(
         data=AuditLogDetail.model_validate(
@@ -238,7 +240,7 @@ async def get_audit_log_detail(item_id: UUID, crud: AuditLogCrudDep) -> Response
     )
 
 
-@router.get("/plugins", summary="插件状态列表")
+@router.get("/plugins", summary="插件状态列表", dependencies=[Require("plugin:read")])
 async def get_plugin_status(request: Request) -> Response[list[PluginStatusItem]]:
     """返回所有插件的加载状态、版本、耗时和健康信息。"""
     plugins = getattr(request.app.state, "plugins", [])
@@ -253,7 +255,7 @@ async def get_plugin_status(request: Request) -> Response[list[PluginStatusItem]
     return Response(data=items)
 
 
-@router.get("/plugins/dependencies", summary="插件依赖关系图")
+@router.get("/plugins/dependencies", summary="插件依赖关系图", dependencies=[Require("plugin:read")])
 async def get_plugin_dependencies(request: Request) -> Response[PluginDependencyGraph]:
     """返回插件依赖关系图的节点和边，用于前端可视化。"""
     plugins = getattr(request.app.state, "plugins", [])
@@ -272,7 +274,7 @@ async def get_plugin_dependencies(request: Request) -> Response[PluginDependency
     )
 
 
-@router.get("/events", summary="EventBus 统计")
+@router.get("/events", summary="EventBus 统计", dependencies=[Require("plugin:read")])
 async def get_event_bus_stats() -> Response[EventBusStats]:
     """返回 EventBus 的死信记录和 handler 错误统计。"""
 

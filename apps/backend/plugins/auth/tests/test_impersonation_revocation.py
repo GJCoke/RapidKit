@@ -11,6 +11,7 @@ from plugin_user.crud import UserManageCRUD
 from plugin_user.schemas import UserManageUpdate
 from plugins.auth.tests.impersonation_helpers import strict_client, target  # noqa: F401
 from plugins.auth.tests.test_impersonation_service import setup_service, start  # noqa: F401
+from rapidkit_common.access import Scope
 from rapidkit_common.protocols.impersonation import ImpersonationRevoker
 from rapidkit_framework.services import get_service
 from sqlmodel import select
@@ -68,7 +69,9 @@ async def test_update_rollback_keeps_active(setup_service, monkeypatch):
     monkeypatch.setattr("plugin_user.services.get_service_optional", lambda protocol: service)
     async with factory() as session:
         await update_user(
-            users[2].id, UserManageUpdate(status="2"), users[0], UserManageCRUD(session), service.redis, session
+            users[2].id, UserManageUpdate(status="2"),
+            Scope(user=users[0], code="user:update"),
+            UserManageCRUD(session), service.redis, session
         )
         async with factory() as reader:
             assert (await reader.get(ImpersonationSession, record.id)).ended_at is None

@@ -21,5 +21,5 @@ class TestPluginCacheManager:
     def test_prefix_property(self):
         from rapidkit_core.cache import PluginCacheManager
 
-        cm = PluginCacheManager("script")
-        assert cm.prefix == "plugin:script:"
+        cm = PluginCacheManager("example")
+        assert cm.prefix == "plugin:example:"

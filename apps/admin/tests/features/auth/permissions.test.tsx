@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
-import { afterEach, test, expect } from "vitest"
+import { afterEach, test, expect, expectTypeOf } from "vitest"
 import { render, screen } from "@testing-library/react"
 import type { AuthUserInfo } from "@/services/api/auth"
 import { useAuthStore } from "@/stores/auth"
+import type { PermissionRequirement } from "@/features/auth/permissions"
 import { Can, hasPermission } from "@/features/auth/permissions"
 
 const user: AuthUserInfo = {
@@ -22,7 +23,7 @@ afterEach(() => useAuthStore.setState({ token: "", refreshToken: "", userInfo: n
 
 test("permission checks reject anonymous users and grant administrators every permission", () => {
   expect(hasPermission(null, "user:create")).toBe(false)
-  expect(hasPermission({ ...user, isAdmin: true, buttons: [] }, "anything")).toBe(true)
+  expect(hasPermission({ ...user, isAdmin: true, buttons: [] }, "user:read")).toBe(true)
 })
 
 test("permission arrays use any-match semantics", () => {
@@ -46,4 +47,9 @@ test("Can reacts to auth state changes and renders its fallback", () => {
     </Can>,
   )
   expect(screen.getByText("Allowed")).toBeInTheDocument()
+})
+
+test("permission requirements only accept generated permission codes", () => {
+  expectTypeOf<"user:read">().toMatchTypeOf<PermissionRequirement>()
+  expectTypeOf<"manage_user:edit">().not.toMatchTypeOf<PermissionRequirement>()
 })

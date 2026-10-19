@@ -11,7 +11,24 @@ import {
   announcementStatus,
 } from "@/views/notification/manage/announcements/modules/announcement-table"
 
-vi.mock("@/hooks/business/auth", () => ({ useAuth: () => ({ hasAuth: () => true }) }))
+const currentAccess = reactive({ allowed: true })
+
+vi.mock("@/hooks/business/auth", () => ({
+  useAuth: () => {
+    const hasAuth = () => currentAccess.allowed
+    return {
+      hasAuth,
+      getActionContext: (locale = "zh-CN") => ({
+        ready: true,
+        hasAuth,
+        actorId: "actor",
+        isAdmin: false,
+        impersonating: false,
+        locale,
+      }),
+    }
+  },
+}))
 const api = vi.hoisted(() => ({
   list: vi.fn(),
   remove: vi.fn(),
@@ -83,11 +100,12 @@ async function settle() {
 afterEach(() => {
   app?.unmount()
   host?.remove()
+  currentAccess.allowed = true
 })
 
 describe("announcement permissions and lifecycle actions", () => {
   it("keeps details outside and requires both editing and publishing permission for draft publication", () => {
-    const allowed = new Set([permissions.publish, permissions.cancel])
+    const allowed = new Set<string>([permissions.publish, permissions.cancel])
     const auth = (key: string) => allowed.has(key)
     expect(announcementActions(row(), auth)).toEqual({ primary: "detail", more: ["cancel"] })
     allowed.add(permissions.update)
@@ -321,4 +339,34 @@ describe("announcement list mutation confirmation", () => {
       window.$dialog = originalDialog
     }
   })
+})
+
+it("destroys a stale announcement confirmation and rejects its callback after permission revocation", async () => {
+  api.remove.mockClear()
+  api.warning.mockReset()
+  const destroy = vi.fn()
+  api.warning.mockReturnValue({ destroy })
+  api.check.mockResolvedValue({ data: { current: null, scheduled: null }, error: null })
+  api.list.mockResolvedValue({ data: { records: [row()], page: 1, pageSize: 20, total: 1 }, error: null })
+  const originalDialog = window.$dialog
+  window.$dialog = { warning: api.warning } as unknown as typeof window.$dialog
+  try {
+    await mount(() => h(AnnouncementList))
+    await vi.waitFor(() => expect(host.textContent).toContain("标题{username}"))
+    host.querySelector<HTMLButtonElement>('[aria-label="更多"]')!.click()
+    await vi.waitFor(() => expect(document.querySelector(".n-dropdown-menu")).not.toBeNull())
+    const remove = [...document.querySelectorAll<HTMLElement>(".n-dropdown-option-body")].find((item) =>
+      item.textContent?.includes("删除草稿"),
+    )!
+    remove.click()
+    await settle()
+    const confirmation = api.warning.mock.calls.at(-1)![0]
+    currentAccess.allowed = false
+    await settle()
+    expect(destroy).toHaveBeenCalledOnce()
+    expect(await confirmation.onPositiveClick()).toBe(false)
+    expect(api.remove).not.toHaveBeenCalled()
+  } finally {
+    window.$dialog = originalDialog
+  }
 })

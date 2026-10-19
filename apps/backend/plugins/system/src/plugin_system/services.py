@@ -161,7 +161,6 @@ async def build_business_summary(session: AsyncSession, *, enable_celery: bool) 
     roles = await _count("permission_roles")
     menus = await _count("menu_menus")
     routers = await _count("permission_routers")
-    scripts = await _count("script_scripts")
 
     schedules = 0
     try:
@@ -174,7 +173,6 @@ async def build_business_summary(session: AsyncSession, *, enable_celery: bool) 
         "roles": roles,
         "menus": menus,
         "routers": routers,
-        "scripts": scripts,
         "schedules": schedules,
     }
 

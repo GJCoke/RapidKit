@@ -2,9 +2,11 @@ import type { ReactNode } from "react"
 import type { AuthUserInfo } from "@/services/api/auth"
 import { useAuthStore } from "@/stores/auth"
 
-export type PermissionCode = string | string[]
+import type { PermissionCode } from "@/typings/permission-codes"
 
-export function hasPermission(userInfo: AuthUserInfo | null, codes: PermissionCode) {
+export type PermissionRequirement = PermissionCode | PermissionCode[]
+
+export function hasPermission(userInfo: AuthUserInfo | null, codes: PermissionRequirement) {
   if (!userInfo) return false
   if (userInfo.isAdmin) return true
 
@@ -12,14 +14,14 @@ export function hasPermission(userInfo: AuthUserInfo | null, codes: PermissionCo
   return requiredCodes.some((code) => userInfo.buttons.includes(code))
 }
 
-export function usePermission(codes: PermissionCode) {
+export function usePermission(codes: PermissionRequirement) {
   const token = useAuthStore((state) => state.token)
   const userInfo = useAuthStore((state) => state.userInfo)
   return Boolean(token) && hasPermission(userInfo, codes)
 }
 
 interface CanProps {
-  permission: PermissionCode
+  permission: PermissionRequirement
   children: ReactNode
   fallback?: ReactNode
 }

@@ -20,7 +20,7 @@ vi.mock("@/service/api", () => ({
 vi.mock("@/hooks/business/auth", () => ({
   useAuth: () => ({
     hasAuth: (permission: string) =>
-      permission.startsWith("PUT") ? allowed.update : permission.startsWith("DELETE") ? allowed.delete : true,
+      permission.endsWith(":update") ? allowed.update : permission.endsWith(":delete") ? allowed.delete : true,
   }),
 }))
 vi.mock("@/store/modules/app", () => ({ useAppStore: () => ({ locale: "zh-CN", isMobile: false }) }))

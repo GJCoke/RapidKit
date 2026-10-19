@@ -210,18 +210,13 @@ Loader 使用 Kahn 算法对插件进行拓扑排序，确保被依赖的插件�
 #### 现有插件依赖关系
 
 ```text
-auth ─────────┬──────────────────────┐
-              │                      │
-         menu (auth)            script (无依赖)
-              │                      │
-         system (auth, menu, script) │
-              │                      │
-         user (auth, system)         │
-                                     │
-monitoring (无依赖)    schedule (无依赖)    worker (无依赖)
+auth → menu → system → user
+  └─────────────────────┘
+
+monitoring、schedule、worker：无前置插件依赖
 ```
 
-加载顺序：`auth → script → monitoring → schedule → worker → menu → system → user`
+加载顺序：`auth → monitoring → schedule → worker → menu → system → user`
 
 ## 路由与 API
 
@@ -268,17 +263,16 @@ def register() -> PluginManifest:
 ### 路由权限保护
 
 ```python
-from fastapi import APIRouter, Depends
-from rapidkit_common.auth import verify_user_permission
+from fastapi import APIRouter
+from rapidkit_common.access import Authenticated
 from rapidkit_common.deps import SessionDep
 from rapidkit_common.schemas.response import Response
 
 router = APIRouter(
     prefix="/notification",
     tags=["Notification"],
-    dependencies=[Depends(verify_user_permission)],  # 整个路由组需要权限
+    dependencies=[Authenticated],  # 整个路由组登录即可访问
 )
-
 
 @router.get("")
 async def list_notifications(session: SessionDep) -> Response:
@@ -293,17 +287,17 @@ async def list_notifications(session: SessionDep) -> Response:
 
 ```python
 # packages/common — 定义占位符
-async def _verify_user_permission_placeholder():
+async def _get_current_user_placeholder():
     raise NotImplementedError("No auth plugin installed")
 
 
-VerifyPermissionDep = Annotated[None, Depends(_verify_user_permission_placeholder)]
+UserDBDep = Annotated[UserProtocol, Depends(_get_current_user_placeholder)]
 ```
 
 ```python
 # plugin_auth — 覆盖为真实实现
-from rapidkit_common.auth import _verify_user_permission_placeholder
-from plugin_auth.auth.deps import verify_user_permission
+from rapidkit_common.auth import _get_current_user_placeholder
+from plugin_auth.auth.deps import get_current_user_form_db
 
 
 def register() -> PluginManifest:
@@ -311,7 +305,7 @@ def register() -> PluginManifest:
         name="auth",
         version="0.1.0",
         dependency_overrides={
-            _verify_user_permission_placeholder: verify_user_permission,
+            _get_current_user_placeholder: get_current_user_form_db,
         },
     )
 ```

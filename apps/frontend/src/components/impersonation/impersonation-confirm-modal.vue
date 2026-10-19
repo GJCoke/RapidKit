@@ -3,6 +3,7 @@
   import { useRoute } from "vue-router"
   import { $t } from "@/locales"
   import { useAuthStore } from "@/store/modules/auth"
+  import { canImpersonate } from "./eligibility"
 
   defineOptions({ name: "ImpersonationConfirmModal" })
   const props = defineProps<{ user: Api.SystemManage.User; departmentName?: string }>()
@@ -16,7 +17,7 @@
   })
 
   async function submit() {
-    if (loading.value) return
+    if (loading.value || !canImpersonate(auth.userInfo, props.user, Boolean(auth.impersonation))) return
     loading.value = true
     try {
       const started = await auth.startImpersonation(

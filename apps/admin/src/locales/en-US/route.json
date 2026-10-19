@@ -6,11 +6,11 @@
     "home": "Home",
     "manage": "System management",
     "manage_user": "Users",
+    "manage_permission-extension": "Permission Extensions",
+    "manage_user-detail": "User details",
     "manage_role": "Roles",
     "manage_menu": "Menus",
     "manage_department": "Departments",
-    "manage_data-policy": "Data policies",
-    "manage_field-policy": "Field policies",
     "manage_audit-dict": "Audit dictionary",
     "manage_audit-log": "Audit logs",
     "socketio": "Realtime communication",
@@ -21,13 +21,13 @@
     "queue_dashboard": "Queue overview",
     "queue_schedule": "Schedules",
     "queue_task": "Task history",
-    "script": "Scripts",
     "monitoring": "Monitoring",
     "monitoring_api": "API monitoring",
     "monitoring_plugin": "Plugins",
     "notification_manage": "Notification management",
     "notification_manage_templates": "Templates",
     "notification_manage_announcements": "Announcements",
-    "notification_manage_deliveries": "Delivery status"
+    "notification_manage_deliveries": "Delivery status",
+    "manage_permission-package": "Permission Packages"
   }
 }

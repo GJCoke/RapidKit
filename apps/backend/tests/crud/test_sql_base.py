@@ -12,7 +12,6 @@ from rapidkit_common.models import SQLModel
 from rapidkit_common.schemas import BaseRequest, BaseResponse
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.status_codes import StatusCode
-from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Field, col, delete
 from sqlmodel import SQLModel as _SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -169,7 +168,7 @@ async def test_get_all_with_invalid_filter_returns_empty(crud: CRUD) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_all_with_schema(crud: CRUD) -> None:
+async def test_get_all_with_schema(crud: CRUD, with_data: list[PyUser]) -> None:
     case = await crud.get_all(schema=PyUserResponse)
     assert isinstance(case[0], PyUserResponse)
 
@@ -265,6 +264,14 @@ async def test_get_paginate_desc_order(crud: CRUD, with_data: list[PyUser]) -> N
 async def test_get_paginate_out_of_range_page_returns_empty(crud: CRUD, with_data: list[PyUser]) -> None:
     page = await crud.get_paginate(page=len(with_data) + 1)
     assert len(page.records) == 0
+    assert page.total == len(with_data)
+
+
+@pytest.mark.asyncio
+async def test_empty_page_preserves_filtered_total_and_schema(crud: CRUD, with_data: list[PyUser]) -> None:
+    page = await crud.get_paginate(col(PyUser.name) == with_data[0].name, page=2, size=10, schema=PyUserResponse)
+    assert page.records == []
+    assert page.total == 1
 
 
 @pytest.mark.asyncio
@@ -275,7 +282,7 @@ async def test_get_paginate_size_zero_returns_empty(crud: CRUD, with_data: list[
 
 
 @pytest.mark.asyncio
-async def test_get_paginate_size_one_returns_single(crud: CRUD) -> None:
+async def test_get_paginate_size_one_returns_single(crud: CRUD, with_data: list[PyUser]) -> None:
     page = await crud.get_paginate(size=1)
     assert len(page.records) == 1
 
@@ -339,8 +346,10 @@ async def test_update_all_empty(crud: CRUD) -> None:
 
 @pytest.mark.asyncio
 async def test_update_all_error(crud: CRUD, with_data: list[PyUser]) -> None:
-    with pytest.raises(SQLAlchemyError):
-        await crud.update_all([{"name1": "test", "id": with_data[0].id}])
+    with pytest.raises(AppException) as error:
+        await crud.update_all([{"name": with_data[1].name, "id": with_data[0].id}])
+    assert error.value.code == StatusCode.ALREADY_EXISTS.code
+    assert await crud.get_count() == len(with_data)
 
 
 @pytest.mark.asyncio

@@ -2,6 +2,7 @@
   import { computed, ref, shallowRef, watch } from "vue"
   import type { TreeSelectOption } from "naive-ui"
   import { jsonClone } from "@rapidkit/utils"
+  import { useOperationAccess } from "@/hooks/business/table-actions/use-operation-access"
   import { enableStatusOptions } from "@/constants/business"
   import { fetchCreateDepartment, fetchGetAllUsers, fetchGetDepartmentTree, fetchUpdateDepartment } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
@@ -24,6 +25,10 @@
   const emit = defineEmits<Emits>()
 
   const visible = defineModel<boolean>("visible", { default: false })
+  const operationAccess = useOperationAccess(
+    () => (props.operateType === "edit" ? "department:update" : "department:create"),
+    visible,
+  )
 
   const { formRef, validate, restoreValidation } = useNaiveForm()
   const { defaultRequiredRule } = useFormRules()
@@ -106,7 +111,9 @@
   }
 
   async function handleSubmit() {
+    if (!operationAccess.value) return
     await validate()
+    if (!operationAccess.value) return
 
     const payload = {
       parentId: model.value.parentId,
@@ -118,9 +125,11 @@
     }
 
     if (props.operateType === "edit" && props.rowData) {
+      if (!operationAccess.value) return
       const { error } = await fetchUpdateDepartment(props.rowData.id, payload)
       if (error) return
     } else {
+      if (!operationAccess.value) return
       const { error } = await fetchCreateDepartment(payload)
       if (error) return
     }

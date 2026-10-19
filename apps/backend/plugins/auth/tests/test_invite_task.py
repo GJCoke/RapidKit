@@ -8,7 +8,7 @@ def test_deliver_renders_and_sends(monkeypatch) -> None:
             sent.update(to=to, subject=subject, html=html)
 
     monkeypatch.setattr(tasks, "build_email_sender", lambda: Sender())
-    tasks._deliver("to@example.com", "Alice", "https://app/login/set-password?token=t")
+    tasks._deliver("to@example.com", "RapidKit", "Alice", "alice", "https://app/login/set-password?token=t")
     assert sent["to"] == "to@example.com"
     assert "Alice" in sent["html"]
     assert "token=t" in sent["html"]

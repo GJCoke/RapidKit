@@ -64,19 +64,20 @@ export function fetchGetRolePermissions(id: string) {
   })
 }
 
-/** batch update role permissions (router + button + interface) */
-export function fetchUpdateRolePermissions(
-  id: string,
-  data: {
-    routerPermissions: string[]
-    buttonPermissions: string[]
-    interfacePermissions: string[]
-  },
-) {
+/** update role permission codes; data scopes / field modes unchanged when omitted */
+export function fetchUpdateRolePermissions(id: string, data: Api.SystemManage.RolePermissionsUpdate) {
   return request<boolean>({
     url: `/roles/${id}/permissions`,
     method: "put",
     data,
+  })
+}
+
+/** get permission code catalog */
+export function fetchGetPermissionCatalog() {
+  return request<Api.SystemManage.PermissionCatalog>({
+    url: "/permission-catalog",
+    method: "get",
   })
 }
 
@@ -308,100 +309,6 @@ export function fetchDeleteDepartment(id: string) {
     url: `/departments/${id}`,
     method: "delete",
   })
-}
-
-// ============== Data Policy ==============
-
-export function fetchGetDataPolicyList(params?: Api.DataPolicy.PolicySearchParams) {
-  return request<Api.DataPolicy.PolicyList>({
-    url: "/data-policies",
-    method: "get",
-    params,
-  })
-}
-
-export function fetchGetAllDataPolicies() {
-  return request<Api.DataPolicy.Policy[]>({
-    url: "/data-policies/all",
-    method: "get",
-  })
-}
-
-export function fetchCreateDataPolicy(data: Api.DataPolicy.PolicyCreate) {
-  return request<Api.DataPolicy.Policy>({
-    url: "/data-policies",
-    method: "post",
-    data,
-  })
-}
-
-export function fetchUpdateDataPolicy(id: string, data: Api.DataPolicy.PolicyUpdate) {
-  return request<Api.DataPolicy.Policy>({
-    url: `/data-policies/${id}`,
-    method: "put",
-    data,
-  })
-}
-
-export function fetchDeleteDataPolicy(id: string) {
-  return request<Api.DataPolicy.Policy>({
-    url: `/data-policies/${id}`,
-    method: "delete",
-  })
-}
-
-export function fetchGetPolicyModels() {
-  return request<Api.DataPolicy.ModelMetadata[]>({
-    url: "/data-policies/models",
-    method: "get",
-  })
-}
-
-export function fetchGetTemplateVars() {
-  return request<{ name: string; description: string }[]>({
-    url: "/data-policies/template-vars",
-    method: "get",
-  })
-}
-
-export function fetchSimulatePolicy(data: Api.DataPolicy.PolicySimulateRequest) {
-  return request<Api.DataPolicy.PolicySimulateResponse>({
-    url: "/data-policies/simulate",
-    method: "post",
-    data,
-  })
-}
-
-// ---------- Field Policy ----------
-
-/** Fetch field policy list (paginated) */
-export function fetchGetFieldPolicyList(params?: Api.FieldPolicy.PolicySearchParams) {
-  return request<Api.FieldPolicy.PolicyList>({ url: "/field-policies", method: "get", params })
-}
-
-/** Fetch all field policies (for role drawer select) */
-export function fetchGetAllFieldPolicies() {
-  return request<Api.FieldPolicy.Policy[]>({ url: "/field-policies/all", method: "get" })
-}
-
-/** Create a field policy */
-export function fetchCreateFieldPolicy(data: Api.FieldPolicy.PolicyCreate) {
-  return request<Api.FieldPolicy.Policy>({ url: "/field-policies", method: "post", data })
-}
-
-/** Update a field policy */
-export function fetchUpdateFieldPolicy(id: string, data: Api.FieldPolicy.PolicyUpdate) {
-  return request<Api.FieldPolicy.Policy>({ url: `/field-policies/${id}`, method: "put", data })
-}
-
-/** Delete a field policy */
-export function fetchDeleteFieldPolicy(id: string) {
-  return request<null>({ url: `/field-policies/${id}`, method: "delete" })
-}
-
-/** Batch delete field policies */
-export function fetchBatchDeleteFieldPolicies(ids: string[]) {
-  return request<null>({ url: "/field-policies/batch", method: "delete", data: { ids } })
 }
 
 // ==================== Audit Log ====================

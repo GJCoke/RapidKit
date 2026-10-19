@@ -13,6 +13,19 @@ concurrency:
 env:
   UV_CACHE_DIR: /tmp/.uv-cache
   PYTHON_VERSION: "3.14"
+  ENVIRONMENT: TESTING
+  POSTGRESQL_ASYNC_SCHEME: postgresql+asyncpg
+  POSTGRESQL_SYNC_SCHEME: postgresql+psycopg
+  POSTGRESQL_USERNAME: test
+  POSTGRESQL_PASSWORD: test
+  POSTGRESQL_HOST: localhost
+  POSTGRESQL_DATABASE: test
+  REDIS_ROOT_PASSWORD: ""
+  REDIS_HOST: localhost
+  MINIO_ROOT_USER: test
+  MINIO_ROOT_PASSWORD: test1234
+  CORS_ORIGINS: '["*"]'
+  CORS_HEADERS: '["*"]'
 
 jobs:
   # ----------------------------------------------------------------
@@ -46,8 +59,12 @@ jobs:
             backend:
               - 'apps/backend/src/**'
               - 'apps/backend/alembic/**'
-            plugin_script:
-              - 'apps/backend/plugins/script/**'
+            plugin_department:
+              - 'apps/backend/plugins/department/**'
+            plugin_notification:
+              - 'apps/backend/plugins/notification/**'
+            plugin_permission:
+              - 'apps/backend/plugins/permission/**'
             plugin_monitoring:
               - 'apps/backend/plugins/monitoring/**'
             plugin_system:
@@ -67,7 +84,9 @@ jobs:
         id: plugins
         run: |
           declare -A PLUGIN_OUTPUTS
-          PLUGIN_OUTPUTS["plugin_script"]="${{ steps.changes.outputs.plugin_script }}"
+          PLUGIN_OUTPUTS["plugin_department"]="${{ steps.changes.outputs.plugin_department }}"
+          PLUGIN_OUTPUTS["plugin_notification"]="${{ steps.changes.outputs.plugin_notification }}"
+          PLUGIN_OUTPUTS["plugin_permission"]="${{ steps.changes.outputs.plugin_permission }}"
           PLUGIN_OUTPUTS["plugin_monitoring"]="${{ steps.changes.outputs.plugin_monitoring }}"
           PLUGIN_OUTPUTS["plugin_system"]="${{ steps.changes.outputs.plugin_system }}"
           PLUGIN_OUTPUTS["plugin_worker"]="${{ steps.changes.outputs.plugin_worker }}"
@@ -84,9 +103,9 @@ jobs:
              [[ "${{ steps.changes.outputs.framework }}" == "true" ]] || \
              [[ "${{ steps.changes.outputs.security }}" == "true" ]] || \
              [[ "${{ steps.changes.outputs.backend }}" == "true" ]]; then
-            plugins=("script" "monitoring" "system" "worker" "schedule" "menu" "auth" "user")
+            plugins=("department" "notification" "permission" "monitoring" "system" "worker" "schedule" "menu" "auth" "user")
           else
-            for p in script monitoring system worker schedule menu auth user; do
+            for p in department notification permission monitoring system worker schedule menu auth user; do
               val="${PLUGIN_OUTPUTS["plugin_${p}"]}"
               if [[ "$val" == "true" ]]; then
                 plugins+=("$p")
@@ -195,7 +214,7 @@ jobs:
 
       - name: Run plugin tests
         working-directory: apps/backend
-        run: uv run pytest plugins/${{ matrix.plugin }}/tests/ -v
+        run: uv run pytest -c pyproject.toml plugins/${{ matrix.plugin }}/tests/ -v
         env:
           ENVIRONMENT: TESTING
           POSTGRESQL_ASYNC_SCHEME: postgresql+asyncpg
@@ -206,7 +225,7 @@ jobs:
           POSTGRESQL_PORT: "5432"
           POSTGRESQL_DATABASE: test
           SQL_DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/test
-          REDIS_ROOT_PASSWORD: test
+          REDIS_ROOT_PASSWORD: ""
           REDIS_HOST: localhost
           REDIS_DATABASE_URL: redis://localhost:6379/0
           MINIO_ROOT_USER: test
@@ -283,7 +302,7 @@ jobs:
           POSTGRESQL_HOST: localhost
           POSTGRESQL_PORT: "5432"
           POSTGRESQL_DATABASE: test
-          REDIS_ROOT_PASSWORD: test
+          REDIS_ROOT_PASSWORD: ""
           REDIS_HOST: localhost
           REDIS_DATABASE_URL: redis://localhost:6379/0
           MINIO_ROOT_USER: test
@@ -325,7 +344,7 @@ jobs:
           POSTGRESQL_HOST: localhost
           POSTGRESQL_PORT: "5432"
           POSTGRESQL_DATABASE: test
-          REDIS_ROOT_PASSWORD: test
+          REDIS_ROOT_PASSWORD: ""
           REDIS_HOST: localhost
           MINIO_ROOT_USER: test
           MINIO_ROOT_PASSWORD: test1234
@@ -350,7 +369,7 @@ jobs:
           POSTGRESQL_HOST: localhost
           POSTGRESQL_PORT: "5432"
           POSTGRESQL_DATABASE: test
-          REDIS_ROOT_PASSWORD: test
+          REDIS_ROOT_PASSWORD: ""
           REDIS_HOST: localhost
           MINIO_ROOT_USER: test
           MINIO_ROOT_PASSWORD: test1234

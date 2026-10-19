@@ -2,8 +2,9 @@
   import { computed, ref, watch } from "vue"
   import { jsonClone } from "@rapidkit/utils"
   import { useBoolean } from "@rapidkit/hooks"
+  import { useOperationAccess } from "@/hooks/business/table-actions/use-operation-access"
   import { enableStatusOptions } from "@/constants/business"
-  import { fetchCreateRole, fetchGetAllDataPolicies, fetchGetAllFieldPolicies, fetchUpdateRole } from "@/service/api"
+  import { fetchCreateRole, fetchUpdateRole } from "@/service/api"
   import { translateOptions } from "@/utils/common"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
@@ -33,6 +34,10 @@
   const visible = defineModel<boolean>("visible", {
     default: false,
   })
+  const operationAccess = useOperationAccess(
+    () => (props.operateType === "edit" ? "role:update" : "role:create"),
+    visible,
+  )
 
   const { formRef, validate, restoreValidation } = useNaiveForm()
   const { defaultRequiredRule } = useFormRules()
@@ -47,10 +52,7 @@
     return titles[props.operateType]
   })
 
-  type Model = Pick<Api.SystemManage.Role, "name" | "code" | "description" | "status"> & {
-    dataPolicyIds: string[]
-    fieldPolicyIds: string[]
-  }
+  type Model = Pick<Api.SystemManage.Role, "name" | "code" | "description" | "status">
 
   const model = ref(createDefaultModel())
 
@@ -60,8 +62,6 @@
       code: "",
       description: "",
       status: null,
-      dataPolicyIds: [],
-      fieldPolicyIds: [],
     }
   }
 
@@ -71,30 +71,6 @@
     name: defaultRequiredRule,
     code: defaultRequiredRule,
     status: defaultRequiredRule,
-  }
-
-  // Data policy options
-  const policyOptions = ref<Array<{ label: string; value: string }>>([])
-
-  async function loadPolicies() {
-    const { data, error } = await fetchGetAllDataPolicies()
-    if (error) return
-    policyOptions.value = data.map((p: Api.DataPolicy.Policy) => ({
-      label: p.name,
-      value: p.id,
-    }))
-  }
-
-  // Field policy options
-  const fieldPolicyOptions = ref<Array<{ label: string; value: string }>>([])
-
-  async function loadFieldPolicies() {
-    const { data, error } = await fetchGetAllFieldPolicies()
-    if (error) return
-    fieldPolicyOptions.value = data.map((p: Api.FieldPolicy.Policy) => ({
-      label: p.name,
-      value: p.id,
-    }))
   }
 
   const roleId = computed(() => props.rowData?.id || "")
@@ -114,12 +90,16 @@
   }
 
   async function handleSubmit() {
+    if (!operationAccess.value) return
     await validate()
+    if (!operationAccess.value) return
 
     if (props.operateType === "add") {
+      if (!operationAccess.value) return
       const { error } = await fetchCreateRole(model.value)
       if (error) return
     } else {
+      if (!operationAccess.value) return
       const { error } = await fetchUpdateRole(props.rowData!.id!, buildRoleUpdatePayload(model.value))
       if (error) return
     }
@@ -133,8 +113,6 @@
     if (visible.value) {
       handleInitModel()
       restoreValidation()
-      loadPolicies()
-      loadFieldPolicies()
     }
   })
 </script>
@@ -157,27 +135,9 @@
         <NFormItem :label="$t('page.manage.role.roleDesc')" path="description">
           <NInput v-model:value="model.description" :placeholder="$t('page.manage.role.form.roleDesc')" />
         </NFormItem>
-        <NFormItem :label="$t('page.manage.role.dataPolicies')" path="dataPolicyIds">
-          <NSelect
-            v-model:value="model.dataPolicyIds"
-            :options="policyOptions"
-            multiple
-            clearable
-            placeholder="选择数据策略（不选则不限制）"
-          />
-        </NFormItem>
-        <NFormItem :label="$t('page.manage.role.fieldPolicy')" path="fieldPolicyIds">
-          <NSelect
-            v-model:value="model.fieldPolicyIds"
-            :options="fieldPolicyOptions"
-            multiple
-            clearable
-            :placeholder="$t('page.manage.role.fieldPolicyPlaceholder')"
-          />
-        </NFormItem>
       </NForm>
       <NSpace v-if="isEdit">
-        <NButton v-if="hasAuth('manage_role:permission')" @click="openPermissionModal">
+        <NButton v-if="hasAuth('role:grant')" @click="openPermissionModal">
           {{ $t("page.manage.role.permissionConfig") }}
         </NButton>
         <PermissionModal v-model:visible="permissionVisible" :role-id="roleId" />

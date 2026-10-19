@@ -2,11 +2,14 @@
   import { reactive } from "vue"
   import { useRouter } from "vue-router"
   import { NButton, NPopconfirm, NSwitch, NTag } from "naive-ui"
+  import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
   import { fetchDeleteSchedule, fetchGetScheduleList, fetchToggleSchedule } from "@/service/api/worker"
   import { useAppStore } from "@/store/modules/app"
   import { defaultTransform, useNaivePaginatedTable, useTableOperate } from "@/hooks/common/table"
   import { $t } from "@/locales"
   import { useAuth } from "@/hooks/business/auth"
+  import { useTableActions } from "@/hooks/business/table-actions/use-table-actions"
+  import { createScheduleActionModel } from "./modules/table-actions"
   import ScheduleOperateDrawer from "./modules/schedule-operate-drawer.vue"
   import ScheduleSearch from "./modules/schedule-search.vue"
 
@@ -16,11 +19,13 @@
 
   const appStore = useAppStore()
   const router = useRouter()
-  const { hasAuth } = useAuth()
+  const { hasAuth, getActionContext } = useAuth()
+
+  const actions = useTableActions(() => createScheduleActionModel<Api.Worker.PeriodicTaskListItem>(), () => getActionContext(appStore.locale, appStore.isMobile), (row) => row.id)
 
   const searchParams: Api.Worker.PeriodicTaskSearchParams = reactive({
     page: 1,
-    pageSize: 10,
+    pageSize: DEFAULT_PAGE_SIZE,
     enabled: undefined,
     taskName: undefined,
   })
@@ -32,12 +37,12 @@
     return `${$t(`common.scheduleEditor.events.${value.event}`)} · ${value.latitude}°, ${value.longitude}°`
   }
 
-  const { columns, columnChecks, data, loading, getData, getDataByPage, mobilePagination } = useNaivePaginatedTable({
+  const { columns, columnChecks, scrollX, data, loading, getData, getDataByPage, mobilePagination } = useNaivePaginatedTable({
     api: () => fetchGetScheduleList(searchParams),
     transform: (response) => defaultTransform(response),
     onPaginationParamsChange: (params) => {
       searchParams.page = params.page || 1
-      searchParams.pageSize = params.pageSize || 10
+      searchParams.pageSize = params.pageSize || DEFAULT_PAGE_SIZE
     },
     columns: () => [
       {
@@ -98,25 +103,23 @@
         render: (row) => (
           <NSwitch
             value={row.enabled}
-            disabled={!hasAuth("queue_schedule:edit")}
+            disabled={!hasAuth("schedule:update")}
             onUpdateValue={() => handleToggle(row.id)}
           />
         ),
       },
-      {
+      ...actions.column({
         key: "operate",
         title: $t("common.operate"),
-        align: "center",
-        width: 130,
         render: (row) => (
-          <div class="flex-center gap-8px">
-            {hasAuth("queue_schedule:edit") && (
+          <div class="flex items-center justify-start flex-nowrap gap-8px whitespace-nowrap">
+            {actions.visible(row, "edit") && (
               <NButton type="primary" ghost size="small" onClick={() => edit(row.id)}>
                 {$t("common.edit")}
               </NButton>
             )}
-            {hasAuth("queue_schedule:delete") && (
-              <NPopconfirm onPositiveClick={() => handleDelete(row.id)}>
+            {actions.visible(row, "delete") && (
+              <NPopconfirm onPositiveClick={() => actions.run(() => data.value.find((item) => item.id === row.id), "delete", (latest) => handleDelete(latest.id))}>
                 {{
                   default: () => $t("page.manage.worker.schedule.deleteConfirm"),
                   trigger: () => (
@@ -129,7 +132,7 @@
             )}
           </div>
         ),
-      },
+      }),
     ],
   })
 
@@ -174,8 +177,13 @@
       class="card-wrapper sm:flex-1-hidden"
     >
       <template #header-extra>
-        <TableHeaderOperation v-model:columns="columnChecks" :loading="loading" @refresh="getData">
-          <NButton v-if="hasAuth('queue_schedule:add')" size="small" ghost type="primary" @click="handleAdd">
+        <TableHeaderOperation
+          :show-business-actions="hasAuth('schedule:create')"
+          v-model:columns="columnChecks"
+          :loading="loading"
+          @refresh="getData"
+        >
+          <NButton v-if="hasAuth('schedule:create')" size="small" ghost type="primary" @click="handleAdd">
             <template #icon>
               <icon-ic-round-plus class="text-icon" />
             </template>
@@ -188,7 +196,7 @@
         :data="data"
         size="small"
         :flex-height="!appStore.isMobile"
-        :scroll-x="960"
+        :scroll-x="scrollX"
         :loading="loading"
         remote
         :row-key="(row) => row.id"

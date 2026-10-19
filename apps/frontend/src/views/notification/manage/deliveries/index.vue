@@ -1,6 +1,11 @@
 <script setup lang="tsx">
   import { computed, onMounted, onScopeDispose, ref } from "vue"
   import type { DataTableColumns } from "naive-ui"
+  import { NButton } from "naive-ui"
+  import { residentActionModel } from "@/hooks/business/table-actions/layout"
+  import { useTableActions } from "@/hooks/business/table-actions/use-table-actions"
+  import { tableScrollWidth } from "@/hooks/common/table-columns"
+  import { PAGE_SIZE_OPTIONS } from "@/constants/pagination"
   import { useAuth } from "@/hooks/business/auth"
   import { useAppStore } from "@/store/modules/app"
   import { useRouteStore } from "@/store/modules/route"
@@ -17,7 +22,7 @@
   import AnnouncementDetail from "../announcements/modules/announcement-detail.vue"
 
   defineOptions({ name: "NotificationDeliveries" })
-  const { hasAuth } = useAuth()
+  const { hasAuth, getActionContext } = useAuth()
   const appStore = useAppStore()
   const routeStore = useRouteStore()
   // List access comes from this page's route; useAuth only contains button permissions.
@@ -52,12 +57,13 @@
   )))
   const pagination = computed(() => ({
     page: page.value, pageSize: pageSize.value, itemCount: total.value,
-    showSizePicker: true, pageSizes: [10, 20, 50],
+    showSizePicker: true, pageSizes: [...PAGE_SIZE_OPTIONS],
     simple: appStore.isMobile,
     prefix: () => $t("page.notification.manage.deliveries.recordCount", { count: total.value }),
     onUpdatePage: (value: number) => state.setPage(value),
     onUpdatePageSize: (value: number) => state.setPageSize(value),
   }))
+  const actions = useTableActions(() => residentActionModel<Api.Notification.Delivery>({ detail: t("details") }), () => getActionContext(appStore.locale, appStore.isMobile), (row) => row.id)
   const columns = computed<DataTableColumns<Api.Notification.Delivery>>(() => [
     { key: "recipient", title: t("recipient"), width: 250,
       render: (row) => <DeliveryRecipient recipient={row.recipient} userId={row.userId} /> },
@@ -65,9 +71,11 @@
     { key: "status", title: t("deliveryStatus"), width: 120, render: (row) => <DeliveryStatus status={row.status} /> },
     { key: "attemptCount", title: t("attemptCount"), width: 100, render: (row) => row.attemptCount },
     { key: "result", title: t("latestResult"), minWidth: 240, render: (row) => <DeliveryResult row={row} /> },
-    { key: "action", title: $t("common.operate"), width: 90, fixed: "right", align: "center",
-      render: (row) => <NButton text type="primary" size="small" onClick={() => showDetails(row)}>{t("details")}</NButton> },
+    ...actions.column({ key: "action", title: $t("common.operate"), fixed: "right",
+      render: (row) => <NButton text type="primary" size="small" onClick={() => showDetails(row)}>{t("details")}</NButton> }),
   ])
+
+  const scrollX = computed(() => tableScrollWidth(columns.value))
 
   function showDetails(row: Api.Notification.Delivery) {
     detailRow.value = row
@@ -272,7 +280,7 @@
         :loading="loading"
         :row-key="(row) => row.id"
         :pagination="pagination"
-        :scroll-x="910"
+        :scroll-x="scrollX"
         size="small"
         remote
       >

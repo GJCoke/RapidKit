@@ -1,24 +1,25 @@
 import { computed, getCurrentScope, onScopeDispose, ref } from "vue"
+import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
 import { fetchDeliverySummary, fetchGetNotificationDeliveries, fetchRetryFailedDeliveries } from "@/service/api"
 
 export const deliveryPermissions = {
-  messages: "GET:/api/v1/admin/notifications",
-  list: "GET:/api/v1/admin/notification-deliveries",
-  summary: "GET:/api/v1/admin/notification-deliveries/{message_id}/summary",
-  retry: "POST:/api/v1/admin/notification-deliveries/{message_id}/retry-failed",
-}
+  messages: "notification:read",
+  list: "notification-delivery:read",
+  summary: "notification-delivery:read",
+  retry: "notification-delivery:retry",
+} satisfies Record<string, PermissionCode>
 
 export function isMessageId(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim())
 }
 
-export function useDeliveryWorkbench(hasAuth: (permission: string) => boolean) {
+export function useDeliveryWorkbench(hasAuth: (permission: PermissionCode) => boolean) {
   const messageId = ref("")
   const summary = ref<Api.Notification.DeliverySummary | null>(null)
   const records = ref<Api.Notification.Delivery[]>([])
   const total = ref(0)
   const page = ref(1)
-  const pageSize = ref(10)
+  const pageSize = ref(DEFAULT_PAGE_SIZE)
   const status = ref<Api.Notification.DeliveryStatus | null>(null)
   const loading = ref(false)
   const summaryLoading = ref(false)

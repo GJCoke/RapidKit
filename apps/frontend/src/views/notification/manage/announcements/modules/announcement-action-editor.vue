@@ -18,8 +18,8 @@
   const { hasAuth } = useAuth()
   const t = (key: string, params: Record<string, unknown> = {}) =>
     $t(`page.notification.manage.announcements.editor.${key}` as I18nFullKey, params)
-  const mayReadTargets = computed(() => hasAuth("GET:/api/v1/admin/notifications/action-targets"))
-  const mayPreview = computed(() => hasAuth("POST:/api/v1/admin/notifications/action-preview"))
+  const mayReadTargets = computed(() => hasAuth("notification:preview"))
+  const mayPreview = computed(() => hasAuth("notification:preview"))
   const targets = ref<Api.Notification.ActionTarget[]>([])
   const directoryStatus = ref<"idle" | "loading" | "loaded" | "error">("idle")
   const tree = computed(() => actionTargetTree(targets.value))

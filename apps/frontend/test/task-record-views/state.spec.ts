@@ -12,6 +12,7 @@ describe("task view navigation", () => {
   it("defaults to records with a concrete seven day UTC range", () => {
     const state = readTaskView({}, Date.UTC(2026, 9, 8))
     expect(state.view).toBe("records")
+    expect(state.pageSize).toBe(20)
     expect(Date.parse(state.end) - Date.parse(state.start)).toBe(7 * 86400000)
     expect(state.start.endsWith("Z")).toBe(true)
   })
@@ -24,6 +25,16 @@ describe("task view navigation", () => {
       sortBy: "failure",
     })
     expect(readTaskView(writeTaskView(state))).toEqual(state)
+  })
+  it("restores supported page sizes and replaces legacy or invalid sizes with 20", () => {
+    for (const size of [20, 50, 100, 500]) {
+      const state = readTaskView({ groupSize: String(size) })
+      expect(state.pageSize).toBe(size)
+      expect(readTaskView(writeTaskView(state)).pageSize).toBe(size)
+    }
+    for (const groupSize of ["10", "15", "0", "501", "Infinity", "20.5", "invalid"]) {
+      expect(readTaskView({ groupSize }).pageSize).toBe(20)
+    }
   })
   it("drills into exact task while retaining summary pagination and interval", () => {
     const summary = readTaskView({ view: "groups", groupPage: "4", keyword: "jobs" })

@@ -2,6 +2,7 @@
   import { computed, reactive, ref, watch } from "vue"
   import { useMediaQuery } from "@vueuse/core"
   import { NTag } from "naive-ui"
+  import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
   import { defaultTransform, useNaivePaginatedTable, useTableOperate } from "@/hooks/common/table"
   import { useAuth } from "@/hooks/business/auth"
   import { useAppStore } from "@/store/modules/app"
@@ -17,14 +18,14 @@
   defineOptions({ name: "NotificationTemplates" })
 
   const permissions = {
-    create: "POST:/api/v1/admin/notification-templates",
-    update: "PUT:/api/v1/admin/notification-templates/{template_id}",
-    delete: "DELETE:/api/v1/admin/notification-templates/{template_id}",
-  }
+    create: "notification-template:create",
+    update: "notification-template:update",
+    delete: "notification-template:delete",
+  } satisfies Record<string, PermissionCode>
   const { hasAuth } = useAuth()
   const appStore = useAppStore()
   const wideScreen = useMediaQuery("(min-width: 1200px)")
-  const searchParams = reactive<Api.Notification.TemplateListQuery>({ page: 1, pageSize: 10 })
+  const searchParams = reactive<Api.Notification.TemplateListQuery>({ page: 1, pageSize: DEFAULT_PAGE_SIZE })
   const selectedId = ref<string | null>(null)
   const deletingId = ref<string | null>(null)
   const deleteTarget = ref<Api.Notification.Template | null>(null)

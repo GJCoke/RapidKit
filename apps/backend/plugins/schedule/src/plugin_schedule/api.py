@@ -1,5 +1,5 @@
 """
-Schedule domain API routes.
+定时任务管理接口。
 
 Author  : Coke
 Date    : 2026-04-01
@@ -8,8 +8,8 @@ Date    : 2026-04-01
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
-from rapidkit_common.auth import verify_user_permission
+from fastapi import APIRouter, Query
+from rapidkit_common.access import Require
 from rapidkit_common.events import ScheduleCreatedEvent, ScheduleDeletedEvent, ScheduleToggledEvent
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_core.log import get_plugin_logger
@@ -38,23 +38,22 @@ logger = get_plugin_logger("Schedule")
 router = APIRouter(
     prefix="/schedules",
     tags=["Schedule"],
-    dependencies=[Depends(verify_user_permission)],
 )
 
 
-@router.post("/crontab/preview")
+@router.post("/crontab/preview", dependencies=[Require("schedule:read")])
 def get_crontab_preview(body: CrontabPreviewRequest) -> Response[CrontabPreviewResponse]:
     """校验 Crontab，并按当前调度时区返回未来五次计划执行时间。"""
     return Response(data=preview_crontab(body))
 
 
-@router.post("/preview")
+@router.post("/preview", dependencies=[Require("schedule:read")])
 def get_schedule_preview(body: SchedulePreviewRequest) -> Response[SchedulePreviewResponse]:
     """按服务端时区预览调度；固定间隔以当前预览时间为示例起点。"""
     return Response(data=preview_schedule(body))
 
 
-@router.get("")
+@router.get("", dependencies=[Require("schedule:read")])
 async def get_schedules(
     query: Annotated[PeriodicTaskQueryRequest, Query(...)],
     crud: PeriodicTaskCrudDep,
@@ -64,7 +63,7 @@ async def get_schedules(
     return Response(data=data)
 
 
-@router.get("/{schedule_id}")
+@router.get("/{schedule_id}", dependencies=[Require("schedule:read")])
 async def get_schedule(
     schedule_id: UUID,
     crud: PeriodicTaskCrudDep,
@@ -76,7 +75,7 @@ async def get_schedule(
     return Response(data=data)
 
 
-@router.post("")
+@router.post("", dependencies=[Require("schedule:create")])
 async def create_schedule(
     body: PeriodicTaskCreate,
     crud: PeriodicTaskCrudDep,
@@ -87,7 +86,7 @@ async def create_schedule(
     return Response(data=result)
 
 
-@router.put("/{schedule_id}")
+@router.put("/{schedule_id}", dependencies=[Require("schedule:update")])
 async def update_schedule(
     schedule_id: UUID,
     body: PeriodicTaskUpdate,
@@ -98,7 +97,7 @@ async def update_schedule(
     return Response(data=result)
 
 
-@router.patch("/{schedule_id}/toggle")
+@router.patch("/{schedule_id}/toggle", dependencies=[Require("schedule:update")])
 async def toggle_schedule(
     schedule_id: UUID,
     crud: PeriodicTaskCrudDep,
@@ -116,7 +115,7 @@ async def toggle_schedule(
     return Response(data=result)
 
 
-@router.delete("/{schedule_id}")
+@router.delete("/{schedule_id}", dependencies=[Require("schedule:delete")])
 async def delete_schedule(
     schedule_id: UUID,
     crud: PeriodicTaskCrudDep,

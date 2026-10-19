@@ -9,9 +9,10 @@
     itemAlign?: NaiveUI.Align
     loading?: boolean
     showColumnSetting?: boolean
+    showBusinessActions?: boolean
   }
 
-  withDefaults(defineProps<Props>(), { showColumnSetting: true })
+  withDefaults(defineProps<Props>(), { showColumnSetting: true, showBusinessActions: true })
 
   interface Emits {
     (e: "refresh"): void
@@ -31,7 +32,7 @@
 <template>
   <NSpace :align="itemAlign" wrap justify="end" class="lt-sm:w-200px">
     <slot name="prefix"></slot>
-    <slot></slot>
+    <template v-if="showBusinessActions"><slot></slot></template>
     <NButton size="small" @click="refresh">
       <template #icon>
         <icon-mdi-refresh class="text-icon" :class="{ 'animate-spin': loading }" />

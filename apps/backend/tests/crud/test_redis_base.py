@@ -174,7 +174,7 @@ async def test_sadd_smembers_pydantic_models(redis_client: AsyncRedisClient) -> 
     m2 = SampleModel(name="b", age=2)
     await redis_client.sadd(random_key, m1, m2)
     result = await redis_client.smembers(random_key, response_model=SampleModel)
-    assert {r.name for r in list[result]} == {"a", "b"}
+    assert {r.name for r in result} == {"a", "b"}
 
 
 @pytest.mark.asyncio

@@ -11,6 +11,7 @@ import socketio
 from engineio.async_socket import AsyncSocket
 from fastapi_sio_di import AsyncServer
 from plugin_auth.impersonation.models import EndReason
+from plugin_auth.impersonation.session_reader import ImpersonationSessionReaderImpl
 from plugins.auth.tests.test_impersonation_service import setup_service, start  # noqa: F401
 from rapidkit_common.protocols.auth import AuthContext
 from rapidkit_core.config import settings
@@ -214,7 +215,8 @@ async def test_ordinary_real_redis_serialization_disconnect(monkeypatch):
 async def test_stop_after_index_rejects_real_library_handshake(setup_service, monkeypatch):  # noqa: F811
     service, users, factory = setup_service
     record = await start(service, users)
-    monkeypatch.setattr(impersonation, "AsyncSessionLocal", factory)
+    reader = ImpersonationSessionReaderImpl(factory)
+    monkeypatch.setattr(impersonation, "get_service", lambda protocol: reader)
     original_validation = impersonation.validate_registered_identity
     server = socketio.AsyncServer(async_mode="asgi")
     server.eio.sockets["race"] = AsyncSocket(server.eio, "race")

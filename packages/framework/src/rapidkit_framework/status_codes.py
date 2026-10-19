@@ -81,6 +81,8 @@ class StatusCode(BaseStatusCode):
 
     # ==================== Permission errors (004xxx) ====================
     FORBIDDEN = (4001, "common.error.forbidden")
+    RESOURCE_OUT_OF_SCOPE = (4002, "common.error.resourceOutOfScope")
+    FIELD_WRITE_DENIED = (4003, "common.error.fieldWriteDenied")
 
     # ==================== Resource not found (005xxx) ====================
     RESOURCE_NOT_FOUND = (5001, "common.error.resourceNotFound")

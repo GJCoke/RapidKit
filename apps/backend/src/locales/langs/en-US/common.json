@@ -67,6 +67,8 @@
     "stateConflict": "Resource state conflict",
     "concurrentModification": "Concurrent modification conflict",
     "forbidden": "Access denied",
+    "resourceOutOfScope": "The data is outside your data scope",
+    "fieldWriteDenied": "The request modifies fields you are not allowed to change",
     "resourceNotFound": "Resource not found",
     "externalServiceError": "External service call failed",
     "thirdPartyError": "Third-party service error",

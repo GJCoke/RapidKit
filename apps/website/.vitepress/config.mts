@@ -141,7 +141,6 @@ export default defineConfig({
                 { text: "@rapidkit/utils", link: "/packages/utils" },
                 { text: "@rapidkit/hooks", link: "/packages/hooks" },
                 { text: "@rapidkit/axios", link: "/packages/axios" },
-                { text: "@rapidkit/editor", link: "/packages/editor" },
                 { text: "@rapidkit/color", link: "/packages/color" },
               ],
             },

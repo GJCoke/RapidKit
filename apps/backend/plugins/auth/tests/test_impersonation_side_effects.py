@@ -73,12 +73,16 @@ async def test_simulation_does_not_change_real_login_activity_or_online_state(
     assert (await strict_client.delete("/auth/impersonations/current", headers=simulated)).json()["code"] == 0
     await drain_identity_events()
     await session.refresh(target)
-    assert observed == []
     assert target.last_login_time == before_login
     assert (await session.exec(select(func.count()).select_from(UserDailyActivity))).one() == before_activity
     assert await redis.smembers("online_users") == before_online
     assert await redis.get(sid_key) == "real-session"
     stored = await session.get(ImpersonationSession, UUID(created["sessionId"]))
+    # The authenticated administrator may record their own activity; the simulated target must not.
+    assert all(
+        isinstance(event, UserActivityObservedEvent) and event.user_id == str(stored.actor_id)
+        for event in observed
+    )
     records = (await session.exec(select(AuditLog).where(AuditLog.impersonation_session_id == stored.id))).all()
     assert {record.action for record in records} == {"impersonation.start", "impersonation.stop"}
     assert all(record.actor_id == stored.actor_id and record.subject_user_id == target.id for record in records)

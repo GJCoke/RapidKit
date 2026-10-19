@@ -4,6 +4,20 @@ import { describe, expect, it, vi } from "vitest"
 import TaskGroups from "../../src/views/queue/task/modules/task-groups.vue"
 const api = vi.hoisted(() => ({ fetch: vi.fn(), table: null as any }))
 vi.mock("@/service/api", () => ({ fetchTaskStatsByName: api.fetch }))
+vi.mock("@/hooks/business/auth", () => ({
+  useAuth: () => ({
+    hasAuth: () => false,
+    getActionContext: () => ({
+      ready: true,
+      hasAuth: () => false,
+      actorId: "actor",
+      isAdmin: false,
+      impersonating: false,
+      locale: "zh-CN",
+    }),
+  }),
+}))
+vi.mock("@/store/modules/app", () => ({ useAppStore: () => ({ locale: "zh-CN", isMobile: false }) }))
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
 vi.mock("naive-ui", () => ({
   NCard: {
@@ -91,6 +105,7 @@ describe("task summary table", () => {
     ])
     api.table.pagination.onUpdatePage(4)
     expect(pages).toEqual([4])
+    expect(api.table.pagination.pageSizes).toEqual([20, 50, 100, 500])
     resolveOld({ data: { records: [{ taskName: "stale" }], total: 99 }, error: null })
     await flush()
     expect(host.textContent).not.toContain("stale")

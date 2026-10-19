@@ -21,7 +21,6 @@ from rapidkit_common.events.schedule import (
     ScheduleDeletedEvent,
     ScheduleToggledEvent,
 )
-from rapidkit_common.events.script import ScriptExecutedEvent
 from rapidkit_common.events.user import (
     UserCreatedEvent,
     UserDeletedEvent,
@@ -39,7 +38,6 @@ __all__ = [
     "ScheduleCreatedEvent",
     "ScheduleDeletedEvent",
     "ScheduleToggledEvent",
-    "ScriptExecutedEvent",
     "SystemStartedEvent",
     "TaskCancelledEvent",
     "TaskFailedEvent",

@@ -16,7 +16,9 @@ from plugin_notification.orchestrator import MessageOrchestrator
 from plugin_notification.preference import PreferenceResolver
 from plugin_notification.validation import validate_action
 from pydantic import ValidationError
-from rapidkit_common.auth import verify_user_permission
+from rapidkit_common.access import access_guard_dependency, inspect_route_access
+from rapidkit_common.access_testing import allow_access, deny_access
+from rapidkit_common.auth import _get_current_user_placeholder
 from rapidkit_common.deps import get_async_session
 from rapidkit_common.protocols.menu import ActionParameter, ActionTarget
 from rapidkit_common.protocols.notification import AudienceRule, NotificationAction, NotificationCommand
@@ -280,7 +282,9 @@ async def test_action_preview_http_contract_is_camel_case_and_read_only(db_sessi
     monkeypatch.setattr("plugin_notification.actions.get_service", lambda contract: targets)
     app = FastAPI()
     app.include_router(admin_api.router)
-    app.dependency_overrides[verify_user_permission] = lambda: SimpleNamespace(id=uuid4(), is_admin=False, roles=[])
+    user = SimpleNamespace(id=uuid4(), is_admin=False, roles=[])
+    app.dependency_overrides[access_guard_dependency] = allow_access(user)
+    app.dependency_overrides[_get_current_user_placeholder] = lambda: user
     app.dependency_overrides[get_async_session] = lambda: db_session
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         listing = await client.get("/admin/notifications/action-targets")

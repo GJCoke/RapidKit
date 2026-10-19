@@ -21,7 +21,6 @@ v1_router.include_router(router.router)     # 路由管理
 v1_router.include_router(roles.router)      # 角色管理
 v1_router.include_router(manage.router)     # 菜单管理
 v1_router.include_router(user.router)       # 用户管理
-v1_router.include_router(script.router)     # 脚本管理
 ```
 
 ## 统一响应结构

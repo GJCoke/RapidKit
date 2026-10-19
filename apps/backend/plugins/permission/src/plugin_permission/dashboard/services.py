@@ -6,6 +6,7 @@ from collections.abc import Iterable, Mapping, Set
 
 from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
 
+from plugin_permission.catalog.registry import PermissionCatalog
 from plugin_permission.dashboard.schemas import DashboardCapabilitiesResponse
 
 
@@ -14,14 +15,20 @@ def collect_dashboard_modules(manifests: Iterable[PluginManifest]) -> list[Dashb
     return [definition for manifest in manifests for definition in manifest.dashboard_modules]
 
 
+def find_unknown_dashboard_codes(manifests: Iterable[PluginManifest], catalog: PermissionCatalog) -> list[str]:
+    """返回首页模块声明中不在目录里的权限码（去重、排序）。"""
+    declared = {code for definition in collect_dashboard_modules(manifests) for code in definition.required_permissions}
+    return sorted(declared - set(catalog.codes))
+
+
 def resolve_capabilities(
     definitions: Iterable[DashboardModuleDef],
-    permissions: Set[str],
+    codes: Set[str],
     *,
     is_admin: bool,
     role_versions: Mapping[str, int],
 ) -> DashboardCapabilitiesResponse:
-    """Resolve authorized module keys and a stable permission revision."""
+    """Resolve authorized modules; ``codes`` 为用户已展开的权限码。"""
     by_key: dict[str, DashboardModuleDef] = {}
     for definition in definitions:
         if definition.key in by_key:
@@ -31,7 +38,7 @@ def resolve_capabilities(
     allowed_modules = [
         key
         for key, definition in sorted(by_key.items())
-        if is_admin or set(definition.required_permissions).issubset(permissions)
+        if is_admin or set(definition.required_permissions).issubset(codes)
     ]
     revision_payload = {
         "allowedModules": allowed_modules,

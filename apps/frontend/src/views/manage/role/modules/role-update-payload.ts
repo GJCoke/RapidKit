@@ -3,8 +3,6 @@ interface RoleUpdateSource {
   code: string
   description: string
   status: Api.Common.EnableStatus | null
-  dataPolicyIds: string[]
-  fieldPolicyIds: string[]
 }
 
 export function buildRoleUpdatePayload<T extends RoleUpdateSource>(source: T): Api.SystemManage.UpdateRoleBody {
@@ -13,7 +11,5 @@ export function buildRoleUpdatePayload<T extends RoleUpdateSource>(source: T): A
     code: source.code,
     description: source.description,
     status: source.status!,
-    dataPolicyIds: source.dataPolicyIds,
-    fieldPolicyIds: source.fieldPolicyIds,
   }
 }

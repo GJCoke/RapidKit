@@ -19,11 +19,6 @@ class Query(BaseModel):
     value: str
 
 
-class Button(BaseModel):
-    code: str
-    desc: str
-
-
 class MenuSchema(BaseModel):
     """菜单基础数据结构。"""
 
@@ -45,8 +40,7 @@ class MenuSchema(BaseModel):
     multi_tab: bool = Field(False, description="是否支持多页签")
     fixed_index_in_tab: int | None = Field(None, description="固定页签次序")
     query: list[Query] = Field([], description="路由参数")
-    buttons: list[Button] = Field([], description="按钮权限")
-    interfaces: list[str] = Field([], description="绑定的接口权限码列表")
+    permission: str | None = Field(None, max_length=100, description="进入页面需要的权限码，仅非常量页面菜单使用")
 
 
 class MenuMutationSchema(MenuSchema):
@@ -90,8 +84,7 @@ class MenuUpdate(BaseRequest):
     multi_tab: bool | SkipJsonSchema[None] = Field(None, description="是否支持多页签")
     fixed_index_in_tab: int | None = Field(None, description="固定页签次序")
     query: list[Query] | SkipJsonSchema[None] = Field(None, description="路由参数")
-    buttons: list[Button] | SkipJsonSchema[None] = Field(None, description="按钮权限")
-    interfaces: list[str] | SkipJsonSchema[None] = Field(None, description="绑定的接口权限码列表")
+    permission: str | None = Field(None, max_length=100, description="进入页面需要的权限码，仅非常量页面菜单使用")
     active_menu: str | None = Field(None, description="高亮祖先菜单的路由名称")
 
     @model_validator(mode="before")
@@ -121,8 +114,6 @@ class MenuUpdate(BaseRequest):
             "multi_tab",
             "multiTab",
             "query",
-            "buttons",
-            "interfaces",
         }
         null_fields = sorted(field for field in non_nullable_fields if field in data and data[field] is None)
         if null_fields:

@@ -101,10 +101,12 @@ async def invalidate_user_cache(redis: AsyncRedisClient, user_id: UUID) -> None:
 
 
 # api.py — 路由层注入依赖后传入 Service
-@router.delete("/{user_id}")
+from rapidkit_common.access import Require
+from rapidkit_common.auth import UserDBDep
+@router.delete("/{user_id}", dependencies=[Require("user:delete")])
 async def delete_user(
     user_id: UUID,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     user_crud: UserManageCrudDep,
     redis: RedisDep,
 ) -> Response[bool]:
@@ -189,7 +191,7 @@ Redis 缓存失效等外部副作用必须在 DB commit 成功后才执行，使
 ```python
 from rapidkit_common.transaction import after_commit
 
-@router.delete("/{user_id}")
+@router.delete("/{user_id}", dependencies=[Require("user:delete")])
 async def delete_user(user_id: UUID, redis: RedisDep, session: SessionDep, ...):
     await user_crud.delete(user_id)
     after_commit(session, invalidate_user_cache, redis, user_id)

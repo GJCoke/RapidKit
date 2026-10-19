@@ -13,7 +13,7 @@ def test_adds_only_notification_tree_and_keeps_permission_metadata():
     assert root.component == "layout.base"
     children = [menu for menu in missing if menu is not root]
     assert all(menu.parent_id == root.id for menu in children)
-    assert all(menu.interfaces and menu.buttons for menu in children)
+    assert all(menu.permission for menu in children)
     assert unrelated.menu_name == "Custom"
 
 

@@ -4,6 +4,8 @@ from rapidkit_common.protocols.operations import WorkerOperationsProvider
 from rapidkit_framework.plugin import PluginManifest
 from rapidkit_framework.services import ServiceRegistry
 
+from plugin_worker.permissions import PERMISSION_CODES, PERMISSION_PACKAGES, RESOURCES
+
 
 def register() -> PluginManifest:
     """返回 worker 插件的 manifest。"""
@@ -24,6 +26,9 @@ def register() -> PluginManifest:
     return PluginManifest(
         name="worker",
         version="0.1.0",
+        resources=RESOURCES,
+        permission_codes=PERMISSION_CODES,
+        permission_packages=PERMISSION_PACKAGES,
         router=combined,
         models=[CeleryWorker, CeleryTaskResult, QueueDepthSnapshot],
         provides=[WorkerOperationsProvider],

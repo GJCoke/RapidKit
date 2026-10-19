@@ -53,7 +53,7 @@ async def seed() -> None:
     async with AsyncSessionLocal() as session:
         await init_db(session)
         role = (await session.exec(select(Role).where(Role.code == "GUEST"))).one()
-        role.interface_permissions = [*role.interface_permissions, "POST:/api/v1/tasks/trigger"]
+        role.permission_codes = [*role.permission_codes, "task:trigger"]
         session.add(role)
         interval = IntervalSchedule.model_validate({"every": 3, "period": Period.SECONDS})
         session.add(interval)

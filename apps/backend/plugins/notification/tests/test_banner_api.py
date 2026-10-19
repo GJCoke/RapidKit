@@ -16,7 +16,9 @@ from plugin_notification.admin_service import AdminNotificationService
 from plugin_notification.api import router as public_router
 from plugin_notification.banner_service import BannerAnnouncementService
 from plugin_notification.models import BANNER_STATE_ID, NotificationBannerState
-from rapidkit_common.auth import _get_current_user_placeholder, verify_user_permission
+from rapidkit_common.access import access_guard_dependency, inspect_route_access
+from rapidkit_common.access_testing import allow_access, deny_access
+from rapidkit_common.auth import _get_current_user_placeholder
 from rapidkit_core.database import get_async_session
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
@@ -41,7 +43,7 @@ async def test_public_read_requires_auth_but_no_management_permission_and_hides_
 
     app.dependency_overrides[get_async_session] = session
     app.dependency_overrides[_get_current_user_placeholder] = unauthenticated
-    app.dependency_overrides[verify_user_permission] = forbidden
+    app.dependency_overrides[access_guard_dependency] = deny_access()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         assert (await client.get("/api/v1/notifications/top-banner")).status_code == 401
         app.dependency_overrides[_get_current_user_placeholder] = lambda: SimpleNamespace(id=uuid4())
@@ -78,7 +80,7 @@ async def test_banner_preflight_readonly_and_create_requires_publish_permission(
 
     @app.middleware("http")
     async def context(request, call_next):
-        request.state.permission_ctx = SimpleNamespace(permissions=permissions)
+        request.state.permission_ctx = SimpleNamespace(allows_route=lambda key: key in permissions)
         return await call_next(request)
 
     @app.exception_handler(AppException)
@@ -89,7 +91,8 @@ async def test_banner_preflight_readonly_and_create_requires_publish_permission(
         yield db_session
 
     app.dependency_overrides[get_async_session] = session
-    app.dependency_overrides[verify_user_permission] = lambda: user
+    app.dependency_overrides[access_guard_dependency] = allow_access(user)
+    app.dependency_overrides[_get_current_user_placeholder] = lambda: user
     app.dependency_overrides[_get_current_user_placeholder] = lambda: user
     app.dependency_overrides[get_admin_service] = lambda: admin
     app.dependency_overrides[get_banner_service] = lambda: service

@@ -1,11 +1,12 @@
 <script setup lang="ts">
   import { computed, ref, watch } from "vue"
+  import { jsonClone } from "@rapidkit/utils"
+  import { useOperationAccess } from "@/hooks/business/table-actions/use-operation-access"
   import PythonArgumentsEditor from "@/components/common/python-arguments-editor/index.vue"
   import type { PythonArguments } from "@/components/common/python-arguments-editor/arguments"
   import ScheduleEditor from "@/components/common/schedule-editor/index.vue"
   import { defaultSchedule, isCompleteSchedule } from "@/components/common/schedule-editor/schedule"
   import type { ScheduleValue } from "@/components/common/schedule-editor/schedule"
-  import { jsonClone } from "@rapidkit/utils"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
   import {
@@ -36,6 +37,10 @@
   const visible = defineModel<boolean>("visible", {
     default: false,
   })
+  const operationAccess = useOperationAccess(
+    () => (props.operateType === "edit" ? "schedule:update" : "schedule:create"),
+    visible,
+  )
 
   const { formRef, validate, restoreValidation } = useNaiveForm()
   const { defaultRequiredRule } = useFormRules()
@@ -151,9 +156,11 @@
   }
 
   async function submitSchedule() {
+    if (!operationAccess.value) return
     const operation = detailRequest
     if (argumentsLoading.value || argumentsLoadFailed.value) return
     await validate()
+    if (!operationAccess.value) return
     if (!argumentsRef.value?.validate()) return
     if (!(await scheduleRef.value?.validate()) || !isCompleteSchedule(scheduleModel.value)) return
     if (!visible.value || operation !== detailRequest) return
@@ -169,9 +176,11 @@
     }
 
     if (props.operateType === "add") {
+      if (!operationAccess.value) return
       const { error } = await fetchCreateSchedule(baseData)
       if (error) return
     } else if (props.rowData) {
+      if (!operationAccess.value) return
       const { error } = await fetchUpdateSchedule(props.rowData.id, {
         ...baseData,
       })

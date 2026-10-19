@@ -29,7 +29,7 @@ class PaginatedRequest(BaseRequest):
     """统一分页请求。"""
 
     page: int = Field(1, ge=1, description="当前页码。")
-    page_size: int = Field(10, ge=1, le=100, description="每页条数。")
+    page_size: int = Field(20, ge=1, le=500, description="每页条数。")
 
 
 class SearchRequest(BaseRequest):

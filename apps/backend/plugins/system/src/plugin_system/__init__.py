@@ -8,6 +8,7 @@ from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
 from rapidkit_framework.services import ServiceRegistry
 
 from plugin_system.impersonation_audit import ImpersonationAuditWriterImpl
+from plugin_system.permissions import PERMISSION_CODES, RESOURCES
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -83,6 +84,8 @@ def register() -> PluginManifest:
     return PluginManifest(
         name="system",
         version="0.1.0",
+        resources=RESOURCES,
+        permission_codes=PERMISSION_CODES,
         router=router,
         models=[AuditLog, ActivityEvent],
         provides=[ImpersonationAuditWriter],
@@ -90,7 +93,7 @@ def register() -> PluginManifest:
         dashboard_modules=[
             DashboardModuleDef(
                 key="dashboard.overview",
-                required_permissions=("GET:/api/v1/system/stats/operations-overview",),
+                required_permissions=("dashboard:read",),
                 realtime_topics=(
                     "dashboard:online_users",
                     "dashboard:worker_status",
@@ -100,27 +103,24 @@ def register() -> PluginManifest:
             ),
             DashboardModuleDef(
                 key="dashboard.application-health",
-                required_permissions=("GET:/api/v1/system/stats/health",),
+                required_permissions=("dashboard:health",),
             ),
             DashboardModuleDef(
                 key="dashboard.infrastructure",
-                required_permissions=(
-                    "GET:/api/v1/system/stats/infrastructure",
-                    "GET:/api/v1/system/stats/resources",
-                ),
+                required_permissions=("dashboard:infrastructure",),
                 realtime_topics=("dashboard:resources",),
             ),
             DashboardModuleDef(
                 key="dashboard.business",
-                required_permissions=("GET:/api/v1/system/stats/business",),
+                required_permissions=("dashboard:business",),
             ),
             DashboardModuleDef(
                 key="dashboard.activity",
-                required_permissions=("GET:/api/v1/system/activities",),
+                required_permissions=("dashboard:activity",),
                 realtime_topics=("dashboard:activity.created",),
             ),
         ],
-        dependencies=["auth", "menu", "script"],
+        dependencies=["auth", "menu"],
         sio_modules=["plugin_system.events"],
         on_startup=[_startup],
         on_shutdown=[_shutdown],

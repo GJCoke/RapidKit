@@ -1,3 +1,5 @@
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/constants/pagination"
+
 export type TaskViewState = {
   view: "records" | "groups"
   task: string
@@ -44,7 +46,7 @@ export function readTaskView(query: Record<string, unknown>, now = Date.now()): 
       Number.isSafeInteger(Number(value("groupPage"))) && Number(value("groupPage")) > 0
         ? Number(value("groupPage"))
         : 1,
-    pageSize: [10, 20, 50, 100].includes(Number(value("groupSize"))) ? Number(value("groupSize")) : 10,
+    pageSize: PAGE_SIZE_OPTIONS.includes(Number(value("groupSize"))) ? Number(value("groupSize")) : DEFAULT_PAGE_SIZE,
     sortBy: ["total", "failure"].includes(value("sortBy"))
       ? (value("sortBy") as TaskViewState["sortBy"])
       : "lastExecutedAt",

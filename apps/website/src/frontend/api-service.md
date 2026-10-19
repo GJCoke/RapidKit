@@ -113,7 +113,6 @@ API 函数按业务模块组织在 `src/service/api/` 目录下：
 | `auth.ts`          | 认证相关：登录、获取公钥、获取用户信息               |
 | `route.ts`         | 路由相关：获取常量路由、获取用户路由、路由存在性检查 |
 | `system-manage.ts` | 系统管理：角色、用户、菜单管理                       |
-| `script.ts`        | 脚本管理                                             |
 | `worker.ts`        | Worker 管理                                          |
 
 所有模块通过 `src/service/api/index.ts` 统一导出。

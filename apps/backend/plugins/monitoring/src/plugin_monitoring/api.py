@@ -9,8 +9,8 @@ Date   : 2026-04-13
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
-from rapidkit_common.auth import verify_user_permission
+from fastapi import APIRouter, Query
+from rapidkit_common.access import Require
 from rapidkit_common.deps import SessionDep
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 
@@ -29,11 +29,10 @@ from plugin_monitoring.services import get_distribution, get_list, get_overview,
 router = APIRouter(
     prefix="/system",
     tags=["System"],
-    dependencies=[Depends(verify_user_permission)],
 )
 
 
-@router.get("/stats/api/overview", summary="API 监控概览")
+@router.get("/stats/api/overview", summary="API 监控概览", dependencies=[Require("monitoring:read")])
 async def get_api_overview(
     session: SessionDep,
     query: Annotated[TimeRangeQuery, Query(...)],
@@ -43,7 +42,7 @@ async def get_api_overview(
     return Response(data=data)
 
 
-@router.get("/stats/api/top", summary="API Top N 排行")
+@router.get("/stats/api/top", summary="API Top N 排行", dependencies=[Require("monitoring:read")])
 async def get_api_top(
     session: SessionDep,
     query: Annotated[ApiTopQuery, Query(...)],
@@ -55,7 +54,7 @@ async def get_api_top(
     return Response(data=data)
 
 
-@router.get("/stats/api/distribution", summary="API 请求占比分布")
+@router.get("/stats/api/distribution", summary="API 请求占比分布", dependencies=[Require("monitoring:read")])
 async def get_api_distribution(
     session: SessionDep,
     query: Annotated[TimeRangeQuery, Query(...)],
@@ -65,7 +64,7 @@ async def get_api_distribution(
     return Response(data=data)
 
 
-@router.get("/stats/api/trend", summary="API 请求量趋势")
+@router.get("/stats/api/trend", summary="API 请求量趋势", dependencies=[Require("monitoring:read")])
 async def get_api_trend(
     session: SessionDep,
     query: Annotated[TimeRangeQuery, Query(...)],
@@ -75,7 +74,7 @@ async def get_api_trend(
     return Response(data=data)
 
 
-@router.get("/stats/api/list", summary="API 明细列表")
+@router.get("/stats/api/list", summary="API 明细列表", dependencies=[Require("monitoring:read")])
 async def get_api_list(
     session: SessionDep,
     query: Annotated[ApiListQuery, Query(...)],

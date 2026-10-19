@@ -87,28 +87,12 @@ export const generatedRoutes: GeneratedRoute[] = [{
       i18nKey: 'route.manage_audit-log'
     }
   }, {
-    name: 'manage_data-policy',
-    path: '/manage/data-policy',
-    component: 'view.manage_data-policy',
-    meta: {
-      title: 'manage_data-policy',
-      i18nKey: 'route.manage_data-policy'
-    }
-  }, {
     name: 'manage_department',
     path: '/manage/department',
     component: 'view.manage_department',
     meta: {
       title: 'manage_department',
       i18nKey: 'route.manage_department'
-    }
-  }, {
-    name: 'manage_field-policy',
-    path: '/manage/field-policy',
-    component: 'view.manage_field-policy',
-    meta: {
-      title: 'manage_field-policy',
-      i18nKey: 'route.manage_field-policy'
     }
   }, {
     name: 'manage_menu',
@@ -118,6 +102,22 @@ export const generatedRoutes: GeneratedRoute[] = [{
       title: 'manage_menu',
       i18nKey: 'route.manage_menu',
       icon: 'material-symbols:route'
+    }
+  }, {
+    name: 'manage_permission-extension',
+    path: '/manage/permission-extension',
+    component: 'view.manage_permission-extension',
+    meta: {
+      title: 'manage_permission-extension',
+      i18nKey: 'route.manage_permission-extension'
+    }
+  }, {
+    name: 'manage_permission-package',
+    path: '/manage/permission-package',
+    component: 'view.manage_permission-package',
+    meta: {
+      title: 'manage_permission-package',
+      i18nKey: 'route.manage_permission-package'
     }
   }, {
     name: 'manage_role',
@@ -268,16 +268,6 @@ export const generatedRoutes: GeneratedRoute[] = [{
       icon: 'material-symbols:history-2'
     }
   }]
-}, {
-  name: 'script',
-  path: '/script',
-  component: 'layout.base$view.script',
-  meta: {
-    title: 'script',
-    i18nKey: 'route.script',
-    icon: 'streamline-ultimate:programming-browser-1-bold',
-    order: 12
-  }
 }, {
   name: 'socketio',
   path: '/socketio',

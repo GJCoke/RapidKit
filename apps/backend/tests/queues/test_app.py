@@ -24,6 +24,7 @@ def test_plugin_tasks_are_imported_before_worker_task_registry_is_built() -> Non
 
 
 def test_celery_plugin_discovery_does_not_register_api_event_handlers(monkeypatch) -> None:
+    monkeypatch.setattr(service_registry, "_services", dict(service_registry._services))
     discover = MagicMock(return_value=PluginLoadResult(plugins=[]))
     monkeypatch.setattr("rapidkit_framework.loader.discover_and_load_plugins", discover)
 
@@ -46,7 +47,7 @@ def test_celery_plugin_discovery_registers_runtime_services(monkeypatch) -> None
         "rapidkit_framework.loader.discover_and_load_plugins",
         MagicMock(return_value=PluginLoadResult(plugins=[manifest])),
     )
-    service_registry.clear()
+    monkeypatch.setattr(service_registry, "_services", {})
 
     try:
         configure_from_plugins()

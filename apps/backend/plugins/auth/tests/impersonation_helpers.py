@@ -6,9 +6,9 @@ from typing import cast
 
 import pytest_asyncio
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
-from plugin_permission.role.deps import verify_user_permission
 from plugin_permission.router.sync import store_router_in_db
 from plugin_user.models import User
+from rapidkit_common.access import access_guard_dependency
 from rapidkit_framework.events import event_bus
 from rapidkit_security import encrypt_message, hash_password, load_public_pem
 
@@ -16,11 +16,11 @@ from rapidkit_security import encrypt_message, hash_password, load_public_pem
 @pytest_asyncio.fixture
 async def strict_client(client, init):
     app = sys.modules["src.main"].app
-    override = app.dependency_overrides.pop(verify_user_permission, None)
+    guard_override = app.dependency_overrides.pop(access_guard_dependency, None)
     await store_router_in_db(app.routes)
     yield client
-    if override is not None:
-        app.dependency_overrides[verify_user_permission] = override
+    if guard_override is not None:
+        app.dependency_overrides[access_guard_dependency] = guard_override
 
 
 @pytest_asyncio.fixture

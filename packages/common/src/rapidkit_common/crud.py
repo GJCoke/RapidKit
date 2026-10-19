@@ -236,7 +236,7 @@ class BaseCRUD(Generic[Model]):
             total: int = rows[0][1]
         else:
             records = []
-            total = 0
+            total = await self.get_count(*filters)
 
         if schema is not None:
             return PaginatedResponse(

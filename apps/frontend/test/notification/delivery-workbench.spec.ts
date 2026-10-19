@@ -63,15 +63,15 @@ describe("delivery workbench", () => {
       messageId: firstId,
       status: "dead",
       page: 1,
-      pageSize: 10,
+      pageSize: 20,
     })
-    await state.setPageSize(20)
-    expect(state.pageSize.value).toBe(20)
+    await state.setPageSize(500)
+    expect(state.pageSize.value).toBe(500)
     expect(api.fetchGetNotificationDeliveries).toHaveBeenLastCalledWith({
       messageId: firstId,
       status: "dead",
       page: 1,
-      pageSize: 20,
+      pageSize: 500,
     })
   })
 

@@ -1,5 +1,5 @@
 """
-Auth Api.
+用户认证接口。
 
 Author : Coke
 Date   : 2025-03-11
@@ -8,6 +8,7 @@ Date   : 2025-03-11
 from typing import cast
 
 from fastapi import APIRouter, Depends
+from rapidkit_common.access import Authenticated, Public
 from rapidkit_common.auth import DenyImpersonation
 from rapidkit_common.deps import RedisDep, check_debug
 from rapidkit_common.events import UserLogoutEvent
@@ -45,13 +46,13 @@ logger = get_plugin_logger("Auth")
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.get("/keys/public")
+@router.get("/keys/public", dependencies=[Public])
 async def get_public_key() -> Response[str]:
     """得到用于 RSA 加密密码的公开密钥。"""
     return Response(data=auth_settings.RSA_PUBLIC_KEY.get_secret_value())
 
 
-@router.post("/login")
+@router.post("/login", dependencies=[Public])
 async def login(
     body: LoginRequest,
     auth: AuthCrudDep,
@@ -71,7 +72,7 @@ async def login(
     return Response(data=token)
 
 
-@router.post("/logout", dependencies=[Depends(DenyImpersonation)])
+@router.post("/logout", dependencies=[Depends(DenyImpersonation), Authenticated])
 async def logout(auth: UserAccessJWTDep, token_store: TokenStoreDep, redis: RedisDep) -> Response[bool]:
     """登出当前用户。"""
     await token_store.revoke(auth.sub, auth.jti)
@@ -85,7 +86,7 @@ async def logout(auth: UserAccessJWTDep, token_store: TokenStoreDep, redis: Redi
     return Response(data=True)
 
 
-@router.post("/token/refresh", dependencies=[Depends(DenyImpersonation)])
+@router.post("/token/refresh", dependencies=[Depends(DenyImpersonation), Public])
 async def refresh_token(
     jwt_user: UserRefreshJWTDep,
     user: UserRefreshDep,
@@ -98,7 +99,7 @@ async def refresh_token(
     return Response(data=token)
 
 
-@router.post("/login/swagger", include_in_schema=False, dependencies=[Depends(check_debug)])
+@router.post("/login/swagger", include_in_schema=False, dependencies=[Depends(check_debug), Public])
 async def login_swagger(
     form: OAuth2Form,
     auth: AuthCrudDep,
@@ -117,7 +118,7 @@ async def login_swagger(
     return OAuth2TokenResponse(access_token=token.access_token, token_type="bearer")
 
 
-@router.get("/user/info")
+@router.get("/user/info", dependencies=[Authenticated])
 async def get_user_info(user: UserDBDep, redis: RedisDep) -> Response[UserInfoResponse]:
     """检索当前的用户信息。"""
     user_data = UserInfoResponse.model_validate(user)
@@ -125,5 +126,6 @@ async def get_user_info(user: UserDBDep, redis: RedisDep) -> Response[UserInfoRe
     if not user.is_admin:
         cache_mgr = get_service(PermissionCacheManager)
         user_data.buttons = await cache_mgr.get_buttons(user.id, user.roles, redis)
+        user_data.restricted_fields = await cache_mgr.get_restricted_fields(user.id, user.roles, redis)
 
     return Response(data=user_data)

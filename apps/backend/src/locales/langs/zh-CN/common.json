@@ -67,6 +67,8 @@
     "stateConflict": "资源状态冲突",
     "concurrentModification": "并发修改冲突",
     "forbidden": "没有权限执行此操作",
+    "resourceOutOfScope": "数据超出当前角色的数据范围",
+    "fieldWriteDenied": "包含无权修改的字段",
     "resourceNotFound": "资源不存在",
     "externalServiceError": "外部服务调用失败",
     "thirdPartyError": "第三方服务错误",

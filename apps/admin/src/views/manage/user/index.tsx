@@ -35,7 +35,7 @@ export default function UserManagementPage() {
           <Button variant="ghost" size="sm" onClick={() => navigate(`/manage/user-detail/${user.id}`)}>
             详情
           </Button>
-          <Can permission="manage_user:edit">
+          <Can permission="user:update">
             <Button variant="ghost" size="sm" onClick={() => operate.openEdit(user)}>
               编辑
             </Button>
@@ -50,12 +50,12 @@ export default function UserManagementPage() {
               </Button>
             )}
           </Can>
-          <Can permission="manage_user:password">
+          <Can permission="user:reset-password">
             <Button variant="ghost" size="sm" onClick={() => setPasswordUser(user)}>
               改密
             </Button>
           </Can>
-          <Can permission="manage_user:delete">
+          <Can permission="user:delete">
             <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setDeleteIds([user.id])}>
               删除
             </Button>
@@ -97,10 +97,10 @@ export default function UserManagementPage() {
       <TableHeaderOperation
         leading={
           <>
-            <Can permission="manage_user:add">
+            <Can permission="user:create">
               <Button onClick={operate.openAdd}>新增用户</Button>
             </Can>
-            <Can permission="manage_user:delete">
+            <Can permission="user:delete">
               <Button variant="destructive" disabled={!selected.length} onClick={() => setDeleteIds(selected)}>
                 批量删除
               </Button>

@@ -1,31 +1,25 @@
 """
 PermissionContext — request-level permission container.
 
-Built once by RBAC dep, consumed by ABAC filters within the same request.
+Built once by the access resolver, consumed by in-handler checks within the same request.
 
 Author : Coke
 Date   : 2026-05-08
 """
 
 from dataclasses import dataclass, field
-from uuid import UUID
 
-from plugin_permission.cache import CachedPermissions
+from plugin_permission.catalog.registry import get_catalog
 
 
 @dataclass
 class PermissionContext:
-    """Request-scoped permission state. Built by RBAC, consumed by ABAC."""
+    """Request-scoped permission state built by the access resolver."""
 
     user: object
     cached_role_versions: dict[str, int]
     current_role_versions: dict[str, int]
-    data_policy_ids: list[UUID] = field(default_factory=list)
-    field_policy_ids: list[UUID] = field(default_factory=list)
-    permissions: list[str] = field(default_factory=list)
-    buttons: list[str] = field(default_factory=list)
-
-    _policies: list | None = field(default=None, init=False, repr=False)
+    codes: list[str] = field(default_factory=list)
 
     @property
     def is_stale(self) -> bool:
@@ -37,18 +31,6 @@ class PermissionContext:
             for code in self.current_role_versions
         )
 
-    async def get_policies(self, loader) -> list:
-        """Lazy-load policies once per request."""
-        if self._policies is None:
-            self._policies = await loader.load(self.data_policy_ids)
-        return self._policies
-
-    def to_cached_permissions(self) -> CachedPermissions:
-        """Build a CachedPermissions for storage."""
-        return CachedPermissions(
-            permissions=self.permissions,
-            buttons=self.buttons,
-            data_policy_ids=self.data_policy_ids,
-            field_policy_ids=self.field_policy_ids,
-            role_versions=self.current_role_versions,
-        )
+    def allows_route(self, route_key: str) -> bool:
+        """当前用户的码集合是否覆盖该接口。"""
+        return bool(get_catalog().codes_for_route(route_key) & set(self.codes))

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, ref } from "vue"
+  import { computed, ref, watch } from "vue"
   import { $t } from "@/locales"
   import { useAuthStore } from "@/store/modules/auth"
   import { canImpersonate } from "./eligibility"
@@ -10,11 +10,14 @@
   const auth = useAuthStore()
   const visible = ref(false)
   const allowed = computed(() => canImpersonate(auth.userInfo, props.user, Boolean(auth.impersonation)))
+  watch(allowed, (value) => {
+    if (!value) visible.value = false
+  })
 </script>
 
 <template>
   <template v-if="allowed">
-    <NButton size="small" type="warning" quaternary @click="visible = true">
+    <NButton size="small" type="warning" ghost @click="visible = true">
       {{ $t("page.manage.user.impersonation.start") }}
     </NButton>
     <ImpersonationConfirmModal v-model:show="visible" :user="user" :department-name="departmentName" />

@@ -18,7 +18,8 @@ from plugin_schedule.schemas import (
 )
 from plugin_schedule.services import create_periodic_task, delete_periodic_task, update_periodic_task
 from pydantic import ValidationError
-from rapidkit_common.auth import verify_user_permission
+from rapidkit_common.access import access_guard_dependency
+from rapidkit_common.access_testing import allow_access
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -154,15 +155,12 @@ async def test_unified_routes_round_trip_switch_types_and_validate_before_save()
     app = FastAPI()
     app.include_router(router)
 
-    async def auth():
-        return None
-
     async def crud_dependency():
         async with AsyncSession(engine, expire_on_commit=False) as session:
             yield PeriodicTaskCRUD(session)
             await session.commit()
 
-    app.dependency_overrides[verify_user_permission] = auth
+    app.dependency_overrides[access_guard_dependency] = allow_access(None)
     app.dependency_overrides[get_periodic_task_crud] = crud_dependency
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

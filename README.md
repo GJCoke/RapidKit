@@ -25,8 +25,8 @@ flowchart TD
   Backend[后端 API\nFastAPI + SQLModel]
   Website[文档站\nVitePress]
 
-  TSPackages[TypeScript 共享包\naxios / hooks / utils / editor / color]
-  PyPackages[Python 共享包\ncore / framework / common / security / policy-engine]
+  TSPackages[TypeScript 共享包\naxios / hooks / utils / color]
+  PyPackages[Python 共享包\ncore / framework / common / security]
   Plugins[后端业务插件\nauth / user / permission / menu / worker ...]
 
   Frontend -->|调用 API| Backend
@@ -53,7 +53,6 @@ plugins  ──▶  rapidkit-common  ──▶  rapidkit-framework  ──▶  r
 - `rapidkit-framework`：插件运行时、插件加载器、事件总线、异常、状态码、i18n、限流、请求上下文。
 - `rapidkit-common`：SQLModel 基类、CRUD 基类、请求/响应 schema、FastAPI 依赖类型与业务通用契约。
 - `rapidkit-security`：JWT、密码哈希、RSA 加解密等无状态安全工具。
-- `rapidkit-policy-engine`：面向 ABAC 数据策略的规则解析与 SQL 条件生成。
 - `apps/backend/plugins/*`：业务域插件，通过 `PluginManifest` 声明路由、模型、依赖、事件监听与生命周期。
 
 ## 插件系统
@@ -85,7 +84,7 @@ plugins/<name>/
 - FastAPI dependency override
 - 数据库迁移目录
 
-当前业务插件包括：`auth`、`user`、`permission`、`department`、`menu`、`monitoring`、`schedule`、`script`、`system`、`worker`。
+当前业务插件包括：`auth`、`user`、`permission`、`department`、`menu`、`monitoring`、`schedule`、`system`、`worker`。
 
 ## 前端应用
 
@@ -118,14 +117,12 @@ rapidkit/
 │   ├── hooks/             # Vue composables
 │   ├── utils/             # TypeScript 工具函数
 │   ├── color/             # 颜色工具
-│   ├── editor/            # 编辑器组件包
 │   ├── builder/           # 构建工具包
 │   ├── cli/               # RapidKit CLI
 │   ├── core/              # Python 基础设施包
 │   ├── framework/         # Python 插件运行时
 │   ├── common/            # Python 业务通用层
-│   ├── security/          # Python 安全工具包
-│   └── policy-engine/     # Python 策略引擎
+│   └── security/          # Python 安全工具包
 ├── docs/                  # 项目辅助文档与资源
 ├── docker/                # 容器化相关配置
 ├── package.json           # pnpm workspace 脚本入口

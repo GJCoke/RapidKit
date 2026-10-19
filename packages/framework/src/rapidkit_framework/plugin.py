@@ -5,13 +5,15 @@ Author : Coke
 Date   : 2026-04-14
 """
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Coroutine, Union
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Literal, Union
 
 from sqlmodel import SQLModel
 
 from rapidkit_framework.events import Event
+from rapidkit_framework.scopes import DataScopeDef, FieldGroupDef
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -48,13 +50,32 @@ class HealthStatus(str, Enum):
     UNHEALTHY = "unhealthy"
 
 
-@dataclass
-class PermissionDef:
-    """插件声明的权限定义。"""
+AbacAction = Literal["read", "write"]
+
+
+@dataclass(frozen=True)
+class ResourceDef:
+    """插件声明的受控资源，RBAC 权限码与数据范围 / 字段组共同的锚点。"""
+
+    key: str
+    label: str
+    model: type[SQLModel] | None = None
+    data_scopes: tuple[DataScopeDef, ...] = ()
+    field_groups: tuple[FieldGroupDef, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "data_scopes", tuple(self.data_scopes))
+        object.__setattr__(self, "field_groups", tuple(self.field_groups))
+
+
+@dataclass(frozen=True)
+class PermissionCodeDef:
+    """插件声明的权限码，格式为 ``资源:动作``，资源由前缀推导。"""
 
     code: str
-    name: str
-    description: str = ""
+    label: str
+    abac_action: AbacAction
+    depends: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -130,6 +151,27 @@ class PluginMeta:
     """运行状态：'loaded' | 'disabled' | 'failed' | 'degraded'。"""
 
 
+_PACKAGE_KEY_PATTERN = re.compile(r"^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$")
+
+
+@dataclass(frozen=True)
+class PermissionPackageDef:
+    """插件声明的内置功能包：权限码的命名集合。"""
+
+    key: str
+    label: str
+    codes: tuple[str, ...]
+    description: str = ""
+
+    def __post_init__(self) -> None:
+        if not _PACKAGE_KEY_PATTERN.match(self.key) or self.key.startswith("custom."):
+            raise ValueError(f"invalid permission package key: {self.key!r}")
+        if not self.codes:
+            raise ValueError("permission package must contain at least one code")
+        if len(set(self.codes)) != len(self.codes):
+            raise ValueError("permission package codes must be unique")
+
+
 @dataclass
 class PluginManifest:
     """
@@ -151,8 +193,13 @@ class PluginManifest:
     # 依赖的其他插件名称（支持 str 或 PluginDependency）
     dependencies: list[str | PluginDependency] = field(default_factory=list)
 
-    # 插件声明的权限
-    permissions: list[PermissionDef] = field(default_factory=list)
+    # 插件声明的受控资源
+    resources: list[ResourceDef] = field(default_factory=list)
+
+    # 插件声明的权限码
+    permission_codes: list[PermissionCodeDef] = field(default_factory=list)
+    # 插件声明的内置功能包
+    permission_packages: list[PermissionPackageDef] = field(default_factory=list)
 
     # 插件声明的 Dashboard 模块安全元数据
     dashboard_modules: list[DashboardModuleDef] = field(default_factory=list)

@@ -20,7 +20,9 @@ from plugin_notification.models import NotificationMessage, NotificationOutbox, 
 from plugin_notification.schemas import InboxListQuery
 from plugin_notification.status_codes import NotificationStatusCode
 from plugin_notification.worker import DeliveryWorker
-from rapidkit_common.auth import verify_user_permission
+from rapidkit_common.access import access_guard_dependency, inspect_route_access
+from rapidkit_common.access_testing import allow_access, deny_access
+from rapidkit_common.auth import _get_current_user_placeholder
 from rapidkit_common.protocols.user import UserQueryService
 from rapidkit_framework.exceptions import AppException
 from sqlmodel import select
@@ -66,7 +68,8 @@ async def test_draft_publish_inbox_and_read_preserve_complete_text(db_session, c
     content = "今晚维护\n请提前保存工作。" if character is None else "开始标记\n" + character * 19_990 + "\n结束标记"
     app = FastAPI()
     app.include_router(router)
-    app.dependency_overrides[verify_user_permission] = lambda: user
+    app.dependency_overrides[access_guard_dependency] = allow_access(user)
+    app.dependency_overrides[_get_current_user_placeholder] = lambda: user
     app.dependency_overrides[get_admin_service] = lambda: service
     app.dependency_overrides[get_message_crud] = lambda: MessageCRUD(db_session)
     payload = {"rawTitle": title, "rawContent": content, "audience": [{"type": "all"}], "saveAsDraft": True}

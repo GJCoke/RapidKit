@@ -16,9 +16,9 @@ from plugin_permission.rbac_config import rbac_config
 from plugin_permission.role.crud import RoleCRUD
 
 
-def role_snapshot_key(role_code: str, version: int) -> str:
-    """角色快照 key，版本号进入 key，旧版本按 TTL 自然过期。"""
-    return f"auth:role:{role_code}:v{version}"
+def role_snapshot_key(role_code: str, version: int, catalog_version: int) -> str:
+    """角色快照 key，角色版本与目录版本进入 key，旧版本按 TTL 自然过期。"""
+    return f"auth:role:{role_code}:c{catalog_version}:v{version}"
 
 
 async def _load_snapshot(role_crud: RoleCRUD, role_code: str) -> str:
@@ -30,11 +30,9 @@ async def _load_snapshot(role_crud: RoleCRUD, role_code: str) -> str:
     return RoleSnapshot(
         code=role.code,
         active=role.status == Status.ON,
-        interface_permissions=role.interface_permissions or [],
-        button_permissions=role.button_permissions or [],
-        router_permissions=role.router_permissions or [],
-        data_policy_ids=role.data_policy_ids or [],
-        field_policy_ids=role.field_policy_ids or [],
+        permission_codes=role.permission_codes or [],
+        data_scopes=role.data_scopes or {},
+        field_modes=role.field_modes or {},
     ).model_dump_json()
 
 
@@ -42,9 +40,10 @@ async def load_role_snapshots(
     redis: AsyncRedisClient,
     role_crud: RoleCRUD,
     versions: dict[str, int],
+    catalog_version: int,
 ) -> list[RoleSnapshot]:
     """
-    按当前版本读取角色快照。
+    按当前角色版本与目录版本读取角色快照。
 
     未命中的角色逐个单飞重建，不存在的角色写入负缓存。
 
@@ -52,6 +51,7 @@ async def load_role_snapshots(
         redis: AsyncRedisClient 实例。
         role_crud: 角色 CRUD。
         versions: 角色编码到当前版本号的映射。
+        catalog_version: 当前目录版本。
 
     Returns:
         与 ``versions`` 顺序一致的角色快照列表。
@@ -59,7 +59,7 @@ async def load_role_snapshots(
     if not versions:
         return []
     codes = list(versions)
-    keys = [role_snapshot_key(code, versions[code]) for code in codes]
+    keys = [role_snapshot_key(code, versions[code], catalog_version) for code in codes]
     cached = await redis.mget(keys)
 
     snapshots: list[RoleSnapshot] = []

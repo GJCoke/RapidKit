@@ -8,12 +8,10 @@ def test_role_update_ignores_permission_fields() -> None:
             "description": "Guest role",
             "code": "GUEST",
             "status": "1",
+            "permissionCodes": ["user:read"],
             "routerPermissions": [],
-            "buttonPermissions": [],
-            "interfacePermissions": [],
         }
     )
 
+    assert "permission_codes" not in update.model_fields_set
     assert "router_permissions" not in update.model_fields_set
-    assert "button_permissions" not in update.model_fields_set
-    assert "interface_permissions" not in update.model_fields_set

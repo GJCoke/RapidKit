@@ -8,6 +8,7 @@ Date   : 2026-09-04
 """
 
 from fastapi import APIRouter
+from rapidkit_common.access import Authenticated
 from rapidkit_common.auth import UserDBDep
 from rapidkit_common.schemas.response import Response
 from rapidkit_core.log import get_plugin_logger
@@ -26,12 +27,12 @@ router = APIRouter(
 )
 
 
-@router.get("")
+@router.get("", dependencies=[Authenticated])
 async def list_preferences(
     user: UserDBDep,
     crud: PreferenceCrudDep,
 ) -> Response[list[PreferenceItemResponse]]:
-    """List effective built-in preferences for the current user."""
+    """获取当前用户各内置通知分类的有效偏好设置。"""
     rows = await crud.list_by_user(user.id)
     configured = {row.category: row.enabled for row in rows}
     items = [
@@ -47,14 +48,14 @@ async def list_preferences(
     return Response(data=items)
 
 
-@router.put("/{category}")
+@router.put("/{category}", dependencies=[Authenticated])
 async def update_preference(
     category: str,
     body: PreferenceUpdateRequest,
     user: UserDBDep,
     crud: PreferenceCrudDep,
 ) -> Response[PreferenceItemResponse]:
-    """Upsert one preference owned by the current user."""
+    """新增或更新当前用户指定通知分类的偏好设置。"""
     definition = default_registry().get(category)
     if definition.reserved:
         raise AppException(NotificationStatusCode.CATEGORY_RESERVED)

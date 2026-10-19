@@ -14,8 +14,8 @@ from rapidkit_framework.events import event_bus
 from sqlalchemy import ColumnElement
 from sqlmodel import col, or_
 
-from plugin_permission.data_policy.services import incr_role_version
 from plugin_permission.models import Role
+from plugin_permission.role_versions import incr_role_version
 
 logger = get_plugin_logger("Permission")
 

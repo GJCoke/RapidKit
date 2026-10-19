@@ -31,12 +31,15 @@ async def test_invalidate_bumps_version_without_scan():
 
 async def test_user_route_key_includes_version(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(services, "get_user_routes", AsyncMock(return_value=UserRouteResponse(routes=[], home="home")))
+    manager = AsyncMock()
+    manager.get_catalog_version.return_value = 1
+    monkeypatch.setattr(services, "get_service", lambda _: manager)
     redis = _redis("9")
 
     await services.get_cached_user_routes(SimpleNamespace(is_admin=False, roles=["a"]), redis, AsyncMock())
 
     key = redis.get.await_args_list[0].args[0]
-    assert key.startswith("plugin:menu:v9:route:user:non-admin:")
+    assert key.startswith("plugin:menu:v9:route:user:non-admin:c1:")
     assert redis.set.await_args.args[0] == key
 
 

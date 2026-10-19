@@ -4,6 +4,8 @@ import ast
 import unittest
 from pathlib import Path
 
+from rapidkit_common.protocols.user import UserQueryService, UserResolver
+
 
 class TestUserRegister(unittest.TestCase):
     def test_register_returns_manifest(self):
@@ -27,11 +29,13 @@ class TestUserRegister(unittest.TestCase):
         assert "/users" in routes or "/users/" in routes
         assert "/users/{user_id}" in routes
 
-    def test_depends_on_auth(self):
+    def test_provides_user_services_without_auth_dependency(self):
         from plugin_user import register
 
         m = register()
-        assert "auth" in m.dependencies
+        assert m.dependencies == []
+        assert UserResolver in m.provides
+        assert UserQueryService in m.provides
 
     def test_no_cross_plugin_imports(self):
         """plugin_user must not import other plugins (communicates via protocols)."""

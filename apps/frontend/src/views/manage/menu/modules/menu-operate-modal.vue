@@ -1,14 +1,15 @@
 <script setup lang="tsx">
-  import { computed, ref, watch } from "vue"
-  import type { SelectOption, SelectRenderLabel, SelectRenderTag } from "naive-ui"
-  import { NTag } from "naive-ui"
+  import { computed, ref, shallowRef, watch } from "vue"
+  import type { SelectOption } from "naive-ui"
+  import { useOperationAccess } from "@/hooks/business/table-actions/use-operation-access"
   import { enableStatusOptions, menuIconTypeOptions, menuTypeOptions } from "@/constants/business"
-  import { fetchCreateMenu, fetchGetActiveMenuOptions, fetchGetBackendRouters, fetchUpdateMenu } from "@/service/api"
+  import { fetchCreateMenu, fetchGetActiveMenuOptions, fetchGetPermissionCatalog, fetchUpdateMenu } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { getLocalIcons } from "@/utils/icon"
   import { $t } from "@/locales"
   import SvgIcon from "@/components/custom/svg-icon.vue"
   import { createActiveMenuOptionsLoader, watchActiveMenuPartition } from "./active-menu-options"
+  import { buildPermissionCodeOptions, requiresMenuPermission } from "./permission-options"
   import {
     getLayoutAndPage,
     getPathParamFromRoutePath,
@@ -43,6 +44,7 @@
   const visible = defineModel<boolean>("visible", {
     default: false,
   })
+  const operationAccess = useOperationAccess(() => props.operateType === "edit" ? "menu:update" : "menu:create", visible)
 
   const { formRef, validate, restoreValidation } = useNaiveForm()
   const { defaultRequiredRule } = useFormRules()
@@ -76,10 +78,9 @@
     | "activeMenu"
     | "multiTab"
     | "fixedIndexInTab"
+    | "permission"
   > & {
     query: NonNullable<Api.SystemManage.Menu["query"]>
-    buttons: NonNullable<Api.SystemManage.Menu["buttons"]>
-    interfaces: string[]
     layout: string
     page: string
     pathParam: string
@@ -111,18 +112,24 @@
       multiTab: false,
       fixedIndexInTab: null,
       query: [],
-      buttons: [],
-      interfaces: [],
+      permission: null,
     }
   }
 
-  type RuleKey = Extract<keyof Model, "menuName" | "status" | "routeName" | "routePath">
+  const showPermission = computed(() => requiresMenuPermission(model.value.menuType, model.value.constant === true))
+
+  type RuleKey = Extract<keyof Model, "menuName" | "status" | "routeName" | "routePath" | "permission">
 
   const rules: Record<RuleKey, App.Global.FormRule> = {
     menuName: defaultRequiredRule,
     status: defaultRequiredRule,
     routeName: defaultRequiredRule,
     routePath: defaultRequiredRule,
+    permission: {
+      trigger: ["blur", "change"],
+      validator: () =>
+        !showPermission.value || model.value.permission ? true : new Error($t("page.manage.menu.form.permission")),
+    },
   }
 
   const disabledMenuType = computed(() => props.operateType === "edit")
@@ -138,65 +145,18 @@
     value: item,
   }))
 
-  const backendRouters = ref<Api.SystemManage.BackendRouter[]>([])
+  const permissionCatalog = shallowRef<Api.Permission.Catalog | null>(null)
   const { activeMenuOptions, load: loadActiveMenuOptions } = createActiveMenuOptionsLoader(fetchGetActiveMenuOptions)
   let hydratingModel = false
 
-  async function getBackendRouters() {
-    const { error, data } = await fetchGetBackendRouters()
+  async function getPermissionCatalog() {
+    const { error, data } = await fetchGetPermissionCatalog()
     if (!error) {
-      backendRouters.value = data
+      permissionCatalog.value = data
     }
   }
 
-  const methodColorMap: Record<string, string> = {
-    GET: "info",
-    POST: "success",
-    PUT: "warning",
-    DELETE: "error",
-    PATCH: "warning",
-  }
-
-  const routerOptions = computed(() =>
-    backendRouters.value.map((r) => ({
-      label: `[${r.methods.join(",")}] ${r.path} — ${r.name}`,
-      value: r.code,
-      methods: r.methods,
-      path: r.path,
-      name: r.name,
-    })),
-  )
-
-  const renderRouterLabel: SelectRenderLabel = (option) => {
-    const { methods, path, name } = option as SelectOption & { methods: string[]; path: string; name: string }
-    const method = methods?.[0] || "GET"
-    const color = methodColorMap[method] || "default"
-    return (
-      <div class="flex items-center gap-8px">
-        <NTag
-          size="small"
-          type={color as NaiveUI.ThemeColor}
-          style="font-family: monospace; min-width: 60px; justify-content: center"
-        >
-          {methods?.join(",")}
-        </NTag>
-        <span>
-          {path} — <span style="color: var(--text-color-3)">{name}</span>
-        </span>
-      </div>
-    )
-  }
-
-  const renderRouterTag: SelectRenderTag = ({ option, handleClose }) => {
-    const { methods, path } = option as SelectOption & { methods: string[]; path: string }
-    const method = methods?.[0] || "GET"
-    const color = methodColorMap[method] || "default"
-    return (
-      <NTag size="small" type={color as NaiveUI.ThemeColor} closable onClose={handleClose}>
-        {methods?.join(",")} {path}
-      </NTag>
-    )
-  }
+  const permissionOptions = computed(() => buildPermissionCodeOptions(permissionCatalog.value))
 
   const showLayout = computed(() => !model.value.parentId)
 
@@ -254,12 +214,6 @@
       if (!model.value.query) {
         model.value.query = []
       }
-      if (!model.value.buttons) {
-        model.value.buttons = []
-      }
-      if (!model.value.interfaces) {
-        model.value.interfaces = []
-      }
     } finally {
       hydratingModel = false
     }
@@ -285,15 +239,6 @@
     }
   }
 
-  function handleCreateButton() {
-    const buttonItem: Api.SystemManage.MenuButton = {
-      code: "",
-      desc: "",
-    }
-
-    return buttonItem
-  }
-
   function getSubmitParams() {
     const { layout, page, pathParam, ...params } = model.value
 
@@ -302,19 +247,24 @@
 
     params.component = component
     params.routePath = routePath
+    params.permission = showPermission.value ? params.permission : null
 
     return params
   }
 
   async function handleSubmit() {
+    if (!operationAccess.value) return
     await validate()
+    if (!operationAccess.value) return
 
     const params = getSubmitParams()
 
     if (props.operateType === "edit" && props.rowData) {
+      if (!operationAccess.value) return
       const { error } = await fetchUpdateMenu(props.rowData.id, params)
       if (error) return
     } else {
+      if (!operationAccess.value) return
       const { error } = await fetchCreateMenu(params as Omit<Api.SystemManage.Menu, "id" | "children">)
       if (error) return
     }
@@ -327,7 +277,7 @@
   watch(visible, () => {
     if (visible.value) {
       handleInitModel()
-      getBackendRouters()
+      getPermissionCatalog()
       loadActiveMenuOptions(model.value.parentId, model.value.constant === true)
       restoreValidation()
     } else {
@@ -387,6 +337,20 @@
               v-model:value="model.page"
               :options="pageOptions"
               :placeholder="$t('page.manage.menu.form.page')"
+            />
+          </NFormItemGi>
+          <NFormItemGi
+            v-if="showPermission"
+            span="24 m:12"
+            :label="$t('page.manage.menu.permission')"
+            path="permission"
+          >
+            <NSelect
+              v-model:value="model.permission"
+              :options="permissionOptions"
+              filterable
+              clearable
+              :placeholder="$t('page.manage.menu.form.permission')"
             />
           </NFormItemGi>
           <NFormItemGi span="24 m:12" :label="$t('page.manage.menu.i18nKey')" path="i18nKey">
@@ -497,45 +461,6 @@
                 </NSpace>
               </template>
             </NDynamicInput>
-          </NFormItemGi>
-          <NFormItemGi span="24" :label="$t('page.manage.menu.button')">
-            <NDynamicInput v-model:value="model.buttons" :on-create="handleCreateButton">
-              <template #default="{ value }">
-                <div class="ml-8px flex-y-center flex-1 gap-12px">
-                  <NInput
-                    v-model:value="value.code"
-                    :placeholder="$t('page.manage.menu.form.buttonCode')"
-                    class="flex-1"
-                  />
-                  <NInput
-                    v-model:value="value.desc"
-                    :placeholder="$t('page.manage.menu.form.buttonDesc')"
-                    class="flex-1"
-                  />
-                </div>
-              </template>
-              <template #action="{ index, create, remove }">
-                <NSpace class="ml-12px">
-                  <NButton size="medium" @click="() => create(index)">
-                    <icon-ic-round-plus class="text-icon" />
-                  </NButton>
-                  <NButton size="medium" @click="() => remove(index)">
-                    <icon-ic-round-remove class="text-icon" />
-                  </NButton>
-                </NSpace>
-              </template>
-            </NDynamicInput>
-          </NFormItemGi>
-          <NFormItemGi span="24" :label="$t('page.manage.menu.interface')">
-            <NSelect
-              v-model:value="model.interfaces"
-              multiple
-              filterable
-              :options="routerOptions"
-              :render-label="renderRouterLabel"
-              :render-tag="renderRouterTag"
-              :placeholder="$t('page.manage.menu.form.interface')"
-            />
           </NFormItemGi>
         </NGrid>
       </NForm>

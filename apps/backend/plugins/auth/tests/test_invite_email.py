@@ -2,7 +2,7 @@ from plugin_auth.invite.email import EmailSender, render_invite_email
 
 
 def test_render_invite_email_contains_escaped_name_and_link() -> None:
-    subject, html = render_invite_email("Alice <Admin>", "https://app.example/login/set-password?token=a&b")
+    subject, html = render_invite_email("RapidKit", "Alice <Admin>", "alice", "https://app.example/login/set-password?token=a&b")
     assert "Alice &lt;Admin&gt;" in html
     assert "token=a&amp;b" in html
     assert subject

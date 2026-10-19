@@ -13,6 +13,7 @@ from rapidkit_common.protocols.department import DepartmentResolver
 from rapidkit_common.protocols.impersonation import (
     ImpersonationAuditWriter,
     ImpersonationRevoker,
+    ImpersonationSessionReader,
     ImpersonationSocketCloser,
 )
 from rapidkit_common.protocols.operations import (
@@ -27,7 +28,11 @@ from rapidkit_common.protocols.operations import (
     UserOperationsProvider,
     WorkerOperationsProvider,
 )
-from rapidkit_common.protocols.permission import PermissionChecker, PolicyLoader
+from rapidkit_common.protocols.permission import (
+    PermissionCacheManager,
+    PermissionCatalogReader,
+    PermissionChecker,
+)
 from rapidkit_common.protocols.user import UserProtocol, UserQueryService, UserResolver
 
 __all__ = [
@@ -36,6 +41,7 @@ __all__ = [
     "Authenticator",
     "ImpersonationAuditWriter",
     "ImpersonationRevoker",
+    "ImpersonationSessionReader",
     "ImpersonationSocketCloser",
     "CurrentUserProvider",
     "DepartmentResolver",
@@ -44,8 +50,9 @@ __all__ = [
     "MonitoringOperationsProvider",
     "OperationsTrendPoint",
     "PasswordDecryptor",
+    "PermissionCacheManager",
+    "PermissionCatalogReader",
     "PermissionChecker",
-    "PolicyLoader",
     "QueueSnapshot",
     "ServerSnapshot",
     "SessionInvalidator",

@@ -16,7 +16,6 @@ const modalSource = await readFile(
   new URL("../../src/views/manage/menu/modules/menu-operate-modal.vue", import.meta.url),
   "utf8",
 )
-const menuIndexSource = await readFile(new URL("../../src/views/manage/menu/index.vue", import.meta.url), "utf8")
 
 describe("active menu binding", () => {
   beforeEach(() => vi.clearAllMocks())
@@ -41,15 +40,6 @@ describe("active menu binding", () => {
     expect(modalSource).not.toMatch(/activeMenu:\s*defaultRequiredRule/)
     expect(modalSource).toContain("loadActiveMenuOptions(model.value.parentId, model.value.constant === true)")
     expect(modalSource).toContain("watchActiveMenuPartition")
-  })
-
-  it("allows page rows to add a child and forwards the selected row as its parent", () => {
-    expect(menuIndexSource).not.toMatch(/row\.menuType\s*===\s*["']1["']\s*&&\s*hasAuth\(["']manage_menu:add["']\)/)
-    expect(menuIndexSource).toMatch(/hasAuth\(["']manage_menu:add["']\)\s*&&\s*\(/)
-    expect(menuIndexSource).toContain("onClick={() => handleAddChildMenu(row)}")
-    expect(menuIndexSource).toMatch(
-      /function handleAddChildMenu\(item: Api\.SystemManage\.Menu\)[\s\S]*?operateType\.value = ["']addChild["'][\s\S]*?editingData\.value = \{ \.\.\.item \}/,
-    )
   })
 
   it("maps ancestor candidates into select options", async () => {

@@ -1,11 +1,10 @@
 """Tests for PermissionContext."""
 
-from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
+from unittest.mock import MagicMock
 
-import pytest
 
 from plugin_permission.context import PermissionContext
+from plugins.permission.tests.catalog_fixtures import install_catalog
 
 
 class TestPermissionContext:
@@ -33,21 +32,12 @@ class TestPermissionContext:
         )
         assert ctx.is_stale is True
 
-    @pytest.mark.asyncio
-    async def test_get_policies_caches_result(self):
-        loader = AsyncMock()
-        policy = MagicMock()
-        policy.id = uuid4()
-        loader.load.return_value = [policy]
 
+    def test_allows_route_when_user_holds_bound_code(self):
+        install_catalog()
         ctx = PermissionContext(
-            user=MagicMock(),
-            cached_role_versions={},
-            current_role_versions={},
-            data_policy_ids=[policy.id],
+            user=MagicMock(), cached_role_versions={}, current_role_versions={}, codes=["user:read"]
         )
-        result1 = await ctx.get_policies(loader)
-        result2 = await ctx.get_policies(loader)
 
-        assert result1 == result2
-        loader.load.assert_called_once()
+        assert ctx.allows_route("GET:/api/v1/users") is True
+        assert ctx.allows_route("DELETE:/api/v1/users/{user_id}") is False

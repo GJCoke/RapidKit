@@ -15,6 +15,8 @@ from rapidkit_common.protocols.user import UserQueryService, UserResolver
 from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
 from rapidkit_framework.services import ServiceRegistry
 
+from plugin_user.permissions import PERMISSION_CODES, PERMISSION_PACKAGES, RESOURCES
+
 
 async def _on_department_deleted(event: DepartmentDeletedEvent) -> None:
     """部门删除 → 清空关联用户的 department_id。"""
@@ -73,12 +75,15 @@ def register() -> PluginManifest:
     return PluginManifest(
         name="user",
         version="0.1.0",
+        resources=RESOURCES,
+        permission_codes=PERMISSION_CODES,
+        permission_packages=PERMISSION_PACKAGES,
         router=combined,
         models=[User, UserDailyActivity],
         dashboard_modules=[
             DashboardModuleDef(
                 key="dashboard.trends",
-                required_permissions=("GET:/api/v1/users/stats/trend",),
+                required_permissions=("user:stats",),
             )
         ],
         provides=[UserResolver, UserQueryService, UserOperationsProvider],

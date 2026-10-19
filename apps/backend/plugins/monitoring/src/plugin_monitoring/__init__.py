@@ -8,6 +8,8 @@ from rapidkit_common.protocols.operations import MonitoringOperationsProvider
 from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
 from rapidkit_framework.services import ServiceRegistry
 
+from plugin_monitoring.permissions import PERMISSION_CODES, RESOURCES
+
 if TYPE_CHECKING:
     from fastapi import FastAPI
 
@@ -50,6 +52,8 @@ def register() -> PluginManifest:
     return PluginManifest(
         name="monitoring",
         version="0.1.0",
+        resources=RESOURCES,
+        permission_codes=PERMISSION_CODES,
         router=router,
         models=[ApiMetricsHourly],
         provides=[MonitoringOperationsProvider],
@@ -57,11 +61,7 @@ def register() -> PluginManifest:
         dashboard_modules=[
             DashboardModuleDef(
                 key="dashboard.api-monitoring",
-                required_permissions=(
-                    "GET:/api/v1/system/stats/api/distribution",
-                    "GET:/api/v1/system/stats/api/top",
-                    "GET:/api/v1/system/stats/api/trend",
-                ),
+                required_permissions=("monitoring:read",),
                 realtime_topics=("dashboard:api_stats",),
             )
         ],

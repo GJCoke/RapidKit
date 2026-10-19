@@ -1,6 +1,7 @@
 """Schedule (Periodic Task) CRUD API tests."""
 
 from httpx import AsyncClient
+from rapidkit_framework.status_codes import StatusCode
 from tests.testing.utils import random_lowercase, random_uuid
 
 
@@ -51,7 +52,8 @@ class TestCreateSchedule:
             },
             headers=auth_headers,
         )
-        assert resp.status_code == 422
+        assert resp.status_code == 200
+        assert resp.json()["code"] == StatusCode.VALIDATION_ERROR.code
 
     async def test_create_crontab_without_crontab_body(self, client: AsyncClient, init, auth_headers: dict):
         """Creating a crontab task without crontab config should fail."""
@@ -65,7 +67,8 @@ class TestCreateSchedule:
             },
             headers=auth_headers,
         )
-        assert resp.status_code == 422
+        assert resp.status_code == 200
+        assert resp.json()["code"] == StatusCode.VALIDATION_ERROR.code
 
 
 class TestReadSchedule:

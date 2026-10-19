@@ -10,8 +10,9 @@ def _menu_payload(**overrides) -> dict:
     """Build a valid menu JSON payload with camelCase keys."""
     name = random_lowercase(6)
     base = {
+        "permission": "user:read",
         "menuName": f"Test_{name}",
-        "menuType": 2,
+        "menuType": "2",
         "order": 0,
         "routeName": f"test_{name}",
         "routePath": f"/test/{name}",
@@ -34,6 +35,7 @@ async def create_menu(client: AsyncClient, headers: dict, payload: dict) -> dict
 def _update_payload(menu: dict, **overrides) -> dict:
     payload = {
         "menuName": menu["menuName"],
+        "permission": menu.get("permission"),
         "menuType": menu["menuType"],
         "order": menu["order"],
         "routeName": menu["routeName"],
@@ -51,8 +53,6 @@ def _update_payload(menu: dict, **overrides) -> dict:
         "multiTab": menu.get("multiTab", False),
         "fixedIndexInTab": menu.get("fixedIndexInTab"),
         "query": menu.get("query", []),
-        "buttons": menu.get("buttons", []),
-        "interfaces": menu.get("interfaces", []),
     }
     if "activeMenu" in menu:
         payload["activeMenu"] = menu["activeMenu"]
@@ -76,7 +76,7 @@ class TestCreateMenu:
     async def test_create_directory(self, client: AsyncClient, init, auth_headers: dict):
         payload = _menu_payload(
             menuName=f"Test Dir {random_lowercase(4)}",
-            menuType=1,  # DIRECTORY
+            menuType="1",  # DIRECTORY
             order=99,
             component="layout.base",
         )
@@ -87,7 +87,7 @@ class TestCreateMenu:
         assert data["menuName"] == payload["menuName"]
 
     async def test_create_menu_page(self, client: AsyncClient, init, auth_headers: dict):
-        payload = _menu_payload(menuType=2, component="view.page")
+        payload = _menu_payload(menuType="2", component="view.page")
         resp = await client.post("/manage/menus", json=payload, headers=auth_headers)
         assert resp.status_code == 200
         assert resp.json()["code"] == 0
@@ -209,9 +209,11 @@ class TestActiveMenuBinding:
             _menu_payload(parentId=target["id"], hideInMenu=True, activeMenu=target["routeName"]),
         )
 
+        payload = _update_payload(child, parentId=other_parent["id"])
+        payload.pop("activeMenu")  # Move the existing binding without submitting a replacement.
         response = await client.put(
             f"/manage/menus/{child['id']}",
-            json=_update_payload(child, parentId=other_parent["id"]),
+            json=payload,
             headers=auth_headers,
         )
 
@@ -257,7 +259,7 @@ class TestActiveMenuBinding:
 
         response = await client.put(
             f"/manage/menus/{target['id']}",
-            json=_update_payload(target, menuType=1),
+            json=_update_payload(target, menuType="1"),
             headers=auth_headers,
         )
         assert response.json()["code"] == MenuStatusCode.REFERENCED_TARGET_CONFLICT.code
@@ -306,7 +308,7 @@ class TestActiveMenuBinding:
         intermediate = await create_menu(
             client,
             auth_headers,
-            _menu_payload(parentId=target["id"], menuType=1, component="layout.base"),
+            _menu_payload(parentId=target["id"], menuType="1", component="layout.base"),
         )
         await create_menu(
             client,
@@ -385,3 +387,16 @@ class TestDeleteMenu:
         )
         assert resp.status_code == 200
         assert resp.json()["code"] == 0
+
+
+@pytest.mark.asyncio
+class TestMenuPermissionValidation:
+    async def test_unknown_permission_is_rejected(self, client: AsyncClient, init, auth_headers: dict):
+        response = await client.post(
+            "/manage/menus", json=_menu_payload(permission="nope:read"), headers=auth_headers
+        )
+        assert response.json()["code"] == MenuStatusCode.MENU_PERMISSION_UNKNOWN.code
+
+    async def test_page_without_permission_is_rejected(self, client: AsyncClient, init, auth_headers: dict):
+        response = await client.post("/manage/menus", json=_menu_payload(permission=None), headers=auth_headers)
+        assert response.json()["code"] == MenuStatusCode.MENU_PERMISSION_REQUIRED.code

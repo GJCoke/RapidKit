@@ -13,7 +13,6 @@ dependencies = [
   "rapidkit-core",
   "rapidkit-common",
   # Plugins
-  "rapidkit-plugin-script",
   "rapidkit-plugin-monitoring",
   "rapidkit-plugin-system",
   "rapidkit-plugin-worker",
@@ -75,7 +74,6 @@ dev = [
 [tool.uv.sources]
 rapidkit-core = { workspace = true }
 rapidkit-common = { workspace = true }
-rapidkit-plugin-script = { workspace = true }
 rapidkit-plugin-monitoring = { workspace = true }
 rapidkit-plugin-system = { workspace = true }
 rapidkit-plugin-worker = { workspace = true }
@@ -94,6 +92,7 @@ include = ["src/"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 addopts = "--import-mode=importlib"
+consider_namespace_packages = true
 testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

@@ -8,6 +8,7 @@ Date   : 2026-04-02
 """
 
 from fastapi import APIRouter, Query
+from rapidkit_common.access import Authenticated, Public
 from rapidkit_common.auth import UserDBDep
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import Response
@@ -23,7 +24,7 @@ router = APIRouter(
 )
 
 
-@router.get("/constant")
+@router.get("/constant", dependencies=[Public])
 async def get_constant_routes_api(
     redis: RedisDep,
     session: SessionDep,
@@ -33,7 +34,7 @@ async def get_constant_routes_api(
     return Response(data=routes)
 
 
-@router.get("/user")
+@router.get("/user", dependencies=[Authenticated])
 async def get_user_routes_api(
     user: UserDBDep,
     redis: RedisDep,
@@ -44,7 +45,7 @@ async def get_user_routes_api(
     return Response(data=result)
 
 
-@router.get("/exist")
+@router.get("/exist", dependencies=[Public])
 async def is_route_exist(
     session: SessionDep,
     route_name: str = Query(alias="routeName"),

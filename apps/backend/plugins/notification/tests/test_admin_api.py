@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 import plugin_notification.admin_api as admin_api_module
 import plugin_notification.admin_schemas as admin_schemas_module
 import pytest
+from fastapi.routing import APIRoute
 from fastapi import FastAPI, HTTPException, Request
 from httpx import ASGITransport, AsyncClient
 from plugin_notification.admin_api import (
@@ -44,7 +45,9 @@ from plugin_notification.admin_service import AdminNotificationService
 from plugin_notification.crud import MessageCRUD, OutboxCRUD, TemplateCRUD
 from plugin_notification.enums import MessageStatus, OutboxStatus
 from plugin_notification.models import NotificationOutbox
-from rapidkit_common.auth import UserProtocol, VerifyPermissionDep, verify_user_permission
+from rapidkit_common.access import access_guard_dependency, inspect_route_access
+from rapidkit_common.access_testing import allow_access, deny_access
+from rapidkit_common.auth import UserDBDep, UserProtocol, _get_current_user_placeholder
 from rapidkit_common.protocols.notification import AudiencePreview, NotificationResult
 from rapidkit_common.protocols.user import UserQueryService
 from rapidkit_common.transaction import run_after_commit_hooks
@@ -199,7 +202,11 @@ def test_all_admin_endpoints_require_permission_verified_user():
 
     for endpoint in endpoints:
         hints = get_type_hints(endpoint, include_extras=True)
-        assert hints["current_user"] == VerifyPermissionDep
+        assert hints["current_user"] == UserDBDep
+
+    for route in admin_api_module.router.routes:
+        assert isinstance(route, APIRoute)
+        assert [access.kind for access in inspect_route_access(route)] == ["require"]
 
 
 @pytest.mark.asyncio
@@ -501,12 +508,8 @@ async def test_unsaved_audience_preview_only_resolves_audience_without_message_i
     app = FastAPI()
     app.include_router(admin_api_module.router)
 
-    async def permission_check():
-        if not authorized:
-            raise HTTPException(status_code=403)
-        return _user()
-
-    app.dependency_overrides[verify_user_permission] = permission_check
+    app.dependency_overrides[access_guard_dependency] = allow_access(_user()) if authorized else deny_access()
+    app.dependency_overrides[_get_current_user_placeholder] = _user
     app.dependency_overrides[get_admin_service] = lambda: service
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -524,7 +527,7 @@ async def test_unsaved_audience_preview_only_resolves_audience_without_message_i
     rule = service.audiences[0][0]
     assert (rule.type, rule.value, rule.include_descendants) == ("department", department_id, True)
     hints = get_type_hints(admin_api_module.preview_unsaved_audience, include_extras=True)
-    assert hints["current_user"] == VerifyPermissionDep
+    assert hints["current_user"] == UserDBDep
     assert "message_id" not in hints
 
 
@@ -561,7 +564,8 @@ async def test_announcement_detail_dates_keep_the_same_instant_through_edit_upda
     )
     app = FastAPI()
     app.include_router(admin_api_module.router)
-    app.dependency_overrides[verify_user_permission] = _user
+    app.dependency_overrides[access_guard_dependency] = allow_access(_user())
+    app.dependency_overrides[_get_current_user_placeholder] = _user
     app.dependency_overrides[get_admin_service] = lambda: service
     app.dependency_overrides[get_message_crud] = lambda: MessageCRUD(db_session)
     payload = {

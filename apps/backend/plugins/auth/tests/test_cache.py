@@ -19,11 +19,11 @@ async def test_get_returns_none_for_missing_user(cache):
 @pytest.mark.asyncio
 async def test_set_and_get_roundtrip(cache):
     uid = uuid4()
-    data = CachedPermissions(permissions=["GET:/api/users"], buttons=["btn:delete"], role_versions={"ADMIN": 3})
+    data = CachedPermissions(codes=["user:read"], role_versions={"ADMIN": 3})
     await cache.set(uid, data)
     result = await cache.get(uid)
     assert result is not None
-    assert result.permissions == ["GET:/api/users"]
+    assert result.codes == ["user:read"]
     assert result.role_versions == {"ADMIN": 3}
 
 

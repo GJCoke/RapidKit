@@ -1,13 +1,13 @@
 """Database-independent tests for the username pinyin API contract."""
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from plugin_user.api import _warn_username_pinyin_mismatch, validate_username_pinyin
 from plugin_user.schemas import UsernamePinyinValidationRequest
 
 
 async def test_validate_username_pinyin_returns_camel_case_response():
-    response = await validate_username_pinyin(UsernamePinyinValidationRequest(name="张三", username="zhangsan1"))
+    response = await validate_username_pinyin(UsernamePinyinValidationRequest(name="张三", username="zhangsan1"), _scope=MagicMock())
 
     assert response.data.suggested_username == "zhangsan"
     assert response.data.consistent is False
@@ -18,7 +18,7 @@ async def test_validate_username_pinyin_returns_camel_case_response():
 
 
 async def test_validate_username_pinyin_accepts_empty_username_for_suggestion():
-    response = await validate_username_pinyin(UsernamePinyinValidationRequest(name="张三"))
+    response = await validate_username_pinyin(UsernamePinyinValidationRequest(name="张三"), _scope=MagicMock())
 
     assert response.data.suggested_username == "zhangsan"
     assert response.data.consistent is False

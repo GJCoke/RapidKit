@@ -1,9 +1,10 @@
-"""Administrative impersonation lifecycle API."""
+"""管理员身份代入会话的创建、查询与结束接口。"""
 
 from datetime import UTC
 
 from fastapi import APIRouter, Depends, Request
 from plugin_user.models import User
+from rapidkit_common.access import Authenticated, Public
 from rapidkit_common.auth import DenyImpersonation
 from rapidkit_common.request import get_client_ip
 from rapidkit_common.schemas.response import Response
@@ -30,13 +31,14 @@ from plugin_auth.status_codes import AuthStatusCode
 router = APIRouter(prefix="/auth/impersonations", tags=["Impersonation"])
 
 
-@router.post("", dependencies=[Depends(DenyImpersonation)])
+@router.post("", dependencies=[Depends(DenyImpersonation), Authenticated])
 async def create_impersonation(
     body: ImpersonationCreateBody,
     auth: AuthContextDep,
     service: ImpersonationServiceDep,
     request: Request,
 ) -> Response[ImpersonationCreated]:
+    """创建身份代入会话，并返回目标用户的访问令牌和会话信息。"""
     record = await service.start(
         auth.actor.id,
         body.target_user_id,
@@ -65,10 +67,11 @@ async def create_impersonation(
     )
 
 
-@router.get("/current")
+@router.get("/current", dependencies=[Authenticated])
 async def get_current_impersonation(
     auth: AuthContextDep, service: ImpersonationServiceDep
 ) -> Response[ImpersonationCurrent]:
+    """获取当前身份代入会话的操作者、目标用户及有效期。"""
     if auth.impersonation_session_id is None:
         raise AppException(AuthStatusCode.IMPERSONATION_SESSION_INVALID)
     async with service.session_factory() as session:
@@ -86,8 +89,9 @@ async def get_current_impersonation(
     )
 
 
-@router.delete("/current")
+@router.delete("/current", dependencies=[Public])
 async def stop_impersonation(claims: StopClaimsDep, service: ImpersonationServiceDep) -> Response[bool]:
+    """校验身份代入令牌与会话记录，并结束当前会话。"""
     async with service.session_factory() as session:
         record = await session.get(ImpersonationSession, claims.sid)
         if not matches_record(record, claims):

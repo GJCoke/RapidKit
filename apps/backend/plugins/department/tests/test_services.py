@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 
+from plugin_department.models import Department
 from plugin_department.services import build_tree, check_delete_allowed
 
 
@@ -18,7 +19,7 @@ class TestBuildTree:
 
     @patch("plugin_department.services.DepartmentTreeNode")
     def test_empty_list(self, mock_node_cls):
-        result = build_tree([], parent_id=None)
+        result = build_tree([])
         assert result == []
 
     @patch("plugin_department.services.DepartmentTreeNode")
@@ -30,7 +31,7 @@ class TestBuildTree:
         mock_node.sort = 1
         mock_node_cls.model_validate.return_value = mock_node
 
-        result = build_tree([dept], parent_id=None)
+        result = build_tree([dept])
 
         assert len(result) == 1
         mock_node_cls.model_validate.assert_called_once_with(dept)
@@ -49,7 +50,7 @@ class TestBuildTree:
 
         mock_node_cls.model_validate.side_effect = [root_node, child_node]
 
-        result = build_tree([root, child], parent_id=None)
+        result = build_tree([root, child])
 
         assert len(result) == 1
         assert root_node.children == [child_node]
@@ -68,10 +69,20 @@ class TestBuildTree:
 
         mock_node_cls.model_validate.side_effect = [node1, node2]
 
-        result = build_tree([dept1, dept2], parent_id=None)
+        result = build_tree([dept1, dept2])
 
         assert result == [node2, node1]
 
+
+    def test_orphan_nodes_become_roots_after_filtering(self):
+        parent_id = uuid4()
+        child = Department(id=uuid4(), parent_id=parent_id, name="子部门", code="child", sort=0)
+        grandchild = Department(id=uuid4(), parent_id=child.id, name="孙部门", code="grandchild", sort=0)
+
+        result = build_tree([child, grandchild])
+
+        assert [node.code for node in result] == ["child"]
+        assert [node.code for node in result[0].children] == ["grandchild"]
 
 class TestCheckDeleteAllowed:
     @pytest.mark.asyncio

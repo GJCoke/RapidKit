@@ -80,6 +80,7 @@ const admin = {
   isAdmin: true,
   roles: [],
   buttons: [],
+  restrictedFields: {},
 }
 
 beforeEach(() => {

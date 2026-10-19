@@ -23,7 +23,6 @@ rapidkit/
 │   │   ├── auth/          #   认证 + 角色 + 接口路由（plugin_auth）
 │   │   ├── user/          #   用户管理（plugin_user）
 │   │   ├── menu/          #   菜单 + 前端路由同步（plugin_menu）
-│   │   ├── script/        #   脚本管理与执行（plugin_script）
 │   │   ├── monitoring/    #   API 监控指标（plugin_monitoring）
 │   │   ├── system/        #   系统活动日志（plugin_system）
 │   │   ├── worker/        #   Celery Worker 监控（plugin_worker）
@@ -93,7 +92,6 @@ plugins/<name>/
 | `plugin_auth`       | 认证、角色管理、接口路由 | `User`、`Role`、`InterfaceRouter`  |
 | `plugin_user`       | 用户 CRUD                | — (使用 auth 的 User)              |
 | `plugin_menu`       | 菜单管理 + 前端路由同步  | `Menu`                             |
-| `plugin_script`     | 脚本管理与在线执行       | `Script`、`ScriptExecution`        |
 | `plugin_monitoring` | API 性能指标聚合         | `ApiMetricsHourly`                 |
 | `plugin_system`     | 系统活动日志             | `ActivityLog`                      |
 | `plugin_worker`     | Celery Worker 实时监控   | `CeleryWorker`、`CeleryTaskResult` |
@@ -107,14 +105,14 @@ plugins/<name>/
 from rapidkit_core.plugin import PluginManifest
 
 def register() -> PluginManifest:
-    from plugin_script.api import router
-    from plugin_script.models import Script, ScriptExecution
+    from plugin_menu.api import router
+    from plugin_menu.models import Menu
 
     return PluginManifest(
-        name="script",
+        name="menu",
         version="0.1.0",
         router=router,
-        models=[Script, ScriptExecution],
+        models=[Menu],
         dependencies=[],
     )
 ```
@@ -150,7 +148,7 @@ main.py → setup_router()         # 从已注册的插件路由中匹配
     ▼
 plugin_auth/role/api.py           # router.get("") → get_roles()
     │
-    ├─→ plugin_auth/role/deps.py      # verify_user_permission（权限校验）
+    ├─→ rapidkit_common/access.py     # Require（权限码声明与校验）
     ├─→ plugin_auth/role/services.py  # filter_role()（构建过滤条件）
     └─→ plugin_auth/role/crud.py      # RoleCRUD.get_paginate()
             │

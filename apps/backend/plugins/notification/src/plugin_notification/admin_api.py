@@ -1,10 +1,11 @@
-"""Administrative notification template, announcement, and delivery APIs."""
+"""通知模板、公告与投递记录管理接口。"""
 
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
-from rapidkit_common.auth import VerifyPermissionDep
+from rapidkit_common.access import Require, has_route_access
+from rapidkit_common.auth import UserDBDep
 from rapidkit_common.deps import SessionDep
 from rapidkit_common.protocols.menu import ActionTarget, MenuNavigationProvider
 from rapidkit_common.protocols.notification import (
@@ -92,12 +93,13 @@ def _validate_template_payload(body: TemplateCreateRequest) -> None:
         validate_content(body.content_template, content_format=body.content_format or "plain_text")
 
 
-@router.get("/notification-templates")
+@router.get("/notification-templates", dependencies=[Require("notification-template:read")])
 async def list_templates(
     query: Annotated[TemplateListQuery, Query(...)],
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     crud: TemplateCrudDep,
 ) -> Response[PaginatedResponse[TemplateResponse]]:
+    """分页查询通知模板，支持关键词与启用状态筛选。"""
     filters = []
     if query.keyword:
         pattern = f"%{query.keyword}%"
@@ -120,13 +122,14 @@ async def list_templates(
     return Response(data=page)
 
 
-@router.post("/notification-templates")
+@router.post("/notification-templates", dependencies=[Require("notification-template:create")])
 async def create_template(
     body: TemplateCreateRequest,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     crud: TemplateCrudDep,
     session: SessionDep,
 ) -> Response[TemplateResponse]:
+    """校验并创建通知模板，提交后记录审计日志。"""
     _validate_template_payload(body)
     if await crud.get_by_code(body.code) is not None:
         raise AppException(NotificationStatusCode.TEMPLATE_CODE_EXISTS)
@@ -141,26 +144,28 @@ async def create_template(
     return Response(data=TemplateResponse.model_validate(template))
 
 
-@router.get("/notification-templates/{template_id}")
+@router.get("/notification-templates/{template_id}", dependencies=[Require("notification-template:read")])
 async def get_template(
     template_id: UUID,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     crud: TemplateCrudDep,
 ) -> Response[TemplateResponse]:
+    """获取指定通知模板的详情。"""
     template = await crud.get(template_id)
     if template is None:
         raise AppException(NotificationStatusCode.TEMPLATE_NOT_FOUND)
     return Response(data=TemplateResponse.model_validate(template))
 
 
-@router.put("/notification-templates/{template_id}")
+@router.put("/notification-templates/{template_id}", dependencies=[Require("notification-template:update")])
 async def update_template(
     template_id: UUID,
     body: TemplateUpdateRequest,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     crud: TemplateCrudDep,
     session: SessionDep,
 ) -> Response[TemplateResponse]:
+    """校验并更新通知模板，同时递增模板版本。"""
     template = await crud.get(template_id)
     if template is None:
         raise AppException(NotificationStatusCode.TEMPLATE_NOT_FOUND)
@@ -184,13 +189,14 @@ async def update_template(
     return Response(data=TemplateResponse.model_validate(updated))
 
 
-@router.delete("/notification-templates/{template_id}")
+@router.delete("/notification-templates/{template_id}", dependencies=[Require("notification-template:delete")])
 async def delete_template(
     template_id: UUID,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     crud: TemplateCrudDep,
     session: SessionDep,
 ) -> Response[None]:
+    """删除指定通知模板，提交后记录审计日志。"""
     template = await crud.get(template_id)
     if template is None:
         raise AppException(NotificationStatusCode.TEMPLATE_NOT_FOUND)
@@ -253,12 +259,13 @@ def _to_detail(message, audiences) -> MessageAdminDetailResponse:
     )
 
 
-@router.get("/notifications")
+@router.get("/notifications", dependencies=[Require("notification:read")])
 async def list_announcements(
     query: Annotated[MessageListQuery, Query(...)],
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     crud: AdminMessageCrudDep,
 ) -> Response[PaginatedResponse[MessageAdminResponse]]:
+    """分页查询通知公告，并返回顶部公告的当前状态。"""
     filters = []
     projection = {}
     state = await crud.session.get(NotificationBannerState, BANNER_STATE_ID)
@@ -294,14 +301,15 @@ async def list_announcements(
     return Response(data=page)
 
 
-@router.post("/notifications")
+@router.post("/notifications", dependencies=[Require("notification:create")])
 async def create_announcement(
     body: AnnouncementCreateRequest,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     service: AdminServiceDep,
     session: SessionDep,
     request: Request,
 ) -> Response[dict[str, str]]:
+    """创建通知公告，支持草稿、定时发布和顶部公告。"""
     if body.action is not None:
         await resolve_action(body.action.model_dump(mode="json"), session=session, user=current_user, snapshot=False)
     if body.display_mode == "top_banner" and not body.save_as_draft:
@@ -318,30 +326,29 @@ async def create_announcement(
     return Response(data={"messageId": str(result.message_id)})
 
 
-@router.post("/notifications/audience-preview")
+@router.post("/notifications/audience-preview", dependencies=[Require("notification:preview")])
 async def preview_unsaved_audience(
     body: AudiencePreviewRequest,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     service: AdminServiceDep,
 ) -> Response[AudiencePreviewResponse]:
+    """预览未保存通知的接收人数及受众类型分布。"""
     preview = await service.preview_audience(
         [AudienceRule.model_validate(rule.model_dump()) for rule in body.audience],
     )
     return Response(data=AudiencePreviewResponse(total=preview.total, by_type=preview.by_type))
 
 
-@router.post("/notifications/content-preview")
+@router.post("/notifications/content-preview", dependencies=[Require("notification:preview")])
 async def preview_content(
     body: ContentPreviewRequest,
     request: Request,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     service: AdminServiceDep,
 ) -> Response[ContentPreviewResponse]:
-    """Render an unsaved announcement without persisting messages or recipients."""
+    """预览未保存的通知内容，不写入消息或接收人记录。"""
     if body.variable_bindings and not current_user.is_admin:
-        permission_ctx = getattr(request.state, "permission_ctx", None)
-        permissions = getattr(permission_ctx, "permissions", [])
-        if f"GET:{settings.API_PREFIX_V1}/users/all" not in permissions:
+        if not has_route_access(request, f"GET:{settings.API_PREFIX_V1}/users/all"):
             raise AppException(StatusCode.FORBIDDEN)
     rendered = await service.preview_content(
         template_code=body.template_code,
@@ -353,20 +360,22 @@ async def preview_content(
     return Response(data=ContentPreviewResponse.model_validate(rendered, from_attributes=True))
 
 
-@router.get("/notifications/action-targets")
+@router.get("/notifications/action-targets", dependencies=[Require("notification:preview")])
 async def list_action_targets(
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     session: SessionDep,
 ) -> Response[list[ActionTarget]]:
+    """获取当前用户可访问的通知跳转目标。"""
     return Response(data=await get_service(MenuNavigationProvider).list_targets(session, current_user))
 
 
-@router.post("/notifications/action-preview")
+@router.post("/notifications/action-preview", dependencies=[Require("notification:preview")])
 async def preview_action(
     body: ActionIn,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     session: SessionDep,
 ) -> Response[ActionIn]:
+    """校验并解析当前用户可用的通知跳转动作。"""
     action = await resolve_action(body.model_dump(mode="json"), session=session, user=current_user)
     return Response(data=ActionIn.model_validate(action))
 
@@ -374,30 +383,29 @@ async def preview_action(
 def _require_publish(user, request):
     if user.is_admin:
         return
-    context = getattr(getattr(request, "state", None), "permission_ctx", None)
-    if f"POST:{settings.API_PREFIX_V1}/admin/notifications/{{message_id}}/publish" not in getattr(
-        context, "permissions", []
-    ):
+    if not has_route_access(request, f"POST:{settings.API_PREFIX_V1}/admin/notifications/{{message_id}}/publish"):
         raise AppException(StatusCode.FORBIDDEN)
 
 
-@router.post("/notifications/banner-check")
+@router.post("/notifications/banner-check", dependencies=[Require("notification:preview")])
 async def check_banner(
     body: BannerCheckRequest,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     session: SessionDep,
     banner: BannerServiceDep,
 ) -> Response[BannerCheckResponse]:
+    """校验顶部公告的展示时间范围，并返回当前公告状态。"""
     banner._validate_window(utc(body.publish_at), utc(body.expire_at))
     return Response(data=await banner.snapshot(session))
 
 
-@router.get("/notifications/{message_id}")
+@router.get("/notifications/{message_id}", dependencies=[Require("notification:read")])
 async def get_announcement(
     message_id: UUID,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     service: AdminServiceDep,
 ) -> Response[MessageAdminDetailResponse]:
+    """获取通知公告详情，包含受众规则与顶部公告的当前状态。"""
     message, audiences = await service.get_message(message_id)
     detail = _to_detail(message, audiences)
     if message.display_mode == "top_banner":
@@ -409,15 +417,16 @@ async def get_announcement(
     return Response(data=detail)
 
 
-@router.put("/notifications/{message_id}")
+@router.put("/notifications/{message_id}", dependencies=[Require("notification:update")])
 async def update_announcement(
     message_id: UUID,
     body: AnnouncementUpdateRequest,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     service: AdminServiceDep,
     session: SessionDep,
     request: Request,
 ) -> Response[MessageAdminDetailResponse]:
+    """更新通知公告的内容、受众和发布配置。"""
     if body.action is not None:
         await resolve_action(body.action.model_dump(mode="json"), session=session, user=current_user, snapshot=False)
     if body.display_mode == "top_banner" and not body.save_as_draft:
@@ -436,23 +445,25 @@ async def update_announcement(
     return Response(data=_to_detail(message, audiences))
 
 
-@router.delete("/notifications/{message_id}")
+@router.delete("/notifications/{message_id}", dependencies=[Require("notification:delete")])
 async def delete_announcement(
     message_id: UUID,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     service: AdminServiceDep,
 ) -> Response[None]:
+    """删除指定通知公告。"""
     await service.delete_message(message_id, operator_id=current_user.id)
     return Response(data=None)
 
 
-@router.post("/notifications/{message_id}/audience-preview")
+@router.post("/notifications/{message_id}/audience-preview", dependencies=[Require("notification:preview")])
 async def preview_audience(
     message_id: UUID,
     body: AudiencePreviewRequest,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     service: AdminServiceDep,
 ) -> Response[AudiencePreviewResponse]:
+    """预览已保存通知的接收人数及受众类型分布。"""
     preview = await service.preview_audience(
         [AudienceRule.model_validate(rule.model_dump()) for rule in body.audience],
         message_id=message_id,
@@ -460,44 +471,48 @@ async def preview_audience(
     return Response(data=AudiencePreviewResponse(total=preview.total, by_type=preview.by_type))
 
 
-@router.post("/notifications/{message_id}/publish")
+@router.post("/notifications/{message_id}/publish", dependencies=[Require("notification:publish")])
 async def publish_announcement(
     message_id: UUID,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     service: AdminServiceDep,
     body: BannerPublishRequest | None = None,
 ) -> Response[dict[str, int]]:
+    """发布指定通知公告，并返回接收人数。"""
     kwargs = {"banner_body": body} if body is not None else {}
     result = await service.publish(message_id, operator_id=current_user.id, **kwargs)
     return Response(data={"recipientCount": result.recipient_count})
 
 
-@router.post("/notifications/{message_id}/cancel")
+@router.post("/notifications/{message_id}/cancel", dependencies=[Require("notification:cancel")])
 async def cancel_announcement(
     message_id: UUID,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     service: AdminServiceDep,
 ) -> Response[None]:
+    """取消指定通知公告的发布计划。"""
     await service.cancel(message_id, operator_id=current_user.id)
     return Response(data=None)
 
 
-@router.post("/notifications/{message_id}/recall")
+@router.post("/notifications/{message_id}/recall", dependencies=[Require("notification:recall")])
 async def recall_announcement(
     message_id: UUID,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     service: AdminServiceDep,
 ) -> Response[None]:
+    """撤回已发布的通知公告。"""
     await service.recall(message_id, operator_id=current_user.id)
     return Response(data=None)
 
 
-@router.get("/notification-deliveries")
+@router.get("/notification-deliveries", dependencies=[Require("notification-delivery:read")])
 async def list_deliveries(
     query: Annotated[DeliveryListQuery, Query(...)],
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     crud: AdminOutboxCrudDep,
 ) -> Response[PaginatedResponse[DeliveryResponse]]:
+    """分页查询通知投递记录，并补充接收用户信息。"""
     filters = []
     if query.message_id is not None:
         filters.append(col(NotificationOutbox.message_id) == query.message_id)
@@ -515,25 +530,29 @@ async def list_deliveries(
     return Response(data=page)
 
 
-@router.get("/notification-deliveries/{message_id}/summary")
+@router.get("/notification-deliveries/{message_id}/summary", dependencies=[Require("notification-delivery:read")])
 async def delivery_summary(
     message_id: UUID,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     crud: AdminOutboxCrudDep,
 ) -> Response[DeliverySummaryResponse]:
+    """获取指定通知的投递状态统计与消息摘要。"""
     summary = await crud.summary_by_status(message_id)
     message = delivery_message(await crud.session.get(NotificationMessage, message_id))
     return Response(data=DeliverySummaryResponse(message_id=message_id, by_status=summary, message=message))
 
 
-@router.post("/notification-deliveries/{message_id}/retry-failed")
+@router.post(
+    "/notification-deliveries/{message_id}/retry-failed", dependencies=[Require("notification-delivery:retry")]
+)
 async def retry_failed(
     message_id: UUID,
-    current_user: VerifyPermissionDep,
+    current_user: UserDBDep,
     crud: AdminOutboxCrudDep,
     service: AdminServiceDep,
     session: SessionDep,
 ) -> Response[dict[str, int]]:
+    """重新安排指定通知的失败投递，提交后触发投递任务。"""
     count = await crud.retry_failed(message_id)
     if count:
         after_commit(

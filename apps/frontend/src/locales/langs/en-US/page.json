@@ -48,7 +48,6 @@
       "roles": "Roles",
       "menus": "Menus",
       "apiRouters": "API Routes",
-      "scripts": "Scripts",
       "schedules": "Schedules",
       "serverResources": "Server Resources",
       "allInstances": "Summary ({n} instances)",
@@ -294,19 +293,11 @@
       "activeMenu": "Active Menu",
       "addChildMenu": "Add Child Menu",
       "addMenu": "Add Menu",
-      "button": "Button",
-      "buttonCode": "Button Code",
-      "buttonDesc": "Button Desc",
       "constant": "Constant",
-      "interface": "Interface Binding",
       "editMenu": "Edit Menu",
       "fixedIndexInTab": "Fixed Index In Tab",
       "form": {
         "activeMenu": "Please select route name of the highlighted menu",
-        "button": "Please select whether it is a button",
-        "buttonCode": "Please enter button code",
-        "buttonDesc": "Please enter button description",
-        "interface": "Please select bound interfaces",
         "fixedInTab": "Please select whether to fix in the tab",
         "fixedIndexInTab": "Please enter the index fixed in the tab",
         "hideInMenu": "Please select whether to hide menu",
@@ -327,7 +318,8 @@
         "queryKey": "Please enter route parameter Key",
         "queryValue": "Please enter route parameter Value",
         "routeName": "Please enter route name",
-        "routePath": "Please enter route path"
+        "routePath": "Please enter route path",
+        "permission": "Please select the permission code required to open the page"
       },
       "hideInMenu": "Hidden",
       "home": "Home",
@@ -358,29 +350,57 @@
       "type": {
         "directory": "Directory",
         "menu": "Menu"
-      }
+      },
+      "permission": "Permission Code"
     },
     "role": {
       "addRole": "Add Role",
-      "buttonAuth": "Button Auth",
       "editRole": "Edit Role",
-      "interfaceAuth": "Interface Auth",
       "form": {
         "roleCode": "Please enter role code",
         "roleDesc": "Please enter role description",
         "roleName": "Please enter role name",
         "roleStatus": "Please select role status"
       },
-      "menuAuth": "Menu Auth",
       "permissionConfig": "Permission Config",
-      "dataPolicies": "Data Policies",
-      "fieldPolicy": "Field Policy",
-      "fieldPolicyPlaceholder": "Select field policies (no restriction if none selected)",
       "roleCode": "Code",
       "roleDesc": "Description",
       "roleName": "Name",
       "roleStatus": "Status",
-      "title": "Role List"
+      "title": "Role List",
+      "dependsOn": "Includes",
+      "invalidCodes": "These permission codes no longer exist and will be removed on save",
+      "resource": "Resource",
+      "actions": "Actions",
+      "implied": "Implied",
+      "scope": "Data scope / Fields",
+      "dataScopeAll": "All",
+      "applyPackage": {
+        "button": "Apply Packages",
+        "title": "Apply Permission Packages",
+        "packages": "Packages",
+        "packagesPlaceholder": "Select one or more packages",
+        "mode": "Mode",
+        "modeMerge": "Merge",
+        "modeReplace": "Replace",
+        "modeMergeHint": "Keep the role's current grants, add the packages' codes, and override data scope and field settings per resource",
+        "modeReplaceHint": "Clear the role's current grants and keep only the packages' codes, data scopes and field settings",
+        "preview": "Preview",
+        "added": "Added",
+        "removed": "Removed",
+        "codes": "Permission codes",
+        "noChange": "The selected packages introduce no changes",
+        "oneTimeHint": "Applying is one-time: later package edits do not affect this role",
+        "success": "Packages applied",
+        "scopes": "Data scope / fields"
+      },
+      "dataScope": "Data scope",
+      "fieldMode": {
+        "visible": "Visible",
+        "masked": "Masked",
+        "hidden": "Hidden"
+      },
+      "invalidScopes": "These data scope or field settings are no longer valid; the stricter value applies until you save"
     },
     "user": {
       "addUser": "Add User",
@@ -454,8 +474,13 @@
         "reason": "Investigation reason (optional)",
         "viewing": "Viewing as {name} ({username})",
         "remaining": "Remaining",
-        "stop": "Stop impersonating"
-      }
+        "stop": "Stop impersonating",
+        "active": "Impersonating user",
+        "expiresAt": "Expires at",
+        "restoreHint": "Select the incognito icon next to your avatar to return to your administrator account.",
+        "auditHint": "Actions run as this user. Both the administrator and target user are recorded in the audit log."
+      },
+      "restrictedField": "Your role cannot modify this field"
     },
     "department": {
       "title": "Department Manage",
@@ -529,123 +554,6 @@
         "endReason": "End reason"
       },
       "impersonatedAction": "Administrator {actor} performed {action} as user {subject}"
-    },
-    "dataPolicy": {
-      "title": "Data Policy",
-      "addPolicy": "Add Policy",
-      "editPolicy": "Edit Policy",
-      "name": "Policy Name",
-      "description": "Description",
-      "effect": "Effect",
-      "actions": "Actions",
-      "effectOptions": {
-        "allow": "Allow",
-        "deny": "Deny"
-      },
-      "actionOptions": {
-        "read": "Read",
-        "write": "Write"
-      },
-      "status": "Status",
-      "createTime": "Created At",
-      "rule": "Rule Configuration",
-      "form": {
-        "name": "Please enter policy name",
-        "description": "Please enter description"
-      },
-      "ruleEditor": {
-        "addCondition": "Add Condition",
-        "addGroup": "Add Group",
-        "addSubquery": "Subquery",
-        "conditionCount": "conditions",
-        "emptyHint": "Click to add first condition",
-        "field": "Field",
-        "operator": "Operator",
-        "value": "Value (supports template variables)",
-        "model": "Related Model",
-        "targetModel": "Target Model",
-        "targetField": "Target Field",
-        "inOp": "In",
-        "notInOp": "Not In",
-        "selectModel": "Please select target model",
-        "op": {
-          "eq": "Equal",
-          "ne": "Not Equal",
-          "gt": "Greater Than",
-          "ge": "Greater or Equal",
-          "lt": "Less Than",
-          "le": "Less or Equal",
-          "in": "In",
-          "not_in": "Not In",
-          "is_null": "Is Null",
-          "is_not_null": "Is Not Null",
-          "between": "Between"
-        },
-        "tplVar": {
-          "userId": "Current User ID",
-          "deptId": "Current Dept ID",
-          "deptIds": "Dept & Sub-dept IDs",
-          "roles": "User Roles",
-          "now": "Current Time",
-          "today": "Today's Date"
-        },
-        "help": {
-          "title": "Rule Editor Guide",
-          "conditionTitle": "Condition",
-          "conditionDesc": "The smallest filter unit. Pick a field, operator, and value to match rows. Values support template variables which resolve to the current user at runtime.",
-          "groupTitle": "Condition Group",
-          "groupDesc": "Combine multiple conditions with AND (all must match) or OR (any must match). Groups can nest up to 3 levels for complex logic.",
-          "subqueryTitle": "Subquery",
-          "subqueryDesc": "Cross-model filtering. Check whether a field's value exists IN (or NOT IN) the results of a query on another model. Example: show only departments belonging to the current user's organization.",
-          "tplVarTitle": "Template Variables",
-          "tplVarDesc": "Type the template variable prefix in the value field to see available variables. They resolve to actual user values at policy execution time, enabling per-user data scoping."
-        }
-      },
-      "simulator": {
-        "title": "Policy Simulator",
-        "selectPolicies": "Select Policies",
-        "selectUser": "Target User",
-        "run": "Simulate",
-        "totalCount": "Total Records",
-        "visibleCount": "Visible Records",
-        "excludedCount": "Excluded Records",
-        "policyDetails": "Policy Hit Details",
-        "matched": "matched",
-        "visibleData": "Visible Data Preview",
-        "excludedData": "Excluded Data Preview",
-        "generatedSql": "Generated SQL",
-        "adminBypass": "Target user is a super admin. In production, all data policy filters are bypassed and all data is visible."
-      }
-    },
-    "fieldPolicy": {
-      "title": "Field Policy",
-      "addPolicy": "Add Field Policy",
-      "editPolicy": "Edit Field Policy",
-      "name": "Policy Name",
-      "description": "Description",
-      "targetModel": "Target Model",
-      "fields": "Controlled Fields",
-      "actions": "Actions",
-      "effect": "Effect",
-      "condition": "Condition",
-      "status": "Status",
-      "createTime": "Created At",
-      "effectOptions": {
-        "strip": "Strip",
-        "mask": "Mask",
-        "deny": "Deny"
-      },
-      "actionOptions": {
-        "read": "Read",
-        "write": "Write"
-      },
-      "form": {
-        "name": "Enter policy name",
-        "targetModel": "Select target model",
-        "fields": "Select controlled fields",
-        "effect": "Select effect",
-        "addCondition": "Add condition"
-      }
     },
     "worker": {
       "title": "Worker Management",
@@ -917,31 +825,92 @@
         "commandFailed": "The Worker did not confirm success. Check and retry.",
         "commandSent": "Command sent. Refresh to confirm the Worker state."
       }
-    }
-  },
-  "script": {
-    "title": "Script List",
-    "scriptName": "Script Name",
-    "scriptDesc": "Description",
-    "language": "Language",
-    "addScript": "Add Script",
-    "editScript": "Edit Script",
-    "scriptStatus": "Status",
-    "editCode": "Edit Code",
-    "securityWarning": "Script execution currently has no permission restrictions or sandbox isolation. Scripts can access any resources and information on the server. Please use with caution.",
-    "backToList": "Back to List",
-    "execute": "Run",
-    "save": "Save",
-    "form": {
-      "scriptName": "Please enter script name",
-      "scriptDesc": "Please enter description",
-      "language": "Please select language",
-      "status": "Please select status"
     },
-    "languageLabel": {
-      "python": "Python",
-      "javascript": "JavaScript",
-      "shell": "Shell"
+    "permissionExtension": {
+      "title": "Permission Extensions",
+      "tabExtensions": "Extensions",
+      "tabDenials": "Recent Denials",
+      "add": "Add Extension",
+      "edit": "Edit Extension",
+      "export": "Export as Code",
+      "exportTip": "Only active extensions are exported, ready for developers to move into the code baseline",
+      "copy": "Copy",
+      "copied": "Copied",
+      "kind": "Kind",
+      "code": "Code",
+      "target": "Target",
+      "routeKey": "Endpoint",
+      "dependsOn": "Added Dependency",
+      "resource": "Resource",
+      "label": "Label",
+      "abacAction": "Action",
+      "note": "Note",
+      "status": "Status",
+      "reason": "Detail",
+      "createTime": "Created At",
+      "kindOptions": {
+        "route_binding": "Endpoint Binding",
+        "depends": "Added Dependency",
+        "custom_code": "Custom Code"
+      },
+      "statusOptions": {
+        "active": "Active",
+        "cleanable": "Cleanable",
+        "invalid": "Invalid"
+      },
+      "reasonOptions": {
+        "covered_by_baseline": "Covered by the code baseline; safe to delete",
+        "redundant": "Duplicates another extension; safe to delete",
+        "invalid_format": "Invalid code format",
+        "unknown_resource": "Resource does not exist",
+        "resource_mismatch": "Code prefix does not match the resource",
+        "invalid_action": "Invalid action",
+        "unknown_code": "Referenced code no longer exists",
+        "unknown_route": "Endpoint no longer exists or has no declared code",
+        "cycle": "Dependency cycle"
+      },
+      "actionOptions": {
+        "read": "Read",
+        "write": "Write"
+      },
+      "structureLocked": "Kind and target cannot change; delete and recreate instead",
+      "denials": {
+        "days": "Days",
+        "count": "Count",
+        "lastAt": "Last Seen",
+        "lastUser": "Last User",
+        "bind": "Bind from This",
+        "empty": "No recent denials"
+      },
+      "form": {
+        "code": "Select or type a code",
+        "routeKey": "Select an endpoint",
+        "dependsOn": "Select the dependency to add",
+        "resource": "Select a resource",
+        "label": "e.g. Audit users",
+        "note": "Why this extension is needed"
+      }
+    },
+    "permissionPackage": {
+      "title": "Permission Packages",
+      "addPackage": "Add Package",
+      "editPackage": "Edit Package",
+      "viewPackage": "View Package",
+      "key": "Key",
+      "label": "Name",
+      "description": "Description",
+      "codes": "Permission codes",
+      "type": "Type",
+      "builtin": "Built-in",
+      "custom": "Custom",
+      "builtinReadonly": "Built-in packages are maintained in code and are read-only",
+      "form": {
+        "key": "Lowercase letters, digits and hyphens only",
+        "label": "Enter a package name",
+        "codes": "Select permission codes",
+        "scopesEmpty": "The resources of the selected codes have no configurable data scope or fields"
+      },
+      "scopes": "Data scope / fields"
     }
   },
   "notification": {

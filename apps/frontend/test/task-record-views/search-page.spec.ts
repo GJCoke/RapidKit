@@ -7,7 +7,22 @@ import Page from "../../src/views/queue/task/index.vue"
 import SchedulePage from "../../src/views/queue/schedule/index.vue"
 const queries = vi.hoisted(() => [] as Record<string, unknown>[])
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
-vi.mock("@/hooks/business/auth", () => ({ useAuth: () => ({ hasAuth: () => false }) }))
+vi.mock("@/hooks/business/auth", () => ({
+  useAuth: () => {
+    const hasAuth = () => false
+    return {
+      hasAuth,
+      getActionContext: (locale = "zh-CN") => ({
+        ready: true,
+        hasAuth,
+        actorId: "actor",
+        isAdmin: false,
+        impersonating: false,
+        locale,
+      }),
+    }
+  },
+}))
 vi.mock("@/store/modules/app", () => ({ useAppStore: () => ({ isMobile: false, locale: "zh-CN" }) }))
 vi.mock("@/service/api/worker", () => ({
   fetchGetScheduleList: vi.fn().mockResolvedValue({

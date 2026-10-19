@@ -253,7 +253,7 @@
             </div>
           </NTabPane>
           <NTabPane
-            v-if="hasAuth('queue_dashboard:workerControl')"
+            v-if="hasAuth('worker:control')"
             name="operations"
             :tab="$t('page.manage.worker.detail.operations')"
           >

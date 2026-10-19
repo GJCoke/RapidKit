@@ -18,16 +18,28 @@ from plugin_department.status_codes import DeptStatusCode
 logger = get_plugin_logger("Department")
 
 
-def build_tree(departments: list[Department], parent_id: UUID | None = None) -> list[DepartmentTreeNode]:
-    """将平铺的部门列表构建为树形结构。"""
-    nodes: list[DepartmentTreeNode] = []
+def build_tree(departments: list[Department]) -> list[DepartmentTreeNode]:
+    """
+    将平铺的部门列表构建为树形结构。
+
+    父部门不在列表中的节点（例如被数据范围过滤后）作为根节点。
+    """
+    ids = {dept.id for dept in departments}
+    children: dict[UUID | None, list[Department]] = {}
     for dept in departments:
-        if dept.parent_id == parent_id:
+        key = dept.parent_id if dept.parent_id in ids else None
+        children.setdefault(key, []).append(dept)
+
+    def build(parent_id: UUID | None) -> list[DepartmentTreeNode]:
+        nodes: list[DepartmentTreeNode] = []
+        for dept in children.get(parent_id, []):
             node = DepartmentTreeNode.model_validate(dept)
-            node.children = build_tree(departments, dept.id)
+            node.children = build(dept.id)
             nodes.append(node)
-    nodes.sort(key=lambda n: n.sort)
-    return nodes
+        nodes.sort(key=lambda n: n.sort)
+        return nodes
+
+    return build(None)
 
 
 async def check_delete_allowed(crud: DepartmentCRUD, dept_id: UUID) -> None:

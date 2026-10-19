@@ -24,7 +24,6 @@
 - **双语国际化** — 基于 Babel 的中英文支持，中间件自动识别语言偏好
 - **WebSocket 实时推送** — python-socketio 挂载为 ASGI 中间件，支持多命名空间
 - **Celery 异步任务** — 任务队列 + 事件消费 + Worker 监控 + WebSocket 状态推送
-- **代码执行沙箱** — 支持 Python / JavaScript / Shell 脚本在线执行，带超时和审计日志
 - **OpenAPI 自动文档** — 开发环境下自动生成 Swagger UI 和 ReDoc
 
 ## 项目结构
@@ -40,7 +39,6 @@ rapidkit/
 │   │   ├── auth/          #   认证 + 角色 + 接口路由
 │   │   ├── user/          #   用户管理
 │   │   ├── menu/          #   菜单 + 前端路由
-│   │   ├── script/        #   脚本管理与执行
 │   │   ├── monitoring/    #   API 监控
 │   │   ├── system/        #   系统活动日志
 │   │   ├── worker/        #   Celery Worker 监控

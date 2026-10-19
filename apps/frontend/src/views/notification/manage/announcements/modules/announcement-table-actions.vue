@@ -36,7 +36,7 @@
 </script>
 
 <template>
-  <div class="w-full flex-center gap-8px whitespace-nowrap">
+  <div class="w-full flex items-center justify-start gap-8px whitespace-nowrap">
     <NButton ghost type="primary" size="small" :disabled="busy" @click="select(actions.primary)">
       <span class="max-w-full truncate">{{ announcementActionLabel(row, actions.primary) }}</span>
     </NButton>

@@ -2,6 +2,7 @@
   import { computed, nextTick, ref, watch } from "vue"
   import { useThemeVars } from "naive-ui"
   import type { InputInst } from "naive-ui"
+  import { useOperationAccess } from "@/hooks/business/table-actions/use-operation-access"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { fetchCreateNotificationTemplate, fetchUpdateNotificationTemplate } from "@/service/api"
   import { $t } from "@/locales"
@@ -34,6 +35,10 @@
   const themeVars = useThemeVars()
   const emit = defineEmits<{ submitted: [] }>()
   const visible = defineModel<boolean>("visible", { default: false })
+  const operationAccess = useOperationAccess(
+    () => (props.operateType === "edit" ? "notification-template:update" : "notification-template:create"),
+    visible,
+  )
   const { formRef, validate, restoreValidation } = useNaiveForm()
   const { defaultRequiredRule } = useFormRules()
 
@@ -159,12 +164,14 @@
   }
 
   async function submit() {
+    if (!operationAccess.value) return
     if (submitting.value) return
     submitting.value = true
     formError.value = ""
     try {
       try {
         await validate()
+        if (!operationAccess.value) return
       } catch {
         formError.value = t("formInvalid")
         return
@@ -214,6 +221,7 @@
           mandatory: model.value.mandatory,
           enabled: model.value.enabled,
         }
+        if (!operationAccess.value) return
         const { error } = await fetchCreateNotificationTemplate(payload)
         if (error) {
           formError.value = t("saveFailed")
@@ -232,6 +240,7 @@
           mandatory: model.value.mandatory,
           enabled: model.value.enabled,
         }
+        if (!operationAccess.value) return
         const { error } = await fetchUpdateNotificationTemplate(props.rowData.id, payload)
         if (error) {
           formError.value = t("saveFailed")

@@ -1,6 +1,7 @@
 <script setup lang="tsx">
   import { reactive, ref } from "vue"
   import { NButton, NPopconfirm, NTag } from "naive-ui"
+  import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
   import { userStatusRecord } from "@/constants/business"
   import {
     fetchBatchDeleteUsers,
@@ -14,18 +15,19 @@
   import { defaultTransform, useNaivePaginatedTable, useTableOperate } from "@/hooks/common/table"
   import { $t } from "@/locales"
   import { useAuth } from "@/hooks/business/auth"
+  import { useTableActions } from "@/hooks/business/table-actions/use-table-actions"
   import { useAuthStore } from "@/store/modules/auth"
+  import ImpersonationButton from "@/components/impersonation/impersonation-button.vue"
+  import { createUserActionModel } from "./composables/user-actions"
   import UserOperateDrawer from "./modules/user-operate-drawer.vue"
   import ChangePasswordModal from "./modules/change-password-modal.vue"
   import UserSearch from "./modules/user-search.vue"
-
-  import ImpersonationButton from "@/components/impersonation/impersonation-button.vue"
   import { createDepartmentMap } from "./composables/department-map"
 
   defineOptions({ name: "ManageUser" })
   const { routerPushByKey } = useRouterPush()
   const appStore = useAppStore()
-  const { hasAuth } = useAuth()
+  const { hasAuth, getActionContext } = useAuth()
   const authStore = useAuthStore()
 
   const deptMap = ref<Record<string, string>>({})
@@ -38,14 +40,16 @@
 
   loadDeptMap()
 
+  const actions = useTableActions(createUserActionModel, () => getActionContext(appStore.locale, appStore.isMobile), (row) => row.id)
+
   const searchParams: Api.SystemManage.UserSearchParams = reactive({
     page: 1,
-    pageSize: 10,
+    pageSize: DEFAULT_PAGE_SIZE,
     status: undefined,
     keyword: undefined,
   })
 
-  const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagination } = useNaivePaginatedTable({
+  const { columns, columnChecks, scrollX, data, getData, getDataByPage, loading, mobilePagination } = useNaivePaginatedTable({
     api: () => fetchGetUserList(searchParams),
     transform: (response) => defaultTransform(response),
     onPaginationParamsChange: (params) => {
@@ -132,31 +136,29 @@
           return <NTag type={tagMap[row.status]}>{label}</NTag>
         },
       },
-      {
+      ...actions.column({
         key: "operate",
         title: $t("common.operate"),
-        align: "center",
-        width: 400,
         render: (row) => (
-          <div class="flex-center gap-8px">
-            <ImpersonationButton user={row} departmentName={row.departmentId ? deptMap.value[row.departmentId] : undefined} />
-            {hasAuth("manage_user:edit") && (
+          <div class="flex items-center justify-start flex-nowrap gap-8px whitespace-nowrap">
+            {actions.visible(row, "impersonate") && (<ImpersonationButton user={row} departmentName={row.departmentId ? deptMap.value[row.departmentId] : undefined} />)}
+            {actions.visible(row, "edit") && (
               <NButton type="primary" ghost size="small" onClick={() => edit(row.id)}>
                 {$t("common.edit")}
               </NButton>
             )}
-            {hasAuth("manage_user:password") && (authStore.userInfo.isAdmin || row.id === authStore.userInfo.id) && (
+            {actions.visible(row, "password") && (
               <NButton type="warning" ghost size="small" onClick={() => handleChangePassword(row)}>
                 {$t("page.manage.user.changePassword")}
               </NButton>
             )}
-            {hasAuth("manage_user:edit") && row.status === "3" && (
-              <NButton type="info" ghost size="small" onClick={() => handleResendInvite(row.id)}>
+            {actions.visible(row, "resend") && (
+              <NButton type="info" ghost size="small" onClick={() => actions.run(() => data.value.find((item) => item.id === row.id), "resend", (latest) => handleResendInvite(latest.id))}>
                 {$t("page.manage.user.resendInvite")}
               </NButton>
             )}
-            {hasAuth("manage_user:delete") && (
-              <NPopconfirm onPositiveClick={() => handleDelete(row.id)}>
+            {actions.visible(row, "delete") && (
+              <NPopconfirm onPositiveClick={() => actions.run(() => data.value.find((item) => item.id === row.id), "delete", (latest) => handleDelete(latest.id))}>
                 {{
                   default: () => $t("common.confirmDelete"),
                   trigger: () => (
@@ -169,7 +171,7 @@
             )}
           </div>
         ),
-      },
+      }),
     ],
   })
 
@@ -191,6 +193,7 @@
   }
 
   async function handleBatchDelete() {
+    if (!hasAuth("user:delete")) return
     const { error } = await fetchBatchDeleteUsers(checkedRowKeys.value as string[])
     if (error) return
     onBatchDeleted()
@@ -212,14 +215,19 @@
     <UserSearch v-model:model="searchParams" @search="getDataByPage" />
     <NCard :title="$t('page.manage.user.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
       <template #header-extra>
-        <TableHeaderOperation v-model:columns="columnChecks" :loading="loading" @refresh="getData">
-          <NButton v-if="hasAuth('manage_user:add')" size="small" ghost type="primary" @click="handleAdd">
+        <TableHeaderOperation
+          :show-business-actions="hasAuth('user:create') || hasAuth('user:delete')"
+          v-model:columns="columnChecks"
+          :loading="loading"
+          @refresh="getData"
+        >
+          <NButton v-if="hasAuth('user:create')" size="small" ghost type="primary" @click="handleAdd">
             <template #icon>
               <icon-ic-round-plus class="text-icon" />
             </template>
             {{ $t("common.add") }}
           </NButton>
-          <NPopconfirm v-if="hasAuth('manage_user:delete')" @positive-click="handleBatchDelete">
+          <NPopconfirm v-if="hasAuth('user:delete')" @positive-click="handleBatchDelete">
             <template #trigger>
               <NButton size="small" ghost type="error" :disabled="checkedRowKeys.length === 0">
                 <template #icon>
@@ -238,7 +246,7 @@
         :data="data"
         size="small"
         :flex-height="!appStore.isMobile"
-        :scroll-x="1082"
+        :scroll-x="scrollX"
         :loading="loading"
         remote
         :row-key="(row) => row.id"

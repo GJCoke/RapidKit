@@ -16,34 +16,22 @@ permission_structure = "auth:permission:<{user_id}>"
 class CachedPermissions(BaseModel):
     """Cached permission data for a user."""
 
-    permissions: list[str] = []
-    buttons: list[str] = []
-    data_policy_ids: list[UUID] = []
-    field_policy_ids: list[UUID] = []
+    codes: list[str] = []
+    data_scopes: dict[str, list[str]] = {}
+    field_modes: dict[str, dict[str, str]] = {}
     role_versions: dict[str, int] = {}
+    catalog_version: int = 0
 
 
 class RoleSnapshot(BaseModel):
-    """按角色版本缓存的角色效果快照。"""
+    """按角色版本与目录版本缓存的角色效果快照（权限码未展开）。"""
 
     code: str
     active: bool = False
-    interface_permissions: list[str] = []
-    button_permissions: list[str] = []
-    router_permissions: list[str] = []
-    data_policy_ids: list[UUID] = []
-    field_policy_ids: list[UUID] = []
+    permission_codes: list[str] = []
 
-
-class PolicyLike(Protocol):
-    """Minimal interface for a data policy object."""
-
-    id: UUID
-    name: str
-    target_model: str
-    rule: dict
-    effect: str
-    actions: list[str]
+    data_scopes: dict[str, str] = {}
+    field_modes: dict[str, dict[str, str]] = {}
 
 
 class PermissionCache(Protocol):

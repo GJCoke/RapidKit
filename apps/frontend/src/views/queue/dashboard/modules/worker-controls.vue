@@ -17,7 +17,7 @@
   const increment = ref<number | null>(1)
   const queueName = ref("")
   const pending = ref<string | null>(null)
-  const enabled = computed(() => hasAuth("queue_dashboard:workerControl") && props.online && !pending.value)
+  const enabled = computed(() => hasAuth("worker:control") && props.online && !pending.value)
   let disposed = false
   onUnmounted(() => {
     disposed = true
@@ -59,7 +59,7 @@
 </script>
 
 <template>
-  <div v-if="hasAuth('queue_dashboard:workerControl')" class="flex-col-stretch gap-12px">
+  <div v-if="hasAuth('worker:control')" class="flex-col-stretch gap-12px">
     <NAlert v-if="!online" type="warning" :bordered="false">{{
       $t("page.manage.worker.detail.controlsOffline")
     }}</NAlert>

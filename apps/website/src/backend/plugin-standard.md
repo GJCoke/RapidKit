@@ -220,19 +220,19 @@ class MyPluginStatusCode(BaseStatusCode):
 ## 路由规范
 
 ```python
-from fastapi import APIRouter, Depends
-from rapidkit_common.auth import verify_user_permission
+from fastapi import APIRouter
+from rapidkit_common.access import Require
 
-router = APIRouter(
-    prefix="/entities",
-    tags=["Entity"],
-    dependencies=[Depends(verify_user_permission)],
-)
+router = APIRouter(prefix="/entities", tags=["Entity"])
+
+
+@router.get("", dependencies=[Require("entity:read")])
+async def list_entities(...): ...
 ```
 
 - 路由前缀使用复数名词
 - `tags` 用于 OpenAPI 文档分组
-- 全局 `dependencies` 放认证校验，避免每个端点重复声明
+- 每个端点声明 `Require("资源:动作")` / `Authenticated` / `Public` 之一；资源与权限码在 `permissions.py` 中声明，并通过 `PluginManifest(resources=..., permission_codes=...)` 注册
 
 ## CRUD 规范
 

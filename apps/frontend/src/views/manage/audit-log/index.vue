@@ -2,6 +2,10 @@
   import { reactive, ref } from "vue"
   import dayjs from "dayjs"
   import { NButton, NTag } from "naive-ui"
+  import { residentActionModel } from "@/hooks/business/table-actions/layout"
+  import { useTableActions } from "@/hooks/business/table-actions/use-table-actions"
+  import { useAuth } from "@/hooks/business/auth"
+  import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
   import { defaultTransform, useNaivePaginatedTable } from "@/hooks/common/table"
   import { $t } from "@/locales"
   import { fetchGetAuditLogList } from "@/service/api"
@@ -9,12 +13,15 @@
   import AuditLogDetailDrawer from "./modules/audit-log-detail-drawer.vue"
   import AuditLogSearch from "./modules/audit-log-search.vue"
 
+  const { getActionContext } = useAuth()
+
   defineOptions({ name: "ManageAuditLog" })
 
   const appStore = useAppStore()
+  const actions = useTableActions(() => residentActionModel<Api.SystemManage.AuditLogItem>({ detail: $t("common.detail") }), () => getActionContext(appStore.locale, appStore.isMobile), (row) => row.id)
   const detailVisible = ref(false)
   const selectedAuditId = ref<string | null>(null)
-  const searchParams: Api.SystemManage.AuditLogQuery = reactive({ page: 1, pageSize: 10 })
+  const searchParams: Api.SystemManage.AuditLogQuery = reactive({ page: 1, pageSize: DEFAULT_PAGE_SIZE })
 
   const resultType: Record<Api.SystemManage.AuditResult, "success" | "error"> = {
     success: "success",
@@ -36,7 +43,7 @@
     detailVisible.value = true
   }
 
-  const { columns, columnChecks, data, loading, getData, getDataByPage, mobilePagination } = useNaivePaginatedTable({
+  const { columns, columnChecks, scrollX, data, loading, getData, getDataByPage, mobilePagination } = useNaivePaginatedTable({
     api: () => fetchGetAuditLogList(searchParams),
     transform: (response) => defaultTransform(response),
     onPaginationParamsChange: ({ page, pageSize }) => {
@@ -93,18 +100,16 @@
         render: (row) => <NTag type={sourceType[row.source]} bordered={false}>{$t(`page.manage.auditLog.source.${row.source}` as any)}</NTag>,
       },
       { key: "ip", title: "IP", width: 130, render: (row) => row.ip || "-" },
-      {
+      ...actions.column({
         key: "operate",
         title: $t("common.operate"),
-        align: "center",
         fixed: "right",
-        width: 90,
         render: (row) => (
           <NButton type="primary" text onClick={(event: MouseEvent) => { event.stopPropagation(); openDetail(row.id) }}>
             {$t("common.detail")}
           </NButton>
         ),
-      },
+      }),
     ],
   })
 </script>
@@ -126,7 +131,7 @@
         :data="data"
         size="small"
         :flex-height="!appStore.isMobile"
-        :scroll-x="1260"
+        :scroll-x="scrollX"
         :loading="loading"
         remote
         :row-key="(row) => row.id"

@@ -2,29 +2,33 @@
   import { reactive, ref, onMounted, onUnmounted, watch } from "vue"
   import dayjs from "dayjs"
   import { useBoolean } from "@rapidkit/hooks"
+  import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
   import { useBannerStore } from "@/store/modules/banner"
   import NotificationLevel from "@/components/notification/notification-level.vue"
+  import { defaultTransform, useNaivePaginatedTable } from "@/hooks/common/table"
+  import { useAuth } from "@/hooks/business/auth"
+  import { useTableActions } from "@/hooks/business/table-actions/use-table-actions"
+  import { useAppStore } from "@/store/modules/app"
+  import { fetchCheckBanner, fetchCancelAnnouncement, fetchDeleteAnnouncement, fetchGetAnnouncements, fetchRecallAnnouncement } from "@/service/api"
+  import { renderTitle } from "@/utils/notification/content-render"
+  import { $t } from "@/locales"
   import BannerSummary from "./modules/banner-summary.vue"
   import AnnouncementDetail from "./modules/announcement-detail.vue"
   import AnnouncementTableCell from "./modules/announcement-table-cell.vue"
   import AnnouncementTableActions from "./modules/announcement-table-actions.vue"
   import { announcementPermissions as permissions, announcementActionLabel, announcementTableText as tt } from "./modules/announcement-table"
   import type { AnnouncementAction } from "./modules/announcement-table"
-  import { defaultTransform, useNaivePaginatedTable } from "@/hooks/common/table"
-  import { useAuth } from "@/hooks/business/auth"
-  import { useAppStore } from "@/store/modules/app"
-  import { fetchCheckBanner, fetchCancelAnnouncement, fetchDeleteAnnouncement, fetchGetAnnouncements, fetchRecallAnnouncement } from "@/service/api"
-  import { renderTitle } from "@/utils/notification/content-render"
-  import { $t } from "@/locales"
+  import { createAnnouncementActionModel } from "./modules/announcement-table"
   import AnnouncementOperateDrawer from "./modules/announcement-operate-drawer.vue"
   import AnnouncementSearch from "./modules/announcement-search.vue"
 
   defineOptions({ name: "NotificationAnnouncements" })
 
-  const { hasAuth } = useAuth()
+  const { hasAuth, getActionContext } = useAuth()
   const appStore = useAppStore()
+  const actions = useTableActions(createAnnouncementActionModel, () => getActionContext(appStore.locale, appStore.isMobile), (row) => row.id)
   const { bool: drawerVisible, setTrue: openDrawer } = useBoolean()
-  const searchParams = reactive<Api.Notification.AnnouncementListQuery>({ page: 1, pageSize: 10, status: undefined, category: undefined, displayMode: undefined })
+  const searchParams = reactive<Api.Notification.AnnouncementListQuery>({ page: 1, pageSize: DEFAULT_PAGE_SIZE, status: undefined, category: undefined, displayMode: undefined })
   const bannerStore = useBannerStore()
   const bannerCheck = ref<Api.Notification.BannerCheck | null>(null)
   const bannerFailed = ref(false)
@@ -34,7 +38,7 @@
   let summaryRequest = 0
   const bt = (key: string) => $t(`page.notification.banner.${key}` as I18nFullKey)
   async function loadBanners() {
-    if (!hasAuth("POST:/api/v1/admin/notifications/banner-check")) return
+    if (!hasAuth("notification:preview")) return
     const request = ++summaryRequest
     bannerLoading.value = true
     const { data, error } = await fetchCheckBanner()
@@ -71,13 +75,23 @@
       { key: "level", title: bt("level"), width: 100, render: (row) => <NotificationLevel level={row.level} /> },
       { key: "status", title: $t("page.notification.manage.announcements.status" as I18nFullKey), width: 110, render: (row) => <AnnouncementTableCell row={row} kind="status" /> },
       { key: "publishAt", title: tt("time"), width: 220, render: (row) => <AnnouncementTableCell row={row} kind="time" /> },
-      { key: "operate", title: $t("common.operate"), fixed: "right", width: 160, align: "center",
-        render: (row) => <AnnouncementTableActions row={row} busy={actingIds.value.includes(row.id)} onAction={(action) => handleAction(row, action)} /> },
+      ...actions.column({ key: "operate", title: $t("common.operate"), fixed: "right",
+        render: (row) => <AnnouncementTableActions row={row} busy={actingIds.value.includes(row.id)} onAction={(action) => handleAction(row, action)} /> }),
     ],
   })
 
+  const pendingAction = ref<{ id: string; action: AnnouncementAction } | null>(null)
+  let closePendingDialog: (() => void) | undefined
+  let dialogVersion = 0
+  watch(() => {
+    if (!pendingAction.value) return true
+    const row = table.data.value.find((item) => item.id === pendingAction.value!.id)
+    return Boolean(row && actions.enabled(row, pendingAction.value.action))
+  }, (allowed) => { if (!allowed) closePendingDialog?.() })
+  onUnmounted(() => closePendingDialog?.())
+
   function handleAction(row: Api.Notification.AnnouncementItem, action: AnnouncementAction) {
-    if (actingIds.value.includes(row.id)) return
+    if (actingIds.value.includes(row.id) || !actions.enabled(row, action)) return
     if (action === "detail") return showDetails(row.id)
     if (action === "edit" || action === "publish") return edit(row.id)
     if (action === "copy") return copy(row.id)
@@ -85,14 +99,22 @@
       : action === "delete" ? tt(row.status === "draft" ? "deleteDraftWarning" : "deletePlanWarning")
       : row.displayMode === "top_banner" && row.status === "scheduled" ? bt("cancelWarning")
       : tt(row.status === "draft" ? "cancelDraftWarning" : "cancelPlanWarning")
-    window.$dialog?.warning({
+    closePendingDialog?.()
+    pendingAction.value = { id: row.id, action }
+    const version = ++dialogVersion
+    const dialog = window.$dialog?.warning({
+      onAfterLeave: () => { if (version === dialogVersion) pendingAction.value = null },
       title: announcementActionLabel(row, action),
       content: warning,
       positiveText: announcementActionLabel(row, action),
       negativeText: $t("common.cancel"),
-      onPositiveClick: () => act(row.id, () => action === "delete" ? fetchDeleteAnnouncement(row.id)
-        : action === "cancel" ? fetchCancelAnnouncement(row.id) : fetchRecallAnnouncement(row.id)),
+      onPositiveClick: () => actions.run(
+        () => table.data.value.find((item) => item.id === row.id), action,
+        (latest) => act(latest.id, () => action === "delete" ? fetchDeleteAnnouncement(latest.id)
+          : action === "cancel" ? fetchCancelAnnouncement(latest.id) : fetchRecallAnnouncement(latest.id)),
+      ),
     })
+    closePendingDialog = () => dialog?.destroy()
   }
 
   async function act(id: string, request: () => Promise<{ error: unknown }>) {
@@ -126,7 +148,7 @@
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
     <AnnouncementSearch :model="searchParams" @search="table.getDataByPage(1)" />
     <NCard
-      v-if="hasAuth('POST:/api/v1/admin/notifications/banner-check')"
+      v-if="hasAuth('notification:preview')"
       :bordered="false"
       size="small"
       class="card-wrapper shrink-0"
@@ -198,7 +220,7 @@
         remote
         :pagination="table.mobilePagination.value"
         :row-key="(row) => row.id"
-        :scroll-x="1162"
+        :scroll-x="table.scrollX.value"
         class="announcement-table sm:h-full"
         :flex-height="!appStore.isMobile"
       />

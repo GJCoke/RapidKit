@@ -6,7 +6,6 @@ Date   : 2026-04-17
 """
 
 from plugin_menu.models import Menu
-from plugin_menu.schemas import Button
 from rapidkit_common.enums import MenuIconType, MenuType
 from rapidkit_core.uuid7 import uuid8
 
@@ -105,6 +104,7 @@ def build_menus() -> list[Menu]:
         icon="mdi:monitor-dashboard",
         icon_type=MenuIconType.ICONIFY,
         i18n_key="route.home",
+        permission="dashboard:read",
     )
 
     # 2. 系统管理 (目录)
@@ -133,20 +133,7 @@ def build_menus() -> list[Menu]:
         component="view.manage_user",
         icon="ic:round-manage-accounts",
         i18n_key="route.manage_user",
-        buttons=[
-            Button(code="manage_user:add", desc="新增用户").model_dump(),
-            Button(code="manage_user:edit", desc="编辑用户").model_dump(),
-            Button(code="manage_user:delete", desc="删除用户").model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/users",
-            "GET:/api/v1/users/all",
-            "GET:/api/v1/users/{user_id}",
-            "POST:/api/v1/users",
-            "PUT:/api/v1/users/{user_id}",
-            "DELETE:/api/v1/users/{user_id}",
-            "DELETE:/api/v1/users",
-        ],
+        permission="user:read",
     )
 
     # Hidden detail page: super administrators see all database routes;
@@ -161,8 +148,8 @@ def build_menus() -> list[Menu]:
         route_path="/manage/user-detail/:id",
         component="view.manage_user-detail",
         i18n_key="route.manage_user-detail",
+        permission="user:read",
         hide_in_menu=True,
-        interfaces=["GET:/api/v1/users/{user_id}"],
     )
 
     # 2.2 角色管理
@@ -177,22 +164,7 @@ def build_menus() -> list[Menu]:
         component="view.manage_role",
         icon="carbon:user-role",
         i18n_key="route.manage_role",
-        buttons=[
-            Button(code="manage_role:add", desc="新增角色").model_dump(),
-            Button(code="manage_role:edit", desc="编辑角色").model_dump(),
-            Button(code="manage_role:delete", desc="删除角色").model_dump(),
-            Button(code="manage_role:permission", desc="权限配置").model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/roles",
-            "GET:/api/v1/roles/all",
-            "POST:/api/v1/roles",
-            "PUT:/api/v1/roles/{role_id}",
-            "DELETE:/api/v1/roles/{role_id}",
-            "DELETE:/api/v1/roles",
-            "GET:/api/v1/roles/{role_id}/permissions",
-            "PUT:/api/v1/roles/{role_id}/permissions",
-        ],
+        permission="role:read",
     )
 
     # 2.3 菜单管理
@@ -207,21 +179,7 @@ def build_menus() -> list[Menu]:
         component="view.manage_menu",
         icon="material-symbols:menu-book",
         i18n_key="route.manage_menu",
-        buttons=[
-            Button(code="manage_menu:add", desc="新增菜单").model_dump(),
-            Button(code="manage_menu:edit", desc="编辑菜单").model_dump(),
-            Button(code="manage_menu:delete", desc="删除菜单").model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/manage/menus",
-            "POST:/api/v1/manage/menus",
-            "PUT:/api/v1/manage/menus/{menu_id}",
-            "DELETE:/api/v1/manage/menus/{menu_id}",
-            "DELETE:/api/v1/manage/menus",
-            "GET:/api/v1/manage/menus/tree",
-            "GET:/api/v1/manage/menus/active-menu-options",
-            "GET:/api/v1/manage/menus/pages",
-        ],
+        permission="menu:read",
     )
 
     # 2.4 部门管理
@@ -236,70 +194,7 @@ def build_menus() -> list[Menu]:
         component="view.manage_department",
         icon="ic:outline-corporate-fare",
         i18n_key="route.manage_department",
-        buttons=[
-            Button(code="manage_department:add", desc="新增部门").model_dump(),
-            Button(code="manage_department:edit", desc="编辑部门").model_dump(),
-            Button(code="manage_department:delete", desc="删除部门").model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/departments/tree",
-            "POST:/api/v1/departments",
-            "PUT:/api/v1/departments/{dept_id}",
-            "DELETE:/api/v1/departments/{dept_id}",
-        ],
-    )
-
-    # 2.5 数据策略
-    manage_data_policy = Menu(
-        id=uuid8(),
-        parent_id=manage_id,
-        menu_name="数据策略",
-        menu_type=MenuType.MENU,
-        order=5,
-        route_name="manage_data-policy",
-        route_path="/manage/data-policy",
-        component="view.manage_data-policy",
-        icon="ic:outline-rule",
-        i18n_key="route.manage_data-policy",
-        buttons=[
-            Button(code="manage_data-policy:add", desc="新增数据策略").model_dump(),
-            Button(code="manage_data-policy:edit", desc="编辑数据策略").model_dump(),
-            Button(code="manage_data-policy:delete", desc="删除数据策略").model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/data-policies",
-            "GET:/api/v1/data-policies/all",
-            "GET:/api/v1/data-policies/models",
-            "POST:/api/v1/data-policies",
-            "PUT:/api/v1/data-policies/{policy_id}",
-            "DELETE:/api/v1/data-policies/{policy_id}",
-        ],
-    )
-
-    # 2.6 字段策略
-    manage_field_policy = Menu(
-        id=uuid8(),
-        parent_id=manage_id,
-        menu_name="字段策略",
-        menu_type=MenuType.MENU,
-        order=6,
-        route_name="manage_field-policy",
-        route_path="/manage/field-policy",
-        component="view.manage_field-policy",
-        icon="ic:outline-shield",
-        i18n_key="route.manage_field-policy",
-        buttons=[
-            Button(code="manage_field-policy:add", desc="新增字段策略").model_dump(),
-            Button(code="manage_field-policy:edit", desc="编辑字段策略").model_dump(),
-            Button(code="manage_field-policy:delete", desc="删除字段策略").model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/field-policies",
-            "GET:/api/v1/field-policies/all",
-            "POST:/api/v1/field-policies",
-            "PUT:/api/v1/field-policies/{policy_id}",
-            "DELETE:/api/v1/field-policies/{policy_id}",
-        ],
+        permission="department:read",
     )
 
     # 2.7 审计日志
@@ -314,11 +209,38 @@ def build_menus() -> list[Menu]:
         component="view.manage_audit-log",
         icon="carbon:security",
         i18n_key="route.manage_audit-log",
-        interfaces=[
-            "GET:/api/v1/system/audit-logs/paginate",
-            "GET:/api/v1/system/audit-logs/{item_id}",
-            "GET:/api/v1/users/all",
-        ],
+        permission="audit-log:read",
+    )
+
+    # 2.8 权限扩展（仅超级管理员：不授予任何内置角色；P3 设置 Menu.permission = "permission-extension:manage"）
+    manage_permission_extension = Menu(
+        id=uuid8(),
+        parent_id=manage_id,
+        menu_name="权限扩展",
+        menu_type=MenuType.MENU,
+        order=8,
+        route_name="manage_permission-extension",
+        route_path="/manage/permission-extension",
+        component="view.manage_permission-extension",
+        icon="mdi:puzzle-outline",
+        icon_type=MenuIconType.ICONIFY,
+        i18n_key="route.manage_permission-extension",
+        permission="permission-extension:manage",
+    )
+
+    manage_permission_package = Menu(
+        id=uuid8(),
+        parent_id=manage_id,
+        menu_name="功能包",
+        menu_type=MenuType.MENU,
+        order=9,
+        route_name="manage_permission-package",
+        route_path="/manage/permission-package",
+        component="view.manage_permission-package",
+        icon="mdi:package-variant-closed",
+        icon_type=MenuIconType.ICONIFY,
+        i18n_key="route.manage_permission-package",
+        permission="permission-package:read",
     )
 
     socketio_id = uuid8()
@@ -349,6 +271,7 @@ def build_menus() -> list[Menu]:
         component="view.socketio_chat",
         icon="fluent:chat-multiple-24-regular",
         i18n_key="route.socketio_chat",
+        permission="socketio:read",
     )
 
     # 3.2 调试面板
@@ -363,6 +286,7 @@ def build_menus() -> list[Menu]:
         component="view.socketio_debug",
         icon="codicon:debug-all",
         i18n_key="route.socketio_debug",
+        permission="socketio:read",
     )
 
     # 3.3 仪表盘
@@ -377,6 +301,7 @@ def build_menus() -> list[Menu]:
         component="view.socketio_instrument",
         icon="stash:dashboard",
         i18n_key="route.socketio_instrument",
+        permission="socketio:read",
     )
 
     queue_id = uuid8()
@@ -408,22 +333,7 @@ def build_menus() -> list[Menu]:
         icon="material-symbols:dashboard-outline-rounded",
         icon_type=MenuIconType.ICONIFY,
         i18n_key="route.queue_dashboard",
-        buttons=[
-            Button(code="queue_dashboard:workerControl", desc="Worker 控制").model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/workers",
-            "GET:/api/v1/workers/all",
-            "GET:/api/v1/workers/{worker_id}",
-            "POST:/api/v1/workers/{worker_id}/ping",
-            "POST:/api/v1/workers/{worker_id}/shutdown",
-            "POST:/api/v1/workers/{worker_id}/pool/grow",
-            "POST:/api/v1/workers/{worker_id}/pool/shrink",
-            "POST:/api/v1/workers/{worker_id}/queues/add",
-            "POST:/api/v1/workers/{worker_id}/queues/cancel",
-            "GET:/api/v1/workers/{worker_id}/tasks/active",
-            "GET:/api/v1/workers/{worker_id}/tasks/reserved",
-        ],
+        permission="worker:read",
     )
 
     # 4.2 定时任务
@@ -439,19 +349,7 @@ def build_menus() -> list[Menu]:
         icon="material-symbols:alarm-smart-wake-outline",
         icon_type=MenuIconType.ICONIFY,
         i18n_key="route.queue_schedule",
-        buttons=[
-            Button(code="queue_schedule:add", desc="新增定时任务").model_dump(),
-            Button(code="queue_schedule:edit", desc="编辑定时任务").model_dump(),
-            Button(code="queue_schedule:delete", desc="删除定时任务").model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/schedules",
-            "GET:/api/v1/schedules/{schedule_id}",
-            "POST:/api/v1/schedules",
-            "PUT:/api/v1/schedules/{schedule_id}",
-            "PATCH:/api/v1/schedules/{schedule_id}/toggle",
-            "DELETE:/api/v1/schedules/{schedule_id}",
-        ],
+        permission="schedule:read",
     )
 
     # 4.3 任务历史
@@ -467,51 +365,7 @@ def build_menus() -> list[Menu]:
         icon="material-symbols:history-2",
         icon_type=MenuIconType.ICONIFY,
         i18n_key="route.queue_task",
-        buttons=[
-            Button(code="queue_task:trigger", desc="手动触发任务").model_dump(),
-            Button(code="queue_task:revoke", desc="撤销任务").model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/tasks",
-            "GET:/api/v1/tasks/{task_id}",
-            "GET:/api/v1/tasks/stats/summary",
-            "GET:/api/v1/tasks/stats/timeline",
-            "GET:/api/v1/tasks/stats/by-name",
-            "GET:/api/v1/tasks/stats/by-worker",
-            "GET:/api/v1/tasks/registered",
-            "POST:/api/v1/tasks/trigger",
-            "POST:/api/v1/tasks/{task_id}/revoke",
-        ],
-    )
-
-    # 5. 脚本管理
-    script = Menu(
-        id=uuid8(),
-        menu_name="脚本管理",
-        menu_type=MenuType.MENU,
-        order=12,
-        route_name="script",
-        route_path="/script",
-        component="layout.base$view.script",
-        icon="streamline-ultimate:programming-browser-1-bold",
-        icon_type=MenuIconType.ICONIFY,
-        i18n_key="route.script",
-        buttons=[
-            Button(code="script:add", desc="新增脚本").model_dump(),
-            Button(code="script:edit", desc="编辑脚本").model_dump(),
-            Button(code="script:delete", desc="删除脚本").model_dump(),
-            Button(code="script:execute", desc="执行脚本").model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/scripts",
-            "GET:/api/v1/scripts/{script_id}",
-            "POST:/api/v1/scripts",
-            "PUT:/api/v1/scripts/{script_id}",
-            "DELETE:/api/v1/scripts/{script_id}",
-            "DELETE:/api/v1/scripts",
-            "POST:/api/v1/scripts/{script_id}/execute",
-            "GET:/api/v1/scripts/{script_id}/executions",
-        ],
+        permission="task:read",
     )
 
     monitoring_id = uuid8()
@@ -543,13 +397,7 @@ def build_menus() -> list[Menu]:
         icon="streamline-ultimate:coding-apps-website-web-dev-api-cloud",
         icon_type=MenuIconType.ICONIFY,
         i18n_key="route.monitoring_api",
-        interfaces=[
-            "GET:/api/v1/system/stats/api/overview",
-            "GET:/api/v1/system/stats/api/top",
-            "GET:/api/v1/system/stats/api/distribution",
-            "GET:/api/v1/system/stats/api/trend",
-            "GET:/api/v1/system/stats/api/list",
-        ],
+        permission="monitoring:read",
     )
 
     # 6.2 插件管理
@@ -565,11 +413,7 @@ def build_menus() -> list[Menu]:
         icon="clarity:plugin-outline-badged",
         icon_type=MenuIconType.ICONIFY,
         i18n_key="route.monitoring_plugin",
-        interfaces=[
-            "GET:/api/v1/system/plugins",
-            "GET:/api/v1/system/plugins/dependencies",
-            "GET:/api/v1/system/events",
-        ],
+        permission="plugin:read",
     )
 
     notification_manage_id = uuid8()
@@ -602,24 +446,7 @@ def build_menus() -> list[Menu]:
         component="view.notification_manage_templates",
         icon="material-symbols:dashboard-customize-outline",
         i18n_key="route.notification_manage_templates",
-        buttons=[
-            Button(code="POST:/api/v1/admin/notification-templates", desc="创建通知模板").model_dump(),
-            Button(
-                code="PUT:/api/v1/admin/notification-templates/{template_id}",
-                desc="编辑通知模板",
-            ).model_dump(),
-            Button(
-                code="DELETE:/api/v1/admin/notification-templates/{template_id}",
-                desc="删除通知模板",
-            ).model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/admin/notification-templates",
-            "GET:/api/v1/admin/notification-templates/{template_id}",
-            "POST:/api/v1/admin/notification-templates",
-            "PUT:/api/v1/admin/notification-templates/{template_id}",
-            "DELETE:/api/v1/admin/notification-templates/{template_id}",
-        ],
+        permission="notification-template:read",
     )
 
     notification_manage_announcements = Menu(
@@ -633,33 +460,7 @@ def build_menus() -> list[Menu]:
         component="view.notification_manage_announcements",
         icon="material-symbols:campaign-outline",
         i18n_key="route.notification_manage_announcements",
-        buttons=[
-            Button(code="POST:/api/v1/admin/notifications", desc="创建公告").model_dump(),
-            Button(
-                code="POST:/api/v1/admin/notifications/{message_id}/audience-preview",
-                desc="预览公告受众",
-            ).model_dump(),
-            Button(
-                code="POST:/api/v1/admin/notifications/{message_id}/publish",
-                desc="发布公告",
-            ).model_dump(),
-            Button(
-                code="POST:/api/v1/admin/notifications/{message_id}/cancel",
-                desc="取消公告",
-            ).model_dump(),
-            Button(
-                code="POST:/api/v1/admin/notifications/{message_id}/recall",
-                desc="撤回公告",
-            ).model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/admin/notifications",
-            "POST:/api/v1/admin/notifications",
-            "POST:/api/v1/admin/notifications/{message_id}/audience-preview",
-            "POST:/api/v1/admin/notifications/{message_id}/publish",
-            "POST:/api/v1/admin/notifications/{message_id}/cancel",
-            "POST:/api/v1/admin/notifications/{message_id}/recall",
-        ],
+        permission="notification:read",
     )
 
     notification_manage_deliveries = Menu(
@@ -673,21 +474,7 @@ def build_menus() -> list[Menu]:
         component="view.notification_manage_deliveries",
         icon="material-symbols:send-outline",
         i18n_key="route.notification_manage_deliveries",
-        buttons=[
-            Button(
-                code="GET:/api/v1/admin/notification-deliveries/{message_id}/summary",
-                desc="查看投递汇总",
-            ).model_dump(),
-            Button(
-                code="POST:/api/v1/admin/notification-deliveries/{message_id}/retry-failed",
-                desc="重试失败投递",
-            ).model_dump(),
-        ],
-        interfaces=[
-            "GET:/api/v1/admin/notification-deliveries",
-            "GET:/api/v1/admin/notification-deliveries/{message_id}/summary",
-            "POST:/api/v1/admin/notification-deliveries/{message_id}/retry-failed",
-        ],
+        permission="notification-delivery:read",
     )
 
     return [
@@ -705,9 +492,9 @@ def build_menus() -> list[Menu]:
         manage_role,
         manage_menu,
         manage_department,
-        manage_data_policy,
-        manage_field_policy,
         manage_audit_log,
+        manage_permission_extension,
+        manage_permission_package,
         socketio,
         socketio_chat,
         socketio_debug,
@@ -716,7 +503,6 @@ def build_menus() -> list[Menu]:
         queue_dashboard,
         queue_schedule,
         queue_task,
-        script,
         monitoring,
         monitoring_api,
         monitoring_plugin,

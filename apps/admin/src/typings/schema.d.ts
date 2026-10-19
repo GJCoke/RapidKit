@@ -13,7 +13,7 @@ export interface paths {
     }
     /**
      * 部门树
-     * @description 返回完整部门树。
+     * @description 返回当前数据范围内的部门树；父部门不可见时子树提升为根。
      */
     get: operations["get_department_tree_api_v1_departments_tree_get"]
     put?: never
@@ -35,7 +35,7 @@ export interface paths {
     put?: never
     /**
      * 创建部门
-     * @description 创建新部门。
+     * @description 创建新部门；父部门必须可见，新部门必须落在数据范围内。
      */
     post: operations["create_department_api_v1_departments_post"]
     delete?: never
@@ -54,13 +54,13 @@ export interface paths {
     get?: never
     /**
      * 更新部门
-     * @description 更新部门信息。
+     * @description 更新部门信息；新的父部门必须可见。
      */
     put: operations["update_department_api_v1_departments__dept_id__put"]
     post?: never
     /**
      * 删除部门
-     * @description 删除部门（需检查子部门）。
+     * @description 删除范围内的部门（存在子部门时拒绝）。
      */
     delete: operations["delete_department_api_v1_departments__dept_id__delete"]
     options?: never
@@ -77,10 +77,30 @@ export interface paths {
     }
     /**
      * 系统管理员联系方式
-     * @description Return enabled super administrators without user-management fields.
+     * @description 获取已启用超级管理员的联系方式，仅返回联系所需字段。
      */
     get: operations["get_admin_contacts_api_v1_users_admin_contacts_get"]
     put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/users/{user_id}/password": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * 修改用户密码
+     * @description 修改用户密码。仅本人或超管可操作。
+     */
+    put: operations["change_password_api_v1_users__user_id__password_put"]
     post?: never
     delete?: never
     options?: never
@@ -97,7 +117,7 @@ export interface paths {
     }
     /**
      * 用户统计摘要
-     * @description 获取用户总数、今日新增、昨日新增和在线用户数。
+     * @description 获取数据范围内的用户总数、今日新增、昨日新增和在线用户数。
      */
     get: operations["get_user_stats_summary_api_v1_users_stats_summary_get"]
     put?: never
@@ -117,7 +137,7 @@ export interface paths {
     }
     /**
      * 用户活跃趋势
-     * @description 获取用户注册趋势数据。
+     * @description 获取数据范围内的用户注册趋势。
      */
     get: operations["get_user_stats_trend_api_v1_users_stats_trend_get"]
     put?: never
@@ -137,7 +157,7 @@ export interface paths {
     }
     /**
      * 全部用户选项
-     * @description 获取全部用户（精简字段，用于下拉选项）。
+     * @description 获取范围内全部用户（精简字段，用于下拉选项）。
      */
     get: operations["get_all_users_api_v1_users_all_get"]
     put?: never
@@ -177,13 +197,13 @@ export interface paths {
     }
     /**
      * Get Users
-     * @description 获取分页的用户列表。
+     * @description 获取范围内的分页用户列表。
      */
     get: operations["get_users_api_v1_users_get"]
     put?: never
     /**
      * Create User
-     * @description 创建待激活用户，密码由邀请流程设置。
+     * @description 创建待激活用户，密码由邀请流程设置；新用户必须落在数据范围内（由会话范围校验）。
      */
     post: operations["create_user_api_v1_users_post"]
     /**
@@ -205,12 +225,12 @@ export interface paths {
     }
     /**
      * Get User
-     * @description 获取单个用户详情。
+     * @description 获取范围内单个用户详情；范围外与不存在同样返回 RESOURCE_NOT_FOUND。
      */
     get: operations["get_user_api_v1_users__user_id__get"]
     /**
      * Update User
-     * @description 更新用户信息。
+     * @description 更新用户信息；目标与更新结果都必须在数据范围内（由会话范围校验）。
      */
     put: operations["update_user_api_v1_users__user_id__put"]
     post?: never
@@ -219,26 +239,6 @@ export interface paths {
      * @description 删除单个用户。
      */
     delete: operations["delete_user_api_v1_users__user_id__delete"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/users/{user_id}/password": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /**
-     * 修改用户密码
-     * @description 修改用户密码。仅本人或超管可操作。
-     */
-    put: operations["change_password_api_v1_users__user_id__password_put"]
-    post?: never
-    delete?: never
     options?: never
     head?: never
     patch?: never
@@ -255,7 +255,7 @@ export interface paths {
     put?: never
     /**
      * 重新发送邀请
-     * @description 为待激活用户重新发送邀请。
+     * @description 为范围内的待激活用户重新发送邀请。
      */
     post: operations["resend_invite_api_v1_users__user_id__resend_invite_post"]
     delete?: never
@@ -371,7 +371,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Workers */
+    /**
+     * Get Workers
+     * @description 分页查询工作节点。
+     */
     get: operations["get_workers_api_v1_workers_get"]
     put?: never
     post?: never
@@ -388,7 +391,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get All Workers */
+    /**
+     * Get All Workers
+     * @description 获取全部工作节点。
+     */
     get: operations["get_all_workers_api_v1_workers_all_get"]
     put?: never
     post?: never
@@ -405,7 +411,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Worker */
+    /**
+     * Get Worker
+     * @description 获取工作节点详情，并补充队列订阅和实时运行信息。
+     */
     get: operations["get_worker_api_v1_workers__worker_id__get"]
     put?: never
     post?: never
@@ -424,7 +433,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Ping Worker Endpoint */
+    /**
+     * Ping Worker Endpoint
+     * @description 检测指定工作节点是否可达。
+     */
     post: operations["ping_worker_endpoint_api_v1_workers__worker_id__ping_post"]
     delete?: never
     options?: never
@@ -441,7 +453,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Shutdown Worker Endpoint */
+    /**
+     * Shutdown Worker Endpoint
+     * @description 向指定工作节点发送关闭命令。
+     */
     post: operations["shutdown_worker_endpoint_api_v1_workers__worker_id__shutdown_post"]
     delete?: never
     options?: never
@@ -458,7 +473,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Pool Grow Endpoint */
+    /**
+     * Pool Grow Endpoint
+     * @description 向指定工作节点发送进程池扩容命令。
+     */
     post: operations["pool_grow_endpoint_api_v1_workers__worker_id__pool_grow_post"]
     delete?: never
     options?: never
@@ -475,7 +493,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Pool Shrink Endpoint */
+    /**
+     * Pool Shrink Endpoint
+     * @description 向指定工作节点发送进程池缩容命令。
+     */
     post: operations["pool_shrink_endpoint_api_v1_workers__worker_id__pool_shrink_post"]
     delete?: never
     options?: never
@@ -492,7 +513,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Add Queue Endpoint */
+    /**
+     * Add Queue Endpoint
+     * @description 为指定工作节点添加消费队列。
+     */
     post: operations["add_queue_endpoint_api_v1_workers__worker_id__queues_add_post"]
     delete?: never
     options?: never
@@ -509,7 +533,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Cancel Queue Endpoint */
+    /**
+     * Cancel Queue Endpoint
+     * @description 取消指定工作节点对队列的消费订阅。
+     */
     post: operations["cancel_queue_endpoint_api_v1_workers__worker_id__queues_cancel_post"]
     delete?: never
     options?: never
@@ -524,7 +551,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Active Tasks Endpoint */
+    /**
+     * Get Active Tasks Endpoint
+     * @description 获取指定工作节点正在执行的任务。
+     */
     get: operations["get_active_tasks_endpoint_api_v1_workers__worker_id__tasks_active_get"]
     put?: never
     post?: never
@@ -541,7 +571,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Reserved Tasks Endpoint */
+    /**
+     * Get Reserved Tasks Endpoint
+     * @description 获取指定工作节点已预取、等待执行的任务。
+     */
     get: operations["get_reserved_tasks_endpoint_api_v1_workers__worker_id__tasks_reserved_get"]
     put?: never
     post?: never
@@ -558,8 +591,31 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Tasks */
+    /**
+     * Get Tasks
+     * @description 分页查询任务执行记录。
+     */
     get: operations["get_tasks_api_v1_tasks_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/tasks/stats/dashboard": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Queue Dashboard Endpoint
+     * @description 获取指定时间范围内的队列监控总览。
+     */
+    get: operations["get_queue_dashboard_endpoint_api_v1_tasks_stats_dashboard_get"]
     put?: never
     post?: never
     delete?: never
@@ -575,7 +631,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Task Stats Summary */
+    /**
+     * Get Task Stats Summary
+     * @description 获取指定天数内的任务执行统计摘要。
+     */
     get: operations["get_task_stats_summary_api_v1_tasks_stats_summary_get"]
     put?: never
     post?: never
@@ -592,7 +651,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Task Stats Timeline */
+    /**
+     * Get Task Stats Timeline
+     * @description 按时间范围和粒度查询任务执行趋势。
+     */
     get: operations["get_task_stats_timeline_api_v1_tasks_stats_timeline_get"]
     put?: never
     post?: never
@@ -609,7 +671,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Task Stats By Name */
+    /**
+     * Get Task Stats By Name
+     * @description 按任务名称分页汇总任务执行情况。
+     */
     get: operations["get_task_stats_by_name_api_v1_tasks_stats_by_name_get"]
     put?: never
     post?: never
@@ -626,7 +691,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Task Stats By Worker */
+    /**
+     * Get Task Stats By Worker
+     * @description 按工作节点汇总指定天数内的任务执行情况。
+     */
     get: operations["get_task_stats_by_worker_api_v1_tasks_stats_by_worker_get"]
     put?: never
     post?: never
@@ -643,7 +711,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Registered Task List */
+    /**
+     * Get Registered Task List
+     * @description 获取已向任务队列注册的任务名称。
+     */
     get: operations["get_registered_task_list_api_v1_tasks_registered_get"]
     put?: never
     post?: never
@@ -660,7 +731,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Task */
+    /**
+     * Get Task
+     * @description 根据任务标识获取执行详情。
+     */
     get: operations["get_task_api_v1_tasks__task_id__get"]
     put?: never
     post?: never
@@ -679,7 +753,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Trigger Task Endpoint */
+    /**
+     * Trigger Task Endpoint
+     * @description 使用指定参数手动触发已注册任务。
+     */
     post: operations["trigger_task_endpoint_api_v1_tasks_trigger_post"]
     delete?: never
     options?: never
@@ -696,8 +773,51 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Revoke Task Endpoint */
+    /**
+     * Revoke Task Endpoint
+     * @description 撤销指定任务，并尝试终止正在执行的任务。
+     */
     post: operations["revoke_task_endpoint_api_v1_tasks__task_id__revoke_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/schedules/crontab/preview": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Get Crontab Preview
+     * @description 校验 Crontab，并按当前调度时区返回未来五次计划执行时间。
+     */
+    post: operations["get_crontab_preview_api_v1_schedules_crontab_preview_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/schedules/preview": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Get Schedule Preview
+     * @description 按服务端时区预览调度；固定间隔以当前预览时间为示例起点。
+     */
+    post: operations["get_schedule_preview_api_v1_schedules_preview_post"]
     delete?: never
     options?: never
     head?: never
@@ -774,459 +894,6 @@ export interface paths {
      * @description 启用/禁用定时任务。
      */
     patch: operations["toggle_schedule_api_v1_schedules__schedule_id__toggle_patch"]
-    trace?: never
-  }
-  "/api/v1/scripts": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Scripts
-     * @description 获取分页的脚本列表。
-     */
-    get: operations["get_scripts_api_v1_scripts_get"]
-    put?: never
-    /**
-     * Create Script
-     * @description 创建脚本。
-     */
-    post: operations["create_script_api_v1_scripts_post"]
-    /**
-     * Batch Delete Scripts
-     * @description 批量删除脚本。
-     */
-    delete: operations["batch_delete_scripts_api_v1_scripts_delete"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/scripts/{script_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Script
-     * @description 获取脚本详情（含 code）。
-     */
-    get: operations["get_script_api_v1_scripts__script_id__get"]
-    /**
-     * Update Script
-     * @description 更新脚本。
-     */
-    put: operations["update_script_api_v1_scripts__script_id__put"]
-    post?: never
-    /**
-     * Delete Script
-     * @description 删除单个脚本。
-     */
-    delete: operations["delete_script_api_v1_scripts__script_id__delete"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/scripts/{script_id}/execute": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Execute Script
-     * @description 执行脚本并记录审计日志。
-     */
-    post: operations["execute_script_api_v1_scripts__script_id__execute_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/scripts/{script_id}/executions": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Script Executions
-     * @description 获取脚本执行历史（分页）。
-     */
-    get: operations["get_script_executions_api_v1_scripts__script_id__executions_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/notifications": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Notifications
-     * @description 列出当前用户的收件箱。
-     */
-    get: operations["list_notifications_api_v1_notifications_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/notifications/unread-count": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Unread Count
-     * @description 返回当前用户未读通知数。
-     */
-    get: operations["get_unread_count_api_v1_notifications_unread_count_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/notifications/read-all": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Mark All Read
-     * @description 把当前用户所有未删除的未读通知标记为已读。
-     */
-    post: operations["mark_all_read_api_v1_notifications_read_all_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/notifications/{notification_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Notification
-     * @description 获取当前用户的一条通知。
-     */
-    get: operations["get_notification_api_v1_notifications__notification_id__get"]
-    put?: never
-    post?: never
-    /**
-     * Delete Notification
-     * @description 软删除当前用户的一条通知。
-     */
-    delete: operations["delete_notification_api_v1_notifications__notification_id__delete"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/notifications/{notification_id}/read": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    /**
-     * Mark Read
-     * @description 把当前用户的一条通知标记为已读。
-     */
-    patch: operations["mark_read_api_v1_notifications__notification_id__read_patch"]
-    trace?: never
-  }
-  "/api/v1/notifications/{notification_id}/archive": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    /**
-     * Archive Notification
-     * @description 归档当前用户的一条通知。
-     */
-    patch: operations["archive_notification_api_v1_notifications__notification_id__archive_patch"]
-    trace?: never
-  }
-  "/api/v1/admin/notification-templates": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Templates */
-    get: operations["list_templates_api_v1_admin_notification_templates_get"]
-    put?: never
-    /** Create Template */
-    post: operations["create_template_api_v1_admin_notification_templates_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/admin/notification-templates/{template_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get Template */
-    get: operations["get_template_api_v1_admin_notification_templates__template_id__get"]
-    /** Update Template */
-    put: operations["update_template_api_v1_admin_notification_templates__template_id__put"]
-    post?: never
-    /** Delete Template */
-    delete: operations["delete_template_api_v1_admin_notification_templates__template_id__delete"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/admin/notifications": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Announcements */
-    get: operations["list_announcements_api_v1_admin_notifications_get"]
-    put?: never
-    /** Create Announcement */
-    post: operations["create_announcement_api_v1_admin_notifications_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/admin/notifications/{message_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get Announcement */
-    get: operations["get_announcement_api_v1_admin_notifications__message_id__get"]
-    /** Update Announcement */
-    put: operations["update_announcement_api_v1_admin_notifications__message_id__put"]
-    post?: never
-    /** Delete Announcement */
-    delete: operations["delete_announcement_api_v1_admin_notifications__message_id__delete"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/admin/notifications/{message_id}/audience-preview": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Preview Audience */
-    post: operations["preview_audience_api_v1_admin_notifications__message_id__audience_preview_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/admin/notifications/{message_id}/publish": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Publish Announcement */
-    post: operations["publish_announcement_api_v1_admin_notifications__message_id__publish_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/admin/notifications/{message_id}/cancel": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Cancel Announcement */
-    post: operations["cancel_announcement_api_v1_admin_notifications__message_id__cancel_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/admin/notifications/{message_id}/recall": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Recall Announcement */
-    post: operations["recall_announcement_api_v1_admin_notifications__message_id__recall_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/admin/notification-deliveries": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Deliveries */
-    get: operations["list_deliveries_api_v1_admin_notification_deliveries_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/admin/notification-deliveries/{message_id}/summary": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Delivery Summary */
-    get: operations["delivery_summary_api_v1_admin_notification_deliveries__message_id__summary_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/admin/notification-deliveries/{message_id}/retry-failed": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Retry Failed */
-    post: operations["retry_failed_api_v1_admin_notification_deliveries__message_id__retry_failed_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/notification-preferences": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Preferences
-     * @description List effective built-in preferences for the current user.
-     */
-    get: operations["list_preferences_api_v1_notification_preferences_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/notification-preferences/{category}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /**
-     * Update Preference
-     * @description Upsert one preference owned by the current user.
-     */
-    put: operations["update_preference_api_v1_notification_preferences__category__put"]
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
     trace?: never
   }
   "/api/v1/auth/keys/public": {
@@ -1329,6 +996,50 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/api/v1/auth/impersonations": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Create Impersonation
+     * @description 创建身份代入会话，并返回目标用户的访问令牌和会话信息。
+     */
+    post: operations["create_impersonation_api_v1_auth_impersonations_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/auth/impersonations/current": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Current Impersonation
+     * @description 获取当前身份代入会话的操作者、目标用户及有效期。
+     */
+    get: operations["get_current_impersonation_api_v1_auth_impersonations_current_get"]
+    put?: never
+    post?: never
+    /**
+     * Stop Impersonation
+     * @description 校验身份代入令牌与会话记录，并结束当前会话。
+     */
+    delete: operations["stop_impersonation_api_v1_auth_impersonations_current_delete"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/api/v1/auth/invite/validate": {
     parameters: {
       query?: never
@@ -1336,7 +1047,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Validate Invite */
+    /**
+     * Validate Invite
+     * @description 校验邀请令牌是否有效。
+     */
     get: operations["validate_invite_api_v1_auth_invite_validate_get"]
     put?: never
     post?: never
@@ -1355,7 +1069,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Set Password */
+    /**
+     * Set Password
+     * @description 使用邀请令牌设置用户密码并完成账号激活。
+     */
     post: operations["set_password_api_v1_auth_invite_set_password_post"]
     delete?: never
     options?: never
@@ -1372,7 +1089,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Request Reset */
+    /**
+     * Request Reset
+     * @description 提交密码重置申请，并按账号校验和频率限制规则发送重置邮件。
+     */
     post: operations["request_reset_api_v1_auth_password_reset_request_post"]
     delete?: never
     options?: never
@@ -1387,7 +1107,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Validate Reset */
+    /**
+     * Validate Reset
+     * @description 校验密码重置令牌是否有效。
+     */
     get: operations["validate_reset_api_v1_auth_password_reset_validate_get"]
     put?: never
     post?: never
@@ -1406,7 +1129,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Confirm Reset */
+    /**
+     * Confirm Reset
+     * @description 使用重置令牌更新密码，并撤销已有登录会话。
+     */
     post: operations["confirm_reset_api_v1_auth_password_reset_confirm_post"]
     delete?: never
     options?: never
@@ -1421,12 +1147,21 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Roles */
+    /**
+     * Get Roles
+     * @description 分页查询角色，支持状态与关键词筛选。
+     */
     get: operations["get_roles_api_v1_roles_get"]
     put?: never
-    /** Create Role */
+    /**
+     * Create Role
+     * @description 校验权限码后创建角色。
+     */
     post: operations["create_role_api_v1_roles_post"]
-    /** Batch Delete Role */
+    /**
+     * Batch Delete Role
+     * @description 批量删除角色，提交后通知角色删除。
+     */
     delete: operations["batch_delete_role_api_v1_roles_delete"]
     options?: never
     head?: never
@@ -1440,7 +1175,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get My Roles */
+    /**
+     * Get My Roles
+     * @description 获取当前登录用户所属的角色。
+     */
     get: operations["get_my_roles_api_v1_roles_mine_get"]
     put?: never
     post?: never
@@ -1457,7 +1195,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get All Roles */
+    /**
+     * Get All Roles
+     * @description 获取符合筛选条件的全部角色，用于下拉选项。
+     */
     get: operations["get_all_roles_api_v1_roles_all_get"]
     put?: never
     post?: never
@@ -1476,7 +1217,10 @@ export interface paths {
     }
     /** Get Role Permissions */
     get: operations["get_role_permissions_api_v1_roles__role_id__permissions_get"]
-    /** Update Role Permissions */
+    /**
+     * Update Role Permissions
+     * @description 更新角色权限码、数据范围与字段状态，提交后通知权限变更。
+     */
     put: operations["update_role_permissions_api_v1_roles__role_id__permissions_put"]
     post?: never
     delete?: never
@@ -1493,10 +1237,16 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    /** Update Role */
+    /**
+     * Update Role
+     * @description 更新角色信息，提交后通知角色变更。
+     */
     put: operations["update_role_api_v1_roles__role_id__put"]
     post?: never
-    /** Delete Role */
+    /**
+     * Delete Role
+     * @description 删除指定角色，提交后通知角色删除。
+     */
     delete: operations["delete_role_api_v1_roles__role_id__delete"]
     options?: never
     head?: never
@@ -1510,195 +1260,14 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get Router */
+    /**
+     * Get Router
+     * @description 获取已登记的后端接口路由列表。
+     */
     get: operations["get_router_api_v1_router_backend_get"]
     put?: never
     post?: never
     delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/data-policies/models": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * 可用模型元数据
-     * @description 获取所有已注册模型及其字段信息。
-     */
-    get: operations["get_models_api_v1_data_policies_models_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/data-policies/template-vars": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * 可用模板变量列表
-     * @description 获取所有可用的模板变量（内置 + 插件注册）。
-     */
-    get: operations["get_template_vars_api_v1_data_policies_template_vars_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/data-policies/all": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * 全部数据策略
-     * @description 获取全部数据策略（不分页，用于下拉选项）。
-     */
-    get: operations["get_all_policies_api_v1_data_policies_all_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/data-policies": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * 数据策略分页列表
-     * @description 分页查询数据策略。
-     */
-    get: operations["get_policies_api_v1_data_policies_get"]
-    put?: never
-    /**
-     * 创建数据策略
-     * @description 创建新数据策略。
-     */
-    post: operations["create_policy_api_v1_data_policies_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/data-policies/{policy_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /**
-     * 更新数据策略
-     * @description 更新数据策略。
-     */
-    put: operations["update_policy_api_v1_data_policies__policy_id__put"]
-    post?: never
-    /**
-     * 删除数据策略
-     * @description 删除数据策略。
-     */
-    delete: operations["delete_policy_api_v1_data_policies__policy_id__delete"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/data-policies/simulate": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * 策略模拟
-     * @description 模拟策略执行，仅管理员可用。
-     */
-    post: operations["simulate_policy_api_v1_data_policies_simulate_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/field-policies": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Field Policies */
-    get: operations["list_field_policies_api_v1_field_policies_get"]
-    put?: never
-    /** Create Field Policy */
-    post: operations["create_field_policy_api_v1_field_policies_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/field-policies/all": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get All Field Policies
-     * @description 获取全部字段策略（不分页，用于角色分配下拉）。
-     */
-    get: operations["get_all_field_policies_api_v1_field_policies_all_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/field-policies/{policy_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** Update Field Policy */
-    put: operations["update_field_policy_api_v1_field_policies__policy_id__put"]
-    post?: never
-    /** Delete Field Policy */
-    delete: operations["delete_field_policy_api_v1_field_policies__policy_id__delete"]
     options?: never
     head?: never
     patch?: never
@@ -1713,11 +1282,207 @@ export interface paths {
     }
     /**
      * 当前用户首页模块权限
-     * @description Return authorized keys from the loaded plugin capability registry.
+     * @description 从已加载插件的模块权限注册表中获取当前用户获授权的模块标识。
      */
     get: operations["get_dashboard_capabilities_api_v1_dashboard_capabilities_get"]
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/permission-catalog": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 权限码目录
+     * @description 返回资源与权限码（含 depends 与来源），供角色配置使用。
+     */
+    get: operations["get_permission_catalog_api_v1_permission_catalog_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/permission-extensions": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Extensions
+     * @description 全部扩展及其当前判定（数量少，不分页）。
+     */
+    get: operations["list_extensions_api_v1_permission_extensions_get"]
+    put?: never
+    /**
+     * Create Extension
+     * @description 创建权限扩展，并刷新权限目录与缓存。
+     */
+    post: operations["create_extension_api_v1_permission_extensions_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/permission-extensions/{extension_id}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Update Extension
+     * @description 更新权限扩展，并刷新权限目录与缓存。
+     */
+    put: operations["update_extension_api_v1_permission_extensions__extension_id__put"]
+    post?: never
+    /**
+     * Delete Extension
+     * @description 删除权限扩展，并刷新权限目录与缓存。
+     */
+    delete: operations["delete_extension_api_v1_permission_extensions__extension_id__delete"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/permission-extensions/export": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Export Extensions
+     * @description 生效扩展导出为代码声明文本。
+     */
+    get: operations["export_extensions_api_v1_permission_extensions_export_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/permission-extensions/denials": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Denials
+     * @description 最近被拒的码（按次数降序）。
+     */
+    get: operations["list_denials_api_v1_permission_extensions_denials_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/permission-packages": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Packages
+     * @description 分页查询权限功能包，支持按名称或标识搜索。
+     */
+    get: operations["list_packages_api_v1_permission_packages_get"]
+    put?: never
+    /**
+     * Create Package
+     * @description 校验权限码、范围和字段设置后创建自定义功能包。
+     */
+    post: operations["create_package_api_v1_permission_packages_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/permission-packages/all": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List All Packages
+     * @description 全部功能包（不分页，用于应用到角色）。
+     */
+    get: operations["list_all_packages_api_v1_permission_packages_all_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/permission-packages/{package_id}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Update Package
+     * @description 校验并更新自定义功能包，内置功能包不可修改。
+     */
+    put: operations["update_package_api_v1_permission_packages__package_id__put"]
+    post?: never
+    /**
+     * Delete Package
+     * @description 删除自定义功能包，内置功能包不可删除。
+     */
+    delete: operations["delete_package_api_v1_permission_packages__package_id__delete"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/roles/{role_id}/apply-packages": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Apply Packages
+     * @description 将功能包合并或替换到角色权限，并返回权限与范围变更。
+     */
+    post: operations["apply_packages_api_v1_roles__role_id__apply_packages_post"]
     delete?: never
     options?: never
     head?: never
@@ -1764,6 +1529,26 @@ export interface paths {
      * @description 获取完整菜单树（不分页）
      */
     get: operations["get_menu_tree_api_v1_manage_menus_tree_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/manage/menus/active-menu-options": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Menu Active Menu Options
+     * @description 获取当前父菜单链上可绑定的可见页面菜单。
+     */
+    get: operations["get_menu_active_menu_options_api_v1_manage_menus_active_menu_options_get"]
     put?: never
     post?: never
     delete?: never
@@ -1876,6 +1661,534 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/api/v1/notifications": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Notifications
+     * @description 列出当前用户的收件箱。
+     */
+    get: operations["list_notifications_api_v1_notifications_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/notifications/unread-count": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Unread Count
+     * @description 返回当前用户未读通知数。
+     */
+    get: operations["get_unread_count_api_v1_notifications_unread_count_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/notifications/read-all": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Mark All Read
+     * @description 把当前用户所有未删除、未撤回的未读通知标记为已读。
+     */
+    post: operations["mark_all_read_api_v1_notifications_read_all_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/notifications/top-banner": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Top Banner
+     * @description 获取当前用户可见的顶部公告及其展示状态。
+     */
+    get: operations["get_top_banner_api_v1_notifications_top_banner_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/notifications/{notification_id}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Notification
+     * @description 获取当前用户的一条通知。
+     */
+    get: operations["get_notification_api_v1_notifications__notification_id__get"]
+    put?: never
+    post?: never
+    /**
+     * Delete Notification
+     * @description 软删除当前用户的一条通知。
+     */
+    delete: operations["delete_notification_api_v1_notifications__notification_id__delete"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/notifications/{notification_id}/read": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Mark Read
+     * @description 把当前用户的一条未撤回通知标记为已读。
+     */
+    patch: operations["mark_read_api_v1_notifications__notification_id__read_patch"]
+    trace?: never
+  }
+  "/api/v1/notifications/{notification_id}/archive": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Archive Notification
+     * @description 归档当前用户的一条通知。
+     */
+    patch: operations["archive_notification_api_v1_notifications__notification_id__archive_patch"]
+    trace?: never
+  }
+  "/api/v1/admin/notification-templates": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Templates
+     * @description 分页查询通知模板，支持关键词与启用状态筛选。
+     */
+    get: operations["list_templates_api_v1_admin_notification_templates_get"]
+    put?: never
+    /**
+     * Create Template
+     * @description 校验并创建通知模板，提交后记录审计日志。
+     */
+    post: operations["create_template_api_v1_admin_notification_templates_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notification-templates/{template_id}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Template
+     * @description 获取指定通知模板的详情。
+     */
+    get: operations["get_template_api_v1_admin_notification_templates__template_id__get"]
+    /**
+     * Update Template
+     * @description 校验并更新通知模板，同时递增模板版本。
+     */
+    put: operations["update_template_api_v1_admin_notification_templates__template_id__put"]
+    post?: never
+    /**
+     * Delete Template
+     * @description 删除指定通知模板，提交后记录审计日志。
+     */
+    delete: operations["delete_template_api_v1_admin_notification_templates__template_id__delete"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notifications": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Announcements
+     * @description 分页查询通知公告，并返回顶部公告的当前状态。
+     */
+    get: operations["list_announcements_api_v1_admin_notifications_get"]
+    put?: never
+    /**
+     * Create Announcement
+     * @description 创建通知公告，支持草稿、定时发布和顶部公告。
+     */
+    post: operations["create_announcement_api_v1_admin_notifications_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notifications/audience-preview": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Preview Unsaved Audience
+     * @description 预览未保存通知的接收人数及受众类型分布。
+     */
+    post: operations["preview_unsaved_audience_api_v1_admin_notifications_audience_preview_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notifications/content-preview": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Preview Content
+     * @description 预览未保存的通知内容，不写入消息或接收人记录。
+     */
+    post: operations["preview_content_api_v1_admin_notifications_content_preview_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notifications/action-targets": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Action Targets
+     * @description 获取当前用户可访问的通知跳转目标。
+     */
+    get: operations["list_action_targets_api_v1_admin_notifications_action_targets_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notifications/action-preview": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Preview Action
+     * @description 校验并解析当前用户可用的通知跳转动作。
+     */
+    post: operations["preview_action_api_v1_admin_notifications_action_preview_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notifications/banner-check": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Check Banner
+     * @description 校验顶部公告的展示时间范围，并返回当前公告状态。
+     */
+    post: operations["check_banner_api_v1_admin_notifications_banner_check_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notifications/{message_id}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Announcement
+     * @description 获取通知公告详情，包含受众规则与顶部公告的当前状态。
+     */
+    get: operations["get_announcement_api_v1_admin_notifications__message_id__get"]
+    /**
+     * Update Announcement
+     * @description 更新通知公告的内容、受众和发布配置。
+     */
+    put: operations["update_announcement_api_v1_admin_notifications__message_id__put"]
+    post?: never
+    /**
+     * Delete Announcement
+     * @description 删除指定通知公告。
+     */
+    delete: operations["delete_announcement_api_v1_admin_notifications__message_id__delete"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notifications/{message_id}/audience-preview": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Preview Audience
+     * @description 预览已保存通知的接收人数及受众类型分布。
+     */
+    post: operations["preview_audience_api_v1_admin_notifications__message_id__audience_preview_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notifications/{message_id}/publish": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Publish Announcement
+     * @description 发布指定通知公告，并返回接收人数。
+     */
+    post: operations["publish_announcement_api_v1_admin_notifications__message_id__publish_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notifications/{message_id}/cancel": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Cancel Announcement
+     * @description 取消指定通知公告的发布计划。
+     */
+    post: operations["cancel_announcement_api_v1_admin_notifications__message_id__cancel_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notifications/{message_id}/recall": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Recall Announcement
+     * @description 撤回已发布的通知公告。
+     */
+    post: operations["recall_announcement_api_v1_admin_notifications__message_id__recall_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notification-deliveries": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Deliveries
+     * @description 分页查询通知投递记录，并补充接收用户信息。
+     */
+    get: operations["list_deliveries_api_v1_admin_notification_deliveries_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notification-deliveries/{message_id}/summary": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Delivery Summary
+     * @description 获取指定通知的投递状态统计与消息摘要。
+     */
+    get: operations["delivery_summary_api_v1_admin_notification_deliveries__message_id__summary_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/admin/notification-deliveries/{message_id}/retry-failed": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Retry Failed
+     * @description 重新安排指定通知的失败投递，提交后触发投递任务。
+     */
+    post: operations["retry_failed_api_v1_admin_notification_deliveries__message_id__retry_failed_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/notification-preferences": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Preferences
+     * @description 获取当前用户各内置通知分类的有效偏好设置。
+     */
+    get: operations["list_preferences_api_v1_notification_preferences_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/notification-preferences/{category}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Update Preference
+     * @description 新增或更新当前用户指定通知分类的偏好设置。
+     */
+    put: operations["update_preference_api_v1_notification_preferences__category__put"]
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/api/v1/system/stats/operations-overview": {
     parameters: {
       query?: never
@@ -1883,7 +2196,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 运营总览 */
+    /**
+     * 运营总览
+     * @description 按查询条件汇总用户、业务与系统运行状态，返回运营总览。
+     */
     get: operations["get_operations_overview_api_v1_system_stats_operations_overview_get"]
     put?: never
     post?: never
@@ -2022,7 +2338,7 @@ export interface paths {
     }
     /**
      * 最近系统活动
-     * @description Return cursor-paginated, explicitly curated dashboard activity.
+     * @description 使用游标分页返回纳入首页展示范围的系统活动。
      */
     get: operations["get_activities_api_v1_system_activities_get"]
     put?: never
@@ -2040,7 +2356,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 审计日志分页查询 */
+    /**
+     * 审计日志分页查询
+     * @description 分页查询审计日志，支持按查询条件筛选。
+     */
     get: operations["get_audit_logs_api_v1_system_audit_logs_paginate_get"]
     put?: never
     post?: never
@@ -2057,7 +2376,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 审计日志详情 */
+    /**
+     * 审计日志详情
+     * @description 获取单条审计日志及其关联对象信息，不存在时返回空。
+     */
     get: operations["get_audit_log_detail_api_v1_system_audit_logs__item_id__get"]
     put?: never
     post?: never
@@ -2133,14 +2455,78 @@ export interface components {
   schemas: {
     /** ActionIn */
     ActionIn: {
+      /** Type */
+      type?: ("menu" | "external") | null
+      /** Menuid */
+      menuId?: string | null
       /** Route */
-      route: string
+      route?: string | null
       /** Params */
       params?: {
         [key: string]: unknown
       }
+      /** Query */
+      query?: {
+        [key: string]: unknown
+      }
+      /** Url */
+      url?: string | null
+      /** Path */
+      path?: string | null
       /** Label */
       label?: string | null
+      localizedLabel?: components["schemas"]["LocalizedActionLabel"] | null
+    }
+    /** ActionParameter */
+    ActionParameter: {
+      /** Name */
+      name: string
+      /**
+       * Location
+       * @enum {string}
+       */
+      location: "path" | "query"
+      /** Required */
+      required: boolean
+      /** Defaultvalue */
+      defaultValue?: string | null
+      /** Descriptionkey */
+      descriptionKey?: string | null
+      /** Example */
+      example?: string | null
+    }
+    /** ActionTarget */
+    ActionTarget: {
+      /**
+       * Menuid
+       * Format: uuid
+       */
+      menuId: string
+      /** Label */
+      label: string
+      /** Breadcrumb */
+      breadcrumb: string[]
+      /** Route */
+      route: string
+      /** Path */
+      path: string
+      /** Parameters */
+      parameters?: components["schemas"]["ActionParameter"][]
+    }
+    /**
+     * ActiveMenuOption
+     * @description 可作为侧边栏高亮目标的菜单。
+     */
+    ActiveMenuOption: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Routename */
+      routeName: string
+      /** Menuname */
+      menuName: string
     }
     /**
      * ActiveTaskInfo
@@ -2261,6 +2647,26 @@ export interface components {
     /** AnnouncementCreateRequest */
     AnnouncementCreateRequest: {
       /**
+       * Displaymode
+       * @default inbox
+       * @enum {string}
+       */
+      displayMode: "inbox" | "top_banner"
+      /** Clientrequestid */
+      clientRequestId?: string | null
+      /** Bannerrevision */
+      bannerRevision?: number | null
+      /**
+       * Replacecurrent
+       * @default false
+       */
+      replaceCurrent: boolean
+      /**
+       * Replacescheduled
+       * @default false
+       */
+      replaceScheduled: boolean
+      /**
        * Category
        * @default admin.announcement
        */
@@ -2277,12 +2683,17 @@ export interface components {
       templateVariables?: {
         [key: string]: unknown
       }
+      /** Variablebindings */
+      variableBindings?: {
+        [key: string]: components["schemas"]["RecipientVariableBinding"]
+      }
       /** I18Nkey */
       i18NKey?: string | null
       /** I18Nparams */
       i18NParams?: {
         [key: string]: unknown
       }
+      localizedContent?: components["schemas"]["LocalizedContent"] | null
       /** Rawtitle */
       rawTitle?: string | null
       /** Rawcontent */
@@ -2294,7 +2705,7 @@ export interface components {
        */
       rawFormat: "plain_text" | "markdown"
       /** Audience */
-      audience: components["schemas"]["AudienceRuleIn"][]
+      audience?: components["schemas"]["AudienceRuleIn"][]
       /**
        * Mandatory
        * @default false
@@ -2307,6 +2718,11 @@ export interface components {
       publishAt?: string | null
       /** Expireat */
       expireAt?: string | null
+      /**
+       * Saveasdraft
+       * @default false
+       */
+      saveAsDraft: boolean
     }
     /**
      * ApiDistributionItem
@@ -2462,6 +2878,38 @@ export interface components {
        */
       errorCount: number
     }
+    /** ApplyPackagesBody */
+    ApplyPackagesBody: {
+      /** Packagekeys */
+      packageKeys: string[]
+      /**
+       * Mode
+       * @default merge
+       * @enum {string}
+       */
+      mode: "merge" | "replace"
+    }
+    /** ApplyPackagesResponse */
+    ApplyPackagesResponse: {
+      /** Permissioncodes */
+      permissionCodes: string[]
+      /** Datascopes */
+      dataScopes: {
+        [key: string]: string
+      }
+      /** Fieldmodes */
+      fieldModes: {
+        [key: string]: {
+          [key: string]: "visible" | "masked" | "hidden"
+        }
+      }
+      /** Addedcodes */
+      addedCodes: string[]
+      /** Removedcodes */
+      removedCodes: string[]
+      /** Scopechanges */
+      scopeChanges: components["schemas"]["ScopeChangeResponse"][]
+    }
     /** AudiencePreviewRequest */
     AudiencePreviewRequest: {
       /** Audience */
@@ -2508,6 +2956,12 @@ export interface components {
        * @example 2024-07-31 16:07:34
        */
       updateTime: string
+      /** Subjectuserid */
+      subjectUserId?: string | null
+      /** Impersonationsessionid */
+      impersonationSessionId?: string | null
+      /** Subjectname */
+      subjectName?: string | null
       /** Actorid */
       actorId?: string | null
       /** Actorname */
@@ -2525,6 +2979,12 @@ export interface components {
       ip?: string | null
       /** Occurredat */
       occurredAt: string
+      /** Metadata */
+      metadata?: {
+        [key: string]: unknown
+      }
+      /** Subjectusername */
+      subjectUsername?: string | null
       /** Requestid */
       requestId?: string | null
       /** Correlationid */
@@ -2561,6 +3021,12 @@ export interface components {
        * @example 2024-07-31 16:07:34
        */
       updateTime: string
+      /** Subjectuserid */
+      subjectUserId?: string | null
+      /** Impersonationsessionid */
+      impersonationSessionId?: string | null
+      /** Subjectname */
+      subjectName?: string | null
       /** Actorid */
       actorId?: string | null
       /** Actorname */
@@ -2594,6 +3060,76 @@ export interface components {
      * @enum {string}
      */
     AuditSource: "http" | "domain_event" | "system"
+    /** BannerCheckRequest */
+    BannerCheckRequest: {
+      /** Publishat */
+      publishAt?: string | null
+      /** Expireat */
+      expireAt?: string | null
+      /** Messageid */
+      messageId?: string | null
+    }
+    /** BannerCheckResponse */
+    BannerCheckResponse: {
+      /** Revision */
+      revision: number
+      /** Servernow */
+      serverNow: string
+      current?: components["schemas"]["BannerSummary"] | null
+      scheduled?: components["schemas"]["BannerSummary"] | null
+    }
+    /** BannerPublishRequest */
+    BannerPublishRequest: {
+      /** Bannerrevision */
+      bannerRevision?: number | null
+      /**
+       * Replacecurrent
+       * @default false
+       */
+      replaceCurrent: boolean
+      /**
+       * Replacescheduled
+       * @default false
+       */
+      replaceScheduled: boolean
+    }
+    /** BannerSummary */
+    BannerSummary: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Title */
+      title: string
+      /**
+       * Level
+       * @enum {string}
+       */
+      level: "info" | "success" | "warning" | "error"
+      /** Contentmode */
+      contentMode: string
+      /** Contentparams */
+      contentParams?: {
+        [key: string]: unknown
+      } | null
+      /** Content */
+      content: string
+      /** Contentformat */
+      contentFormat?: string | null
+      /** Action */
+      action?: {
+        [key: string]: unknown
+      } | null
+      /** Publishat */
+      publishAt?: string | null
+      /** Publishedat */
+      publishedAt?: string | null
+      /** Expireat */
+      expireAt?: string | null
+      /** Status */
+      status: string
+    }
     /**
      * BusinessSummary
      * @description 业务数据汇总。
@@ -2605,17 +3141,64 @@ export interface components {
       menus: number
       /** Routers */
       routers: number
-      /** Scripts */
-      scripts: number
       /** Schedules */
       schedules: number
     }
-    /** Button */
-    Button: {
+    /**
+     * CatalogCodeResponse
+     * @description 权限码。
+     */
+    CatalogCodeResponse: {
       /** Code */
       code: string
-      /** Desc */
-      desc: string
+      /** Resource */
+      resource: string
+      /** Label */
+      label: string
+      /** Abacaction */
+      abacAction: string
+      /** Depends */
+      depends: string[]
+      /** Source */
+      source: string
+    }
+    /**
+     * CatalogDataScopeResponse
+     * @description 资源可选的数据范围。
+     */
+    CatalogDataScopeResponse: {
+      /** Key */
+      key: string
+      /** Label */
+      label: string
+    }
+    /**
+     * CatalogFieldGroupResponse
+     * @description 资源的字段组。
+     */
+    CatalogFieldGroupResponse: {
+      /** Key */
+      key: string
+      /** Label */
+      label: string
+      /** Fields */
+      fields: string[]
+      /** Modes */
+      modes: ("masked" | "hidden")[]
+    }
+    /**
+     * CatalogResourceResponse
+     * @description 资源。
+     */
+    CatalogResourceResponse: {
+      /** Key */
+      key: string
+      /** Label */
+      label: string
+      /** Datascopes */
+      dataScopes: components["schemas"]["CatalogDataScopeResponse"][]
+      /** Fieldgroups */
+      fieldGroups: components["schemas"]["CatalogFieldGroupResponse"][]
     }
     /**
      * ChangePasswordBody
@@ -2627,51 +3210,119 @@ export interface components {
       /** Newpassword */
       newPassword: string
     }
-    /** CrontabScheduleCreate */
-    CrontabScheduleCreate: {
+    /** ContentPreviewRequest */
+    ContentPreviewRequest: {
+      /** Templatecode */
+      templateCode: string
+      /** Templatevariables */
+      templateVariables?: {
+        [key: string]: unknown
+      }
+      /** Variablebindings */
+      variableBindings?: {
+        [key: string]: components["schemas"]["RecipientVariableBinding"]
+      }
+      /** Audience */
+      audience: components["schemas"]["AudienceRuleIn"][]
+      /** Previewuserid */
+      previewUserId?: string | null
+    }
+    /** ContentPreviewResponse */
+    ContentPreviewResponse: {
+      /**
+       * Contentmode
+       * @enum {string}
+       */
+      contentMode: "i18n" | "raw"
+      /** Title */
+      title: string
+      /** Content */
+      content: string
+      /** Contentparams */
+      contentParams?: {
+        [key: string]: unknown
+      } | null
+      /** Contentformat */
+      contentFormat?: ("plain_text" | "markdown") | null
+    }
+    /** CrontabDefinition */
+    CrontabDefinition: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "crontab"
       /**
        * Minute
-       * @description 分钟
        * @default *
        */
       minute: string
       /**
        * Hour
-       * @description 小时
        * @default *
        */
       hour: string
       /**
        * Dayofweek
-       * @description 星期
        * @default *
        */
       dayOfWeek: string
       /**
        * Dayofmonth
-       * @description 日
        * @default *
        */
       dayOfMonth: string
       /**
        * Monthofyear
-       * @description 月
        * @default *
        */
       monthOfYear: string
     }
-    /** CrontabScheduleResponse */
-    CrontabScheduleResponse: {
-      /** Minute */
+    /** CrontabPreviewRequest */
+    CrontabPreviewRequest: {
+      /**
+       * Minute
+       * @default *
+       */
       minute: string
-      /** Hour */
+      /**
+       * Hour
+       * @default *
+       */
       hour: string
-      /** Dayofweek */
+      /**
+       * Dayofweek
+       * @default *
+       */
       dayOfWeek: string
-      /** Dayofmonth */
+      /**
+       * Dayofmonth
+       * @default *
+       */
       dayOfMonth: string
-      /** Monthofyear */
+      /**
+       * Monthofyear
+       * @default *
+       */
       monthOfYear: string
+    }
+    /** CrontabPreviewResponse */
+    CrontabPreviewResponse: {
+      /** Valid */
+      valid: boolean
+      /** Errorfield */
+      errorField?: ("minute" | "hour" | "dayOfWeek" | "dayOfMonth" | "monthOfYear") | null
+      /** Timezone */
+      timezone: string
+      /** Evaluatedat */
+      evaluatedAt: string
+      /** Nextruns */
+      nextRuns?: string[]
+      /**
+       * Horizonyears
+       * @default 5
+       */
+      horizonYears: number
     }
     /** CursorPaginatedResponse[ActivityResponse] */
     CursorPaginatedResponse_ActivityResponse_: {
@@ -2701,96 +3352,21 @@ export interface components {
       /** Revision */
       revision: string
     }
-    /**
-     * DataPolicyCreate
-     * @description 创建数据策略请求。
-     */
-    DataPolicyCreate: {
-      /** Name */
-      name: string
-      /** Targetmodel */
-      targetModel: string
-      /**
-       * Description
-       * @default
-       */
-      description: string
-      /** Rule */
-      rule: {
-        [key: string]: unknown
-      }
-      /**
-       * Effect
-       * @default allow
-       */
-      effect: string
-      /**
-       * Actions
-       * @default [
-       *       "read",
-       *       "write"
-       *     ]
-       */
-      actions: string[]
-      /** @default 1 */
-      status: components["schemas"]["Status"]
+    /** DashboardDepthPoint */
+    DashboardDepthPoint: {
+      /** Timebucket */
+      timeBucket: string
+      /** Depth */
+      depth: number | null
     }
-    /**
-     * DataPolicyResponse
-     * @description 数据策略响应。
-     */
-    DataPolicyResponse: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Createtime
-       * @example 2024-07-31 16:07:34
-       */
-      createTime: string
-      /**
-       * Updatetime
-       * @example 2024-07-31 16:07:34
-       */
-      updateTime: string
-      /** Name */
-      name: string
-      /** Targetmodel */
-      targetModel: string
-      /** Description */
-      description: string
-      /** Rule */
-      rule: {
-        [key: string]: unknown
-      }
-      /** Effect */
-      effect: string
-      /** Actions */
-      actions: string[]
-      status: components["schemas"]["Status"]
-    }
-    /**
-     * DataPolicyUpdate
-     * @description 更新数据策略请求。
-     */
-    DataPolicyUpdate: {
-      /** Name */
-      name?: string | null
-      /** Targetmodel */
-      targetModel?: string | null
-      /** Description */
-      description?: string | null
-      /** Rule */
-      rule?: {
-        [key: string]: unknown
-      } | null
-      /** Effect */
-      effect?: string | null
-      /** Actions */
-      actions?: string[] | null
-      status?: components["schemas"]["Status"] | null
+    /** DashboardTimelinePoint */
+    DashboardTimelinePoint: {
+      /** Timebucket */
+      timeBucket: string
+      /** Success */
+      success: number
+      /** Failure */
+      failure: number
     }
     /**
      * DeadLetterResponse
@@ -2803,6 +3379,63 @@ export interface components {
       timestamp: string
       /** Source */
       source?: string | null
+    }
+    /** DeliveryMessageResponse */
+    DeliveryMessageResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Title */
+      title: string
+      /** Category */
+      category: string
+      /** Contentmode */
+      contentMode: string
+      /** Titleparams */
+      titleParams?: {
+        [key: string]: unknown
+      } | null
+      /** Titles */
+      titles?: {
+        [key: string]: string
+      }
+      /** Defaultlocale */
+      defaultLocale?: string | null
+      status: components["schemas"]["MessageStatus"]
+      /** Publishedat */
+      publishedAt?: string | null
+      /** Expireat */
+      expireAt?: string | null
+      /** Createtime */
+      createTime: string
+    }
+    /** DeliveryRecipientResponse */
+    DeliveryRecipientResponse: {
+      /**
+       * Name
+       * @default
+       */
+      name: string
+      /**
+       * Username
+       * @default
+       */
+      username: string
+      /** Avatar */
+      avatar?: string | null
+      /**
+       * Department
+       * @default
+       */
+      department: string
+      /**
+       * State
+       * @default deleted
+       * @enum {string}
+       */
+      state: "active" | "disabled" | "pending" | "deleted"
     }
     /** DeliveryResponse */
     DeliveryResponse: {
@@ -2847,6 +3480,8 @@ export interface components {
       lockedUntil?: string | null
       /** Sentat */
       sentAt?: string | null
+      recipient?: components["schemas"]["DeliveryRecipientResponse"]
+      message?: components["schemas"]["DeliveryMessageResponse"] | null
     }
     /** DeliverySummaryResponse */
     DeliverySummaryResponse: {
@@ -2859,6 +3494,22 @@ export interface components {
       byStatus?: {
         [key: string]: number
       }
+      message?: components["schemas"]["DeliveryMessageResponse"] | null
+    }
+    /** DenialRecord */
+    DenialRecord: {
+      /** Code */
+      code: string
+      /** Routekey */
+      routeKey: string
+      /** Codelabel */
+      codeLabel?: string | null
+      /** Count */
+      count: number
+      /** Lastat */
+      lastAt?: string | null
+      /** Lastuserid */
+      lastUserId?: string | null
     }
     /**
      * DepartmentCreate
@@ -2997,6 +3648,94 @@ export interface components {
       /** Deadlettercount */
       deadLetterCount: number
     }
+    /** ExtensionCreate */
+    ExtensionCreate: {
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: "route_binding" | "depends" | "custom_code"
+      /** Code */
+      code: string
+      /** Routekey */
+      routeKey?: string | null
+      /** Dependson */
+      dependsOn?: string | null
+      /** Resource */
+      resource?: string | null
+      /** Label */
+      label?: string | null
+      /** Abacaction */
+      abacAction?: ("read" | "write") | null
+      /**
+       * Note
+       * @default
+       */
+      note: string
+    }
+    /** ExtensionExport */
+    ExtensionExport: {
+      /** Text */
+      text: string
+    }
+    /** ExtensionResponse */
+    ExtensionResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * Createtime
+       * @example 2024-07-31 16:07:34
+       */
+      createTime: string
+      /**
+       * Updatetime
+       * @example 2024-07-31 16:07:34
+       */
+      updateTime: string
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: "route_binding" | "depends" | "custom_code"
+      /** Code */
+      code: string
+      /** Routekey */
+      routeKey: string | null
+      /** Dependson */
+      dependsOn: string | null
+      /** Resource */
+      resource: string | null
+      /** Label */
+      label: string | null
+      /** Abacaction */
+      abacAction: string | null
+      /** Note */
+      note: string
+      /** Createdby */
+      createdBy: string | null
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "active" | "cleanable" | "invalid"
+      /** Reason */
+      reason: string | null
+    }
+    /**
+     * ExtensionUpdate
+     * @description 只允许修改非结构字段；结构变化请删除后重建。
+     */
+    ExtensionUpdate: {
+      /** Note */
+      note?: string | null
+      /** Label */
+      label?: string | null
+      /** Abacaction */
+      abacAction?: ("read" | "write") | null
+    }
     /**
      * FastAPIRouterResponse
      * @description 接口路由响应数据结构。
@@ -3028,87 +3767,6 @@ export interface components {
       /** Code */
       readonly code: string
     }
-    /** FieldPolicyCreate */
-    FieldPolicyCreate: {
-      /** Name */
-      name: string
-      /**
-       * Description
-       * @default
-       */
-      description: string
-      /** Targetmodel */
-      targetModel: string
-      /** Fields */
-      fields: string[]
-      /**
-       * Actions
-       * @default [
-       *       "read",
-       *       "write"
-       *     ]
-       */
-      actions: string[]
-      /** Effect */
-      effect: string
-      /** Condition */
-      condition?: {
-        [key: string]: unknown
-      } | null
-    }
-    /** FieldPolicyResponse */
-    FieldPolicyResponse: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Createtime
-       * @example 2024-07-31 16:07:34
-       */
-      createTime: string
-      /**
-       * Updatetime
-       * @example 2024-07-31 16:07:34
-       */
-      updateTime: string
-      /** Name */
-      name: string
-      /** Description */
-      description: string
-      /** Targetmodel */
-      targetModel: string
-      /** Fields */
-      fields: string[]
-      /** Actions */
-      actions: string[]
-      /** Effect */
-      effect: string
-      /** Condition */
-      condition: {
-        [key: string]: unknown
-      } | null
-      /** Status */
-      status: string
-    }
-    /** FieldPolicyUpdate */
-    FieldPolicyUpdate: {
-      /** Name */
-      name?: string | null
-      /** Description */
-      description?: string | null
-      /** Fields */
-      fields?: string[] | null
-      /** Actions */
-      actions?: string[] | null
-      /** Effect */
-      effect?: string | null
-      /** Condition */
-      condition?: {
-        [key: string]: unknown
-      } | null
-    }
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -3131,6 +3789,43 @@ export interface components {
       bizErrors1H: number
       /** Wsconnections */
       wsConnections: number
+    }
+    /** ImpersonationCreateBody */
+    ImpersonationCreateBody: {
+      /**
+       * Targetuserid
+       * Format: uuid
+       */
+      targetUserId: string
+      /** Reason */
+      reason?: string | null
+    }
+    /** ImpersonationCreated */
+    ImpersonationCreated: {
+      /** Expiresat */
+      expiresAt: string
+      /** Accesstoken */
+      accessToken: string
+      /**
+       * Sessionid
+       * Format: uuid
+       */
+      sessionId: string
+      subject: components["schemas"]["UserSummary"]
+    }
+    /** ImpersonationCurrent */
+    ImpersonationCurrent: {
+      /** Expiresat */
+      expiresAt: string
+      /**
+       * Sessionid
+       * Format: uuid
+       */
+      sessionId: string
+      actor: components["schemas"]["UserSummary"]
+      subject: components["schemas"]["UserSummary"]
+      /** Createdat */
+      createdAt: string
     }
     /**
      * InboxPage
@@ -3179,21 +3874,30 @@ export interface components {
       /** Hostname */
       hostname: string
     }
-    /** IntervalScheduleCreate */
-    IntervalScheduleCreate: {
+    /** IntervalDefinition */
+    IntervalDefinition: {
       /**
-       * Every
-       * @description 间隔数量
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
        */
-      every: number
-      /** @description 间隔周期单位 */
-      period: components["schemas"]["Period"]
-    }
-    /** IntervalScheduleResponse */
-    IntervalScheduleResponse: {
+      type: "interval"
       /** Every */
       every: number
       period: components["schemas"]["Period"]
+    }
+    /**
+     * InvalidScopeResponse
+     * @description 因声明变化被收紧处理的一项。
+     */
+    InvalidScopeResponse: {
+      /** Resource */
+      resource: string
+      /** Group */
+      group?: string | null
+      /** Stored */
+      stored: string
+      /** Effective */
+      effective: string
     }
     /**
      * InviteValidateResponse
@@ -3202,6 +3906,56 @@ export interface components {
     InviteValidateResponse: {
       /** Valid */
       valid: boolean
+    }
+    /**
+     * LocalizedActionLabel
+     * @description Author-provided button names, independent of the shared navigation target.
+     */
+    LocalizedActionLabel: {
+      /**
+       * Defaultlocale
+       * @enum {string}
+       */
+      defaultLocale: "zh-CN" | "en-US"
+      /** Translations */
+      translations: {
+        [key: string]: string
+      }
+    }
+    /**
+     * LocalizedContent
+     * @description Portable language envelope stored intact in existing notification JSON.
+     */
+    LocalizedContent: {
+      /**
+       * Defaultlocale
+       * @enum {string}
+       */
+      defaultLocale: "zh-CN" | "en-US"
+      /** Translations */
+      translations: {
+        [key: string]: components["schemas"]["LocalizedTranslation"]
+      }
+      /** Parameters */
+      parameters?: {
+        [key: string]: string | number | boolean
+      }
+    }
+    /**
+     * LocalizedTranslation
+     * @description One author-provided language; an optional language may be entirely blank.
+     */
+    LocalizedTranslation: {
+      /**
+       * Title
+       * @default
+       */
+      title: string
+      /**
+       * Content
+       * @default
+       */
+      content: string
     }
     /**
      * LoginRequest
@@ -3326,17 +4080,15 @@ export interface components {
        */
       query: components["schemas"]["Query"][]
       /**
-       * Buttons
-       * @description 按钮权限
-       * @default []
+       * Permission
+       * @description 进入页面需要的权限码，仅非常量页面菜单使用
        */
-      buttons: components["schemas"]["Button"][]
+      permission?: string | null
       /**
-       * Interfaces
-       * @description 绑定的接口权限码列表
-       * @default []
+       * Activemenu
+       * @description 高亮祖先菜单的路由名称
        */
-      interfaces: string[]
+      activeMenu?: string | null
     }
     /**
      * MenuIconType
@@ -3457,17 +4209,15 @@ export interface components {
        */
       query: components["schemas"]["Query"][]
       /**
-       * Buttons
-       * @description 按钮权限
-       * @default []
+       * Permission
+       * @description 进入页面需要的权限码，仅非常量页面菜单使用
        */
-      buttons: components["schemas"]["Button"][]
+      permission?: string | null
       /**
-       * Interfaces
-       * @description 绑定的接口权限码列表
-       * @default []
+       * Activemenu
+       * @description 高亮祖先菜单的路由名称
        */
-      interfaces: string[]
+      activeMenu?: string | null
       /** Children */
       children?: components["schemas"]["MenuListResponse"][] | null
     }
@@ -3588,17 +4338,15 @@ export interface components {
        */
       query: components["schemas"]["Query"][]
       /**
-       * Buttons
-       * @description 按钮权限
-       * @default []
+       * Permission
+       * @description 进入页面需要的权限码，仅非常量页面菜单使用
        */
-      buttons: components["schemas"]["Button"][]
+      permission?: string | null
       /**
-       * Interfaces
-       * @description 绑定的接口权限码列表
-       * @default []
+       * Activemenu
+       * @description 高亮祖先菜单的路由名称
        */
-      interfaces: string[]
+      activeMenu?: string | null
     }
     /**
      * MenuRouteResponse
@@ -3631,28 +4379,27 @@ export interface components {
        * Menuname
        * @description 菜单名称
        */
-      menuName: string
+      menuName?: string
       /**
+       * Menutype
        * @description 菜单类型: 1-目录, 2-菜单
-       * @default 1
        */
-      menuType: components["schemas"]["MenuType"]
+      menuType?: components["schemas"]["MenuType"]
       /**
        * Order
        * @description 排序序号
-       * @default 0
        */
-      order: number
+      order?: number
       /**
        * Routename
        * @description 路由名称
        */
-      routeName: string
+      routeName?: string
       /**
        * Routepath
        * @description 路由路径
        */
-      routePath: string
+      routePath?: string
       /**
        * Component
        * @description 组件路径
@@ -3664,21 +4411,17 @@ export interface components {
        */
       icon?: string | null
       /**
+       * Icontype
        * @description 图标类型
-       * @default 1
        */
-      iconType: components["schemas"]["MenuIconType"]
-      /**
-       * @description 状态
-       * @default 1
-       */
-      status: components["schemas"]["Status"]
+      iconType?: components["schemas"]["MenuIconType"]
+      /** @description 状态 */
+      status?: components["schemas"]["Status"]
       /**
        * Hideinmenu
        * @description 是否隐藏
-       * @default false
        */
-      hideInMenu: boolean
+      hideInMenu?: boolean
       /**
        * Parentid
        * @description 父级ID
@@ -3692,15 +4435,13 @@ export interface components {
       /**
        * Keepalive
        * @description 是否缓存
-       * @default false
        */
-      keepAlive: boolean
+      keepAlive?: boolean
       /**
        * Constant
        * @description 是否常量路由
-       * @default false
        */
-      constant: boolean
+      constant?: boolean
       /**
        * Href
        * @description 外链
@@ -3709,9 +4450,8 @@ export interface components {
       /**
        * Multitab
        * @description 是否支持多页签
-       * @default false
        */
-      multiTab: boolean
+      multiTab?: boolean
       /**
        * Fixedindexintab
        * @description 固定页签次序
@@ -3720,21 +4460,18 @@ export interface components {
       /**
        * Query
        * @description 路由参数
-       * @default []
        */
-      query: components["schemas"]["Query"][]
+      query?: components["schemas"]["Query"][]
       /**
-       * Buttons
-       * @description 按钮权限
-       * @default []
+       * Permission
+       * @description 进入页面需要的权限码，仅非常量页面菜单使用
        */
-      buttons: components["schemas"]["Button"][]
+      permission?: string | null
       /**
-       * Interfaces
-       * @description 绑定的接口权限码列表
-       * @default []
+       * Activemenu
+       * @description 高亮祖先菜单的路由名称
        */
-      interfaces: string[]
+      activeMenu?: string | null
     }
     /** MessageAdminDetailResponse */
     MessageAdminDetailResponse: {
@@ -3753,6 +4490,16 @@ export interface components {
        * @example 2024-07-31 16:07:34
        */
       updateTime: string
+      /**
+       * Displaymode
+       * @default inbox
+       * @enum {string}
+       */
+      displayMode: "inbox" | "top_banner"
+      /** Supersededat */
+      supersededAt?: string | null
+      /** Supersededbyid */
+      supersededById?: string | null
       /** Source */
       source: string
       /** Category */
@@ -3781,6 +4528,10 @@ export interface components {
       recalledAt?: string | null
       /** Cancelledat */
       cancelledAt?: string | null
+      /** Variablebindings */
+      variableBindings?: {
+        [key: string]: components["schemas"]["RecipientVariableBinding"]
+      }
       /** Contentparams */
       contentParams?: {
         [key: string]: unknown
@@ -3821,6 +4572,16 @@ export interface components {
        * @example 2024-07-31 16:07:34
        */
       updateTime: string
+      /**
+       * Displaymode
+       * @default inbox
+       * @enum {string}
+       */
+      displayMode: "inbox" | "top_banner"
+      /** Supersededat */
+      supersededAt?: string | null
+      /** Supersededbyid */
+      supersededById?: string | null
       /** Source */
       source: string
       /** Category */
@@ -3854,7 +4615,15 @@ export interface components {
      * MessageStatus
      * @enum {string}
      */
-    MessageStatus: "draft" | "scheduled" | "publishing" | "published" | "expired" | "cancelled" | "recalled"
+    MessageStatus:
+      | "draft"
+      | "scheduled"
+      | "publishing"
+      | "published"
+      | "expired"
+      | "cancelled"
+      | "recalled"
+      | "superseded"
     /**
      * MultiResourceStats
      * @description 多实例资源统计汇总。
@@ -4008,6 +4777,93 @@ export interface components {
      * @enum {string}
      */
     OutboxStatus: "pending" | "processing" | "retrying" | "sent" | "dead" | "cancelled"
+    /** PackageCreate */
+    PackageCreate: {
+      /** Key */
+      key: string
+      /** Label */
+      label: string
+      /**
+       * Description
+       * @default
+       */
+      description: string
+      /** Codes */
+      codes: string[]
+      /**
+       * Datascopes
+       * @default {}
+       */
+      dataScopes: {
+        [key: string]: string
+      }
+      /**
+       * Fieldmodes
+       * @default {}
+       */
+      fieldModes: {
+        [key: string]: {
+          [key: string]: "visible" | "masked" | "hidden"
+        }
+      }
+    }
+    /** PackageResponse */
+    PackageResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * Createtime
+       * @example 2024-07-31 16:07:34
+       */
+      createTime: string
+      /**
+       * Updatetime
+       * @example 2024-07-31 16:07:34
+       */
+      updateTime: string
+      /** Key */
+      key: string
+      /** Label */
+      label: string
+      /** Description */
+      description: string
+      /** Codes */
+      codes: string[]
+      /** Datascopes */
+      dataScopes: {
+        [key: string]: string
+      }
+      /** Fieldmodes */
+      fieldModes: {
+        [key: string]: {
+          [key: string]: "visible" | "masked" | "hidden"
+        }
+      }
+      /** Builtin */
+      builtin: boolean
+    }
+    /** PackageUpdate */
+    PackageUpdate: {
+      /** Label */
+      label?: string
+      /** Description */
+      description?: string
+      /** Codes */
+      codes?: string[]
+      /** Datascopes */
+      dataScopes?: {
+        [key: string]: string
+      }
+      /** Fieldmodes */
+      fieldModes?: {
+        [key: string]: {
+          [key: string]: "visible" | "masked" | "hidden"
+        }
+      }
+    }
     /** PaginatedResponse[ApiListItem] */
     PaginatedResponse_ApiListItem_: {
       /**
@@ -4054,29 +4910,6 @@ export interface components {
        */
       records: components["schemas"]["AuditLogListItem"][]
     }
-    /** PaginatedResponse[DataPolicyResponse] */
-    PaginatedResponse_DataPolicyResponse_: {
-      /**
-       * Page
-       * @description 页码。
-       */
-      page: number
-      /**
-       * Pagesize
-       * @description 每页条数。
-       */
-      pageSize: number
-      /**
-       * Total
-       * @description 总条数。
-       */
-      total: number
-      /**
-       * Records
-       * @description 记录列表。
-       */
-      records: components["schemas"]["DataPolicyResponse"][]
-    }
     /** PaginatedResponse[DeliveryResponse] */
     PaginatedResponse_DeliveryResponse_: {
       /**
@@ -4099,29 +4932,6 @@ export interface components {
        * @description 记录列表。
        */
       records: components["schemas"]["DeliveryResponse"][]
-    }
-    /** PaginatedResponse[FieldPolicyResponse] */
-    PaginatedResponse_FieldPolicyResponse_: {
-      /**
-       * Page
-       * @description 页码。
-       */
-      page: number
-      /**
-       * Pagesize
-       * @description 每页条数。
-       */
-      pageSize: number
-      /**
-       * Total
-       * @description 总条数。
-       */
-      total: number
-      /**
-       * Records
-       * @description 记录列表。
-       */
-      records: components["schemas"]["FieldPolicyResponse"][]
     }
     /** PaginatedResponse[MenuListResponse] */
     PaginatedResponse_MenuListResponse_: {
@@ -4169,6 +4979,29 @@ export interface components {
        */
       records: components["schemas"]["MessageAdminResponse"][]
     }
+    /** PaginatedResponse[PackageResponse] */
+    PaginatedResponse_PackageResponse_: {
+      /**
+       * Page
+       * @description 页码。
+       */
+      page: number
+      /**
+       * Pagesize
+       * @description 每页条数。
+       */
+      pageSize: number
+      /**
+       * Total
+       * @description 总条数。
+       */
+      total: number
+      /**
+       * Records
+       * @description 记录列表。
+       */
+      records: components["schemas"]["PackageResponse"][]
+    }
     /** PaginatedResponse[PeriodicTaskListResponse] */
     PaginatedResponse_PeriodicTaskListResponse_: {
       /**
@@ -4215,52 +5048,6 @@ export interface components {
        */
       records: components["schemas"]["RoleResponse"][]
     }
-    /** PaginatedResponse[ScriptExecutionResponse] */
-    PaginatedResponse_ScriptExecutionResponse_: {
-      /**
-       * Page
-       * @description 页码。
-       */
-      page: number
-      /**
-       * Pagesize
-       * @description 每页条数。
-       */
-      pageSize: number
-      /**
-       * Total
-       * @description 总条数。
-       */
-      total: number
-      /**
-       * Records
-       * @description 记录列表。
-       */
-      records: components["schemas"]["ScriptExecutionResponse"][]
-    }
-    /** PaginatedResponse[ScriptListResponse] */
-    PaginatedResponse_ScriptListResponse_: {
-      /**
-       * Page
-       * @description 页码。
-       */
-      page: number
-      /**
-       * Pagesize
-       * @description 每页条数。
-       */
-      pageSize: number
-      /**
-       * Total
-       * @description 总条数。
-       */
-      total: number
-      /**
-       * Records
-       * @description 记录列表。
-       */
-      records: components["schemas"]["ScriptListResponse"][]
-    }
     /** PaginatedResponse[TaskListResponse] */
     PaginatedResponse_TaskListResponse_: {
       /**
@@ -4283,6 +5070,29 @@ export interface components {
        * @description 记录列表。
        */
       records: components["schemas"]["TaskListResponse"][]
+    }
+    /** PaginatedResponse[TaskStatsByName] */
+    PaginatedResponse_TaskStatsByName_: {
+      /**
+       * Page
+       * @description 页码。
+       */
+      page: number
+      /**
+       * Pagesize
+       * @description 每页条数。
+       */
+      pageSize: number
+      /**
+       * Total
+       * @description 总条数。
+       */
+      total: number
+      /**
+       * Records
+       * @description 记录列表。
+       */
+      records: components["schemas"]["TaskStatsByName"][]
     }
     /** PaginatedResponse[TemplateResponse] */
     PaginatedResponse_TemplateResponse_: {
@@ -4400,8 +5210,11 @@ export interface components {
        * @description 已注册的 Celery 任务名
        */
       task: string
-      /** @description 调度类型 */
-      taskType: components["schemas"]["TaskType"]
+      /** Schedule */
+      schedule:
+        | components["schemas"]["IntervalDefinition"]
+        | components["schemas"]["CrontabDefinition"]
+        | components["schemas"]["SolarDefinition"]
       /**
        * Enabled
        * @description 是否启用
@@ -4428,10 +5241,6 @@ export interface components {
       kwargs: {
         [key: string]: unknown
       }
-      /** @description 间隔调度配置 */
-      interval?: components["schemas"]["IntervalScheduleCreate"] | null
-      /** @description Crontab 调度配置 */
-      crontab?: components["schemas"]["CrontabScheduleCreate"] | null
     }
     /** PeriodicTaskListResponse */
     PeriodicTaskListResponse: {
@@ -4454,18 +5263,15 @@ export interface components {
       name: string
       /** Task */
       task: string
-      taskType: components["schemas"]["TaskType"]
       /** Enabled */
       enabled: boolean
       /** Description */
       description: string
-      /**
-       * Scheduleid
-       * Format: uuid
-       */
-      scheduleId: string
-      interval?: components["schemas"]["IntervalScheduleResponse"] | null
-      crontab?: components["schemas"]["CrontabScheduleResponse"] | null
+      /** Schedule */
+      schedule:
+        | components["schemas"]["IntervalDefinition"]
+        | components["schemas"]["CrontabDefinition"]
+        | components["schemas"]["SolarDefinition"]
     }
     /** PeriodicTaskResponse */
     PeriodicTaskResponse: {
@@ -4488,24 +5294,21 @@ export interface components {
       name: string
       /** Task */
       task: string
-      taskType: components["schemas"]["TaskType"]
       /** Enabled */
       enabled: boolean
       /** Description */
       description: string
-      /**
-       * Scheduleid
-       * Format: uuid
-       */
-      scheduleId: string
+      /** Schedule */
+      schedule:
+        | components["schemas"]["IntervalDefinition"]
+        | components["schemas"]["CrontabDefinition"]
+        | components["schemas"]["SolarDefinition"]
       /** Args */
       args: unknown[]
       /** Kwargs */
       kwargs: {
         [key: string]: unknown
       }
-      interval?: components["schemas"]["IntervalScheduleResponse"] | null
-      crontab?: components["schemas"]["CrontabScheduleResponse"] | null
     }
     /** PeriodicTaskUpdate */
     PeriodicTaskUpdate: {
@@ -4523,8 +5326,24 @@ export interface components {
       kwargs?: {
         [key: string]: unknown
       } | null
-      interval?: components["schemas"]["IntervalScheduleCreate"] | null
-      crontab?: components["schemas"]["CrontabScheduleCreate"] | null
+      /** Schedule */
+      schedule?:
+        | (
+            | components["schemas"]["IntervalDefinition"]
+            | components["schemas"]["CrontabDefinition"]
+            | components["schemas"]["SolarDefinition"]
+          )
+        | null
+    }
+    /**
+     * PermissionCatalogResponse
+     * @description 权限码目录。
+     */
+    PermissionCatalogResponse: {
+      /** Resources */
+      resources: components["schemas"]["CatalogResourceResponse"][]
+      /** Codes */
+      codes: components["schemas"]["CatalogCodeResponse"][]
     }
     /**
      * PluginDependencyGraph
@@ -4597,74 +5416,6 @@ export interface components {
       error?: components["schemas"]["PluginErrorResponse"] | null
     }
     /**
-     * PolicyAppliedDetail
-     * @description 单条策略模拟结果明细。
-     */
-    PolicyAppliedDetail: {
-      /**
-       * Policyid
-       * Format: uuid
-       */
-      policyId: string
-      /** Policyname */
-      policyName: string
-      /** Matchedcount */
-      matchedCount: number
-      /** Sqlfragment */
-      sqlFragment: string
-    }
-    /**
-     * PolicySimulateRequest
-     * @description 策略模拟请求。
-     */
-    PolicySimulateRequest: {
-      /** Policyids */
-      policyIds: string[]
-      /**
-       * Targetuserid
-       * Format: uuid
-       */
-      targetUserId: string
-      /**
-       * Previewlimit
-       * @default 20
-       */
-      previewLimit: number
-    }
-    /**
-     * PolicySimulateResponse
-     * @description 策略模拟响应。
-     */
-    PolicySimulateResponse: {
-      /** Targetmodel */
-      targetModel: string
-      /** Targetmodellabel */
-      targetModelLabel: string
-      /** Totalcount */
-      totalCount: number
-      /** Filteredcount */
-      filteredCount: number
-      /** Excludedcount */
-      excludedCount: number
-      /** Previewrows */
-      previewRows: {
-        [key: string]: unknown
-      }[]
-      /** Excludedrows */
-      excludedRows: {
-        [key: string]: unknown
-      }[]
-      /** Generatedsql */
-      generatedSql: string
-      /** Policiesapplied */
-      policiesApplied: components["schemas"]["PolicyAppliedDetail"][]
-      /**
-       * Isadminbypass
-       * @default false
-       */
-      isAdminBypass: boolean
-    }
-    /**
      * PoolResizeRequest
      * @description Pool 扩缩容请求。
      */
@@ -4707,6 +5458,52 @@ export interface components {
       /** Value */
       value: string
     }
+    /** QueueDashboardResponse */
+    QueueDashboardResponse: {
+      /** Sampledat */
+      sampledAt: string
+      /** Queues */
+      queues: components["schemas"]["QueueMetric"][]
+      /** Queuedepth */
+      queueDepth: number | null
+      /** Onlineworkers */
+      onlineWorkers: number
+      /** Totalworkers */
+      totalWorkers: number
+      /** Activetasks */
+      activeTasks: number
+      /** Concurrency */
+      concurrency: number
+      /** Throughput */
+      throughput: number
+      /** Success */
+      success: number
+      /** Failure */
+      failure: number
+      /** Retry */
+      retry: number
+      /** Revoked */
+      revoked: number
+      /** Successrate */
+      successRate: number | null
+      /** Avgruntime */
+      avgRuntime: number | null
+      /** P95Runtime */
+      p95Runtime: number | null
+      /** Timeline */
+      timeline: components["schemas"]["DashboardTimelinePoint"][]
+      /** Depthtimeline */
+      depthTimeline: components["schemas"]["DashboardDepthPoint"][]
+    }
+    /** QueueMetric */
+    QueueMetric: {
+      /** Name */
+      name: string
+      /** Depth */
+      depth: number | null
+      /** Consumers */
+      consumers: number | null
+    }
     /**
      * QueueOperateRequest
      * @description 队列操作请求。
@@ -4719,12 +5516,44 @@ export interface components {
       queue: string
     }
     /**
+     * RecipientVariableBinding
+     * @description A supported public recipient field, never an expression.
+     */
+    RecipientVariableBinding: {
+      /**
+       * Source
+       * @constant
+       */
+      source: "recipient"
+      /**
+       * Field
+       * @enum {string}
+       */
+      field: "name" | "email" | "roles" | "department"
+    }
+    /**
      * RegisteredTaskResponse
      * @description 已注册任务列表响应数据结构。
      */
     RegisteredTaskResponse: {
       /** Tasks */
       tasks: string[]
+    }
+    /** Response[ActionIn] */
+    Response_ActionIn_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["ActionIn"] | null
     }
     /** Response[AggregatedHealth] */
     Response_AggregatedHealth_: {
@@ -4758,6 +5587,22 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["ApiOverviewResponse"] | null
     }
+    /** Response[ApplyPackagesResponse] */
+    Response_ApplyPackagesResponse_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["ApplyPackagesResponse"] | null
+    }
     /** Response[AudiencePreviewResponse] */
     Response_AudiencePreviewResponse_: {
       /**
@@ -4774,6 +5619,22 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["AudiencePreviewResponse"] | null
     }
+    /** Response[BannerCheckResponse] */
+    Response_BannerCheckResponse_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["BannerCheckResponse"] | null
+    }
     /** Response[BusinessSummary] */
     Response_BusinessSummary_: {
       /**
@@ -4789,6 +5650,38 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["BusinessSummary"] | null
+    }
+    /** Response[ContentPreviewResponse] */
+    Response_ContentPreviewResponse_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["ContentPreviewResponse"] | null
+    }
+    /** Response[CrontabPreviewResponse] */
+    Response_CrontabPreviewResponse_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["CrontabPreviewResponse"] | null
     }
     /** Response[CursorPaginatedResponse[ActivityResponse]] */
     Response_CursorPaginatedResponse_ActivityResponse__: {
@@ -4821,22 +5714,6 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["DashboardCapabilitiesResponse"] | null
-    }
-    /** Response[DataPolicyResponse] */
-    Response_DataPolicyResponse_: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["DataPolicyResponse"] | null
     }
     /** Response[DeliverySummaryResponse] */
     Response_DeliverySummaryResponse_: {
@@ -4902,8 +5779,8 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["EventBusStats"] | null
     }
-    /** Response[FieldPolicyResponse] */
-    Response_FieldPolicyResponse_: {
+    /** Response[ExtensionExport] */
+    Response_ExtensionExport_: {
       /**
        * Code
        * @description 状态码。
@@ -4916,7 +5793,23 @@ export interface components {
        */
       message?: string
       /** @description 响应数据。 */
-      data?: components["schemas"]["FieldPolicyResponse"] | null
+      data?: components["schemas"]["ExtensionExport"] | null
+    }
+    /** Response[ExtensionResponse] */
+    Response_ExtensionResponse_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["ExtensionResponse"] | null
     }
     /** Response[HealthStats] */
     Response_HealthStats_: {
@@ -4933,6 +5826,38 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["HealthStats"] | null
+    }
+    /** Response[ImpersonationCreated] */
+    Response_ImpersonationCreated_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["ImpersonationCreated"] | null
+    }
+    /** Response[ImpersonationCurrent] */
+    Response_ImpersonationCurrent_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["ImpersonationCurrent"] | null
     }
     /** Response[InboxPage] */
     Response_InboxPage_: {
@@ -5081,6 +6006,22 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["OperationsOverviewResponse"] | null
     }
+    /** Response[PackageResponse] */
+    Response_PackageResponse_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["PackageResponse"] | null
+    }
     /** Response[PaginatedResponse[ApiListItem]] */
     Response_PaginatedResponse_ApiListItem__: {
       /**
@@ -5113,22 +6054,6 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["PaginatedResponse_AuditLogListItem_"] | null
     }
-    /** Response[PaginatedResponse[DataPolicyResponse]] */
-    Response_PaginatedResponse_DataPolicyResponse__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["PaginatedResponse_DataPolicyResponse_"] | null
-    }
     /** Response[PaginatedResponse[DeliveryResponse]] */
     Response_PaginatedResponse_DeliveryResponse__: {
       /**
@@ -5144,22 +6069,6 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["PaginatedResponse_DeliveryResponse_"] | null
-    }
-    /** Response[PaginatedResponse[FieldPolicyResponse]] */
-    Response_PaginatedResponse_FieldPolicyResponse__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["PaginatedResponse_FieldPolicyResponse_"] | null
     }
     /** Response[PaginatedResponse[MenuListResponse]] */
     Response_PaginatedResponse_MenuListResponse__: {
@@ -5193,6 +6102,22 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["PaginatedResponse_MessageAdminResponse_"] | null
     }
+    /** Response[PaginatedResponse[PackageResponse]] */
+    Response_PaginatedResponse_PackageResponse__: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["PaginatedResponse_PackageResponse_"] | null
+    }
     /** Response[PaginatedResponse[PeriodicTaskListResponse]] */
     Response_PaginatedResponse_PeriodicTaskListResponse__: {
       /**
@@ -5225,38 +6150,6 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["PaginatedResponse_RoleResponse_"] | null
     }
-    /** Response[PaginatedResponse[ScriptExecutionResponse]] */
-    Response_PaginatedResponse_ScriptExecutionResponse__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["PaginatedResponse_ScriptExecutionResponse_"] | null
-    }
-    /** Response[PaginatedResponse[ScriptListResponse]] */
-    Response_PaginatedResponse_ScriptListResponse__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["PaginatedResponse_ScriptListResponse_"] | null
-    }
     /** Response[PaginatedResponse[TaskListResponse]] */
     Response_PaginatedResponse_TaskListResponse__: {
       /**
@@ -5272,6 +6165,22 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["PaginatedResponse_TaskListResponse_"] | null
+    }
+    /** Response[PaginatedResponse[TaskStatsByName]] */
+    Response_PaginatedResponse_TaskStatsByName__: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["PaginatedResponse_TaskStatsByName_"] | null
     }
     /** Response[PaginatedResponse[TemplateResponse]] */
     Response_PaginatedResponse_TemplateResponse__: {
@@ -5353,6 +6262,22 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["PeriodicTaskResponse"] | null
     }
+    /** Response[PermissionCatalogResponse] */
+    Response_PermissionCatalogResponse_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["PermissionCatalogResponse"] | null
+    }
     /** Response[PluginDependencyGraph] */
     Response_PluginDependencyGraph_: {
       /**
@@ -5369,22 +6294,6 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["PluginDependencyGraph"] | null
     }
-    /** Response[PolicySimulateResponse] */
-    Response_PolicySimulateResponse_: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["PolicySimulateResponse"] | null
-    }
     /** Response[PreferenceItemResponse] */
     Response_PreferenceItemResponse_: {
       /**
@@ -5400,6 +6309,22 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["PreferenceItemResponse"] | null
+    }
+    /** Response[QueueDashboardResponse] */
+    Response_QueueDashboardResponse_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["QueueDashboardResponse"] | null
     }
     /** Response[RegisteredTaskResponse] */
     Response_RegisteredTaskResponse_: {
@@ -5449,8 +6374,8 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["RoleResponse"] | null
     }
-    /** Response[ScriptExecuteResponse] */
-    Response_ScriptExecuteResponse_: {
+    /** Response[SchedulePreviewResponse] */
+    Response_SchedulePreviewResponse_: {
       /**
        * Code
        * @description 状态码。
@@ -5463,23 +6388,7 @@ export interface components {
        */
       message?: string
       /** @description 响应数据。 */
-      data?: components["schemas"]["ScriptExecuteResponse"] | null
-    }
-    /** Response[ScriptResponse] */
-    Response_ScriptResponse_: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["ScriptResponse"] | null
+      data?: components["schemas"]["SchedulePreviewResponse"] | null
     }
     /** Response[TaskResponse] */
     Response_TaskResponse_: {
@@ -5544,6 +6453,22 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["TokenResponse"] | null
+    }
+    /** Response[TopBannerResponse] */
+    Response_TopBannerResponse_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["TopBannerResponse"] | null
     }
     /** Response[TriggerTaskResponse] */
     Response_TriggerTaskResponse_: {
@@ -5766,6 +6691,44 @@ export interface components {
         [key: string]: string
       } | null
     }
+    /** Response[list[ActionTarget]] */
+    Response_list_ActionTarget__: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /**
+       * Data
+       * @description 响应数据。
+       */
+      data?: components["schemas"]["ActionTarget"][] | null
+    }
+    /** Response[list[ActiveMenuOption]] */
+    Response_list_ActiveMenuOption__: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /**
+       * Data
+       * @description 响应数据。
+       */
+      data?: components["schemas"]["ActiveMenuOption"][] | null
+    }
     /** Response[list[ActiveTaskInfo]] */
     Response_list_ActiveTaskInfo__: {
       /**
@@ -5861,8 +6824,8 @@ export interface components {
        */
       data?: components["schemas"]["ApiTrendPoint"][] | null
     }
-    /** Response[list[DataPolicyResponse]] */
-    Response_list_DataPolicyResponse__: {
+    /** Response[list[DenialRecord]] */
+    Response_list_DenialRecord__: {
       /**
        * Code
        * @description 状态码。
@@ -5878,7 +6841,7 @@ export interface components {
        * Data
        * @description 响应数据。
        */
-      data?: components["schemas"]["DataPolicyResponse"][] | null
+      data?: components["schemas"]["DenialRecord"][] | null
     }
     /** Response[list[DepartmentTreeNode]] */
     Response_list_DepartmentTreeNode__: {
@@ -5899,6 +6862,25 @@ export interface components {
        */
       data?: components["schemas"]["DepartmentTreeNode"][] | null
     }
+    /** Response[list[ExtensionResponse]] */
+    Response_list_ExtensionResponse__: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /**
+       * Data
+       * @description 响应数据。
+       */
+      data?: components["schemas"]["ExtensionResponse"][] | null
+    }
     /** Response[list[FastAPIRouterResponse]] */
     Response_list_FastAPIRouterResponse__: {
       /**
@@ -5917,25 +6899,6 @@ export interface components {
        * @description 响应数据。
        */
       data?: components["schemas"]["FastAPIRouterResponse"][] | null
-    }
-    /** Response[list[FieldPolicyResponse]] */
-    Response_list_FieldPolicyResponse__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /**
-       * Data
-       * @description 响应数据。
-       */
-      data?: components["schemas"]["FieldPolicyResponse"][] | null
     }
     /** Response[list[MenuListResponse]] */
     Response_list_MenuListResponse__: {
@@ -5974,6 +6937,25 @@ export interface components {
        * @description 响应数据。
        */
       data?: components["schemas"]["MenuRouteResponse"][] | null
+    }
+    /** Response[list[PackageResponse]] */
+    Response_list_PackageResponse__: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /**
+       * Data
+       * @description 响应数据。
+       */
+      data?: components["schemas"]["PackageResponse"][] | null
     }
     /** Response[list[PluginStatusItem]] */
     Response_list_PluginStatusItem__: {
@@ -6031,25 +7013,6 @@ export interface components {
        * @description 响应数据。
        */
       data?: components["schemas"]["RoleResponse"][] | null
-    }
-    /** Response[list[TaskStatsByName]] */
-    Response_list_TaskStatsByName__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /**
-       * Data
-       * @description 响应数据。
-       */
-      data?: components["schemas"]["TaskStatsByName"][] | null
     }
     /** Response[list[TaskStatsByWorker]] */
     Response_list_TaskStatsByWorker__: {
@@ -6146,29 +7109,6 @@ export interface components {
        */
       data?: components["schemas"]["WorkerResponse"][] | null
     }
-    /** Response[list[dict]] */
-    Response_list_dict__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /**
-       * Data
-       * @description 响应数据。
-       */
-      data?:
-        | {
-            [key: string]: unknown
-          }[]
-        | null
-    }
     /** Response[list[str]] */
     Response_list_str__: {
       /**
@@ -6220,7 +7160,7 @@ export interface components {
     }
     /**
      * RoleCreate
-     * @description 创建角色数据结构。
+     * @description 创建角色数据结构；数据范围与字段状态在权限配置中设置。
      */
     RoleCreate: {
       /** Name */
@@ -6232,72 +7172,68 @@ export interface components {
       /** @default 1 */
       status: components["schemas"]["Status"]
       /**
-       * Interfacepermissions
+       * Permissioncodes
        * @default []
        */
-      interfacePermissions: string[]
-      /**
-       * Buttonpermissions
-       * @default []
-       */
-      buttonPermissions: string[]
-      /**
-       * Routerpermissions
-       * @default []
-       */
-      routerPermissions: string[]
-      /**
-       * Datapolicyids
-       * @default []
-       */
-      dataPolicyIds: string[]
-      /**
-       * Fieldpolicyids
-       * @default []
-       */
-      fieldPolicyIds: string[]
+      permissionCodes: string[]
     }
     /**
      * RolePermissionsResponse
-     * @description 角色权限响应数据结构。
+     * @description 角色权限响应：范围与字段状态为实际生效值（不含默认值）。
      */
     RolePermissionsResponse: {
       /**
-       * Routerpermissions
+       * Permissioncodes
        * @default []
        */
-      routerPermissions: string[]
+      permissionCodes: string[]
       /**
-       * Buttonpermissions
+       * Invalidcodes
        * @default []
        */
-      buttonPermissions: string[]
+      invalidCodes: string[]
       /**
-       * Interfacepermissions
+       * Datascopes
+       * @default {}
+       */
+      dataScopes: {
+        [key: string]: string
+      }
+      /**
+       * Fieldmodes
+       * @default {}
+       */
+      fieldModes: {
+        [key: string]: {
+          [key: string]: "visible" | "masked" | "hidden"
+        }
+      }
+      /**
+       * Invalidscopes
        * @default []
        */
-      interfacePermissions: string[]
+      invalidScopes: components["schemas"]["InvalidScopeResponse"][]
     }
     /**
      * RolePermissionsUpdateBody
-     * @description 批量权限更新请求数据结构。
+     * @description 角色权限更新请求；范围或字段状态为 None 时保持不变。
      */
     RolePermissionsUpdateBody: {
       /**
-       * Routerpermissions
+       * Permissioncodes
        * @default []
        */
-      routerPermissions: string[]
-      /**
-       * Buttonpermissions
-       * @default []
-       */
-      buttonPermissions: string[]
-      /**
-       * Interfacepermissions
-       * @default []
-       */
-      interfacePermissions: string[]
+      permissionCodes: string[]
+      /** Datascopes */
+      dataScopes?: {
+        [key: string]: string
+      } | null
+      /** Fieldmodes */
+      fieldModes?: {
+        [key: string]: {
+          [key: string]: "visible" | "masked" | "hidden"
+        }
+      } | null
     }
     /**
      * RoleResponse
@@ -6328,30 +7264,26 @@ export interface components {
       /** @default 1 */
       status: components["schemas"]["Status"]
       /**
-       * Interfacepermissions
+       * Permissioncodes
        * @default []
        */
-      interfacePermissions: string[]
+      permissionCodes: string[]
       /**
-       * Buttonpermissions
-       * @default []
+       * Datascopes
+       * @default {}
        */
-      buttonPermissions: string[]
+      dataScopes: {
+        [key: string]: string
+      }
       /**
-       * Routerpermissions
-       * @default []
+       * Fieldmodes
+       * @default {}
        */
-      routerPermissions: string[]
-      /**
-       * Datapolicyids
-       * @default []
-       */
-      dataPolicyIds: string[]
-      /**
-       * Fieldpolicyids
-       * @default []
-       */
-      fieldPolicyIds: string[]
+      fieldModes: {
+        [key: string]: {
+          [key: string]: string
+        }
+      }
     }
     /**
      * RoleUpdate
@@ -6366,10 +7298,6 @@ export interface components {
       code: string
       /** @default 1 */
       status: components["schemas"]["Status"]
-      /** Datapolicyids */
-      dataPolicyIds?: string[] | null
-      /** Fieldpolicyids */
-      fieldPolicyIds?: string[] | null
     }
     /**
      * RouteMeta
@@ -6399,6 +7327,8 @@ export interface components {
        * @default false
        */
       hideInMenu: boolean
+      /** Activemenu */
+      activeMenu?: string | null
       /**
        * Keepalive
        * @default false
@@ -6420,182 +7350,45 @@ export interface components {
           }[]
         | null
     }
-    /**
-     * ScriptBatchBody
-     * @description Script 批量操作请求。
-     */
-    ScriptBatchBody: {
-      /**
-       * Ids
-       * @description 项 id 列表。
-       */
-      ids: string[]
+    /** SchedulePreviewRequest */
+    SchedulePreviewRequest: {
+      /** Schedule */
+      schedule:
+        | components["schemas"]["IntervalDefinition"]
+        | components["schemas"]["CrontabDefinition"]
+        | components["schemas"]["SolarDefinition"]
     }
-    /**
-     * ScriptCreate
-     * @description 创建 Script 数据结构。
-     */
-    ScriptCreate: {
-      /** Name */
-      name: string
+    /** SchedulePreviewResponse */
+    SchedulePreviewResponse: {
+      /** Valid */
+      valid: boolean
+      /** Errorfield */
+      errorField?: string | null
+      /** Timezone */
+      timezone: string
       /**
-       * Description
-       * @default
+       * Evaluatedat
+       * Format: date-time
        */
-      description: string
-      /** Language */
-      language: string
+      evaluatedAt: string
+      /** Nextruns */
+      nextRuns?: string[]
       /**
-       * Code
-       * @default
+       * Horizonyears
+       * @default 5
        */
-      code: string
-      /** @default 1 */
-      status: components["schemas"]["Status"]
+      horizonYears: number
     }
-    /**
-     * ScriptExecuteResponse
-     * @description 脚本执行结果响应。
-     */
-    ScriptExecuteResponse: {
-      /** Stdout */
-      stdout?: string | null
-      /** Stderr */
-      stderr?: string | null
-      /**
-       * Exitcode
-       * @default 0
-       */
-      exitCode: number
-      /**
-       * Runtime
-       * @default 0
-       */
-      runtime: number
-    }
-    /**
-     * ScriptExecutionResponse
-     * @description 脚本执行审计记录响应。
-     */
-    ScriptExecutionResponse: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Createtime
-       * @example 2024-07-31 16:07:34
-       */
-      createTime: string
-      /**
-       * Updatetime
-       * @example 2024-07-31 16:07:34
-       */
-      updateTime: string
-      /**
-       * Scriptid
-       * Format: uuid
-       */
-      scriptId: string
-      /**
-       * Executorid
-       * Format: uuid
-       */
-      executorId: string
-      /** Language */
-      language: string
-      /** Code */
-      code: string
-      /** Stdout */
-      stdout?: string | null
-      /** Stderr */
-      stderr?: string | null
-      /** Exitcode */
-      exitCode: number
-      /** Runtime */
-      runtime: number
-    }
-    /**
-     * ScriptListResponse
-     * @description Script 列表响应（不含 code 大字段）。
-     */
-    ScriptListResponse: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Createtime */
-      createTime: string
-      /** Updatetime */
-      updateTime: string
-      /** Name */
-      name: string
-      /** Description */
-      description: string
-      /** Language */
-      language: string
-      status: components["schemas"]["Status"]
-    }
-    /**
-     * ScriptResponse
-     * @description Script 详情响应（含 code）。
-     */
-    ScriptResponse: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Createtime
-       * @example 2024-07-31 16:07:34
-       */
-      createTime: string
-      /**
-       * Updatetime
-       * @example 2024-07-31 16:07:34
-       */
-      updateTime: string
-      /** Name */
-      name: string
-      /**
-       * Description
-       * @default
-       */
-      description: string
-      /** Language */
-      language: string
-      /**
-       * Code
-       * @default
-       */
-      code: string
-      /** @default 1 */
-      status: components["schemas"]["Status"]
-    }
-    /**
-     * ScriptUpdate
-     * @description 更新 Script 数据结构。
-     */
-    ScriptUpdate: {
-      /** Name */
-      name: string
-      /**
-       * Description
-       * @default
-       */
-      description: string
-      /** Language */
-      language: string
-      /**
-       * Code
-       * @default
-       */
-      code: string
-      /** @default 1 */
-      status: components["schemas"]["Status"]
+    /** ScopeChangeResponse */
+    ScopeChangeResponse: {
+      /** Resource */
+      resource: string
+      /** Group */
+      group?: string | null
+      /** Before */
+      before: string
+      /** After */
+      after: string
     }
     /**
      * ServiceHealth
@@ -6621,6 +7414,34 @@ export interface components {
       /** Newpassword */
       newPassword: string
     }
+    /** SolarDefinition */
+    SolarDefinition: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "solar"
+      event: components["schemas"]["SolarEvent"]
+      /** Latitude */
+      latitude: number
+      /** Longitude */
+      longitude: number
+    }
+    /**
+     * SolarEvent
+     * @description Celery 调度的天文事件枚举。
+     * @enum {string}
+     */
+    SolarEvent:
+      | "dawn_astronomical"
+      | "dawn_nautical"
+      | "dawn_civil"
+      | "sunrise"
+      | "solar_noon"
+      | "sunset"
+      | "dusk_civil"
+      | "dusk_nautical"
+      | "dusk_astronomical"
     /**
      * Status
      * @enum {string}
@@ -6750,6 +7571,12 @@ export interface components {
       success: number
       /** Failure */
       failure: number
+      /** Inprogress */
+      inProgress: number
+      /** Successrate */
+      successRate: number | null
+      /** Lastexecutedat */
+      lastExecutedAt: string
       /** Avgruntime */
       avgRuntime: number | null
     }
@@ -6808,12 +7635,6 @@ export interface components {
      * @enum {string}
      */
     TaskStatus: "1" | "2" | "3" | "4" | "5" | "6"
-    /**
-     * TaskType
-     * @description Celery 定时任务类型枚举。
-     * @enum {string}
-     */
-    TaskType: "interval" | "crontab" | "solar"
     /** TemplateCreateRequest */
     TemplateCreateRequest: {
       /** Code */
@@ -6961,6 +7782,16 @@ export interface components {
       /** Refreshtoken */
       refreshToken: string
     }
+    /** TopBannerResponse */
+    TopBannerResponse: {
+      current?: components["schemas"]["BannerSummary"] | null
+      /** Revision */
+      revision: number
+      /** Servernow */
+      serverNow: string
+      /** Nextchangeat */
+      nextChangeAt?: string | null
+    }
     /**
      * TriggerTaskRequest
      * @description 触发任务请求数据结构。
@@ -7056,6 +7887,15 @@ export interface components {
        * @default []
        */
       buttons: string[]
+      /**
+       * Restrictedfields
+       * @default {}
+       */
+      restrictedFields: {
+        [key: string]: {
+          [key: string]: "masked" | "hidden"
+        }
+      }
     }
     /**
      * UserManageBatchBody
@@ -7233,6 +8073,18 @@ export interface components {
       /** Onlinecount */
       onlineCount: number
     }
+    /** UserSummary */
+    UserSummary: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Name */
+      name: string
+      /** Username */
+      username: string
+    }
     /**
      * UsernamePinyinValidationRequest
      * @description 姓名拼音与用户名一致性校验请求。
@@ -7284,7 +8136,7 @@ export interface components {
     }
     /**
      * WorkerResponse
-     * @description Worker 响应数据结构。
+     * @description Worker 响应数据结构；运行时字段仅在详情检查成功时存在。
      */
     WorkerResponse: {
       /**
@@ -7342,6 +8194,12 @@ export interface components {
       }
       /** Lastheartbeat */
       lastHeartbeat?: string | null
+      /** Runtimeconcurrency */
+      runtimeConcurrency?: number | null
+      /** Runtimeactivetasks */
+      runtimeActiveTasks?: number | null
+      /** Runtimesampledat */
+      runtimeSampledAt?: string | null
     }
     /**
      * WorkerStatus
@@ -7492,6 +8350,41 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Response_list_AdminContactResponse__"]
+        }
+      }
+    }
+  }
+  change_password_api_v1_users__user_id__password_put: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        user_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ChangePasswordBody"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_bool_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
         }
       }
     }
@@ -7783,41 +8676,6 @@ export interface operations {
       cookie?: never
     }
     requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_bool_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  change_password_api_v1_users__user_id__password_put: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        user_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ChangePasswordBody"]
-      }
-    }
     responses: {
       /** @description Successful Response */
       200: {
@@ -8424,12 +9282,15 @@ export interface operations {
         page?: number
         /** @description 每页条数。 */
         pageSize?: number
+        startTime?: string | null
+        endTime?: string | null
         /** @description 任务状态筛选 */
         status?: components["schemas"]["TaskStatus"] | null
         /** @description 任务名筛选 */
         taskName?: string | null
         /** @description Worker 主机名筛选 */
         workerHostname?: string | null
+        taskNameMatch?: "contains" | "exact"
       }
       header?: never
       path?: never
@@ -8444,6 +9305,37 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Response_PaginatedResponse_TaskListResponse__"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  get_queue_dashboard_endpoint_api_v1_tasks_stats_dashboard_get: {
+    parameters: {
+      query?: {
+        days?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_QueueDashboardResponse_"]
         }
       }
       /** @description Validation Error */
@@ -8525,7 +9417,16 @@ export interface operations {
   get_task_stats_by_name_api_v1_tasks_stats_by_name_get: {
     parameters: {
       query?: {
-        days?: number
+        /** @description 当前页码。 */
+        page?: number
+        /** @description 每页条数。 */
+        pageSize?: number
+        startTime?: string | null
+        endTime?: string | null
+        taskName?: string | null
+        workerHostname?: string | null
+        sortBy?: "lastExecutedAt" | "total" | "failure"
+        sortOrder?: "asc" | "desc"
       }
       header?: never
       path?: never
@@ -8539,7 +9440,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          "application/json": components["schemas"]["Response_list_TaskStatsByName__"]
+          "application/json": components["schemas"]["Response_PaginatedResponse_TaskStatsByName__"]
         }
       }
       /** @description Validation Error */
@@ -8686,6 +9587,72 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Response_bool_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  get_crontab_preview_api_v1_schedules_crontab_preview_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CrontabPreviewRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_CrontabPreviewResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  get_schedule_preview_api_v1_schedules_preview_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SchedulePreviewRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_SchedulePreviewResponse_"]
         }
       }
       /** @description Validation Error */
@@ -8898,1090 +9865,6 @@ export interface operations {
       }
     }
   }
-  get_scripts_api_v1_scripts_get: {
-    parameters: {
-      query?: {
-        /** @description 当前页码。 */
-        page?: number
-        /** @description 每页条数。 */
-        pageSize?: number
-        keyword?: string
-        /** @description 状态筛选 */
-        status?: components["schemas"]["Status"] | null
-        /** @description 语言筛选 */
-        language?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PaginatedResponse_ScriptListResponse__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  create_script_api_v1_scripts_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ScriptCreate"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_ScriptResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  batch_delete_scripts_api_v1_scripts_delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ScriptBatchBody"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_bool_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  get_script_api_v1_scripts__script_id__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        script_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_ScriptResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  update_script_api_v1_scripts__script_id__put: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        script_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ScriptUpdate"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_ScriptResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  delete_script_api_v1_scripts__script_id__delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        script_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_bool_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  execute_script_api_v1_scripts__script_id__execute_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        script_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_ScriptExecuteResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  get_script_executions_api_v1_scripts__script_id__executions_get: {
-    parameters: {
-      query?: {
-        /** @description 当前页码。 */
-        page?: number
-        /** @description 每页条数。 */
-        pageSize?: number
-      }
-      header?: never
-      path: {
-        script_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PaginatedResponse_ScriptExecutionResponse__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  list_notifications_api_v1_notifications_get: {
-    parameters: {
-      query?: {
-        cursor?: string | null
-        size?: number
-        unreadOnly?: boolean
-        archived?: "active" | "archived" | "all"
-        category?: string | null
-        level?: ("info" | "success" | "warning" | "error") | null
-        createdFrom?: string | null
-        createdTo?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_InboxPage_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  get_unread_count_api_v1_notifications_unread_count_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_UnreadCount_"]
-        }
-      }
-    }
-  }
-  mark_all_read_api_v1_notifications_read_all_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NoneType_"]
-        }
-      }
-    }
-  }
-  get_notification_api_v1_notifications__notification_id__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        notification_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NotificationItem_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  delete_notification_api_v1_notifications__notification_id__delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        notification_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NoneType_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  mark_read_api_v1_notifications__notification_id__read_patch: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        notification_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NoneType_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  archive_notification_api_v1_notifications__notification_id__archive_patch: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        notification_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NoneType_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  list_templates_api_v1_admin_notification_templates_get: {
-    parameters: {
-      query?: {
-        /** @description 当前页码。 */
-        page?: number
-        /** @description 每页条数。 */
-        pageSize?: number
-        keyword?: string | null
-        enabled?: boolean | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PaginatedResponse_TemplateResponse__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  create_template_api_v1_admin_notification_templates_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["TemplateCreateRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_TemplateResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  get_template_api_v1_admin_notification_templates__template_id__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        template_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_TemplateResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  update_template_api_v1_admin_notification_templates__template_id__put: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        template_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["TemplateUpdateRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_TemplateResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  delete_template_api_v1_admin_notification_templates__template_id__delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        template_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NoneType_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  list_announcements_api_v1_admin_notifications_get: {
-    parameters: {
-      query?: {
-        /** @description 当前页码。 */
-        page?: number
-        /** @description 每页条数。 */
-        pageSize?: number
-        status?: components["schemas"]["MessageStatus"] | null
-        category?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PaginatedResponse_MessageAdminResponse__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  create_announcement_api_v1_admin_notifications_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["AnnouncementCreateRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_dict_str__str__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  get_announcement_api_v1_admin_notifications__message_id__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        message_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_MessageAdminDetailResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  update_announcement_api_v1_admin_notifications__message_id__put: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        message_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["AnnouncementCreateRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_MessageAdminDetailResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  delete_announcement_api_v1_admin_notifications__message_id__delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        message_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NoneType_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  preview_audience_api_v1_admin_notifications__message_id__audience_preview_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        message_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["AudiencePreviewRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_AudiencePreviewResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  publish_announcement_api_v1_admin_notifications__message_id__publish_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        message_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_dict_str__int__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  cancel_announcement_api_v1_admin_notifications__message_id__cancel_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        message_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NoneType_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  recall_announcement_api_v1_admin_notifications__message_id__recall_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        message_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NoneType_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  list_deliveries_api_v1_admin_notification_deliveries_get: {
-    parameters: {
-      query?: {
-        /** @description 当前页码。 */
-        page?: number
-        /** @description 每页条数。 */
-        pageSize?: number
-        messageId?: string | null
-        status?: components["schemas"]["OutboxStatus"] | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PaginatedResponse_DeliveryResponse__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  delivery_summary_api_v1_admin_notification_deliveries__message_id__summary_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        message_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_DeliverySummaryResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  retry_failed_api_v1_admin_notification_deliveries__message_id__retry_failed_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        message_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_dict_str__int__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  list_preferences_api_v1_notification_preferences_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_list_PreferenceItemResponse__"]
-        }
-      }
-    }
-  }
-  update_preference_api_v1_notification_preferences__category__put: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        category: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PreferenceUpdateRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PreferenceItemResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
   get_public_key_api_v1_auth_keys_public_get: {
     parameters: {
       query?: never
@@ -10102,6 +9985,79 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Response_UserInfoResponse_"]
+        }
+      }
+    }
+  }
+  create_impersonation_api_v1_auth_impersonations_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ImpersonationCreateBody"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_ImpersonationCreated_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  get_current_impersonation_api_v1_auth_impersonations_current_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_ImpersonationCurrent_"]
+        }
+      }
+    }
+  }
+  stop_impersonation_api_v1_auth_impersonations_current_delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_bool_"]
         }
       }
     }
@@ -10574,7 +10530,7 @@ export interface operations {
       }
     }
   }
-  get_models_api_v1_data_policies_models_get: {
+  get_dashboard_capabilities_api_v1_dashboard_capabilities_get: {
     parameters: {
       query?: never
       header?: never
@@ -10589,12 +10545,12 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          "application/json": components["schemas"]["Response_list_dict__"]
+          "application/json": components["schemas"]["Response_DashboardCapabilitiesResponse_"]
         }
       }
     }
   }
-  get_template_vars_api_v1_data_policies_template_vars_get: {
+  get_permission_catalog_api_v1_permission_catalog_get: {
     parameters: {
       query?: never
       header?: never
@@ -10609,39 +10565,16 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          "application/json": components["schemas"]["Response_list_dict__"]
+          "application/json": components["schemas"]["Response_PermissionCatalogResponse_"]
         }
       }
     }
   }
-  get_all_policies_api_v1_data_policies_all_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_list_DataPolicyResponse__"]
-        }
-      }
-    }
-  }
-  get_policies_api_v1_data_policies_get: {
+  list_extensions_api_v1_permission_extensions_get: {
     parameters: {
       query?: {
-        /** @description 当前页码。 */
-        page?: number
-        /** @description 每页条数。 */
-        pageSize?: number
-        keyword?: string
+        kind?: ("route_binding" | "depends" | "custom_code") | null
+        status?: ("active" | "cleanable" | "invalid") | null
       }
       header?: never
       path?: never
@@ -10655,7 +10588,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          "application/json": components["schemas"]["Response_PaginatedResponse_DataPolicyResponse__"]
+          "application/json": components["schemas"]["Response_list_ExtensionResponse__"]
         }
       }
       /** @description Validation Error */
@@ -10669,7 +10602,7 @@ export interface operations {
       }
     }
   }
-  create_policy_api_v1_data_policies_post: {
+  create_extension_api_v1_permission_extensions_post: {
     parameters: {
       query?: never
       header?: never
@@ -10678,7 +10611,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        "application/json": components["schemas"]["DataPolicyCreate"]
+        "application/json": components["schemas"]["ExtensionCreate"]
       }
     }
     responses: {
@@ -10688,7 +10621,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          "application/json": components["schemas"]["Response_DataPolicyResponse_"]
+          "application/json": components["schemas"]["Response_ExtensionResponse_"]
         }
       }
       /** @description Validation Error */
@@ -10702,18 +10635,18 @@ export interface operations {
       }
     }
   }
-  update_policy_api_v1_data_policies__policy_id__put: {
+  update_extension_api_v1_permission_extensions__extension_id__put: {
     parameters: {
       query?: never
       header?: never
       path: {
-        policy_id: string
+        extension_id: string
       }
       cookie?: never
     }
     requestBody: {
       content: {
-        "application/json": components["schemas"]["DataPolicyUpdate"]
+        "application/json": components["schemas"]["ExtensionUpdate"]
       }
     }
     responses: {
@@ -10723,7 +10656,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          "application/json": components["schemas"]["Response_DataPolicyResponse_"]
+          "application/json": components["schemas"]["Response_ExtensionResponse_"]
         }
       }
       /** @description Validation Error */
@@ -10737,199 +10670,12 @@ export interface operations {
       }
     }
   }
-  delete_policy_api_v1_data_policies__policy_id__delete: {
+  delete_extension_api_v1_permission_extensions__extension_id__delete: {
     parameters: {
       query?: never
       header?: never
       path: {
-        policy_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_DataPolicyResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  simulate_policy_api_v1_data_policies_simulate_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PolicySimulateRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PolicySimulateResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  list_field_policies_api_v1_field_policies_get: {
-    parameters: {
-      query?: {
-        /** @description 当前页码。 */
-        page?: number
-        /** @description 每页条数。 */
-        pageSize?: number
-        targetModel?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PaginatedResponse_FieldPolicyResponse__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  create_field_policy_api_v1_field_policies_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["FieldPolicyCreate"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_FieldPolicyResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  get_all_field_policies_api_v1_field_policies_all_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_list_FieldPolicyResponse__"]
-        }
-      }
-    }
-  }
-  update_field_policy_api_v1_field_policies__policy_id__put: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        policy_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["FieldPolicyUpdate"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_FieldPolicyResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  delete_field_policy_api_v1_field_policies__policy_id__delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        policy_id: string
+        extension_id: string
       }
       cookie?: never
     }
@@ -10955,7 +10701,7 @@ export interface operations {
       }
     }
   }
-  get_dashboard_capabilities_api_v1_dashboard_capabilities_get: {
+  export_extensions_api_v1_permission_extensions_export_get: {
     parameters: {
       query?: never
       header?: never
@@ -10970,7 +10716,227 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          "application/json": components["schemas"]["Response_DashboardCapabilitiesResponse_"]
+          "application/json": components["schemas"]["Response_ExtensionExport_"]
+        }
+      }
+    }
+  }
+  list_denials_api_v1_permission_extensions_denials_get: {
+    parameters: {
+      query?: {
+        days?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_list_DenialRecord__"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  list_packages_api_v1_permission_packages_get: {
+    parameters: {
+      query?: {
+        /** @description 当前页码。 */
+        page?: number
+        /** @description 每页条数。 */
+        pageSize?: number
+        keyword?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_PaginatedResponse_PackageResponse__"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  create_package_api_v1_permission_packages_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PackageCreate"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_PackageResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  list_all_packages_api_v1_permission_packages_all_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_list_PackageResponse__"]
+        }
+      }
+    }
+  }
+  update_package_api_v1_permission_packages__package_id__put: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        package_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PackageUpdate"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_PackageResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  delete_package_api_v1_permission_packages__package_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        package_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_bool_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  apply_packages_api_v1_roles__role_id__apply_packages_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        role_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ApplyPackagesBody"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_ApplyPackagesResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
         }
       }
     }
@@ -11093,6 +11059,40 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Response_list_MenuListResponse__"]
+        }
+      }
+    }
+  }
+  get_menu_active_menu_options_api_v1_manage_menus_active_menu_options_get: {
+    parameters: {
+      query?: {
+        /** @description 当前页面的父菜单 ID */
+        parentId?: string | null
+        /** @description 当前页面是否为常量路由 */
+        constant?: boolean
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_list_ActiveMenuOption__"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
         }
       }
     }
@@ -11241,6 +11241,998 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Response_bool_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  list_notifications_api_v1_notifications_get: {
+    parameters: {
+      query?: {
+        cursor?: string | null
+        size?: number
+        unreadOnly?: boolean
+        archived?: "active" | "archived" | "all"
+        category?: string | null
+        level?: ("info" | "success" | "warning" | "error") | null
+        createdFrom?: string | null
+        createdTo?: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_InboxPage_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  get_unread_count_api_v1_notifications_unread_count_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_UnreadCount_"]
+        }
+      }
+    }
+  }
+  mark_all_read_api_v1_notifications_read_all_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_NoneType_"]
+        }
+      }
+    }
+  }
+  get_top_banner_api_v1_notifications_top_banner_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_TopBannerResponse_"]
+        }
+      }
+    }
+  }
+  get_notification_api_v1_notifications__notification_id__get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        notification_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_NotificationItem_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  delete_notification_api_v1_notifications__notification_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        notification_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_NoneType_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  mark_read_api_v1_notifications__notification_id__read_patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        notification_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_NoneType_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  archive_notification_api_v1_notifications__notification_id__archive_patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        notification_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_NoneType_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  list_templates_api_v1_admin_notification_templates_get: {
+    parameters: {
+      query?: {
+        /** @description 当前页码。 */
+        page?: number
+        /** @description 每页条数。 */
+        pageSize?: number
+        keyword?: string | null
+        enabled?: boolean | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_PaginatedResponse_TemplateResponse__"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  create_template_api_v1_admin_notification_templates_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TemplateCreateRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_TemplateResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  get_template_api_v1_admin_notification_templates__template_id__get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        template_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_TemplateResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  update_template_api_v1_admin_notification_templates__template_id__put: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        template_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TemplateUpdateRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_TemplateResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  delete_template_api_v1_admin_notification_templates__template_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        template_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_NoneType_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  list_announcements_api_v1_admin_notifications_get: {
+    parameters: {
+      query?: {
+        /** @description 当前页码。 */
+        page?: number
+        /** @description 每页条数。 */
+        pageSize?: number
+        displayMode?: ("inbox" | "top_banner") | null
+        status?: components["schemas"]["MessageStatus"] | null
+        category?: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_PaginatedResponse_MessageAdminResponse__"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  create_announcement_api_v1_admin_notifications_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AnnouncementCreateRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_dict_str__str__"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  preview_unsaved_audience_api_v1_admin_notifications_audience_preview_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AudiencePreviewRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_AudiencePreviewResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  preview_content_api_v1_admin_notifications_content_preview_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ContentPreviewRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_ContentPreviewResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  list_action_targets_api_v1_admin_notifications_action_targets_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_list_ActionTarget__"]
+        }
+      }
+    }
+  }
+  preview_action_api_v1_admin_notifications_action_preview_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ActionIn"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_ActionIn_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  check_banner_api_v1_admin_notifications_banner_check_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BannerCheckRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_BannerCheckResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  get_announcement_api_v1_admin_notifications__message_id__get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        message_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_MessageAdminDetailResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  update_announcement_api_v1_admin_notifications__message_id__put: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        message_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AnnouncementCreateRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_MessageAdminDetailResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  delete_announcement_api_v1_admin_notifications__message_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        message_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_NoneType_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  preview_audience_api_v1_admin_notifications__message_id__audience_preview_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        message_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AudiencePreviewRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_AudiencePreviewResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  publish_announcement_api_v1_admin_notifications__message_id__publish_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        message_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["BannerPublishRequest"] | null
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_dict_str__int__"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  cancel_announcement_api_v1_admin_notifications__message_id__cancel_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        message_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_NoneType_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  recall_announcement_api_v1_admin_notifications__message_id__recall_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        message_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_NoneType_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  list_deliveries_api_v1_admin_notification_deliveries_get: {
+    parameters: {
+      query?: {
+        /** @description 当前页码。 */
+        page?: number
+        /** @description 每页条数。 */
+        pageSize?: number
+        messageId?: string | null
+        status?: components["schemas"]["OutboxStatus"] | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_PaginatedResponse_DeliveryResponse__"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  delivery_summary_api_v1_admin_notification_deliveries__message_id__summary_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        message_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_DeliverySummaryResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  retry_failed_api_v1_admin_notification_deliveries__message_id__retry_failed_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        message_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_dict_str__int__"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  list_preferences_api_v1_notification_preferences_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_list_PreferenceItemResponse__"]
+        }
+      }
+    }
+  }
+  update_preference_api_v1_notification_preferences__category__put: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        category: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PreferenceUpdateRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_PreferenceItemResponse_"]
         }
       }
       /** @description Validation Error */

@@ -8,8 +8,8 @@ Date   : 2025-05-18
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
-from rapidkit_common.auth import verify_user_permission
+from fastapi import APIRouter, Query
+from rapidkit_common.access import Require
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.events import MenuChangedEvent
 from rapidkit_common.schemas.response import PaginatedResponse, Response
@@ -51,13 +51,12 @@ from plugin_menu.services import (
 router = APIRouter(
     prefix="/manage",
     tags=["Menu"],
-    dependencies=[Depends(verify_user_permission)],
 )
 
 logger = get_plugin_logger("Menu")
 
 
-@router.get("/menus")
+@router.get("/menus", dependencies=[Require("menu:read")])
 async def get_menu_list(
     query: Annotated[MenuPageQuery, Query(...)],
     menu_crud: MenuCrudDep,
@@ -68,7 +67,7 @@ async def get_menu_list(
     return Response(data=roles)
 
 
-@router.get("/menus/tree")
+@router.get("/menus/tree", dependencies=[Require("menu:read")])
 async def get_menu_tree(
     redis: RedisDep,
     session: SessionDep,
@@ -78,7 +77,7 @@ async def get_menu_tree(
     return Response(data=tree)
 
 
-@router.get("/menus/active-menu-options")
+@router.get("/menus/active-menu-options", dependencies=[Require("menu:read")])
 async def get_menu_active_menu_options(
     query: Annotated[ActiveMenuOptionsQuery, Query(...)],
     menu_crud: MenuCrudDep,
@@ -88,14 +87,14 @@ async def get_menu_active_menu_options(
     return Response(data=options)
 
 
-@router.get("/pages")
+@router.get("/pages", dependencies=[Require("menu:read")])
 async def get_all_pages(redis: RedisDep, session: SessionDep) -> Response[list[str]]:
     """获取所有页面组件名称"""
     pages = await get_cached_pages(redis, session)
     return Response(data=pages)
 
 
-@router.post("/menus")
+@router.post("/menus", dependencies=[Require("menu:create")])
 async def add_menu(
     data: MenuCreate,
     menu_crud: MenuCrudDep,
@@ -110,7 +109,7 @@ async def add_menu(
     return Response(data=menu)
 
 
-@router.put("/menus/{menu_id}")
+@router.put("/menus/{menu_id}", dependencies=[Require("menu:update")])
 async def update_menu(
     menu_id: UUID,
     data: MenuUpdate,
@@ -126,7 +125,7 @@ async def update_menu(
     return Response(data=menu)
 
 
-@router.delete("/menus/{menu_id}")
+@router.delete("/menus/{menu_id}", dependencies=[Require("menu:delete")])
 async def delete_menu(menu_id: UUID, menu_crud: MenuCrudDep, redis: RedisDep, session: SessionDep) -> Response[bool]:
     """删除单个菜单。"""
     await delete_menu_service(menu_crud, menu_id)
@@ -136,7 +135,7 @@ async def delete_menu(menu_id: UUID, menu_crud: MenuCrudDep, redis: RedisDep, se
     return Response(data=True)
 
 
-@router.delete("/menus")
+@router.delete("/menus", dependencies=[Require("menu:delete")])
 async def batch_delete_menus(
     data: MenuBatchRequest, menu_crud: MenuCrudDep, redis: RedisDep, session: SessionDep
 ) -> Response[bool]:

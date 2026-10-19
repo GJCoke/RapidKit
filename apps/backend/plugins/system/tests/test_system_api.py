@@ -128,7 +128,7 @@ class TestBusinessSummary:
         assert "roles" in data
         assert "menus" in data
         assert "routers" in data
-        assert "scripts" in data
+        assert "scripts" not in data
         assert "schedules" in data
         # After init, there should be at least some roles and menus
         assert data["roles"] >= 1
@@ -169,7 +169,7 @@ class TestPluginDependencies:
         target_names = {e["target"] for e in system_edges}
         assert "auth" in target_names
         assert "menu" in target_names
-        assert "script" in target_names
+        assert "script" not in target_names
 
     async def test_nodes_have_required_fields(self, client: AsyncClient, init, auth_headers: dict):
         resp = await client.get("/system/plugins/dependencies", headers=auth_headers)

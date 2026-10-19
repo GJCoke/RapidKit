@@ -54,8 +54,7 @@ export const request = createFlatRequest(
     },
     onResponse(response) {
       const config = response.config as typeof response.config & { authSession?: number }
-      if (config.authSession !== getAuthSession())
-        throw new CanceledError("Identity changed")
+      if (config.authSession !== getAuthSession()) throw new CanceledError("Identity changed")
     },
     isBackendSuccess(response) {
       // when the backend response code is "0000"(default), it means the request is success

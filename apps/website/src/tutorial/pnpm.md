@@ -54,12 +54,12 @@ pnpm 会将这些目录下的每个子目录视为一个独立的包，统一管
 
 ### workspace:\* 协议
 
-在 monorepo 中，子包之间的依赖使用 `workspace:*` 协议声明。例如前端项目依赖共享编辑器包时：
+在 monorepo 中，子包之间的依赖使用 `workspace:*` 协议声明。例如前端项目依赖共享工具包时：
 
 ```json
 {
   "dependencies": {
-    "@rapidkit/editor": "workspace:*"
+    "@rapidkit/utils": "workspace:*"
   }
 }
 ```

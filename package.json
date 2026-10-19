@@ -17,7 +17,7 @@
     "commit": "git-cz",
     "prepare": "husky",
     "check:python": "uv run ruff format . && uv run ruff check --fix . && uv run ty check",
-    "check:push": "turbo lint format typecheck --parallel && pnpm --filter @rapidkit/frontend test && pnpm --filter @rapidkit/admin test && pnpm check:python",
+    "check:push": "pnpm check:permission-codes && turbo lint format typecheck --parallel && pnpm --filter @rapidkit/frontend test && pnpm --filter @rapidkit/admin test && pnpm check:python && pnpm report:permission-codes && pnpm report:unscoped",
     "clean:workspace": "tsx ./scripts/clean-workspace.ts",
     "sync:version": "changeset version && tsx ./scripts/sync-changelogs.ts",
     "dev:frontend": "turbo watch dev --filter @rapidkit/frontend",
@@ -27,7 +27,11 @@
     "dev:beater": "pnpm --filter @rapidkit/backend beater",
     "dev:admin": "turbo watch dev --filter @rapidkit/admin",
     "dev:website": "turbo dev --filter @rapidkit/website",
-    "rapidkit": "tsx packages/cli/src/index.ts"
+    "rapidkit": "tsx packages/cli/src/index.ts",
+    "gen:permission-codes": "uv run --directory apps/backend python scripts/export_permission_catalog.py",
+    "check:permission-codes": "uv run --directory apps/backend python scripts/export_permission_catalog.py --check",
+    "report:permission-codes": "uv run --directory apps/backend python scripts/export_permission_catalog.py --report-unused",
+    "report:unscoped": "uv run --directory apps/backend python scripts/report_unscoped.py"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",

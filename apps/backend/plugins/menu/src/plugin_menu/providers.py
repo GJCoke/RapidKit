@@ -12,6 +12,7 @@ from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_menu.models import Menu
+from plugin_menu.route_services import permitted_route_names
 
 _PATH_PARAMETER = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?([?*+]?)")
 
@@ -26,7 +27,7 @@ class MenuNavigationProvider:
         permitted = None
         if user is not None and not user.is_admin:
             provider = self._permission_provider or get_service(PermissionCacheManager)
-            permitted = set(await provider.get_permitted_routes(user.roles or []))
+            permitted = permitted_route_names(menus, await provider.get_role_codes(user.roles or []))
         targets = []
         for menu in menus:
             if menu.menu_type != MenuType.MENU or menu.href or not menu.component:

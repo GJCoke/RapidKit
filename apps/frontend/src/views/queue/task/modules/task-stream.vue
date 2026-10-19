@@ -1,10 +1,17 @@
 <script setup lang="tsx">
   import { computed, reactive, ref, watch, onBeforeUnmount } from "vue"
   import { NButton, NPopconfirm, NTag } from "naive-ui"
+  import { useAppStore } from "@/store/modules/app"
+  import { useTableActions } from "@/hooks/business/table-actions/use-table-actions"
+  import { tableScrollWidth } from "@/hooks/common/table-columns"
+  import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/constants/pagination"
   import { taskStatusRecord } from "@/constants/business"
   import { fetchGetTaskList, fetchRevokeTask } from "@/service/api"
   import { $t } from "@/locales"
   import { useAuth } from "@/hooks/business/auth"
+  import { createTaskActionModel } from "./task-actions"
+
+  const appStore = useAppStore()
 
   defineOptions({
     name: "TaskStream",
@@ -16,15 +23,15 @@
   }
 
   const emit = defineEmits<Emits>()
-  const { hasAuth } = useAuth()
+  const { hasAuth, getActionContext } = useAuth()
 
   const props = defineProps<{ filters: Omit<Api.Worker.TaskSearchParams, "page" | "pageSize">; resetKey: string }>()
-  const searchParams = reactive({ page: 1, pageSize: 10 })
+  const searchParams = reactive({ page: 1, pageSize: DEFAULT_PAGE_SIZE })
   const data = ref<Api.Worker.TaskListItem[]>([])
   const loading = ref(false)
   let requestId = 0
   let timer: ReturnType<typeof setTimeout> | undefined
-  const pagination = reactive({ page: 1, pageSize: 10, itemCount: 0, showSizePicker: true, pageSizes: [10, 20, 50, 100], onUpdatePage: (page: number) => { searchParams.page = page; pagination.page = page; getData() }, onUpdatePageSize: (size: number) => { searchParams.pageSize = size; pagination.pageSize = size; searchParams.page = 1; pagination.page = 1; getData() } })
+  const pagination = reactive({ page: 1, pageSize: DEFAULT_PAGE_SIZE, itemCount: 0, showSizePicker: true, pageSizes: [...PAGE_SIZE_OPTIONS], onUpdatePage: (page: number) => { searchParams.page = page; pagination.page = page; getData() }, onUpdatePageSize: (size: number) => { searchParams.pageSize = size; pagination.pageSize = size; searchParams.page = 1; pagination.page = 1; getData() } })
   async function getData() {
     const id = ++requestId
     loading.value = true
@@ -41,6 +48,7 @@
     getData()
   }, { deep: true, immediate: true })
   onBeforeUnmount(() => { requestId++; clearTimeout(timer) })
+  const actions = useTableActions(() => createTaskActionModel<Api.Worker.TaskListItem>(), () => getActionContext(appStore.locale, appStore.isMobile), (row) => row.taskId)
   const columns = computed<import("naive-ui").DataTableColumns<Api.Worker.TaskListItem>>(() => [
 
       {
@@ -99,18 +107,16 @@
         width: 80,
         align: "center",
       },
-      {
+      ...actions.column({
         key: "operate",
         title: $t("common.operate"),
-        align: "center",
-        width: 150,
         render: (row) => (
-          <div class="flex-center gap-8px">
+          <div class="flex items-center justify-start flex-nowrap gap-8px whitespace-nowrap">
             <NButton type="primary" ghost size="small" onClick={() => emit("select", row.taskId)}>
               {$t("common.detail")}
             </NButton>
-            {hasAuth("queue_task:revoke") && (row.status === "1" || row.status === "2") && (
-              <NPopconfirm onPositiveClick={() => handleRevoke(row.taskId)}>
+            {actions.visible(row, "revoke") && (
+              <NPopconfirm onPositiveClick={() => actions.run(() => data.value.find((item) => item.taskId === row.taskId), "revoke", (latest) => handleRevoke(latest.taskId))}>
                 {{
                   default: () => $t("page.manage.worker.revokeConfirm"),
                   trigger: () => (
@@ -123,8 +129,10 @@
             )}
           </div>
         ),
-      },
+      }),
     ])
+
+  const scrollX = computed(() => tableScrollWidth(columns.value))
 
   async function handleRevoke(taskId: string) {
     const { error } = await fetchRevokeTask(taskId)
@@ -153,7 +161,7 @@
       :columns="columns"
       :data="data"
       size="small"
-      :scroll-x="960"
+      :scroll-x="scrollX"
       :loading="loading"
       remote
       :row-key="(row) => row.id"

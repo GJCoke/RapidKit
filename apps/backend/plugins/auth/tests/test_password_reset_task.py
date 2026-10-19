@@ -9,7 +9,7 @@ def test_deliver_reset_email_uses_shared_sender(monkeypatch) -> None:
 
     monkeypatch.setattr(tasks, "build_email_sender", lambda: Sender())
 
-    tasks._deliver("to@example.com", "Alice", "https://app/login/reset-password?token=t")
+    tasks._deliver("to@example.com", "RapidKit", "Alice", "https://app/login/reset-password?token=t")
 
     assert sent["to"] == "to@example.com"
     assert "token=t" in sent["html"]

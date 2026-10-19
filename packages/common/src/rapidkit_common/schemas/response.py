@@ -5,12 +5,25 @@ Author : Coke
 Date   : 2025-03-12
 """
 
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, Self, TypeVar
 from uuid import UUID
 
-from pydantic import ConfigDict, Field, field_serializer
+from pydantic import (
+    ConfigDict,
+    Field,
+    ModelWrapValidatorHandler,
+    PrivateAttr,
+    SerializationInfo,
+    SerializerFunctionWrapHandler,
+    field_serializer,
+    model_serializer,
+    model_validator,
+)
 from rapidkit_framework.i18n import is_i18n_key, t
 from rapidkit_framework.status_codes import StatusCode
+from sqlmodel import SQLModel as _SQLModel
+
+from rapidkit_common.scope_runtime import apply_field_rules
 
 from .base import BaseModel
 from .types import LocalDatetime
@@ -19,9 +32,37 @@ T = TypeVar("T")
 
 
 class BaseResponse(BaseModel):
-    """基础响应模型。"""
+    """
+    基础响应模型。
+
+    由受控模型的 ORM 对象构造（``from_attributes``）时记录来源模型，序列化时按当前请求的字段规则
+    脱敏或移除字段；由 dict 构造的实例不处理（手工构造请使用 ``Scope.serialize``）。
+    """
 
     model_config = ConfigDict(**(BaseModel.model_config or {}), from_attributes=True)
+
+    _rapidkit_source: type | None = PrivateAttr(default=None)
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def _capture_source_model(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        instance = handler(data)
+        if isinstance(data, _SQLModel) and getattr(type(data), "__table__", None) is not None:
+            instance._rapidkit_source = type(data)
+        return instance
+
+    # 不标注返回类型，OpenAPI 仍按声明的字段生成
+    @model_serializer(mode="wrap")
+    def _apply_field_rules(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo):
+        data = handler(self)
+        source = self._rapidkit_source
+        if source is None or not isinstance(data, dict):
+            return data
+        aliases = {
+            name: (field.serialization_alias or field.alias or name) if info.by_alias else name
+            for name, field in type(self).model_fields.items()
+        }
+        return apply_field_rules(data, source, aliases=aliases)
 
 
 class BaseSchema(BaseResponse):

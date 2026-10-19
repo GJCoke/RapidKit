@@ -22,7 +22,9 @@ from plugin_notification.preference import PreferenceResolver
 from plugin_notification.renderer import RenderedContent
 from plugin_notification.tasks import _build_orchestrator, _publish_due
 from plugin_notification.worker import DeliveryWorker
-from rapidkit_common.auth import verify_user_permission
+from rapidkit_common.access import access_guard_dependency, inspect_route_access
+from rapidkit_common.access_testing import allow_access, deny_access
+from rapidkit_common.auth import _get_current_user_placeholder
 from rapidkit_common.protocols.notification import AudienceRule, NotificationCommand, RecipientVariableBinding
 from rapidkit_common.protocols.user import UserPublicProfile
 from rapidkit_core.config import settings
@@ -271,13 +273,17 @@ async def test_preview_requires_user_options_permission(admin, user_options_perm
     app = FastAPI()
     app.include_router(router)
 
-    async def current_user(request: Request):
-        request.state.permission_ctx = SimpleNamespace(
-            permissions=[f"GET:{settings.API_PREFIX_V1}/users/all"] if user_options_permission else []
-        )
-        return SimpleNamespace(id=uuid4(), is_admin=admin)
+    user = SimpleNamespace(id=uuid4(), is_admin=admin)
+    allow = allow_access(user)
 
-    app.dependency_overrides[verify_user_permission] = current_user
+    def guard_with_context(request: Request):
+        request.state.permission_ctx = SimpleNamespace(
+            allows_route=lambda key: user_options_permission and key == f"GET:{settings.API_PREFIX_V1}/users/all"
+        )
+        return allow()
+
+    app.dependency_overrides[access_guard_dependency] = guard_with_context
+    app.dependency_overrides[_get_current_user_placeholder] = lambda: user
     app.dependency_overrides[get_admin_service] = lambda: PreviewService()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         payload = dict(
@@ -403,10 +409,8 @@ async def test_preview_endpoint_requires_its_own_permission_before_service_acces
     app = FastAPI()
     app.include_router(router)
 
-    async def forbidden():
-        raise HTTPException(status_code=403)
-
-    app.dependency_overrides[verify_user_permission] = forbidden
+    app.dependency_overrides[access_guard_dependency] = deny_access()
+    app.dependency_overrides[_get_current_user_placeholder] = lambda: SimpleNamespace(id=uuid4(), is_admin=False)
     app.dependency_overrides[get_admin_service] = lambda: pytest.fail("unauthorized preview reached service")
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(

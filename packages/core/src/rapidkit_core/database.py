@@ -10,7 +10,6 @@ from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator, Iterator
 
 from pydantic_core import to_json
-from rapidkit_common.transaction import run_after_commit_hooks
 from redis.asyncio import ConnectionPool
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
@@ -21,6 +20,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from rapidkit_core.log import logger
 from rapidkit_core.proxy import LazyProxy
 from rapidkit_core.redis_client import AsyncRedisClient
+from rapidkit_core.transaction import run_after_commit_hooks
 
 # ---------------------------------------------------------------------------
 # Lazy engine factories

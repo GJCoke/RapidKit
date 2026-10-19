@@ -19,7 +19,6 @@
     "@iconify/vue": "^5.0.0",
     "@rapidkit/axios": "workspace:*",
     "@rapidkit/color": "workspace:*",
-    "@rapidkit/editor": "workspace:*",
     "@rapidkit/hooks": "workspace:*",
     "@rapidkit/utils": "workspace:*",
     "@vueuse/core": "^14.2.1",

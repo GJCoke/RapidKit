@@ -56,7 +56,6 @@
       { label: $t("page.home.dashboard.roles"), value: props.businessSummary.roles, icon: "carbon:user-role" },
       { label: $t("page.home.dashboard.menus"), value: props.businessSummary.menus, icon: "carbon:menu" },
       { label: $t("page.home.dashboard.apiRouters"), value: props.businessSummary.routers, icon: "carbon:api" },
-      { label: $t("page.home.dashboard.scripts"), value: props.businessSummary.scripts, icon: "carbon:code" },
       { label: $t("page.home.dashboard.schedules"), value: props.businessSummary.schedules, icon: "carbon:time" },
     ]
   })

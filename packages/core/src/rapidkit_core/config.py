@@ -120,13 +120,6 @@ class CeleryConfigMixin(RedisConfigMixin):
         )
 
 
-class ScriptConfigMixin(BaseSettings):
-    """脚本执行配置。"""
-
-    SCRIPT_EXEC_TIMEOUT: int = Field(30, description="脚本执行超时时间（秒）")
-    SCRIPT_EXEC_MAX_OUTPUT: int = Field(65536, description="脚本执行最大输出字节数")
-
-
 class LogConfigMixin(BaseSettings):
     """日志配置。"""
 
@@ -203,7 +196,6 @@ class AuditMixin(BaseSettings):
 class Config(
     PostgreSQLConfigMixin,
     CeleryConfigMixin,
-    ScriptConfigMixin,
     LogConfigMixin,
     CorsConfigMixin,
     RateLimitConfigMixin,

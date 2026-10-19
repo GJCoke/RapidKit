@@ -8,7 +8,6 @@ from rapidkit_common.protocols import (
     CurrentUserProvider,
     DepartmentResolver,
     PermissionChecker,
-    PolicyLoader,
     TokenDecoder,
     UserProtocol,
     UserQueryService,
@@ -25,7 +24,6 @@ def test_protocols_are_importable():
     assert Authenticator is not None
     assert CurrentUserProvider is not None
     assert PermissionChecker is not None
-    assert PolicyLoader is not None
     assert DepartmentResolver is not None
 
 

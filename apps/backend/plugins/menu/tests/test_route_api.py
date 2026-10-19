@@ -8,8 +8,9 @@ from tests.testing.utils import random_lowercase
 def _menu_payload(**overrides) -> dict:
     name = random_lowercase(8)
     payload = {
+        "permission": "user:read",
         "menuName": f"Route {name}",
-        "menuType": 2,
+        "menuType": "2",
         "routeName": f"route_{name}",
         "routePath": f"/route/{name}",
         "component": "view.route",

@@ -4,16 +4,13 @@ import asyncio
 import json
 import math
 import time
-from datetime import UTC
 from uuid import UUID
 
-from plugin_auth.impersonation.models import ImpersonationSession
-from rapidkit_common.protocols.impersonation import ImpersonationSocketCloser
-from rapidkit_core.database import AsyncSessionLocal
+from rapidkit_common.protocols.impersonation import ImpersonationSessionReader, ImpersonationSocketCloser
 from rapidkit_core.log import logger
 from rapidkit_core.realtime import get_external_sio
 from rapidkit_framework.identity import IdentityMetadata
-from rapidkit_framework.services import service_registry
+from rapidkit_framework.services import get_service, service_registry
 from socketio.exceptions import ConnectionRefusedError
 
 from src.sio.constants import SESSION_TTL, authenticated_sid_structure, sid_user_structure
@@ -54,25 +51,17 @@ def resolve_root_sid(server, sid: str, namespace: str) -> str | None:
 
 
 async def session_expiry(session_id: UUID) -> int:
-    async with AsyncSessionLocal() as session:
-        record = await session.get(ImpersonationSession, session_id)
-        if record is None:
-            raise ConnectionRefusedError("Invalid impersonation session")
-        return int(record.expires_at.replace(tzinfo=UTC).timestamp())
+    expiry = await get_service(ImpersonationSessionReader).get_expiry(session_id)
+    if expiry is None:
+        raise ConnectionRefusedError("Invalid impersonation session")
+    return expiry
 
 
 async def validate_registered_identity(data) -> bool:
     """Validate after indexing so a concurrent stop cannot miss the new SID."""
-    async with AsyncSessionLocal() as session:
-        record = await session.get(ImpersonationSession, UUID(data["impersonation_session_id"]))
-        return bool(
-            record is not None
-            and record.ended_at is None
-            and str(record.actor_id) == data["actor_id"]
-            and str(record.subject_user_id) == data["id"]
-            and int(record.expires_at.replace(tzinfo=UTC).timestamp()) == int(data["expires_at"])
-            and record.expires_at.replace(tzinfo=UTC).timestamp() > time.time()
-        )
+    return await get_service(ImpersonationSessionReader).validate_identity(
+        UUID(data["impersonation_session_id"]), UUID(data["actor_id"]), UUID(data["id"]), int(data["expires_at"])
+    )
 
 
 async def register_impersonated_socket(redis, session_id, namespace, sid, expires_at):

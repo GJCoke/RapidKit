@@ -283,13 +283,7 @@
       @refresh="handleTaskSubmitted"
     >
       <template #header-extra>
-        <NButton
-          v-if="hasAuth('queue_task:trigger')"
-          size="small"
-          ghost
-          type="primary"
-          @click="triggerModalVisible = true"
-        >
+        <NButton v-if="hasAuth('task:trigger')" size="small" ghost type="primary" @click="triggerModalVisible = true">
           <template #icon>
             <icon-ic-round-play-arrow class="text-icon" />
           </template>

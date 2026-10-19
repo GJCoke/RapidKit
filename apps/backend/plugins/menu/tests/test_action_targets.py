@@ -77,8 +77,8 @@ async def test_public_system_targets_follow_constant_route_access_for_non_admins
     disabled = await seed(isolated_session, constant=True, status=Status.OFF)
 
     class Permissions:
-        async def get_permitted_routes(self, roles):
-            return []
+        async def get_role_codes(self, roles):
+            return set()
 
     provider = MenuNavigationProvider(permission_provider=Permissions())
     user = SimpleNamespace(is_admin=False, roles=[])
@@ -93,8 +93,9 @@ async def test_public_system_targets_follow_constant_route_access_for_non_admins
 @pytest.mark.asyncio
 async def test_targets_follow_authorized_routes_and_hidden_detail_ancestor_permissions(isolated_session):
     directory = await seed(isolated_session, menu_type=MenuType.DIRECTORY)
-    page = await seed(isolated_session, parent_id=directory.id)
+    page = await seed(isolated_session, parent_id=directory.id, permission="page:read")
     detail = Menu(
+        permission="user:read",
         menu_name="Detail",
         route_name="user_detail",
         route_path="/users/:id",
@@ -108,8 +109,8 @@ async def test_targets_follow_authorized_routes_and_hidden_detail_ancestor_permi
     await isolated_session.flush()
 
     class Permissions:
-        async def get_permitted_routes(self, roles):
-            return ["user_detail"] if roles == ["detail_only"] else [page.route_name, "user_detail"]
+        async def get_role_codes(self, roles):
+            return {"user:read"} if roles == ["detail_only"] else {"page:read", "user:read"}
 
     provider = MenuNavigationProvider(permission_provider=Permissions())
     user = SimpleNamespace(is_admin=False, roles=["detail_only"])

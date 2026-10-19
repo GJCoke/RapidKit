@@ -25,10 +25,10 @@ declare module "@elegant-router/types" {
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat|set-password|reset-password)?";
     "manage": "/manage";
     "manage_audit-log": "/manage/audit-log";
-    "manage_data-policy": "/manage/data-policy";
     "manage_department": "/manage/department";
-    "manage_field-policy": "/manage/field-policy";
     "manage_menu": "/manage/menu";
+    "manage_permission-extension": "/manage/permission-extension";
+    "manage_permission-package": "/manage/permission-package";
     "manage_role": "/manage/role";
     "manage_user": "/manage/user";
     "manage_user-detail": "/manage/user-detail/:id";
@@ -46,7 +46,6 @@ declare module "@elegant-router/types" {
     "queue_dashboard": "/queue/dashboard";
     "queue_schedule": "/queue/schedule";
     "queue_task": "/queue/task";
-    "script": "/script";
     "socketio": "/socketio";
     "socketio_chat": "/socketio/chat";
     "socketio_debug": "/socketio/debug";
@@ -92,7 +91,6 @@ declare module "@elegant-router/types" {
     | "monitoring"
     | "notification"
     | "queue"
-    | "script"
     | "socketio"
   >;
 
@@ -117,10 +115,10 @@ declare module "@elegant-router/types" {
     | "login"
     | "home"
     | "manage_audit-log"
-    | "manage_data-policy"
     | "manage_department"
-    | "manage_field-policy"
     | "manage_menu"
+    | "manage_permission-extension"
+    | "manage_permission-package"
     | "manage_role"
     | "manage_user-detail"
     | "manage_user"
@@ -134,7 +132,6 @@ declare module "@elegant-router/types" {
     | "queue_dashboard"
     | "queue_schedule"
     | "queue_task"
-    | "script"
     | "socketio_chat"
     | "socketio_debug"
     | "socketio_instrument"

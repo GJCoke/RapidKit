@@ -73,7 +73,6 @@ export function useDashboard() {
     roles: 0,
     menus: 0,
     routers: 0,
-    scripts: 0,
     schedules: 0,
   })
 

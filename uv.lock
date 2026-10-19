@@ -16,11 +16,9 @@ members = [
     "rapidkit-plugin-notification",
     "rapidkit-plugin-permission",
     "rapidkit-plugin-schedule",
-    "rapidkit-plugin-script",
     "rapidkit-plugin-system",
     "rapidkit-plugin-user",
     "rapidkit-plugin-worker",
-    "rapidkit-policy-engine",
     "rapidkit-security",
 ]
 
@@ -1075,11 +1073,9 @@ dependencies = [
     { name = "rapidkit-plugin-notification" },
     { name = "rapidkit-plugin-permission" },
     { name = "rapidkit-plugin-schedule" },
-    { name = "rapidkit-plugin-script" },
     { name = "rapidkit-plugin-system" },
     { name = "rapidkit-plugin-user" },
     { name = "rapidkit-plugin-worker" },
-    { name = "rapidkit-policy-engine" },
     { name = "rapidkit-security" },
 ]
 
@@ -1105,11 +1101,9 @@ requires-dist = [
     { name = "rapidkit-plugin-notification", editable = "apps/backend/plugins/notification" },
     { name = "rapidkit-plugin-permission", editable = "apps/backend/plugins/permission" },
     { name = "rapidkit-plugin-schedule", editable = "apps/backend/plugins/schedule" },
-    { name = "rapidkit-plugin-script", editable = "apps/backend/plugins/script" },
     { name = "rapidkit-plugin-system", editable = "apps/backend/plugins/system" },
     { name = "rapidkit-plugin-user", editable = "apps/backend/plugins/user" },
     { name = "rapidkit-plugin-worker", editable = "apps/backend/plugins/worker" },
-    { name = "rapidkit-policy-engine", editable = "packages/policy-engine" },
     { name = "rapidkit-security", editable = "packages/security" },
 ]
 
@@ -1152,7 +1146,6 @@ dependencies = [
     { name = "rapidkit-plugin-notification" },
     { name = "rapidkit-plugin-permission" },
     { name = "rapidkit-plugin-schedule" },
-    { name = "rapidkit-plugin-script" },
     { name = "rapidkit-plugin-system" },
     { name = "rapidkit-plugin-user" },
     { name = "rapidkit-plugin-worker" },
@@ -1206,7 +1199,6 @@ requires-dist = [
     { name = "rapidkit-plugin-notification", editable = "apps/backend/plugins/notification" },
     { name = "rapidkit-plugin-permission", editable = "apps/backend/plugins/permission" },
     { name = "rapidkit-plugin-schedule", editable = "apps/backend/plugins/schedule" },
-    { name = "rapidkit-plugin-script", editable = "apps/backend/plugins/script" },
     { name = "rapidkit-plugin-system", editable = "apps/backend/plugins/system" },
     { name = "rapidkit-plugin-user", editable = "apps/backend/plugins/user" },
     { name = "rapidkit-plugin-worker", editable = "apps/backend/plugins/worker" },
@@ -1241,7 +1233,6 @@ dependencies = [
     { name = "fastapi" },
     { name = "rapidkit-core" },
     { name = "rapidkit-framework" },
-    { name = "rapidkit-policy-engine" },
     { name = "user-agents" },
 ]
 
@@ -1250,7 +1241,6 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "rapidkit-core", editable = "packages/core" },
     { name = "rapidkit-framework", editable = "packages/framework" },
-    { name = "rapidkit-policy-engine", editable = "packages/policy-engine" },
     { name = "user-agents", specifier = ">=2.2.0" },
 ]
 
@@ -1413,7 +1403,6 @@ dependencies = [
     { name = "rapidkit-common" },
     { name = "rapidkit-core" },
     { name = "rapidkit-framework" },
-    { name = "rapidkit-policy-engine" },
 ]
 
 [package.metadata]
@@ -1421,7 +1410,6 @@ requires-dist = [
     { name = "rapidkit-common" },
     { name = "rapidkit-core" },
     { name = "rapidkit-framework" },
-    { name = "rapidkit-policy-engine" },
 ]
 
 [[package]]
@@ -1437,21 +1425,6 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "ephem", specifier = ">=4.2,<5" },
-    { name = "rapidkit-common" },
-    { name = "rapidkit-core" },
-]
-
-[[package]]
-name = "rapidkit-plugin-script"
-version = "0.1.0"
-source = { editable = "apps/backend/plugins/script" }
-dependencies = [
-    { name = "rapidkit-common" },
-    { name = "rapidkit-core" },
-]
-
-[package.metadata]
-requires-dist = [
     { name = "rapidkit-common" },
     { name = "rapidkit-core" },
 ]
@@ -1516,17 +1489,6 @@ requires-dist = [
     { name = "rapidkit-common" },
     { name = "rapidkit-core" },
 ]
-
-[[package]]
-name = "rapidkit-policy-engine"
-version = "0.1.0"
-source = { editable = "packages/policy-engine" }
-dependencies = [
-    { name = "sqlmodel" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "sqlmodel", specifier = ">=0.0.24" }]
 
 [[package]]
 name = "rapidkit-security"

@@ -2,6 +2,7 @@
 
 import pytest
 from httpx import AsyncClient
+from plugin_auth.status_codes import AuthStatusCode
 
 
 @pytest.mark.asyncio
@@ -23,4 +24,6 @@ async def test_admin_contacts_exposes_only_minimal_fields(
 async def test_admin_contacts_requires_authentication(client: AsyncClient, init) -> None:
     response = await client.get("/users/admin-contacts")
 
-    assert response.status_code == 401
+    assert response.status_code == 200
+    assert response.json()["code"] == AuthStatusCode.TOKEN_INVALID.code
+    assert response.json()["data"] is None

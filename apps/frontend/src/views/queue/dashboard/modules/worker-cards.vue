@@ -48,10 +48,7 @@
                 <NTag :type="worker.status === '1' ? 'success' : 'warning'" size="small">
                   {{ $t(workerStatusRecord[worker.status]) }}
                 </NTag>
-                <NPopconfirm
-                  v-if="hasAuth('queue_dashboard:workerControl')"
-                  @positive-click.stop="emit('shutdown', worker)"
-                >
+                <NPopconfirm v-if="hasAuth('worker:control')" @positive-click.stop="emit('shutdown', worker)">
                   <template #trigger>
                     <NButton size="tiny" type="error" quaternary :disabled="worker.status !== '1'" @click.stop>
                       <template #icon>

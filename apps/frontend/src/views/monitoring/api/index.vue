@@ -6,6 +6,7 @@
   import MonitoringCharts from "./modules/monitoring-charts.vue"
   import MonitoringRankings from "./modules/monitoring-rankings.vue"
   import MonitoringSearch from "./modules/monitoring-search.vue"
+  import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
   import { $t } from "@/locales"
   import { fetchApiList } from "@/service/api"
   import { useNaivePaginatedTable, defaultTransform } from "@/hooks/common/table"
@@ -19,7 +20,7 @@
 
   const searchParams: Record<string, string | number> = reactive({
     page: 1,
-    pageSize: 10,
+    pageSize: DEFAULT_PAGE_SIZE,
     range: "24h",
     sortBy: "request_count",
     sortOrder: "desc",
@@ -53,7 +54,7 @@
     immediate: false,
     onPaginationParamsChange: (params) => {
       searchParams.page = params.page || 1
-      searchParams.pageSize = params.pageSize || 10
+      searchParams.pageSize = params.pageSize || DEFAULT_PAGE_SIZE
     },
   })
 

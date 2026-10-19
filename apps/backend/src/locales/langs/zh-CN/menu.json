@@ -5,6 +5,8 @@
     "activeMenuTargetUnavailable": "所选侧边栏菜单必须是启用且可见的页面菜单",
     "referencedTargetConflict": "该菜单仍被隐藏子页面用作侧边栏绑定",
     "moveInvalidatesBinding": "当前移动会导致已有子页面侧边栏绑定失效",
-    "activeMenuTargetNotFound": "所选侧边栏菜单不存在"
+    "activeMenuTargetNotFound": "所选侧边栏菜单不存在",
+    "permissionRequired": "页面菜单必须选择进入页面需要的权限码",
+    "permissionUnknown": "所选权限码不存在"
   }
 }

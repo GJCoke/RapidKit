@@ -61,7 +61,8 @@ class TestReadRole:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        assert "buttonPermissions" in body["data"]
+        assert "user:read" in body["data"]["permissionCodes"]
+        assert body["data"]["invalidCodes"] == []
 
     async def test_get_my_roles(self, client: AsyncClient, init, auth_headers: dict):
         resp = await client.get("/roles/mine", headers=auth_headers)
@@ -97,13 +98,10 @@ class TestUpdateRole:
         resp = await client.get("/roles/all", headers=auth_headers)
         guest = next(r for r in resp.json()["data"] if r["code"] == "GUEST")
 
+        before = (await client.get(f"/roles/{guest['id']}/permissions", headers=auth_headers)).json()["data"]
         resp = await client.put(
             f"/roles/{guest['id']}/permissions",
-            json={
-                "routerPermissions": ["home"],
-                "buttonPermissions": [],
-                "interfacePermissions": ["GET:/api/v1/users"],
-            },
+            json={"permissionCodes": ["user:read"]},
             headers=auth_headers,
         )
         assert resp.status_code == 200
@@ -116,9 +114,7 @@ class TestUpdateRole:
                 "code": guest["code"],
                 "description": guest["description"],
                 "status": guest["status"],
-                "routerPermissions": [],
-                "buttonPermissions": [],
-                "interfacePermissions": [],
+                "permissionCodes": [],
             },
             headers=auth_headers,
         )
@@ -128,9 +124,11 @@ class TestUpdateRole:
         resp = await client.get(f"/roles/{guest['id']}/permissions", headers=auth_headers)
         assert resp.status_code == 200
         assert resp.json()["data"] == {
-            "routerPermissions": ["home"],
-            "buttonPermissions": [],
-            "interfacePermissions": ["GET:/api/v1/users"],
+            "permissionCodes": ["user:read"],
+            "invalidCodes": [],
+            "dataScopes": before["dataScopes"],
+            "fieldModes": before["fieldModes"],
+            "invalidScopes": before["invalidScopes"],
         }
 
 

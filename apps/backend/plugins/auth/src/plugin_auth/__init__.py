@@ -14,7 +14,7 @@ from rapidkit_common.protocols.auth import (
     SessionInvalidator,
     TokenDecoder,
 )
-from rapidkit_common.protocols.impersonation import ImpersonationRevoker
+from rapidkit_common.protocols.impersonation import ImpersonationRevoker, ImpersonationSessionReader
 from rapidkit_common.protocols.user import UserResolver
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
 from rapidkit_framework.plugin import PluginManifest
@@ -23,6 +23,7 @@ from rapidkit_framework.services import ServiceRegistry
 from plugin_auth.auth.resolver import AuthContextResolverImpl
 from plugin_auth.impersonation.models import ImpersonationSession
 from plugin_auth.impersonation.service import ImpersonationService
+from plugin_auth.impersonation.session_reader import ImpersonationSessionReaderImpl
 
 
 def register() -> PluginManifest:
@@ -55,6 +56,7 @@ def register() -> PluginManifest:
         service = ImpersonationService(AsyncSessionLocal, _LazyRedis(), None, None)
         resolver = AuthContextResolverImpl(AsyncSessionLocal, RedisManager.client, service)
         registry.register(ImpersonationRevoker, service)
+        registry.register(ImpersonationSessionReader, ImpersonationSessionReaderImpl(AsyncSessionLocal))
         registry.register(AuthContextResolver, resolver)
         registry.register(TokenDecoder, TokenDecoderImpl(resolver))
         registry.register(Authenticator, AuthenticatorImpl(user_resolver))
@@ -71,6 +73,7 @@ def register() -> PluginManifest:
         requires=[UserResolver],
         provides=[
             ImpersonationRevoker,
+            ImpersonationSessionReader,
             AuthContextResolver,
             TokenDecoder,
             Authenticator,

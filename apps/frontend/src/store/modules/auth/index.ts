@@ -58,6 +58,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       isAdmin: false,
       roles: [],
       buttons: [],
+      restrictedFields: {},
     }
   }
   const userInfo = reactive(createEmptyUserInfo())

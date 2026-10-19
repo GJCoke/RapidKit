@@ -11,7 +11,7 @@ from rapidkit_common.enums import MenuIconType, MenuType, Status
 from rapidkit_common.models import SQLModel
 from sqlmodel import JSON, Column, Field
 
-from plugin_menu.schemas import Button, Query
+from plugin_menu.schemas import Query
 
 
 class Menu(SQLModel, table=True):
@@ -50,5 +50,4 @@ class Menu(SQLModel, table=True):
     multi_tab: bool = Field(default=False, description="是否支持多页签")
     fixed_index_in_tab: int | None = Field(default=None, description="在页签中的固定次序")
     query: list[Query] = Field(default=[], sa_column=Column(JSON), description="路由参数")
-    buttons: list[Button] = Field(default=[], sa_column=Column(JSON), description="按钮权限")
-    interfaces: list[str] = Field(default=[], sa_column=Column(JSON), description="绑定的接口权限码")
+    permission: str | None = Field(default=None, max_length=100, description="进入页面需要的权限码")

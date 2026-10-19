@@ -1,3 +1,4 @@
+from rapidkit_common.access import Scope
 from uuid import uuid4
 
 import pytest
@@ -21,7 +22,7 @@ async def test_resend_rejects_non_pending(monkeypatch) -> None:
     monkeypatch.setattr(user_api.event_bus, "fire_and_forget", lambda event: None)
     current = type("Current", (), {"id": uuid4(), "is_admin": True})()
     with pytest.raises(AppException) as exc:
-        await user_api.resend_invite(uuid4(), current, CRUD(Status.ON))
+        await user_api.resend_invite(user_id=uuid4(), user_crud=CRUD(Status.ON), scope=Scope(user=current, code="user:create"))
     assert exc.value.code == UserStatusCode.USER_NOT_PENDING.code
 
 
@@ -31,6 +32,6 @@ async def test_resend_fires_event_for_pending(monkeypatch) -> None:
     monkeypatch.setattr(user_api.event_bus, "fire_and_forget", fired.append)
     current = type("Current", (), {"id": uuid4(), "is_admin": True})()
     user_id = uuid4()
-    result = await user_api.resend_invite(user_id, current, CRUD(Status.PENDING))
+    result = await user_api.resend_invite(user_id=user_id, user_crud=CRUD(Status.PENDING), scope=Scope(user=current, code="user:create"))
     assert result.data is True
     assert fired[0].user_id == str(user_id)

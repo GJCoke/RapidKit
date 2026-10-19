@@ -25,7 +25,6 @@ const ICONS: Record<string, LucideIcon> = {
   monitoring: Activity,
   department: Building2,
   schedule: Clock,
-  script: Terminal,
 }
 
 const RULES: Array<[RegExp, LucideIcon]> = [
@@ -37,7 +36,7 @@ const RULES: Array<[RegExp, LucideIcon]> = [
   [/monitor|chart|analytic/i, Activity],
   [/department|org/i, Building2],
   [/schedule|clock|time/i, Clock],
-  [/script|code|terminal/i, Terminal],
+  [/code|terminal/i, Terminal],
 ]
 
 function normalized(name?: string) {

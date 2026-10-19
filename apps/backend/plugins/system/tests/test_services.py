@@ -84,7 +84,8 @@ class TestBuildBusinessSummary:
         assert result["roles"] == 42
         assert result["menus"] == 42
         assert result["routers"] == 42
-        assert result["scripts"] == 42
+        assert "scripts" not in result
+        assert session.execute.await_count == 3
         assert result["schedules"] == 0
 
     @pytest.mark.asyncio
@@ -104,13 +105,8 @@ class TestBuildBusinessSummary:
     async def test_celery_count_failure_returns_zero(self):
         from plugin_system.services import build_business_summary
 
-        call_count = 0
-
         async def _execute(stmt):
-            nonlocal call_count
-            call_count += 1
-            # The 5th call is for schedule_periodic_tasks — raise
-            if call_count == 5:
+            if "schedule_periodic_tasks" in str(stmt):
                 raise RuntimeError("table missing")
             mock_result = MagicMock()
             mock_result.scalar_one.return_value = 7

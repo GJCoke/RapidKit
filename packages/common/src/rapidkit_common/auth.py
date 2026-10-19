@@ -1,8 +1,9 @@
 """
-权限依赖抽象层。
+认证依赖抽象层。
 
-插件通过此模块获取 verify_user_permission 和 UserDBDep，
+插件通过此模块获取 UserDBDep 与 DenyImpersonation，
 实际实现由 auth 插件在启动时通过 FastAPI dependency_overrides 注入。
+接口权限声明见 ``rapidkit_common.access``。
 
 Author : Coke
 Date   : 2026-04-14
@@ -28,16 +29,6 @@ class UserProtocol(Protocol):
 _oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login/swagger", auto_error=False)
 
 
-async def _verify_user_permission_placeholder(
-    _token: str = Depends(_oauth2_scheme),
-) -> UserProtocol:
-    """占位：由 auth 插件在启动时替换为真实实现。"""
-    raise RuntimeError(
-        "verify_user_permission has not been initialized. "
-        "Make sure the auth plugin is loaded and has registered its dependency override."
-    )
-
-
 async def _get_current_user_placeholder(
     _token: str = Depends(_oauth2_scheme),
 ) -> UserProtocol:
@@ -47,8 +38,6 @@ async def _get_current_user_placeholder(
         "Make sure the auth plugin is loaded and has registered its dependency override."
     )
 
-
-verify_user_permission = _verify_user_permission_placeholder
 
 UserDBDep = Annotated[
     UserProtocol,
@@ -61,21 +50,9 @@ UserDBDep = Annotated[
     ),
 ]
 
-VerifyPermissionDep = Annotated[
-    UserProtocol,
-    Depends(_verify_user_permission_placeholder),
-    Doc(
-        """
-        依赖项：校验当前用户是否有权限访问该路由。
-        实际实现由 auth 插件注入。
-        """
-    ),
-]
-
 
 async def DenyImpersonation() -> None:
     """Credential-route marker implemented by the auth plugin at startup."""
     raise RuntimeError(
-        "DenyImpersonation has not been initialized. "
-        "Make sure the auth plugin has registered its dependency override."
+        "DenyImpersonation has not been initialized. Make sure the auth plugin has registered its dependency override."
     )

@@ -6,7 +6,22 @@ const api = vi.hoisted(() => ({ fetch: vi.fn(), table: null as any }))
 vi.mock("@/service/api", () => ({ fetchGetTaskList: api.fetch, fetchRevokeTask: vi.fn() }))
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
 vi.mock("@/store/modules/app", () => ({ useAppStore: () => ({ isMobile: false }) }))
-vi.mock("@/hooks/business/auth", () => ({ useAuth: () => ({ hasAuth: () => false }) }))
+vi.mock("@/hooks/business/auth", () => ({
+  useAuth: () => {
+    const hasAuth = () => false
+    return {
+      hasAuth,
+      getActionContext: (locale = "zh-CN") => ({
+        ready: true,
+        hasAuth,
+        actorId: "actor",
+        isAdmin: false,
+        impersonating: false,
+        locale,
+      }),
+    }
+  },
+}))
 vi.mock("naive-ui", () => ({
   NButton: {
     setup:
@@ -51,6 +66,8 @@ it("keeps record page on rolling interval refresh and resets for a changed statu
   const host = document.createElement("div")
   app.mount(host)
   await flush()
+  expect(api.fetch).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, pageSize: 20 }))
+  expect(api.table.pagination.pageSizes).toEqual([20, 50, 100, 500])
   api.table.pagination.onUpdatePage(2)
   await flush()
   state.filters.endTime = "2026-10-08T00:01:00Z"
@@ -67,5 +84,8 @@ it("keeps record page on rolling interval refresh and resets for a changed statu
   await flush()
   expect(api.fetch).toHaveBeenCalledTimes(calls + 1)
   expect(api.fetch).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, status: "4" }))
+  api.table.pagination.onUpdatePageSize(500)
+  await flush()
+  expect(api.fetch).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, pageSize: 500 }))
   app.unmount()
 })

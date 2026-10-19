@@ -2,16 +2,19 @@
   import { ref, shallowRef } from "vue"
   import type { TreeOption } from "naive-ui"
   import { NButton, NPopconfirm, NSpace, NTag } from "naive-ui"
+  import { useBoolean } from "@rapidkit/hooks"
   import { enableStatusRecord } from "@/constants/business"
   import { fetchDeleteDepartment, fetchGetDepartmentTree } from "@/service/api"
   import { $t } from "@/locales"
   import { useAuth } from "@/hooks/business/auth"
-  import { useBoolean } from "@rapidkit/hooks"
+  import { useTableActions } from "@/hooks/business/table-actions/use-table-actions"
+  import { residentActionModel } from "@/hooks/business/table-actions/layout"
+  import type { ActionModel } from "@/hooks/business/table-actions/types"
   import DepartmentOperateDrawer from "./modules/department-operate-drawer.vue"
 
   defineOptions({ name: "ManageDepartment" })
 
-  const { hasAuth } = useAuth()
+  const { hasAuth, getActionContext } = useAuth()
   const { bool: drawerVisible, setTrue: openDrawer } = useBoolean()
 
   const treeData = shallowRef<TreeOption[]>([])
@@ -65,6 +68,24 @@
     await loadTree()
   }
 
+  const actions = useTableActions<Api.SystemManage.DepartmentTree>(() => {
+    const model = residentActionModel<Api.SystemManage.DepartmentTree>({ add: $t("common.add"), edit: $t("common.edit"), delete: $t("common.delete") })
+    const codes = { add: "department:create", edit: "department:update", delete: "department:delete" } as const
+    return { ...model, actions: model.actions.map((action) => ({ ...action,
+      access: { kind: "all", codes: [codes[action.key as keyof typeof codes]] },
+    })) } satisfies ActionModel<Api.SystemManage.DepartmentTree>
+  }, () => getActionContext(), (row) => row.id)
+
+  function findDepartment(id: string, nodes = treeData.value): Api.SystemManage.DepartmentTree | undefined {
+    for (const node of nodes) {
+      const row = node.rawData as Api.SystemManage.DepartmentTree
+      if (row.id === id) return row
+      const child = findDepartment(id, node.children ?? [])
+      if (child) return child
+    }
+    return undefined
+  }
+
   const renderSuffix = ({ option }: { option: TreeOption }) => {
     const dept = option.rawData as Api.SystemManage.DepartmentTree
     const statusLabel = dept.status ? $t(enableStatusRecord[dept.status]) : ""
@@ -74,18 +95,20 @@
       <NSpace size={8} align="center" class="ml-8px">
         <NTag size="small" type={tagType}>{statusLabel}</NTag>
         <span class="text-12px text-base-text-3">{dept.code}</span>
-        {hasAuth("manage_department:add") && (
+        {actions.rowEntries(dept).length > 0 && (
+          <span class="inline-flex items-center gap-8px">
+        {actions.visible(dept, "add") && (
           <NButton size="tiny" quaternary type="primary" onClick={(e: Event) => { e.stopPropagation(); handleAddChild(dept) }}>
             {$t("common.add")}
           </NButton>
         )}
-        {hasAuth("manage_department:edit") && (
+        {actions.visible(dept, "edit") && (
           <NButton size="tiny" quaternary type="primary" onClick={(e: Event) => { e.stopPropagation(); handleEdit(dept) }}>
             {$t("common.edit")}
           </NButton>
         )}
-        {hasAuth("manage_department:delete") && (
-          <NPopconfirm onPositiveClick={() => handleDelete(dept.id)}>
+        {actions.visible(dept, "delete") && (
+          <NPopconfirm onPositiveClick={() => actions.run(() => findDepartment(dept.id), "delete", (latest) => handleDelete(latest.id))}>
             {{
               default: () => $t("common.confirmDelete"),
               trigger: () => (
@@ -95,6 +118,8 @@
               ),
             }}
           </NPopconfirm>
+        )}
+          </span>
         )}
       </NSpace>
     )
@@ -113,7 +138,7 @@
       class="card-wrapper sm:flex-1-hidden"
     >
       <template #header-extra>
-        <NButton v-if="hasAuth('manage_department:add')" size="small" ghost type="primary" @click="handleAdd">
+        <NButton v-if="hasAuth('department:create')" size="small" ghost type="primary" @click="handleAdd">
           <template #icon>
             <icon-ic-round-plus class="text-icon" />
           </template>

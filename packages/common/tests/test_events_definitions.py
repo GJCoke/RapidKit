@@ -8,7 +8,6 @@ from rapidkit_common.events import (
     ScheduleCreatedEvent,
     ScheduleDeletedEvent,
     ScheduleToggledEvent,
-    ScriptExecutedEvent,
     TaskSucceededEvent,
     UserActivityObservedEvent,
     UserCreatedEvent,
@@ -118,14 +117,6 @@ class TestActivityEvents:
         )
         assert event.event_name == "worker.offline"
         assert event.worker_hostname == "worker-1"
-
-
-class TestScriptEvents:
-    def test_script_executed(self):
-        e = ScriptExecutedEvent(script_id="s-1", executor_id="u-1")
-        assert e.event_name == "script.executed"
-        assert e.script_id == "s-1"
-        assert e.executor_id == "u-1"
 
 
 class TestScheduleEvents:

@@ -12,7 +12,8 @@ from plugin_worker.deps import TaskResultCrudDep
 from plugin_worker.models import CeleryTaskResult
 from plugin_worker.schemas import TaskGroupQuery, TaskQueryRequest
 from pydantic import ValidationError
-from rapidkit_common.auth import verify_user_permission
+from rapidkit_common.access import access_guard_dependency
+from rapidkit_common.access_testing import allow_access
 from rapidkit_common.enums import TaskStatus
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -51,7 +52,7 @@ async def test_groups_pagination_and_retry_counts(task_crud):
     for status in (TaskStatus.FAILURE, TaskStatus.PENDING, TaskStatus.STARTED, TaskStatus.RETRY, TaskStatus.REVOKED):
         await seed(task_crud, "task.00", status=status, retries=7)
     await task_crud.session.flush()
-    query = TaskGroupQuery(start_time=START, end_time=END, sort_by="total")
+    query = TaskGroupQuery(start_time=START, end_time=END, sort_by="total", page_size=10)
     page = await task_crud.get_stats_by_name(query)
     assert page.total == 12
     assert len(page.records) == 10
@@ -144,7 +145,7 @@ async def test_group_api_contract(task_crud):
     await task_crud.session.flush()
     app = FastAPI()
     app.include_router(task_router)
-    app.dependency_overrides[verify_user_permission] = lambda: None
+    app.dependency_overrides[access_guard_dependency] = allow_access(None)
     app.dependency_overrides[TaskResultCrudDep.__metadata__[0].dependency] = lambda: task_crud
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get(

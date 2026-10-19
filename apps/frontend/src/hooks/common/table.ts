@@ -6,8 +6,10 @@ import type { PaginationData, TableColumnCheck, UseTableOptions } from "@rapidki
 import { useBoolean, useTable } from "@rapidkit/hooks"
 import type { FlatResponseData } from "@rapidkit/axios"
 import { jsonClone } from "@rapidkit/utils"
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/constants/pagination"
 import { useAppStore } from "@/store/modules/app"
 import { $t } from "@/locales"
+import { createColumnCheckMemory, tableScrollWidth } from "./table-columns"
 
 export type UseNaiveTableOptions<ResponseData, ApiData, Pagination extends boolean> = Omit<
   UseTableOptions<ResponseData, ApiData, NaiveUI.TableColumn<ApiData>, Pagination>,
@@ -46,20 +48,27 @@ export function useNaiveTable<ResponseData, ApiData>(options: UseNaiveTableOptio
   const scope = effectScope()
   const appStore = useAppStore()
 
+  const sourceColumns = computed(options.columns)
+  const memory = createColumnCheckMemory()
+
   const result = useTable<ResponseData, ApiData, NaiveUI.TableColumn<ApiData>, false>({
     ...options,
+    columns: () => sourceColumns.value,
     getColumnChecks: (cols) => getColumnChecks(cols, options.getColumnVisible),
-    getColumns,
+    getColumns: (cols, checks) => getColumns(cols, checks, appStore.isMobile),
   })
 
-  // calculate the total width of the table this is used for horizontal scrolling
-  const scrollX = computed(() => {
-    return result.columns.value.reduce((acc, column) => {
-      return acc + Number(column.width ?? column.minWidth ?? 120)
-    }, 0)
-  })
+  result.reloadColumns = () => {
+    result.columnChecks.value = memory.reconcile(
+      result.columnChecks.value,
+      getColumnChecks(sourceColumns.value, options.getColumnVisible),
+    )
+  }
+  result.reloadColumns()
+  const scrollX = computed(() => tableScrollWidth(result.columns.value))
 
   scope.run(() => {
+    watch(sourceColumns, () => result.reloadColumns(), { flush: "sync" })
     watch(
       () => appStore.locale,
       () => {
@@ -103,10 +112,10 @@ export function useNaivePaginatedTable<ResponseData, ApiData>(
 
   const pagination = reactive({
     page: 1,
-    pageSize: 10,
+    pageSize: DEFAULT_PAGE_SIZE,
     itemCount: 0,
     showSizePicker: true,
-    pageSizes: [10, 15, 20, 25, 30],
+    pageSizes: [...PAGE_SIZE_OPTIONS],
     prefix: showTotal.value ? (page) => $t("datatable.itemCount", { total: page.itemCount }) : undefined,
     onUpdatePage(page) {
       pagination.page = page
@@ -138,11 +147,15 @@ export function useNaivePaginatedTable<ResponseData, ApiData>(
     }
   })
 
+  const sourceColumns = computed(options.columns)
+  const memory = createColumnCheckMemory()
+
   const result = useTable<ResponseData, ApiData, NaiveUI.TableColumn<ApiData>, true>({
     ...options,
+    columns: () => sourceColumns.value,
     pagination: true,
     getColumnChecks: (cols) => getColumnChecks(cols, options.getColumnVisible),
-    getColumns,
+    getColumns: (cols, checks) => getColumns(cols, checks, appStore.isMobile),
     onFetched: (data) => {
       pagination.itemCount = data.total
       pagination.pageSize = data.pageSize
@@ -159,7 +172,17 @@ export function useNaivePaginatedTable<ResponseData, ApiData>(
     await result.getData()
   }
 
+  result.reloadColumns = () => {
+    result.columnChecks.value = memory.reconcile(
+      result.columnChecks.value,
+      getColumnChecks(sourceColumns.value, options.getColumnVisible),
+    )
+  }
+  result.reloadColumns()
+  const scrollX = computed(() => tableScrollWidth(result.columns.value))
+
   scope.run(() => {
+    watch(sourceColumns, () => result.reloadColumns(), { flush: "sync" })
     watch(
       () => appStore.locale,
       () => {
@@ -180,6 +203,7 @@ export function useNaivePaginatedTable<ResponseData, ApiData>(
 
   return {
     ...result,
+    scrollX,
     getDataByPage,
     pagination,
     mobilePagination,
@@ -263,7 +287,7 @@ export function defaultTransform<ApiData>(
   return {
     data: [],
     pageNum: 1,
-    pageSize: 10,
+    pageSize: DEFAULT_PAGE_SIZE,
     total: 0,
   }
 }
@@ -305,7 +329,11 @@ function getColumnChecks<Column extends NaiveUI.TableColumn<any>>(
   return checks
 }
 
-function getColumns<Column extends NaiveUI.TableColumn<any>>(cols: Column[], checks: TableColumnCheck[]) {
+function getColumns<Column extends NaiveUI.TableColumn<any>>(
+  cols: Column[],
+  checks: TableColumnCheck[],
+  mobile = false,
+) {
   const columnMap = new Map<string, Column>()
 
   cols.forEach((column) => {
@@ -318,14 +346,11 @@ function getColumns<Column extends NaiveUI.TableColumn<any>>(cols: Column[], che
     }
   })
 
-  return checks
-    .filter((item) => item.checked)
-    .map((check) => {
-      return {
-        ...columnMap.get(check.key),
-        fixed: check.fixed,
-      } as Column
-    })
+  return checks.flatMap((check) => {
+    const column = columnMap.get(check.key)
+    if (!check.checked || !column) return []
+    return [{ ...column, fixed: mobile ? undefined : check.fixed } as Column]
+  })
 }
 
 export function isTableColumnHasKey<T>(column: NaiveUI.TableColumn<T>): column is NaiveUI.TableColumnWithKey<T> {

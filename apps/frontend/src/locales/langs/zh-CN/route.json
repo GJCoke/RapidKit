@@ -14,14 +14,11 @@
   "manage_user": "用户管理",
   "manage_department": "部门管理",
   "manage_audit-log": "审计日志",
-  "manage_data-policy": "数据策略",
-  "manage_field-policy": "字段策略",
   "manage_user-detail": "用户详情",
   "queue": "任务队列",
   "queue_dashboard": "队列概览",
   "queue_task": "任务记录",
   "queue_schedule": "定时任务",
-  "script": "脚本管理",
   "socketio": "即时通讯",
   "socketio_chat": "聊天室",
   "socketio_debug": "调试面板",
@@ -32,5 +29,7 @@
   "notification_manage": "通知管理",
   "notification_manage_templates": "模板管理",
   "notification_manage_announcements": "公告管理",
-  "notification_manage_deliveries": "投递状态"
+  "notification_manage_deliveries": "投递状态",
+  "manage_permission-extension": "权限扩展",
+  "manage_permission-package": "功能包"
 }

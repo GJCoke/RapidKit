@@ -9,7 +9,7 @@ import plugin_menu.route_services as route_services
 import pytest
 from plugin_menu.crud import MenuCRUD
 from plugin_menu.models import Menu
-from plugin_menu.route_services import build_route_tree, get_user_routes, menu_to_route
+from plugin_menu.route_services import build_route_tree, get_user_routes, menu_to_route, permitted_route_names
 from plugin_menu.schemas import ActiveMenuOption, MenuCreate, MenuResponse, MenuUpdate
 from plugin_menu.services import (
     create_menu,
@@ -18,6 +18,7 @@ from plugin_menu.services import (
     ensure_delete_preserves_active_menu_bindings,
     ensure_update_preserves_active_menu_bindings,
     filter_menu,
+    normalize_menu_permission,
     get_active_menu_options,
     resolve_active_menu_id,
     update_menu,
@@ -37,10 +38,16 @@ def make_menu(route_name: str, *, parent_id=None, **overrides) -> Menu:
         "parent_id": parent_id,
         "status": Status.ON,
         "hide_in_menu": False,
+        "permission": "user:read",
     }
     values.update(overrides)
     return Menu(**values)
 
+@pytest.fixture(autouse=True)
+def catalog_reader(monkeypatch: pytest.MonkeyPatch):
+    reader = SimpleNamespace(has_code=lambda code: code in {"user:read", "role:read"})
+    monkeypatch.setattr("plugin_menu.services.get_service", lambda _protocol: reader)
+    return reader
 
 def test_menu_model_stores_nullable_active_menu_id():
     target_id = uuid4()
@@ -92,8 +99,6 @@ def test_menu_update_is_partial_and_distinguishes_omitted_from_explicit_null():
         "constant",
         "multiTab",
         "query",
-        "buttons",
-        "interfaces",
     ],
 )
 def test_menu_update_rejects_explicit_null_for_non_nullable_fields(field):
@@ -101,7 +106,7 @@ def test_menu_update_rejects_explicit_null_for_non_nullable_fields(field):
         MenuUpdate.model_validate({field: None})
 
 
-@pytest.mark.parametrize("field", ["activeMenu", "parentId", "component", "icon", "i18nKey", "href", "fixedIndexInTab"])
+@pytest.mark.parametrize("field", ["activeMenu", "parentId", "component", "icon", "i18nKey", "href", "fixedIndexInTab", "permission"])
 def test_menu_update_accepts_explicit_null_for_nullable_fields(field):
     data = MenuUpdate.model_validate({field: None})
     assert data.model_fields_set
@@ -364,7 +369,7 @@ async def test_active_menu_options_stop_at_cross_partition_intermediate():
 
 @pytest.mark.asyncio
 async def test_create_visible_menu_normalizes_active_menu_to_null():
-    data = MenuCreate(
+    data = MenuCreate(permission="user:read",
         menu_name="visible",
         menu_type=MenuType.MENU,
         route_name="visible",
@@ -620,25 +625,29 @@ async def test_admin_route_mapping_uses_one_menu_query_for_active_menu_names():
     assert routes.routes[0].children[0].meta.active_menu == target.route_name
 
 
+def test_permitted_route_names_use_page_permission_codes():
+    directory = make_menu("dir", menu_type=MenuType.DIRECTORY, permission=None)
+    page = make_menu("page", parent_id=directory.id, permission="page:read")
+    other = make_menu("other", permission="other:read")
+
+    assert permitted_route_names([directory, page, other], {"page:read"}) == {"page"}
+
+
 @pytest.mark.asyncio
 async def test_active_menu_binding_does_not_grant_hidden_route_permission(monkeypatch: pytest.MonkeyPatch):
-    target = make_menu("target")
+    target = make_menu("target", permission="target:read")
     hidden_child = make_menu(
-        "hidden-child",
-        parent_id=target.id,
-        active_menu_id=target.id,
-        hide_in_menu=True,
+        "hidden-child", parent_id=target.id, active_menu_id=target.id, hide_in_menu=True, permission="child:read"
     )
     query_result = MagicMock()
     query_result.all.return_value = [target, hidden_child]
     session = AsyncMock()
     session.exec.return_value = query_result
     permission_cache = AsyncMock()
-    permission_cache.get_permitted_routes.return_value = {target.route_name}
+    permission_cache.get_role_codes.return_value = {"target:read"}
     monkeypatch.setattr(route_services, "get_service", lambda _: permission_cache)
-    user = SimpleNamespace(is_admin=False, roles=["viewer"])
 
-    routes = await get_user_routes(user, session)
+    routes = await get_user_routes(SimpleNamespace(is_admin=False, roles=["viewer"]), session)
 
     assert [route.name for route in routes.routes] == [target.route_name]
     assert routes.routes[0].children is None
@@ -648,14 +657,16 @@ async def test_active_menu_binding_does_not_grant_hidden_route_permission(monkey
 async def test_permitted_hidden_child_is_excluded_when_active_target_is_not_permitted(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    target = make_menu("target")
-    hidden_child = make_menu("hidden-child", parent_id=target.id, active_menu_id=target.id, hide_in_menu=True)
+    target = make_menu("target", permission="target:read")
+    hidden_child = make_menu(
+        "hidden-child", parent_id=target.id, active_menu_id=target.id, hide_in_menu=True, permission="child:read"
+    )
     query_result = MagicMock()
     query_result.all.return_value = [target, hidden_child]
     session = AsyncMock()
     session.exec.return_value = query_result
     permission_cache = AsyncMock()
-    permission_cache.get_permitted_routes.return_value = {hidden_child.route_name}
+    permission_cache.get_role_codes.return_value = {"child:read"}
     monkeypatch.setattr(route_services, "get_service", lambda _: permission_cache)
 
     routes = await get_user_routes(SimpleNamespace(is_admin=False, roles=["viewer"]), session)
@@ -667,14 +678,16 @@ async def test_permitted_hidden_child_is_excluded_when_active_target_is_not_perm
 async def test_permitted_hidden_child_is_included_when_active_target_is_also_permitted(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    target = make_menu("target")
-    hidden_child = make_menu("hidden-child", parent_id=target.id, active_menu_id=target.id, hide_in_menu=True)
+    target = make_menu("target", permission="target:read")
+    hidden_child = make_menu(
+        "hidden-child", parent_id=target.id, active_menu_id=target.id, hide_in_menu=True, permission="child:read"
+    )
     query_result = MagicMock()
     query_result.all.return_value = [target, hidden_child]
     session = AsyncMock()
     session.exec.return_value = query_result
     permission_cache = AsyncMock()
-    permission_cache.get_permitted_routes.return_value = {target.route_name, hidden_child.route_name}
+    permission_cache.get_role_codes.return_value = {"target:read", "child:read"}
     monkeypatch.setattr(route_services, "get_service", lambda _: permission_cache)
 
     routes = await get_user_routes(SimpleNamespace(is_admin=False, roles=["viewer"]), session)
@@ -690,23 +703,20 @@ async def test_hidden_child_requires_every_page_ancestor_permission(
     monkeypatch: pytest.MonkeyPatch,
     permit_intermediate: bool,
 ):
-    target = make_menu("target")
-    intermediate = make_menu("intermediate", parent_id=target.id)
+    target = make_menu("target", permission="target:read")
+    intermediate = make_menu("intermediate", parent_id=target.id, permission="intermediate:read")
     child = make_menu(
-        "child",
-        parent_id=intermediate.id,
-        active_menu_id=target.id,
-        hide_in_menu=True,
+        "child", parent_id=intermediate.id, active_menu_id=target.id, hide_in_menu=True, permission="child:read"
     )
     query_result = MagicMock()
     query_result.all.return_value = [target, intermediate, child]
     session = AsyncMock()
     session.exec.return_value = query_result
-    permitted_routes = {target.route_name, child.route_name}
+    codes = {"target:read", "child:read"}
     if permit_intermediate:
-        permitted_routes.add(intermediate.route_name)
+        codes.add("intermediate:read")
     permission_cache = AsyncMock()
-    permission_cache.get_permitted_routes.return_value = permitted_routes
+    permission_cache.get_role_codes.return_value = codes
     monkeypatch.setattr(route_services, "get_service", lambda _: permission_cache)
 
     routes = await get_user_routes(SimpleNamespace(is_admin=False, roles=["viewer"]), session)
@@ -719,6 +729,24 @@ async def test_hidden_child_requires_every_page_ancestor_permission(
 
 
 @pytest.mark.asyncio
+async def test_directory_is_visible_only_with_a_visible_child(monkeypatch: pytest.MonkeyPatch):
+    directory = make_menu("dir", menu_type=MenuType.DIRECTORY, permission=None)
+    page = make_menu("page", parent_id=directory.id, permission="page:read")
+    empty = make_menu("empty", menu_type=MenuType.DIRECTORY, permission=None)
+    query_result = MagicMock()
+    query_result.all.return_value = [directory, page, empty]
+    session = AsyncMock()
+    session.exec.return_value = query_result
+    permission_cache = AsyncMock()
+    permission_cache.get_role_codes.return_value = {"page:read"}
+    monkeypatch.setattr(route_services, "get_service", lambda _: permission_cache)
+
+    routes = await get_user_routes(SimpleNamespace(is_admin=False, roles=["viewer"]), session)
+
+    assert [route.name for route in routes.routes] == ["dir"]
+    assert routes.routes[0].children[0].name == "page"
+
+@pytest.mark.asyncio
 async def test_user_route_cache_separates_admin_and_non_admin_with_same_roles(monkeypatch: pytest.MonkeyPatch):
     from plugin_menu.route_schemas import UserRouteResponse
     from plugin_menu.services import get_cached_user_routes
@@ -729,6 +757,9 @@ async def test_user_route_cache_separates_admin_and_non_admin_with_same_roles(mo
     redis.lock = MagicMock(return_value=MagicMock(acquire=AsyncMock(return_value=True), release=AsyncMock()))
     route_builder = AsyncMock(return_value=UserRouteResponse(routes=[], home="home"))
     monkeypatch.setattr("plugin_menu.services.get_user_routes", route_builder)
+    permission_cache = AsyncMock()
+    permission_cache.get_catalog_version.return_value = 1
+    monkeypatch.setattr("plugin_menu.services.get_service", lambda _: permission_cache)
     session = AsyncMock()
     roles = ["shared-role"]
 
@@ -752,6 +783,9 @@ async def test_user_route_cache_role_hash_has_no_delimiter_collision(monkeypatch
         "plugin_menu.services.get_user_routes",
         AsyncMock(return_value=UserRouteResponse(routes=[], home="home")),
     )
+    permission_cache = AsyncMock()
+    permission_cache.get_catalog_version.return_value = 1
+    monkeypatch.setattr("plugin_menu.services.get_service", lambda _: permission_cache)
     session = AsyncMock()
 
     await get_cached_user_routes(SimpleNamespace(is_admin=False, roles=["a:b", "c"]), redis, session)
@@ -798,13 +832,6 @@ async def test_lock_menu_tree_uses_for_update_sql():
 
     statement = session.exec.await_args.args[0]
     assert "FOR UPDATE" in str(statement)
-
-
-def test_manage_menu_seed_includes_active_menu_options_permission():
-    from src._menu_seeds import build_menus
-
-    manage_menu = next(menu for menu in build_menus() if menu.route_name == "manage_menu")
-    assert "GET:/api/v1/manage/menus/active-menu-options" in manage_menu.interfaces
 
 
 def test_constant_route_tree_keeps_active_menu_name_within_partition():
@@ -967,3 +994,91 @@ class TestBuildRouteTree:
         result = build_route_tree([child])
 
         assert len(result) == 0
+
+
+def test_page_menu_requires_permission():
+    with pytest.raises(AppException) as exc_info:
+        normalize_menu_permission(MenuType.MENU, False, None)
+
+    assert exc_info.value.code == MenuStatusCode.MENU_PERMISSION_REQUIRED.code
+
+
+def test_page_menu_rejects_unknown_permission():
+    with pytest.raises(AppException) as exc_info:
+        normalize_menu_permission(MenuType.MENU, False, "user:export")
+
+    assert exc_info.value.code == MenuStatusCode.MENU_PERMISSION_UNKNOWN.code
+
+
+@pytest.mark.parametrize(("menu_type", "constant"), [(MenuType.DIRECTORY, False), (MenuType.MENU, True)])
+def test_directory_and_constant_menus_drop_permission(menu_type, constant):
+    assert normalize_menu_permission(menu_type, constant, "user:read") is None
+
+
+@pytest.mark.asyncio
+async def test_create_page_menu_without_permission_is_rejected():
+    crud = AsyncMock()
+    data = MenuCreate(menu_name="page", menu_type=MenuType.MENU, route_name="page", route_path="/page")
+
+    with pytest.raises(AppException) as exc_info:
+        await create_menu(crud, data)
+
+    assert exc_info.value.code == MenuStatusCode.MENU_PERMISSION_REQUIRED.code
+    crud.create.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_create_directory_stores_null_permission():
+    created = make_menu("dir", menu_type=MenuType.DIRECTORY, permission=None)
+    crud = AsyncMock()
+    crud.create.return_value = created
+    crud.get_route_name_map.return_value = {created.id: created.route_name}
+    data = MenuCreate(menu_name="dir", menu_type=MenuType.DIRECTORY, route_name="dir", route_path="/dir", permission="user:read")
+
+    await create_menu(crud, data)
+
+    assert crud.create.call_args.args[0]["permission"] is None
+
+
+@pytest.mark.asyncio
+async def test_update_to_directory_clears_permission_and_partial_update_keeps_it():
+    current = make_menu("page")
+    crud = AsyncMock()
+    crud.get.return_value = current
+    crud.update_by_id.return_value = current
+    crud.get_route_name_map.return_value = {current.id: current.route_name}
+    crud.get_active_menu_references.return_value = []
+    crud.get_parent_map.return_value = {current.id: None}
+    crud.get_all_active_menu_bindings.return_value = []
+
+    await update_menu(crud, current.id, MenuUpdate(menu_name="renamed"))
+    assert crud.update_by_id.call_args.args[1]["permission"] == "user:read"
+
+    await update_menu(crud, current.id, MenuUpdate(menu_type=MenuType.DIRECTORY))
+    assert crud.update_by_id.call_args.args[1]["permission"] is None
+
+
+@pytest.mark.asyncio
+async def test_user_route_cache_key_changes_with_catalog_version(monkeypatch: pytest.MonkeyPatch):
+    from plugin_menu.route_schemas import UserRouteResponse
+    from plugin_menu.services import get_cached_user_routes
+
+    redis = AsyncMock()
+    redis.get.return_value = None
+    redis.mget.return_value = ["1"]
+    redis.lock = MagicMock(return_value=MagicMock(acquire=AsyncMock(return_value=True), release=AsyncMock()))
+    monkeypatch.setattr(
+        "plugin_menu.services.get_user_routes",
+        AsyncMock(return_value=UserRouteResponse(routes=[], home="home")),
+    )
+    permission_cache = AsyncMock()
+    monkeypatch.setattr("plugin_menu.services.get_service", lambda _: permission_cache)
+    user = SimpleNamespace(is_admin=False, roles=["viewer"])
+
+    permission_cache.get_catalog_version.return_value = 1
+    await get_cached_user_routes(user, redis, AsyncMock())
+    permission_cache.get_catalog_version.return_value = 2
+    await get_cached_user_routes(user, redis, AsyncMock())
+
+    keys = list(dict.fromkeys(call.args[0] for call in redis.get.await_args_list))
+    assert len(keys) == 2

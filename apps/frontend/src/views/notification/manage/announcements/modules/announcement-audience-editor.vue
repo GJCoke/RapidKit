@@ -12,10 +12,10 @@
     $t(`page.notification.manage.announcements.editor.${key}` as I18nFullKey, params)
   type AudienceType = "role" | "department" | "user"
   const permissions = {
-    role: "GET:/api/v1/roles/all",
-    department: "GET:/api/v1/departments/tree",
-    user: "GET:/api/v1/users/all",
-  }
+    role: "role:options",
+    department: "department:read",
+    user: "user:options",
+  } satisfies Record<AudienceType, PermissionCode>
   const options = ref<Record<AudienceType, { label: string; value: string }[]>>({ role: [], department: [], user: [] })
   const status = ref<Record<AudienceType, "idle" | "loading" | "loaded" | "error">>({
     role: "idle",

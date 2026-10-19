@@ -12,10 +12,12 @@ from uuid import UUID
 
 from pydantic import TypeAdapter
 from rapidkit_common.enums import MenuType, Status
+from rapidkit_common.protocols.permission import PermissionCacheManager, PermissionCatalogReader
 from rapidkit_core.cache import PluginCacheManager, bump_version, get_or_rebuild, get_versions
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.realtime import emit_permission_changed
 from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.services import get_service
 from sqlalchemy import ColumnElement
 from sqlmodel import col, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -222,6 +224,17 @@ async def ensure_active_menu_constant_partition(
         raise AppException(MenuStatusCode.ACTIVE_MENU_TARGET_UNAVAILABLE)
 
 
+def normalize_menu_permission(menu_type: MenuType, constant: bool, permission: str | None) -> str | None:
+    """Only non-constant page menus carry a permission, and it must be a registered code."""
+    if menu_type != MenuType.MENU or constant:
+        return None
+    if not permission:
+        raise AppException(MenuStatusCode.MENU_PERMISSION_REQUIRED)
+    if not get_service(PermissionCatalogReader).has_code(permission):
+        raise AppException(MenuStatusCode.MENU_PERMISSION_UNKNOWN)
+    return permission
+
+
 async def create_menu(crud: MenuCRUD, data: MenuCreate) -> MenuResponse:
     """Create a menu and resolve its optional public active-menu route name."""
     await crud.lock_menu_tree()
@@ -238,6 +251,7 @@ async def create_menu(crud: MenuCRUD, data: MenuCreate) -> MenuResponse:
             data.hide_in_menu,
             data.constant,
         )
+    values["permission"] = normalize_menu_permission(data.menu_type, data.constant, data.permission)
     menu = await crud.create(values)
     return to_menu_response(menu, await crud.get_route_name_map())
 
@@ -280,6 +294,7 @@ async def update_menu(crud: MenuCRUD, menu_id: UUID, data: MenuUpdate) -> MenuRe
         constant=constant,
     )
 
+    values["permission"] = normalize_menu_permission(menu_type, constant, values.get("permission", current.permission))
     menu = await crud.update_by_id(menu_id, values)
     return to_menu_response(menu, await crud.get_route_name_map())
 
@@ -383,15 +398,16 @@ async def get_cached_user_routes(
     redis: AsyncRedisClient,
     session: AsyncSession,
 ) -> UserRouteResponse:
-    """获取用户授权路由（按角色组合版本化缓存 + 单飞重建）。"""
+    """获取用户授权路由（按目录版本与角色组合版本化缓存 + 单飞重建）。"""
     roles_payload = json.dumps(sorted(user.roles or []), separators=(",", ":"))
     roles_key = hashlib.md5(roles_payload.encode()).hexdigest()
     identity_scope = "admin" if user.is_admin else "non-admin"
+    catalog_version = await get_service(PermissionCacheManager).get_catalog_version()
 
     async def load() -> str:
         return (await get_user_routes(user, session)).model_dump_json()
 
-    key = await _versioned_key(redis, "route", "user", identity_scope, roles_key)
+    key = await _versioned_key(redis, "route", "user", identity_scope, f"c{catalog_version}", roles_key)
     return UserRouteResponse.model_validate_json(await get_or_rebuild(redis, key, load, ttl=_CACHE_TTL))
 
 

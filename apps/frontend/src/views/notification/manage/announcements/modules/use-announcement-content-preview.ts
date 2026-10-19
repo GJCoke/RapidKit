@@ -35,10 +35,8 @@ export function useAnnouncementContentPreview(
   const hasDynamicValues = computed(
     () => state.value.contentMode === "template" && state.value.variableRows.some((row) => row.source !== "manual"),
   )
-  const canReadUsers = computed(() => hasAuth("GET:/api/v1/users/all"))
-  const canPreviewContent = computed(
-    () => hasAuth("POST:/api/v1/admin/notifications/content-preview") && canReadUsers.value,
-  )
+  const canReadUsers = computed(() => hasAuth("user:options"))
+  const canPreviewContent = computed(() => hasAuth("notification:preview") && canReadUsers.value)
   const contentFingerprint = computed(() =>
     JSON.stringify([
       state.value.contentMode,

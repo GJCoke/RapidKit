@@ -17,13 +17,8 @@ class TestPluginManifest:
         assert m.on_startup == []
         assert m.on_shutdown == []
 
-    def test_permission_def(self):
-        from rapidkit_framework.plugin import PermissionDef
-
-        p = PermissionDef(code="user:create", name="创建用户", description="允许创建新用户")
-        assert p.code == "user:create"
-        assert p.name == "创建用户"
-        assert p.description == "允许创建新用户"
+    def test_legacy_permissions_are_removed(self):
+        assert not hasattr(PluginManifest(name="test", version="0.1.0"), "permissions")
 
     def test_health_status(self):
         from rapidkit_framework.plugin import HealthStatus

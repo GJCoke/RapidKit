@@ -10,6 +10,7 @@ from rapidkit_common.protocols.menu import MenuNavigationProvider
 from rapidkit_framework.plugin import PluginManifest
 from rapidkit_framework.services import ServiceRegistry
 
+from plugin_menu.permissions import PERMISSION_CODES, PERMISSION_PACKAGES, RESOURCES
 from plugin_menu.providers import MenuNavigationProvider as NavigationProvider
 
 
@@ -41,6 +42,9 @@ def register() -> PluginManifest:
     return PluginManifest(
         name="menu",
         version="0.1.0",
+        resources=RESOURCES,
+        permission_codes=PERMISSION_CODES,
+        permission_packages=PERMISSION_PACKAGES,
         router=combined,
         models=[Menu],
         dependencies=["permission"],

@@ -5,6 +5,8 @@
     "activeMenuTargetUnavailable": "The selected sidebar menu must be an enabled, visible page menu",
     "referencedTargetConflict": "This menu is still used as a child-page sidebar binding",
     "moveInvalidatesBinding": "This move would invalidate an existing child-page sidebar binding",
-    "activeMenuTargetNotFound": "The selected sidebar menu does not exist"
+    "activeMenuTargetNotFound": "The selected sidebar menu does not exist",
+    "permissionRequired": "A page menu must select the permission code required to open it",
+    "permissionUnknown": "The selected permission code does not exist"
   }
 }

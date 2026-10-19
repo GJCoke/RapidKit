@@ -23,7 +23,7 @@ class TestSystemRegister:
         from plugin_system import register
 
         module = next(item for item in register().dashboard_modules if item.key == "dashboard.activity")
-        assert module.required_permissions == ("GET:/api/v1/system/activities",)
+        assert module.required_permissions == ("dashboard:activity",)
         assert module.realtime_topics == ("dashboard:activity.created",)
 
     def test_router_has_routes(self):
@@ -41,11 +41,11 @@ class TestSystemRegister:
         assert all("audit-dict" not in route for route in routes)
 
     def test_no_cross_plugin_imports(self):
-        """plugin_system 允许导入 plugin_menu、plugin_auth、plugin_script（声明依赖）。"""
+        """plugin_system 允许导入 plugin_menu、plugin_auth（声明依赖）。"""
         import ast
         from pathlib import Path
 
-        allowed = {"plugin_system", "plugin_menu", "plugin_auth", "plugin_script", "plugin_schedule"}
+        allowed = {"plugin_system", "plugin_menu", "plugin_auth", "plugin_schedule"}
         plugin_src = Path(__file__).parent.parent / "src" / "plugin_system"
         violations = []
 

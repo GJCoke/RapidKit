@@ -11,6 +11,7 @@ vi.mock("@/service/api", () => ({
   fetchCreateNotificationTemplate: createTemplate,
   fetchUpdateNotificationTemplate: updateTemplate,
 }))
+vi.mock("@/hooks/business/auth", () => ({ useAuth: () => ({ hasAuth: () => true }) }))
 vi.mock("@/locales", async () => {
   const { createI18n } = await import("vue-i18n")
   const page = (await import("../../src/locales/langs/zh-CN/page.json")).default

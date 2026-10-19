@@ -1,6 +1,5 @@
 """Notification 插件注册测试。"""
 
-from fastapi.routing import APIRoute
 from plugin_notification import register
 from plugin_notification.admin_service import AdminNotificationService
 from plugin_notification.service import NotificationService
@@ -21,27 +20,7 @@ def test_register_wires_notification_runtime_integrations():
     assert manifest.router is not None
     assert len(manifest.models) == 7
     assert manifest.dependencies == ["user", "menu"]
-    permission_codes = {permission.code for permission in manifest.permissions}
-    assert "GET:/api/v1/notifications" in permission_codes
-    preference_route_codes = {
-        f"{method}:/api/v1{route.path}"
-        for route in manifest.router.routes
-        if isinstance(route, APIRoute) and route.path.startswith("/notification-preferences")
-        for method in route.methods
-    }
-    assert preference_route_codes == {
-        "GET:/api/v1/notification-preferences",
-        "PUT:/api/v1/notification-preferences/{category}",
-    }
-    assert preference_route_codes <= permission_codes
-    admin_route_codes = {
-        f"{method}:/api/v1{route.path}"
-        for route in manifest.router.routes
-        if isinstance(route, APIRoute) and route.path.startswith("/admin/")
-        for method in route.methods
-    }
-    assert "POST:/api/v1/admin/notifications/audience-preview" in admin_route_codes
-    assert admin_route_codes <= permission_codes
+    assert not hasattr(manifest, "permissions")
     assert manifest.provides == [Notifier, AdminNotifier]
     assert manifest.task_modules == ["plugin_notification.tasks"]
     assert {value["task"] for value in manifest.beat_schedule.values()} == {

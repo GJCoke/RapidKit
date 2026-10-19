@@ -199,7 +199,6 @@ class BusinessSummary(BaseModel):
     roles: int
     menus: int
     routers: int
-    scripts: int
     schedules: int
 
 

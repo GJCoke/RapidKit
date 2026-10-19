@@ -18,7 +18,6 @@ rapidkit/
 │   ├── alova/               # Alova 请求策略库
 │   ├── hooks/               # Vue Composition Hooks
 │   ├── color/               # 颜色工具与主题管理
-│   ├── editor/              # Monaco Editor 代码编辑器组件
 │   ├── builder/             # 构建辅助工具 (Rollup 配置)
 │   └── cli/                 # RapidKit 工作流 CLI
 ├── scripts/                 # 辅助层：运维与自动化脚本
@@ -60,7 +59,6 @@ rapidkit/
 | `alova/`   | `@rapidkit/alova`   | 基于 Alova 的请求策略库                                 |
 | `hooks/`   | `@rapidkit/hooks`   | Vue 3 Composition Hooks，封装可复用的组合式逻辑         |
 | `color/`   | `@rapidkit/color`   | 颜色工具与主题色管理                                    |
-| `editor/`  | `@rapidkit/editor`  | Monaco Editor Vue 组件，提供代码编辑与输出面板          |
 | `builder/` | `@rapidkit/builder` | 构建辅助工具，封装 Rollup 配置片段与 CI 脚本            |
 | `cli/`     | `@rapidkit/cli`     | 开发、数据库和生产部署工作流 CLI                        |
 

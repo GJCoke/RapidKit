@@ -15,34 +15,42 @@ from rapidkit_core.log import get_plugin_logger
 audit_logger = get_plugin_logger("RBACaudit")
 
 
-def log_data_policy_result(
+def log_data_scope_result(
     *,
     user_id: UUID,
-    model: str,
+    resource: str,
     endpoint: str,
     method: str,
-    policies_evaluated: list[UUID],
+    scope_keys: list[str],
     result: str,
-    reason: str,
 ) -> None:
-    """Log a structured ABAC evaluation result."""
-    if result == "denied":
-        audit_logger.warning(
-            "ABAC {result}: user_id={user_id} model={model} endpoint={method} {endpoint} "
-            "policies={policies} reason={reason}",
-            result=result,
-            user_id=str(user_id),
-            model=model,
-            method=method,
-            endpoint=endpoint,
-            policies=[str(p) for p in policies_evaluated],
-            reason=reason,
-        )
-    else:
-        audit_logger.info(
-            "ABAC {result}: user_id={user_id} model={model} policies_count={count}",
-            result=result,
-            user_id=str(user_id),
-            model=model,
-            count=len(policies_evaluated),
-        )
+    """Log the data scope bound to a request."""
+    audit_logger.info(
+        "Data scope {result}: user_id={user_id} resource={resource} scopes={scopes} endpoint={method} {endpoint}",
+        result=result,
+        user_id=str(user_id),
+        resource=resource,
+        scopes=scope_keys,
+        method=method,
+        endpoint=endpoint,
+    )
+
+
+def log_permission_denied(
+    *,
+    user_id: UUID,
+    code: str,
+    route_key: str,
+    role_versions: dict[str, int],
+    catalog_version: int,
+) -> None:
+    """Log a structured RBAC denial (missing permission code)."""
+    audit_logger.warning(
+        "RBAC denied: user_id={user_id} code={code} route={route_key} "
+        "role_versions={role_versions} catalog_version={catalog_version}",
+        user_id=str(user_id),
+        code=code,
+        route_key=route_key,
+        role_versions=role_versions,
+        catalog_version=catalog_version,
+    )

@@ -1,5 +1,5 @@
 """
-用户权限缓存读取：按角色版本比对，过期或缺失即重建并写回。
+用户权限缓存读取：按角色版本与目录版本比对，过期或缺失即重建并写回。
 
 Author : Coke
 Date   : 2026-10-15
@@ -11,7 +11,8 @@ from rapidkit_core.redis_client import AsyncRedisClient
 
 from plugin_permission.adapters import AuthRoleResolver, RedisPermissionCache
 from plugin_permission.cache import CachedPermissions, permission_structure
-from plugin_permission.data_policy.services import get_role_versions
+from plugin_permission.catalog.runtime import ensure_catalog_fresh
+from plugin_permission.catalog.version import get_permission_versions
 from plugin_permission.rbac_config import rbac_config
 from plugin_permission.role.crud import RoleCRUD
 
@@ -41,8 +42,9 @@ async def get_fresh_permissions(
     """
     cache = build_permission_cache(redis)
     cached = await cache.get(user_id)
-    current_versions = await get_role_versions(redis, roles)
-    if cached is not None and cached.role_versions == current_versions:
+    current_versions, catalog_version = await get_permission_versions(redis, roles)
+    await ensure_catalog_fresh(redis, role_crud.session, version=catalog_version)
+    if cached is not None and cached.role_versions == current_versions and cached.catalog_version == catalog_version:
         return cached, current_versions
 
     permissions = await AuthRoleResolver(role_crud, redis).resolve(roles)

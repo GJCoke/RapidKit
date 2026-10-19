@@ -16,3 +16,6 @@ class MenuStatusCode(BaseStatusCode):
     REFERENCED_TARGET_CONFLICT = (63001, "menu.error.referencedTargetConflict")
     MOVE_INVALIDATES_BINDING = (63002, "menu.error.moveInvalidatesBinding")
     ACTIVE_MENU_TARGET_NOT_FOUND = (65001, "menu.error.activeMenuTargetNotFound")
+
+    MENU_PERMISSION_REQUIRED = (62004, "menu.error.permissionRequired")
+    MENU_PERMISSION_UNKNOWN = (62005, "menu.error.permissionUnknown")

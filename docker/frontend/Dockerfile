@@ -24,7 +24,6 @@ COPY packages/alova/package.json packages/alova/package.json
 COPY packages/axios/package.json packages/axios/package.json
 COPY packages/builder/package.json packages/builder/package.json
 COPY packages/color/package.json packages/color/package.json
-COPY packages/editor/package.json packages/editor/package.json
 COPY packages/hooks/package.json packages/hooks/package.json
 COPY packages/utils/package.json packages/utils/package.json
 COPY apps/frontend/package.json apps/frontend/package.json

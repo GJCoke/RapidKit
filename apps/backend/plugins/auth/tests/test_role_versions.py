@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from plugin_permission.data_policy.services import get_role_versions, incr_role_version
+from plugin_permission.role_versions import get_role_versions, incr_role_version
 
 
 class TestGetRoleVersions:

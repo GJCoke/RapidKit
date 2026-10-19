@@ -99,6 +99,15 @@ async def get_constant_routes(session: AsyncSession) -> list[MenuRouteResponse]:
     return build_route_tree(menus)
 
 
+def permitted_route_names(menus: list[Menu], codes: set[str]) -> set[str]:
+    """Page menus whose permission code the user holds; directories follow their visible children."""
+    return {
+        menu.route_name
+        for menu in menus
+        if menu.menu_type == MenuType.MENU and menu.permission is not None and menu.permission in codes
+    }
+
+
 async def get_user_routes(
     user: "UserProtocol",
     session: AsyncSession,
@@ -120,7 +129,7 @@ async def get_user_routes(
         filtered_menus = all_menus
     else:
         cache_mgr = get_service(PermissionCacheManager)
-        permitted_routes = await cache_mgr.get_permitted_routes(user.roles or [])
+        permitted_routes = permitted_route_names(all_menus, await cache_mgr.get_role_codes(user.roles or []))
 
         permitted_menu_ids: set[UUID] = set()
         menu_map = {m.id: m for m in all_menus}

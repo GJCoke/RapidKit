@@ -14,14 +14,11 @@
   "manage_user": "User Manage",
   "manage_department": "Department",
   "manage_audit-log": "Audit Log",
-  "manage_data-policy": "Data Policy",
-  "manage_field-policy": "Field Policy",
   "manage_user-detail": "User Detail",
   "queue": "Task Queue",
   "queue_dashboard": "Dashboard",
   "queue_task": "Task History",
   "queue_schedule": "Scheduled Tasks",
-  "script": "Script Manage",
   "socketio": "Instant Messaging",
   "socketio_chat": "Chat Room",
   "socketio_debug": "Debug Panel",
@@ -32,5 +29,7 @@
   "notification_manage": "Notification admin",
   "notification_manage_templates": "Templates",
   "notification_manage_announcements": "Announcements",
-  "notification_manage_deliveries": "Deliveries"
+  "notification_manage_deliveries": "Deliveries",
+  "manage_permission-extension": "Permission Extensions",
+  "manage_permission-package": "Permission Packages"
 }

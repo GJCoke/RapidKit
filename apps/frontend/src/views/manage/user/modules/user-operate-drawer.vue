@@ -1,8 +1,9 @@
 <script setup lang="ts">
   import { computed, nextTick, ref, shallowRef, watch } from "vue"
-  import { jsonClone } from "@rapidkit/utils"
-  import { enableStatusOptions } from "@/constants/business"
   import type { InputInst, TreeSelectOption } from "naive-ui"
+  import { jsonClone } from "@rapidkit/utils"
+  import { useOperationAccess } from "@/hooks/business/table-actions/use-operation-access"
+  import { enableStatusOptions } from "@/constants/business"
   import {
     fetchCreateUser,
     fetchGetAllRoles,
@@ -14,6 +15,7 @@
   import { $t } from "@/locales"
   import { useAuthStore } from "@/store/modules/auth"
   import { createUsernamePinyinState } from "../composables/use-username-pinyin"
+  import { omitRestricted, restrictedUserFields } from "../composables/restricted-fields"
 
   defineOptions({
     name: "UserOperateDrawer",
@@ -37,10 +39,15 @@
   const visible = defineModel<boolean>("visible", {
     default: false,
   })
+  const operationAccess = useOperationAccess(
+    () => (props.operateType === "edit" ? "user:update" : "user:create"),
+    visible,
+  )
 
   const { formRef, validate, restoreValidation } = useNaiveForm()
   const { defaultRequiredRule, formRules, patternRules } = useFormRules()
   const authStore = useAuthStore()
+  const restrictedFields = computed(() => restrictedUserFields(authStore.userInfo.restrictedFields))
   const usernameInputRef = ref<InputInst | null>(null)
   const submitting = ref(false)
   const pinyinState = createUsernamePinyinState(props.operateType)
@@ -103,7 +110,7 @@
         defaultRequiredRule,
         { min: 2, max: 100, message: $t("page.manage.user.form.nameLengthRule"), trigger: "change" },
       ],
-      email: formRules.email,
+      email: props.operateType === "edit" && restrictedFields.value.has("email") ? [] : formRules.email,
       status: defaultRequiredRule,
     }
   })
@@ -166,6 +173,7 @@
   }
 
   async function submitUser() {
+    if (!operationAccess.value) return
     const commonFields = {
       username: model.value.username,
       name: model.value.name,
@@ -182,10 +190,12 @@
     }
 
     if (props.operateType === "add") {
+      if (!operationAccess.value) return
       const { error } = await fetchCreateUser({ ...commonFields, status: model.value.status! })
       if (error) return
     } else {
-      const { error } = await fetchUpdateUser(props.rowData!.id!, commonFields)
+      if (!operationAccess.value) return
+      const { error } = await fetchUpdateUser(props.rowData!.id!, omitRestricted(commonFields, restrictedFields.value))
       if (error) return
     }
 
@@ -311,10 +321,24 @@
           </div>
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.userEmail')" path="email">
-          <NInput v-model:value="model.email" :placeholder="$t('page.manage.user.form.userEmail')" />
+          <NInput
+            v-model:value="model.email"
+            :placeholder="
+              restrictedFields.has('email')
+                ? $t('page.manage.user.restrictedField')
+                : $t('page.manage.user.form.userEmail')
+            "
+            :disabled="restrictedFields.has('email')"
+          />
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.phone')" path="phone">
-          <NInput v-model:value="model.phone" :placeholder="$t('page.manage.user.form.phone')" />
+          <NInput
+            v-model:value="model.phone"
+            :placeholder="
+              restrictedFields.has('phone') ? $t('page.manage.user.restrictedField') : $t('page.manage.user.form.phone')
+            "
+            :disabled="restrictedFields.has('phone')"
+          />
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.nickname')" path="nickname">
           <NInput v-model:value="model.nickname" :placeholder="$t('page.manage.user.form.nickname')" />
@@ -352,7 +376,12 @@
           />
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.remark')" path="remark">
-          <NInput v-model:value="model.remark" type="textarea" :placeholder="$t('page.manage.user.form.remark')" />
+          <NInput
+            v-model:value="model.remark"
+            :disabled="restrictedFields.has('remark')"
+            type="textarea"
+            :placeholder="$t('page.manage.user.form.remark')"
+          />
         </NFormItem>
         <NFormItem v-if="authStore.userInfo.isAdmin" :label="$t('page.manage.user.isAdmin')">
           <NSwitch v-model:value="model.isAdmin" />

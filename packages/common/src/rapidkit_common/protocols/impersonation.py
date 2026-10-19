@@ -19,3 +19,11 @@ class ImpersonationRevoker(Protocol):
 
 class ImpersonationSocketCloser(Protocol):
     async def close_session(self, session_id: UUID, redis: "AsyncRedisClient") -> None: ...
+
+
+class ImpersonationSessionReader(Protocol):
+    """Read expiry and validate the complete identity binding without exposing a database model."""
+
+    async def get_expiry(self, session_id: UUID) -> int | None: ...
+
+    async def validate_identity(self, session_id: UUID, actor_id: UUID, subject_id: UUID, expires_at: int) -> bool: ...

@@ -103,62 +103,67 @@ class Role(SQLModel, table=True):
 
 ## 权限验证
 
-权限验证通过 `verify_user_permission` 依赖实现（`src/domains/role/deps.py`）。
+每个接口必须且只能声明一种访问方式（`rapidkit_common.access`）：
 
-验证流程：
+| 声明                   | 含义                   |
+| ---------------------- | ---------------------- |
+| `Require("资源:动作")` | 需持有该权限码         |
+| `Authenticated`        | 登录即可，不检查权限码 |
+| `Public`               | 无需登录               |
 
-1. 从 JWT Token 中提取用户信息
-2. 判断用户是否为管理员（`is_admin`），管理员跳过权限校验
-3. 从 Redis 缓存查询用户权限列表（key: `auth:permission:<user_id>`）
-4. 缓存未命中时，从数据库查询角色权限并写入 Redis（过期时间与 Access Token 一致）
-5. 将当前请求路径拼接为 `METHOD:path` 格式，与权限列表比对
-6. 匹配通过则放行，否则抛出 `ROLE_PERMISSION_DENIED` 异常
+应用启动时 permission 插件汇总各插件在 `PluginManifest.resources` / `permission_codes` 中声明的资源与权限码，并检查每个路由：未声明、重复声明或引用不存在的权限码都会导致启动失败。CI 中 `apps/backend/tests/test_route_access_contract.py` 做同样的检查，并要求 `Public` 接口与 `tests/route_access_public.txt` 一致。
 
 ```python
-async def verify_user_permission(user: UserDBDep, route: RequestRouterDep, redis: RedisDep, role: RoleCrudDep) -> User:
-    if not user.is_admin:
-        redis_key = permission_structure.format(user_id=user.id)
-        cache = await redis.get(redis_key, response_model=UserPermissionCache)
-        if cache:
-            user_permission_list = cache.permissions
-        else:
-            user_permission_list = await create_user_permission_cache(user.id, user.roles, redis, role)
+from typing import Annotated
 
-        route_key = f"{':'.join(route.methods)}:{route.path}"
-        if route_key not in user_permission_list:
-            raise AppException(StatusCode.ROLE_PERMISSION_DENIED)
+from rapidkit_common.access import Authenticated, Public, Require, Scope
 
-    return user
+
+@router.get("", dependencies=[Require("user:read")])
+async def list_users(...): ...
+
+
+@router.get("/{user_id}")
+async def get_user(user_id: UUID, scope: Annotated[Scope, Require("user:read")]): ...
+
+
+@router.get("/me", dependencies=[Authenticated])
+async def me(...): ...
+
+
+@router.post("/login", dependencies=[Public])
+async def login(...): ...
 ```
+
+超级管理员跳过权限码校验。`DenyImpersonation` 可与任一声明组合。
 
 ## 依赖注入
 
 项目提供多个认证相关的 FastAPI 依赖项，按需选用：
 
-| 依赖                  | 说明                                                |
-| --------------------- | --------------------------------------------------- |
-| `UserAccessJWTDep`    | 仅解析 Access Token，返回 JWT payload（不查数据库） |
-| `UserDBDep`           | 解析 Token 后查数据库，返回完整 `User` 模型         |
-| `UserRefreshDep`      | 校验 Refresh Token（Redis + DB），用于 Token 刷新   |
-| `VerifyPermissionDep` | 完整权限校验，含 RBAC 接口权限判断                  |
-| `AuthCrudDep`         | 注入 `UserCRUD` 实例                                |
+| 依赖               | 说明                                                |
+| ------------------ | --------------------------------------------------- |
+| `UserAccessJWTDep` | 仅解析 Access Token，返回 JWT payload（不查数据库） |
+| `UserDBDep`        | 解析 Token 后查数据库，返回完整 `User` 模型         |
+| `UserRefreshDep`   | 校验 Refresh Token（Redis + DB），用于 Token 刷新   |
+| `AuthCrudDep`      | 注入 `UserCRUD` 实例                                |
 
 在路由中使用：
 
 ```python
-from src.domains.auth.deps import UserDBDep
-from src.domains.role.deps import VerifyPermissionDep
+from rapidkit_common.access import Authenticated, Require
+from rapidkit_common.auth import UserDBDep
 
 
 # 仅需登录认证
-@router.get("/profile")
+@router.get("/profile", dependencies=[Authenticated])
 async def get_profile(user: UserDBDep):
     return user
 
 
-# 需要接口权限校验
-@router.delete("/users/{user_id}")
-async def delete_user(user: VerifyPermissionDep, user_id: UUID):
+# 需要权限码
+@router.delete("/users/{user_id}", dependencies=[Require("user:delete")])
+async def delete_user(user: UserDBDep, user_id: UUID):
     ...
 ```
 

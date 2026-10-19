@@ -1,8 +1,9 @@
-"""Public password-reset API."""
+"""公开的密码重置接口。"""
 
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
+from rapidkit_common.access import Public
 from rapidkit_common.auth import DenyImpersonation
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import Response
@@ -20,27 +21,29 @@ from plugin_auth.password_reset.service import confirm_password_reset, request_p
 router = APIRouter(prefix="/auth/password-reset", tags=["Auth Password Reset"])
 
 
-@router.post("/request", dependencies=[Depends(DenyImpersonation)])
+@router.post("/request", dependencies=[Depends(DenyImpersonation), Public])
 async def request_reset(
     body: PasswordResetRequestBody,
     request: Request,
     store: PasswordResetTokenStoreDep,
     user_crud: AuthCrudDep,
 ) -> Response[bool]:
+    """提交密码重置申请，并按账号校验和频率限制规则发送重置邮件。"""
     client_ip = request.client.host if request.client else "unknown"
     await request_password_reset(str(body.email), client_ip, store=store, user_crud=user_crud)
     return Response(data=True)
 
 
-@router.get("/validate", dependencies=[Depends(DenyImpersonation)])
+@router.get("/validate", dependencies=[Depends(DenyImpersonation), Public])
 async def validate_reset(
     query: Annotated[PasswordResetValidateQuery, Query(...)],
     store: PasswordResetTokenStoreDep,
 ) -> Response[PasswordResetValidateResponse]:
+    """校验密码重置令牌是否有效。"""
     return Response(data=PasswordResetValidateResponse(valid=await store.exists(query.token)))
 
 
-@router.post("/confirm", dependencies=[Depends(DenyImpersonation)])
+@router.post("/confirm", dependencies=[Depends(DenyImpersonation), Public])
 async def confirm_reset(
     body: PasswordResetConfirmBody,
     store: PasswordResetTokenStoreDep,
@@ -48,6 +51,7 @@ async def confirm_reset(
     redis: RedisDep,
     session: SessionDep,
 ) -> Response[bool]:
+    """使用重置令牌更新密码，并撤销已有登录会话。"""
     await confirm_password_reset(
         body.token,
         body.new_password,

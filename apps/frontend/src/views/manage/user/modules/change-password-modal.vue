@@ -1,6 +1,8 @@
 <script setup lang="ts">
   import { computed, ref, watch } from "vue"
   import { rsaEncrypt } from "@rapidkit/utils"
+  import { useOperationAccess } from "@/hooks/business/table-actions/use-operation-access"
+  import { useAuthStore } from "@/store/modules/auth"
   import { fetchChangePassword, fetchGetPublicKey } from "@/service/api"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
@@ -15,6 +17,13 @@
   const props = defineProps<Props>()
 
   const visible = defineModel<boolean>("visible", { default: false })
+
+  const auth = useAuthStore()
+  const operationAccess = useOperationAccess(
+    () => "user:reset-password",
+    visible,
+    () => auth.userInfo.isAdmin || auth.userInfo.id === props.userId,
+  )
 
   const { formRef, validate, restoreValidation } = useNaiveForm()
   const { defaultRequiredRule } = useFormRules()
@@ -41,6 +50,7 @@
 
   async function handleSubmit() {
     await validate()
+    if (!operationAccess.value) return
 
     const { data: publicKey } = await fetchGetPublicKey()
     if (!publicKey) return
@@ -53,6 +63,7 @@
       payload.oldPassword = await rsaEncrypt(publicKey, model.value.oldPassword)
     }
 
+    if (!operationAccess.value) return
     const { error } = await fetchChangePassword(props.userId, payload)
     if (error) return
 

@@ -1,5 +1,7 @@
 # 整体架构
 
+声明式权限的运行时约束与升级事项见[数据范围与字段规则](./data-scopes)。
+
 ## Monorepo 仓库结构
 
 项目采用 Monorepo 模式，通过 pnpm workspace 管理 JavaScript/TypeScript 生态，通过 uv 管理 Python 生态，由 Turborepo
@@ -19,13 +21,11 @@ rapidkit/
 │   ├── framework/                 # rapidkit-framework（插件运行时：plugin/event/HTTP）
 │   ├── security/                  # rapidkit-security（安全工具：JWT/bcrypt/RSA）
 │   ├── common/                    # rapidkit-common（业务脚手架：CRUD/Schema/deps）
-│   ├── policy-engine/             # rapidkit-policy-engine（数据策略引擎）
 │   ├── cli/                       # RapidKit CLI（rapidkit 命令行工具）
 │   ├── utils/                     # 通用工具函数
 │   ├── axios/                     # HTTP 请求封装
 │   ├── hooks/                     # Vue Composition API Hooks
 │   ├── color/                     # 颜色管理工具
-│   ├── editor/                    # Monaco Code Editor 组件
 │   ├── builder/                   # 构建工具与 Vite 插件
 │   └── alova/                     # Alova 请求库封装
 ├── docs/                          # 文档层
@@ -56,10 +56,10 @@ rapidkit/
 │              ┌───────────────┐                           │
 │              │  共享包层      │                           │
 │              │  (packages/)  │                           │
-│  ┌───────┐ ┌───────┐ ┌──────┐ ┌──────┐ ┌──────┐       │
-│  │ axios │ │ hooks │ │utils │ │color │ │editor│       │
-│  └───┬───┘ └───┬───┘ └──┬───┘ └──┬───┘ └──┬───┘       │
-│      └─────────┴────────┴────────┴────────┘             │
+│  ┌───────┐ ┌───────┐ ┌──────┐ ┌──────┐                │
+│  │ axios │ │ hooks │ │utils │ │color │                │
+│  └───┬───┘ └───┬───┘ └──┬───┘ └──┬───┘                │
+│      └─────────┴────────┴────────┘                       │
 │                      ▼                                   │
 │              ┌───────────────┐                           │
 │              │   builder     │                           │

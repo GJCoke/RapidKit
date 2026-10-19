@@ -59,12 +59,24 @@ export function useAnnouncementEditor(
   let templateRequest = 0
   let pendingTemplateValues: Record<string, unknown> | null = null
   let pendingTemplateBindings: NonNullable<Api.Notification.AnnouncementUpdate["variableBindings"]> = {}
-  const canSave = computed(() =>
-    hasAuth(savedId.value ? "PUT:/api/v1/admin/notifications/{message_id}" : "POST:/api/v1/admin/notifications"),
+  const canSave = computed(() => hasAuth(savedId.value ? "notification:update" : "notification:create"))
+  const canPublish = computed(() => canSave.value && hasAuth("notification:publish"))
+  watch(
+    [visible, canSave],
+    ([open, allowed]) => {
+      if (open && !allowed) visible.value = false
+    },
+    { flush: "sync" },
   )
-  const canPublish = computed(() => canSave.value && hasAuth("POST:/api/v1/admin/notifications/{message_id}/publish"))
-  const canPreview = computed(() => hasAuth("POST:/api/v1/admin/notifications/audience-preview"))
-  const canReadTemplates = computed(() => hasAuth("GET:/api/v1/admin/notification-templates"))
+  watch(
+    canPublish,
+    (allowed) => {
+      if (!allowed) confirming.value = false
+    },
+    { flush: "sync" },
+  )
+  const canPreview = computed(() => hasAuth("notification:preview"))
+  const canReadTemplates = computed(() => hasAuth("notification-template:read"))
   const disabled = computed(
     () => loading.value || loadFailed.value || submitting.value || confirming.value || checkingBanner.value,
   )
@@ -153,6 +165,7 @@ export function useAnnouncementEditor(
     return buildAnnouncementPayload(state.value, intent)
   }
   async function persist(body: Api.Notification.AnnouncementUpdate) {
+    if (!canSave.value) return false
     if (savedId.value) {
       const { error } = await fetchUpdateAnnouncement(savedId.value, body)
       if (error) return false
@@ -276,6 +289,7 @@ export function useAnnouncementEditor(
         return false
       }
       if (!isBanner.value && !pendingPayload.value.publishAt) {
+        if (!hasAuth("notification:publish")) return false
         const { error } = await fetchPublishAnnouncement(savedId.value!)
         if (error) {
           formError.value = t("publishFailed")

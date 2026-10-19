@@ -21,7 +21,6 @@ declare global {
         description: string
         /** role code */
         code: string
-        /** interface permissions */
         interfacePermissions: string[]
         /** button permissions */
         buttonPermissions: string[]
@@ -113,6 +112,12 @@ declare global {
       /** role permissions response */
       type RolePermissions = Service.ApiResponse<"/api/v1/roles/{role_id}/permissions">
 
+      /** role permissions update body */
+      type RolePermissionsUpdate = Service.ApiRequest<"/api/v1/roles/{role_id}/permissions", "put", "body">
+
+      /** permission code catalog */
+      type PermissionCatalog = Service.ApiResponse<"/api/v1/permission-catalog">
+
       /**
        * menu type
        *
@@ -120,17 +125,6 @@ declare global {
        * - "2": menu
        */
       type MenuType = "1" | "2"
-
-      type MenuButton = {
-        /**
-         * button code
-         *
-         * it can be used to control the button permission
-         */
-        code: string
-        /** button description */
-        desc: string
-      }
 
       /**
        * icon type
@@ -184,10 +178,8 @@ declare global {
         icon?: string | null
         /** icon type */
         iconType?: IconType | null
-        /** buttons */
-        buttons?: MenuButton[] | null
-        /** bound interface permission codes */
-        interfaces?: string[] | null
+        /** permission code required to open the page */
+        permission?: string | null
         /** children menu */
         children?: Menu[] | null
       }> &
@@ -202,8 +194,7 @@ declare global {
         routeName: string
         constant: boolean
         children?: MenuTree[] | null
-        buttons?: MenuButton[] | null
-        interfaces?: string[] | null
+        permission?: string | null
       }
 
       /** backend router from auth_routers table */

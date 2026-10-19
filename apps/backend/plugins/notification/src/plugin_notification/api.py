@@ -7,6 +7,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query
+from rapidkit_common.access import Authenticated
 from rapidkit_common.auth import UserDBDep
 from rapidkit_common.deps import SessionDep
 from rapidkit_common.schemas.response import Response
@@ -34,7 +35,7 @@ def _to_item(row: UserNotification, message: NotificationMessage) -> Notificatio
     return to_inbox_item(row, message)
 
 
-@router.get("")
+@router.get("", dependencies=[Authenticated])
 async def list_notifications(
     query: Annotated[InboxListQuery, Query(...)],
     user: UserDBDep,
@@ -56,14 +57,14 @@ async def list_notifications(
     return Response(data=InboxPage(items=items, next_cursor=next_cursor, size=query.size))
 
 
-@router.get("/unread-count")
+@router.get("/unread-count", dependencies=[Authenticated])
 async def get_unread_count(user: UserDBDep, crud: InboxCrudDep) -> Response[UnreadCount]:
     """返回当前用户未读通知数。"""
     count = await crud.get_unread_count(user.id)
     return Response(data=UnreadCount(count=count))
 
 
-@router.post("/read-all")
+@router.post("/read-all", dependencies=[Authenticated])
 async def mark_all_read(user: UserDBDep, crud: InboxCrudDep) -> Response[None]:
     """把当前用户所有未删除、未撤回的未读通知标记为已读。"""
     statement = (
@@ -84,12 +85,13 @@ async def mark_all_read(user: UserDBDep, crud: InboxCrudDep) -> Response[None]:
     return Response(data=None)
 
 
-@router.get("/top-banner")
+@router.get("/top-banner", dependencies=[Authenticated])
 async def get_top_banner(user: UserDBDep, session: SessionDep, banner: BannerServiceDep) -> Response[TopBannerResponse]:
+    """获取当前用户可见的顶部公告及其展示状态。"""
     return Response(data=await banner.snapshot(session, user=user))
 
 
-@router.get("/{notification_id}")
+@router.get("/{notification_id}", dependencies=[Authenticated])
 async def get_notification(
     notification_id: UUID,
     user: UserDBDep,
@@ -103,7 +105,7 @@ async def get_notification(
     return Response(data=_to_item(row, message))
 
 
-@router.patch("/{notification_id}/read")
+@router.patch("/{notification_id}/read", dependencies=[Authenticated])
 async def mark_read(
     notification_id: UUID,
     user: UserDBDep,
@@ -134,7 +136,7 @@ async def mark_read(
     return Response(data=None)
 
 
-@router.patch("/{notification_id}/archive")
+@router.patch("/{notification_id}/archive", dependencies=[Authenticated])
 async def archive_notification(
     notification_id: UUID,
     user: UserDBDep,
@@ -154,7 +156,7 @@ async def archive_notification(
     return Response(data=None)
 
 
-@router.delete("/{notification_id}")
+@router.delete("/{notification_id}", dependencies=[Authenticated])
 async def delete_notification(
     notification_id: UUID,
     user: UserDBDep,

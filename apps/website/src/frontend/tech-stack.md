@@ -37,8 +37,7 @@
   ├── @rapidkit/axios    → HTTP 请求封装（依赖 @rapidkit/utils）
   ├── @rapidkit/hooks    → 通用 Composition Hooks（依赖 @rapidkit/axios）
   ├── @rapidkit/color    → 主题色彩工具（依赖 @rapidkit/utils）
-  ├── @rapidkit/utils    → 基础工具函数
-  └── @rapidkit/editor   → Monaco Code Editor 组件（独立包）
+  └── @rapidkit/utils    → 基础工具函数
 ```
 
 ::: tip

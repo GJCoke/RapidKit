@@ -1,35 +1,47 @@
-"""Tests for rbac plugin status codes."""
+"""Permission status codes and translations."""
+
+import json
+from pathlib import Path
+
+from plugin_permission.status_codes import RbacStatusCode
+from rapidkit_framework.status_codes import BaseStatusCode
 
 
-class TestRbacStatusCode:
-    def test_is_base_status_code_subclass(self):
-        from plugin_permission.status_codes import RbacStatusCode
-        from rapidkit_framework.status_codes import BaseStatusCode
+def test_status_code_contract():
+    assert issubclass(RbacStatusCode, BaseStatusCode)
+    assert RbacStatusCode.ROLE_PERMISSION_DENIED.code == 34001
+    assert RbacStatusCode.ROLE_PERMISSION_DENIED.type == 4
+    assert RbacStatusCode.ROLE_NOT_FOUND.code == 35001
+    assert RbacStatusCode.ROLE_NOT_FOUND.type == 5
+    for code in RbacStatusCode:
+        assert code.plugin_id == 3
+        assert code.description.startswith("permission.error.")
 
-        assert issubclass(RbacStatusCode, BaseStatusCode)
 
-    def test_plugin_id_is_03(self):
-        from plugin_permission.status_codes import RbacStatusCode
+def test_extension_status_codes_have_translations():
 
-        for code in RbacStatusCode:
-            assert code.plugin_id == 3, f"{code.name} has wrong plugin_id: {code.plugin_id}"
 
-    def test_role_permission_denied(self):
-        from plugin_permission.status_codes import RbacStatusCode
+    names = [
+        "EXTENSION_UNKNOWN_CODE",
+        "EXTENSION_UNKNOWN_ROUTE",
+        "EXTENSION_INVALID_CUSTOM_CODE",
+        "EXTENSION_DEPENDS_CYCLE",
+        "EXTENSION_DUPLICATES_BASELINE",
+        "EXTENSION_ALREADY_EXISTS",
+        "EXTENSION_IN_USE",
+        "EXTENSION_NOT_FOUND",
+    ]
+    root = Path(__file__).resolve().parents[3] / "src/locales/langs"
+    for lang in ("zh-CN", "en-US"):
+        errors = json.loads((root / lang / "permission.json").read_text())["error"]
+        for name in names:
+            key = RbacStatusCode[name].description.removeprefix("permission.error.")
+            assert errors.get(key), (lang, name)
 
-        assert RbacStatusCode.ROLE_PERMISSION_DENIED.code == 34001
-        assert RbacStatusCode.ROLE_PERMISSION_DENIED.type == 4
 
-    def test_role_not_found(self):
-        from plugin_permission.status_codes import RbacStatusCode
+def test_package_status_codes_are_registered():
 
-        assert RbacStatusCode.ROLE_NOT_FOUND.code == 35001
-        assert RbacStatusCode.ROLE_NOT_FOUND.type == 5
-
-    def test_description_is_i18n_key(self):
-        from plugin_permission.status_codes import RbacStatusCode
-
-        for code in RbacStatusCode:
-            assert code.description.startswith("permission.error."), (
-                f"{code.name} description should start with 'permission.error.'"
-            )
+    assert RbacStatusCode.PACKAGE_NOT_FOUND.value[0] == 35101
+    assert RbacStatusCode.PACKAGE_BUILTIN_READONLY.value[0] == 35102
+    assert RbacStatusCode.PACKAGE_INVALID_CODES.value[0] == 35103
+    assert RbacStatusCode.PACKAGE_INVALID_SCOPES.value[0] == 35104
