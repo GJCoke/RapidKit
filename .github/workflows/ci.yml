@@ -12,6 +12,7 @@ concurrency:
 
 env:
   UV_CACHE_DIR: /tmp/.uv-cache
+  UV_NO_SYNC: "true"
   PYTHON_VERSION: "3.14"
   ENVIRONMENT: TESTING
   POSTGRESQL_ASYNC_SCHEME: postgresql+asyncpg
@@ -141,7 +142,7 @@ jobs:
           enable-cache: true
 
       - name: Install Python dependencies
-        run: uv sync --frozen
+        run: uv sync --all-packages --all-groups --frozen
 
       - name: Ruff check
         run: uv run ruff check .
@@ -210,7 +211,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --frozen
+        run: uv sync --all-packages --all-groups --frozen
 
       - name: Run plugin tests
         working-directory: apps/backend
@@ -276,7 +277,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --frozen
+        run: uv sync --all-packages --all-groups --frozen
 
       - name: Run core tests
         run: uv run pytest packages/core/tests/ -v
@@ -331,7 +332,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --frozen
+        run: uv sync --all-packages --all-groups --frozen
 
       - name: Check alembic heads (no conflicts)
         working-directory: apps/backend
