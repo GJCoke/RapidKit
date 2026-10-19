@@ -1,0 +1,183 @@
+{
+  "login": [],
+  "403": [],
+  "404": [],
+  "500": [],
+  "iframe-page": [],
+  "home": [
+    "GET:/api/v1/system/stats/operations-overview",
+    "GET:/api/v1/system/stats/resources",
+    "GET:/api/v1/system/stats/errors",
+    "GET:/api/v1/system/stats/health",
+    "GET:/api/v1/system/stats/infrastructure",
+    "GET:/api/v1/system/stats/business",
+    "GET:/api/v1/system/activities",
+    "GET:/api/v1/users/stats/summary",
+    "GET:/api/v1/users/stats/trend",
+    "GET:/api/v1/workers/all",
+    "GET:/api/v1/tasks/stats/summary",
+    "GET:/api/v1/system/stats/api/top",
+    "GET:/api/v1/system/stats/api/distribution",
+    "GET:/api/v1/system/stats/api/trend"
+  ],
+  "manage": [],
+  "manage_user": [
+    "GET:/api/v1/users",
+    "GET:/api/v1/users/all",
+    "GET:/api/v1/users/{user_id}",
+    "POST:/api/v1/users",
+    "PUT:/api/v1/users/{user_id}",
+    "DELETE:/api/v1/users/{user_id}",
+    "DELETE:/api/v1/users",
+    "PUT:/api/v1/users/{user_id}/password",
+    "POST:/api/v1/users/{user_id}/resend-invite",
+    "POST:/api/v1/users/validate-username-pinyin",
+    "GET:/api/v1/roles/all",
+    "GET:/api/v1/departments/tree"
+  ],
+  "manage_user-detail": ["GET:/api/v1/users/{user_id}"],
+  "manage_role": [
+    "GET:/api/v1/roles",
+    "GET:/api/v1/roles/all",
+    "POST:/api/v1/roles",
+    "PUT:/api/v1/roles/{role_id}",
+    "DELETE:/api/v1/roles/{role_id}",
+    "DELETE:/api/v1/roles",
+    "GET:/api/v1/roles/{role_id}/permissions",
+    "PUT:/api/v1/roles/{role_id}/permissions",
+    "GET:/api/v1/manage/menus/tree",
+    "GET:/api/v1/router/backend",
+    "GET:/api/v1/data-policies/all",
+    "GET:/api/v1/field-policies/all"
+  ],
+  "manage_menu": [
+    "GET:/api/v1/manage/menus",
+    "POST:/api/v1/manage/menus",
+    "PUT:/api/v1/manage/menus/{menu_id}",
+    "DELETE:/api/v1/manage/menus/{menu_id}",
+    "DELETE:/api/v1/manage/menus",
+    "GET:/api/v1/manage/menus/tree",
+    "GET:/api/v1/manage/menus/active-menu-options",
+    "GET:/api/v1/manage/pages"
+  ],
+  "manage_department": [
+    "GET:/api/v1/departments/tree",
+    "POST:/api/v1/departments",
+    "PUT:/api/v1/departments/{dept_id}",
+    "DELETE:/api/v1/departments/{dept_id}"
+  ],
+  "manage_data-policy": [
+    "GET:/api/v1/data-policies",
+    "GET:/api/v1/data-policies/all",
+    "GET:/api/v1/data-policies/models",
+    "GET:/api/v1/data-policies/template-vars",
+    "POST:/api/v1/data-policies/simulate",
+    "GET:/api/v1/users",
+    "POST:/api/v1/data-policies",
+    "PUT:/api/v1/data-policies/{policy_id}",
+    "DELETE:/api/v1/data-policies/{policy_id}"
+  ],
+  "manage_field-policy": [
+    "GET:/api/v1/field-policies",
+    "GET:/api/v1/field-policies/all",
+    "POST:/api/v1/field-policies",
+    "PUT:/api/v1/field-policies/{policy_id}",
+    "DELETE:/api/v1/field-policies/{policy_id}"
+  ],
+  "manage_audit-log": [
+    "GET:/api/v1/system/audit-logs/paginate",
+    "GET:/api/v1/system/audit-logs/{item_id}",
+    "GET:/api/v1/users/all"
+  ],
+  "socketio": [],
+  "socketio_chat": [],
+  "socketio_debug": [],
+  "socketio_instrument": [],
+  "queue": [],
+  "queue_dashboard": [
+    "GET:/api/v1/workers",
+    "GET:/api/v1/workers/all",
+    "GET:/api/v1/workers/{worker_id}",
+    "POST:/api/v1/workers/{worker_id}/ping",
+    "POST:/api/v1/workers/{worker_id}/shutdown",
+    "POST:/api/v1/workers/{worker_id}/pool/grow",
+    "POST:/api/v1/workers/{worker_id}/pool/shrink",
+    "POST:/api/v1/workers/{worker_id}/queues/add",
+    "POST:/api/v1/workers/{worker_id}/queues/cancel",
+    "GET:/api/v1/workers/{worker_id}/tasks/active",
+    "GET:/api/v1/workers/{worker_id}/tasks/reserved",
+    "GET:/api/v1/tasks/stats/dashboard",
+    "GET:/api/v1/tasks/stats/by-name",
+    "GET:/api/v1/tasks/stats/by-worker"
+  ],
+  "queue_schedule": [
+    "GET:/api/v1/schedules",
+    "GET:/api/v1/schedules/{schedule_id}",
+    "POST:/api/v1/schedules",
+    "PUT:/api/v1/schedules/{schedule_id}",
+    "PATCH:/api/v1/schedules/{schedule_id}/toggle",
+    "DELETE:/api/v1/schedules/{schedule_id}",
+    "GET:/api/v1/tasks/registered",
+    "POST:/api/v1/schedules/preview",
+    "POST:/api/v1/schedules/crontab/preview"
+  ],
+  "queue_task": [
+    "GET:/api/v1/tasks",
+    "GET:/api/v1/tasks/{task_id}",
+    "GET:/api/v1/tasks/stats/summary",
+    "GET:/api/v1/tasks/stats/timeline",
+    "GET:/api/v1/tasks/stats/by-name",
+    "GET:/api/v1/tasks/stats/by-worker",
+    "GET:/api/v1/tasks/registered",
+    "POST:/api/v1/tasks/trigger",
+    "POST:/api/v1/tasks/{task_id}/revoke"
+  ],
+  "monitoring": [],
+  "monitoring_api": [
+    "GET:/api/v1/system/stats/api/overview",
+    "GET:/api/v1/system/stats/api/top",
+    "GET:/api/v1/system/stats/api/distribution",
+    "GET:/api/v1/system/stats/api/trend",
+    "GET:/api/v1/system/stats/api/list"
+  ],
+  "monitoring_plugin": [
+    "GET:/api/v1/system/plugins",
+    "GET:/api/v1/system/plugins/dependencies",
+    "GET:/api/v1/system/events"
+  ],
+  "notificationManage": [],
+  "notification_manage_templates": [
+    "GET:/api/v1/admin/notification-templates",
+    "GET:/api/v1/admin/notification-templates/{template_id}",
+    "POST:/api/v1/admin/notification-templates",
+    "PUT:/api/v1/admin/notification-templates/{template_id}",
+    "DELETE:/api/v1/admin/notification-templates/{template_id}"
+  ],
+  "notification_manage_announcements": [
+    "GET:/api/v1/admin/notifications",
+    "GET:/api/v1/admin/notifications/{message_id}",
+    "PUT:/api/v1/admin/notifications/{message_id}",
+    "DELETE:/api/v1/admin/notifications/{message_id}",
+    "POST:/api/v1/admin/notifications",
+    "POST:/api/v1/admin/notifications/audience-preview",
+    "POST:/api/v1/admin/notifications/content-preview",
+    "GET:/api/v1/admin/notifications/action-targets",
+    "POST:/api/v1/admin/notifications/action-preview",
+    "POST:/api/v1/admin/notifications/banner-check",
+    "GET:/api/v1/admin/notification-templates",
+    "GET:/api/v1/roles/all",
+    "GET:/api/v1/departments/tree",
+    "GET:/api/v1/users/all",
+    "POST:/api/v1/admin/notifications/{message_id}/audience-preview",
+    "POST:/api/v1/admin/notifications/{message_id}/publish",
+    "POST:/api/v1/admin/notifications/{message_id}/cancel",
+    "POST:/api/v1/admin/notifications/{message_id}/recall"
+  ],
+  "notification_manage_deliveries": [
+    "GET:/api/v1/admin/notifications",
+    "GET:/api/v1/admin/notifications/{message_id}",
+    "GET:/api/v1/admin/notification-deliveries",
+    "GET:/api/v1/admin/notification-deliveries/{message_id}/summary",
+    "POST:/api/v1/admin/notification-deliveries/{message_id}/retry-failed"
+  ]
+}

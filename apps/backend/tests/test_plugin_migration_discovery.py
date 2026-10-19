@@ -25,12 +25,12 @@ def test_dynamic_discovery_uses_entry_point_identity() -> None:
 def test_dynamic_discovery_includes_all_local_model_plugins() -> None:
     result = discover_migration_plugins(Path("plugins"))
 
-    assert {"permission", "department", "script"} <= result.plugins.keys()
+    assert {"permission", "department", "menu"} <= result.plugins.keys()
 
 
 def test_duplicate_table_ownership_is_rejected() -> None:
     with pytest.raises(PluginDiscoveryError, match="owned by multiple plugins"):
         discover_migration_plugins(
             Path("plugins"),
-            table_overrides={"script": ["shared_table"], "permission": ["shared_table"]},
+            table_overrides={"menu": ["shared_table"], "permission": ["shared_table"]},
         )

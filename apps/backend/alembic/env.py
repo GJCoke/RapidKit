@@ -12,6 +12,7 @@ from scripts.alembic.plugin_discovery import (
     enum_type_owners,
     object_belongs_to_plugin,
 )
+from scripts.alembic.server_defaults import compare_json_server_defaults
 from sqlalchemy import inspect
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -119,7 +120,7 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         compare_type=True,
-        compare_server_default=True,
+        compare_server_default=compare_json_server_defaults,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         include_object=include_object,
@@ -135,7 +136,7 @@ def do_run_migrations(connection: Connection | None) -> None:
         connection=connection,
         target_metadata=target_metadata,
         compare_type=True,
-        compare_server_default=True,
+        compare_server_default=compare_json_server_defaults,
         include_object=include_object,
         render_item=render_item,
     )

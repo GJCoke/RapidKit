@@ -1,0 +1,8 @@
+{
+  "name": "superpowers",
+  "description": "Core skills library: TDD, debugging, collaboration patterns, and proven techniques (vendored from obra/superpowers)",
+  "version": "1.0.0",
+  "author": {
+    "name": "coke"
+  }
+}
