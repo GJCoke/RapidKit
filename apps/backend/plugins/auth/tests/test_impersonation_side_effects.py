@@ -21,7 +21,7 @@ from rapidkit_core.timezone import timezone
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.services import get_service
 from sqlmodel import func, select
-from src.sio.constants import user_sid_structure
+from src.sio.constants import presence_structure
 
 
 async def create_session(client, headers, target_id):
@@ -65,8 +65,8 @@ async def test_simulation_does_not_change_real_login_activity_or_online_state(
     monkeypatch.setattr(event_bus, "fire_and_forget", observe)
     before_activity = (await session.exec(select(func.count()).select_from(UserDailyActivity))).one()
     await redis.sadd("online_users", str(target.id))
-    sid_key = user_sid_structure.format(user_id=target.id)
-    await redis.set(sid_key, "real-session")
+    sid_key = presence_structure.format(user_id=target.id)
+    await redis.zadd(sid_key, {"real-session": 123})
     before_online = await redis.smembers("online_users")
     created, simulated = await create_session(strict_client, auth_headers, target.id)
     assert (await strict_client.get("/auth/user/info", headers=simulated)).json()["code"] == 0
@@ -76,7 +76,7 @@ async def test_simulation_does_not_change_real_login_activity_or_online_state(
     assert target.last_login_time == before_login
     assert (await session.exec(select(func.count()).select_from(UserDailyActivity))).one() == before_activity
     assert await redis.smembers("online_users") == before_online
-    assert await redis.get(sid_key) == "real-session"
+    assert await redis.zscore(sid_key, "real-session") == 123
     stored = await session.get(ImpersonationSession, UUID(created["sessionId"]))
     # The authenticated administrator may record their own activity; the simulated target must not.
     assert all(

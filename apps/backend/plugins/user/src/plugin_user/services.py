@@ -8,7 +8,7 @@ Date   : 2026-05-11
 from uuid import UUID
 
 from rapidkit_common.enums import Status
-from rapidkit_common.protocols.auth import PasswordDecryptor, SessionInvalidator
+from rapidkit_common.protocols.auth import PasswordDecryptor, SessionInvalidator, UserSocketCloser
 from rapidkit_common.protocols.impersonation import ImpersonationRevoker
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
@@ -76,3 +76,11 @@ async def revoke_impersonations_for_user(user_id: UUID, redis: AsyncRedisClient)
     revoker = get_service_optional(ImpersonationRevoker)
     if revoker is not None:
         await revoker.revoke_user(user_id, redis)
+
+
+async def close_user_sockets(
+    user_id: UUID, redis: AsyncRedisClient, namespaces: set[str] | None = None, reason: str = "unauthorized",
+) -> None:
+    closer = get_service_optional(UserSocketCloser)
+    if closer is not None:
+        await closer.close_user(user_id, redis, namespaces=namespaces, reason=reason)

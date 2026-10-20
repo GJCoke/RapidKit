@@ -94,3 +94,16 @@ async def test_invalidator_calls_optional_revoker(monkeypatch):
     user_id = uuid4()
     await SessionInvalidatorImpl().invalidate_user_sessions(user_id, redis)
     revoker.revoke_user.assert_awaited_once_with(user_id, redis)
+
+
+@pytest.mark.asyncio
+async def test_invalidate_user_sessions_closes_user_sockets(monkeypatch):
+    from rapidkit_common.protocols.auth import UserSocketCloser
+
+    closer = AsyncMock()
+    monkeypatch.setattr('plugin_auth.providers.get_service_optional', lambda protocol: closer if protocol is UserSocketCloser else None)
+    redis = AsyncMock()
+    redis.scan_iter = lambda **kwargs: AsyncIteratorMock([])
+    user_id = uuid4()
+    await SessionInvalidatorImpl().invalidate_user_sessions(user_id, redis)
+    closer.close_user.assert_awaited_once_with(user_id, redis)
