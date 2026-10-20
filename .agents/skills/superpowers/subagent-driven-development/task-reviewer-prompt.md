@@ -132,6 +132,18 @@ Subagent (general-purpose):
       significantly grow existing files? (Don't flag pre-existing file
       sizes — focus on what this change contributed.)
 
+    **Lean** (code this change added that should not exist or should be smaller):
+    - delete: dead code, unused parameters or options, speculative features
+    - reuse: the codebase already has this helper (name the path)
+    - stdlib / native: the standard library, platform or an installed
+      dependency already does it
+    - yagni: abstraction with one implementation, wrapper that only passes
+      calls through, config nobody sets
+    - merge: near-copies that must change together
+    - split: one function doing several unrelated jobs. Split by job, never
+      by line count.
+    - noise: comments that restate the code
+
     Your report should point at evidence: file:line references for every
     finding and for any check you would otherwise answer with a bare
     "yes." A tight report that cites lines gives the controller everything
@@ -155,6 +167,13 @@ Subagent (general-purpose):
     block), that IS a finding — report it as Important, labeled
     plan-mandated. The plan's authorship does not grade its own work; the
     human decides.
+    Lean findings this change introduced — an abstraction with one
+    implementation, a pass-through wrapper, an option or config nobody sets,
+    re-implementing an existing helper — are Important, not Minor.
+    Every finding needs a concrete case: the input or situation that goes
+    wrong, or the exact lines that can be deleted. No case, no finding.
+    Propose the smallest fix; prefer fixes that delete code, and never ask
+    for a new layer, wrapper or config the problem does not need.
     Acknowledge what was done well before listing issues — accurate praise
     helps the implementer trust the rest of the feedback.
 

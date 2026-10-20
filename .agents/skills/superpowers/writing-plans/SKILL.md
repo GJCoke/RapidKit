@@ -7,7 +7,7 @@ description: Use when you have a spec or requirements for a multi-step task, bef
 
 ## Overview
 
-Write implementation plans for an engineer who has not seen this codebase or this spec. Assume they write idiomatic code in the project's language once they know the exact interface and the exact test, and that they will make a reasonable choice wherever the plan leaves one open. What they cannot know is what you decided: which files, which names and signatures, which values from the spec, which tests prove each task. Document those. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
+Write implementation plans for an engineer who has not seen this codebase or this spec. Assume they write idiomatic code in the project's language once they know the exact interface and the exact test, and that they will make a reasonable choice wherever the plan leaves one open. What they cannot know is what you decided: which files, which names and signatures, which values from the spec, which tests prove each task. Document those. Give them the whole plan as bite-sized tasks. TDD. Frequent commits. Plan the smallest complete change: the Lean Code Rules in `rapidkit-conventions` bind the plan, because whatever the plan names gets built.
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
@@ -49,8 +49,9 @@ If the spec covers multiple independent subsystems, it should have been broken i
 
 Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in.
 
-- Design units with clear boundaries and well-defined interfaces. Each file should have one clear responsibility.
-- You reason best about code you can hold in context at once, and your edits are more reliable when files are focused. Prefer smaller, focused files over large ones that do too much.
+- Reuse before you create: extend an existing module, helper, CRUD or component when one fits. Each new file or function needs a reason in the spec.
+- Design units with clear boundaries. Each file should have one clear responsibility; split only when a file would do several unrelated jobs, never by line count.
+- Do not plan interfaces, base classes, factories, wrappers or config with a single implementation or user.
 - Files that change together should live together. Split by responsibility, not by technical layer.
 - In existing codebases, follow established patterns. If the codebase uses large files, don't unilaterally restructure - but if a file you're modifying has grown unwieldy, including a split in the plan is reasonable.
 
@@ -200,7 +201,9 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 
 **5. Proportion:** Compare the plan's length to the spec's. A plan several times longer than the spec it implements is a transcript of the program, not a plan. If code blocks are most of the document, replace bodies with signatures, test names and assertions, and check that each step is still unambiguous.
 
-**6. RapidKit conventions:** Does every task follow `rapidkit-conventions` and the domain skills it touches, and name the skill to read? Does any commit step stage something under `docs/superpowers/` or use blanket staging? Fix both.
+**6. Lean:** Every new file, function, parameter, option and config value must trace to a spec requirement. Anything that doesn't — or that the codebase, standard library or an installed dependency already provides — gets deleted from the plan.
+
+**7. RapidKit conventions:** Does every task follow `rapidkit-conventions` and the domain skills it touches, and name the skill to read? Does any commit step stage something under `docs/superpowers/` or use blanket staging? Fix both.
 
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
 

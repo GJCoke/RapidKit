@@ -72,6 +72,22 @@ Subagent (general-purpose):
     - In existing codebases, follow established patterns. Improve code you're touching
       the way a good developer would, but don't restructure things outside your task.
 
+    ## Smallest Complete Change
+
+    Follow the Lean Code Rules in `.agents/skills/rapidkit/rapidkit-conventions/SKILL.md`.
+    In short: take the first option that fully works — not needed, already in the
+    codebase, standard library or platform, an installed dependency, one clear line,
+    then the minimum code.
+    - No abstraction, wrapper, option, config or "for later" code the task does not
+      require. An interface, base class or factory needs a second real implementation.
+    - Be lean about the solution, never about the change: update every caller, test
+      and fixture your change reaches.
+    - Comment only the why the code cannot show, in one line.
+    - Never cut validation at trust boundaries, data-loss error handling, security
+      or permission checks.
+    - If the plan asks for something that looks unnecessary, build it anyway and
+      report it as DONE_WITH_CONCERNS. Do not drop plan items on your own.
+
     ## When You're in Over Your Head
 
     It is always OK to stop and say "this is too hard for me." Bad work is worse than
@@ -104,14 +120,19 @@ Subagent (general-purpose):
     - Is the code clean and maintainable?
 
     **Discipline:**
-    - Did I avoid overbuilding (YAGNI)?
     - Did I only build what was requested?
+    - Is there an abstraction, wrapper or helper with a single caller I can inline?
+    - Is there a parameter, option or config nobody sets? Dead code I can delete?
+    - Did I write something the codebase, standard library or an installed
+      dependency already provides?
+    - Do any comments restate the code?
     - Did I follow existing patterns in the codebase?
 
     **Testing:**
     - Do tests actually verify behavior (not just mock behavior)?
     - Did I follow TDD if required?
-    - Are tests comprehensive?
+    - Does each piece of risky logic have one test that fails when it breaks
+      (not extra tests for coverage's sake)?
     - Is the test output pristine (no stray warnings or noise)?
 
     If you find issues during self-review, fix them now before reporting.
@@ -135,6 +156,7 @@ Subagent (general-purpose):
       - GREEN: command run and relevant passing output after implementation
     - Files changed
     - Self-review findings (if any)
+    - What you deliberately skipped or did not check, in one or two lines
     - Any issues or concerns
 
     Then report back with ONLY (under 15 lines — the detail lives in the

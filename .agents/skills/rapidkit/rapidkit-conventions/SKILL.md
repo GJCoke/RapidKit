@@ -180,6 +180,26 @@ The canonical repository-wide policy is `AGENTS.md` at the repository root. Read
 
 These rules override incompatible Git steps in generic workflow skills.
 
+## Lean Code Rules
+
+Solve the whole task with the least new code. Take the first option that fully works:
+
+1. Does it need to exist? Skip features, options and flexibility nobody asked for, and name what you skipped in one line.
+2. Already in this codebase (helper, component, service, CRUD, pattern)? Reuse it the way the surrounding code does.
+3. Standard library or platform feature? Use it, unless the project has its own.
+4. An installed dependency? Use it. Never add a dependency for a few lines.
+5. One line a reader gets at a glance? One line.
+6. Otherwise: the minimum code that works.
+
+- Be lean about the solution, never about the change: finish every caller, test, fixture, export, generated type and migration the change reaches. Bug fix: grep every caller first, then fix the root cause once in the shared code.
+- No abstraction, wrapper, pass-through function, type conversion, option, config, boilerplate or "for later" code nobody asked for. An interface, base class or factory needs a second real implementation. Keep values in the form the platform already gives you. Deletion beats addition.
+- Keep the structure the codebase already has. Split a file or function by job, never by line count, and never into helpers that exist only to make a function shorter.
+- The shortest working diff wins once you know everything it must touch. A one-liner that needs decoding is not short. Between options of equal size, take the one correct on edge cases.
+- Comment only the why the code cannot show, in one line. No comments that restate the code, no changelog comments.
+- Tests: one test that fails when risky logic (a branch, parser, permission check, data write, bug fix) breaks. Not coverage for its own sake.
+- Never cut: validation at trust boundaries, error handling that prevents data loss, security and permission checks, accessibility, anything the user asked for. Code you move or merge keeps its validation and error handling.
+- Finish the report with one or two lines: what you skipped or did not check, and any risk the user must know.
+
 ## Rules
 
 ### ALWAYS

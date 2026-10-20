@@ -86,6 +86,15 @@ Subagent (general-purpose):
     - Integration tests where they matter?
     - All tests passing?
 
+    **Lean:**
+    - Dead code, unused parameters or options, speculative features?
+    - Re-implements a helper the codebase already has (name the path), or
+      something the standard library / an installed dependency provides?
+    - Abstraction with one implementation, pass-through wrapper, config
+      nobody sets?
+    - Near-copies that must change together?
+    - Comments that restate the code?
+
     **Production readiness:**
     - Migration strategy if schema changed?
     - Backward compatibility considered?
@@ -95,6 +104,10 @@ Subagent (general-purpose):
     ## Calibration
 
     Categorize issues by actual severity. Not everything is Critical.
+    Lean findings the change introduced (abstraction with one implementation,
+    pass-through wrapper, unused option or config, duplicated helper) are
+    Important. Every finding needs a concrete case; propose the smallest fix
+    and prefer fixes that delete code.
     Acknowledge what was done well before listing issues — accurate praise
     helps the implementer trust the rest of the feedback.
 
