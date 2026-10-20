@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
 from rapidkit_common.access import Require, has_route_access
-from rapidkit_common.auth import UserDBDep
+from rapidkit_common.auth import UserDBDep, UserProtocol
 from rapidkit_common.deps import SessionDep
 from rapidkit_common.protocols.menu import ActionTarget, MenuNavigationProvider
 from rapidkit_common.protocols.notification import (
@@ -17,33 +17,33 @@ from rapidkit_common.protocols.user import UserQueryService
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_common.transaction import after_commit
 from rapidkit_core.config import settings
-from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.services import get_service
 from rapidkit_framework.status_codes import StatusCode
-from sqlalchemy import case, or_
+from sqlalchemy import or_
 from sqlmodel import col
 
 from plugin_notification.actions import resolve_action
-from plugin_notification.admin_delivery import delivery_message, enrich_deliveries
-from plugin_notification.admin_deps import (
+from plugin_notification.admin.delivery import delivery_message, enrich_deliveries
+from plugin_notification.admin.deps import (
     AdminMessageCrudDep,
     AdminOutboxCrudDep,
     AdminServiceDep,
-    BannerServiceDep,
     TemplateCrudDep,
 )
-from plugin_notification.admin_schemas import (
+from plugin_notification.admin.schemas import (
     ActionIn,
+    AnnouncementCreatedResponse,
     AnnouncementCreateRequest,
+    AnnouncementPublishedResponse,
     AnnouncementUpdateRequest,
     AudiencePreviewRequest,
     AudiencePreviewResponse,
-    AudienceRuleIn,
     ContentPreviewRequest,
     ContentPreviewResponse,
     DeliveryListQuery,
     DeliveryResponse,
+    DeliveryRetryResponse,
     DeliverySummaryResponse,
     MessageAdminDetailResponse,
     MessageAdminResponse,
@@ -53,12 +53,12 @@ from plugin_notification.admin_schemas import (
     TemplateResponse,
     TemplateUpdateRequest,
 )
+from plugin_notification.admin.services import list_messages, to_message_detail
 from plugin_notification.audit import audit
-from plugin_notification.banner_schemas import BannerCheckRequest, BannerCheckResponse, BannerPublishRequest
-from plugin_notification.banner_service import BannerAnnouncementService, utc
+from plugin_notification.banner.deps import BannerServiceDep
+from plugin_notification.banner.schemas import BannerCheckRequest, BannerCheckResponse, BannerPublishRequest
+from plugin_notification.banner.services import utc
 from plugin_notification.models import (
-    BANNER_STATE_ID,
-    NotificationBannerState,
     NotificationMessage,
     NotificationOutbox,
     NotificationTemplate,
@@ -222,30 +222,6 @@ def _to_command(body: AnnouncementCreateRequest) -> NotificationCommand:
     )
 
 
-def _to_detail(message, audiences) -> MessageAdminDetailResponse:
-    return MessageAdminDetailResponse.model_validate(
-        {
-            **dict(MessageAdminResponse.model_validate(message)),
-            "content_params": message.content_params,
-            "variable_bindings": (message.personalization or {}).get("bindings", {}),
-            "content_format": message.content_format,
-            "channels": message.channels,
-            "action": message.action,
-            "meta": message.meta,
-            "template_id": message.template_id,
-            "template_code": message.template_code,
-            "audiences": [
-                AudienceRuleIn(
-                    type=row.audience_type,
-                    value=row.audience_value,
-                    include_descendants=row.include_descendants,
-                )
-                for row in audiences
-            ],
-        }
-    )
-
-
 @router.get("/notifications", dependencies=[Require("notification:read")])
 async def list_announcements(
     query: Annotated[MessageListQuery, Query(...)],
@@ -253,39 +229,7 @@ async def list_announcements(
     crud: AdminMessageCrudDep,
 ) -> Response[PaginatedResponse[MessageAdminResponse]]:
     """分页查询通知公告，并返回顶部公告的当前状态。"""
-    filters = []
-    projection = {}
-    state = await crud.session.get(NotificationBannerState, BANNER_STATE_ID)
-    banner = BannerAnnouncementService()
-    if state is not None:
-        state, active, scheduled = await banner._load(crud.session)
-        _, _, _, projection = banner._project(state, active, scheduled, timezone.now())
-    status_expr = (
-        case(
-            *[(col(NotificationMessage.id) == key, patch["status"]) for key, patch in projection.items()],
-            else_=col(NotificationMessage.status),
-        )
-        if projection
-        else col(NotificationMessage.status)
-    )
-    if query.status is not None:
-        filters.append(status_expr == query.status.value)
-    if query.display_mode is not None:
-        filters.append(col(NotificationMessage.display_mode) == query.display_mode)
-    if query.category is not None:
-        filters.append(col(NotificationMessage.category) == query.category)
-    page = await crud.get_paginate(
-        *filters,
-        page=query.page,
-        size=query.page_size,
-        order_by=col(NotificationMessage.id).desc(),
-        schema=MessageAdminResponse,
-    )
-    for record in page.records:
-        for key, value in projection.get(record.id, {}).items():
-            if key in type(record).model_fields:
-                setattr(record, key, value)
-    return Response(data=page)
+    return Response(data=await list_messages(crud, query))
 
 
 @router.post("/notifications", dependencies=[Require("notification:create")])
@@ -310,7 +254,9 @@ async def create_announcement(
         save_as_draft=body.save_as_draft,
         **kwargs,
     )
-    return Response(data={"messageId": str(result.message_id)})
+    return Response(
+        data=AnnouncementCreatedResponse(message_id=result.message_id).model_dump(mode="json", by_alias=True)
+    )
 
 
 @router.post("/notifications/audience-preview", dependencies=[Require("notification:preview")])
@@ -367,7 +313,7 @@ async def preview_action(
     return Response(data=ActionIn.model_validate(action))
 
 
-def _require_publish(user, request):
+def _require_publish(user: UserProtocol, request: Request) -> None:
     if user.is_admin:
         return
     if not has_route_access(request, f"POST:{settings.API_PREFIX_V1}/admin/notifications/{{message_id}}/publish"):
@@ -382,7 +328,7 @@ async def check_banner(
     banner: BannerServiceDep,
 ) -> Response[BannerCheckResponse]:
     """校验顶部公告的展示时间范围，并返回当前公告状态。"""
-    banner._validate_window(utc(body.publish_at), utc(body.expire_at))
+    banner.validate_window(utc(body.publish_at), utc(body.expire_at))
     return Response(data=await banner.snapshot(session))
 
 
@@ -393,15 +339,7 @@ async def get_announcement(
     service: AdminServiceDep,
 ) -> Response[MessageAdminDetailResponse]:
     """获取通知公告详情，包含受众规则与顶部公告的当前状态。"""
-    message, audiences = await service.get_message(message_id)
-    detail = _to_detail(message, audiences)
-    if message.display_mode == "top_banner":
-        async with service._session_factory() as session:
-            patch = await BannerAnnouncementService().project_message(session, message)
-        for key, value in patch.items():
-            if key in type(detail).model_fields:
-                setattr(detail, key, value)
-    return Response(data=detail)
+    return Response(data=await service.get_message_detail(message_id))
 
 
 @router.put("/notifications/{message_id}", dependencies=[Require("notification:update")])
@@ -429,7 +367,7 @@ async def update_announcement(
         **kwargs,
     )
     message, audiences = await service.get_message(message_id)
-    return Response(data=_to_detail(message, audiences))
+    return Response(data=to_message_detail(message, audiences))
 
 
 @router.delete("/notifications/{message_id}", dependencies=[Require("notification:delete")])
@@ -453,7 +391,9 @@ async def publish_announcement(
     """发布指定通知公告，并返回接收人数。"""
     kwargs = {"banner_body": body} if body is not None else {}
     result = await service.publish(message_id, operator_id=current_user.id, **kwargs)
-    return Response(data={"recipientCount": result.recipient_count})
+    return Response(
+        data=AnnouncementPublishedResponse(recipient_count=result.recipient_count).model_dump(by_alias=True)
+    )
 
 
 @router.post("/notifications/{message_id}/cancel", dependencies=[Require("notification:cancel")])
@@ -535,4 +475,4 @@ async def retry_failed(
             message_id,
         )
         after_commit(session, _enqueue_delivery_after_commit, service)
-    return Response(data={"retried": count})
+    return Response(data=DeliveryRetryResponse(retried=count).model_dump(by_alias=True))

@@ -6,13 +6,13 @@ from typing import Any, cast, get_type_hints
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
-import plugin_notification.admin_api as admin_api_module
-import plugin_notification.admin_schemas as admin_schemas_module
+import plugin_notification.admin.api as admin_api_module
+import plugin_notification.admin.schemas as admin_schemas_module
 import pytest
 from fastapi import FastAPI, Request
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
-from plugin_notification.admin_api import (
+from plugin_notification.admin.api import (
     cancel_announcement,
     create_announcement,
     create_template,
@@ -28,8 +28,8 @@ from plugin_notification.admin_api import (
     update_announcement,
     update_template,
 )
-from plugin_notification.admin_deps import get_admin_service, get_message_crud
-from plugin_notification.admin_schemas import (
+from plugin_notification.admin.deps import get_admin_service, get_message_crud
+from plugin_notification.admin.schemas import (
     AnnouncementCreateRequest,
     AnnouncementUpdateRequest,
     AudiencePreviewRequest,
@@ -40,7 +40,7 @@ from plugin_notification.admin_schemas import (
     TemplateListQuery,
     TemplateUpdateRequest,
 )
-from plugin_notification.admin_service import AdminNotificationService
+from plugin_notification.admin.services import AdminNotificationService
 from plugin_notification.crud import MessageCRUD, OutboxCRUD, TemplateCRUD
 from plugin_notification.enums import MessageStatus, OutboxStatus
 from plugin_notification.models import NotificationOutbox

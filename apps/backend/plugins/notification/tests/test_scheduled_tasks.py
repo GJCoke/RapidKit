@@ -10,7 +10,7 @@ from plugin_notification.crud import MessageCRUD, OutboxCRUD, UserNotificationCR
 from plugin_notification.enums import MessageStatus, OutboxStatus
 from plugin_notification.models import NotificationOutbox, UserNotification
 from plugin_notification.orchestrator import MessageOrchestrator
-from plugin_notification.preference import PreferenceResolver
+from plugin_notification.preference.services import PreferenceResolver
 from plugin_notification.tasks import (
     _expire_due,
     _publish_due,
@@ -42,9 +42,7 @@ def _orchestrator(session: AsyncSession, audience_ids: list[UUID]) -> MessageOrc
 
     return MessageOrchestrator(
         session=session,
-        audience_resolver=AudienceResolver(
-            query_service=cast(UserQueryService, _QueryService())
-        ),
+        audience_resolver=AudienceResolver(query_service=cast(UserQueryService, _QueryService())),
         preference_resolver=PreferenceResolver(session=session),
     )
 
@@ -117,9 +115,7 @@ async def test_publish_due_rolls_back_one_failed_fanout_and_continues(db_session
             audience_rules,
         ) -> int:
             if message.id == failed_message_id:
-                await UserNotificationCRUD(self.session).create(
-                    {"message_id": message.id, "user_id": first_user_id}
-                )
+                await UserNotificationCRUD(self.session).create({"message_id": message.id, "user_id": first_user_id})
                 await OutboxCRUD(self.session).create(
                     {
                         "message_id": message.id,
@@ -145,12 +141,8 @@ async def test_publish_due_rolls_back_one_failed_fanout_and_continues(db_session
 
     refreshed_failed = await MessageCRUD(db_session).get(failed_message_id)
     refreshed_successful = await MessageCRUD(db_session).get(successful_message_id)
-    failed_inbox = await UserNotificationCRUD(db_session).get_all(
-        col(UserNotification.message_id) == failed_message_id
-    )
-    failed_outbox = await OutboxCRUD(db_session).get_all(
-        col(NotificationOutbox.message_id) == failed_message_id
-    )
+    failed_inbox = await UserNotificationCRUD(db_session).get_all(col(UserNotification.message_id) == failed_message_id)
+    failed_outbox = await OutboxCRUD(db_session).get_all(col(NotificationOutbox.message_id) == failed_message_id)
     successful_inbox = await UserNotificationCRUD(db_session).get_all(
         col(UserNotification.message_id) == successful_message_id
     )

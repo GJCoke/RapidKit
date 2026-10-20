@@ -19,7 +19,7 @@ from plugin_notification.crud import AudienceCRUD, MessageCRUD, OutboxCRUD, User
 from plugin_notification.enums import MessageStatus, OutboxStatus
 from plugin_notification.models import NotificationAudience, NotificationMessage, UserNotification
 from plugin_notification.personalization import content_snapshot, render_personalized
-from plugin_notification.preference import PreferenceResolver
+from plugin_notification.preference.services import PreferenceResolver
 from plugin_notification.renderer import RenderedContent
 from plugin_notification.status_codes import NotificationStatusCode
 from plugin_notification.validation import (

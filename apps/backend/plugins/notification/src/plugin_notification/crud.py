@@ -5,7 +5,8 @@ from uuid import UUID
 
 from rapidkit_common.crud import BaseCRUD
 from rapidkit_core.timezone import timezone
-from sqlmodel import col, func, select
+from rapidkit_framework.exceptions import AppException
+from sqlmodel import col, func, select, update
 
 from plugin_notification.enums import MessageStatus, OutboxStatus
 from plugin_notification.models import (
@@ -16,6 +17,7 @@ from plugin_notification.models import (
     NotificationTemplate,
     UserNotification,
 )
+from plugin_notification.status_codes import NotificationStatusCode
 
 
 class MessageCRUD(BaseCRUD[NotificationMessage]):
@@ -194,6 +196,66 @@ class UserNotificationCRUD(BaseCRUD[UserNotification]):
     """用户收件箱操作。"""
 
     model = UserNotification
+
+    async def _get_owned(self, user_id: UUID, notification_id: UUID) -> UserNotification:
+        row = await self.get_for_user(user_id, notification_id)
+        if row is None:
+            raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
+        return row
+
+    async def mark_all_read(self, user_id: UUID) -> None:
+        statement = (
+            update(UserNotification)
+            .where(
+                col(UserNotification.user_id) == user_id,
+                col(UserNotification.read_at).is_(None),
+                col(UserNotification.deleted_at).is_(None),
+                col(UserNotification.message_id).in_(
+                    select(NotificationMessage.id).where(
+                        col(NotificationMessage.status) != MessageStatus.RECALLED.value
+                    )
+                ),
+            )
+            .values(read_at=timezone.now())
+        )
+        await self.session.exec(statement)
+        await self.session.flush()
+
+    async def mark_read_for_user(self, user_id: UUID, notification_id: UUID) -> bool:
+        row = await self._get_owned(user_id, notification_id)
+        if row.read_at is not None:
+            return False
+        statement = (
+            update(UserNotification)
+            .where(
+                col(UserNotification.id) == row.id,
+                col(UserNotification.read_at).is_(None),
+                col(UserNotification.message_id).in_(
+                    select(NotificationMessage.id).where(
+                        col(NotificationMessage.status) != MessageStatus.RECALLED.value
+                    )
+                ),
+            )
+            .values(read_at=timezone.now())
+        )
+        result = await self.session.exec(statement)
+        await self.session.flush()
+        return bool(result.rowcount)
+
+    async def archive_for_user(self, user_id: UUID, notification_id: UUID) -> bool:
+        row = await self._get_owned(user_id, notification_id)
+        if row.archived_at is not None:
+            return False
+        row.archived_at = timezone.now()
+        self.session.add(row)
+        await self.session.flush()
+        return True
+
+    async def delete_for_user(self, user_id: UUID, notification_id: UUID) -> None:
+        row = await self._get_owned(user_id, notification_id)
+        row.deleted_at = timezone.now()
+        self.session.add(row)
+        await self.session.flush()
 
     async def get_unread_count(self, user_id: UUID) -> int:
         statement = (

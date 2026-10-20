@@ -4,7 +4,8 @@ from collections.abc import Awaitable, Callable
 from uuid import UUID, uuid4
 
 import pytest
-from plugin_notification.api import (
+from plugin_notification.crud import MessageCRUD, UserNotificationCRUD
+from plugin_notification.inbox.api import (
     archive_notification,
     delete_notification,
     get_unread_count,
@@ -12,8 +13,7 @@ from plugin_notification.api import (
     mark_all_read,
     mark_read,
 )
-from plugin_notification.crud import MessageCRUD, UserNotificationCRUD
-from plugin_notification.schemas import InboxListQuery
+from plugin_notification.inbox.schemas import InboxListQuery
 from plugin_notification.status_codes import NotificationStatusCode
 from rapidkit_framework.exceptions import AppException
 

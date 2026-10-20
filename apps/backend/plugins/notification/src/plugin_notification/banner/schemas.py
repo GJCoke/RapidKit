@@ -1,14 +1,14 @@
 """Global banner wire contract: timing fields always identify UTC instants."""
 
-from datetime import UTC, datetime
-from typing import Annotated, Any
+from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from pydantic import Field, PlainSerializer
+from pydantic import Field
 from rapidkit_common.protocols.notification import NotificationLevel
 from rapidkit_common.schemas.base import BaseModel
 
-Instant = Annotated[datetime, PlainSerializer(lambda value: value.replace(tzinfo=UTC).isoformat(), return_type=str)]
+from plugin_notification.schemas import UTCInstant
 
 
 class BannerPublishRequest(BaseModel):
@@ -32,15 +32,15 @@ class BannerSummary(BaseModel):
     content: str
     content_format: str | None = None
     action: dict[str, Any] | None = None
-    publish_at: Instant | None = None
-    published_at: Instant | None = None
-    expire_at: Instant | None = None
+    publish_at: UTCInstant | None = None
+    published_at: UTCInstant | None = None
+    expire_at: UTCInstant | None = None
     status: str
 
 
 class BannerCheckResponse(BaseModel):
     revision: int
-    server_now: Instant
+    server_now: UTCInstant
     current: BannerSummary | None = None
     scheduled: BannerSummary | None = None
 
@@ -48,5 +48,5 @@ class BannerCheckResponse(BaseModel):
 class TopBannerResponse(BaseModel):
     current: BannerSummary | None = None
     revision: int
-    server_now: Instant
-    next_change_at: Instant | None = None
+    server_now: UTCInstant
+    next_change_at: UTCInstant | None = None

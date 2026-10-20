@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 from plugin_notification.models import NotificationMessage
-from plugin_notification.service import NotificationService
+from plugin_notification.services import NotificationService
 from rapidkit_common.protocols.notification import (
     AudienceRule,
     NotificationAction,

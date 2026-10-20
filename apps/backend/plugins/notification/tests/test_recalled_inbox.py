@@ -4,11 +4,11 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
-from plugin_notification.api import list_notifications, mark_all_read, mark_read
 from plugin_notification.channels import ChannelRegistry, ChannelResult
 from plugin_notification.crud import MessageCRUD, OutboxCRUD, UserNotificationCRUD
+from plugin_notification.inbox.api import list_notifications, mark_all_read, mark_read
+from plugin_notification.inbox.schemas import InboxListQuery
 from plugin_notification.models import NotificationMessage
-from plugin_notification.schemas import InboxListQuery
 from plugin_notification.worker import DeliveryWorker
 from rapidkit_core.timezone import timezone
 from sqlmodel import col, update

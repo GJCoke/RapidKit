@@ -41,6 +41,7 @@ async def db_session() -> AsyncIterator[AsyncSession]:
     """Provide an isolated real SQLModel session without external services."""
     engine = create_async_engine(
         "sqlite+aiosqlite://",
+        connect_args={"autocommit": False},
         poolclass=StaticPool,
     )
     async with engine.begin() as connection:

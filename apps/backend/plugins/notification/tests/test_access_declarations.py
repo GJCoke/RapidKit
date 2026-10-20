@@ -1,9 +1,9 @@
 """通知接口访问声明。"""
 
 from plugin_notification import register
-from plugin_notification.admin_api import router as admin_router
-from plugin_notification.api import router as inbox_router
-from plugin_notification.pref_api import router as pref_router
+from plugin_notification.admin.api import router as admin_router
+from plugin_notification.inbox.api import router as inbox_router
+from plugin_notification.preference.api import router as pref_router
 
 from tests.testing.access import declared_access
 

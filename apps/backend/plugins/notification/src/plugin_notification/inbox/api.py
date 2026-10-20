@@ -12,27 +12,16 @@ from rapidkit_common.auth import UserDBDep
 from rapidkit_common.deps import SessionDep
 from rapidkit_common.schemas.response import Response
 from rapidkit_core.log import get_plugin_logger
-from rapidkit_core.timezone import timezone
-from rapidkit_framework.exceptions import AppException
-from sqlmodel import col, select, update
 
-from plugin_notification.admin_deps import BannerServiceDep
-from plugin_notification.banner_schemas import TopBannerResponse
-from plugin_notification.crud import UserNotificationCRUD
-from plugin_notification.deps import InboxCrudDep
+from plugin_notification.banner.deps import BannerServiceDep
+from plugin_notification.banner.schemas import TopBannerResponse
+from plugin_notification.inbox.deps import InboxCrudDep
+from plugin_notification.inbox.schemas import InboxListQuery, InboxPage, UnreadCount
 from plugin_notification.inbox_projection import to_inbox_item
-from plugin_notification.models import NotificationMessage, UserNotification
-from plugin_notification.schemas import InboxListQuery, InboxPage, NotificationItem, UnreadCount
-from plugin_notification.status_codes import NotificationStatusCode
 
 logger = get_plugin_logger("Notification")
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
-
-
-def _to_item(row: UserNotification, message: NotificationMessage) -> NotificationItem:
-    """将收件箱记录与消息内容合并为公开响应。"""
-    return to_inbox_item(row, message)
 
 
 @router.get("", dependencies=[Authenticated])
@@ -53,7 +42,7 @@ async def list_notifications(
         created_from=query.created_from,
         created_to=query.created_to,
     )
-    items = [_to_item(row, message) for row, message in rows]
+    items = [to_inbox_item(row, message) for row, message in rows]
     return Response(data=InboxPage(items=items, next_cursor=next_cursor, size=query.size))
 
 
@@ -67,20 +56,7 @@ async def get_unread_count(user: UserDBDep, crud: InboxCrudDep) -> Response[Unre
 @router.post("/read-all", dependencies=[Authenticated])
 async def mark_all_read(user: UserDBDep, crud: InboxCrudDep) -> Response[None]:
     """把当前用户所有未删除、未撤回的未读通知标记为已读。"""
-    statement = (
-        update(UserNotification)
-        .where(
-            col(UserNotification.user_id) == user.id,
-            col(UserNotification.read_at).is_(None),
-            col(UserNotification.deleted_at).is_(None),
-            col(UserNotification.message_id).in_(
-                select(NotificationMessage.id).where(col(NotificationMessage.status) != "recalled")
-            ),
-        )
-        .values(read_at=timezone.now())
-    )
-    await crud.session.exec(statement)
-    await crud.session.flush()
+    await crud.mark_all_read(user.id)
     logger.info("All notifications marked read: user_id={user_id}", user_id=user.id)
     return Response(data=None)
 
@@ -98,27 +74,12 @@ async def mark_read(
     crud: InboxCrudDep,
 ) -> Response[None]:
     """把当前用户的一条未撤回通知标记为已读。"""
-    row = await _get_current_user_notification(crud, user.id, notification_id)
-    if row.read_at is None:
-        statement = (
-            update(UserNotification)
-            .where(
-                col(UserNotification.id) == row.id,
-                col(UserNotification.read_at).is_(None),
-                col(UserNotification.message_id).in_(
-                    select(NotificationMessage.id).where(col(NotificationMessage.status) != "recalled")
-                ),
-            )
-            .values(read_at=timezone.now())
+    if await crud.mark_read_for_user(user.id, notification_id):
+        logger.info(
+            "Notification marked read: user_id={user_id}, notification_id={notification_id}",
+            user_id=user.id,
+            notification_id=notification_id,
         )
-        result = await crud.session.exec(statement)
-        await crud.session.flush()
-        if result.rowcount:
-            logger.info(
-                "Notification marked read: user_id={user_id}, notification_id={notification_id}",
-                user_id=user.id,
-                notification_id=notification_id,
-            )
     return Response(data=None)
 
 
@@ -129,11 +90,7 @@ async def archive_notification(
     crud: InboxCrudDep,
 ) -> Response[None]:
     """归档当前用户的一条通知。"""
-    row = await _get_current_user_notification(crud, user.id, notification_id)
-    if row.archived_at is None:
-        row.archived_at = timezone.now()
-        crud.session.add(row)
-        await crud.session.flush()
+    if await crud.archive_for_user(user.id, notification_id):
         logger.info(
             "Notification archived: user_id={user_id}, notification_id={notification_id}",
             user_id=user.id,
@@ -149,25 +106,10 @@ async def delete_notification(
     crud: InboxCrudDep,
 ) -> Response[None]:
     """软删除当前用户的一条通知。"""
-    row = await _get_current_user_notification(crud, user.id, notification_id)
-    row.deleted_at = timezone.now()
-    crud.session.add(row)
-    await crud.session.flush()
+    await crud.delete_for_user(user.id, notification_id)
     logger.warning(
         "Notification deleted: user_id={user_id}, notification_id={notification_id}",
         user_id=user.id,
         notification_id=notification_id,
     )
     return Response(data=None)
-
-
-async def _get_current_user_notification(
-    crud: UserNotificationCRUD,
-    user_id: UUID,
-    notification_id: UUID,
-) -> UserNotification:
-    """按当前用户归属读取通知，避免暴露其他用户记录是否存在。"""
-    row = await crud.get_for_user(user_id, notification_id)
-    if row is None:
-        raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
-    return row

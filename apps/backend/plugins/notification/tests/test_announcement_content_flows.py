@@ -9,15 +9,15 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from plugin_notification.admin_api import _to_command, router
-from plugin_notification.admin_deps import get_admin_service, get_message_crud
-from plugin_notification.admin_schemas import AnnouncementCreateRequest
-from plugin_notification.admin_service import AdminNotificationService
-from plugin_notification.api import get_unread_count, list_notifications, mark_read
+from plugin_notification.admin.api import _to_command, router
+from plugin_notification.admin.deps import get_admin_service, get_message_crud
+from plugin_notification.admin.schemas import AnnouncementCreateRequest
+from plugin_notification.admin.services import AdminNotificationService
 from plugin_notification.channels import ChannelRegistry
 from plugin_notification.crud import MessageCRUD, UserNotificationCRUD
+from plugin_notification.inbox.api import get_unread_count, list_notifications, mark_read
+from plugin_notification.inbox.schemas import InboxListQuery
 from plugin_notification.models import NotificationMessage, NotificationOutbox, NotificationTemplate, UserNotification
-from plugin_notification.schemas import InboxListQuery
 from plugin_notification.status_codes import NotificationStatusCode
 from plugin_notification.worker import DeliveryWorker
 from rapidkit_common.access import access_guard_dependency

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import Field, field_serializer, model_validator
+from pydantic import Field, model_validator
 from rapidkit_common.protocols.notification import (
     AudienceType,
     ContentFormat,
@@ -19,9 +19,9 @@ from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.request import BaseRequest, PaginatedRequest
 from rapidkit_common.schemas.response import BaseSchema
 from rapidkit_common.schemas.types import LocalDatetime
-from rapidkit_core.timezone import timezone
 
 from plugin_notification.enums import MessageStatus, OutboxStatus
+from plugin_notification.schemas import EditableInstant
 
 TemplateContentMode = Literal["i18n", "raw"]
 
@@ -221,10 +221,8 @@ class MessageAdminDetailResponse(MessageAdminResponse):
     template_code: str | None = None
     audiences: list[AudienceRuleIn]
 
-    @field_serializer("publish_at", "expire_at")
-    def serialize_editable_datetime(self, value: datetime | None) -> str | None:
-        """Preserve the instant when an editor runs in a different browser timezone."""
-        return timezone.to_local(value).isoformat() if value is not None else None
+    publish_at: EditableInstant | None = None
+    expire_at: EditableInstant | None = None
 
 
 class MessageListQuery(PaginatedRequest):
@@ -278,3 +276,15 @@ class DeliverySummaryResponse(BaseModel):
 class DeliveryListQuery(PaginatedRequest):
     message_id: UUID | None = None
     status: OutboxStatus | None = None
+
+
+class AnnouncementCreatedResponse(BaseModel):
+    message_id: UUID
+
+
+class AnnouncementPublishedResponse(BaseModel):
+    recipient_count: int
+
+
+class DeliveryRetryResponse(BaseModel):
+    retried: int

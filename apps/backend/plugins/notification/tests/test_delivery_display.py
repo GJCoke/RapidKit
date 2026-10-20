@@ -3,9 +3,9 @@
 from types import SimpleNamespace
 from uuid import UUID, uuid4
 
+import plugin_notification.admin.api as api
 import pytest
-import plugin_notification.admin_api as api
-from plugin_notification.admin_schemas import DeliveryListQuery
+from plugin_notification.admin.schemas import DeliveryListQuery
 from plugin_notification.crud import OutboxCRUD
 from plugin_notification.models import NotificationMessage, NotificationOutbox
 from rapidkit_common.protocols.user import UserDisplayProfile

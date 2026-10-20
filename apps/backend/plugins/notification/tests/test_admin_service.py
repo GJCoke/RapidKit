@@ -4,17 +4,23 @@ from datetime import timedelta
 from typing import Any, cast
 from uuid import UUID, uuid4
 
-import plugin_notification.admin_service as admin_service_module
+import plugin_notification.admin.services as admin_service_module
 import plugin_notification.audit as audit_module
 import pytest
-from plugin_notification.admin_service import AdminNotificationService
+import rapidkit_core.database as database
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
+from plugin_notification.admin.deps import AdminServiceDep
+from plugin_notification.admin.services import AdminNotificationService
 from plugin_notification.audit import audit
 from plugin_notification.crud import MessageCRUD
 from plugin_notification.enums import MessageStatus
 from plugin_notification.models import NotificationAudience, NotificationMessage, NotificationOutbox, UserNotification
 from rapidkit_common.protocols.notification import AudienceRule, NotificationCommand
 from rapidkit_common.protocols.user import UserQueryService
+from rapidkit_common.transaction import run_after_commit_hooks
 from rapidkit_core.timezone import timezone
+from sqlalchemy import func
 from sqlmodel import select
 
 
@@ -304,3 +310,71 @@ async def test_preview_audience_uses_unions_for_total_and_each_type(db_session):
 
     assert preview.total == 4
     assert preview.by_type == {"user": 1, "role": 3, "all": 2}
+
+
+@pytest.mark.asyncio
+async def test_request_service_defers_audit_and_rolls_back_with_request(db_session, monkeypatch):
+    """A failed request must not leave an independently committed announcement."""
+
+    audits = []
+    monkeypatch.setattr(admin_service_module, "audit", lambda *args, **kwargs: audits.append(args))
+    service = AdminNotificationService(
+        session=db_session,
+        query_service=cast(UserQueryService, _StubQueryService([])),
+    )
+    result = await service.create_message(_command(), created_by=uuid4())
+    assert await MessageCRUD(db_session).get(result.message_id) is not None
+    assert audits == []
+    await db_session.rollback()
+    assert await MessageCRUD(db_session).get(result.message_id) is None
+    assert audits == []
+
+
+@pytest.mark.asyncio
+async def test_request_publish_enqueues_and_audits_only_after_commit(db_session, monkeypatch):
+
+    events = []
+    service = AdminNotificationService(
+        session=db_session,
+        query_service=cast(UserQueryService, _StubQueryService([uuid4()])),
+        enqueue_delivery=lambda: events.append("enqueue"),
+    )
+    monkeypatch.setattr(admin_service_module, "audit", lambda action, **kwargs: events.append(action))
+    result = await service.create_message(_command(), created_by=uuid4())
+    await db_session.commit()
+    await run_after_commit_hooks(db_session)
+    events.clear()
+    published = await service.publish(result.message_id, operator_id=uuid4())
+    assert published.recipient_count == 1
+    assert events == []
+    await db_session.commit()
+    await run_after_commit_hooks(db_session)
+    assert events == ["enqueue", "publish"]
+
+
+@pytest.mark.asyncio
+async def test_http_failure_rolls_back_announcement_and_does_not_audit(db_session, monkeypatch):
+    """Exercise the real request dependency, not an independently assembled service."""
+
+    audits = []
+    saved_ids = []
+    monkeypatch.setattr(database, "get_async_session_factory", lambda: lambda: _SessionContext(db_session))
+    monkeypatch.setattr(admin_service_module, "get_service", lambda _: _StubQueryService([]))
+    monkeypatch.setattr(admin_service_module, "audit", lambda *args, **kwargs: audits.append(args))
+    app = FastAPI()
+
+    @app.post("/rollback")
+    async def failing_request(service: AdminServiceDep):
+        result = await service.create_message(_command(), created_by=uuid4())
+        saved_ids.append(result.message_id)
+        raise RuntimeError("request failed after saving")
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test"
+    ) as client:
+        response = await client.post("/rollback")
+    assert response.status_code == 500
+    assert len(saved_ids) == 1
+    assert (await db_session.exec(select(func.count()).select_from(NotificationMessage))).one() == 0
+    assert (await db_session.exec(select(func.count()).select_from(NotificationAudience))).one() == 0
+    assert audits == []
