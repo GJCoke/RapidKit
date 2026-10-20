@@ -16,6 +16,8 @@ const state = vi.hoisted(() => ({
   home: vi.fn(),
   replace: vi.fn(),
   connect: vi.fn(),
+  resetSockets: vi.fn(),
+  globalConnect: vi.fn(),
 }))
 vi.mock("@/utils/storage", () => ({
   localStg: {
@@ -53,7 +55,14 @@ vi.mock("@/store/modules/notification/shared", () => ({
   connectNotificationSocket: state.connect,
   disconnectNotificationSocket: vi.fn(),
 }))
-vi.mock("socket.io-client", () => ({ io: () => ({ on: vi.fn(), disconnect: vi.fn(), io: { on: vi.fn() } }) }))
+vi.mock("@/hooks/common/app-socket", () => ({
+  closeAppSocket: (socket: { disconnect(): void }) => socket.disconnect(),
+  resetAppSockets: state.resetSockets,
+  openAppSocket: (...args: unknown[]) => {
+    state.globalConnect(...args)
+    return { on: vi.fn(), disconnect: vi.fn(), io: { on: vi.fn(), off: vi.fn() } }
+  },
+}))
 vi.mock("@/service/api", () => ({
   fetchLogout: state.logout,
   fetchGetUserInfo: state.info,
@@ -149,7 +158,8 @@ it("does not apply a late subject permission snapshot after administrator restor
   expect(await entering).toBe(false)
   expect(store.userInfo.id).toBe("admin")
   expect(state.connect).toHaveBeenCalledOnce()
-  expect(state.connect).toHaveBeenCalledWith("admin-token")
+  expect(state.connect).toHaveBeenCalledWith()
+  expect(state.resetSockets).toHaveBeenCalled()
 })
 
 it("explicit logout deduplicates requests and clears identity caches after the server responds", async () => {
@@ -255,4 +265,12 @@ it("logout cannot redirect a new login while old route cleanup finishes", async 
   await pending
   expect(state.storage.get("token")).toBe("new-user-token")
   expect(state.login).not.toHaveBeenCalled()
+})
+
+it("syncAccessToken updates state without rebuilding sockets", () => {
+  const store = useAuthStore()
+  store.syncAccessToken("new-token")
+  expect(store.token).toBe("new-token")
+  expect(state.connect).not.toHaveBeenCalled()
+  expect(state.globalConnect).not.toHaveBeenCalled()
 })

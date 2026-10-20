@@ -7,6 +7,7 @@ Date   : 2026-05-11
 
 from uuid import UUID
 
+from rapidkit_common.protocols.auth import UserSocketCloser
 from rapidkit_common.protocols.impersonation import ImpersonationRevoker
 from rapidkit_common.protocols.user import UserProtocol, UserResolver
 from rapidkit_core.log import get_plugin_logger
@@ -91,6 +92,9 @@ class SessionInvalidatorImpl:
         revoker = get_service_optional(ImpersonationRevoker)
         if revoker is not None:
             await revoker.revoke_user(user_id, redis)
+        closer = get_service_optional(UserSocketCloser)
+        if closer is not None:
+            await closer.close_user(user_id, redis)
 
     async def invalidate_permission_cache(self, user_id: UUID, redis: AsyncRedisClient) -> None:
         redis_key = self.PERMISSION_CACHE_KEY.format(user_id=user_id)

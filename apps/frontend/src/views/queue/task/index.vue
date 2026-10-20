@@ -13,7 +13,7 @@
     validRange,
     refreshTaskRange,
   } from "./composables/task-view-state"
-  import { useWorkerSocket } from "@/hooks/business/worker-socket"
+  import { useAppSocket } from "@/hooks/common/app-socket"
   import { $t } from "@/locales"
   import { useAuth } from "@/hooks/business/auth"
   import TaskStream from "./modules/task-stream.vue"
@@ -169,12 +169,12 @@
   onBeforeUnmount(() => clearTimeout(refreshTimer))
 
   // ==================== Socket.IO ====================
-  const { socket, connect } = useWorkerSocket()
+  const { on, connect } = useAppSocket()
 
   function setupSocket() {
-    connect()
+    connect("/worker")
 
-    socket.value?.on("task:update", () => {
+    on("task:update", () => {
       clearTimeout(refreshTimer)
       refreshTimer = setTimeout(handleTaskSubmitted, 300)
     })

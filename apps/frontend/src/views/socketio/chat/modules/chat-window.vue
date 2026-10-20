@@ -1,9 +1,12 @@
 <script setup lang="ts">
-  import { ref, onMounted, nextTick } from "vue"
+  import { ref, onMounted, onBeforeUnmount, nextTick, toRaw } from "vue"
   import type { ScrollbarInst } from "naive-ui"
   import type { Message } from "./types"
   import { $t } from "@/locales"
   import { useSocket } from "@/hooks/common/socket"
+  import { bindAuthRecovery, closeAppSocket } from "@/hooks/common/app-socket"
+  import { getToken } from "@/store/modules/auth/shared"
+  import { characterAvatar } from "./characters"
 
   interface Props {
     username: string
@@ -19,6 +22,9 @@
   const scrollbarRef = ref<ScrollbarInst | null>(null)
 
   const { socket, isConnected, connect } = useSocket()
+  onBeforeUnmount(() => {
+    if (socket.value) closeAppSocket(toRaw(socket.value))
+  })
 
   const url = new URL(import.meta.env.VITE_SERVICE_BASE_URL, window.location.origin)
 
@@ -26,14 +32,17 @@
     const instance = connect({
       url: url.origin,
       namespace: "/chat",
-      auth: { username: props.username },
+      auth: (callback: (auth: { access_token: string; display_name: string }) => void) =>
+        callback({ access_token: getToken(), display_name: props.username }),
       ioOptions: {
+        forceNew: true,
         query: { group: props.group },
       },
       onConnect: () => socket.value?.emit("join", props.group),
     })
 
     if (instance) {
+      bindAuthRecovery(instance)
       instance.on("message", (msg: Message) => {
         messages.value.push({ ...msg, isSelf: msg.sender === props.username })
         scrollToBottom()
@@ -46,7 +55,6 @@
     socket.value.emit("message", {
       content: inputText.value,
       group: props.group,
-      avatar: props.avatar,
     })
     inputText.value = ""
   }
@@ -113,7 +121,7 @@
             <n-avatar
               round
               :size="32"
-              :src="m.avatar || (m.isSelf ? avatar : undefined)"
+              :src="m.avatar || characterAvatar(m.sender)"
               class="flex-shrink-0 border border-zinc-200 dark:border-zinc-700"
             />
 

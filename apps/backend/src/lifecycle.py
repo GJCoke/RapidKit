@@ -20,7 +20,7 @@ from rapidkit_framework.events import event_bus
 from src.locales.watch import watch_locale_files
 from src.queues.consumer import check_worker_offline, consume_events
 from src.sio.events.connection import renew_session_keys_loop
-from src.sio.impersonation import register_socket_closer, shutdown_socket_timers
+from src.sio.sessions import register_socket_closer, shutdown_socket_timers
 
 
 async def _flush_audit_batch(batch: list[dict]) -> None:

@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, computed, onMounted } from "vue"
-  import { useWorkerSocket } from "@/hooks/business/worker-socket"
+  import { useAppSocket } from "@/hooks/common/app-socket"
   import { fetchGetAllWorkers, fetchShutdownWorker } from "@/service/api"
   import { $t } from "@/locales"
   import { reconcileRows } from "./composables/reconcile"
@@ -47,7 +47,7 @@
   const statsPanelRef = ref<InstanceType<typeof StatsPanel> | null>(null)
 
   // ==================== Socket.IO ====================
-  const { socket, connect, isConnected } = useWorkerSocket()
+  const { on, connect, isConnected } = useAppSocket()
   const workerSection = ref<HTMLElement | null>(null)
 
   function viewWorkers() {
@@ -55,9 +55,9 @@
   }
 
   function setupSocket() {
-    connect()
+    connect("/worker")
 
-    socket.value?.on("worker:status", (data: Api.Worker.WorkerStatusEvent) => {
+    on("worker:status", (data: Api.Worker.WorkerStatusEvent) => {
       statsPanelRef.value?.refresh()
       const index = workers.value.findIndex((w) => w.hostname === data.hostname)
       if (index >= 0) {
@@ -74,7 +74,7 @@
       }
     })
 
-    socket.value?.on("task:update", (data: Api.Worker.TaskUpdateEvent) => {
+    on("task:update", (data: Api.Worker.TaskUpdateEvent) => {
       statsPanelRef.value?.handleTaskUpdate(data)
     })
   }

@@ -1,5 +1,6 @@
 import { reactive, ref } from "vue"
-import { useSocket } from "@/hooks/common/socket"
+import { useAppSocket } from "@/hooks/common/app-socket"
+import { useAuthStore } from "@/store/modules/auth"
 import { fetchApiOverview, fetchApiTop, fetchApiDistribution, fetchApiTrend } from "@/service/api"
 
 export function useMonitoring() {
@@ -85,18 +86,13 @@ export function useMonitoring() {
 
   // ==================== Socket.IO ====================
 
-  const { socket, connect, isConnected } = useSocket()
+  const { on, connect, isConnected } = useAppSocket()
 
   function setupSocket() {
-    const baseUrl = new URL(import.meta.env.VITE_SERVICE_BASE_URL || "", window.location.origin).origin
+    if (!useAuthStore().userInfo.isAdmin) return
+    connect("/dashboard")
 
-    connect({
-      url: baseUrl,
-      namespace: "/dashboard",
-      path: "/socket.io",
-    })
-
-    socket.value?.on("dashboard:api_stats", (data: Api.Monitoring.ApiStatsEvent) => {
+    on("dashboard:api_stats", (data: Api.Monitoring.ApiStatsEvent) => {
       overview.value = {
         ...overview.value,
         totalRequests: overview.value.totalRequests + data.deltaRequests,

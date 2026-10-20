@@ -25,7 +25,9 @@ async def test_revocation_without_user_index(setup_service, monkeypatch, entry, 
     record = await start(service, users)
     await service.redis.delete(actor_key(users[0].id), subject_key(users[2].id))
     module = "plugin_auth.auth.token_store" if entry == "token" else "plugin_auth.providers"
-    monkeypatch.setattr(module + ".get_service_optional", lambda protocol: service)
+    monkeypatch.setattr(
+        module + ".get_service_optional", lambda protocol: service if protocol is ImpersonationRevoker else None
+    )
     if entry == "token":
         await TokenStore(service.redis).revoke_all(users[side].id)
     else:
@@ -66,12 +68,18 @@ async def test_real_user_api_revokes_subject(strict_client, auth_headers, target
 async def test_update_rollback_keeps_active(setup_service, monkeypatch):
     service, users, factory = setup_service
     record = await start(service, users)
-    monkeypatch.setattr("plugin_user.services.get_service_optional", lambda protocol: service)
+    monkeypatch.setattr(
+        "plugin_user.services.get_service_optional",
+        lambda protocol: service if protocol is ImpersonationRevoker else None,
+    )
     async with factory() as session:
         await update_user(
-            users[2].id, UserManageUpdate(status="2"),
+            users[2].id,
+            UserManageUpdate(status="2"),
             Scope(user=users[0], code="user:update"),
-            UserManageCRUD(session), service.redis, session
+            UserManageCRUD(session),
+            service.redis,
+            session,
         )
         async with factory() as reader:
             assert (await reader.get(ImpersonationSession, record.id)).ended_at is None

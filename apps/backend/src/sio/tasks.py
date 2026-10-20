@@ -10,7 +10,8 @@ from rapidkit_core.log import logger
 
 from src.queues.app import app
 from src.queues.deps import TaskRedis
-from src.sio.constants import online_users_structure, user_sid_structure
+from src.sio.constants import online_users_structure
+from src.sio.presence import prune_user
 
 
 @app.task(name="cleanup_stale_online_users")
@@ -24,9 +25,7 @@ async def cleanup_stale_online_users(redis: TaskRedis) -> None:
         members = await redis.smembers(online_users_structure)
         removed = 0
         for user_id in members:
-            exists = await redis.exists(user_sid_structure.format(user_id=user_id))
-            if not exists:
-                await redis.srem(online_users_structure, user_id)
+            if not await prune_user(redis, user_id):
                 removed += 1
         if removed:
             logger.info("Cleaned {} stale online users", removed)

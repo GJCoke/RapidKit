@@ -54,7 +54,11 @@ vi.mock("@/store/modules/notification/shared", () => ({
   connectNotificationSocket: state.connect,
   disconnectNotificationSocket: vi.fn(),
 }))
-vi.mock("socket.io-client", () => ({ io: () => ({ on: vi.fn(), disconnect: vi.fn(), io: { on: vi.fn() } }) }))
+vi.mock("@/hooks/common/app-socket", () => ({
+  closeAppSocket: (socket: { disconnect(): void }) => socket.disconnect(),
+  resetAppSockets: vi.fn(),
+  openAppSocket: () => ({ on: vi.fn(), disconnect: vi.fn(), io: { on: vi.fn(), off: vi.fn() } }),
+}))
 vi.mock("@/service/api", () => ({
   fetchGetUserInfo: state.info,
   fetchGetUserRoutes: state.routes,
@@ -126,7 +130,7 @@ beforeEach(() => {
     state.events.push("stop")
     return { data: true, error: null }
   })
-  state.connect.mockImplementation((token: string) => state.events.push(`connect:${token}`))
+  state.connect.mockImplementation(() => state.events.push(`connect:${state.storage.get("token")}`))
 })
 afterEach(() => {
   store?.$dispose()
