@@ -38,6 +38,11 @@ export function connectGlobalSocket() {
   disconnectGlobalSocket()
 
   globalSocket = openAppSocket("/")
+  let connectedBefore = false
+  globalSocket.on("connect", () => {
+    if (connectedBefore) permissionSignalHandler?.trigger()
+    connectedBefore = true
+  })
 
   globalSocket.on("permission:changed", (payload: PermissionChangedPayload) => permissionSignalHandler?.signal(payload))
   // Signals may be missed while disconnected; the first connect is not a reconnect.

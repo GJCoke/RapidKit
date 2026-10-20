@@ -32,7 +32,9 @@ def auto_register_events(plugins: list[PluginManifest] | None = None) -> None:
                 importlib.import_module(module_path)
 
 
-def socket_cors_origins(origins: list[str], regex: str | None, debug: bool) -> str | list[str] | Callable[[str], bool]:
+def socket_cors_origins(
+    origins: list[str], regex: str | None, debug: bool
+) -> str | list[str] | Callable[[str], bool] | None:
     if "*" in origins:
         return "*"
     allowed = [*origins]
@@ -40,7 +42,7 @@ def socket_cors_origins(origins: list[str], regex: str | None, debug: bool) -> s
         allowed.append("https://admin.socket.io")
     if regex:
         return lambda origin: origin in allowed or re.fullmatch(regex, origin) is not None
-    return allowed
+    return allowed or None
 
 
 redis_manager = AsyncRedisManager(url=str(settings.REDIS_URL))

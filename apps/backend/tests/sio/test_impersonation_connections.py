@@ -203,7 +203,7 @@ async def test_local_expiry_precedes_bounded_remote_cleanup(monkeypatch, timeout
     sid = await server.manager.connect("deferred", "/")
     entered, release = asyncio.Event(), asyncio.Event()
 
-    async def blocked(*args):
+    async def blocked(*args, **kwargs):
         entered.set()
         await release.wait()
 

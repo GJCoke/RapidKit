@@ -75,3 +75,26 @@ describe("worker socket", () => {
     expect(first.socket.value).toBeNull()
   })
 })
+
+it("keeps a shared namespace active until its last page releases it", async () => {
+  const first = await setup()
+  const second = await setup()
+  const socket = second.socket.value!
+  expect(first.socket.value).toBe(socket)
+  first.disconnect()
+  expect(socket.active).toBe(true)
+  resetAppSockets()
+  expect(socket.active).toBe(false)
+})
+
+it("removes only the departing page's subscriptions from a shared namespace", async () => {
+  const first = await setup()
+  const second = await setup()
+  const onFirst = vi.fn()
+  const onSecond = vi.fn()
+  first.on("task:update", onFirst)
+  second.on("task:update", onSecond)
+  const socket = second.socket.value!
+  first.disconnect()
+  expect(socket.listeners("task:update")).toEqual([onSecond])
+})

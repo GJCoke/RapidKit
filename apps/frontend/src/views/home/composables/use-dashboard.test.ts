@@ -3,10 +3,7 @@ import { beforeEach, expect, it, vi } from "vitest"
 const state = vi.hoisted(() => ({ admin: false, connect: vi.fn() }))
 vi.mock("@/store/modules/auth", () => ({ useAuthStore: () => ({ userInfo: { isAdmin: state.admin } }) }))
 vi.mock("@/hooks/common/app-socket", () => ({
-  useAppSocket: () => ({ socket: { value: { on: vi.fn() } }, connect: state.connect, isConnected: { value: false } }),
-}))
-vi.mock("@/hooks/common/socket", () => ({
-  useSocket: () => ({ socket: { value: { on: vi.fn() } }, connect: state.connect, isConnected: { value: false } }),
+  useAppSocket: () => ({ on: vi.fn(), connect: state.connect, isConnected: { value: false } }),
 }))
 vi.mock("@/service/api", () => ({}))
 import { useDashboard } from "./use-dashboard"

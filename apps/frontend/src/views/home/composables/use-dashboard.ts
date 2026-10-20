@@ -197,7 +197,7 @@ export function useDashboard() {
 
   // ==================== Socket.IO ====================
 
-  const { socket, connect, isConnected } = useAppSocket()
+  const { on, connect, isConnected } = useAppSocket()
 
   function setupSocket(moduleKeys: readonly string[]) {
     const enabled = new Set(moduleKeys)
@@ -205,21 +205,21 @@ export function useDashboard() {
     connect("/dashboard")
 
     if (enabled.has("dashboard.infrastructure"))
-      socket.value?.on("dashboard:resources", (data: Api.Dashboard.ResourcesEvent) => {
+      on("dashboard:resources", (data: Api.Dashboard.ResourcesEvent) => {
         const map = new Map(instanceResources.value)
         map.set(data.hostname, data)
         instanceResources.value = map
       })
 
     if (enabled.has("dashboard.activity"))
-      socket.value?.on("dashboard:activity.created", (data: Api.Dashboard.ActivityCreatedEvent) => {
+      on("dashboard:activity.created", (data: Api.Dashboard.ActivityCreatedEvent) => {
         if (activityCategory.value !== "all" && activityCategory.value !== data.category) return
         if (activities.value.some((item) => item.id === data.id)) return
         activities.value = [data, ...activities.value.slice(0, 19)]
       })
 
     if (enabled.has("dashboard.api-monitoring"))
-      socket.value?.on("dashboard:api_stats", (data: Api.Monitoring.ApiStatsEvent) => {
+      on("dashboard:api_stats", (data: Api.Monitoring.ApiStatsEvent) => {
         if (data.topFailures?.length) {
           apiTopFailures.value = data.topFailures
         }

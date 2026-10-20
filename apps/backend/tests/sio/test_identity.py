@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import json
 import time
@@ -6,11 +7,13 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from engineio.async_socket import AsyncSocket
 from fastapi_sio_di import SID, AsyncServer
 from rapidkit_common.protocols.auth import AuthContext
 from rapidkit_framework.identity import IdentityMetadata, current_identity
 from socketio.exceptions import ConnectionRefusedError
 from src.sio import identity as module
+from src.sio import sessions
 
 
 def token(exp):
@@ -98,3 +101,38 @@ async def test_chat_events_require_identity(monkeypatch):
 @pytest.mark.parametrize("value", ["broken", "a.b.c", "a.W10.c", token(True), token(float("inf"))])
 def test_invalid_expiry_is_rejected(value):
     assert module.token_expiry(value) is None
+
+
+async def test_pending_business_admission_blocks_events_and_refusal_cleans_every_index(redis, monkeypatch):
+    server = module.IdentityAwareAsyncServer(async_mode="asgi")
+    server.eio.sockets["transport"] = AsyncSocket(server.eio, "transport")
+    sid = await server.manager.connect("transport", "/chat")
+    metadata = IdentityMetadata(str(uuid4()), str(uuid4()), str(uuid4()))
+    reader = AsyncMock()
+    reader.validate_identity.return_value = True
+    monkeypatch.setattr(sessions, "get_service", lambda _: reader)
+    monkeypatch.setattr(module, "authenticate", AsyncMock(return_value=(metadata, int(time.time()) + 60)))
+    monkeypatch.setattr(module.RedisManager, "client", lambda: redis)
+    dispatch = AsyncMock()
+    monkeypatch.setattr(AsyncServer, "_handle_event_internal", dispatch)
+    entered, release = asyncio.Event(), asyncio.Event()
+
+    @server.on("connect", namespace="/chat")
+    async def connect(sid: SID):
+        entered.set()
+        await release.wait()
+        return False
+
+    connecting = asyncio.create_task(server._trigger_event("connect", "/chat", sid, {}, {}))
+    await asyncio.wait_for(entered.wait(), 2)
+    try:
+        await server._handle_event_internal(server, sid, "transport", ["message"], "/chat", None)
+        dispatch.assert_not_awaited()
+    finally:
+        release.set()
+        with pytest.raises(ConnectionRefusedError):
+            await connecting
+    assert not await redis.scard(f"sio:user:<{metadata.user_id}>:sockets")
+    assert not await redis.scard(f"auth:impersonation:<{metadata.impersonation_session_id}>:sockets")
+    assert ("/chat", sid) not in sessions._timers
+    assert "trusted_identity" not in await server.get_session(sid, namespace="/chat")

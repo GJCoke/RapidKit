@@ -86,13 +86,13 @@ export function useMonitoring() {
 
   // ==================== Socket.IO ====================
 
-  const { socket, connect, isConnected } = useAppSocket()
+  const { on, connect, isConnected } = useAppSocket()
 
   function setupSocket() {
     if (!useAuthStore().userInfo.isAdmin) return
     connect("/dashboard")
 
-    socket.value?.on("dashboard:api_stats", (data: Api.Monitoring.ApiStatsEvent) => {
+    on("dashboard:api_stats", (data: Api.Monitoring.ApiStatsEvent) => {
       overview.value = {
         ...overview.value,
         totalRequests: overview.value.totalRequests + data.deltaRequests,

@@ -52,6 +52,10 @@ async def authenticate(auth: object) -> tuple[IdentityMetadata, int]:
 
 
 class IdentityAwareAsyncServer(AsyncServer):
+    def __init__(self, *args, **kwargs):
+        self._pending_admissions: set[tuple[str, str]] = set()
+        super().__init__(*args, **kwargs)
+
     async def _trigger_event(self, event, namespace, *args):
         if namespace not in PROTECTED_NAMESPACES or event not in {"connect", "disconnect"}:
             return await super()._trigger_event(event, namespace, *args)
@@ -69,6 +73,7 @@ class IdentityAwareAsyncServer(AsyncServer):
             finally:
                 await unregister_socket(self, RedisManager.client(), sid, namespace)
         redis = None
+        self._pending_admissions.add((namespace, sid))
         try:
             identity, expires_at = await authenticate(args[2] if len(args) > 2 else None)
             redis = RedisManager.client()
@@ -87,8 +92,12 @@ class IdentityAwareAsyncServer(AsyncServer):
             if isinstance(exc, ConnectionRefusedError):
                 raise
             raise ConnectionRefusedError() from exc
+        finally:
+            self._pending_admissions.discard((namespace, sid))
 
     async def _handle_event_internal(self, server, sid, eio_sid, data, namespace, id):
+        if (namespace, sid) in self._pending_admissions:
+            return None
         try:
             session = await self.get_session(sid, namespace=namespace)
         except KeyError:

@@ -36,6 +36,13 @@ async function handleRefreshToken(session: number) {
   return false
 }
 
+async function refreshWithBrowserLock(refreshToken: string, refresh: () => Promise<boolean>) {
+  // Different logins must never wait for an old identity's pending request.
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(refreshToken))
+  const key = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")
+  return navigator.locks.request(`rapidkit-access-token-refresh:${key}`, refresh)
+}
+
 export function handleExpiredRequest(state: RequestInstanceState, forLogout = false) {
   if (isLoggingOut() && !forLogout) return Promise.resolve(false)
   if (localStg.get("impersonation"))
@@ -44,7 +51,16 @@ export function handleExpiredRequest(state: RequestInstanceState, forLogout = fa
       .then(() => false)
   const session = getAuthSession()
   if (!state.refreshTokenPromise || state.refreshTokenSession !== session) {
-    const promise = handleRefreshToken(session).finally(() => {
+    const token = localStg.get("token")
+    const refresh = () => {
+      // Another tab's credential change is handled by the existing identity reload.
+      if (getAuthSession() !== session || localStg.get("token") !== token) return Promise.resolve(false)
+      return handleRefreshToken(session)
+    }
+    const pending = globalThis.navigator?.locks
+      ? refreshWithBrowserLock(localStg.get("refreshToken") || "", refresh)
+      : refresh()
+    const promise = pending.finally(() => {
       if (state.refreshTokenPromise === promise) state.refreshTokenPromise = null
     })
     state.refreshTokenSession = session

@@ -66,3 +66,17 @@ async def test_registry_ttl_cannot_shrink():
     await sessions.register_socket(server, redis, "sid", "/", IdentityMetadata(str(uuid4())), int(time.time()) + 60)
     assert redis.expire.await_args_list[0].kwargs == {"nx": True}
     assert redis.expire.await_args_list[1].kwargs == {"gt": True}
+
+
+async def test_impersonation_remote_expiry_preserves_recovery_reason(monkeypatch):
+    server, external, redis, reader = AsyncMock(), AsyncMock(), AsyncMock(), AsyncMock()
+    metadata = IdentityMetadata(str(uuid4()), str(uuid4()), str(uuid4()))
+    reader.validate_identity.return_value = True
+    redis.smembers.return_value = {'{"namespace":"/notifications","sid":"remote"}'}
+    monkeypatch.setattr(sessions, "get_service", lambda _: reader)
+    monkeypatch.setattr(sessions, "get_external_sio", lambda: external)
+    await sessions.register_socket(server, redis, "sid", "/", metadata, int(time.time()) + 1)
+    await sessions._timers[("/", "sid")]
+    external.emit.assert_awaited_once_with(
+        "auth:revoked", {"code": "token_expired"}, to="remote", namespace="/notifications"
+    )

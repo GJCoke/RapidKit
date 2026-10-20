@@ -169,12 +169,12 @@
   onBeforeUnmount(() => clearTimeout(refreshTimer))
 
   // ==================== Socket.IO ====================
-  const { socket, connect } = useAppSocket()
+  const { on, connect } = useAppSocket()
 
   function setupSocket() {
     connect("/worker")
 
-    socket.value?.on("task:update", () => {
+    on("task:update", () => {
       clearTimeout(refreshTimer)
       refreshTimer = setTimeout(handleTaskSubmitted, 300)
     })

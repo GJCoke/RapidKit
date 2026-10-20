@@ -54,7 +54,7 @@ vi.mock("../../src/views/queue/schedule/modules/schedule-operate-drawer.vue", ()
   default: defineComponent({ render: () => null }),
 }))
 vi.mock("@/hooks/common/app-socket", () => ({
-  useAppSocket: () => ({ socket: { value: null }, connect: vi.fn() }),
+  useAppSocket: () => ({ on: vi.fn(), connect: vi.fn() }),
 }))
 vi.mock("../../src/views/queue/task/modules/task-drawer.vue", () => ({
   default: defineComponent({ render: () => null }),

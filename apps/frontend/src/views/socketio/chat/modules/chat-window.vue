@@ -1,10 +1,10 @@
 <script setup lang="ts">
-  import { ref, onMounted, nextTick } from "vue"
+  import { ref, onMounted, onBeforeUnmount, nextTick, toRaw } from "vue"
   import type { ScrollbarInst } from "naive-ui"
   import type { Message } from "./types"
   import { $t } from "@/locales"
   import { useSocket } from "@/hooks/common/socket"
-  import { bindAuthRecovery } from "@/hooks/common/app-socket"
+  import { bindAuthRecovery, closeAppSocket } from "@/hooks/common/app-socket"
   import { getToken } from "@/store/modules/auth/shared"
   import { characterAvatar } from "./characters"
 
@@ -22,6 +22,9 @@
   const scrollbarRef = ref<ScrollbarInst | null>(null)
 
   const { socket, isConnected, connect } = useSocket()
+  onBeforeUnmount(() => {
+    if (socket.value) closeAppSocket(toRaw(socket.value))
+  })
 
   const url = new URL(import.meta.env.VITE_SERVICE_BASE_URL, window.location.origin)
 

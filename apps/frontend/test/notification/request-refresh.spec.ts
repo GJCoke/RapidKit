@@ -69,3 +69,34 @@ describe("request token refresh", () => {
     expect(mocks.resetStore).not.toHaveBeenCalled()
   })
 })
+
+it("serializes refresh across browser contexts and discards the stale waiting context", async () => {
+  vi.clearAllMocks()
+  mocks.fetchRefreshToken.mockResolvedValue({
+    data: { accessToken: "new-access", refreshToken: "new-refresh" },
+    error: null,
+  })
+  const values = new Map<string, string>([
+    ["token", "old-access"],
+    ["refreshToken", "old-refresh"],
+  ])
+  mocks.get.mockImplementation((key: string) => values.get(key))
+  mocks.set.mockImplementation((key: string, value: string) => values.set(key, value))
+  let queue = Promise.resolve<unknown>(undefined)
+  const requestLock = vi.fn((_name: string, callback: () => Promise<unknown>) => {
+    const pending = queue.then(callback)
+    queue = pending.catch(() => undefined)
+    return pending
+  })
+  vi.stubGlobal("navigator", { locks: { request: requestLock } })
+  try {
+    const first = { refreshTokenPromise: null } as any
+    const second = { refreshTokenPromise: null } as any
+    expect(await Promise.all([handleExpiredRequest(first), handleExpiredRequest(second)])).toEqual([true, false])
+    expect(mocks.fetchRefreshToken).toHaveBeenCalledOnce()
+    expect(mocks.resetStore).not.toHaveBeenCalled()
+  } finally {
+    vi.unstubAllGlobals()
+    mocks.set.mockReset()
+  }
+})

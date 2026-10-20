@@ -1,6 +1,9 @@
 from unittest.mock import patch
 
+import httpx
 from fastapi_sio_di import AsyncServer
+from socketio import ASGIApp
+from src.sio.identity import IdentityAwareAsyncServer
 
 with patch.object(AsyncServer, "instrument"):
     from src.sio.app import socket_cors_origins
@@ -27,3 +30,15 @@ def test_regex_and_exact_and_debug():
     assert check("https://admin.socket.io")
     assert not check("https://evil.com")
     assert not check("https://x.a.com.evil.com")
+
+
+async def test_empty_cors_rejects_cross_origin_but_allows_same_origin():
+    server = IdentityAwareAsyncServer(async_mode="asgi", cors_allowed_origins=socket_cors_origins([], None, False))
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=ASGIApp(server)), base_url="http://server.test"
+    ) as client:
+        cross = await client.get("/socket.io/?EIO=4&transport=polling", headers={"Origin": "http://evil.test"})
+        same = await client.get("/socket.io/?EIO=4&transport=polling", headers={"Origin": "http://server.test"})
+    assert cross.status_code == 400
+    assert same.status_code == 200
+    await server.shutdown()

@@ -1,9 +1,12 @@
 """User CRUD API tests."""
 
 from typing import cast
+from unittest.mock import AsyncMock
+from uuid import UUID
 
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from httpx import AsyncClient
+from rapidkit_common.protocols.auth import UserSocketCloser
 from tests.testing.utils import random_email, random_lowercase, random_uuid
 
 
@@ -200,29 +203,29 @@ class TestDeleteUser:
         assert resp.json()["code"] == 0
 
 
-async def test_disabling_user_closes_sockets_after_commit(client, init, auth_headers, monkeypatch):
-    from unittest.mock import AsyncMock
-    from uuid import UUID
-
-    from rapidkit_common.protocols.auth import UserSocketCloser
-
+async def test_disabling_user_closes_sockets_after_commit(client, init, auth_headers, redis, monkeypatch):
     closer = AsyncMock()
     monkeypatch.setattr(
         "plugin_user.services.get_service_optional", lambda protocol: closer if protocol is UserSocketCloser else None
     )
     users = (await client.get("/users?pageSize=10", headers=auth_headers)).json()["data"]["records"]
     guest = next(user for user in users if user["username"] == "guest")
+    observed_cache = []
+    key = f"auth:user:<{guest['id']}>"
+    await redis.set(key, "stale-enabled-user")
+
+    async def observe_cache(*args, **kwargs):
+        observed_cache.append(await redis.get(key))
+
+    closer.close_user.side_effect = observe_cache
     result = await client.put(f"/users/{guest['id']}", headers=auth_headers, json={"status": "2"})
     assert result.json()["code"] == 0
+    assert observed_cache == [None]
     assert closer.close_user.await_args.args[0] == UUID(guest["id"])
     assert closer.close_user.await_args.kwargs == {"namespaces": None, "reason": "unauthorized"}
 
 
 async def test_revoking_admin_closes_dashboard_only(client, init, auth_headers, monkeypatch):
-    from unittest.mock import AsyncMock
-
-    from rapidkit_common.protocols.auth import UserSocketCloser
-
     closer = AsyncMock()
     monkeypatch.setattr(
         "plugin_user.services.get_service_optional", lambda protocol: closer if protocol is UserSocketCloser else None

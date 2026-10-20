@@ -34,13 +34,11 @@ class RedisSocketCloser:
     def __init__(self, server=None):
         self.server = server if server is not None else get_external_sio()
 
-    async def close_session(self, session_id, redis):
+    async def close_session(self, session_id, redis, *, reason="unauthorized"):
         key = sockets_key(session_id)
         for member in await redis.smembers(key):
             item = json.loads(member)
-            await self.server.emit(
-                "auth:revoked", {"code": "unauthorized"}, to=item["sid"], namespace=item["namespace"]
-            )
+            await self.server.emit("auth:revoked", {"code": reason}, to=item["sid"], namespace=item["namespace"])
             await self.server.disconnect(item["sid"], namespace=item["namespace"])
         await redis.delete(key)
 
@@ -110,7 +108,9 @@ async def register_socket(server, redis, sid: str, namespace: str, identity: Ide
                 if identity.impersonation_session_id:
                     try:
                         async with asyncio.timeout(REMOTE_CLEANUP_TIMEOUT_SECONDS):
-                            await RedisSocketCloser().close_session(identity.impersonation_session_id, redis)
+                            await RedisSocketCloser().close_session(
+                                identity.impersonation_session_id, redis, reason="token_expired"
+                            )
                     except Exception:
                         logger.warning("Socket session remote expiry cleanup failed user_id={}", identity.user_id)
         finally:
@@ -143,7 +143,7 @@ async def unregister_socket(server, redis, sid, namespace):
     identity = None
     try:
         session = await server.get_session(sid, namespace=namespace)
-        identity = session.get(IDENTITY_SESSION_KEY)
+        identity = session.pop(IDENTITY_SESSION_KEY, None)
         if identity:
             await redis.srem(user_sockets_structure.format(user_id=identity.user_id), socket_member(namespace, sid))
             if identity.impersonation_session_id:

@@ -47,7 +47,7 @@
   const statsPanelRef = ref<InstanceType<typeof StatsPanel> | null>(null)
 
   // ==================== Socket.IO ====================
-  const { socket, connect, isConnected } = useAppSocket()
+  const { on, connect, isConnected } = useAppSocket()
   const workerSection = ref<HTMLElement | null>(null)
 
   function viewWorkers() {
@@ -57,7 +57,7 @@
   function setupSocket() {
     connect("/worker")
 
-    socket.value?.on("worker:status", (data: Api.Worker.WorkerStatusEvent) => {
+    on("worker:status", (data: Api.Worker.WorkerStatusEvent) => {
       statsPanelRef.value?.refresh()
       const index = workers.value.findIndex((w) => w.hostname === data.hostname)
       if (index >= 0) {
@@ -74,7 +74,7 @@
       }
     })
 
-    socket.value?.on("task:update", (data: Api.Worker.TaskUpdateEvent) => {
+    on("task:update", (data: Api.Worker.TaskUpdateEvent) => {
       statsPanelRef.value?.handleTaskUpdate(data)
     })
   }

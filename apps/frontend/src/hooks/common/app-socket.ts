@@ -7,7 +7,7 @@ import { getToken } from "@/store/modules/auth/shared"
 let manager: Manager | null = null
 let generation = 0
 let refreshPromise: Promise<boolean> | null = null
-const sockets = new Set<Socket>()
+const sockets = new Map<Socket, number>()
 const recoveryBindings = new WeakMap<Socket, object>()
 
 function hasFreshToken() {
@@ -78,12 +78,17 @@ export function openAppSocket(namespace: string): Socket {
   })
   const socket = manager.socket(namespace, { auth: (callback) => callback({ access_token: getToken() }) })
   bindAuthRecovery(socket)
-  sockets.add(socket)
-  socket.connect()
+  sockets.set(socket, (sockets.get(socket) || 0) + 1)
+  if (!socket.active) socket.connect()
   return socket
 }
 
 export function closeAppSocket(socket: Socket): void {
+  const owners = sockets.get(socket) || 0
+  if (owners > 1) {
+    sockets.set(socket, owners - 1)
+    return
+  }
   recoveryBindings.delete(socket)
   socket.disconnect()
   socket.removeAllListeners()
@@ -93,7 +98,10 @@ export function closeAppSocket(socket: Socket): void {
 export function resetAppSockets(): void {
   generation++
   refreshPromise = null
-  for (const socket of sockets) closeAppSocket(socket)
+  for (const socket of sockets.keys()) {
+    sockets.set(socket, 1)
+    closeAppSocket(socket)
+  }
   sockets.clear()
   manager = null
 }
@@ -103,12 +111,23 @@ export function useAppSocket(): {
   isConnected: Ref<boolean>
   connect(namespace: string): Socket
   disconnect(): void
+  on(event: string, listener: Parameters<Socket["on"]>[1]): void
 } {
   const socket = shallowRef<Socket | null>(null)
   const isConnected = ref(false)
+  const subscriptions: (() => void)[] = []
+  const markConnected = () => {
+    isConnected.value = true
+  }
+  const markDisconnected = () => {
+    isConnected.value = false
+  }
 
   function disconnect() {
+    for (const remove of subscriptions.splice(0)) remove()
     if (socket.value) {
+      socket.value.off("connect", markConnected)
+      socket.value.off("disconnect", markDisconnected)
       closeAppSocket(socket.value)
       socket.value = null
     }
@@ -120,15 +139,20 @@ export function useAppSocket(): {
     const instance = openAppSocket(namespace)
     socket.value = instance
     isConnected.value = instance.connected
-    instance.on("connect", () => {
-      isConnected.value = true
-    })
-    instance.on("disconnect", () => {
-      isConnected.value = false
-    })
+    instance.on("connect", markConnected)
+    instance.on("disconnect", markDisconnected)
     return instance
   }
 
+  function on(event: string, listener: Parameters<Socket["on"]>[1]) {
+    const instance = socket.value
+    if (!instance) return
+    instance.on(event, listener)
+    subscriptions.push(() => {
+      instance.off(event, listener)
+    })
+  }
+
   onUnmounted(disconnect)
-  return { socket, isConnected, connect, disconnect }
+  return { socket, isConnected, connect, disconnect, on }
 }

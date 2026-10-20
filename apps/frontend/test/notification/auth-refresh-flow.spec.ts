@@ -168,10 +168,13 @@ describe("auth refresh request flow", () => {
     mocks.storage.set("token", "other-access")
     mocks.storage.set("refreshToken", "other-refresh")
     const newResult = request({ url: "/new" })
-    // Release on the next event loop turn: the new session must rotate independently.
-    await new Promise<void>((resolve) => setTimeout(resolve, 0))
+    // The new session must rotate while the old network request is still blocked.
+    try {
+      await vi.waitFor(() => expect(mocks.storage.get("token")).toBe("other-rotated"))
+    } finally {
+      releaseOld()
+    }
     const rotatedBeforeOldCompletes = mocks.storage.get("token")
-    releaseOld()
     const [old, current] = await Promise.all([oldResult, newResult])
     expect(rotatedBeforeOldCompletes).toBe("other-rotated")
     expect(old.error).not.toBeNull()

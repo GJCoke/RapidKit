@@ -23,6 +23,13 @@ vi.mock("socket.io-client", () => {
       this.handlers.set(event, [...(this.handlers.get(event) || []), fn])
       return this
     }
+    off(event: string, fn: (...args: unknown[]) => unknown) {
+      this.handlers.set(
+        event,
+        (this.handlers.get(event) || []).filter((handler) => handler !== fn),
+      )
+      return this
+    }
     fire(event: string, ...args: unknown[]) {
       for (const fn of this.handlers.get(event) || []) fn(...args)
     }
