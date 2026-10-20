@@ -79,7 +79,10 @@ async def revoke_impersonations_for_user(user_id: UUID, redis: AsyncRedisClient)
 
 
 async def close_user_sockets(
-    user_id: UUID, redis: AsyncRedisClient, namespaces: set[str] | None = None, reason: str = "unauthorized",
+    user_id: UUID,
+    redis: AsyncRedisClient,
+    namespaces: set[str] | None = None,
+    reason: str = "unauthorized",
 ) -> None:
     closer = get_service_optional(UserSocketCloser)
     if closer is not None:

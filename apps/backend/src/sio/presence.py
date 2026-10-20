@@ -19,7 +19,7 @@ async def mark_offline(redis, user_id: str, sid: str) -> None:
 
 async def prune_user(redis, user_id: str) -> bool:
     key = presence_structure.format(user_id=user_id)
-    await redis.zremrangebyscore(key, '-inf', time.time() - SESSION_TTL)
+    await redis.zremrangebyscore(key, "-inf", time.time() - SESSION_TTL)
     if await redis.zcard(key):
         return True
     await redis.srem(online_users_structure, user_id)

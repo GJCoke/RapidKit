@@ -3,11 +3,11 @@
 import asyncio
 
 from fastapi_sio_di import SID
+from rapidkit_common.deps import RedisDep
 from rapidkit_core.database import RedisManager
 from rapidkit_core.log import logger
 from rapidkit_core.realtime import PERMISSION_BROADCAST_ROOM, permission_user_room
 from rapidkit_framework.identity import current_identity
-from rapidkit_common.deps import RedisDep
 
 from src.sio.app import socket
 from src.sio.constants import SESSION_TTL, online_users_structure
@@ -23,7 +23,7 @@ async def connect(sid: SID, redis: RedisDep) -> None:
     if not identity.impersonation_session_id:
         await mark_online(redis, identity.user_id, sid)
         count = await redis.scard(online_users_structure) or 0
-        await socket.emit('dashboard:online_users', {'count': count}, namespace='/dashboard')
+        await socket.emit("dashboard:online_users", {"count": count}, namespace="/dashboard")
 
 
 @socket.event
@@ -34,9 +34,9 @@ async def disconnect(sid: SID, redis: RedisDep) -> None:
     try:
         await mark_offline(redis, identity.user_id, sid)
         count = await redis.scard(online_users_structure) or 0
-        await socket.emit('dashboard:online_users', {'count': count}, namespace='/dashboard')
+        await socket.emit("dashboard:online_users", {"count": count}, namespace="/dashboard")
     except Exception:
-        logger.warning('Socket Redis disconnect cleanup failed user_id={}', identity.user_id)
+        logger.warning("Socket Redis disconnect cleanup failed user_id={}", identity.user_id)
 
 
 async def renew_session_keys_loop() -> None:
@@ -44,11 +44,11 @@ async def renew_session_keys_loop() -> None:
         try:
             entries: dict[str, list[str]] = {}
             for eio_sid in set(socket.eio.sockets):
-                sid = socket.manager.sid_from_eio_sid(eio_sid, '/')
+                sid = socket.manager.sid_from_eio_sid(eio_sid, "/")
                 if sid is None:
                     continue
                 try:
-                    session = await socket.get_session(sid, namespace='/')
+                    session = await socket.get_session(sid, namespace="/")
                 except KeyError:
                     continue
                 identity = session.get(IDENTITY_SESSION_KEY)
@@ -58,5 +58,5 @@ async def renew_session_keys_loop() -> None:
         except asyncio.CancelledError:
             raise
         except Exception:
-            logger.debug('Failed to renew socket presence')
+            logger.debug("Failed to renew socket presence")
         await asyncio.sleep(SESSION_TTL // 3)

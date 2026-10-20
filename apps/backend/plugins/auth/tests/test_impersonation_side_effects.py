@@ -80,8 +80,7 @@ async def test_simulation_does_not_change_real_login_activity_or_online_state(
     stored = await session.get(ImpersonationSession, UUID(created["sessionId"]))
     # The authenticated administrator may record their own activity; the simulated target must not.
     assert all(
-        isinstance(event, UserActivityObservedEvent) and event.user_id == str(stored.actor_id)
-        for event in observed
+        isinstance(event, UserActivityObservedEvent) and event.user_id == str(stored.actor_id) for event in observed
     )
     records = (await session.exec(select(AuditLog).where(AuditLog.impersonation_session_id == stored.id))).all()
     assert {record.action for record in records} == {"impersonation.start", "impersonation.stop"}

@@ -82,6 +82,10 @@ class SessionInvalidator(Protocol):
 
 class UserSocketCloser(Protocol):
     async def close_user(
-        self, user_id: UUID, redis: "AsyncRedisClient", *, namespaces: set[str] | None = None,
+        self,
+        user_id: UUID,
+        redis: "AsyncRedisClient",
+        *,
+        namespaces: set[str] | None = None,
         reason: str = "unauthorized",
     ) -> None: ...

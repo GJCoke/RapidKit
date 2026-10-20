@@ -6,12 +6,12 @@ import math
 import time
 from uuid import UUID
 
+from rapidkit_common.protocols.auth import UserSocketCloser
+from rapidkit_common.protocols.impersonation import ImpersonationSessionReader, ImpersonationSocketCloser
 from rapidkit_core.log import logger
 from rapidkit_core.realtime import get_external_sio
 from rapidkit_framework.identity import IdentityMetadata
 from rapidkit_framework.services import get_service, service_registry
-from rapidkit_common.protocols.auth import UserSocketCloser
-from rapidkit_common.protocols.impersonation import ImpersonationSessionReader, ImpersonationSocketCloser
 from socketio.exceptions import ConnectionRefusedError
 
 from src.sio.constants import SESSION_TTL, user_sockets_structure
@@ -38,7 +38,9 @@ class RedisSocketCloser:
         key = sockets_key(session_id)
         for member in await redis.smembers(key):
             item = json.loads(member)
-            await self.server.emit("auth:revoked", {"code": "unauthorized"}, to=item["sid"], namespace=item["namespace"])
+            await self.server.emit(
+                "auth:revoked", {"code": "unauthorized"}, to=item["sid"], namespace=item["namespace"]
+            )
             await self.server.disconnect(item["sid"], namespace=item["namespace"])
         await redis.delete(key)
 
@@ -147,4 +149,6 @@ async def unregister_socket(server, redis, sid, namespace):
             if identity.impersonation_session_id:
                 await redis.srem(sockets_key(identity.impersonation_session_id), socket_member(namespace, sid))
     except Exception:
-        logger.warning("Socket identity cleanup failed namespace={} user_id={}", namespace, identity.user_id if identity else None)
+        logger.warning(
+            "Socket identity cleanup failed namespace={} user_id={}", namespace, identity.user_id if identity else None
+        )

@@ -296,7 +296,9 @@ async def update_user(
     if any(key in update_data and update_data[key] != getattr(target_user, key) for key in ("status", "is_admin")):
         after_commit(session, revoke_impersonations_for_user, user_id, redis)
 
-    disabling = "status" in update_data and update_data["status"] != Status.ON and update_data["status"] != target_user.status
+    disabling = (
+        "status" in update_data and update_data["status"] != Status.ON and update_data["status"] != target_user.status
+    )
     if disabling:
         after_commit(session, close_user_sockets, user_id, redis)
     elif target_user.is_admin and update_data.get("is_admin") is False:
