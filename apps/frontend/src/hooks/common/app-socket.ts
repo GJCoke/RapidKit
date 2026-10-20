@@ -31,7 +31,9 @@ export function bindAuthRecovery(socket: Socket): void {
   async function recover(code: string | undefined) {
     if (openedGeneration !== generation || recoveryBindings.get(socket) !== binding) return
     if (code === "unauthorized") {
-      await useAuthStore().resetStore()
+      const authStore = useAuthStore()
+      if (authStore.impersonation) await authStore.stopImpersonation()
+      else await authStore.resetStore()
       return
     }
     if (code !== "token_expired" || attempted) return

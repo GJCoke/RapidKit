@@ -1,8 +1,25 @@
 import { beforeEach, afterEach, expect, it, vi } from "vitest"
 
-const state = vi.hoisted(() => ({ token: "", refresh: vi.fn(), reset: vi.fn(), managers: [] as unknown[] }))
+const state = vi.hoisted(() => ({
+  token: "",
+  impersonation: null as { sessionId: string } | null,
+  storage: new Map<string, unknown>(),
+  refresh: vi.fn(),
+  reset: vi.fn(),
+  stop: vi.fn(),
+  managers: [] as unknown[],
+}))
 vi.mock("@/store/modules/auth/shared", () => ({ getToken: () => state.token }))
-vi.mock("@/store/modules/auth", () => ({ useAuthStore: () => ({ resetStore: state.reset }) }))
+vi.mock("@/store/modules/auth", () => ({
+  useAuthStore: () => ({ impersonation: state.impersonation, resetStore: state.reset, stopImpersonation: state.stop }),
+}))
+vi.mock("@/utils/storage", () => ({
+  localStg: {
+    get: (key: string) => state.storage.get(key) ?? null,
+    set: (key: string, value: unknown) => state.storage.set(key, value),
+    remove: (key: string) => state.storage.delete(key),
+  },
+}))
 vi.mock("@/service/request", () => ({ refreshAccessToken: state.refresh }))
 vi.mock("socket.io-client", () => {
   class Socket {
@@ -47,6 +64,8 @@ vi.mock("socket.io-client", () => {
   return { Manager }
 })
 import { openAppSocket, resetAppSockets, useAppSocket } from "./app-socket"
+import { createImpersonationSession } from "@/store/modules/auth/impersonation-session"
+import { beginImpersonationStorage } from "@/store/modules/auth/impersonation-storage"
 
 type FakeSocket = ReturnType<typeof openAppSocket> & { fire(event: string, ...args: unknown[]): void }
 const open = (ns: string) => openAppSocket(ns) as FakeSocket
@@ -56,6 +75,10 @@ const expired = (s: FakeSocket) => s.fire("connect_error", new Error("token_expi
 beforeEach(() => {
   vi.stubGlobal("window", { location: { origin: "https://app.test" } })
   state.token = token(Date.now() / 1000 - 60)
+  state.impersonation = null
+  state.storage.clear()
+  state.stop.mockReset()
+  state.reset.mockReset()
   vi.clearAllMocks()
   state.managers.length = 0
 })
@@ -127,6 +150,66 @@ it("recovers after revoked followed by server disconnect", async () => {
   socket.fire("disconnect", "io server disconnect")
   await vi.waitFor(() => expect(socket.connect).toHaveBeenCalledTimes(2))
 })
+
+it.each(["manual stop", "server revocation"])(
+  "restores the administrator after %s closes simulated sockets",
+  async (trigger) => {
+    state.storage.set("token", "administrator")
+    state.storage.set("refreshToken", "administrator-refresh")
+    beginImpersonationStorage(
+      {
+        accessToken: "simulated",
+        sessionId: "simulation",
+        subject: { id: "subject", name: "Subject", username: "subject" },
+        expiresAt: "2099-01-01T00:00:00Z",
+      },
+      "/manage/user",
+    )
+    state.impersonation = { sessionId: "simulation" }
+    const root = open("/")
+    const notifications = open("/notifications")
+    const revoke = () => {
+      for (const socket of [root, notifications]) {
+        socket.fire("auth:revoked", { code: "unauthorized" })
+        socket.fire("disconnect", "io server disconnect")
+      }
+    }
+    const navigate = vi.fn(async () => {})
+    const login = vi.fn(async () => {})
+    const stop = vi.fn(async () => {
+      await Promise.resolve()
+      revoke()
+    })
+    const session = createImpersonationSession({
+      create: vi.fn(),
+      validate: vi.fn(),
+      stop,
+      clearRuntime: async () => {
+        resetAppSockets()
+      },
+      loadIdentity: async () => state.storage.get("token") === "administrator",
+      navigate,
+      login,
+      reconnect: vi.fn(),
+    })
+    state.stop.mockImplementation(session.stop)
+    state.reset.mockImplementation(async () => {
+      session.cancel()
+      state.storage.clear()
+    })
+
+    if (trigger === "manual stop") await session.stop()
+    else revoke()
+
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith("/manage/user"))
+    expect(state.storage.get("token")).toBe("administrator")
+    expect(state.storage.get("refreshToken")).toBe("administrator-refresh")
+    expect(state.storage.has("impersonation")).toBe(false)
+    expect(stop).toHaveBeenCalledOnce()
+    expect(state.reset).not.toHaveBeenCalled()
+    expect(login).not.toHaveBeenCalled()
+  },
+)
 
 it("tears down page sockets and creates a new manager after identity change", () => {
   const page = useAppSocket()
