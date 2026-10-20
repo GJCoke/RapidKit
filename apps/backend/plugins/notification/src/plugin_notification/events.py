@@ -16,7 +16,7 @@ from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.identity import current_identity
 from src.sio.app import socket
 
-from plugin_notification.banner_service import BANNER_ROOM
+from plugin_notification.banner.services import BANNER_ROOM
 from plugin_notification.channels import notification_user_room
 from plugin_notification.crud import UserNotificationCRUD
 

@@ -2,9 +2,9 @@
 
 from rapidkit_core.timezone import timezone
 
+from plugin_notification.inbox.schemas import NotificationItem
 from plugin_notification.models import NotificationMessage, UserNotification
 from plugin_notification.personalization import resolve_recipient_content
-from plugin_notification.schemas import NotificationItem
 
 
 def to_inbox_item(row: UserNotification, message: NotificationMessage) -> NotificationItem:

@@ -11,7 +11,7 @@ from plugin_notification.crud import MessageCRUD, TemplateCRUD
 from plugin_notification.enums import MessageStatus
 from plugin_notification.models import NotificationTemplate, UserNotification
 from plugin_notification.orchestrator import MessageOrchestrator
-from plugin_notification.preference import PreferenceResolver
+from plugin_notification.preference.services import PreferenceResolver
 from plugin_notification.status_codes import NotificationStatusCode
 from rapidkit_common.protocols.notification import AudienceRule, NotificationCommand
 from rapidkit_common.protocols.user import UserQueryService

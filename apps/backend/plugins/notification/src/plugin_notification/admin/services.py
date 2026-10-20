@@ -2,7 +2,6 @@
 
 from collections.abc import Awaitable, Callable
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from rapidkit_common.protocols.notification import (
@@ -13,36 +12,46 @@ from rapidkit_common.protocols.notification import (
     RecipientVariableBinding,
 )
 from rapidkit_common.protocols.user import UserQueryService
+from rapidkit_common.schemas.response import PaginatedResponse
 from rapidkit_core.database import AsyncSessionLocal
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.services import get_service
+from sqlalchemy import case
 from sqlmodel import col
+from sqlmodel.ext.asyncio.session import AsyncSession
 
+from plugin_notification.admin.schemas import (
+    AnnouncementCreateRequest,
+    AudienceRuleIn,
+    MessageAdminDetailResponse,
+    MessageAdminResponse,
+    MessageListQuery,
+)
 from plugin_notification.audience import AudienceResolver
 from plugin_notification.audit import audit
-from plugin_notification.banner_schemas import BannerPublishRequest
-from plugin_notification.banner_service import BannerAnnouncementService
+from plugin_notification.banner.schemas import BannerPublishRequest
+from plugin_notification.banner.services import BannerAnnouncementService
 from plugin_notification.crud import AudienceCRUD, MessageCRUD, TemplateCRUD
+from plugin_notification.enums import MessageStatus
 from plugin_notification.models import NotificationAudience, NotificationMessage
 from plugin_notification.orchestrator import MessageOrchestrator
 from plugin_notification.personalization import prepare_personalization, render_personalized
-from plugin_notification.preference import PreferenceResolver
+from plugin_notification.preference.services import PreferenceResolver
 from plugin_notification.renderer import RenderedContent
+from plugin_notification.services import enqueue_notification_delivery
 from plugin_notification.status_codes import NotificationStatusCode
+from plugin_notification.transactions import (
+    SessionFactory,
+    complete_notification_write,
+    defer_notification_effect,
+    notification_session,
+)
 
 logger = get_plugin_logger("Notification")
 
-SessionFactory = Callable[[], Any]
 EnqueueDelivery = Callable[[], None]
-RecallBroadcaster = Callable[[UUID], Awaitable[Any]]
-
-
-def _default_enqueue_delivery() -> None:
-    """Request delivery after commit without importing Celery during plugin import."""
-    from plugin_notification.tasks import deliver_pending_notifications
-
-    deliver_pending_notifications.apply_async()
+RecallBroadcaster = Callable[[UUID], Awaitable[None]]
 
 
 def _audience_type_summary(audience: list[AudienceRule]) -> str:
@@ -56,10 +65,13 @@ class AdminNotificationService:
         self,
         session_factory: SessionFactory = AsyncSessionLocal,
         query_service: UserQueryService | None = None,
-        enqueue_delivery: EnqueueDelivery = _default_enqueue_delivery,
+        enqueue_delivery: EnqueueDelivery = enqueue_notification_delivery,
         recall_broadcaster: RecallBroadcaster | None = None,
+        *,
+        session: AsyncSession | None = None,
     ) -> None:
         self._session_factory = session_factory
+        self._session = session
         self._query_service = query_service
         self._enqueue_delivery = enqueue_delivery
         self._recall_broadcaster = recall_broadcaster
@@ -69,7 +81,7 @@ class AdminNotificationService:
             return self._query_service
         return get_service(UserQueryService)
 
-    def _orchestrator(self, session: Any) -> MessageOrchestrator:
+    def _orchestrator(self, session: AsyncSession) -> MessageOrchestrator:
         return MessageOrchestrator(
             session=session,
             audience_resolver=AudienceResolver(
@@ -93,14 +105,14 @@ class AdminNotificationService:
         publish_at: datetime | None = None,
         expire_at: datetime | None = None,
         save_as_draft: bool = False,
-        banner_body=None,
+        banner_body: AnnouncementCreateRequest | None = None,
     ) -> NotificationResult:
         """Persist a draft or scheduled message, then audit the committed result."""
         if banner_body is not None:
-            return await BannerAnnouncementService(self._session_factory).save(
+            return await BannerAnnouncementService(self._session_factory, session=self._session).save(
                 command, operator_id=created_by, body=banner_body
             )
-        async with self._session_factory() as session:
+        async with notification_session(self._session_factory, self._session) as session:
             message = await self._orchestrator(session).create_message(
                 command,
                 created_by=created_by,
@@ -110,15 +122,17 @@ class AdminNotificationService:
             )
             message_id = message.id
             correlation_id = message.correlation_id
-            await session.commit()
+            defer_notification_effect(
+                session,
+                audit,
+                "create",
+                operator_id=created_by,
+                target_id=message_id,
+                correlation_id=correlation_id,
+                audience_summary=_audience_type_summary(command.audience),
+            )
+            await complete_notification_write(session, owned=self._session is None)
 
-        audit(
-            "create",
-            operator_id=created_by,
-            target_id=message_id,
-            correlation_id=correlation_id,
-            audience_summary=_audience_type_summary(command.audience),
-        )
         return NotificationResult(
             message_id=message_id,
             recipient_count=0,
@@ -126,12 +140,23 @@ class AdminNotificationService:
         )
 
     async def get_message(self, message_id: UUID) -> tuple[NotificationMessage, list[NotificationAudience]]:
-        async with self._session_factory() as session:
+        async with notification_session(self._session_factory, self._session) as session:
             message = await MessageCRUD(session).get(message_id)
             if message is None:
                 raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
             audiences = await AudienceCRUD(session).get_all(col(NotificationAudience.message_id) == message_id)
             return message, audiences
+
+    async def get_message_detail(self, message_id: UUID) -> MessageAdminDetailResponse:
+        message, audiences = await self.get_message(message_id)
+        detail = to_message_detail(message, audiences)
+        if message.display_mode == "top_banner":
+            async with notification_session(self._session_factory, self._session) as session:
+                patch = await BannerAnnouncementService().project_message(session, message)
+            for key, value in patch.items():
+                if key in type(detail).model_fields:
+                    setattr(detail, key, value)
+        return detail
 
     async def update_message(
         self,
@@ -142,17 +167,21 @@ class AdminNotificationService:
         publish_at: datetime | None,
         expire_at: datetime | None,
         save_as_draft: bool = False,
-        banner_body=None,
+        banner_body: AnnouncementCreateRequest | None = None,
     ) -> NotificationMessage:
         existing, _ = await self.get_message(message_id)
-        if existing.display_mode == "top_banner" and existing.status == "scheduled" and banner_body is None:
+        if (
+            existing.display_mode == "top_banner"
+            and existing.status == MessageStatus.SCHEDULED.value
+            and banner_body is None
+        ):
             raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
         if banner_body is not None:
-            await BannerAnnouncementService(self._session_factory).save(
+            await BannerAnnouncementService(self._session_factory, session=self._session).save(
                 command, operator_id=operator_id, body=banner_body, message_id=message_id
             )
             return (await self.get_message(message_id))[0]
-        async with self._session_factory() as session:
+        async with notification_session(self._session_factory, self._session) as session:
             message = await self._orchestrator(session).update_message(
                 message_id,
                 command,
@@ -161,25 +190,30 @@ class AdminNotificationService:
                 save_as_draft=save_as_draft,
             )
             correlation_id = message.correlation_id
-            await session.commit()
-        audit("update", operator_id=operator_id, target_id=message_id, correlation_id=correlation_id)
+            defer_notification_effect(
+                session, audit, "update", operator_id=operator_id, target_id=message_id, correlation_id=correlation_id
+            )
+            await complete_notification_write(session, owned=self._session is None)
+
         return message
 
     async def delete_message(self, message_id: UUID, *, operator_id: UUID) -> None:
         existing, _ = await self.get_message(message_id)
         if existing.display_mode == "top_banner":
-            await BannerAnnouncementService(self._session_factory).remove(
+            await BannerAnnouncementService(self._session_factory, session=self._session).remove(
                 message_id, operator_id=operator_id, operation="delete"
             )
             return
-        async with self._session_factory() as session:
+        async with notification_session(self._session_factory, self._session) as session:
             message = await MessageCRUD(session).get(message_id)
             if message is None:
                 raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
             correlation_id = message.correlation_id
             await self._orchestrator(session).delete_message(message_id)
-            await session.commit()
-        audit("delete", operator_id=operator_id, target_id=message_id, correlation_id=correlation_id)
+            defer_notification_effect(
+                session, audit, "delete", operator_id=operator_id, target_id=message_id, correlation_id=correlation_id
+            )
+            await complete_notification_write(session, owned=self._session is None)
 
     async def publish(
         self,
@@ -191,23 +225,25 @@ class AdminNotificationService:
         """Publish and commit before requesting asynchronous delivery."""
         existing, _ = await self.get_message(message_id)
         if existing.display_mode == "top_banner":
-            return await BannerAnnouncementService(self._session_factory).publish(
+            return await BannerAnnouncementService(self._session_factory, session=self._session).publish(
                 message_id, operator_id=operator_id, body=banner_body or BannerPublishRequest()
             )
-        async with self._session_factory() as session:
+        async with notification_session(self._session_factory, self._session) as session:
             recipient_count = await self._orchestrator(session).publish_message(message_id)
             message = await MessageCRUD(session).get(message_id, nullable=False)
             correlation_id = message.correlation_id
-            await session.commit()
+            defer_notification_effect(session, self.enqueue_delivery)
 
-        self.enqueue_delivery()
+            defer_notification_effect(
+                session,
+                audit,
+                "publish",
+                operator_id=operator_id,
+                target_id=message_id,
+                correlation_id=correlation_id,
+            )
+            await complete_notification_write(session, owned=self._session is None)
 
-        audit(
-            "publish",
-            operator_id=operator_id,
-            target_id=message_id,
-            correlation_id=correlation_id,
-        )
         return NotificationResult(
             message_id=message_id,
             recipient_count=recipient_count,
@@ -218,37 +254,49 @@ class AdminNotificationService:
         """Cancel and commit before recording the audit event."""
         existing, _ = await self.get_message(message_id)
         if existing.display_mode == "top_banner":
-            await BannerAnnouncementService(self._session_factory).remove(
+            await BannerAnnouncementService(self._session_factory, session=self._session).remove(
                 message_id, operator_id=operator_id, operation="cancel"
             )
             return
-        async with self._session_factory() as session:
+        async with notification_session(self._session_factory, self._session) as session:
             await self._orchestrator(session).cancel_message(message_id)
             message = await MessageCRUD(session).get(message_id, nullable=False)
             correlation_id = message.correlation_id
-            await session.commit()
-
-        audit(
-            "cancel",
-            operator_id=operator_id,
-            target_id=message_id,
-            correlation_id=correlation_id,
-        )
+            defer_notification_effect(
+                session,
+                audit,
+                "cancel",
+                operator_id=operator_id,
+                target_id=message_id,
+                correlation_id=correlation_id,
+            )
+            await complete_notification_write(session, owned=self._session is None)
 
     async def recall(self, message_id: UUID, *, operator_id: UUID) -> None:
         """Recall and commit before broadcasting, isolating broadcast failures."""
         existing, _ = await self.get_message(message_id)
         if existing.display_mode == "top_banner":
-            await BannerAnnouncementService(self._session_factory).remove(
+            await BannerAnnouncementService(self._session_factory, session=self._session).remove(
                 message_id, operator_id=operator_id, operation="recall"
             )
             return
-        async with self._session_factory() as session:
+        async with notification_session(self._session_factory, self._session) as session:
             await self._orchestrator(session).recall_message(message_id)
             message = await MessageCRUD(session).get(message_id, nullable=False)
             correlation_id = message.correlation_id
-            await session.commit()
+            defer_notification_effect(session, self._broadcast_recall, message_id)
 
+            defer_notification_effect(
+                session,
+                audit,
+                "recall",
+                operator_id=operator_id,
+                target_id=message_id,
+                correlation_id=correlation_id,
+            )
+            await complete_notification_write(session, owned=self._session is None)
+
+    async def _broadcast_recall(self, message_id: UUID) -> None:
         if self._recall_broadcaster is not None:
             try:
                 await self._recall_broadcaster(message_id)
@@ -258,13 +306,6 @@ class AdminNotificationService:
                     message_id,
                     exc,
                 )
-
-        audit(
-            "recall",
-            operator_id=operator_id,
-            target_id=message_id,
-            correlation_id=correlation_id,
-        )
 
     async def preview_content(
         self,
@@ -276,7 +317,7 @@ class AdminNotificationService:
         preview_user_id: UUID | None = None,
     ) -> RenderedContent:
         """Read and render public recipient data without writing or enqueueing."""
-        async with self._session_factory() as session:
+        async with notification_session(self._session_factory, self._session) as session:
             template = await TemplateCRUD(session).get_by_code(template_code)
             if template is None:
                 raise AppException(NotificationStatusCode.TEMPLATE_NOT_FOUND)
@@ -313,3 +354,62 @@ class AdminNotificationService:
             total=len(all_user_ids),
             by_type={audience_type: len(user_ids) for audience_type, user_ids in user_ids_by_type.items()},
         )
+
+
+def to_message_detail(
+    message: NotificationMessage, audiences: list[NotificationAudience]
+) -> MessageAdminDetailResponse:
+    return MessageAdminDetailResponse.model_validate(
+        {
+            **dict(MessageAdminResponse.model_validate(message)),
+            "content_params": message.content_params,
+            "variable_bindings": (message.personalization or {}).get("bindings", {}),
+            "content_format": message.content_format,
+            "channels": message.channels,
+            "action": message.action,
+            "meta": message.meta,
+            "template_id": message.template_id,
+            "template_code": message.template_code,
+            "audiences": [
+                AudienceRuleIn.model_validate(
+                    {
+                        "type": row.audience_type,
+                        "value": row.audience_value,
+                        "include_descendants": row.include_descendants,
+                    }
+                )
+                for row in audiences
+            ],
+        }
+    )
+
+
+async def list_messages(crud: MessageCRUD, query: MessageListQuery) -> PaginatedResponse[MessageAdminResponse]:
+    filters = []
+    projection = await BannerAnnouncementService().project_changes(crud.session, required=False)
+    status_expr = (
+        case(
+            *[(col(NotificationMessage.id) == key, patch["status"]) for key, patch in projection.items()],
+            else_=col(NotificationMessage.status),
+        )
+        if projection
+        else col(NotificationMessage.status)
+    )
+    if query.status is not None:
+        filters.append(status_expr == query.status.value)
+    if query.display_mode is not None:
+        filters.append(col(NotificationMessage.display_mode) == query.display_mode)
+    if query.category is not None:
+        filters.append(col(NotificationMessage.category) == query.category)
+    page = await crud.get_paginate(
+        *filters,
+        page=query.page,
+        size=query.page_size,
+        order_by=col(NotificationMessage.id).desc(),
+        schema=MessageAdminResponse,
+    )
+    for record in page.records:
+        for key, value in projection.get(record.id, {}).items():
+            if key in type(record).model_fields:
+                setattr(record, key, value)
+    return page

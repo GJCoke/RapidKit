@@ -12,9 +12,8 @@ def register() -> PluginManifest:
     from fastapi import APIRouter
     from rapidkit_common.protocols.notification import AdminNotifier, Notifier
 
-    from plugin_notification.admin_api import router as admin_router
-    from plugin_notification.admin_service import AdminNotificationService
-    from plugin_notification.api import router as inbox_router
+    from plugin_notification.admin.api import router as admin_router
+    from plugin_notification.inbox.api import router as inbox_router
     from plugin_notification.models import (
         NotificationAudience,
         NotificationBannerState,
@@ -24,8 +23,9 @@ def register() -> PluginManifest:
         NotificationTemplate,
         UserNotification,
     )
-    from plugin_notification.pref_api import router as pref_router
-    from plugin_notification.service import NotificationService
+    from plugin_notification.preference.api import router as pref_router
+    from plugin_notification.providers import create_admin_service
+    from plugin_notification.services import NotificationService
 
     router = APIRouter()
     router.include_router(inbox_router)
@@ -33,18 +33,10 @@ def register() -> PluginManifest:
     router.include_router(pref_router)
 
     def register_services(registry: ServiceRegistry) -> None:
-        from rapidkit_core.database import AsyncSessionLocal
-
-        from plugin_notification.recall import broadcast_recall
-
-        async def broadcast(message_id):
-            async with AsyncSessionLocal() as session:
-                await broadcast_recall(session, message_id)
-
         registry.register(Notifier, NotificationService())
         registry.register(
             AdminNotifier,
-            AdminNotificationService(recall_broadcaster=broadcast),
+            create_admin_service(),
         )
 
     return PluginManifest(

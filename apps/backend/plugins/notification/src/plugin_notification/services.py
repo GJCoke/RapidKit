@@ -10,12 +10,13 @@ from rapidkit_framework.services import get_service
 
 from plugin_notification.audience import AudienceResolver
 from plugin_notification.orchestrator import MessageOrchestrator
-from plugin_notification.preference import PreferenceResolver
+from plugin_notification.preference.services import PreferenceResolver
+from plugin_notification.transactions import SessionFactory
 
 logger = get_plugin_logger("Notification")
 
 
-def _default_enqueue_delivery() -> None:
+def enqueue_notification_delivery() -> None:
     from plugin_notification.tasks import deliver_pending_notifications
 
     deliver_pending_notifications.apply_async()
@@ -26,9 +27,9 @@ class NotificationService:
 
     def __init__(
         self,
-        session_factory: Callable = AsyncSessionLocal,
+        session_factory: SessionFactory = AsyncSessionLocal,
         query_service: UserQueryService | None = None,
-        enqueue_delivery: Callable[[], None] = _default_enqueue_delivery,
+        enqueue_delivery: Callable[[], None] = enqueue_notification_delivery,
     ) -> None:
         self._session_factory = session_factory
         self._query_service = query_service

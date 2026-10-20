@@ -10,11 +10,12 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from httpx import ASGITransport, AsyncClient
-from plugin_notification.admin_api import router as admin_router
-from plugin_notification.admin_deps import get_admin_service, get_banner_service
-from plugin_notification.admin_service import AdminNotificationService
-from plugin_notification.api import router as public_router
-from plugin_notification.banner_service import BannerAnnouncementService
+from plugin_notification.admin.api import router as admin_router
+from plugin_notification.admin.deps import get_admin_service
+from plugin_notification.admin.services import AdminNotificationService
+from plugin_notification.banner.deps import get_banner_service
+from plugin_notification.banner.services import BannerAnnouncementService
+from plugin_notification.inbox.api import router as public_router
 from plugin_notification.models import BANNER_STATE_ID, NotificationBannerState
 from rapidkit_common.access import access_guard_dependency, inspect_route_access
 from rapidkit_common.access_testing import allow_access, deny_access
@@ -72,7 +73,7 @@ async def test_banner_preflight_readonly_and_create_requires_publish_permission(
     service = BannerAnnouncementService(factory, broadcaster=AsyncMock())
     admin = AdminNotificationService(factory)
     monkeypatch.setattr(
-        "plugin_notification.banner_service.get_external_sio", lambda: SimpleNamespace(emit=AsyncMock())
+        "plugin_notification.banner.services.get_external_sio", lambda: SimpleNamespace(emit=AsyncMock())
     )
     app = FastAPI()
     app.include_router(admin_router, prefix="/api/v1")

@@ -12,11 +12,11 @@ from src.queues.app import app
 from src.queues.deps import TaskRedis, TaskSession
 
 from plugin_notification.audience import AudienceResolver
-from plugin_notification.banner_service import BannerAnnouncementService
+from plugin_notification.banner.services import BannerAnnouncementService
 from plugin_notification.crud import MessageCRUD, OutboxCRUD
 from plugin_notification.enums import MessageStatus
 from plugin_notification.orchestrator import MessageOrchestrator
-from plugin_notification.preference import PreferenceResolver
+from plugin_notification.preference.services import PreferenceResolver
 
 logger = get_plugin_logger("Notification")
 

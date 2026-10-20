@@ -7,7 +7,7 @@ from rapidkit_common.protocols.user import UserQueryService
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from plugin_notification.admin_schemas import DeliveryMessageResponse, DeliveryRecipientResponse, DeliveryResponse
+from plugin_notification.admin.schemas import DeliveryMessageResponse, DeliveryRecipientResponse, DeliveryResponse
 from plugin_notification.enums import MessageStatus
 from plugin_notification.models import NotificationMessage
 

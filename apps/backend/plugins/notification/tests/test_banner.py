@@ -7,14 +7,14 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
-import plugin_notification.banner_service as banner_module
+import plugin_notification.banner.services as banner_module
 import pytest
 import pytest_asyncio
-from plugin_notification.admin_api import _to_command, list_announcements
-from plugin_notification.admin_schemas import AnnouncementCreateRequest, MessageListQuery
-from plugin_notification.admin_service import AdminNotificationService
-from plugin_notification.banner_schemas import BannerPublishRequest
-from plugin_notification.banner_service import BannerAnnouncementService, emit_banner_changed
+from plugin_notification.admin.api import _to_command, list_announcements
+from plugin_notification.admin.schemas import AnnouncementCreateRequest, MessageListQuery
+from plugin_notification.admin.services import AdminNotificationService
+from plugin_notification.banner.schemas import BannerPublishRequest
+from plugin_notification.banner.services import BannerAnnouncementService, emit_banner_changed
 from plugin_notification.crud import MessageCRUD
 from plugin_notification.enums import MessageStatus
 from plugin_notification.models import (
@@ -39,7 +39,7 @@ OPERATOR = uuid4()
 @pytest_asyncio.fixture
 async def banners(db_session, monkeypatch):
     clock = SimpleNamespace(now=NOW)
-    monkeypatch.setattr("plugin_notification.banner_service.timezone.now", lambda: clock.now)
+    monkeypatch.setattr("plugin_notification.banner.services.timezone.now", lambda: clock.now)
     db_session.add(NotificationBannerState(id=BANNER_STATE_ID))
     await db_session.commit()
 
@@ -369,13 +369,13 @@ async def test_due_menu_removed_cannot_block_banner_transition(banners, monkeypa
     session.add(message)
     await session.commit()
     monkeypatch.setattr(
-        "plugin_notification.banner_service.resolve_action",
+        "plugin_notification.banner.services.resolve_action",
         AsyncMock(side_effect=AppException(NotificationStatusCode.INVALID_ACTION_ROUTE)),
     )
     clock.now += timedelta(seconds=10)
     # Public projection needs a menu provider only when an action remains accessible.
     provider = SimpleNamespace(get_target=AsyncMock(return_value=SimpleNamespace()))
-    monkeypatch.setattr("plugin_notification.banner_service.get_service", lambda _: provider)
+    monkeypatch.setattr("plugin_notification.banner.services.get_service", lambda _: provider)
     result = await snapshot(service, session)
     assert result.current.id == message_id and result.current.action is None
     state, _, _ = await service.advance_due(session)
@@ -410,7 +410,7 @@ async def test_unauthorized_menu_action_stripped_but_public_content_survives(ban
     session.add(message)
     await session.commit()
     provider = SimpleNamespace(get_target=AsyncMock(return_value=None))
-    monkeypatch.setattr("plugin_notification.banner_service.get_service", lambda _: provider)
+    monkeypatch.setattr("plugin_notification.banner.services.get_service", lambda _: provider)
     result = await snapshot(service, session)
     assert result.current.title == "Banner" and result.current.action is None
     assert message.action["path"] == "/secret"
@@ -420,7 +420,7 @@ async def test_unauthorized_menu_action_stripped_but_public_content_survives(ban
 @pytest.mark.asyncio
 async def test_banner_emitter_targets_authenticated_namespace_room(monkeypatch):
     socket = SimpleNamespace(emit=AsyncMock())
-    monkeypatch.setattr("plugin_notification.banner_service.get_external_sio", lambda: socket)
+    monkeypatch.setattr("plugin_notification.banner.services.get_external_sio", lambda: socket)
     await emit_banner_changed(7)
     socket.emit.assert_awaited_once_with(
         "announcement:banner_changed", {"revision": 7}, to="announcement:authenticated", namespace="/notifications"
@@ -606,3 +606,19 @@ async def test_scheduled_edit_rendering_across_original_start_cannot_rewrite_eff
     assert result.current.id == future and result.current.title == "Banner"
     assert result.current.publish_at == NOW + timedelta(seconds=10)
     assert (await session.get(NotificationMessage, future)).title == "Banner"
+
+
+@pytest.mark.asyncio
+async def test_request_banner_write_defers_broadcast_and_supports_rollback(banners):
+
+    _, session, _, emitter = banners
+    service = BannerAnnouncementService(session=session, broadcaster=emitter)
+    request = body(banner_revision=0)
+    result = await service.save(_to_command(request), operator_id=OPERATOR, body=request)
+    assert await MessageCRUD(session).get(result.message_id) is not None
+    assert emitter.await_count == 0
+    await session.rollback()
+    assert await MessageCRUD(session).get(result.message_id) is None
+    state = await session.get(NotificationBannerState, BANNER_STATE_ID)
+    assert state.revision == 0
+    assert emitter.await_count == 0

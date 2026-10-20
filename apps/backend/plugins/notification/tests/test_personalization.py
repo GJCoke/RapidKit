@@ -8,17 +8,17 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI, HTTPException, Request
 from httpx import ASGITransport, AsyncClient
-from plugin_notification.admin_api import router
-from plugin_notification.admin_deps import get_admin_service
-from plugin_notification.admin_service import AdminNotificationService
-from plugin_notification.api import _to_item
+from plugin_notification.admin.api import router
+from plugin_notification.admin.deps import get_admin_service
+from plugin_notification.admin.services import AdminNotificationService
 from plugin_notification.audience import AudienceResolver
 from plugin_notification.channels import ChannelRegistry, ChannelResult
 from plugin_notification.crud import MessageCRUD, PreferenceCRUD, TemplateCRUD
+from plugin_notification.inbox_projection import to_inbox_item
 from plugin_notification.models import NotificationOutbox, UserNotification
 from plugin_notification.orchestrator import MessageOrchestrator
 from plugin_notification.personalization import prepare_personalization, render_personalized
-from plugin_notification.preference import PreferenceResolver
+from plugin_notification.preference.services import PreferenceResolver
 from plugin_notification.renderer import RenderedContent
 from plugin_notification.tasks import _build_orchestrator, _publish_due
 from plugin_notification.worker import DeliveryWorker
@@ -123,11 +123,11 @@ async def test_publish_uses_current_profiles_and_preserves_template_and_delivery
     assert inbox.rendered_content["title"] == "Hello After"
     assert inbox.rendered_content["content"] == "after@example.test|Editor、Viewer|Engineering|0|False"
     profiles.users[uid] = UserPublicProfile(id=uid, name="Later")
-    assert _to_item(inbox, message).title == "Hello After"
+    assert to_inbox_item(inbox, message).title == "Hello After"
     worker = DeliveryWorker(db_session, None, None, "test")
     payload = await worker._build_payload(message.id, uid)
-    assert payload["title"] == _to_item(inbox, message).title
-    assert payload["content"] == _to_item(inbox, message).content
+    assert payload["title"] == to_inbox_item(inbox, message).title
+    assert payload["content"] == to_inbox_item(inbox, message).content
     assert profiles.calls == [[uid]]
 
 
@@ -314,14 +314,14 @@ async def test_i18n_snapshot_and_legacy_fallback_use_same_reader(db_session):
     message = await orch.create_message(command(), created_by=uuid4())
     await orch.publish_message(message.id)
     row = (await db_session.exec(select(UserNotification))).one()
-    item = _to_item(row, message)
+    item = to_inbox_item(row, message)
     worker = DeliveryWorker(db_session, None, None, "test")
     payload = await worker._build_payload(message.id, uid)
     assert item.content_params == payload["contentParams"]
     assert item.content_params["recipient"] == "A"
     row.rendered_content = None
     message.content = "Legacy body"
-    assert _to_item(row, message).content == "Legacy body"
+    assert to_inbox_item(row, message).content == "Legacy body"
     assert (await worker._build_payload(message.id, uid))["content"] == "Legacy body"
 
 

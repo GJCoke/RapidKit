@@ -6,14 +6,14 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI, Request
 from httpx import ASGITransport, AsyncClient
-from plugin_notification import admin_api
 from plugin_notification.actions import resolve_action
-from plugin_notification.admin_schemas import ActionIn, AnnouncementCreateRequest
+from plugin_notification.admin import api as admin_api
+from plugin_notification.admin.schemas import ActionIn, AnnouncementCreateRequest
 from plugin_notification.audience import AudienceResolver
 from plugin_notification.crud import MessageCRUD
 from plugin_notification.models import NotificationMessage, NotificationOutbox, UserNotification
 from plugin_notification.orchestrator import MessageOrchestrator
-from plugin_notification.preference import PreferenceResolver
+from plugin_notification.preference.services import PreferenceResolver
 from plugin_notification.validation import validate_action
 from pydantic import ValidationError
 from rapidkit_common.access import access_guard_dependency

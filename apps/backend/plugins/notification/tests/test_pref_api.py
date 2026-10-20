@@ -8,12 +8,12 @@ Date   : 2026-09-04
 from typing import Any
 from uuid import uuid4
 
-import plugin_notification.pref_api as pref_api_module
+import plugin_notification.preference.api as pref_api_module
 import pytest
 from plugin_notification.categories import CategoryDef, CategoryRegistry
 from plugin_notification.crud import PreferenceCRUD
-from plugin_notification.pref_api import list_preferences, update_preference
-from plugin_notification.pref_schemas import PreferenceUpdateRequest
+from plugin_notification.preference.api import list_preferences, update_preference
+from plugin_notification.preference.schemas import PreferenceUpdateRequest
 from plugin_notification.status_codes import NotificationStatusCode
 from pydantic import ValidationError
 from rapidkit_framework.exceptions import AppException
@@ -37,9 +37,7 @@ async def test_list_preferences_includes_builtin(db_session):
     codes = {item.category for item in response.data}
     assert "user.invited" in codes
     assert "admin.announcement" in codes
-    announcement = next(
-        item for item in response.data if item.category == "admin.announcement"
-    )
+    announcement = next(item for item in response.data if item.category == "admin.announcement")
     assert announcement.closable is False
     assert announcement.enabled is True
 

@@ -1,8 +1,8 @@
 """Notification 插件注册测试。"""
 
 from plugin_notification import register
-from plugin_notification.admin_service import AdminNotificationService
-from plugin_notification.service import NotificationService
+from plugin_notification.admin.services import AdminNotificationService
+from plugin_notification.services import NotificationService
 from rapidkit_common.protocols.notification import AdminNotifier, Notifier
 from rapidkit_framework.services import ServiceRegistry
 

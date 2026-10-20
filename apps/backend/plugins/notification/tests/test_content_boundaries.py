@@ -1,7 +1,7 @@
 """Exact announcement text and structured-payload limits."""
 
 import pytest
-from plugin_notification.admin_schemas import ActionIn, AnnouncementCreateRequest
+from plugin_notification.admin.schemas import ActionIn, AnnouncementCreateRequest
 from plugin_notification.models import NotificationTemplate
 from plugin_notification.renderer import TemplateRenderer
 from plugin_notification.status_codes import NotificationStatusCode

@@ -13,7 +13,7 @@ from plugin_notification.models import (
     UserNotification,
 )
 from plugin_notification.orchestrator import MessageOrchestrator
-from plugin_notification.preference import PreferenceResolver
+from plugin_notification.preference.services import PreferenceResolver
 from rapidkit_common.protocols.notification import (
     AudienceRule,
     NotificationAction,
@@ -39,9 +39,7 @@ def _orchestrator(session, audience_ids):
 
     return MessageOrchestrator(
         session=session,
-        audience_resolver=AudienceResolver(
-            query_service=cast(UserQueryService, _QueryService())
-        ),
+        audience_resolver=AudienceResolver(query_service=cast(UserQueryService, _QueryService())),
         preference_resolver=PreferenceResolver(session=session),
     )
 
@@ -123,9 +121,7 @@ async def test_orchestrator_filters_only_new_fanout_and_preserves_historical_inb
         )
     ).all()
     current_inbox = (
-        await db_session.exec(
-            select(UserNotification).where(col(UserNotification.message_id) == current.message_id)
-        )
+        await db_session.exec(select(UserNotification).where(col(UserNotification.message_id) == current.message_id))
     ).all()
     current_outbox = (
         await db_session.exec(
@@ -166,14 +162,10 @@ async def test_orchestrator_mandatory_message_fans_out_to_disabled_user(db_sessi
     await db_session.commit()
 
     inbox = (
-        await db_session.exec(
-            select(UserNotification).where(col(UserNotification.message_id) == result.message_id)
-        )
+        await db_session.exec(select(UserNotification).where(col(UserNotification.message_id) == result.message_id))
     ).all()
     outbox = (
-        await db_session.exec(
-            select(NotificationOutbox).where(col(NotificationOutbox.message_id) == result.message_id)
-        )
+        await db_session.exec(select(NotificationOutbox).where(col(NotificationOutbox.message_id) == result.message_id))
     ).all()
     assert result.recipient_count == 2
     assert {row.user_id for row in inbox} == {disabled_user_id, enabled_user_id}
@@ -211,9 +203,7 @@ async def test_orchestrator_dedup_returns_existing_recipient_count(db_session):
 
 
 @pytest.mark.asyncio
-async def test_orchestrator_recovers_stale_dedup_conflict_without_rolling_back_outer_writes(
-    db_session, monkeypatch
-):
+async def test_orchestrator_recovers_stale_dedup_conflict_without_rolling_back_outer_writes(db_session, monkeypatch):
     user_id = uuid4()
     orchestrator = _orchestrator(db_session, [user_id])
     command = NotificationCommand(

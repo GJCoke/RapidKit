@@ -3,9 +3,10 @@
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, Literal, cast, overload
 from uuid import UUID, uuid4
 
+from rapidkit_common.auth import UserProtocol
 from rapidkit_common.protocols.menu import MenuNavigationProvider
 from rapidkit_common.protocols.notification import NotificationCommand, NotificationResult
 from rapidkit_core.database import AsyncSessionLocal
@@ -14,10 +15,12 @@ from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.services import get_service
 from sqlmodel import col, delete, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_notification.actions import resolve_action
+from plugin_notification.admin.schemas import AnnouncementCreateRequest
 from plugin_notification.audit import audit
-from plugin_notification.banner_schemas import (
+from plugin_notification.banner.schemas import (
     BannerCheckResponse,
     BannerPublishRequest,
     BannerSummary,
@@ -26,6 +29,7 @@ from plugin_notification.banner_schemas import (
 from plugin_notification.content import resolve_content
 from plugin_notification.crud import MessageCRUD
 from plugin_notification.emitter import get_external_sio
+from plugin_notification.enums import MessageStatus
 from plugin_notification.models import (
     BANNER_STATE_ID,
     NotificationAudience,
@@ -33,9 +37,19 @@ from plugin_notification.models import (
     NotificationMessage,
 )
 from plugin_notification.status_codes import NotificationStatusCode
+from plugin_notification.transactions import (
+    SessionFactory,
+    complete_notification_write,
+    defer_notification_effect,
+    notification_session,
+)
 
 logger = get_plugin_logger("Notification")
 BANNER_ROOM = "announcement:authenticated"
+
+type BannerSlots = tuple[NotificationBannerState, NotificationMessage | None, NotificationMessage | None]
+type BannerChanges = dict[UUID, dict[str, Any]]
+type BannerConsent = AnnouncementCreateRequest | BannerPublishRequest
 
 
 def utc(value: datetime | None) -> datetime | None:
@@ -51,11 +65,15 @@ async def emit_banner_changed(revision: int) -> None:
 class BannerAnnouncementService:
     def __init__(
         self,
-        session_factory: Callable[[], Any] = AsyncSessionLocal,
-        broadcaster: Callable[[int], Awaitable[Any]] = emit_banner_changed,
+        session_factory: SessionFactory = AsyncSessionLocal,
+        broadcaster: Callable[[int], Awaitable[None]] = emit_banner_changed,
+        *,
+        session: AsyncSession | None = None,
     ) -> None:
         self.session_factory = session_factory
+        self._session = session
         self.broadcaster = broadcaster
+        self.transitioned = False
 
     async def broadcast(self, revision: int) -> None:
         try:
@@ -63,7 +81,7 @@ class BannerAnnouncementService:
         except Exception as exc:  # noqa: BLE001 - durable state and polling remain authoritative
             logger.warning("Banner broadcast failed revision={}: {}", revision, exc)
 
-    async def _load(self, session, *, lock=False):
+    async def _load(self, session: AsyncSession, *, lock: bool = False) -> BannerSlots:
         statement = select(NotificationBannerState).where(col(NotificationBannerState.id) == BANNER_STATE_ID)
         if lock:
             statement = statement.with_for_update().execution_options(populate_existing=True)
@@ -77,37 +95,43 @@ class BannerAnnouncementService:
         )
         return state, active, scheduled
 
-    def _project(self, state, active, scheduled, now):
+    def _project(
+        self,
+        state: NotificationBannerState,
+        active: NotificationMessage | None,
+        scheduled: NotificationMessage | None,
+        now: datetime,
+    ) -> tuple[NotificationMessage | None, NotificationMessage | None, int, BannerChanges]:
         """Return effective slot plus changes without mutating even attached ORM objects."""
-        changes = {}
+        changes: BannerChanges = {}
         revision = state.revision
         if scheduled is not None and scheduled.publish_at is not None and scheduled.publish_at <= now:
             start = scheduled.publish_at
             if active is not None:
                 if active.expire_at is not None and active.expire_at <= start:
-                    changes[active.id] = {"status": "expired"}
+                    changes[active.id] = {"status": MessageStatus.EXPIRED.value}
                     revision += 1
                 else:
                     changes[active.id] = {
-                        "status": "superseded",
+                        "status": MessageStatus.SUPERSEDED.value,
                         "superseded_at": start,
                         "superseded_by_id": scheduled.id,
                     }
-            changes[scheduled.id] = {"status": "published", "published_at": start}
+            changes[scheduled.id] = {"status": MessageStatus.PUBLISHED.value, "published_at": start}
             active, scheduled = scheduled, None
             revision += 1
         if active is not None and active.expire_at is not None and active.expire_at <= now:
-            changes.setdefault(active.id, {}).update(status="expired")
+            changes.setdefault(active.id, {}).update(status=MessageStatus.EXPIRED.value)
             active = None
             revision += 1
         return active, scheduled, revision, changes
 
-    async def advance_due(self, session, *, now=None):
+    async def advance_due(self, session: AsyncSession, *, now: datetime | None = None) -> BannerSlots:
         loaded = await self._load(session, lock=True)
         # Sample after lock acquisition: lock waits can cross a start/end boundary.
         return await self._advance_locked(session, loaded, now=now or timezone.now())
 
-    async def _advance_locked(self, session, loaded, *, now):
+    async def _advance_locked(self, session: AsyncSession, loaded: BannerSlots, *, now: datetime) -> BannerSlots:
         state, old_active, old_scheduled = loaded
         active, scheduled, revision, changes = self._project(state, old_active, old_scheduled, now)
         for message in (old_active, old_scheduled):
@@ -136,7 +160,13 @@ class BannerAnnouncementService:
             )
         return state, active, scheduled
 
-    async def _publication_action(self, action, *, session, user=None):
+    async def _publication_action(
+        self,
+        action: dict[str, Any] | None,
+        *,
+        session: AsyncSession,
+        user: UserProtocol | None = None,
+    ) -> dict[str, Any] | None:
         try:
             return await resolve_action(action, session=session, user=user)
         except AppException as exc:
@@ -145,7 +175,14 @@ class BannerAnnouncementService:
             # A menu removed after reservation must not block content or slot cleanup.
             return None
 
-    async def _summary(self, message, changes=None, *, session, user=None):
+    async def _summary(
+        self,
+        message: NotificationMessage | None,
+        changes: BannerChanges | None = None,
+        *,
+        session: AsyncSession,
+        user: UserProtocol | None = None,
+    ) -> BannerSummary | None:
         if message is None:
             return None
         values = {name: getattr(message, name) for name in BannerSummary.model_fields}
@@ -156,11 +193,22 @@ class BannerAnnouncementService:
             if target is None:
                 values["action"] = None
         # A due reservation may be read before the worker has captured its action.
-        if values["action"] and values["status"] == "published" and not values["action"].get("path"):
+        if values["action"] and values["status"] == MessageStatus.PUBLISHED.value and not values["action"].get("path"):
             values["action"] = await self._publication_action(values["action"], session=session, user=user)
         return BannerSummary.model_validate(values)
 
-    async def snapshot(self, session, *, user=None):
+    @overload
+    async def snapshot(self, session: AsyncSession, *, user: None = None) -> BannerCheckResponse: ...
+
+    @overload
+    async def snapshot(self, session: AsyncSession, *, user: UserProtocol) -> TopBannerResponse: ...
+
+    async def snapshot(
+        self,
+        session: AsyncSession,
+        *,
+        user: UserProtocol | None = None,
+    ) -> BannerCheckResponse | TopBannerResponse:
         state, active, scheduled = await self._load(session)
         now = timezone.now()
         active, scheduled, revision, changes = self._project(state, active, scheduled, now)
@@ -181,14 +229,38 @@ class BannerAnnouncementService:
             server_now=now,
         )
 
-    async def project_message(self, session, message):
-        if message.display_mode != "top_banner":
-            return {}
+    async def project_changes(self, session: AsyncSession, *, required: bool = True) -> BannerChanges:
+        """Project effective banner states without changing persisted rows."""
+        if not required:
+            state = (
+                await session.exec(
+                    select(NotificationBannerState).where(col(NotificationBannerState.id) == BANNER_STATE_ID)
+                )
+            ).one_or_none()
+            if state is None:
+                return {}
         state, active, scheduled = await self._load(session)
         _, _, _, changes = self._project(state, active, scheduled, timezone.now())
+        return changes
+
+    async def project_message(self, session: AsyncSession, message: NotificationMessage) -> dict[str, Any]:
+        if message.display_mode != "top_banner":
+            return {}
+        changes = await self.project_changes(session)
         return changes.get(message.id, {})
 
-    async def _check(self, session, state, active, scheduled, body, message, *, future, now):
+    async def _check(
+        self,
+        session: AsyncSession,
+        state: NotificationBannerState,
+        active: NotificationMessage | None,
+        scheduled: NotificationMessage | None,
+        body: BannerConsent,
+        message: NotificationMessage | SimpleNamespace,
+        *,
+        future: bool,
+        now: datetime,
+    ) -> None:
         snapshot = BannerCheckResponse(
             revision=state.revision,
             server_now=now,
@@ -201,7 +273,7 @@ class BannerAnnouncementService:
         elif (
             active is not None
             and active.id != message.id
-            and (not future or active.expire_at is None or active.expire_at > message.publish_at)
+            and (not future or active.expire_at is None or active.expire_at > cast(datetime, message.publish_at))
             and not body.replace_current
         ):
             code = NotificationStatusCode.BANNER_REPLACEMENT_REQUIRED
@@ -210,38 +282,65 @@ class BannerAnnouncementService:
         if code is not None:
             raise AppException(code, data=snapshot.model_dump(mode="json", by_alias=True))
 
-    def _validate_window(self, publish_at, expire_at, *, now=None):
+    def validate_window(
+        self,
+        publish_at: datetime | None,
+        expire_at: datetime | None,
+        *,
+        now: datetime | None = None,
+    ) -> None:
         now = now or timezone.now()
         if expire_at is not None and expire_at <= max(publish_at or now, now):
             raise AppException(NotificationStatusCode.INVALID_COMMAND)
 
-    async def _register(self, session, state, active, scheduled, message, body, *, now):
+    async def _register(
+        self,
+        session: AsyncSession,
+        state: NotificationBannerState,
+        active: NotificationMessage | None,
+        scheduled: NotificationMessage | None,
+        message: NotificationMessage,
+        body: BannerConsent,
+        *,
+        now: datetime,
+    ) -> None:
         future = message.publish_at is not None and message.publish_at > now
-        self._validate_window(message.publish_at, message.expire_at, now=now)
+        self.validate_window(message.publish_at, message.expire_at, now=now)
         await self._check(session, state, active, scheduled, body, message, future=future, now=now)
         if future:
             if scheduled is not None and scheduled.id != message.id:
-                scheduled.status, scheduled.cancelled_at = "cancelled", now
+                scheduled.status, scheduled.cancelled_at = MessageStatus.CANCELLED.value, now
                 session.add(scheduled)
-            message.status = "scheduled"
+            message.status = MessageStatus.SCHEDULED.value
             state.scheduled_message_id = message.id
         else:
             if active is not None and active.id != message.id:
-                active.status, active.superseded_at, active.superseded_by_id = "superseded", now, message.id
+                active.status, active.superseded_at, active.superseded_by_id = (
+                    MessageStatus.SUPERSEDED.value,
+                    now,
+                    message.id,
+                )
                 session.add(active)
             if state.scheduled_message_id == message.id:
                 state.scheduled_message_id = None
             message.action = await resolve_action(message.action, session=session)
-            message.status, message.published_at = "published", now
+            message.status, message.published_at = MessageStatus.PUBLISHED.value, now
             state.active_message_id = message.id
         state.revision += 1
         session.add_all([message, state])
         await session.flush()
 
-    async def save(self, command: NotificationCommand, *, operator_id: UUID, body, message_id: UUID | None = None):
+    async def save(
+        self,
+        command: NotificationCommand,
+        *,
+        operator_id: UUID,
+        body: AnnouncementCreateRequest,
+        message_id: UUID | None = None,
+    ) -> NotificationResult:
         if command.variable_bindings:
             raise AppException(NotificationStatusCode.INVALID_COMMAND)
-        async with self.session_factory() as session:
+        async with notification_session(self.session_factory, self._session) as session:
             # Always lock slot before message to maintain a single lock order.
             state = active = scheduled = None
             nonce_key = None
@@ -262,15 +361,22 @@ class BannerAnnouncementService:
             if message_id and message is None:
                 raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
             if message is not None and (
-                message.status not in {"draft", "scheduled"} or message.status == "scheduled" and body.save_as_draft
+                message.status not in {MessageStatus.DRAFT.value, MessageStatus.SCHEDULED.value}
+                or message.status == MessageStatus.SCHEDULED.value
+                and body.save_as_draft
             ):
                 raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
-            if message is not None and message.status == "scheduled" and message.display_mode != "top_banner":
+            if (
+                message is not None
+                and message.status == MessageStatus.SCHEDULED.value
+                and message.display_mode != "top_banner"
+            ):
                 raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
             original_scheduled_start = (
-                message.publish_at if message is not None and message.status == "scheduled" else None
+                message.publish_at if message is not None and message.status == MessageStatus.SCHEDULED.value else None
             )
             if not body.save_as_draft:
+                assert state is not None and now is not None
                 candidate = SimpleNamespace(id=message.id if message else None, publish_at=utc(body.publish_at))
                 await self._check(
                     session,
@@ -300,6 +406,7 @@ class BannerAnnouncementService:
             ):
                 # Unlocked reads already expose the original reservation after its start.
                 # Rendering must not rewrite that effective publication or postpone it.
+                assert state is not None
                 await self._advance_locked(session, (state, active, scheduled), now=finished_at)
                 raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
             if message is None:
@@ -332,30 +439,40 @@ class BannerAnnouncementService:
                 personalization=None,
                 publish_at=utc(body.publish_at),
                 expire_at=utc(body.expire_at),
-                status="draft",
+                status=MessageStatus.DRAFT.value,
             ).items():
                 setattr(message, key, value)
             session.add(message)
             await session.flush()
             if not body.save_as_draft:
+                assert state is not None and now is not None
                 await self._register(session, state, active, scheduled, message, body, now=now)
             revision = state.revision if state else None
-            await session.commit()
-        audit(
-            "banner.save",
-            operator_id=operator_id,
-            target_id=message.id,
-            banner_revision=revision,
-            previous_active_id=active.id if active else None,
-            previous_scheduled_id=scheduled.id if scheduled else None,
-        )
-        if not body.save_as_draft:
-            assert revision is not None
-            await self.broadcast(revision)
+            defer_notification_effect(
+                session,
+                audit,
+                "banner.save",
+                operator_id=operator_id,
+                target_id=message.id,
+                banner_revision=revision,
+                previous_active_id=active.id if active else None,
+                previous_scheduled_id=scheduled.id if scheduled else None,
+            )
+            if not body.save_as_draft:
+                assert revision is not None
+                defer_notification_effect(session, self.broadcast, revision)
+            await complete_notification_write(session, owned=self._session is None)
+
         return NotificationResult(message_id=message.id, recipient_count=0, deduplicated=False)
 
-    async def publish(self, message_id, *, operator_id, body: BannerPublishRequest):
-        async with self.session_factory() as session:
+    async def publish(
+        self,
+        message_id: UUID,
+        *,
+        operator_id: UUID,
+        body: BannerPublishRequest,
+    ) -> NotificationResult:
+        async with notification_session(self.session_factory, self._session) as session:
             loaded = await self._load(session, lock=True)
             now = timezone.now()
             state, active, scheduled = await self._advance_locked(session, loaded, now=now)
@@ -366,24 +483,33 @@ class BannerAnnouncementService:
                 raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
             deduplicated = message.published_at is not None or state.scheduled_message_id == message.id
             if not deduplicated:
-                if message.status != "draft":
+                if message.status != MessageStatus.DRAFT.value:
                     raise AppException(NotificationStatusCode.MESSAGE_NOT_PUBLISHABLE)
                 await self._register(session, state, active, scheduled, message, body, now=now)
             revision = state.revision
-            await session.commit()
-        audit(
-            "banner.publish",
-            operator_id=operator_id,
-            target_id=message_id,
-            banner_revision=revision,
-            previous_active_id=active.id if active else None,
-            previous_scheduled_id=scheduled.id if scheduled else None,
-        )
-        await self.broadcast(revision)
+            defer_notification_effect(
+                session,
+                audit,
+                "banner.publish",
+                operator_id=operator_id,
+                target_id=message_id,
+                banner_revision=revision,
+                previous_active_id=active.id if active else None,
+                previous_scheduled_id=scheduled.id if scheduled else None,
+            )
+            defer_notification_effect(session, self.broadcast, revision)
+            await complete_notification_write(session, owned=self._session is None)
+
         return NotificationResult(message_id=message_id, recipient_count=0, deduplicated=deduplicated)
 
-    async def remove(self, message_id, *, operator_id, operation):
-        async with self.session_factory() as session:
+    async def remove(
+        self,
+        message_id: UUID,
+        *,
+        operator_id: UUID,
+        operation: Literal["recall", "cancel", "delete"],
+    ) -> None:
+        async with notification_session(self.session_factory, self._session) as session:
             loaded = await self._load(session, lock=True)
             now = timezone.now()
             state, active, scheduled = await self._advance_locked(session, loaded, now=now)
@@ -392,7 +518,11 @@ class BannerAnnouncementService:
                 raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
             if message.display_mode != "top_banner":
                 raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
-            valid = {"recall": {"published"}, "cancel": {"draft", "scheduled"}, "delete": {"draft", "scheduled"}}
+            valid = {
+                "recall": {MessageStatus.PUBLISHED.value},
+                "cancel": {MessageStatus.DRAFT.value, MessageStatus.SCHEDULED.value},
+                "delete": {MessageStatus.DRAFT.value, MessageStatus.SCHEDULED.value},
+            }
             if message.status not in valid[operation]:
                 raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
             changed = False
@@ -405,21 +535,25 @@ class BannerAnnouncementService:
             if operation == "delete":
                 await session.delete(message)
             else:
-                message.status = "recalled" if operation == "recall" else "cancelled"
+                message.status = (
+                    MessageStatus.RECALLED.value if operation == "recall" else MessageStatus.CANCELLED.value
+                )
                 setattr(message, "recalled_at" if operation == "recall" else "cancelled_at", now)
                 session.add(message)
             if changed:
                 state.revision += 1
             revision = state.revision
             session.add(state)
-            await session.commit()
-        audit(
-            "banner." + operation,
-            operator_id=operator_id,
-            target_id=message_id,
-            banner_revision=revision,
-            previous_active_id=active.id if active else None,
-            previous_scheduled_id=scheduled.id if scheduled else None,
-        )
-        if changed:
-            await self.broadcast(revision)
+            defer_notification_effect(
+                session,
+                audit,
+                "banner." + operation,
+                operator_id=operator_id,
+                target_id=message_id,
+                banner_revision=revision,
+                previous_active_id=active.id if active else None,
+                previous_scheduled_id=scheduled.id if scheduled else None,
+            )
+            if changed:
+                defer_notification_effect(session, self.broadcast, revision)
+            await complete_notification_write(session, owned=self._session is None)

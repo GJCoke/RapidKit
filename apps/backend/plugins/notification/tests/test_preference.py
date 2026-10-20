@@ -10,7 +10,7 @@ from uuid import uuid4
 import pytest
 from plugin_notification.categories import CategoryDef, CategoryRegistry
 from plugin_notification.crud import PreferenceCRUD
-from plugin_notification.preference import PreferenceResolver
+from plugin_notification.preference.services import PreferenceResolver
 
 
 def _registry() -> CategoryRegistry:

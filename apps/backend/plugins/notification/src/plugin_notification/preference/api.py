@@ -15,8 +15,8 @@ from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.exceptions import AppException
 
 from plugin_notification.categories import default_registry
-from plugin_notification.pref_deps import PreferenceCrudDep
-from plugin_notification.pref_schemas import PreferenceItemResponse, PreferenceUpdateRequest
+from plugin_notification.preference.deps import PreferenceCrudDep
+from plugin_notification.preference.schemas import PreferenceItemResponse, PreferenceUpdateRequest
 from plugin_notification.status_codes import NotificationStatusCode
 
 logger = get_plugin_logger("Notification")
