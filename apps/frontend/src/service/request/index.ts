@@ -1,6 +1,6 @@
 /* oxlint-disable @typescript-eslint/no-explicit-any */
 import type { AxiosResponse } from "@rapidkit/axios"
-import { BACKEND_ERROR_CODE, CanceledError, createFlatRequest, createRequest } from "@rapidkit/axios"
+import { BACKEND_ERROR_CODE, CanceledError, createFlatRequest } from "@rapidkit/axios"
 import { useAuthStore } from "@/store/modules/auth"
 import { localStg } from "@/utils/storage"
 import { getServiceBaseURL } from "@/utils/service"
@@ -19,7 +19,7 @@ const IMPERSONATION_INVALID_CODES = new Set(["14017", "14002", "14003", "14008"]
 function isImpersonationStop(config: { url?: string; method?: string } | undefined) {
   return config?.url === "/auth/impersonations/current" && config.method?.toLowerCase() === "delete"
 }
-const { baseURL, otherBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy)
+const { baseURL } = getServiceBaseURL(import.meta.env, isHttpProxy)
 
 export const request = createFlatRequest(
   {
@@ -174,48 +174,6 @@ export const request = createFlatRequest(
       }
 
       showErrorMsg(request.state, message)
-    },
-  },
-)
-
-export const demoRequest = createRequest(
-  {
-    baseURL: otherBaseURL.demo,
-  },
-  {
-    transform(response: AxiosResponse<Service.DemoResponse>) {
-      return response.data.result
-    },
-    async onRequest(config) {
-      const { headers } = config
-
-      // set token
-      const token = localStg.get("token")
-      const Authorization = token ? `Bearer ${token}` : null
-      Object.assign(headers, { Authorization })
-
-      return config
-    },
-    isBackendSuccess(response) {
-      // when the backend response code is "200", it means the request is success
-      // you can change this logic by yourself
-      return response.data.status === "200"
-    },
-    async onBackendFail(_response) {
-      // when the backend response code is not "200", it means the request is fail
-      // for example: the token is expired, refresh token and retry request
-    },
-    onError(error) {
-      // when the request is fail, you can show error message
-
-      let message = error.message
-
-      // show backend error message
-      if (error.code === BACKEND_ERROR_CODE) {
-        message = error.response?.data?.message || message
-      }
-
-      window.$message?.error(message)
     },
   },
 )

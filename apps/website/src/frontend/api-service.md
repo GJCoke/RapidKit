@@ -38,8 +38,12 @@ if (!error) {
 返回直接的数据对象，需要通过 try-catch 处理错误：
 
 ```ts
+import { createRequest } from "@rapidkit/axios"
+
+const directRequest = createRequest()
+
 try {
-  const data = await demoRequest({ url: "/api/demo", method: "get" })
+  const data = await directRequest({ url: "/api/v1/auth/keys/public", method: "get" })
   console.log(data)
 } catch (error) {
   console.error(error)

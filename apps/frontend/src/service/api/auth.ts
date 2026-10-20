@@ -69,13 +69,3 @@ export function fetchRefreshToken(refreshToken: string) {
     headers: { "X-Refresh-Token": refreshToken },
   })
 }
-
-/**
- * return custom backend error
- *
- * @param code error code
- * @param message error message
- */
-export function fetchCustomBackendError(code: string, message: string) {
-  return request({ url: "/auth/error", params: { code, message } })
-}

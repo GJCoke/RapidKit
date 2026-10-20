@@ -2,9 +2,9 @@
 
 from typing import Literal, TypeAlias
 
-LANGUAGE_TYPE: TypeAlias = Literal["zh-CN", "en-US"]
+LANGUAGE_TYPE: TypeAlias = Literal['zh-CN', 'en-US']
 
-languages: set[LANGUAGE_TYPE] = {"zh-CN", "en-US"}
+languages: set[LANGUAGE_TYPE] = {'zh-CN', 'en-US'}
 
 I18nKey = Literal[
     "auth.error.accountLocked",

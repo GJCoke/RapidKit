@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from "vue"
+import { computed, ref } from "vue"
 import dayjs from "dayjs"
 import { useSocket } from "@/hooks/common/socket"
 import {
@@ -7,15 +7,10 @@ import {
   fetchApiTop,
   fetchApiTrend,
   fetchBusinessSummary,
-  fetchErrorStats,
   fetchHealthStats,
   fetchInfrastructureHealth,
   fetchGetOperationsOverview,
   fetchSystemResources,
-  fetchUserActivityTrend,
-  fetchUserStatsSummary,
-  fetchGetAllWorkers,
-  fetchTaskStatsSummary,
 } from "@/service/api"
 
 export function useDashboard() {
@@ -25,35 +20,6 @@ export function useDashboard() {
   const operationsLoading = ref(false)
   let operationsRequestId = 0
   // ==================== Reactive State ====================
-  const userSummary = ref<Api.Dashboard.UserStatsSummary>({
-    total: 0,
-    todayNew: 0,
-    yesterdayNew: 0,
-    onlineCount: 0,
-  })
-
-  const onlineUsers = ref(0)
-  const workerCount = ref(0)
-  const onlineWorkerSet = new Set<string>()
-
-  const taskSummary = ref<Api.Worker.TaskStatsSummary>({
-    total: 0,
-    success: 0,
-    failure: 0,
-    retry: 0,
-    revoked: 0,
-    successRate: 0,
-    avgRuntime: null,
-  })
-
-  const errorStats = ref<Api.Dashboard.ErrorStats>({
-    http5XxCount: 0,
-    bizErrorCount: 0,
-    totalRequests: 0,
-    errorRate: 0,
-    sparkline24H: [],
-  })
-
   const healthStats = ref<Api.Dashboard.HealthStats>({
     qps: 0,
     p50Ms: 0,
@@ -128,38 +94,20 @@ export function useDashboard() {
   const apiTopFailures = ref<Api.Monitoring.ApiTopItem[]>([])
   const apiTrend = ref<Api.Monitoring.ApiTrendPoint[]>([])
 
-  // Trend data
-  const userTrend = ref<Api.Dashboard.UserActivityTrend[]>([])
-  const taskTrend = ref<Api.Dashboard.UserActivityTrend[]>([])
-  // Time range
-  const trendRange = ref<"today" | "7d" | "30d" | "custom">("30d")
-  const customRange = ref<[number, number] | null>(null)
-
-  // Loading states
-  const loading = reactive({
-    initial: false,
-    userTrend: false,
-    taskTrend: false,
-  })
-
   // ==================== Data Loaders ====================
 
   async function loadModules(moduleKeys: readonly string[]) {
-    loading.initial = true
     const loaders: Record<string, () => Promise<unknown>> = {
       "dashboard.overview": loadOperationsOverview,
       "dashboard.application-health": loadHealthStats,
       "dashboard.infrastructure": () => Promise.all([loadInfrastructure(), loadResources()]),
       "dashboard.business": loadBusinessSummary,
       "dashboard.api-monitoring": () => Promise.all([loadApiDistribution(), loadApiTopFailures(), loadApiTrend()]),
-      "dashboard.trends": loadUserTrend,
       "dashboard.activity": loadActivities,
     }
-    const results = await Promise.allSettled(
+    await Promise.allSettled(
       moduleKeys.map((key) => loaders[key]?.()).filter((result): result is Promise<unknown> => Boolean(result)),
     )
-    void results
-    loading.initial = false
   }
 
   async function loadOperationsOverview(custom?: [number, number]) {
@@ -184,28 +132,6 @@ export function useDashboard() {
   async function onOperationsRangeChange(range: "7d" | "30d" | "custom", custom?: [number, number]) {
     operationsRange.value = range
     await loadOperationsOverview(custom)
-  }
-
-  async function loadUserSummary() {
-    const { data, error } = await fetchUserStatsSummary()
-    if (!error) {
-      userSummary.value = data
-      onlineUsers.value = data.onlineCount
-    }
-  }
-
-  async function loadTaskSummary() {
-    const { data, error } = await fetchTaskStatsSummary({ days: 1 })
-    if (!error) {
-      taskSummary.value = data
-    }
-  }
-
-  async function loadErrorStats() {
-    const { data, error } = await fetchErrorStats()
-    if (!error) {
-      errorStats.value = data
-    }
   }
 
   async function loadHealthStats() {
@@ -240,15 +166,6 @@ export function useDashboard() {
     }
   }
 
-  async function loadWorkers() {
-    const { data, error } = await fetchGetAllWorkers()
-    if (!error) {
-      onlineWorkerSet.clear()
-      data.filter((w) => w.status === "1").forEach((w) => onlineWorkerSet.add(w.hostname))
-      workerCount.value = onlineWorkerSet.size
-    }
-  }
-
   async function loadActivities() {
     const categories = activityCategory.value === "all" ? undefined : [activityCategory.value]
     const { data, error } = await fetchActivities({ categories, size: 20 })
@@ -277,58 +194,6 @@ export function useDashboard() {
     if (!error) apiTrend.value = data
   }
 
-  function getTrendParams() {
-    const now = dayjs()
-    let start: string
-    let end: string
-    let granularity: string
-
-    if (trendRange.value === "custom" && customRange.value) {
-      start = dayjs(customRange.value[0]).format("YYYY-MM-DD")
-      end = dayjs(customRange.value[1]).format("YYYY-MM-DD")
-      const diffDays = dayjs(customRange.value[1]).diff(dayjs(customRange.value[0]), "day")
-      granularity = diffDays <= 1 ? "hour" : "day"
-    } else if (trendRange.value === "7d") {
-      start = now.subtract(6, "day").format("YYYY-MM-DD")
-      end = now.format("YYYY-MM-DD")
-      granularity = "day"
-    } else if (trendRange.value === "30d") {
-      start = now.subtract(29, "day").format("YYYY-MM-DD")
-      end = now.format("YYYY-MM-DD")
-      granularity = "day"
-    } else {
-      // today
-      start = now.format("YYYY-MM-DD")
-      end = now.format("YYYY-MM-DD")
-      granularity = "hour"
-    }
-
-    return { start, end, granularity }
-  }
-
-  async function loadUserTrend() {
-    loading.userTrend = true
-    const params = getTrendParams()
-    const { data, error } = await fetchUserActivityTrend(params)
-    if (!error) {
-      userTrend.value = data
-    }
-    loading.userTrend = false
-  }
-
-  async function loadTaskTrend() {
-    loading.taskTrend = true
-    // TODO: implement when backend task trend API is ready
-    taskTrend.value = []
-    loading.taskTrend = false
-  }
-
-  async function onTrendRangeChange(range: "today" | "7d" | "30d" | "custom", custom?: [number, number]) {
-    trendRange.value = range
-    if (custom) customRange.value = custom
-    await loadUserTrend()
-  }
-
   // ==================== Socket.IO ====================
 
   const { socket, connect, isConnected } = useSocket()
@@ -342,44 +207,6 @@ export function useDashboard() {
       namespace: "/dashboard",
       path: "/socket.io",
     })
-
-    if (enabled.has("dashboard.overview"))
-      socket.value?.on("dashboard:online_users", (data: Api.Dashboard.OnlineUsersEvent) => {
-        onlineUsers.value = data.count
-        userSummary.value = { ...userSummary.value, onlineCount: data.count }
-      })
-
-    if (enabled.has("dashboard.overview"))
-      socket.value?.on("dashboard:worker_status", (data: Api.Dashboard.DashboardWorkerStatusEvent) => {
-        if (data.status === "1") {
-          onlineWorkerSet.add(data.hostname)
-        } else {
-          onlineWorkerSet.delete(data.hostname)
-        }
-        workerCount.value = onlineWorkerSet.size
-      })
-
-    if (enabled.has("dashboard.overview"))
-      socket.value?.on("dashboard:task_completed", (data: Api.Dashboard.TaskCompletedEvent) => {
-        // Update today's task summary
-        taskSummary.value = {
-          ...taskSummary.value,
-          total: taskSummary.value.total + 1,
-          success: data.status === "3" ? taskSummary.value.success + 1 : taskSummary.value.success,
-          failure: data.status === "4" ? taskSummary.value.failure + 1 : taskSummary.value.failure,
-        }
-      })
-
-    if (enabled.has("dashboard.overview"))
-      socket.value?.on("dashboard:error_stats", (data: Api.Dashboard.ErrorStatsEvent) => {
-        errorStats.value = {
-          ...errorStats.value,
-          http5XxCount: data.http5xxCount,
-          bizErrorCount: data.bizErrorCount,
-          totalRequests: Math.max(errorStats.value.totalRequests, data.totalRequests),
-          errorRate: data.errorRate,
-        }
-      })
 
     if (enabled.has("dashboard.infrastructure"))
       socket.value?.on("dashboard:resources", (data: Api.Dashboard.ResourcesEvent) => {
@@ -405,15 +232,10 @@ export function useDashboard() {
 
   return {
     // State
-    userSummary,
     operationsOverview,
     operationsRange,
     operationsError,
     operationsLoading,
-    onlineUsers,
-    workerCount,
-    taskSummary,
-    errorStats,
     healthStats,
     infrastructure,
     businessSummary,
@@ -422,13 +244,9 @@ export function useDashboard() {
     selectedInstance,
     activities,
     activityCategory,
-    userTrend,
-    trendRange,
-    customRange,
     apiDistribution,
     apiTopFailures,
     apiTrend,
-    loading,
     isConnected,
 
     // Actions
@@ -436,8 +254,6 @@ export function useDashboard() {
     loadOperationsOverview,
     onOperationsRangeChange,
     setupSocket,
-    onTrendRangeChange,
-    loadUserTrend,
     onActivityCategoryChange,
   }
 }

@@ -18,10 +18,6 @@
     "build": "tsx ../builder/cli.ts",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@rapidkit/axios": "workspace:*",
-    "@rapidkit/utils": "workspace:*"
-  },
   "devDependencies": {
     "@vueuse/core": "^14.2.1"
   },

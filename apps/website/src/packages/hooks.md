@@ -19,11 +19,9 @@ import { useBoolean, useLoading, useCountDown, useContext, useTable } from "@rap
 
 ## 依赖关系
 
-| 依赖              | 用途                                             |
-| ----------------- | ------------------------------------------------ |
-| `@vueuse/core`    | `useRafFn` 等底层组合函数                        |
-| `@rapidkit/axios` | `createHookRequest` 内部使用 `createFlatRequest` |
-| `@rapidkit/utils` | 被 axios 包间接引用                              |
+| 依赖           | 用途                      |
+| -------------- | ------------------------- |
+| `@vueuse/core` | `useRafFn` 等底层组合函数 |
 
 ## 导出一览
 
