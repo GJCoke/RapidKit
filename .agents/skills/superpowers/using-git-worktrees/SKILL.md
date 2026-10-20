@@ -5,21 +5,31 @@ description: Use when starting feature work that needs isolation from current wo
 
 # Using Git Worktrees
 
-## RapidKit Override: Task Branch First, Worktree Optional
+## RapidKit Override: New Worktree Per Non-Simple Task
 
 In the RapidKit repository, the root `AGENTS.md` Git workflow takes
 precedence over this skill:
 
-- The default isolation is a fresh `codex/<task-name>` branch created
-  from the current HEAD in the current checkout, not a worktree. Use this
-  skill only when your human partner explicitly asks for a worktree.
-- A worktree, if used, must also get a newly created named task branch
-  before any edit. Never work on the entry branch or a detached HEAD.
-- Preserve all pre-existing staged, unstaged and untracked changes. Never
-  reset, clean, stash or discard them to create a branch or worktree.
-- If the worktree directory is not ignored, do not edit or commit
-  `.gitignore` on your own: report it and ask, or place the worktree
-  outside the repository.
+- Every non-simple task gets a new worktree; consent is already declared,
+  so skip the Step 0 question. A simple task (no design/plan, 1–2 files,
+  no migration, no API or permission change) stays on the current branch
+  in place and does not use this skill.
+- Create it with git from the current HEAD, not a native tool that
+  branches from elsewhere or places it in another directory:
+  `git worktree add -b <type>/<slug> .worktrees/<type>-<slug> HEAD`, then
+  work inside it (a native tool that can enter an existing path, such as
+  `EnterWorktree` with `path`, may be used to switch the session into it).
+- Branch names are `<type>/<slug>`: `<type>` is one of `feature`, `fix`,
+  `refactor`, `perf`, `docs`, `test`, `chore`; `<slug>` is lowercase
+  English kebab-case, e.g. `feature/login`, `fix/login-cooldown`. Never
+  use the `codex/` prefix. Never work on the entry branch or a detached
+  HEAD.
+- `.worktrees/` is already ignored. Never edit or commit `.gitignore` on
+  your own.
+- Uncommitted changes in the main checkout are not carried into the
+  worktree. Preserve them: never reset, clean, stash or discard them.
+- Project setup (Step 2): run `pnpm install` for frontend work and
+  `uv sync` for backend work inside the worktree, only what the task needs.
 - Never stage or commit anything under `docs/superpowers/`.
 
 ## Overview

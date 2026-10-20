@@ -15,7 +15,8 @@ review is a self-review in this session.
 In other harnesses, the RapidKit rules still apply: read the root
 `AGENTS.md`, `rapidkit-conventions` and the relevant `rapidkit-*` domain
 skills before Task 1 and pass the applicable conventions into each
-implementer brief; work on the `AGENTS.md` task branch; commit only
+implementer brief; work in the `AGENTS.md` task worktree and branch
+(`.worktrees/<type>-<slug>` on `<type>/<slug>`); commit only
 explicit task-owned implementation paths; never stage or commit anything
 under `docs/superpowers/`.
 

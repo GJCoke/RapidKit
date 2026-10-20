@@ -52,12 +52,12 @@ These rules override the generic workflow below wherever they conflict.
   Before editing in a task, re-check the domain skill for that task. A
   plan step that contradicts the conventions is a plan defect: rule in
   favour of the conventions and ledger it.
-- **Task branch, not a worktree.** Work on the task branch created under
+- **Task worktree.** Work in the task worktree and branch created under
   the `AGENTS.md` Git workflow. If execution is a separate new task, create
-  and switch to a fresh `codex/<task-name>` branch from the current HEAD
-  first. A worktree is optional; never implement on the entry branch or a
-  detached HEAD. Preserve all pre-existing staged, unstaged and untracked
-  changes.
+  a new worktree `.worktrees/<type>-<slug>` on a fresh `<type>/<slug>`
+  branch from the current HEAD first (e.g. `feature/login`). Never
+  implement on the entry branch or a detached HEAD. Preserve all
+  pre-existing staged, unstaged and untracked changes.
 - **Never commit anything under `docs/superpowers/`.** That covers the
   spec, the plan and every other file in the directory. Commit only
   validated task-owned implementation files: stage explicit paths or
@@ -140,12 +140,11 @@ digraph process {
 
 ## Setup
 
-Ensure the work happens on the task branch required by `AGENTS.md`
-(see RapidKit Repository Rules above): verify the current branch is the
-named task branch, or create a fresh `codex/<task-name>` branch for a new
-task. Use superpowers:using-git-worktrees only if your human partner asks
-for a worktree. Never start implementation on main/master, the entry
-branch, or a detached HEAD.
+Ensure the work happens in the task worktree required by `AGENTS.md`
+(see RapidKit Repository Rules above): verify you are inside the task
+worktree on its `<type>/<slug>` branch, or create one for a new task with
+superpowers:using-git-worktrees. Never start implementation on
+main/master, the entry branch, or a detached HEAD.
 
 Conversation memory does not survive compaction. An inline executor that
 loses its place re-implements tasks whose commits already exist — the same
@@ -365,7 +364,7 @@ explicit choice.
 ```
 You: I'm using the executing-plans skill to implement this plan inline.
 
-[Setup: AGENTS.md + rapidkit-conventions + domain skills read; task branch codex/feature verified]
+[Setup: AGENTS.md + rapidkit-conventions + domain skills read; worktree .worktrees/feature-login on branch feature/login verified]
 [Read plan once: docs/superpowers/plans/feature-plan.md; spec read]
 [Resolve workspace: sdd-workspace docs/superpowers/plans/feature-plan.md — no ledger inside, fresh start]
 [Pre-flight scan: 2 shared-interface rows, 4 self-consistency rows, clean; written to ledger]

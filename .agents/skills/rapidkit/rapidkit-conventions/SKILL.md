@@ -173,7 +173,7 @@ async def get_user() -> Response[UserSchema]:
 
 The canonical repository-wide policy is `AGENTS.md` at the repository root. Read and follow it before any repository edit:
 
-- Start every new task on a fresh `codex/<task-name>` branch, preserving existing work. A continuation of the same task stays on that task branch.
+- A simple task (no design/plan, 1–2 files, no migration, no API or permission change) may be done on the current branch in place. Every other new task starts in a new worktree `.worktrees/<type>-<slug>` on a fresh `<type>/<slug>` branch (`feature`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`; e.g. `feature/login`), preserving existing work. A continuation of the same task stays in that worktree and branch.
 - After validation, implementation changes may be committed automatically using explicit task-owned paths or hunks; exclude unrelated pre-existing changes.
 - Never stage or commit design documents, specifications or implementation plans, including `docs/superpowers/specs/` and `docs/superpowers/plans/`.
 - Do not push, merge or rewrite history without explicit user authorization. If branch setup is blocked, do not edit the entry branch or detached HEAD.

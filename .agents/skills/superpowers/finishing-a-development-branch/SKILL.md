@@ -15,7 +15,11 @@ precedence over this skill:
   yourself: merging, pushing, opening a PR, rebasing, amending history,
   discarding work and deleting branches or worktrees each need your human
   partner's explicit choice.
-- Keep the task branch by default.
+- Keep the task branch and worktree by default.
+- `docs/superpowers/` is git-ignored, so `git worktree remove` deletes it
+  silently. Before removing a worktree, list its `docs/superpowers/` files
+  and ask your human partner whether to copy them back to the main
+  checkout or discard them.
 - Before any commit, merge or PR, confirm nothing under
   `docs/superpowers/` is staged or included; specs, plans and every other
   file there stay local. Stage only explicit task-owned paths, never
@@ -184,7 +188,10 @@ Step 2, from before that directory change.
 **If `GIT_DIR == GIT_COMMON`:** Normal repo, no worktree to clean up. Done.
 
 **If `WORKTREE_PATH` is under `.worktrees/` or `worktrees/`:** Superpowers
-created this worktree — we own cleanup:
+created this worktree — we own cleanup. In RapidKit, first check
+`ls -R "$WORKTREE_PATH/docs/superpowers" 2>/dev/null`; if anything is
+there, ask whether to copy it to the main checkout or discard it, and
+carry out the choice before removing:
 
 ```bash
 git worktree remove "$WORKTREE_PATH"

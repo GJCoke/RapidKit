@@ -40,10 +40,13 @@ These rules override the generic workflow below wherever they conflict.
 
   Domain skills are read as references during design; executing their
   implementation procedures waits for the approved design and plan.
-- **Task branch.** Follow the Git workflow in `AGENTS.md`: before writing
-  any repository file (the design document included), create and switch to
-  a fresh `codex/<task-name>` branch, or reuse the current task branch when
-  this is a continuation. Branch setup is preparation, not building.
+- **Task worktree.** Follow the Git workflow in `AGENTS.md`: a task that
+  needs a written design is never simple, so before writing any repository
+  file (the design document included), create a new worktree
+  `.worktrees/<type>-<slug>` on a fresh `<type>/<slug>` branch (e.g.
+  `feature/login`) and work inside it, or reuse the current task worktree
+  when this is a continuation. A simple task may stay on the current
+  branch in place. Worktree and branch setup is preparation, not building.
 - **Never commit anything under `docs/superpowers/`.** Not only specs and
   plans: every file in that directory (specs, plans, mockups, notes,
   scratch files) stays local. Never stage it, never force-add it, and
@@ -223,8 +226,8 @@ description: in chat for a small change, the document for a project.
 Building includes writing product code, scaffolding, installing
 dependencies, creating projects, and invoking an implementation skill.
 Reading and exploring are fine, including reading `rapidkit-*` domain
-skills for reference, and so is the task-branch setup `AGENTS.md`
-requires.
+skills for reference, and so is the worktree and branch setup
+`AGENTS.md` requires.
 
 Two exceptions. If they opted out of the questions, the skill is done
 and the gate goes with it. A spike they said yes to may be built; it
