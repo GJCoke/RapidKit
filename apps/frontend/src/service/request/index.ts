@@ -177,3 +177,7 @@ export const request = createFlatRequest(
     },
   },
 )
+
+export function refreshAccessToken(): Promise<boolean> {
+  return handleExpiredRequest(request.state)
+}

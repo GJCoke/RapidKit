@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   clearTabs: vi.fn(),
 }))
 
+vi.mock("@/hooks/common/app-socket", () => ({ resetAppSockets: vi.fn() }))
 vi.mock("vue-router", () => ({ useRoute: () => ({ meta: { constant: true } }) }))
 vi.mock("@rapidkit/hooks", () => ({
   useLoading: () => ({ loading: false, startLoading: vi.fn(), endLoading: vi.fn() }),
@@ -121,7 +122,7 @@ describe("auth notification socket lifecycle", () => {
 
     await store.login("user", "password", false)
 
-    expect(mocks.connectNotificationSocket).toHaveBeenCalledWith("login-token")
+    expect(mocks.connectNotificationSocket).toHaveBeenCalledWith()
   })
 
   it("connects the notification socket after restoring a stored login", async () => {
@@ -129,7 +130,7 @@ describe("auth notification socket lifecycle", () => {
 
     await store.initUserInfo()
 
-    expect(mocks.connectNotificationSocket).toHaveBeenCalledWith("stored-token")
+    expect(mocks.connectNotificationSocket).toHaveBeenCalledWith()
   })
 
   it("disconnects the notification socket when auth state resets", async () => {

@@ -1,39 +1,28 @@
-import { io } from "socket.io-client"
+import { closeAppSocket, openAppSocket } from "@/hooks/common/app-socket"
+import { getToken } from "@/store/modules/auth/shared"
 import type { Socket } from "socket.io-client"
 import { useNotificationStore } from "./index"
 import { useBannerStore } from "../banner"
 
 let socket: Socket | null = null
-let socketToken: string | null = null
-
-function getSocketBaseUrl(): string {
-  return new URL(import.meta.env.VITE_SERVICE_BASE_URL || "", window.location.origin).origin
-}
 
 function destroySocket() {
   if (!socket) return
 
-  socket.removeAllListeners()
-  socket.disconnect()
+  closeAppSocket(socket)
   socket = null
-  socketToken = null
 }
 
-export function connectNotificationSocket(token: string): Socket | undefined {
-  if (!token) return
-  if (socket && socketToken === token) return socket
+export function connectNotificationSocket(): Socket | undefined {
+  if (!getToken()) return
+  if (socket) return socket
 
   destroySocket()
 
   const store = useNotificationStore()
   const banner = useBannerStore()
-  banner.start(token)
-  socketToken = token
-  socket = io(`${getSocketBaseUrl()}/notifications`, {
-    path: "/socket.io",
-    auth: { access_token: token },
-    transports: ["websocket", "polling"],
-  })
+  banner.start(getToken())
+  socket = openAppSocket("/notifications")
 
   socket.on("connect", () => {
     void store.calibrate()

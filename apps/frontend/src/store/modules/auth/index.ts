@@ -19,6 +19,7 @@ import { useNotificationStore } from "@/store/modules/notification"
 import { useBannerStore } from "@/store/modules/banner"
 import { useRouterPush } from "@/hooks/common/router"
 import { router } from "@/router"
+import { resetAppSockets } from "@/hooks/common/app-socket"
 import { connectNotificationSocket, disconnectNotificationSocket } from "@/store/modules/notification/shared"
 import { localStg } from "@/utils/storage"
 import { SetupStoreId } from "@/enum"
@@ -156,11 +157,9 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     permissionSync.trigger()
   }
 
-  /** Synchronize refreshed credentials with reactive auth state and sockets. */
+  /** Synchronize refreshed credentials with reactive auth state. */
   function syncAccessToken(accessToken: string) {
     token.value = accessToken
-    connectGlobalSocket()
-    connectNotificationSocket(accessToken)
   }
 
   function resetIdentityState(): Promise<void> {
@@ -168,6 +167,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     runtimeVersion++
     permissionSync.reset()
     permissionRefresher.reset()
+    resetAppSockets()
     disconnectNotificationSocket()
     disconnectGlobalSocket()
     useNotificationStore().reset()
@@ -200,10 +200,13 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   function reconnectIdentitySockets() {
+    disconnectNotificationSocket()
+    disconnectGlobalSocket()
+    resetAppSockets()
     token.value = getToken()
     if (!token.value) return
     connectGlobalSocket()
-    connectNotificationSocket(token.value)
+    connectNotificationSocket()
   }
 
   async function navigateIdentity(path: string) {
@@ -387,8 +390,11 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
     if (pass) {
       token.value = loginToken.accessToken
+      disconnectNotificationSocket()
+      disconnectGlobalSocket()
+      resetAppSockets()
       connectGlobalSocket()
-      connectNotificationSocket(loginToken.accessToken)
+      connectNotificationSocket()
 
       return true
     }

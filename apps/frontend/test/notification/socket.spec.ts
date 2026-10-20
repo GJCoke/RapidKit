@@ -32,6 +32,7 @@ const mocks = vi.hoisted(() => ({
   bannerRefresh: vi.fn(),
   bannerInvalidate: vi.fn(),
   io: vi.fn(),
+  token: "token",
   calibrate: vi.fn(),
   onRealtimeNew: vi.fn(),
   onRealtimeRecalled: vi.fn(),
@@ -48,7 +49,14 @@ vi.mock("@/store/modules/banner", () => ({
   }),
 }))
 
-vi.mock("socket.io-client", () => ({ io: mocks.io }))
+vi.mock("@/hooks/common/app-socket", () => ({
+  openAppSocket: mocks.io,
+  closeAppSocket: (socket: FakeSocket) => {
+    socket.removeAllListeners()
+    socket.disconnect()
+  },
+}))
+vi.mock("@/store/modules/auth/shared", () => ({ getToken: () => mocks.token }))
 vi.mock("@/store/modules/notification", () => ({
   useNotificationStore: () => ({
     calibrate: mocks.calibrate,
@@ -77,8 +85,8 @@ describe("notification socket", () => {
   })
 
   it("is idempotent for repeated connects with the same token", () => {
-    connectNotificationSocket("same-token")
-    connectNotificationSocket("same-token")
+    connectNotificationSocket()
+    connectNotificationSocket()
 
     expect(mocks.io).toHaveBeenCalledTimes(1)
     expect(sockets[0].disconnect).not.toHaveBeenCalled()
@@ -86,7 +94,7 @@ describe("notification socket", () => {
 
   it("calibrates on connect and forwards all notification events", async () => {
     const message = { id: "notification-1" } as Api.Notification.Message
-    connectNotificationSocket("token")
+    connectNotificationSocket()
 
     await sockets[0].emitFromServer("connect")
     await sockets[0].emitFromServer("notification:new", message)
@@ -103,7 +111,7 @@ describe("notification socket", () => {
   })
 
   it("removes listeners, disconnects, and resets notification state", () => {
-    connectNotificationSocket("token")
+    connectNotificationSocket()
     const socket = sockets[0]
 
     disconnectNotificationSocket()
@@ -115,16 +123,11 @@ describe("notification socket", () => {
     expect(mocks.bannerReset).toHaveBeenCalledOnce()
   })
 
-  it("rebuilds an unconnected socket when the auth token changes", () => {
-    connectNotificationSocket("old-token")
-    const oldSocket = sockets[0]
-    expect(oldSocket.connected).toBe(false)
-
-    connectNotificationSocket("new-token")
-
-    expect(oldSocket.removeAllListeners).toHaveBeenCalledOnce()
-    expect(oldSocket.disconnect).toHaveBeenCalledOnce()
-    expect(mocks.io).toHaveBeenCalledTimes(2)
-    expect(mocks.io.mock.calls[1][1]).toMatchObject({ auth: { access_token: "new-token" } })
+  it("keeps the existing socket when only the token changes", () => {
+    connectNotificationSocket()
+    mocks.token = "new-token"
+    connectNotificationSocket()
+    expect(mocks.io).toHaveBeenCalledExactlyOnceWith("/notifications")
+    expect(sockets[0].disconnect).not.toHaveBeenCalled()
   })
 })
