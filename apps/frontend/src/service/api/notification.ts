@@ -8,10 +8,6 @@ export function fetchGetUnreadCount() {
   return request<Api.Notification.UnreadCount>({ url: "/notifications/unread-count", method: "get" })
 }
 
-export function fetchGetNotification(id: string) {
-  return request<Api.Notification.Message>({ url: `/notifications/${id}`, method: "get" })
-}
-
 export function fetchReadNotification(id: string) {
   return request<Api.Notification.MarkReadResponse>({ url: `/notifications/${id}/read`, method: "patch" })
 }
@@ -78,14 +74,6 @@ export function fetchUpdateAnnouncement(messageId: string, data: Api.Notificatio
 
 export function fetchDeleteAnnouncement(messageId: string) {
   return request<null>({ url: `/admin/notifications/${messageId}`, method: "delete" })
-}
-
-export function fetchPreviewAudience(messageId: string, audience: Api.Notification.AudienceRule[]) {
-  return request<Api.Notification.AudiencePreview>({
-    url: `/admin/notifications/${messageId}/audience-preview`,
-    method: "post",
-    data: { audience },
-  })
 }
 
 /** Estimate an unsaved audience without persisting or scheduling an announcement. */

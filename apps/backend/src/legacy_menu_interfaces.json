@@ -45,8 +45,6 @@
     "DELETE:/api/v1/roles",
     "GET:/api/v1/roles/{role_id}/permissions",
     "PUT:/api/v1/roles/{role_id}/permissions",
-    "GET:/api/v1/manage/menus/tree",
-    "GET:/api/v1/router/backend",
     "GET:/api/v1/data-policies/all",
     "GET:/api/v1/field-policies/all"
   ],
@@ -56,7 +54,6 @@
     "PUT:/api/v1/manage/menus/{menu_id}",
     "DELETE:/api/v1/manage/menus/{menu_id}",
     "DELETE:/api/v1/manage/menus",
-    "GET:/api/v1/manage/menus/tree",
     "GET:/api/v1/manage/menus/active-menu-options",
     "GET:/api/v1/manage/pages"
   ],
@@ -95,7 +92,6 @@
   "socketio_instrument": [],
   "queue": [],
   "queue_dashboard": [
-    "GET:/api/v1/workers",
     "GET:/api/v1/workers/all",
     "GET:/api/v1/workers/{worker_id}",
     "POST:/api/v1/workers/{worker_id}/ping",
@@ -118,14 +114,12 @@
     "PATCH:/api/v1/schedules/{schedule_id}/toggle",
     "DELETE:/api/v1/schedules/{schedule_id}",
     "GET:/api/v1/tasks/registered",
-    "POST:/api/v1/schedules/preview",
-    "POST:/api/v1/schedules/crontab/preview"
+    "POST:/api/v1/schedules/preview"
   ],
   "queue_task": [
     "GET:/api/v1/tasks",
     "GET:/api/v1/tasks/{task_id}",
     "GET:/api/v1/tasks/stats/summary",
-    "GET:/api/v1/tasks/stats/timeline",
     "GET:/api/v1/tasks/stats/by-name",
     "GET:/api/v1/tasks/stats/by-worker",
     "GET:/api/v1/tasks/registered",
@@ -148,7 +142,6 @@
   "notificationManage": [],
   "notification_manage_templates": [
     "GET:/api/v1/admin/notification-templates",
-    "GET:/api/v1/admin/notification-templates/{template_id}",
     "POST:/api/v1/admin/notification-templates",
     "PUT:/api/v1/admin/notification-templates/{template_id}",
     "DELETE:/api/v1/admin/notification-templates/{template_id}"
@@ -168,7 +161,6 @@
     "GET:/api/v1/roles/all",
     "GET:/api/v1/departments/tree",
     "GET:/api/v1/users/all",
-    "POST:/api/v1/admin/notifications/{message_id}/audience-preview",
     "POST:/api/v1/admin/notifications/{message_id}/publish",
     "POST:/api/v1/admin/notifications/{message_id}/cancel",
     "POST:/api/v1/admin/notifications/{message_id}/recall"

@@ -13,15 +13,15 @@ from plugin_notification.admin_api import _to_command, router
 from plugin_notification.admin_deps import get_admin_service, get_message_crud
 from plugin_notification.admin_schemas import AnnouncementCreateRequest
 from plugin_notification.admin_service import AdminNotificationService
-from plugin_notification.api import get_notification, get_unread_count, list_notifications, mark_read
+from plugin_notification.api import get_unread_count, list_notifications, mark_read
 from plugin_notification.channels import ChannelRegistry
 from plugin_notification.crud import MessageCRUD, UserNotificationCRUD
 from plugin_notification.models import NotificationMessage, NotificationOutbox, NotificationTemplate, UserNotification
 from plugin_notification.schemas import InboxListQuery
 from plugin_notification.status_codes import NotificationStatusCode
 from plugin_notification.worker import DeliveryWorker
-from rapidkit_common.access import access_guard_dependency, inspect_route_access
-from rapidkit_common.access_testing import allow_access, deny_access
+from rapidkit_common.access import access_guard_dependency
+from rapidkit_common.access_testing import allow_access
 from rapidkit_common.auth import _get_current_user_placeholder
 from rapidkit_common.protocols.user import UserQueryService
 from rapidkit_framework.exceptions import AppException
@@ -97,9 +97,6 @@ async def test_draft_publish_inbox_and_read_preserve_complete_text(db_session, c
     assert item.content == content
     assert item.read_at is None
     assert (await get_unread_count(user=user, crud=crud)).data.count == 1
-    detail = await get_notification(notification_id=item.id, user=user, crud=crud)
-    assert detail.data.title == title
-    assert detail.data.content == content
     worker = DeliveryWorker(session=db_session, redis=None, registry=ChannelRegistry(), worker_id="content-test")
     pushed = await worker._build_payload(message_id, user.id)
     assert pushed["title"] == title
@@ -109,9 +106,9 @@ async def test_draft_publish_inbox_and_read_preserve_complete_text(db_session, c
     await db_session.commit()
     db_session.expunge_all()
     assert (await get_unread_count(user=user, crud=crud)).data.count == 0
-    read = await get_notification(notification_id=item.id, user=user, crud=crud)
-    assert read.data.read_at is not None
-    assert read.data.content == content
+    read = (await list_notifications(query=InboxListQuery(), user=user, crud=crud)).data.items[0]
+    assert read.read_at is not None
+    assert read.content == content
 
 
 @pytest.mark.asyncio

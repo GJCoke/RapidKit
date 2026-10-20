@@ -16,12 +16,9 @@ from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.exceptions import AppException
 
-from plugin_schedule.cron_preview import preview_crontab
 from plugin_schedule.deps import PeriodicTaskCrudDep
 from plugin_schedule.schedule_preview import preview_schedule
 from plugin_schedule.schemas import (
-    CrontabPreviewRequest,
-    CrontabPreviewResponse,
     PeriodicTaskCreate,
     PeriodicTaskListResponse,
     PeriodicTaskQueryRequest,
@@ -39,12 +36,6 @@ router = APIRouter(
     prefix="/schedules",
     tags=["Schedule"],
 )
-
-
-@router.post("/crontab/preview", dependencies=[Require("schedule:read")])
-def get_crontab_preview(body: CrontabPreviewRequest) -> Response[CrontabPreviewResponse]:
-    """校验 Crontab，并按当前调度时区返回未来五次计划执行时间。"""
-    return Response(data=preview_crontab(body))
 
 
 @router.post("/preview", dependencies=[Require("schedule:read")])

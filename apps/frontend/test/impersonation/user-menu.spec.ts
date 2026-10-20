@@ -75,6 +75,7 @@ beforeEach(() => {
     expiresInSeconds: 61,
     stopImpersonation: fixture.stop,
     resetStore: fixture.reset,
+    logout: fixture.reset,
   })
   window.$dialog = { info: fixture.dialog } as any
   host = document.createElement("div")
@@ -181,4 +182,19 @@ it("provides the capsule fill locally and updates it when the theme changes", as
   await nextTick()
   expect(capsule.classList.contains("bg-theme-fill")).toBe(false)
   expect(capsule.style.getPropertyValue("--fill-color")).toBe("")
+})
+
+it("sends explicit logout only after the user confirms the dialog", async () => {
+  const logoutRequest = vi.fn().mockResolvedValue(undefined)
+  fixture.auth.impersonation = null
+  fixture.auth.logout = logoutRequest
+  mount()
+  avatar().click()
+  await nextTick()
+  const logoutItem = [...host.querySelectorAll("button")].find((el) => el.textContent === "common.logout")!
+  logoutItem.click()
+  expect(logoutRequest).not.toHaveBeenCalled()
+  await fixture.dialog.mock.calls[0][0].onPositiveClick()
+  expect(logoutRequest).toHaveBeenCalledOnce()
+  expect(fixture.reset).not.toHaveBeenCalled()
 })

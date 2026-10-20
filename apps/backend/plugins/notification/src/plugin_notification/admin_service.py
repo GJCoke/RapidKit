@@ -24,7 +24,6 @@ from plugin_notification.audit import audit
 from plugin_notification.banner_schemas import BannerPublishRequest
 from plugin_notification.banner_service import BannerAnnouncementService
 from plugin_notification.crud import AudienceCRUD, MessageCRUD, TemplateCRUD
-from plugin_notification.enums import MessageStatus
 from plugin_notification.models import NotificationAudience, NotificationMessage
 from plugin_notification.orchestrator import MessageOrchestrator
 from plugin_notification.personalization import prepare_personalization, render_personalized
@@ -298,26 +297,17 @@ class AdminNotificationService:
     async def preview_audience(
         self,
         audience: list[AudienceRule],
-        *,
-        message_id: UUID | None = None,
     ) -> AudiencePreview:
         """Estimate unique recipients overall and independently per rule type."""
-        async with self._session_factory() as session:
-            if message_id is not None:
-                message = await MessageCRUD(session).get(message_id)
-                if message is None:
-                    raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
-                if message.status not in {MessageStatus.DRAFT.value, MessageStatus.SCHEDULED.value}:
-                    raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
-            resolver = AudienceResolver(
-                query_service=self._resolve_query_service(),
-            )
-            all_user_ids: set[UUID] = set()
-            user_ids_by_type: dict[str, set[UUID]] = {}
-            for rule in audience:
-                resolved = await resolver.resolve([rule])
-                all_user_ids.update(resolved)
-                user_ids_by_type.setdefault(rule.type, set()).update(resolved)
+        resolver = AudienceResolver(
+            query_service=self._resolve_query_service(),
+        )
+        all_user_ids: set[UUID] = set()
+        user_ids_by_type: dict[str, set[UUID]] = {}
+        for rule in audience:
+            resolved = await resolver.resolve([rule])
+            all_user_ids.update(resolved)
+            user_ids_by_type.setdefault(rule.type, set()).update(resolved)
 
         return AudiencePreview(
             total=len(all_user_ids),

@@ -2,7 +2,6 @@
 
 /** Baseline permission codes declared by backend plugins. */
 export const PERMISSION_CODES = [
-  "api-route:read",
   "audit-log:read",
   "dashboard:activity",
   "dashboard:business",

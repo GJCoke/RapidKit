@@ -18,7 +18,7 @@ from sqlmodel import col, select, update
 
 from plugin_notification.admin_deps import BannerServiceDep
 from plugin_notification.banner_schemas import TopBannerResponse
-from plugin_notification.crud import MessageCRUD, UserNotificationCRUD
+from plugin_notification.crud import UserNotificationCRUD
 from plugin_notification.deps import InboxCrudDep
 from plugin_notification.inbox_projection import to_inbox_item
 from plugin_notification.models import NotificationMessage, UserNotification
@@ -89,20 +89,6 @@ async def mark_all_read(user: UserDBDep, crud: InboxCrudDep) -> Response[None]:
 async def get_top_banner(user: UserDBDep, session: SessionDep, banner: BannerServiceDep) -> Response[TopBannerResponse]:
     """获取当前用户可见的顶部公告及其展示状态。"""
     return Response(data=await banner.snapshot(session, user=user))
-
-
-@router.get("/{notification_id}", dependencies=[Authenticated])
-async def get_notification(
-    notification_id: UUID,
-    user: UserDBDep,
-    crud: InboxCrudDep,
-) -> Response[NotificationItem]:
-    """获取当前用户的一条通知。"""
-    row = await _get_current_user_notification(crud, user.id, notification_id)
-    message = await MessageCRUD(crud.session).get(row.message_id)
-    if message is None:
-        raise AppException(NotificationStatusCode.NOTIFICATION_NOT_FOUND)
-    return Response(data=_to_item(row, message))
 
 
 @router.patch("/{notification_id}/read", dependencies=[Authenticated])

@@ -579,15 +579,15 @@ deleted_count = await _cache.invalidate_all(redis)
 典型的 Cache-Aside 使用模式：
 
 ```python
-async def get_cached_menu_tree(redis, session):
+async def get_cached_pages(redis, session):
     key = _cache.make_key("tree")
     cached = await redis.get(key)
     if cached:
         return _adapter.validate_json(cached)
 
-    tree = await fetch_from_db(session)
-    await redis.set(key, _adapter.dump_json(tree).decode(), ex=3600)
-    return tree
+    pages = await fetch_pages_from_db(session)
+    await redis.set(key, _adapter.dump_json(pages).decode(), ex=3600)
+    return pages
 ```
 
 缓存序列化统一使用 JSON 字符串（Pydantic `model_dump_json` / `TypeAdapter.dump_json`），适合"整体读取、整体失效"的场景。
@@ -642,7 +642,7 @@ plugin_metrics 加载失败
 
 - `GET /api/v1/system/plugins` — 所有插件状态、版本、耗时、健康、错误信息
 - `GET /api/v1/system/events` — EventBus 死信列表 + handler 错误统计
-- `GET /api/v1/system/health` — 聚合健康检查
+- `GET /api/v1/system/stats/infrastructure` — PostgreSQL、Redis、MinIO 基础设施健康检查
 
 ## 数据模型
 

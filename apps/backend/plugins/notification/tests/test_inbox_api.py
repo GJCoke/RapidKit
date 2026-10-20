@@ -7,7 +7,6 @@ import pytest
 from plugin_notification.api import (
     archive_notification,
     delete_notification,
-    get_notification,
     get_unread_count,
     list_notifications,
     mark_all_read,
@@ -87,23 +86,6 @@ async def test_list_returns_only_current_users_notifications(db_session):
 
 
 @pytest.mark.asyncio
-async def test_detail_returns_current_users_notification(db_session):
-    user_id = uuid4()
-    message, rows = await _seed(db_session, user_id, count=1)
-
-    response = await get_notification(
-        notification_id=rows[0].id,
-        user=_CurrentUser(user_id),
-        crud=UserNotificationCRUD(db_session),
-    )
-
-    assert response.data is not None
-    assert response.data.id == rows[0].id
-    assert response.data.message_id == message.id
-    assert response.data.content == "Test body"
-
-
-@pytest.mark.asyncio
 async def test_mark_read_sets_read_timestamp(db_session):
     user_id = uuid4()
     _, rows = await _seed(db_session, user_id, count=1)
@@ -166,8 +148,8 @@ InboxMutation = Callable[..., Awaitable[object]]
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "endpoint",
-    [get_notification, mark_read, archive_notification, delete_notification],
-    ids=["detail", "mark-read", "archive", "delete"],
+    [mark_read, archive_notification, delete_notification],
+    ids=["mark-read", "archive", "delete"],
 )
 async def test_notification_id_endpoints_hide_foreign_notifications(
     db_session,

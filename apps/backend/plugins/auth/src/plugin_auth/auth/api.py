@@ -5,6 +5,7 @@ Author : Coke
 Date   : 2025-03-11
 """
 
+from asyncio import gather
 from typing import cast
 
 from fastapi import APIRouter, Depends
@@ -74,12 +75,18 @@ async def login(
 
 @router.post("/logout", dependencies=[Depends(DenyImpersonation), Authenticated])
 async def logout(auth: UserAccessJWTDep, token_store: TokenStoreDep, redis: RedisDep) -> Response[bool]:
-    """登出当前用户。"""
-    await token_store.revoke(auth.sub, auth.jti)
-    await token_store.clear_user_cache(auth.sub)
-
+    """撤销当前会话并清理用户信息与权限缓存。"""
     cache_mgr = get_service(PermissionCacheManager)
-    await cache_mgr.invalidate(auth.sub, redis)
+    # Attempt every cleanup even if one Redis operation fails.
+    results = await gather(
+        token_store.revoke(auth.sub, auth.jti),
+        token_store.clear_user_cache(auth.sub),
+        cache_mgr.invalidate(auth.sub, redis),
+        return_exceptions=True,
+    )
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
 
     logger.info("User {user_id} logged out", user_id=auth.sub)
     event_bus.fire_and_forget(UserLogoutEvent(user_id=str(auth.sub)))

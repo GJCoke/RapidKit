@@ -14,7 +14,6 @@ def test_notification_routes_declare_expected_access():
     assert declared_access(admin_router, inbox_router, pref_router) == {
         "GET:/api/v1/admin/notification-templates": "require:notification-template:read",
         "POST:/api/v1/admin/notification-templates": "require:notification-template:create",
-        "GET:/api/v1/admin/notification-templates/{template_id}": "require:notification-template:read",
         "PUT:/api/v1/admin/notification-templates/{template_id}": "require:notification-template:update",
         "DELETE:/api/v1/admin/notification-templates/{template_id}": "require:notification-template:delete",
         "GET:/api/v1/admin/notifications": "require:notification:read",
@@ -27,7 +26,6 @@ def test_notification_routes_declare_expected_access():
         "GET:/api/v1/admin/notifications/{message_id}": "require:notification:read",
         "PUT:/api/v1/admin/notifications/{message_id}": "require:notification:update",
         "DELETE:/api/v1/admin/notifications/{message_id}": "require:notification:delete",
-        "POST:/api/v1/admin/notifications/{message_id}/audience-preview": PREVIEW,
         "POST:/api/v1/admin/notifications/{message_id}/publish": "require:notification:publish",
         "POST:/api/v1/admin/notifications/{message_id}/cancel": "require:notification:cancel",
         "POST:/api/v1/admin/notifications/{message_id}/recall": "require:notification:recall",
@@ -38,7 +36,6 @@ def test_notification_routes_declare_expected_access():
         "GET:/api/v1/notifications/unread-count": "authenticated",
         "POST:/api/v1/notifications/read-all": "authenticated",
         "GET:/api/v1/notifications/top-banner": "authenticated",
-        "GET:/api/v1/notifications/{notification_id}": "authenticated",
         "PATCH:/api/v1/notifications/{notification_id}/read": "authenticated",
         "PATCH:/api/v1/notifications/{notification_id}/archive": "authenticated",
         "DELETE:/api/v1/notifications/{notification_id}": "authenticated",

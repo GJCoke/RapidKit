@@ -2,6 +2,15 @@ import { localStg } from "@/utils/storage"
 
 let observedIdentity = ""
 let session = 0
+let logoutSession: number | null = null
+
+export function setLogoutSession(value: number | null) {
+  logoutSession = value
+}
+
+export function isLoggingOut(value = getAuthSession()) {
+  return logoutSession === value
+}
 
 function credentialIdentity() {
   const impersonation = localStg.get("impersonation")

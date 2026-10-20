@@ -110,13 +110,6 @@ class TestReadMenu:
         assert body["code"] == 0
         assert body["data"]["total"] > 0
 
-    async def test_tree_structure(self, client: AsyncClient, init, auth_headers: dict):
-        resp = await client.get("/manage/menus/tree", headers=auth_headers)
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["code"] == 0
-        assert isinstance(body["data"], list)
-
     async def test_get_pages(self, client: AsyncClient, init, auth_headers: dict):
         resp = await client.get("/manage/pages", headers=auth_headers)
         assert resp.status_code == 200
@@ -392,9 +385,7 @@ class TestDeleteMenu:
 @pytest.mark.asyncio
 class TestMenuPermissionValidation:
     async def test_unknown_permission_is_rejected(self, client: AsyncClient, init, auth_headers: dict):
-        response = await client.post(
-            "/manage/menus", json=_menu_payload(permission="nope:read"), headers=auth_headers
-        )
+        response = await client.post("/manage/menus", json=_menu_payload(permission="nope:read"), headers=auth_headers)
         assert response.json()["code"] == MenuStatusCode.MENU_PERMISSION_UNKNOWN.code
 
     async def test_page_without_permission_is_rejected(self, client: AsyncClient, init, auth_headers: dict):

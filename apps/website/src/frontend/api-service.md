@@ -182,3 +182,11 @@ type LoginToken = Service.ApiResponse<"/api/v1/auth/login", "post">
 建议在 `src/typings/` 下创建全局类型声明文件，将常用的 API 类型集中管理，方便在业务代码中直接使用 `Api.Auth.LoginBody`
 等简短引用。
 :::
+
+## 主动退出登录
+
+Vue 用户菜单确认退出时调用 `authStore.logout()`，向 `POST /api/v1/auth/logout` 发送当前会话凭据。后端撤销当前 refresh token，并清理该用户的信息缓存和权限缓存；其他会话及共享角色、菜单缓存不受影响。已签发的 access token 保持原有到期语义。
+
+客户端等待已有刷新后使用最新 token，退出请求最多等待五秒。成功、失败或超时都会清理本地凭据、身份备份、Socket、通知、标签页和动态路由；旧请求不能清除新登录账号。服务端注销未确认时会显示提示。
+
+`resetStore()` 仅清理本地身份，供被动鉴权失效等场景调用，不发送 logout 请求。模拟身份期间必须先停止模拟。

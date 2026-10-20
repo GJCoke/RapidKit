@@ -27,7 +27,7 @@ from plugin_menu.menu_responses import to_menu_response
 from plugin_menu.models import Menu
 from plugin_menu.route_schemas import MenuRouteResponse, UserRouteResponse
 from plugin_menu.route_services import get_constant_routes, get_user_routes
-from plugin_menu.schemas import ActiveMenuOption, MenuCreate, MenuListResponse, MenuResponse, MenuUpdate
+from plugin_menu.schemas import ActiveMenuOption, MenuCreate, MenuResponse, MenuUpdate
 from plugin_menu.status_codes import MenuStatusCode
 
 if TYPE_CHECKING:
@@ -43,7 +43,6 @@ _VERSION_KEY = _cache.make_key("version")
 _CACHE_TTL = 3600  # 1 小时
 
 # TypeAdapter 用于 list 类型的序列化/反序列化
-_menu_tree_adapter = TypeAdapter(list[MenuListResponse])
 _route_list_adapter = TypeAdapter(list[MenuRouteResponse])
 
 
@@ -350,20 +349,6 @@ async def _versioned_key(redis: AsyncRedisClient, *parts: str) -> str:
     """生成带菜单版本号的缓存 key，版本变更后旧 key 按 TTL 自然过期。"""
     [version] = await get_versions(redis, [_VERSION_KEY])
     return _cache.make_key(f"v{version}", *parts)
-
-
-async def get_cached_menu_tree(
-    redis: AsyncRedisClient,
-    session: AsyncSession,
-) -> list[MenuListResponse]:
-    """获取完整菜单树（版本化缓存 + 单飞重建）。"""
-
-    async def load() -> str:
-        tree = await MenuCRUD(session).get_menu_tree()
-        return _menu_tree_adapter.dump_json(tree).decode()
-
-    key = await _versioned_key(redis, "tree")
-    return _menu_tree_adapter.validate_json(await get_or_rebuild(redis, key, load, ttl=_CACHE_TTL))
 
 
 async def get_cached_pages(

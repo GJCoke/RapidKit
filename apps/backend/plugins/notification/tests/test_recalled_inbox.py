@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
-from plugin_notification.api import get_notification, list_notifications, mark_all_read, mark_read
+from plugin_notification.api import list_notifications, mark_all_read, mark_read
 from plugin_notification.channels import ChannelRegistry, ChannelResult
 from plugin_notification.crud import MessageCRUD, OutboxCRUD, UserNotificationCRUD
 from plugin_notification.models import NotificationMessage
@@ -57,16 +57,15 @@ async def seed(session, user_id, *, status="recalled", content_mode="raw", snaps
 @pytest.mark.asyncio
 @pytest.mark.parametrize("content_mode", ["raw", "i18n"])
 @pytest.mark.parametrize("snapshot", [False, True], ids=["shared", "personalized"])
-async def test_recalled_detail_and_list_hide_content_and_preserve_originals(db_session, content_mode, snapshot):
+async def test_recalled_list_hides_content_and_preserves_originals(db_session, content_mode, snapshot):
     user = SimpleNamespace(id=uuid4())
     message, row = await seed(db_session, user.id, content_mode=content_mode, snapshot=snapshot)
     original_snapshot = row.rendered_content
     crud = UserNotificationCRUD(db_session)
 
-    detail = await get_notification(row.id, user, crud)
     page = await list_notifications(InboxListQuery(), user, crud)
 
-    for item in (detail.data, page.data.items[0]):
+    for item in page.data.items:
         assert item.id == row.id
         assert item.message_id == message.id
         assert item.status == "recalled"
@@ -143,11 +142,13 @@ async def test_socket_payload_matches_http_recipient_projection(db_session, stat
     message, row = await seed(db_session, user.id, status=status, snapshot=True, read_at=timezone.now())
     row.archived_at = timezone.now()
     await db_session.flush()
-    response = await get_notification(row.id, user, UserNotificationCRUD(db_session))
+    response = (
+        await list_notifications(InboxListQuery(archived="all"), user, UserNotificationCRUD(db_session))
+    ).data.items[0]
 
     payload = await DeliveryWorker(db_session, None, ChannelRegistry(), "test")._build_payload(message.id, user.id)
 
-    assert payload == response.data.model_dump(mode="json", by_alias=True)
+    assert payload == response.model_dump(mode="json", by_alias=True)
     assert payload["id"] == str(row.id)
     assert payload["messageId"] == str(message.id)
     assert payload["readAt"] is not None

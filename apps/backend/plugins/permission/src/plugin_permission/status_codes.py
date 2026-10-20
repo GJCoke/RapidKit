@@ -26,8 +26,3 @@ class RbacStatusCode(BaseStatusCode):
     ROLE_NOT_FOUND = (35001, "permission.error.roleNotFound")
     ROLE_OPERATION_ERROR = (35002, "permission.error.roleOperationError")
     PERMISSION_OPERATION_ERROR = (35003, "permission.error.permissionOperationError")
-
-    # Permission packages (0351xx)
-    PACKAGE_NOT_FOUND = (35101, "permission.error.packageNotFound")
-    PACKAGE_INVALID_CODES = (35103, "permission.error.packageInvalidCodes")
-    PACKAGE_INVALID_SCOPES = (35104, "permission.error.packageInvalidScopes")

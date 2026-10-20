@@ -6,7 +6,6 @@ from typing import cast
 
 import pytest_asyncio
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
-from plugin_permission.router.sync import store_router_in_db
 from plugin_user.models import User
 from rapidkit_common.access import access_guard_dependency
 from rapidkit_framework.events import event_bus
@@ -17,7 +16,6 @@ from rapidkit_security import encrypt_message, hash_password, load_public_pem
 async def strict_client(client, init):
     app = sys.modules["src.main"].app
     guard_override = app.dependency_overrides.pop(access_guard_dependency, None)
-    await store_router_in_db(app.routes)
     yield client
     if guard_override is not None:
         app.dependency_overrides[access_guard_dependency] = guard_override

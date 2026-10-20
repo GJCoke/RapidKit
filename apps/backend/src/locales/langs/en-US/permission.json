@@ -6,9 +6,6 @@
     "roleOperationError": "Role operation failed",
     "permissionOperationError": "Permission operation failed",
     "unknownPermissionCode": "Contains unknown permission codes",
-    "invalidDataScope": "Contains invalid data scope or field settings",
-    "packageNotFound": "Permission package not found",
-    "packageInvalidCodes": "Permission package contains unknown permission codes",
-    "packageInvalidScopes": "Permission package contains invalid data scope or field settings"
+    "invalidDataScope": "Contains invalid data scope or field settings"
   }
 }

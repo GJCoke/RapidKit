@@ -60,7 +60,6 @@ def test_register_runs_catalog_build_first():
     manifest = register()
     assert manifest.on_startup[0] is build_catalog_on_startup
     assert manifest.on_startup[1].__name__ == "sync_catalog_version_on_startup"
-    assert manifest.on_startup[2].__name__ == "sync_routes_on_startup"
 
 
 def _manifest(*codes: str) -> PluginManifest:

@@ -3,14 +3,12 @@
 from plugin_menu import register
 from plugin_menu.api import router as menu_router
 from plugin_menu.route_api import router as route_router
-
 from tests.testing.access import declared_access
 
 
 def test_menu_routes_declare_expected_access():
     assert declared_access(menu_router, route_router) == {
         "GET:/api/v1/manage/menus": "require:menu:read",
-        "GET:/api/v1/manage/menus/tree": "require:menu:read",
         "GET:/api/v1/manage/menus/active-menu-options": "require:menu:read",
         "GET:/api/v1/manage/pages": "require:menu:read",
         "POST:/api/v1/manage/menus": "require:menu:create",

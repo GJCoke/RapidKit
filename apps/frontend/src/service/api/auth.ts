@@ -1,5 +1,14 @@
 import { request } from "../request"
 import { refreshRequest } from "../request/refresh"
+import { getAuthSession } from "../request/auth-session"
+
+/** Revoke the latest credentials after any already-running token rotation. */
+export async function fetchLogout(signal?: AbortSignal) {
+  const session = getAuthSession()
+  if (request.state.refreshTokenSession === session) await request.state.refreshTokenPromise
+  if (signal?.aborted || getAuthSession() !== session) throw new Error("Logout session changed or timed out")
+  return request<Api.Auth.Logout>({ url: "/auth/logout", method: "post", timeout: 5000, signal })
+}
 
 /** login */
 export function fetchLogin(data: Api.Auth.LoginBody) {

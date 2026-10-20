@@ -26,10 +26,3 @@ def test_permission_status_codes_have_translations():
         for code in RbacStatusCode:
             key = code.description.removeprefix("permission.error.")
             assert errors.get(key), (lang, code.name)
-
-
-def test_package_status_codes_are_registered():
-
-    assert RbacStatusCode.PACKAGE_NOT_FOUND.value[0] == 35101
-    assert RbacStatusCode.PACKAGE_INVALID_CODES.value[0] == 35103
-    assert RbacStatusCode.PACKAGE_INVALID_SCOPES.value[0] == 35104

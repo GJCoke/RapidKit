@@ -7,11 +7,10 @@ Date   : 2026-10-17
 
 from rapidkit_framework.plugin import PermissionCodeDef, PermissionPackageDef, ResourceDef
 
-from plugin_permission.models import InterfaceRouter, Role
+from plugin_permission.models import Role
 
 RESOURCES = [
     ResourceDef(key="role", label="角色管理", model=Role),
-    ResourceDef(key="api-route", label="后端接口", model=InterfaceRouter),
 ]
 
 PERMISSION_CODES = [
@@ -24,9 +23,8 @@ PERMISSION_CODES = [
         code="role:grant",
         label="权限配置",
         abac_action="write",
-        depends=("role:read", "menu:read", "api-route:read"),
+        depends=("role:read", "menu:read"),
     ),
-    PermissionCodeDef(code="api-route:read", label="查看后端接口", abac_action="read"),
 ]
 
 

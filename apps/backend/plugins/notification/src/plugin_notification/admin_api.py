@@ -144,19 +144,6 @@ async def create_template(
     return Response(data=TemplateResponse.model_validate(template))
 
 
-@router.get("/notification-templates/{template_id}", dependencies=[Require("notification-template:read")])
-async def get_template(
-    template_id: UUID,
-    current_user: UserDBDep,
-    crud: TemplateCrudDep,
-) -> Response[TemplateResponse]:
-    """获取指定通知模板的详情。"""
-    template = await crud.get(template_id)
-    if template is None:
-        raise AppException(NotificationStatusCode.TEMPLATE_NOT_FOUND)
-    return Response(data=TemplateResponse.model_validate(template))
-
-
 @router.put("/notification-templates/{template_id}", dependencies=[Require("notification-template:update")])
 async def update_template(
     template_id: UUID,
@@ -454,21 +441,6 @@ async def delete_announcement(
     """删除指定通知公告。"""
     await service.delete_message(message_id, operator_id=current_user.id)
     return Response(data=None)
-
-
-@router.post("/notifications/{message_id}/audience-preview", dependencies=[Require("notification:preview")])
-async def preview_audience(
-    message_id: UUID,
-    body: AudiencePreviewRequest,
-    current_user: UserDBDep,
-    service: AdminServiceDep,
-) -> Response[AudiencePreviewResponse]:
-    """预览已保存通知的接收人数及受众类型分布。"""
-    preview = await service.preview_audience(
-        [AudienceRule.model_validate(rule.model_dump()) for rule in body.audience],
-        message_id=message_id,
-    )
-    return Response(data=AudiencePreviewResponse(total=preview.total, by_type=preview.by_type))
 
 
 @router.post("/notifications/{message_id}/publish", dependencies=[Require("notification:publish")])

@@ -188,24 +188,6 @@ declare global {
       /** menu list */
       type MenuList = Common.PaginatingQueryRecord<Menu>
 
-      type MenuTree = {
-        id: string
-        menuName: string
-        routeName: string
-        constant: boolean
-        children?: MenuTree[] | null
-        permission?: string | null
-      }
-
-      /** backend router from auth_routers table */
-      type BackendRouter = Common.CommonRecord<{
-        name: string
-        description: string | null
-        path: string
-        methods: string[]
-        code: string
-      }>
-
       /** department */
       type Department = Common.CommonRecord<{
         /** parent department id */

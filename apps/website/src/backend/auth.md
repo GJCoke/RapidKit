@@ -105,7 +105,7 @@ class Role(SQLModel, table=True):
     data_rule_ids: list[UUID] = Field(default_factory=list, sa_column=Column(JSON), description="数据规则 ID 列表")
 ```
 
-接口权限通过 `InterfaceRouter` 模型动态注册，格式为 `METHOD:path`（如 `GET:POST:/api/v1/users`）。
+接口权限由各插件在代码中声明资源与权限码，并通过 `Require("资源:动作")` 绑定路由。启动时直接检查 FastAPI 路由，不再将接口清单存入数据库。
 
 ## 权限验证
 

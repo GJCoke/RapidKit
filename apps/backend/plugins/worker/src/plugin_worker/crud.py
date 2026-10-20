@@ -5,7 +5,7 @@ Author  : Claude
 Date    : 2026-03-30
 """
 
-from datetime import date, datetime, timedelta
+from datetime import timedelta
 
 from rapidkit_common.crud import BaseCRUD
 from rapidkit_common.enums import TaskStatus, WorkerStatus
@@ -23,8 +23,6 @@ from plugin_worker.schemas import (
     TaskStatsByName,
     TaskStatsByWorker,
     TaskStatsSummary,
-    TaskStatsTimeline,
-    WorkerQueryRequest,
     WorkerResponse,
 )
 
@@ -38,20 +36,6 @@ class WorkerCRUD(BaseCRUD[CeleryWorker]):
         statement = select(self.model).filter(col(self.model.hostname) == hostname)
         result = await self.session.exec(statement)
         return result.first()
-
-    async def get_paginate_workers(self, query: WorkerQueryRequest) -> PaginatedResponse[WorkerResponse]:
-        filters = scoped_worker_filters()
-        if query.status is not None:
-            filters.append(col(self.model.status) == query.status)
-        if query.hostname:
-            filters.append(col(self.model.hostname).contains(query.hostname))
-        return await self.get_paginate(
-            *filters,
-            page=query.page,
-            size=query.page_size,
-            order_by=col(self.model.last_heartbeat).desc(),
-            schema=WorkerResponse,
-        )
 
     async def get_all_workers(self) -> list[WorkerResponse]:
         return await self.get_all(
@@ -158,43 +142,6 @@ class TaskResultCRUD(BaseCRUD[CeleryTaskResult]):
             success_rate=round(success / total * 100, 2) if total > 0 else 0.0,
             avg_runtime=round(result["avg_runtime"], 3) if result["avg_runtime"] is not None else None,
         )
-
-    async def get_stats_timeline(
-        self,
-        days: int,
-        *,
-        start: date | None = None,
-        end: date | None = None,
-        granularity: str = "hour",
-    ) -> list[TaskStatsTimeline]:
-        trunc_unit = "hour" if granularity == "hour" else "day"
-        bucket = func.date_trunc(trunc_unit, col(self.model.create_time)).label("time_bucket")
-        statement = select(
-            bucket,
-            func.count().label("total"),
-            func.count(case((col(self.model.status) == TaskStatus.SUCCESS, 1))).label("success"),
-            func.count(case((col(self.model.status) == TaskStatus.FAILURE, 1))).label("failure"),
-        )
-        if start and end:
-            start_dt = datetime.combine(start, datetime.min.time())
-            end_dt = datetime.combine(end + timedelta(days=1), datetime.min.time())
-            statement = statement.filter(
-                col(self.model.create_time) >= start_dt,
-                col(self.model.create_time) < end_dt,
-            )
-        else:
-            statement = statement.filter(self._time_filter(days))
-        statement = statement.group_by(bucket).order_by(bucket)
-        results = (await self.session.exec(statement)).mappings().all()  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
-        return [
-            TaskStatsTimeline(
-                time_bucket=row["time_bucket"],
-                total=row["total"],
-                success=row["success"],
-                failure=row["failure"],
-            )
-            for row in results
-        ]
 
     async def get_stats_by_name(self, query: TaskGroupQuery) -> PaginatedResponse[TaskStatsByName]:
         grouped = (

@@ -7,16 +7,11 @@ import pytest
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from plugin_permission import register
-from plugin_permission.catalog.registry import CatalogError, build_catalog, get_catalog, set_catalog
+from plugin_permission.catalog.registry import CatalogError, build_catalog, get_catalog
 from plugin_permission.catalog.startup import build_catalog_on_startup
-from plugin_permission.models import InterfaceRouter, Role
-from plugin_permission.package.services import apply_packages_to_role
-from plugin_permission.status_codes import RbacStatusCode
+from plugin_permission.models import Role
 from rapidkit_common.access import Require, inspect_route_access
-from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.plugin import PermissionCodeDef, PermissionPackageDef, PluginManifest, ResourceDef
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 def manifest(*packages):
@@ -44,11 +39,9 @@ def test_no_runtime_permission_management_endpoints_or_models():
     assert [(method, path) for method, path in routes if "permission-packages" in path] == [
         ("GET", "/permission-packages/all")
     ]
-    assert set(plugin.models) == {Role, InterfaceRouter}
+    assert set(plugin.models) == {Role}
     for route in plugin.router.routes:
-        if isinstance(route, APIRoute) and (
-            route.path == "/permission-packages/all" or route.path.endswith("/apply-packages")
-        ):
+        if isinstance(route, APIRoute) and (route.path == "/permission-packages/all"):
             assert [(access.kind, access.code) for access in inspect_route_access(route)] == [("require", "role:grant")]
     assert not any(
         code.code.startswith(("permission-extension:", "permission-package:")) for code in plugin.permission_codes
@@ -79,29 +72,3 @@ async def test_startup_needs_no_extension_database(monkeypatch):
     await build_catalog_on_startup(app)
     assert get_catalog().codes_for_route("GET:/demo") == {"demo:read"}
     forbidden.assert_not_called()
-
-
-async def test_code_packages_apply_without_package_table_and_reject_unknown_keys():
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
-    try:
-        async with engine.begin() as connection:
-            await connection.run_sync(lambda sync: Role.__table__.create(sync))
-        async with AsyncSession(engine, expire_on_commit=False) as session:
-            role = Role(name="Static packages", code="STATIC_ROLE", permission_codes=["demo:read"])
-            session.add(role)
-            await session.flush()
-            full = PermissionPackageDef(key="demo.full", label="Full", codes=("demo:update",))
-            readonly = PermissionPackageDef(key="demo.readonly", label="Read", codes=("demo:read",))
-            set_catalog(build_catalog([manifest(full, readonly)], {}))
-            merged = await apply_packages_to_role(session, role.id, ["demo.full", "demo.full"], "merge")
-            assert merged.role.permission_codes == ["demo:read", "demo:update"]
-            assert merged.diff.added_codes == ["demo:update"]
-            with pytest.raises(AppException) as error:
-                await apply_packages_to_role(session, role.id, ["custom.old"], "replace")
-            assert error.value.code == RbacStatusCode.PACKAGE_NOT_FOUND.code
-            assert role.permission_codes == ["demo:read", "demo:update"]
-            replaced = await apply_packages_to_role(session, role.id, ["demo.readonly"], "replace")
-            assert replaced.role.permission_codes == ["demo:read"]
-            assert replaced.diff.removed_codes == ["demo:update"]
-    finally:
-        await engine.dispose()

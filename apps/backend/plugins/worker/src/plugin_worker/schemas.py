@@ -151,17 +151,6 @@ class WorkerControlResponse(BaseModel):
 # ==================== Query Schemas ====================
 
 
-class WorkerQueriesSchema(BaseModel):
-    """Worker 查询字段。"""
-
-    status: WorkerStatus | None = Field(None, description="Worker 状态筛选")
-    hostname: str | None = Field(None, description="主机名筛选")
-
-
-class WorkerQueryRequest(WorkerQueriesSchema, PaginatedRequest):
-    """Worker 分页查询请求。"""
-
-
 class TaskTimeRange(BaseModel):
     """Creation-time interval, stored as naive UTC for database queries."""
 
@@ -230,15 +219,6 @@ class TaskStatsSummary(BaseModel):
     revoked: int
     success_rate: float
     avg_runtime: float | None
-
-
-class TaskStatsTimeline(BaseModel):
-    """时间线数据点。"""
-
-    time_bucket: LocalDatetime
-    total: int
-    success: int
-    failure: int
 
 
 class TaskStatsByName(BaseModel):

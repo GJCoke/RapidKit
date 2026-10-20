@@ -107,28 +107,3 @@ class MenuCRUD(BaseCRUD[Menu]):
             page=root_pagination.page,
             page_size=root_pagination.page_size,
         )
-
-    async def get_menu_tree(self) -> list[MenuListResponse]:
-        """获取整个菜单树"""
-
-        statement = select(Menu).order_by(col(Menu.order))
-        result = await self.session.exec(statement)
-        response = result.all()
-
-        route_names = {menu.id: menu.route_name for menu in response}
-        menu_list = [to_menu_list_response(menu, route_names) for menu in response]
-
-        menu_map = {menu.id: menu for menu in menu_list}
-        tree = []
-
-        for menu in menu_list:
-            if menu.parent_id is None:
-                tree.append(menu)
-            else:
-                parent = menu_map.get(menu.parent_id)
-                if parent:
-                    if parent.children is None:
-                        parent.children = []
-                    parent.children.append(menu)
-
-        return tree

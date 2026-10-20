@@ -2,13 +2,11 @@
 
 from plugin_schedule import register
 from plugin_schedule.api import router
-
 from tests.testing.access import declared_access
 
 
 def test_schedule_routes_declare_expected_access():
     assert declared_access(router) == {
-        "POST:/api/v1/schedules/crontab/preview": "require:schedule:read",
         "POST:/api/v1/schedules/preview": "require:schedule:read",
         "GET:/api/v1/schedules": "require:schedule:read",
         "GET:/api/v1/schedules/{schedule_id}": "require:schedule:read",

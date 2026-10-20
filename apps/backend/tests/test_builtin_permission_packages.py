@@ -3,7 +3,6 @@
 import pytest
 from plugin_permission.catalog.registry import build_catalog, get_catalog, set_catalog
 from plugin_permission.catalog.route_check import collect_route_bindings
-from plugin_permission.package.services import collect_builtin_packages
 
 EXPECTED_KEYS = {
     f"{resource}.{kind}"
@@ -42,7 +41,7 @@ def test_builtin_packages_cover_all_resources(started_app):
     if "schedule" not in loaded:
         expected -= {"schedule.readonly", "schedule.full"}
 
-    packages = {package.key: package for package in collect_builtin_packages(manifests)}
+    packages = build_catalog(manifests, {}).packages
 
     assert set(packages) == expected
     catalog = get_catalog()

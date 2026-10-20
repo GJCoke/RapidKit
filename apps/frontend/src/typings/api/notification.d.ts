@@ -29,7 +29,7 @@ declare global {
 
       type InboxQuery = Service.ApiRequest<"/api/v1/notifications", "get", "query">
 
-      type InboxMessage = Service.ApiResponse<"/api/v1/notifications/{notification_id}">
+      type InboxMessage = Service.ApiResponse<"/api/v1/notifications">["items"][number]
 
       /** UI-normalized version of the OpenAPI inbox message response. */
       type Message = Omit<InboxMessage, "action" | "contentMode" | "level"> & {
@@ -155,11 +155,6 @@ declare global {
         scheduled?: BannerSummary | null
       }
       type BannerConfirmation = Pick<AnnouncementCreate, "bannerRevision" | "replaceCurrent" | "replaceScheduled">
-
-      interface AudiencePreview {
-        total: number
-        byType: Record<string, number>
-      }
 
       type AudiencePreviewBody = Service.ApiRequest<"/api/v1/admin/notifications/audience-preview", "post", "body">
       type UnsavedAudiencePreview = Service.ApiResponse<"/api/v1/admin/notifications/audience-preview", "post">

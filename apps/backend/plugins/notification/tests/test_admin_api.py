@@ -9,8 +9,8 @@ from zoneinfo import ZoneInfo
 import plugin_notification.admin_api as admin_api_module
 import plugin_notification.admin_schemas as admin_schemas_module
 import pytest
+from fastapi import FastAPI, Request
 from fastapi.routing import APIRoute
-from fastapi import FastAPI, HTTPException, Request
 from httpx import ASGITransport, AsyncClient
 from plugin_notification.admin_api import (
     cancel_announcement,
@@ -18,11 +18,10 @@ from plugin_notification.admin_api import (
     create_template,
     delete_template,
     delivery_summary,
-    get_template,
     list_announcements,
     list_deliveries,
     list_templates,
-    preview_audience,
+    preview_unsaved_audience,
     publish_announcement,
     recall_announcement,
     retry_failed,
@@ -186,12 +185,11 @@ def test_all_admin_endpoints_require_permission_verified_user():
     endpoints = [
         list_templates,
         create_template,
-        get_template,
         update_template,
         delete_template,
         list_announcements,
         create_announcement,
-        preview_audience,
+        preview_unsaved_audience,
         publish_announcement,
         cancel_announcement,
         recall_announcement,
@@ -242,13 +240,9 @@ async def test_template_crud_and_filtered_pagination(db_session):
     assert page.data.total == 1
     assert [item.code for item in page.data.records] == ["ops.active"]
 
-    detail = await get_template(
-        template_id=first.data.id,
-        current_user=user,
-        crud=crud,
-    )
-    assert detail.data is not None
-    assert detail.data.code == "ops.active"
+    detail = await crud.get(first.data.id)
+    assert detail is not None
+    assert detail.code == "ops.active"
 
     updated = await update_template(
         template_id=first.data.id,
@@ -287,11 +281,11 @@ async def test_template_examples_persist_across_create_update_and_database_reloa
     await db_session.commit()
     db_session.expunge_all()
 
-    detail = await get_template(template_id=template_id, current_user=user, crud=crud)
-    assert detail.data is not None
-    assert detail.data.variable_schema == schema
-    assert detail.data.variable_schema["count"]["example"] == 0
-    assert detail.data.variable_schema["flag"]["example"] is False
+    detail = await crud.get(template_id)
+    assert detail is not None
+    assert detail.variable_schema == schema
+    assert detail.variable_schema["count"]["example"] == 0
+    assert detail.variable_schema["flag"]["example"] is False
     page = await list_templates(query=TemplateListQuery(keyword="examples.persisted"), current_user=user, crud=crud)
     assert page.data is not None
     assert page.data.records[0].variable_schema == schema
@@ -306,14 +300,14 @@ async def test_template_examples_persist_across_create_update_and_database_reloa
     )
     await db_session.commit()
     db_session.expunge_all()
-    reloaded = await get_template(template_id=template_id, current_user=user, crud=crud)
-    assert reloaded.data is not None
-    assert reloaded.data.variable_schema == updated_schema
-    assert reloaded.data.version == 2
+    reloaded = await crud.get(template_id)
+    assert reloaded is not None
+    assert reloaded.variable_schema == updated_schema
+    assert reloaded.version == 2
 
 
 @pytest.mark.asyncio
-async def test_template_create_conflict_and_missing_detail_raise(db_session):
+async def test_template_create_conflict_raises(db_session):
     crud = TemplateCRUD(db_session)
     user = _user()
     await create_template(
@@ -329,12 +323,6 @@ async def test_template_create_conflict_and_missing_detail_raise(db_session):
             current_user=user,
             crud=crud,
             session=db_session,
-        )
-    with pytest.raises(AppException):
-        await get_template(
-            template_id=uuid4(),
-            current_user=user,
-            crud=crud,
         )
 
 
@@ -393,8 +381,7 @@ async def test_announcement_lifecycle_endpoints_forward_verified_operator(db_ses
         session=db_session,
         request=Request({"type": "http"}),
     )
-    preview = await preview_audience(
-        message_id=message_id,
+    preview = await preview_unsaved_audience(
         body=AudiencePreviewRequest(audience=[AudienceRuleIn(type="all")]),
         current_user=user,
         service=service,
@@ -427,7 +414,7 @@ async def test_announcement_lifecycle_endpoints_forward_verified_operator(db_ses
     ]
     assert service.calls[0][1][1] == user.id
     assert service.calls[2][1] == (message_id, user.id)
-    assert service.calls[1][1][1] == message_id
+    assert service.calls[1][1][1] is None
 
 
 @pytest.mark.asyncio

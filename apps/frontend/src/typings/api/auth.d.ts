@@ -8,6 +8,7 @@ declare global {
      * backend api module: "auth"
      */
     namespace Auth {
+      type Logout = Service.ApiResponse<"/api/v1/auth/logout", "post">
       type LoginBody = Service.ApiRequest<"/api/v1/auth/login", "post", "body">
 
       type LoginToken = Service.ApiResponse<"/api/v1/auth/login", "post">

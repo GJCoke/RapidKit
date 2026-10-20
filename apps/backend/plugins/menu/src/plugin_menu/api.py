@@ -37,13 +37,7 @@ from plugin_menu.services import (
 from plugin_menu.services import (
     delete_menus as delete_menus_service,
 )
-from plugin_menu.services import (
-    filter_menu,
-    get_active_menu_options,
-    get_cached_menu_tree,
-    get_cached_pages,
-    publish_menu_change,
-)
+from plugin_menu.services import filter_menu, get_active_menu_options, get_cached_pages, publish_menu_change
 from plugin_menu.services import (
     update_menu as update_menu_service,
 )
@@ -65,16 +59,6 @@ async def get_menu_list(
     filters = filter_menu(query.status, query.keyword)
     roles = await menu_crud.get_menu_paginated_tree(*filters, page=query.page, page_size=query.page_size)
     return Response(data=roles)
-
-
-@router.get("/menus/tree", dependencies=[Require("menu:read")])
-async def get_menu_tree(
-    redis: RedisDep,
-    session: SessionDep,
-) -> Response[list[MenuListResponse]]:
-    """获取完整菜单树（不分页）"""
-    tree = await get_cached_menu_tree(redis, session)
-    return Response(data=tree)
 
 
 @router.get("/menus/active-menu-options", dependencies=[Require("menu:read")])

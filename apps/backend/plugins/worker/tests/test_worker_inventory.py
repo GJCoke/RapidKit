@@ -9,7 +9,6 @@ from plugin_worker.crud import WorkerCRUD
 from plugin_worker.event_service import EventService
 from plugin_worker.models import CeleryWorker, QueueDepthSnapshot
 from plugin_worker.operations import WorkerOperationsProviderImpl
-from plugin_worker.schemas import WorkerQueryRequest
 from plugin_worker.tasks import capture_queue_depth
 from rapidkit_common.enums import WorkerStatus
 from rapidkit_core.config import settings
@@ -81,23 +80,6 @@ async def test_discovery_preserves_offline_workers(inventory, monkeypatch):
         assert {worker.hostname for worker in await WorkerCRUD(session).get_all_workers()} == {STABLE, LEGACY}
     snapshot = await WorkerOperationsProviderImpl(inventory).get_server_snapshot(timezone.now())
     assert (snapshot.healthy, snapshot.total) == (1, 2)
-
-
-@pytest.mark.asyncio
-async def test_pagination_applies_inventory_and_query_filters(inventory):
-    await add_current(inventory)
-    async with inventory() as session:
-        crud = WorkerCRUD(session)
-        page = await crud.get_paginate_workers(WorkerQueryRequest(page_size=1))
-        assert page.total == 1
-        assert [worker.hostname for worker in page.records] == [STABLE]
-        for query in (
-            WorkerQueryRequest(status=WorkerStatus.OFFLINE),
-            WorkerQueryRequest(hostname=LEGACY),
-            WorkerQueryRequest(page=2, page_size=1),
-        ):
-            page = await crud.get_paginate_workers(query)
-            assert page.records == []
 
 
 @pytest.mark.asyncio

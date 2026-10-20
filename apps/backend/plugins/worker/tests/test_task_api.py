@@ -1,7 +1,6 @@
 """Task API tests with mocked Celery."""
 
 from httpx import AsyncClient
-
 from tests.testing.utils import random_uuid
 
 
@@ -19,11 +18,6 @@ class TestTaskList:
 class TestTaskStats:
     async def test_stats_summary(self, client: AsyncClient, init, auth_headers: dict):
         resp = await client.get("/tasks/stats/summary", headers=auth_headers)
-        assert resp.status_code == 200
-        assert resp.json()["code"] == 0
-
-    async def test_stats_timeline(self, client: AsyncClient, init, auth_headers: dict):
-        resp = await client.get("/tasks/stats/timeline", headers=auth_headers)
         assert resp.status_code == 200
         assert resp.json()["code"] == 0
 

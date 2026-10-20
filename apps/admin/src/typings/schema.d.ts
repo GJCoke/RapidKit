@@ -364,26 +364,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  "/api/v1/workers": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Workers
-     * @description 分页查询工作节点。
-     */
-    get: operations["get_workers_api_v1_workers_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   "/api/v1/workers/all": {
     parameters: {
       query?: never
@@ -644,26 +624,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  "/api/v1/tasks/stats/timeline": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Task Stats Timeline
-     * @description 按时间范围和粒度查询任务执行趋势。
-     */
-    get: operations["get_task_stats_timeline_api_v1_tasks_stats_timeline_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   "/api/v1/tasks/stats/by-name": {
     parameters: {
       query?: never
@@ -778,26 +738,6 @@ export interface paths {
      * @description 撤销指定任务，并尝试终止正在执行的任务。
      */
     post: operations["revoke_task_endpoint_api_v1_tasks__task_id__revoke_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/schedules/crontab/preview": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Get Crontab Preview
-     * @description 校验 Crontab，并按当前调度时区返回未来五次计划执行时间。
-     */
-    post: operations["get_crontab_preview_api_v1_schedules_crontab_preview_post"]
     delete?: never
     options?: never
     head?: never
@@ -947,7 +887,7 @@ export interface paths {
     put?: never
     /**
      * Logout
-     * @description 登出当前用户。
+     * @description 撤销当前会话并清理用户信息与权限缓存。
      */
     post: operations["logout_api_v1_auth_logout_post"]
     delete?: never
@@ -1168,26 +1108,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  "/api/v1/roles/mine": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get My Roles
-     * @description 获取当前登录用户所属的角色。
-     */
-    get: operations["get_my_roles_api_v1_roles_mine_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   "/api/v1/roles/all": {
     parameters: {
       query?: never
@@ -1253,26 +1173,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  "/api/v1/router/backend": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Router
-     * @description 获取已登记的后端接口路由列表。
-     */
-    get: operations["get_router_api_v1_router_backend_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   "/api/v1/dashboard/capabilities": {
     parameters: {
       query?: never
@@ -1333,26 +1233,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  "/api/v1/roles/{role_id}/apply-packages": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Apply Packages
-     * @description 将功能包合并或替换到角色权限，并返回权限与范围变更。
-     */
-    post: operations["apply_packages_api_v1_roles__role_id__apply_packages_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   "/api/v1/manage/menus": {
     parameters: {
       query?: never
@@ -1376,26 +1256,6 @@ export interface paths {
      * @description 批量删除菜单。
      */
     delete: operations["batch_delete_menus_api_v1_manage_menus_delete"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/manage/menus/tree": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Menu Tree
-     * @description 获取完整菜单树（不分页）
-     */
-    get: operations["get_menu_tree_api_v1_manage_menus_tree_get"]
-    put?: never
-    post?: never
-    delete?: never
     options?: never
     head?: never
     patch?: never
@@ -1605,30 +1465,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  "/api/v1/notifications/{notification_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Notification
-     * @description 获取当前用户的一条通知。
-     */
-    get: operations["get_notification_api_v1_notifications__notification_id__get"]
-    put?: never
-    post?: never
-    /**
-     * Delete Notification
-     * @description 软删除当前用户的一条通知。
-     */
-    delete: operations["delete_notification_api_v1_notifications__notification_id__delete"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   "/api/v1/notifications/{notification_id}/read": {
     parameters: {
       query?: never
@@ -1669,6 +1505,26 @@ export interface paths {
     patch: operations["archive_notification_api_v1_notifications__notification_id__archive_patch"]
     trace?: never
   }
+  "/api/v1/notifications/{notification_id}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Notification
+     * @description 软删除当前用户的一条通知。
+     */
+    delete: operations["delete_notification_api_v1_notifications__notification_id__delete"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/api/v1/admin/notification-templates": {
     parameters: {
       query?: never
@@ -1700,11 +1556,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /**
-     * Get Template
-     * @description 获取指定通知模板的详情。
-     */
-    get: operations["get_template_api_v1_admin_notification_templates__template_id__get"]
+    get?: never
     /**
      * Update Template
      * @description 校验并更新通知模板，同时递增模板版本。
@@ -1868,26 +1720,6 @@ export interface paths {
      * @description 删除指定通知公告。
      */
     delete: operations["delete_announcement_api_v1_admin_notifications__message_id__delete"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/admin/notifications/{message_id}/audience-preview": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Preview Audience
-     * @description 预览已保存通知的接收人数及受众类型分布。
-     */
-    post: operations["preview_audience_api_v1_admin_notifications__message_id__audience_preview_post"]
-    delete?: never
     options?: never
     head?: never
     patch?: never
@@ -2145,26 +1977,6 @@ export interface paths {
      * @description 检查 PostgreSQL、Redis、MinIO 的健康状态。
      */
     get: operations["get_infrastructure_health_api_v1_system_stats_infrastructure_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/system/health": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * 聚合健康状态
-     * @description 聚合基础设施健康状态。
-     */
-    get: operations["get_aggregated_health_api_v1_system_health_get"]
     put?: never
     post?: never
     delete?: never
@@ -2499,15 +2311,6 @@ export interface components {
        */
       email: string
     }
-    /**
-     * AggregatedHealth
-     * @description 聚合健康状态响应（仅基础设施）。
-     */
-    AggregatedHealth: {
-      /** Status */
-      status: string
-      infrastructure: components["schemas"]["InfrastructureHealth"]
-    }
     /** AnnouncementCreateRequest */
     AnnouncementCreateRequest: {
       /**
@@ -2741,38 +2544,6 @@ export interface components {
        * @default 0
        */
       errorCount: number
-    }
-    /** ApplyPackagesBody */
-    ApplyPackagesBody: {
-      /** Packagekeys */
-      packageKeys: string[]
-      /**
-       * Mode
-       * @default merge
-       * @enum {string}
-       */
-      mode: "merge" | "replace"
-    }
-    /** ApplyPackagesResponse */
-    ApplyPackagesResponse: {
-      /** Permissioncodes */
-      permissionCodes: string[]
-      /** Datascopes */
-      dataScopes: {
-        [key: string]: string
-      }
-      /** Fieldmodes */
-      fieldModes: {
-        [key: string]: {
-          [key: string]: "visible" | "masked" | "hidden"
-        }
-      }
-      /** Addedcodes */
-      addedCodes: string[]
-      /** Removedcodes */
-      removedCodes: string[]
-      /** Scopechanges */
-      scopeChanges: components["schemas"]["ScopeChangeResponse"][]
     }
     /** AudiencePreviewRequest */
     AudiencePreviewRequest: {
@@ -3142,52 +2913,6 @@ export interface components {
        */
       monthOfYear: string
     }
-    /** CrontabPreviewRequest */
-    CrontabPreviewRequest: {
-      /**
-       * Minute
-       * @default *
-       */
-      minute: string
-      /**
-       * Hour
-       * @default *
-       */
-      hour: string
-      /**
-       * Dayofweek
-       * @default *
-       */
-      dayOfWeek: string
-      /**
-       * Dayofmonth
-       * @default *
-       */
-      dayOfMonth: string
-      /**
-       * Monthofyear
-       * @default *
-       */
-      monthOfYear: string
-    }
-    /** CrontabPreviewResponse */
-    CrontabPreviewResponse: {
-      /** Valid */
-      valid: boolean
-      /** Errorfield */
-      errorField?: ("minute" | "hour" | "dayOfWeek" | "dayOfMonth" | "monthOfYear") | null
-      /** Timezone */
-      timezone: string
-      /** Evaluatedat */
-      evaluatedAt: string
-      /** Nextruns */
-      nextRuns?: string[]
-      /**
-       * Horizonyears
-       * @default 5
-       */
-      horizonYears: number
-    }
     /** CursorPaginatedResponse[ActivityResponse] */
     CursorPaginatedResponse_ActivityResponse_: {
       /**
@@ -3496,37 +3221,6 @@ export interface components {
       deadLetters: components["schemas"]["DeadLetterResponse"][]
       /** Deadlettercount */
       deadLetterCount: number
-    }
-    /**
-     * FastAPIRouterResponse
-     * @description 接口路由响应数据结构。
-     */
-    FastAPIRouterResponse: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Createtime
-       * @example 2024-07-31 16:07:34
-       */
-      createTime: string
-      /**
-       * Updatetime
-       * @example 2024-07-31 16:07:34
-       */
-      updateTime: string
-      /** Name */
-      name: string
-      /** Description */
-      description: string
-      /** Path */
-      path: string
-      /** Methods */
-      methods: string[]
-      /** Code */
-      readonly code: string
     }
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -4812,29 +4506,6 @@ export interface components {
        */
       records: components["schemas"]["UserManageResponse"][]
     }
-    /** PaginatedResponse[WorkerResponse] */
-    PaginatedResponse_WorkerResponse_: {
-      /**
-       * Page
-       * @description 页码。
-       */
-      page: number
-      /**
-       * Pagesize
-       * @description 每页条数。
-       */
-      pageSize: number
-      /**
-       * Total
-       * @description 总条数。
-       */
-      total: number
-      /**
-       * Records
-       * @description 记录列表。
-       */
-      records: components["schemas"]["WorkerResponse"][]
-    }
     /**
      * PasswordResetConfirmBody
      * @description Encrypted password and single-use reset token.
@@ -5227,22 +4898,6 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["ActionIn"] | null
     }
-    /** Response[AggregatedHealth] */
-    Response_AggregatedHealth_: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["AggregatedHealth"] | null
-    }
     /** Response[ApiOverviewResponse] */
     Response_ApiOverviewResponse_: {
       /**
@@ -5258,22 +4913,6 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["ApiOverviewResponse"] | null
-    }
-    /** Response[ApplyPackagesResponse] */
-    Response_ApplyPackagesResponse_: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["ApplyPackagesResponse"] | null
     }
     /** Response[AudiencePreviewResponse] */
     Response_AudiencePreviewResponse_: {
@@ -5338,22 +4977,6 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["ContentPreviewResponse"] | null
-    }
-    /** Response[CrontabPreviewResponse] */
-    Response_CrontabPreviewResponse_: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["CrontabPreviewResponse"] | null
     }
     /** Response[CursorPaginatedResponse[ActivityResponse]] */
     Response_CursorPaginatedResponse_ActivityResponse__: {
@@ -5614,22 +5237,6 @@ export interface components {
        */
       data?: null
     }
-    /** Response[NotificationItem] */
-    Response_NotificationItem_: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["NotificationItem"] | null
-    }
     /** Response[OperationsOverviewResponse] */
     Response_OperationsOverviewResponse_: {
       /**
@@ -5821,22 +5428,6 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["PaginatedResponse_UserManageResponse_"] | null
-    }
-    /** Response[PaginatedResponse[WorkerResponse]] */
-    Response_PaginatedResponse_WorkerResponse__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["PaginatedResponse_WorkerResponse_"] | null
     }
     /** Response[PasswordResetValidateResponse] */
     Response_PasswordResetValidateResponse_: {
@@ -6451,44 +6042,6 @@ export interface components {
        */
       data?: components["schemas"]["DepartmentTreeNode"][] | null
     }
-    /** Response[list[FastAPIRouterResponse]] */
-    Response_list_FastAPIRouterResponse__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /**
-       * Data
-       * @description 响应数据。
-       */
-      data?: components["schemas"]["FastAPIRouterResponse"][] | null
-    }
-    /** Response[list[MenuListResponse]] */
-    Response_list_MenuListResponse__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /**
-       * Data
-       * @description 响应数据。
-       */
-      data?: components["schemas"]["MenuListResponse"][] | null
-    }
     /** Response[list[MenuRouteResponse]] */
     Response_list_MenuRouteResponse__: {
       /**
@@ -6602,25 +6155,6 @@ export interface components {
        * @description 响应数据。
        */
       data?: components["schemas"]["TaskStatsByWorker"][] | null
-    }
-    /** Response[list[TaskStatsTimeline]] */
-    Response_list_TaskStatsTimeline__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /**
-       * Data
-       * @description 响应数据。
-       */
-      data?: components["schemas"]["TaskStatsTimeline"][] | null
     }
     /** Response[list[UserActivityTrend]] */
     Response_list_UserActivityTrend__: {
@@ -6949,17 +6483,6 @@ export interface components {
        */
       horizonYears: number
     }
-    /** ScopeChangeResponse */
-    ScopeChangeResponse: {
-      /** Resource */
-      resource: string
-      /** Group */
-      group?: string | null
-      /** Before */
-      before: string
-      /** After */
-      after: string
-    }
     /**
      * ServiceHealth
      * @description 单个服务健康状态。
@@ -7185,20 +6708,6 @@ export interface components {
       successRate: number
       /** Avgruntime */
       avgRuntime: number | null
-    }
-    /**
-     * TaskStatsTimeline
-     * @description 时间线数据点。
-     */
-    TaskStatsTimeline: {
-      /** Timebucket */
-      timeBucket: string
-      /** Total */
-      total: number
-      /** Success */
-      success: number
-      /** Failure */
-      failure: number
     }
     /**
      * TaskStatus
@@ -8492,44 +8001,6 @@ export interface operations {
       }
     }
   }
-  get_workers_api_v1_workers_get: {
-    parameters: {
-      query?: {
-        /** @description 当前页码。 */
-        page?: number
-        /** @description 每页条数。 */
-        pageSize?: number
-        /** @description Worker 状态筛选 */
-        status?: components["schemas"]["WorkerStatus"] | null
-        /** @description 主机名筛选 */
-        hostname?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PaginatedResponse_WorkerResponse__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
   get_all_workers_api_v1_workers_all_get: {
     parameters: {
       query?: never
@@ -8950,40 +8421,6 @@ export interface operations {
       }
     }
   }
-  get_task_stats_timeline_api_v1_tasks_stats_timeline_get: {
-    parameters: {
-      query?: {
-        days?: number
-        start?: string | null
-        end?: string | null
-        granularity?: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_list_TaskStatsTimeline__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
   get_task_stats_by_name_api_v1_tasks_stats_by_name_get: {
     parameters: {
       query?: {
@@ -9157,39 +8594,6 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Response_bool_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  get_crontab_preview_api_v1_schedules_crontab_preview_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CrontabPreviewRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_CrontabPreviewResponse_"]
         }
       }
       /** @description Validation Error */
@@ -9896,26 +9300,6 @@ export interface operations {
       }
     }
   }
-  get_my_roles_api_v1_roles_mine_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_list_RoleResponse__"]
-        }
-      }
-    }
-  }
   get_all_roles_api_v1_roles_all_get: {
     parameters: {
       query?: {
@@ -10080,26 +9464,6 @@ export interface operations {
       }
     }
   }
-  get_router_api_v1_router_backend_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_list_FastAPIRouterResponse__"]
-        }
-      }
-    }
-  }
   get_dashboard_capabilities_api_v1_dashboard_capabilities_get: {
     parameters: {
       query?: never
@@ -10156,41 +9520,6 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Response_list_PackageResponse__"]
-        }
-      }
-    }
-  }
-  apply_packages_api_v1_roles__role_id__apply_packages_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        role_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ApplyPackagesBody"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_ApplyPackagesResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
         }
       }
     }
@@ -10293,26 +9622,6 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  get_menu_tree_api_v1_manage_menus_tree_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_list_MenuListResponse__"]
         }
       }
     }
@@ -10606,68 +9915,6 @@ export interface operations {
       }
     }
   }
-  get_notification_api_v1_notifications__notification_id__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        notification_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NotificationItem_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  delete_notification_api_v1_notifications__notification_id__delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        notification_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NoneType_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
   mark_read_api_v1_notifications__notification_id__read_patch: {
     parameters: {
       query?: never
@@ -10700,6 +9947,37 @@ export interface operations {
     }
   }
   archive_notification_api_v1_notifications__notification_id__archive_patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        notification_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_NoneType_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  delete_notification_api_v1_notifications__notification_id__delete: {
     parameters: {
       query?: never
       header?: never
@@ -10778,37 +10056,6 @@ export interface operations {
         "application/json": components["schemas"]["TemplateCreateRequest"]
       }
     }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_TemplateResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  get_template_api_v1_admin_notification_templates__template_id__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        template_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
     responses: {
       /** @description Successful Response */
       200: {
@@ -11215,41 +10462,6 @@ export interface operations {
       }
     }
   }
-  preview_audience_api_v1_admin_notifications__message_id__audience_preview_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        message_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["AudiencePreviewRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_AudiencePreviewResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
   publish_announcement_api_v1_admin_notifications__message_id__publish_post: {
     parameters: {
       query?: never
@@ -11621,26 +10833,6 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Response_InfrastructureHealth_"]
-        }
-      }
-    }
-  }
-  get_aggregated_health_api_v1_system_health_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_AggregatedHealth_"]
         }
       }
     }

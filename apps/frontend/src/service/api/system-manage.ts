@@ -215,14 +215,6 @@ export function fetchGetActiveMenuOptions(parentId: string, constant: boolean) {
   })
 }
 
-/** get menu tree */
-export function fetchGetMenuTree() {
-  return request<Api.SystemManage.MenuTree[]>({
-    url: "/manage/menus/tree",
-    method: "get",
-  })
-}
-
 /** create menu */
 export function fetchCreateMenu(data: Omit<Api.SystemManage.Menu, "id" | "children">) {
   return request<Api.SystemManage.Menu>({
@@ -259,14 +251,6 @@ export function fetchBatchDeleteMenus(ids: string[]) {
 }
 
 // ==================== Router ====================
-
-/** get all backend routers */
-export function fetchGetBackendRouters() {
-  return request<Api.SystemManage.BackendRouter[]>({
-    url: "/router/backend",
-    method: "get",
-  })
-}
 
 // ==================== Department ====================
 

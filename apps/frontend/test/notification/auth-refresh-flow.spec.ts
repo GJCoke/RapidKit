@@ -26,10 +26,13 @@ vi.mock("@/utils/service", () => ({ getServiceBaseURL: () => ({ baseURL: "/api/v
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
 
 import { request } from "@/service/request"
+import { fetchLogout } from "@/service/api/auth"
+import { getAuthSession, setLogoutSession } from "@/service/request/auth-session"
 
 describe("auth refresh request flow", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    setLogoutSession(null)
     vi.stubEnv("VITE_SERVICE_SUCCESS_CODE", "0")
     vi.stubEnv("VITE_SERVICE_EXPIRED_TOKEN_CODES", "14002")
     vi.stubEnv("VITE_SERVICE_LOGOUT_CODES", "14003,14008")
@@ -175,4 +178,72 @@ describe("auth refresh request flow", () => {
     expect(current.data).toBe("allowed")
     expect(mocks.storage.get("token")).toBe("other-rotated")
   })
+})
+
+it("logout can recover its own expired access while other requests cannot start refresh", async () => {
+  mocks.storage.clear()
+  mocks.storage.set("token", "old-access")
+  mocks.storage.set("refreshToken", "old-refresh")
+  vi.stubEnv("VITE_SERVICE_SUCCESS_CODE", "0")
+  vi.stubEnv("VITE_SERVICE_EXPIRED_TOKEN_CODES", "14002")
+  const session = getAuthSession()
+  setLogoutSession(session)
+  const calls: string[] = []
+  mocks.adapter.mockImplementation(async (config) => {
+    calls.push(config.url)
+    const data =
+      config.url === "/auth/token/refresh"
+        ? { code: 0, data: { accessToken: "latest-access", refreshToken: "latest-refresh" } }
+        : config.headers.get("Authorization") === "Bearer latest-access"
+          ? { code: 0, data: true }
+          : { code: 14002, data: null }
+    return { status: 200, statusText: "OK", headers: {}, config, data }
+  })
+  try {
+    expect((await request({ url: "/protected" })).error).not.toBeNull()
+    expect(calls).toEqual(["/protected"])
+    expect((await fetchLogout()).data).toBe(true)
+    expect(calls).toEqual(["/protected", "/auth/logout", "/auth/token/refresh", "/auth/logout"])
+  } finally {
+    setLogoutSession(null)
+  }
+})
+
+it("logout waits for an in-flight refresh and sends the rotated access token", async () => {
+  mocks.storage.clear()
+  mocks.storage.set("token", "old-access")
+  mocks.storage.set("refreshToken", "old-refresh")
+  vi.stubEnv("VITE_SERVICE_SUCCESS_CODE", "0")
+  vi.stubEnv("VITE_SERVICE_EXPIRED_TOKEN_CODES", "14002")
+  let release!: () => void
+  const blocked = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const logoutHeaders: string[] = []
+  mocks.adapter.mockImplementation(async (config) => {
+    let data
+    if (config.url === "/auth/token/refresh") {
+      await blocked
+      data = { code: 0, data: { accessToken: "latest-access", refreshToken: "latest-refresh" } }
+    } else if (config.url === "/auth/logout") {
+      logoutHeaders.push(config.headers.get("Authorization"))
+      data = { code: 0, data: true }
+    } else
+      data = config.headers.get("Authorization") === "Bearer old-access" ? { code: 14002 } : { code: 0, data: true }
+    return { status: 200, statusText: "OK", headers: {}, config, data }
+  })
+  const business = request({ url: "/protected" })
+  await vi.waitFor(() => expect(request.state.refreshTokenPromise).not.toBeNull())
+  setLogoutSession(getAuthSession())
+  try {
+    const logout = fetchLogout()
+    await Promise.resolve()
+    expect(logoutHeaders).toEqual([])
+    release()
+    await Promise.all([logout, business])
+    expect(logoutHeaders).toEqual(["Bearer latest-access"])
+  } finally {
+    setLogoutSession(null)
+    release()
+  }
 })

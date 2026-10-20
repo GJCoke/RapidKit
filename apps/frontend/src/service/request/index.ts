@@ -129,7 +129,7 @@ export const request = createFlatRequest(
         const currentAuthorization = getAuthorization()
         // Late responses sent with the old token can reuse a completed refresh.
         const alreadyRefreshed = currentAuthorization && config.headers.Authorization !== currentAuthorization
-        const success = alreadyRefreshed || (await handleExpiredRequest(request.state))
+        const success = alreadyRefreshed || (await handleExpiredRequest(request.state, config.url === "/auth/logout"))
         if (success && config.authSession === getAuthSession()) {
           Object.assign(config.headers, { Authorization: getAuthorization() })
           return instance.request(config) as Promise<AxiosResponse>

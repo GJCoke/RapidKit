@@ -6,11 +6,6 @@ from tests.testing.utils import random_uuid
 
 
 class TestWorkerList:
-    async def test_list_workers(self, client: AsyncClient, init, auth_headers: dict):
-        resp = await client.get("/workers?page=1&pageSize=10", headers=auth_headers)
-        assert resp.status_code == 200
-        assert resp.json()["code"] == 0
-
     async def test_get_all_workers(self, client: AsyncClient, init, auth_headers: dict):
         resp = await client.get("/workers/all", headers=auth_headers)
         assert resp.status_code == 200
@@ -20,10 +15,10 @@ class TestWorkerList:
 class TestWorkerControl:
     async def test_ping_worker(self, client: AsyncClient, init, auth_headers: dict, mock_celery_app):
         """Ping a worker -- requires a worker record in DB."""
-        resp = await client.get("/workers?page=1&pageSize=1", headers=auth_headers)
-        if resp.json()["data"]["total"] == 0:
+        resp = await client.get("/workers/all", headers=auth_headers)
+        if not resp.json()["data"]:
             pytest.skip("No worker records in DB")
-        worker_id = resp.json()["data"]["records"][0]["id"]
+        worker_id = resp.json()["data"][0]["id"]
 
         resp = await client.post(
             f"/workers/{worker_id}/ping",
@@ -40,10 +35,10 @@ class TestWorkerControl:
         assert resp.json()["code"] != 0
 
     async def test_shutdown_worker(self, client: AsyncClient, init, auth_headers: dict, mock_celery_app):
-        resp = await client.get("/workers?page=1&pageSize=1", headers=auth_headers)
-        if resp.json()["data"]["total"] == 0:
+        resp = await client.get("/workers/all", headers=auth_headers)
+        if not resp.json()["data"]:
             pytest.skip("No worker records in DB")
-        worker_id = resp.json()["data"]["records"][0]["id"]
+        worker_id = resp.json()["data"][0]["id"]
 
         resp = await client.post(
             f"/workers/{worker_id}/shutdown",
@@ -52,10 +47,10 @@ class TestWorkerControl:
         assert resp.status_code == 200
 
     async def test_pool_grow(self, client: AsyncClient, init, auth_headers: dict, mock_celery_app):
-        resp = await client.get("/workers?page=1&pageSize=1", headers=auth_headers)
-        if resp.json()["data"]["total"] == 0:
+        resp = await client.get("/workers/all", headers=auth_headers)
+        if not resp.json()["data"]:
             pytest.skip("No worker records in DB")
-        worker_id = resp.json()["data"]["records"][0]["id"]
+        worker_id = resp.json()["data"][0]["id"]
 
         resp = await client.post(
             f"/workers/{worker_id}/pool/grow",
@@ -65,10 +60,10 @@ class TestWorkerControl:
         assert resp.status_code == 200
 
     async def test_pool_shrink(self, client: AsyncClient, init, auth_headers: dict, mock_celery_app):
-        resp = await client.get("/workers?page=1&pageSize=1", headers=auth_headers)
-        if resp.json()["data"]["total"] == 0:
+        resp = await client.get("/workers/all", headers=auth_headers)
+        if not resp.json()["data"]:
             pytest.skip("No worker records in DB")
-        worker_id = resp.json()["data"]["records"][0]["id"]
+        worker_id = resp.json()["data"][0]["id"]
 
         resp = await client.post(
             f"/workers/{worker_id}/pool/shrink",
@@ -78,10 +73,10 @@ class TestWorkerControl:
         assert resp.status_code == 200
 
     async def test_add_queue(self, client: AsyncClient, init, auth_headers: dict, mock_celery_app):
-        resp = await client.get("/workers?page=1&pageSize=1", headers=auth_headers)
-        if resp.json()["data"]["total"] == 0:
+        resp = await client.get("/workers/all", headers=auth_headers)
+        if not resp.json()["data"]:
             pytest.skip("No worker records in DB")
-        worker_id = resp.json()["data"]["records"][0]["id"]
+        worker_id = resp.json()["data"][0]["id"]
 
         resp = await client.post(
             f"/workers/{worker_id}/queues/add",
@@ -91,10 +86,10 @@ class TestWorkerControl:
         assert resp.status_code == 200
 
     async def test_cancel_queue(self, client: AsyncClient, init, auth_headers: dict, mock_celery_app):
-        resp = await client.get("/workers?page=1&pageSize=1", headers=auth_headers)
-        if resp.json()["data"]["total"] == 0:
+        resp = await client.get("/workers/all", headers=auth_headers)
+        if not resp.json()["data"]:
             pytest.skip("No worker records in DB")
-        worker_id = resp.json()["data"]["records"][0]["id"]
+        worker_id = resp.json()["data"][0]["id"]
 
         resp = await client.post(
             f"/workers/{worker_id}/queues/cancel",
@@ -104,12 +99,12 @@ class TestWorkerControl:
         assert resp.status_code == 200
 
     async def test_get_active_tasks(self, client: AsyncClient, init, auth_headers: dict, mock_celery_app):
-        resp = await client.get("/workers?page=1&pageSize=1", headers=auth_headers)
-        if resp.json()["data"]["total"] == 0:
+        resp = await client.get("/workers/all", headers=auth_headers)
+        if not resp.json()["data"]:
             pytest.skip("No worker records in DB")
-        worker_id = resp.json()["data"]["records"][0]["id"]
+        worker_id = resp.json()["data"][0]["id"]
 
-        hostname = resp.json()["data"]["records"][0]["hostname"]
+        hostname = resp.json()["data"][0]["hostname"]
         # An empty list from this Worker is distinct from a missing reply.
         mock_inspector = mock_celery_app.control.inspect.return_value
         mock_inspector.active.return_value = {hostname: []}
@@ -122,12 +117,12 @@ class TestWorkerControl:
         assert resp.json()["code"] == 0
 
     async def test_get_reserved_tasks(self, client: AsyncClient, init, auth_headers: dict, mock_celery_app):
-        resp = await client.get("/workers?page=1&pageSize=1", headers=auth_headers)
-        if resp.json()["data"]["total"] == 0:
+        resp = await client.get("/workers/all", headers=auth_headers)
+        if not resp.json()["data"]:
             pytest.skip("No worker records in DB")
-        worker_id = resp.json()["data"]["records"][0]["id"]
+        worker_id = resp.json()["data"][0]["id"]
 
-        hostname = resp.json()["data"]["records"][0]["hostname"]
+        hostname = resp.json()["data"][0]["hostname"]
         mock_inspector = mock_celery_app.control.inspect.return_value
         mock_inspector.reserved.return_value = {hostname: []}
 

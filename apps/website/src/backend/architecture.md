@@ -87,15 +87,16 @@ plugins/<name>/
 
 #### 当前插件
 
-| 插件                | 说明                     | 核心模型                           |
-| ------------------- | ------------------------ | ---------------------------------- |
-| `plugin_auth`       | 认证、角色管理、接口路由 | `User`、`Role`、`InterfaceRouter`  |
-| `plugin_user`       | 用户 CRUD                | — (使用 auth 的 User)              |
-| `plugin_menu`       | 菜单管理 + 前端路由同步  | `Menu`                             |
-| `plugin_monitoring` | API 性能指标聚合         | `ApiMetricsHourly`                 |
-| `plugin_system`     | 系统活动日志             | `ActivityLog`                      |
-| `plugin_worker`     | Celery Worker 实时监控   | `CeleryWorker`、`CeleryTaskResult` |
-| `plugin_schedule`   | 定时任务调度             | — (使用 queues 的模型)             |
+| 插件                | 说明                    | 核心模型                           |
+| ------------------- | ----------------------- | ---------------------------------- |
+| `plugin_auth`       | 认证与模拟身份          | `ImpersonationSession`             |
+| `plugin_permission` | 角色与权限目录          | `Role`                             |
+| `plugin_user`       | 用户 CRUD               | `User`                             |
+| `plugin_menu`       | 菜单管理 + 前端路由同步 | `Menu`                             |
+| `plugin_monitoring` | API 性能指标聚合        | `ApiMetricsHourly`                 |
+| `plugin_system`     | 系统活动日志            | `ActivityLog`                      |
+| `plugin_worker`     | Celery Worker 实时监控  | `CeleryWorker`、`CeleryTaskResult` |
+| `plugin_schedule`   | 定时任务调度            | — (使用 queues 的模型)             |
 
 ## 插件注册机制
 

@@ -183,13 +183,6 @@ class InfrastructureHealth(BaseModel):
 # ========== 聚合健康 ==========
 
 
-class AggregatedHealth(BaseModel):
-    """聚合健康状态响应（仅基础设施）。"""
-
-    status: str  # healthy / degraded / unhealthy
-    infrastructure: InfrastructureHealth
-
-
 # ========== 业务汇总 ==========
 
 

@@ -196,7 +196,6 @@ async def client(
     monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterator[AsyncClient]:
     """Full-app httpx client with auth bypass and service URL overrides."""
-    from plugin_permission.router import sync
     from rapidkit_common.access import access_guard_dependency
     from rapidkit_common.access_testing import allow_current_user_access
     from rapidkit_core import database
@@ -221,7 +220,6 @@ async def client(
     async def async_none(*_args: Any, **_kwargs: Any) -> None:
         return None
 
-    monkeypatch.setattr(sync, "store_router_in_db", async_none)
     original_overrides = app.dependency_overrides.copy()
     app.dependency_overrides[access_guard_dependency] = allow_current_user_access
 

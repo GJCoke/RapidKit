@@ -2,7 +2,6 @@
 
 /** Baseline permission codes declared by backend plugins. */
 type PermissionCode =
-  | "api-route:read"
   | "audit-log:read"
   | "dashboard:activity"
   | "dashboard:business"

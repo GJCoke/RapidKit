@@ -29,21 +29,16 @@ def register() -> PluginManifest:
 
     from plugin_permission.catalog.api import router as catalog_router
     from plugin_permission.dashboard.api import router as dashboard_router
-    from plugin_permission.models import InterfaceRouter, Role
-    from plugin_permission.package.api import apply_router as package_apply_router
+    from plugin_permission.models import Role
     from plugin_permission.package.api import router as package_router
     from plugin_permission.providers import PermissionCacheManagerImpl, PermissionCatalogReaderImpl
     from plugin_permission.role.api import router as role_router
-    from plugin_permission.router.api import router as router_api_router
-    from plugin_permission.router.sync import sync_routes_on_startup
 
     combined = APIRouter()
     combined.include_router(role_router)
-    combined.include_router(router_api_router)
     combined.include_router(dashboard_router)
     combined.include_router(catalog_router)
     combined.include_router(package_router)
-    combined.include_router(package_apply_router)
 
     def register_services(registry: ServiceRegistry) -> None:
         registry.register(PermissionCacheManager, PermissionCacheManagerImpl())
@@ -58,7 +53,7 @@ def register() -> PluginManifest:
         permission_codes=PERMISSION_CODES,
         permission_packages=PERMISSION_PACKAGES,
         router=combined,
-        models=[Role, InterfaceRouter],
+        models=[Role],
         dependencies=["auth"],
         middlewares=[MiddlewareDef(cls=ScopeContextMiddleware)],
         requires=[UserResolver, TokenDecoder],
@@ -67,6 +62,5 @@ def register() -> PluginManifest:
         on_startup=[
             build_catalog_on_startup,
             sync_catalog_version_on_startup,
-            sync_routes_on_startup,
         ],
     )

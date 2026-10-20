@@ -1,7 +1,7 @@
 import { useAuthStore } from "@/store/modules/auth"
 import { localStg } from "@/utils/storage"
 import { fetchRefreshToken } from "../api"
-import { getAuthSession, recordTokenRotation } from "./auth-session"
+import { getAuthSession, isLoggingOut, recordTokenRotation } from "./auth-session"
 import type { RequestInstanceState } from "./type"
 
 export function getAuthorization() {
@@ -36,7 +36,8 @@ async function handleRefreshToken(session: number) {
   return false
 }
 
-export function handleExpiredRequest(state: RequestInstanceState) {
+export function handleExpiredRequest(state: RequestInstanceState, forLogout = false) {
+  if (isLoggingOut() && !forLogout) return Promise.resolve(false)
   if (localStg.get("impersonation"))
     return useAuthStore()
       .stopImpersonation()

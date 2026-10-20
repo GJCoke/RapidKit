@@ -6,9 +6,6 @@
     "roleOperationError": "角色操作失败",
     "permissionOperationError": "权限操作失败",
     "unknownPermissionCode": "包含不存在的权限码",
-    "invalidDataScope": "包含无效的数据范围或字段设置",
-    "packageNotFound": "功能包不存在",
-    "packageInvalidCodes": "功能包包含不存在的权限码",
-    "packageInvalidScopes": "功能包包含无效的数据范围或字段设置"
+    "invalidDataScope": "包含无效的数据范围或字段设置"
   }
 }

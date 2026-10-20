@@ -4,13 +4,10 @@ from dataclasses import dataclass, field
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from plugin_system.services import (
     build_plugin_dependency_graph,
     build_plugin_status_list,
-    derive_overall_health,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -43,29 +40,6 @@ class _FakePluginError:
     caused_by: str | None = None
 
 
-# ── derive_overall_health ────────────────────────────────────────────
-
-
-class TestDeriveOverallHealth:
-    def test_all_up_returns_healthy(self):
-        assert derive_overall_health(["up", "up", "up"]) == "healthy"
-
-    def test_any_down_returns_unhealthy(self):
-        assert derive_overall_health(["up", "down", "up"]) == "unhealthy"
-
-    def test_degraded_without_down_returns_degraded(self):
-        assert derive_overall_health(["up", "degraded", "up"]) == "degraded"
-
-    def test_down_takes_precedence_over_degraded(self):
-        assert derive_overall_health(["down", "degraded", "up"]) == "unhealthy"
-
-    def test_empty_returns_healthy(self):
-        assert derive_overall_health([]) == "healthy"
-
-    def test_all_down_returns_unhealthy(self):
-        assert derive_overall_health(["down", "down"]) == "unhealthy"
-
-
 # ── build_business_summary ───────────────────────────────────────────
 
 
@@ -79,13 +53,13 @@ class TestBuildBusinessSummary:
         result_mock.scalar_one.return_value = 42
         session.execute.return_value = result_mock
 
-        result = await build_business_summary(session, enable_celery=False)
+        result = await build_business_summary(session, enable_celery=False, route_count=3)
 
         assert result["roles"] == 42
         assert result["menus"] == 42
-        assert result["routers"] == 42
+        assert result["routers"] == 3
         assert "scripts" not in result
-        assert session.execute.await_count == 3
+        assert session.execute.await_count == 2
         assert result["schedules"] == 0
 
     @pytest.mark.asyncio
@@ -97,7 +71,7 @@ class TestBuildBusinessSummary:
         result_mock.scalar_one.return_value = 10
         session.execute.return_value = result_mock
 
-        result = await build_business_summary(session, enable_celery=True)
+        result = await build_business_summary(session, enable_celery=True, route_count=3)
 
         assert result["schedules"] == 10
 
@@ -115,7 +89,7 @@ class TestBuildBusinessSummary:
         session = AsyncMock()
         session.execute = _execute
 
-        result = await build_business_summary(session, enable_celery=True)
+        result = await build_business_summary(session, enable_celery=True, route_count=3)
 
         assert result["schedules"] == 0
         assert result["roles"] == 7
@@ -166,9 +140,7 @@ class TestBuildPluginStatusList:
         meta = {"auth": _FakePluginMeta()}
         error = _FakePluginError(phase="startup", message="timeout")
 
-        items = build_plugin_status_list(
-            plugins, meta, disabled=["legacy"], errors={"broken": error}
-        )
+        items = build_plugin_status_list(plugins, meta, disabled=["legacy"], errors={"broken": error})
 
         assert len(items) == 3
         names = [i["name"] for i in items]

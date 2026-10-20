@@ -9,16 +9,14 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query
-from rapidkit_common.access import Authenticated, Require
+from rapidkit_common.access import Require
 from rapidkit_common.auth import UserDBDep
 from rapidkit_common.deps import RedisDep
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_common.transaction import after_commit
 from rapidkit_core.log import get_plugin_logger
-from sqlmodel import col
 
 from plugin_permission.catalog.registry import get_catalog
-from plugin_permission.models import Role
 from plugin_permission.role.deps import RoleCrudDep
 from plugin_permission.role.permission_codes import ensure_known_codes, split_permission_codes
 from plugin_permission.role.schemas import (
@@ -52,13 +50,6 @@ async def get_roles(
     """分页查询角色，支持状态与关键词筛选。"""
     filter = filter_role(query.status, query.keyword)
     roles = await role_crud.get_paginate(*filter, page=query.page, size=query.page_size, schema=RoleResponse)
-    return Response(data=roles)
-
-
-@router.get("/mine", dependencies=[Authenticated])
-async def get_my_roles(role_crud: RoleCrudDep, user: UserDBDep) -> Response[list[RoleResponse]]:
-    """获取当前登录用户所属的角色。"""
-    roles = await role_crud.get_all(col(Role.code).in_(user.roles), schema=RoleResponse)
     return Response(data=roles)
 
 

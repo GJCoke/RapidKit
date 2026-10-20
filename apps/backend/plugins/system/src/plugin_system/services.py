@@ -10,7 +10,6 @@ from typing import Any
 
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_core.timezone import timezone
-from rapidkit_framework.plugin import HealthStatus
 from sqlmodel import text
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -129,29 +128,7 @@ def empty_instance(hostname: str) -> InstanceResourceStats:
 # ==================== 健康 & 业务汇总 ====================
 
 
-def derive_overall_health(service_statuses: list[str]) -> str:
-    """Derive an overall health status from individual service statuses.
-
-    Maps raw service status strings ("down" → unhealthy, "degraded" → degraded,
-    anything else → healthy) then picks the worst across all services.
-    """
-    mapped: list[str] = []
-    for status in service_statuses:
-        if status == "down":
-            mapped.append(HealthStatus.UNHEALTHY.value)
-        elif status == "degraded":
-            mapped.append(HealthStatus.DEGRADED.value)
-        else:
-            mapped.append(HealthStatus.HEALTHY.value)
-
-    if HealthStatus.UNHEALTHY.value in mapped:
-        return HealthStatus.UNHEALTHY.value
-    if HealthStatus.DEGRADED.value in mapped:
-        return HealthStatus.DEGRADED.value
-    return HealthStatus.HEALTHY.value
-
-
-async def build_business_summary(session: AsyncSession, *, enable_celery: bool) -> dict[str, int]:
+async def build_business_summary(session: AsyncSession, *, enable_celery: bool, route_count: int) -> dict[str, int]:
     """Count rows in core business tables and return a plain dict."""
 
     async def _count(table: str) -> int:
@@ -160,7 +137,6 @@ async def build_business_summary(session: AsyncSession, *, enable_celery: bool) 
 
     roles = await _count("permission_roles")
     menus = await _count("menu_menus")
-    routers = await _count("permission_routers")
 
     schedules = 0
     try:
@@ -172,7 +148,7 @@ async def build_business_summary(session: AsyncSession, *, enable_celery: bool) 
     return {
         "roles": roles,
         "menus": menus,
-        "routers": routers,
+        "routers": route_count,
         "schedules": schedules,
     }
 

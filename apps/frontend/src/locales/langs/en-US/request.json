@@ -7,5 +7,6 @@
   "permissionChangedMsg": "Your permissions were changed by an administrator. This page is no longer accessible. Click OK to return home.",
   "refreshToken": "The requested token has expired, refresh the token",
   "tokenExpired": "The requested token has expired",
-  "impersonationStopFirst": "Stop impersonating before signing out."
+  "impersonationStopFirst": "Stop impersonating before signing out.",
+  "logoutUnconfirmed": "Signed out locally, but server sign-out could not be confirmed."
 }

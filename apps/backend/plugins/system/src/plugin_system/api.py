@@ -10,6 +10,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
+from fastapi.routing import APIRoute
 from rapidkit_common.access import Require
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.schemas.response import CursorPaginatedResponse, PaginatedResponse, Response
@@ -25,7 +26,6 @@ from plugin_system.push import _RESOURCE_KEY_PREFIX
 from plugin_system.schemas import (
     ActivityCursorQuery,
     ActivityResponse,
-    AggregatedHealth,
     AuditLogDetail,
     AuditLogListItem,
     AuditLogQuery,
@@ -50,7 +50,6 @@ from plugin_system.services import (
     build_business_summary,
     build_plugin_dependency_graph,
     build_plugin_status_list,
-    derive_overall_health,
     empty_instance,
     get_error_counts,
     get_error_sparkline_24h,
@@ -174,27 +173,19 @@ async def get_infrastructure_health(session: SessionDep, redis: RedisDep) -> Res
     return Response(data=InfrastructureHealth(pg=pg_health, redis=redis_health, minio=minio_health))
 
 
-@router.get("/health", summary="聚合健康状态", dependencies=[Require("dashboard:infrastructure")])
-async def get_aggregated_health(
-    session: SessionDep,
-    redis: RedisDep,
-) -> Response[AggregatedHealth]:
-    """聚合基础设施健康状态。"""
-    pg_health, redis_health, minio_health = await asyncio.gather(
-        check_pg(session),
-        check_redis(redis),
-        check_minio(),
-    )
-    infra = InfrastructureHealth(pg=pg_health, redis=redis_health, minio=minio_health)
-
-    overall = derive_overall_health([svc.status for svc in (infra.pg, infra.redis, infra.minio)])
-    return Response(data=AggregatedHealth(status=overall, infrastructure=infra))
-
-
 @router.get("/stats/business", summary="业务数据汇总", dependencies=[Require("dashboard:business")])
-async def get_business_summary(session: SessionDep) -> Response[BusinessSummary]:
+async def get_business_summary(session: SessionDep, request: Request) -> Response[BusinessSummary]:
     """获取各业务模块的数据总量。"""
-    summary = await build_business_summary(session, enable_celery=settings.ENABLE_CELERY_MONITOR)
+    route_count = len(
+        {
+            (r.path, tuple(sorted(r.methods)))
+            for r in request.app.routes
+            if isinstance(r, APIRoute) and r.include_in_schema
+        }
+    )
+    summary = await build_business_summary(
+        session, enable_celery=settings.ENABLE_CELERY_MONITOR, route_count=route_count
+    )
     return Response(data=BusinessSummary(**summary))
 
 

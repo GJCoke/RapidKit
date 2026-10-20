@@ -25,7 +25,7 @@ class TestWorkerRegister:
 
         m = register()
         routes = [r.path for r in m.router.routes]
-        assert "/workers" in routes or "/workers/" in routes
+        assert "/workers/all" in routes
         assert "/tasks" in routes or "/tasks/" in routes
 
     def test_no_cross_plugin_imports(self):

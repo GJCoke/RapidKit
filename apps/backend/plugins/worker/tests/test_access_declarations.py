@@ -2,13 +2,11 @@
 
 from plugin_worker import register
 from plugin_worker.api import router, task_router
-
 from tests.testing.access import declared_access
 
 
 def test_worker_routes_declare_expected_access():
     assert declared_access(router, task_router) == {
-        "GET:/api/v1/workers": "require:worker:read",
         "GET:/api/v1/workers/all": "require:worker:read",
         "GET:/api/v1/workers/{worker_id}": "require:worker:read",
         "POST:/api/v1/workers/{worker_id}/ping": "require:worker:control",
@@ -22,7 +20,6 @@ def test_worker_routes_declare_expected_access():
         "GET:/api/v1/tasks": "require:task:read",
         "GET:/api/v1/tasks/stats/dashboard": "require:worker:read",
         "GET:/api/v1/tasks/stats/summary": "require:task:stats",
-        "GET:/api/v1/tasks/stats/timeline": "require:task:stats",
         "GET:/api/v1/tasks/stats/by-name": "require:task:stats",
         "GET:/api/v1/tasks/stats/by-worker": "require:task:stats",
         "GET:/api/v1/tasks/registered": "require:task:registered",

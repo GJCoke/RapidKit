@@ -2,7 +2,6 @@
 
 from plugin_system import register
 from plugin_system.api import router
-
 from tests.testing.access import declared_access
 
 
@@ -13,7 +12,6 @@ def test_system_routes_declare_expected_access():
         "GET:/api/v1/system/stats/errors": "require:dashboard:errors",
         "GET:/api/v1/system/stats/health": "require:dashboard:health",
         "GET:/api/v1/system/stats/infrastructure": "require:dashboard:infrastructure",
-        "GET:/api/v1/system/health": "require:dashboard:infrastructure",
         "GET:/api/v1/system/stats/business": "require:dashboard:business",
         "GET:/api/v1/system/activities": "require:dashboard:activity",
         "GET:/api/v1/system/audit-logs/paginate": "require:audit-log:read",

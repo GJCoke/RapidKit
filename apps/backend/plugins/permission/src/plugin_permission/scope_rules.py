@@ -132,7 +132,6 @@ def ensure_valid_scopes(
     catalog: PermissionCatalog,
     *,
     error: BaseStatusCode,
-    preserve_defaults: bool = False,
 ) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     """
     保存前校验并去掉默认值。
@@ -151,7 +150,7 @@ def ensure_valid_scopes(
         declared = {scope.key for scope in resource.data_scopes} if resource is not None else set()
         if resource is None or (key != ALL_SCOPE and key not in declared):
             items.append(f"{resource_key}={key}")
-        elif key != ALL_SCOPE or preserve_defaults:
+        elif key != ALL_SCOPE:
             data[resource_key] = key
     for resource_key, groups in field_modes.items():
         resource = catalog.resources.get(resource_key)
@@ -160,7 +159,7 @@ def ensure_valid_scopes(
             group = declared_groups.get(group_key)
             if group is None or (mode != VISIBLE and mode not in group.modes):
                 items.append(f"{resource_key}.{group_key}={mode}")
-            elif mode != VISIBLE or preserve_defaults:
+            elif mode != VISIBLE:
                 fields.setdefault(resource_key, {})[group_key] = mode
     if items:
         raise AppException(error, data={"items": items})

@@ -64,13 +64,6 @@ class TestReadRole:
         assert "user:read" in body["data"]["permissionCodes"]
         assert body["data"]["invalidCodes"] == []
 
-    async def test_get_my_roles(self, client: AsyncClient, init, auth_headers: dict):
-        resp = await client.get("/roles/mine", headers=auth_headers)
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["code"] == 0
-        assert isinstance(body["data"], list)
-
 
 class TestUpdateRole:
     async def test_update_role_name(self, client: AsyncClient, init, auth_headers: dict):

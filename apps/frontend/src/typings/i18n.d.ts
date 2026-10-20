@@ -1734,6 +1734,7 @@ declare namespace I18nKeys {
     | "impersonationStopFirst"
     | "logout"
     | "logoutMsg"
+    | "logoutUnconfirmed"
     | "logoutWithModal"
     | "logoutWithModalMsg"
     | "permissionChanged"

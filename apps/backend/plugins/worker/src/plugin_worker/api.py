@@ -6,7 +6,6 @@ Date    : 2026-03-30
 """
 
 from asyncio import gather, to_thread
-from datetime import date
 from typing import Annotated
 from uuid import UUID
 
@@ -33,11 +32,9 @@ from plugin_worker.schemas import (
     TaskStatsByName,
     TaskStatsByWorker,
     TaskStatsSummary,
-    TaskStatsTimeline,
     TriggerTaskRequest,
     TriggerTaskResponse,
     WorkerControlResponse,
-    WorkerQueryRequest,
     WorkerResponse,
 )
 from plugin_worker.services import (
@@ -60,16 +57,6 @@ router = APIRouter(
     prefix="/workers",
     tags=["Worker"],
 )
-
-
-@router.get("", dependencies=[Require("worker:read")])
-async def get_workers(
-    query: Annotated[WorkerQueryRequest, Query(...)],
-    crud: WorkerCrudDep,
-) -> Response[PaginatedResponse[WorkerResponse]]:
-    """分页查询工作节点。"""
-    data = await crud.get_paginate_workers(query)
-    return Response(data=data)
 
 
 @router.get("/all", dependencies=[Require("worker:read")])
@@ -226,19 +213,6 @@ async def get_task_stats_summary(
 ) -> Response[TaskStatsSummary]:
     """获取指定天数内的任务执行统计摘要。"""
     data = await crud.get_stats_summary(days)
-    return Response(data=data)
-
-
-@task_router.get("/stats/timeline", dependencies=[Require("task:stats")])
-async def get_task_stats_timeline(
-    crud: TaskResultCrudDep,
-    days: int = Query(7, ge=1, le=90),
-    start: date | None = Query(None),
-    end: date | None = Query(None),
-    granularity: str = Query("hour"),
-) -> Response[list[TaskStatsTimeline]]:
-    """按时间范围和粒度查询任务执行趋势。"""
-    data = await crud.get_stats_timeline(days, start=start, end=end, granularity=granularity)
     return Response(data=data)
 
 

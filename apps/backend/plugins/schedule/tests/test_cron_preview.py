@@ -4,14 +4,9 @@ from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 import pytest
-from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
-from plugin_schedule.api import router
 from plugin_schedule.cron_preview import preview_crontab
 from plugin_schedule.schemas import CrontabPreviewRequest
 from pydantic.alias_generators import to_camel
-from rapidkit_common.access import access_guard_dependency
-from rapidkit_common.access_testing import allow_access
 from rapidkit_core.timezone import timezone
 
 
@@ -79,19 +74,3 @@ def test_dst_arithmetic_matches_celery_real_time_estimate(monkeypatch):
     assert result.next_runs[0].astimezone(UTC).isoformat() == "2026-03-29T01:30:00+00:00"
     assert result.next_runs[0].hour == 3
     assert result.next_runs[1].hour == 2
-
-
-@pytest.mark.asyncio
-async def test_preview_route_uses_camel_case_and_needs_no_database():
-    app = FastAPI()
-    app.include_router(router)
-    app.dependency_overrides[access_guard_dependency] = allow_access(None)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.post("/schedules/crontab/preview", json={"minute": "0", "dayOfWeek": "0"})
-        assert response.status_code == 200
-        data = response.json()["data"]
-        assert data["valid"] and len(data["nextRuns"]) == 5
-        bad = await client.post("/schedules/crontab/preview", json={"dayOfWeek": "7"})
-        assert bad.json()["data"]["errorField"] == "dayOfWeek"
-        long = await client.post("/schedules/crontab/preview", json={"minute": "1" * 129})
-        assert long.status_code == 422

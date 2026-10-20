@@ -9,11 +9,12 @@ import {
   fetchGetUserInfo,
   fetchGetUserRoutes,
   fetchLogin,
+  fetchLogout,
   fetchCreateImpersonation,
   fetchGetCurrentImpersonation,
   fetchDeleteCurrentImpersonation,
 } from "@/service/api"
-import { getAuthSession } from "@/service/request/auth-session"
+import { getAuthSession, isLoggingOut, setLogoutSession } from "@/service/request/auth-session"
 import { useNotificationStore } from "@/store/modules/notification"
 import { useBannerStore } from "@/store/modules/banner"
 import { useRouterPush } from "@/hooks/common/router"
@@ -243,9 +244,48 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     recordUserId()
     clearAuthStorage()
     impersonation.value = null
-    getAuthSession()
+    const clearedSession = getAuthSession()
     await resetIdentityState()
-    if (!route.meta.constant) await toLogin()
+    if (getAuthSession() === clearedSession && !route.meta.constant) await toLogin()
+  }
+
+  let logoutTask: { session: number; promise: Promise<void> } | null = null
+
+  function logout(): Promise<void> {
+    if (impersonation.value || localStg.get("impersonation")) {
+      window.$message?.warning?.($t("request.impersonationStopFirst"))
+      return Promise.resolve()
+    }
+    if (!getToken()) return resetStore()
+    const session = getAuthSession()
+    if (logoutTask?.session === session) return logoutTask.promise
+    setLogoutSession(session)
+    const controller = new AbortController()
+    let timeout: ReturnType<typeof setTimeout>
+    const timedOut = new Promise<never>((_, reject) => {
+      timeout = setTimeout(() => {
+        controller.abort()
+        reject(new Error("Logout timed out"))
+      }, 5000)
+    })
+    const promise = (async () => {
+      try {
+        const { error } = await Promise.race([fetchLogout(controller.signal), timedOut])
+        if (error) throw error
+      } catch {
+        if (getAuthSession() === session) window.$message?.warning?.($t("request.logoutUnconfirmed"))
+      } finally {
+        clearTimeout(timeout!)
+        try {
+          if (getAuthSession() === session) await resetStore()
+        } finally {
+          if (isLoggingOut(session)) setLogoutSession(null)
+          if (logoutTask?.session === session) logoutTask = null
+        }
+      }
+    })()
+    logoutTask = { session, promise }
+    return promise
   }
 
   /** Record the user ID of the previous login session Used to compare with the current user ID on next login */
@@ -432,6 +472,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     syncAccessToken,
     loginLoading,
     resetStore,
+    logout,
     resetIdentityState,
     startImpersonation,
     stopImpersonation,

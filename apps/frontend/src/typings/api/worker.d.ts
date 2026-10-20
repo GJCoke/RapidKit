@@ -47,12 +47,6 @@ declare global {
       /** Worker detail with independently nullable live inspection fields. */
       type WorkerDetail = Service.ApiResponse<"/api/v1/workers/{worker_id}">
 
-      /** worker search params */
-      type WorkerSearchParams = Service.ApiRequest<"/api/v1/workers", "get", "query">
-
-      /** worker list */
-      type WorkerList = Service.ApiResponse<"/api/v1/workers">
-
       /** task result info */
       type TaskInfo = Service.ApiResponse<"/api/v1/tasks/{task_id}">
 
@@ -106,14 +100,6 @@ declare global {
       /** task stats summary */
       type TaskStatsSummary = Service.ApiResponse<"/api/v1/tasks/stats/summary">
 
-      /** task stats timeline data point */
-      type TaskStatsTimeline = {
-        timeBucket: string
-        total: number
-        success: number
-        failure: number
-      }
-
       /** task stats by task name */
       type TaskGroupQuery = Service.ApiRequest<"/api/v1/tasks/stats/by-name", "get", "query">
       type TaskGroupList = Service.ApiResponse<"/api/v1/tasks/stats/by-name">
@@ -137,11 +123,6 @@ declare global {
         runtime?: number
         exception?: string
       }
-
-      // ==================== Schedule Types ====================
-
-      type CrontabPreviewRequest = Service.ApiRequest<"/api/v1/schedules/crontab/preview", "post", "body">
-      type CrontabPreviewResponse = Service.ApiResponse<"/api/v1/schedules/crontab/preview", "post">
 
       type SchedulePreviewRequest = Service.ApiRequest<"/api/v1/schedules/preview", "post", "body">
       type SchedulePreviewResponse = Service.ApiResponse<"/api/v1/schedules/preview", "post">
