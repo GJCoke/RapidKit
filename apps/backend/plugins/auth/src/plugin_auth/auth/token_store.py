@@ -11,6 +11,7 @@ Date   : 2026-05-07
 import time
 from uuid import UUID
 
+from rapidkit_common.protocols.auth import UserSocketCloser
 from rapidkit_common.protocols.impersonation import ImpersonationRevoker
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
@@ -76,11 +77,7 @@ class TokenStore:
         keys = await self._redis.keys(pattern)
         if keys:
             await self._redis.delete(*keys)
-        relogin_key = _FORCE_RELOGIN_KEY.format(user_id=user_id)
-        await self._redis.set(relogin_key, "1", ex=auth_settings.REFRESH_TOKEN_EXP)
-        revoker = get_service_optional(ImpersonationRevoker)
-        if revoker is not None:
-            await revoker.revoke_user(user_id, self._redis)
+        await self.force_relogin(user_id)
 
     async def is_valid(self, user_id: UUID, jti: UUID) -> bool:
         """Check if a refresh token is still valid in Redis."""
@@ -96,6 +93,12 @@ class TokenStore:
         """Force a user to re-login (invalidates all active access tokens)."""
         relogin_key = _FORCE_RELOGIN_KEY.format(user_id=user_id)
         await self._redis.set(relogin_key, "1", ex=auth_settings.REFRESH_TOKEN_EXP)
+        revoker = get_service_optional(ImpersonationRevoker)
+        if revoker is not None:
+            await revoker.revoke_user(user_id, self._redis)
+        closer = get_service_optional(UserSocketCloser)
+        if closer is not None:
+            await closer.close_user(user_id, self._redis)
 
     async def clear_force_relogin(self, user_id: UUID) -> None:
         """Clear the force-relogin flag (called after successful login)."""
