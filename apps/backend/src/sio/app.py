@@ -4,6 +4,8 @@ Date    : 2025-05-19
 """
 
 import importlib
+import re
+from collections.abc import Callable
 
 from rapidkit_core.config import settings
 from rapidkit_framework.plugin import PluginManifest
@@ -30,10 +32,21 @@ def auto_register_events(plugins: list[PluginManifest] | None = None) -> None:
                 importlib.import_module(module_path)
 
 
+def socket_cors_origins(origins: list[str], regex: str | None, debug: bool) -> str | list[str] | Callable[[str], bool]:
+    if "*" in origins:
+        return "*"
+    allowed = [*origins]
+    if debug:
+        allowed.append("https://admin.socket.io")
+    if regex:
+        return lambda origin: origin in allowed or re.fullmatch(regex, origin) is not None
+    return allowed
+
+
 redis_manager = AsyncRedisManager(url=str(settings.REDIS_URL))
 socket = IdentityAwareAsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=[],
+    cors_allowed_origins=socket_cors_origins(settings.CORS_ORIGINS, settings.CORS_ORIGINS_REGEX, settings.ENVIRONMENT.is_debug),
     serializer="serializable_dict",
     client_manager=redis_manager,
 )
