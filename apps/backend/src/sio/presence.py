@@ -18,12 +18,24 @@ async def mark_offline(redis, user_id: str, sid: str) -> None:
 
 
 async def prune_user(redis, user_id: str) -> bool:
-    key = presence_structure.format(user_id=user_id)
-    await redis.zremrangebyscore(key, "-inf", time.time() - SESSION_TTL)
-    if await redis.zcard(key):
-        return True
-    await redis.srem(online_users_structure, user_id)
-    return False
+    # Keep the empty check and index removal atomic with concurrent joins and heartbeats.
+    return bool(
+        await redis.eval(
+            """
+        redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', ARGV[1])
+        if redis.call('ZCARD', KEYS[1]) == 0 then
+            redis.call('SREM', KEYS[2], ARGV[2])
+            return 0
+        end
+        return 1
+        """,
+            2,
+            presence_structure.format(user_id=user_id),
+            online_users_structure,
+            time.time() - SESSION_TTL,
+            user_id,
+        )
+    )
 
 
 async def renew_presence(redis, entries: dict[str, list[str]]) -> None:
