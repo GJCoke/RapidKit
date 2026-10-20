@@ -3,11 +3,7 @@
   import { $t } from "@/locales"
   import type { ChatInstance } from "./types"
 
-  import Doraemon from "@/assets/imgs/avatar_doraemon.jpg"
-  import Gian from "@/assets/imgs/avatar_gian.jpg"
-  import Nobita from "@/assets/imgs/avatar_nobita.jpg"
-  import Shizuka from "@/assets/imgs/avatar_shizuka.jpg"
-  import Suneo from "@/assets/imgs/avatar_suneo.jpg"
+  import { CHAT_CHARACTERS } from "./characters"
 
   interface Props {
     disabled: boolean
@@ -19,14 +15,6 @@
   }>()
 
   const selectedGroup = ref("Nobis-Home")
-
-  const availableUsers = [
-    { name: "Doraemon", img: Doraemon },
-    { name: "Nobita", img: Nobita },
-    { name: "Shizuka", img: Shizuka },
-    { name: "Gian", img: Gian },
-    { name: "Suneo", img: Suneo },
-  ]
 
   const handleSelect = (user: { name: string; img: string }) => {
     emit("join", {
@@ -47,7 +35,7 @@
         </span>
         <div class="flex gap-4">
           <div
-            v-for="user in availableUsers"
+            v-for="user in CHAT_CHARACTERS"
             :key="user.name"
             class="group relative flex flex-col items-center gap-1 cursor-pointer"
             :class="{ 'opacity-50 pointer-events-none': disabled }"

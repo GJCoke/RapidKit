@@ -1,6 +1,7 @@
 import { computed, ref } from "vue"
 import dayjs from "dayjs"
-import { useSocket } from "@/hooks/common/socket"
+import { useAppSocket } from "@/hooks/common/app-socket"
+import { useAuthStore } from "@/store/modules/auth"
 import {
   fetchActivities,
   fetchApiDistribution,
@@ -196,17 +197,12 @@ export function useDashboard() {
 
   // ==================== Socket.IO ====================
 
-  const { socket, connect, isConnected } = useSocket()
+  const { socket, connect, isConnected } = useAppSocket()
 
   function setupSocket(moduleKeys: readonly string[]) {
     const enabled = new Set(moduleKeys)
-    const baseUrl = new URL(import.meta.env.VITE_SERVICE_BASE_URL || "", window.location.origin).origin
-
-    connect({
-      url: baseUrl,
-      namespace: "/dashboard",
-      path: "/socket.io",
-    })
+    if (!useAuthStore().userInfo.isAdmin) return
+    connect("/dashboard")
 
     if (enabled.has("dashboard.infrastructure"))
       socket.value?.on("dashboard:resources", (data: Api.Dashboard.ResourcesEvent) => {
