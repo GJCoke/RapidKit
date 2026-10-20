@@ -78,3 +78,10 @@ class SessionInvalidator(Protocol):
     async def invalidate_user_cache(self, user_id: UUID, redis: "AsyncRedisClient") -> None:
         """Clear the user's info cache."""
         ...
+
+
+class UserSocketCloser(Protocol):
+    async def close_user(
+        self, user_id: UUID, redis: "AsyncRedisClient", *, namespaces: set[str] | None = None,
+        reason: str = "unauthorized",
+    ) -> None: ...

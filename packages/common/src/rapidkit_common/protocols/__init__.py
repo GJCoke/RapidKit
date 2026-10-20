@@ -8,6 +8,7 @@ from rapidkit_common.protocols.auth import (
     PasswordDecryptor,
     SessionInvalidator,
     TokenDecoder,
+    UserSocketCloser,
 )
 from rapidkit_common.protocols.department import DepartmentResolver
 from rapidkit_common.protocols.impersonation import (
@@ -57,6 +58,7 @@ __all__ = [
     "ServerSnapshot",
     "SessionInvalidator",
     "TokenDecoder",
+    "UserSocketCloser",
     "SyncSnapshot",
     "TaskSuccessComparison",
     "UserOperationsProvider",
