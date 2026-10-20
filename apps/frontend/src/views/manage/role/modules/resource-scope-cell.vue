@@ -21,6 +21,7 @@
     resource: ScopeResource
     invalidKeys?: Set<string>
     preserveDefaults?: boolean
+    disabled?: boolean
   }
 
   const props = withDefaults(defineProps<Props>(), { invalidKeys: () => new Set<string>() })
@@ -52,19 +53,24 @@
 
 <template>
   <div class="flex flex-wrap items-center gap-8px">
-    <NSelect
-      v-if="resource.dataScopes.length"
-      v-model:value="selectedScope"
-      :options="scopeOptions"
-      :status="statusOf()"
-      :aria-label="$t('page.manage.role.dataScope')"
-      size="small"
-      class="w-160px"
-    />
+    <div v-if="resource.dataScopes.length" class="flex items-center gap-4px">
+      <span class="text-12px text-base-text-3">{{ $t("page.manage.role.dataScope") }}</span>
+      <NSelect
+        v-model:value="selectedScope"
+        :disabled="disabled"
+        :options="scopeOptions"
+        :status="statusOf()"
+        :aria-label="`${resource.label} / ${$t('page.manage.role.dataScope')}`"
+        size="small"
+        class="w-160px"
+      />
+    </div>
     <div v-for="group in resource.fieldGroups" :key="group.key" class="flex items-center gap-4px">
       <span class="text-12px text-base-text-3">{{ group.label }}</span>
       <NSelect
         :value="getFieldMode(fieldModes, resource.key, group.key)"
+        :disabled="disabled"
+        :aria-label="`${resource.label} / ${group.label}`"
         :options="fieldModeOptions(group, modeLabels)"
         :status="statusOf(group.key)"
         size="small"
@@ -72,6 +78,11 @@
         @update:value="(value: FieldModeValue) => updateMode(group.key, value)"
       />
     </div>
-    <span v-if="!resource.dataScopes.length && !resource.fieldGroups.length" class="text-base-text-3">—</span>
+    <p
+      v-if="!resource.dataScopes.length && !resource.fieldGroups.length"
+      class="m-0 w-full rd-6px bg-theme-fill px-12px py-10px text-13px text-base-text-3"
+    >
+      {{ $t("page.manage.role.workbench.noRestrictionOptions") }}
+    </p>
   </div>
 </template>

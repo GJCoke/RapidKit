@@ -8,7 +8,6 @@ import { useNaivePaginatedTable, useNaiveTable } from "@/hooks/common/table"
 import { createRoleActionModel } from "@/views/manage/role/modules/table-actions"
 import { createMenuActionModel } from "@/views/manage/menu/modules/table-actions"
 import { createUserActionModel } from "@/views/manage/user/composables/user-actions"
-import { createPackageActionModel } from "@/views/manage/permission-package/modules/package-actions"
 import { createScheduleActionModel } from "@/views/queue/schedule/modules/table-actions"
 import { createTaskActionModel } from "@/views/queue/task/modules/task-actions"
 import { createAnnouncementActionModel } from "@/views/notification/manage/announcements/modules/announcement-table"
@@ -56,7 +55,6 @@ it.each([
   ["user", () => translatedWidths(createUserActionModel)],
   ["role", () => translatedWidths(createRoleActionModel)],
   ["menu", () => translatedWidths(createMenuActionModel)],
-  ["package", () => translatedWidths(createPackageActionModel)],
   ["schedule", () => translatedWidths(createScheduleActionModel)],
   ["task", () => translatedWidths(createTaskActionModel)],
   ["announcement", () => translatedWidths(createAnnouncementActionModel)],

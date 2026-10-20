@@ -198,7 +198,7 @@ Loading process: `importlib.metadata.entry_points(group="rapidkit.plugins")` →
 | `auth` | `rapidkit-plugin-auth` | Authentication, invite/reset flows, impersonation |
 | `user` | `rapidkit-plugin-user` | User administration and profiles |
 | `department` | `rapidkit-plugin-department` | Department hierarchy |
-| `permission` | `rapidkit-plugin-permission` | Roles, route access, permission catalog/packages/extensions |
+| `permission` | `rapidkit-plugin-permission` | Roles, route access, permission catalog and server-declared packages |
 | `menu` | `rapidkit-plugin-menu` | Menus and navigation |
 | `monitoring` | `rapidkit-plugin-monitoring` | API monitoring |
 | `system` | `rapidkit-plugin-system` | System information, health and audit |

@@ -15,7 +15,6 @@ EXPECTED_KEYS = {
         "worker",
         "task",
         "schedule",
-        "permission-package",
     )
     for kind in ("readonly", "full")
 }

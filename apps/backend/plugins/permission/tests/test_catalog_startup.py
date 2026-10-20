@@ -1,25 +1,18 @@
 """启动时构建权限码目录。"""
 
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
 import pytest
 from fastapi import FastAPI
 from plugin_permission import register
+from plugin_permission.catalog import startup
 from plugin_permission.catalog.registry import CatalogError, get_catalog, set_catalog
 from plugin_permission.catalog.startup import build_catalog_on_startup
-from rapidkit_common.access import Require
-from rapidkit_framework.plugin import PermissionCodeDef, PluginManifest, ResourceDef
-
-
-from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
-
-import pytest
-from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
-
-from plugin_permission.catalog import runtime, startup
-from plugin_permission.catalog.registry import CatalogError
 from plugin_permission.dashboard.services import find_unknown_dashboard_codes
 from plugins.permission.tests.catalog_fixtures import install_catalog
-
+from rapidkit_common.access import Require
+from rapidkit_framework.plugin import DashboardModuleDef, PermissionCodeDef, PluginManifest, ResourceDef
 
 
 def _app(*, naked: bool = False) -> FastAPI:
@@ -47,8 +40,6 @@ def _app(*, naked: bool = False) -> FastAPI:
 
 
 async def test_startup_builds_and_publishes_catalog(monkeypatch):
-    monkeypatch.setattr(startup, "AsyncSessionLocal", MagicMock(return_value=AsyncMock()))
-    monkeypatch.setattr(runtime, "load_extension_rows", AsyncMock(return_value=[]))
     set_catalog(None)
     try:
         await build_catalog_on_startup(_app())

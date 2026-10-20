@@ -12,16 +12,18 @@
   import { createRoleActionModel } from "./modules/table-actions"
   import RoleOperateDrawer from "./modules/role-operate-drawer.vue"
   import RoleSearch from "./modules/role-search.vue"
-  import ApplyPackageModal from "./modules/apply-package-modal.vue"
+  import PermissionModal from "./modules/permission-modal.vue"
 
   const appStore = useAppStore()
   const { hasAuth, getActionContext } = useAuth()
 
-  const applyRoleId = shallowRef("")
-  const applyVisible = shallowRef(false)
-  function openApplyPackages(roleId: string) {
-    applyRoleId.value = roleId
-    applyVisible.value = true
+  const permissionRoleId = shallowRef("")
+  const permissionRoleName = shallowRef("")
+  const permissionVisible = shallowRef(false)
+  function openPermissions(role: Api.SystemManage.Role) {
+    permissionRoleId.value = role.id
+    permissionRoleName.value = role.name
+    permissionVisible.value = true
   }
   const actions = useTableActions(() => createRoleActionModel<Api.SystemManage.Role>(), () => getActionContext(appStore.locale, appStore.isMobile), (row) => row.id)
 
@@ -95,8 +97,8 @@
         render: (row) => (
           <div class="flex items-center justify-start flex-nowrap gap-8px whitespace-nowrap">
             {actions.visible(row, "grant") && (
-              <NButton type="primary" ghost size="small" onClick={() => openApplyPackages(row.id)}>
-                {$t("page.manage.role.applyPackage.button")}
+              <NButton type="primary" ghost size="small" onClick={() => openPermissions(row)}>
+                {$t("page.manage.role.permissionConfig")}
               </NButton>
             )}
             {actions.visible(row, "edit") && (
@@ -195,7 +197,12 @@
         :pagination="mobilePagination"
         class="sm:h-full"
       />
-      <ApplyPackageModal v-model:visible="applyVisible" :role-id="applyRoleId" @applied="getData" />
+      <PermissionModal
+        v-model:visible="permissionVisible"
+        :role-id="permissionRoleId"
+        :role-name="permissionRoleName"
+        @saved="getData"
+      />
       <RoleOperateDrawer
         v-model:visible="drawerVisible"
         :operate-type="operateType"

@@ -4,7 +4,6 @@ from src._menu_seeds import build_menus
 
 # 与总索引 C7 菜单 → Menu.permission 对照表一致。
 EXPECTED_MENU_PERMISSIONS = {
-    "manage_permission-package": "permission-package:read",
     "home": "dashboard:read",
     "manage_user": "user:read",
     "manage_user-detail": "user:read",
@@ -23,7 +22,6 @@ EXPECTED_MENU_PERMISSIONS = {
     "notification_manage_templates": "notification-template:read",
     "notification_manage_announcements": "notification:read",
     "notification_manage_deliveries": "notification-delivery:read",
-    "manage_permission-extension": "permission-extension:manage",
 }
 
 
@@ -81,11 +79,6 @@ def test_user_detail_seed_registers_hidden_authorized_page() -> None:
     assert detail.permission == "user:read"
 
 
-def test_permission_package_menu_seeded():
-
-    menus = {menu.route_name: menu for menu in build_menus()}
-    package_menu = menus["manage_permission-package"]
-    assert package_menu.route_path == "/manage/permission-package"
-    assert package_menu.component == "view.manage_permission-package"
-    assert package_menu.permission == "permission-package:read"
-    assert package_menu.parent_id == menus["manage"].id
+def test_permission_management_menus_are_retired():
+    names = {menu.route_name for menu in build_menus()}
+    assert not names & {"manage_permission-package", "manage_permission-extension"}

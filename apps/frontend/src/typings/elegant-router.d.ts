@@ -27,8 +27,6 @@ declare module "@elegant-router/types" {
     "manage_audit-log": "/manage/audit-log";
     "manage_department": "/manage/department";
     "manage_menu": "/manage/menu";
-    "manage_permission-extension": "/manage/permission-extension";
-    "manage_permission-package": "/manage/permission-package";
     "manage_role": "/manage/role";
     "manage_user": "/manage/user";
     "manage_user-detail": "/manage/user-detail/:id";
@@ -117,8 +115,6 @@ declare module "@elegant-router/types" {
     | "manage_audit-log"
     | "manage_department"
     | "manage_menu"
-    | "manage_permission-extension"
-    | "manage_permission-package"
     | "manage_role"
     | "manage_user-detail"
     | "manage_user"

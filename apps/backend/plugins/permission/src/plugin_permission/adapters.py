@@ -15,7 +15,6 @@ from rapidkit_core.redis_client import AsyncRedisClient
 
 from plugin_permission.cache import CachedPermissions, PermissionCache
 from plugin_permission.catalog.registry import get_catalog
-from plugin_permission.catalog.runtime import ensure_catalog_fresh
 from plugin_permission.catalog.version import get_permission_versions
 from plugin_permission.role.crud import RoleCRUD
 from plugin_permission.role_snapshots import load_role_snapshots
@@ -52,7 +51,6 @@ class AuthRoleResolver:
 
     async def resolve(self, role_codes: list[str]) -> CachedPermissions:
         role_versions, catalog_version = await get_permission_versions(self._redis, role_codes)
-        await ensure_catalog_fresh(self._redis, self._crud.session, version=catalog_version)
         snapshots = await load_role_snapshots(self._redis, self._crud, role_versions, catalog_version)
         active = [s for s in snapshots if s.active]
         catalog = get_catalog()

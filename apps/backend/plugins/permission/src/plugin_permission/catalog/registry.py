@@ -9,12 +9,10 @@ import hashlib
 import json
 import re
 from collections.abc import Iterable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Literal
 
-from rapidkit_framework.plugin import AbacAction, PluginManifest, ResourceDef
-
-from plugin_permission.catalog.extensions import CatalogExtension, ExtensionState, plan_extensions
+from rapidkit_framework.plugin import AbacAction, PermissionPackageDef, PluginManifest, ResourceDef
 
 CODE_PATTERN = re.compile(r"^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$")
 RESOURCE_PATTERN = re.compile(r"^[a-z][a-z0-9-]*$")
@@ -34,7 +32,7 @@ class CatalogCode:
     label: str
     abac_action: AbacAction
     depends: tuple[str, ...]
-    source: Literal["code", "extension"]
+    source: Literal["code"]
 
 
 class PermissionCatalog:
@@ -46,14 +44,12 @@ class PermissionCatalog:
         codes: dict[str, CatalogCode],
         route_codes: dict[str, set[str]],
         *,
-        extra_route_codes: dict[str, frozenset[str]] | None = None,
-        extension_states: tuple[ExtensionState, ...] = (),
+        packages: dict[str, PermissionPackageDef] | None = None,
     ) -> None:
         self.resources = resources
         self.codes = codes
         self._route_codes = route_codes
-        self.extra_route_codes: dict[str, frozenset[str]] = dict(extra_route_codes or {})
-        self.extension_states = extension_states
+        self.packages = dict(packages or {})
 
     def expand(self, codes: Iterable[str]) -> set[str]:
         """传递展开 ``depends``，忽略目录中不存在的码。"""
@@ -68,13 +64,12 @@ class PermissionCatalog:
         return result
 
     def codes_for_route(self, route_key: str) -> set[str]:
-        """可访问该接口的码：声明码 ∪ 扩展绑定。"""
-        return set(self._route_codes.get(route_key, ())) | set(self.extra_route_codes.get(route_key, frozenset()))
+        """可访问该接口的代码声明码。"""
+        return set(self._route_codes.get(route_key, ()))
 
     def bound_codes(self) -> set[str]:
-        """至少绑定了一个接口的权限码（含扩展绑定）。"""
-        declared = {code for codes in self._route_codes.values() for code in codes}
-        return declared | {code for codes in self.extra_route_codes.values() for code in codes}
+        """至少绑定了一个接口的权限码。"""
+        return {code for codes in self._route_codes.values() for code in codes}
 
     def allows(self, code: str, route_key: str, user_codes: Iterable[str]) -> bool:
         """持有的码与可访问该接口的码有交集即放行；接口未登记时退回到声明码。"""
@@ -89,7 +84,7 @@ class PermissionCatalog:
         return self.resources[entry.resource]
 
     def digest(self) -> str:
-        """目录内容哈希，含扩展；用于目录版本判定。"""
+        """代码目录及功能包内容哈希，用于目录版本判定。"""
         payload = {
             "resources": sorted(
                 [
@@ -108,7 +103,9 @@ class PermissionCatalog:
                 for entry in self.codes.values()
             ),
             "routes": {key: sorted(codes) for key, codes in sorted(self._route_codes.items())},
-            "extra": {key: sorted(codes) for key, codes in sorted(self.extra_route_codes.items())},
+            "packages": [
+                [item.key, item.label, item.description, list(item.codes)] for _, item in sorted(self.packages.items())
+            ],
         }
         raw = json.dumps(payload, ensure_ascii=False, sort_keys=True)
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
@@ -247,52 +244,23 @@ def _build_baseline(manifests: list[PluginManifest], route_bindings: dict[str, s
         else:
             route_codes.setdefault(route_key, set()).add(code)
 
+    packages: dict[str, PermissionPackageDef] = {}
+    for manifest in manifests:
+        for package in manifest.permission_packages:
+            if package.key in packages:
+                errors.append(f"Duplicate permission package key {package.key!r}")
+            unknown = sorted(set(package.codes) - codes.keys())
+            if unknown:
+                errors.append(f"Permission package {package.key!r} references unknown codes: {unknown}")
+            packages[package.key] = package
     if errors:
         raise CatalogError("\n".join(errors))
-    return PermissionCatalog(resources, codes, route_codes)
+    return PermissionCatalog(resources, codes, route_codes, packages=packages)
 
 
-def build_catalog(
-    manifests: list[PluginManifest],
-    route_bindings: dict[str, str],
-    extensions: Iterable[CatalogExtension] = (),
-) -> PermissionCatalog:
-    """
-    构建生效目录：基线校验失败抛 CatalogError；扩展只按判定结果合并，从不抛异常。
-
-    Args:
-        manifests: 已加载插件清单。
-        route_bindings: Require 声明的 route_key → 声明码。
-        extensions: 扩展层记录，按创建时间升序。
-
-    Returns:
-        合并 active 扩展后的目录。
-    """
-    baseline = _build_baseline(manifests, route_bindings)
-    items = list(extensions)
-    if not items:
-        return baseline
-
-    plan = plan_extensions(baseline, route_bindings, items)
-    codes = dict(baseline.codes)
-    for ext in plan.custom_codes:
-        codes[ext.code] = CatalogCode(
-            code=ext.code,
-            resource=ext.resource or "",
-            label=ext.label or ext.code,
-            abac_action=ext.abac_action,  # ty: ignore[invalid-argument-type]
-            depends=(),
-            source="extension",
-        )
-    for code, extra in plan.depends.items():
-        codes[code] = replace(codes[code], depends=tuple(codes[code].depends) + extra)
-    return PermissionCatalog(
-        baseline.resources,
-        codes,
-        baseline._route_codes,
-        extra_route_codes=plan.route_codes,
-        extension_states=plan.states,
-    )
+def build_catalog(manifests: list[PluginManifest], route_bindings: dict[str, str]) -> PermissionCatalog:
+    """构建仅来自插件代码声明的权限与功能包目录。"""
+    return _build_baseline(manifests, route_bindings)
 
 
 _catalog: PermissionCatalog | None = None

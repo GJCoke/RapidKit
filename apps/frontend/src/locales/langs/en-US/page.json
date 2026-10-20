@@ -375,32 +375,55 @@
       "implied": "Implied",
       "scope": "Data scope / Fields",
       "dataScopeAll": "All",
-      "applyPackage": {
-        "button": "Apply Packages",
-        "title": "Apply Permission Packages",
-        "packages": "Packages",
-        "packagesPlaceholder": "Select one or more packages",
-        "mode": "Mode",
-        "modeMerge": "Merge",
-        "modeReplace": "Replace",
-        "modeMergeHint": "Keep the role's current grants, add the packages' codes, and override data scope and field settings per resource",
-        "modeReplaceHint": "Clear the role's current grants and keep only the packages' codes, data scopes and field settings",
-        "preview": "Preview",
-        "added": "Added",
-        "removed": "Removed",
-        "codes": "Permission codes",
-        "noChange": "The selected packages introduce no changes",
-        "oneTimeHint": "Applying is one-time: later package edits do not affect this role",
-        "success": "Packages applied",
-        "scopes": "Data scope / fields"
-      },
       "dataScope": "Data scope",
       "fieldMode": {
         "visible": "Visible",
         "masked": "Masked",
         "hidden": "Hidden"
       },
-      "invalidScopes": "These data scope or field settings are no longer valid; the stricter value applies until you save"
+      "invalidScopes": "These data scope or field settings are no longer valid; the stricter value applies until you save",
+      "workbench": {
+        "subtitle": "Configure operations, data scopes and field visibility",
+        "unsaved": "Unsaved changes",
+        "saved": "Saved",
+        "packages": "Package shortcuts",
+        "packageHint": "Check or uncheck a package to toggle its permissions. Other selections stay unchanged and required dependencies remain enabled. You can also adjust individual permissions below.",
+        "resources": "Adjust by resource",
+        "custom": "Custom operations",
+        "match": "Matches “{name}”",
+        "matchHint": "Matching compares operations only. It does not represent a package binding or compare data scopes and field settings.",
+        "requiredBy": "Required by: {names}",
+        "crossDependencies": "Cross-resource permissions required by these operations",
+        "restrictions": "Data scope and fields",
+        "inactiveRestrictions": "No operations granted yet. Existing restrictions are retained and take effect when operations are granted.",
+        "emptyResources": "No permission resources available",
+        "counts": "{direct} direct grants · {implied} dependencies",
+        "changes": "Draft: {added} added / {removed} removed · {scopes} restriction changes",
+        "noChanges": "No changes",
+        "reset": "Undo draft",
+        "review": "Review and save",
+        "reviewTitle": "Pending permission changes",
+        "back": "Back to editing",
+        "save": "Save permissions",
+        "addedCodes": "Added direct permissions",
+        "removedCodes": "Removed direct permissions",
+        "addedImplied": "Added dependencies",
+        "removedImplied": "Removed dependencies",
+        "keepRestrictions": "Existing settings retained",
+        "oneTimeHint": "Packages are one-time templates. Saving records final permissions. Later server package changes do not automatically update this role.",
+        "loadFailed": "Unable to load permissions; editing and saving are disabled",
+        "retry": "Reload",
+        "unsavedTitle": "Discard unsaved permission changes?",
+        "unsavedHint": "Closing loses this draft. The role’s saved permissions remain unchanged.",
+        "discard": "Discard draft",
+        "continueEditing": "Keep editing",
+        "invalidCodesHint": "Remove invalid permission codes explicitly before saving",
+        "removeInvalid": "Remove invalid codes from draft",
+        "repairInvalid": "Use effective values in draft",
+        "repairSummary": "These invalid settings will be corrected on save",
+        "noRestrictionOptions": "Only operation permissions apply to this resource. No additional data scope or field settings are available.",
+        "dependencyDetails": "View dependency sources for {name}"
+      }
     },
     "user": {
       "addUser": "Add User",
@@ -825,92 +848,6 @@
         "commandFailed": "The Worker did not confirm success. Check and retry.",
         "commandSent": "Command sent. Refresh to confirm the Worker state."
       }
-    },
-    "permissionExtension": {
-      "title": "Permission Extensions",
-      "tabExtensions": "Extensions",
-      "tabDenials": "Recent Denials",
-      "add": "Add Extension",
-      "edit": "Edit Extension",
-      "export": "Export as Code",
-      "exportTip": "Only active extensions are exported, ready for developers to move into the code baseline",
-      "copy": "Copy",
-      "copied": "Copied",
-      "kind": "Kind",
-      "code": "Code",
-      "target": "Target",
-      "routeKey": "Endpoint",
-      "dependsOn": "Added Dependency",
-      "resource": "Resource",
-      "label": "Label",
-      "abacAction": "Action",
-      "note": "Note",
-      "status": "Status",
-      "reason": "Detail",
-      "createTime": "Created At",
-      "kindOptions": {
-        "route_binding": "Endpoint Binding",
-        "depends": "Added Dependency",
-        "custom_code": "Custom Code"
-      },
-      "statusOptions": {
-        "active": "Active",
-        "cleanable": "Cleanable",
-        "invalid": "Invalid"
-      },
-      "reasonOptions": {
-        "covered_by_baseline": "Covered by the code baseline; safe to delete",
-        "redundant": "Duplicates another extension; safe to delete",
-        "invalid_format": "Invalid code format",
-        "unknown_resource": "Resource does not exist",
-        "resource_mismatch": "Code prefix does not match the resource",
-        "invalid_action": "Invalid action",
-        "unknown_code": "Referenced code no longer exists",
-        "unknown_route": "Endpoint no longer exists or has no declared code",
-        "cycle": "Dependency cycle"
-      },
-      "actionOptions": {
-        "read": "Read",
-        "write": "Write"
-      },
-      "structureLocked": "Kind and target cannot change; delete and recreate instead",
-      "denials": {
-        "days": "Days",
-        "count": "Count",
-        "lastAt": "Last Seen",
-        "lastUser": "Last User",
-        "bind": "Bind from This",
-        "empty": "No recent denials"
-      },
-      "form": {
-        "code": "Select or type a code",
-        "routeKey": "Select an endpoint",
-        "dependsOn": "Select the dependency to add",
-        "resource": "Select a resource",
-        "label": "e.g. Audit users",
-        "note": "Why this extension is needed"
-      }
-    },
-    "permissionPackage": {
-      "title": "Permission Packages",
-      "addPackage": "Add Package",
-      "editPackage": "Edit Package",
-      "viewPackage": "View Package",
-      "key": "Key",
-      "label": "Name",
-      "description": "Description",
-      "codes": "Permission codes",
-      "type": "Type",
-      "builtin": "Built-in",
-      "custom": "Custom",
-      "builtinReadonly": "Built-in packages are maintained in code and are read-only",
-      "form": {
-        "key": "Lowercase letters, digits and hyphens only",
-        "label": "Enter a package name",
-        "codes": "Select permission codes",
-        "scopesEmpty": "The resources of the selected codes have no configurable data scope or fields"
-      },
-      "scopes": "Data scope / fields"
     }
   },
   "notification": {

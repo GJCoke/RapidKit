@@ -9,7 +9,7 @@ declare global {
       /** a resource declared by backend plugins: key / label / dataScopes / fieldGroups */
       type CatalogResource = Catalog["resources"][number]
 
-      /** a permission code; `source` is "extension" for runtime custom codes */
+      /** A permission code declared by a server plugin. */
       type CatalogCode = Catalog["codes"][number]
 
       /** GET /roles/{role_id}/permissions：permissionCodes / dataScopes / fieldModes / invalidCodes / invalidScopes */

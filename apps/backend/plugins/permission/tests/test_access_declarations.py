@@ -26,18 +26,13 @@ def test_permission_routes_declare_expected_access():
 
 def test_permission_manifest_declares_codes():
     manifest = register()
-    assert [r.key for r in manifest.resources] == ["permission-extension", "role", "api-route", "permission-package"]
+    assert [r.key for r in manifest.resources] == ["role", "api-route"]
     assert {c.code: c.depends for c in manifest.permission_codes} == {
-        "permission-package:read": ("role:read",),
-        "permission-package:create": ("permission-package:read",),
-        "permission-package:update": ("permission-package:read",),
-        "permission-package:delete": ("permission-package:read",),
-        "permission-extension:manage": (),
         "role:options": (),
         "role:read": ("role:options",),
         "role:create": ("role:read",),
         "role:update": ("role:read",),
         "role:delete": ("role:read",),
-        "role:grant": ("role:read", "menu:read", "api-route:read", "permission-package:read"),
+        "role:grant": ("role:read", "menu:read", "api-route:read"),
         "api-route:read": (),
     }

@@ -16,16 +16,11 @@ def test_role_permission_codes_roundtrip():
     assert role.permission_codes == ["user:read"]
 
 
-def test_role_and_package_scope_columns_default_to_empty():
-    from plugin_permission.models import Role
-    from plugin_permission.package.models import PermissionPackage
-
+def test_role_scope_columns_default_to_empty():
     role = Role(name="编辑者", code="R_EDITOR")
-    package = PermissionPackage(key="custom.x", label="x", codes=["role:read"])
     assert role.data_scopes == {} and role.field_modes == {}
-    assert package.data_scopes == {} and package.field_modes == {}
-    for table in (Role.__table__, PermissionPackage.__table__):
-        assert not table.c.data_scopes.nullable and not table.c.field_modes.nullable
+    assert not Role.__table__.c.data_scopes.nullable
+    assert not Role.__table__.c.field_modes.nullable
 
 
 def test_role_versions_module_exports_helpers():

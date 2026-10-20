@@ -189,8 +189,9 @@ async def test_real_bootstrap_and_repeat_preserve_stored_users_roles_and_custom_
         await engine.dispose()
 
 
-def test_seed_roles_do_not_grant_extension_management(loaded_app):
+def test_seed_roles_only_grant_declared_codes(loaded_app):
     catalog, _ = catalog_from_app(loaded_app)
     admin, guest = initdb.seed_role_codes(catalog)
-    assert "permission-extension:manage" in catalog.codes
+    assert "permission-extension:manage" not in catalog.codes
+    assert set(admin) == set(catalog.codes)
     assert "permission-extension:manage" not in set(admin) | set(guest)

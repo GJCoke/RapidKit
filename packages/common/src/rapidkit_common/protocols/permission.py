@@ -39,12 +39,12 @@ class PermissionCacheManager(Protocol):
         ...
 
     async def get_catalog_version(self) -> int:
-        """Get the permission catalog version; it changes when baseline codes or extensions change."""
+        """Get the permission catalog version; it changes when server declarations change."""
         ...
 
 
 class PermissionCatalogReader(Protocol):
-    """Read the effective permission catalog (baseline + extensions). Provided by plugin_permission."""
+    """Read the code-declared permission catalog. Provided by plugin_permission."""
 
     def has_code(self, code: str) -> bool:
         """Whether the code exists in the effective catalog."""

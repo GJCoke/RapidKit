@@ -29,7 +29,5 @@
   "notification_manage": "通知管理",
   "notification_manage_templates": "模板管理",
   "notification_manage_announcements": "公告管理",
-  "notification_manage_deliveries": "投递状态",
-  "manage_permission-extension": "权限扩展",
-  "manage_permission-package": "功能包"
+  "notification_manage_deliveries": "投递状态"
 }

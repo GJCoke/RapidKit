@@ -104,22 +104,6 @@ export const generatedRoutes: GeneratedRoute[] = [{
       icon: 'material-symbols:route'
     }
   }, {
-    name: 'manage_permission-extension',
-    path: '/manage/permission-extension',
-    component: 'view.manage_permission-extension',
-    meta: {
-      title: 'manage_permission-extension',
-      i18nKey: 'route.manage_permission-extension'
-    }
-  }, {
-    name: 'manage_permission-package',
-    path: '/manage/permission-package',
-    component: 'view.manage_permission-package',
-    meta: {
-      title: 'manage_permission-package',
-      i18nKey: 'route.manage_permission-package'
-    }
-  }, {
     name: 'manage_role',
     path: '/manage/role',
     component: 'view.manage_role',

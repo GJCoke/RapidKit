@@ -18,30 +18,18 @@ def test_status_code_contract():
         assert code.description.startswith("permission.error.")
 
 
-def test_extension_status_codes_have_translations():
+def test_permission_status_codes_have_translations():
 
-
-    names = [
-        "EXTENSION_UNKNOWN_CODE",
-        "EXTENSION_UNKNOWN_ROUTE",
-        "EXTENSION_INVALID_CUSTOM_CODE",
-        "EXTENSION_DEPENDS_CYCLE",
-        "EXTENSION_DUPLICATES_BASELINE",
-        "EXTENSION_ALREADY_EXISTS",
-        "EXTENSION_IN_USE",
-        "EXTENSION_NOT_FOUND",
-    ]
     root = Path(__file__).resolve().parents[3] / "src/locales/langs"
     for lang in ("zh-CN", "en-US"):
         errors = json.loads((root / lang / "permission.json").read_text())["error"]
-        for name in names:
-            key = RbacStatusCode[name].description.removeprefix("permission.error.")
-            assert errors.get(key), (lang, name)
+        for code in RbacStatusCode:
+            key = code.description.removeprefix("permission.error.")
+            assert errors.get(key), (lang, code.name)
 
 
 def test_package_status_codes_are_registered():
 
     assert RbacStatusCode.PACKAGE_NOT_FOUND.value[0] == 35101
-    assert RbacStatusCode.PACKAGE_BUILTIN_READONLY.value[0] == 35102
     assert RbacStatusCode.PACKAGE_INVALID_CODES.value[0] == 35103
     assert RbacStatusCode.PACKAGE_INVALID_SCOPES.value[0] == 35104

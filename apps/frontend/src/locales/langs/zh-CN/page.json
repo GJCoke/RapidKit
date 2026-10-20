@@ -375,32 +375,55 @@
       "implied": "依赖带入",
       "scope": "数据范围 / 字段",
       "dataScopeAll": "全部",
-      "applyPackage": {
-        "button": "应用功能包",
-        "title": "从功能包应用",
-        "packages": "功能包",
-        "packagesPlaceholder": "选择一个或多个功能包",
-        "mode": "应用方式",
-        "modeMerge": "合并",
-        "modeReplace": "替换",
-        "modeMergeHint": "保留角色现有授权，追加功能包中的权限码，并按资源覆盖数据范围与字段设置",
-        "modeReplaceHint": "清空角色现有授权，只保留功能包中的权限码、数据范围与字段设置",
-        "preview": "变更预览",
-        "added": "新增",
-        "removed": "移除",
-        "codes": "权限码",
-        "noChange": "所选功能包未带来任何变更",
-        "oneTimeHint": "应用是一次性的：之后修改功能包不会影响该角色",
-        "success": "已应用功能包",
-        "scopes": "数据范围 / 字段"
-      },
       "dataScope": "数据范围",
       "fieldMode": {
         "visible": "可见",
         "masked": "脱敏",
         "hidden": "隐藏"
       },
-      "invalidScopes": "以下数据范围或字段设置已失效，已按更严格的值生效，保存后更新"
+      "invalidScopes": "以下数据范围或字段设置已失效，已按更严格的值生效，保存后更新",
+      "workbench": {
+        "subtitle": "配置操作权限、数据范围与字段可见性",
+        "unsaved": "有未保存变更",
+        "saved": "已保存",
+        "packages": "功能包快捷选择",
+        "packageHint": "勾选或取消功能包，直接切换包内权限；其他勾选保持不变，依赖权限自动保留。也可在下方逐项调整。",
+        "resources": "按资源调整",
+        "custom": "自定义操作",
+        "match": "匹配「{name}」",
+        "matchHint": "匹配仅比较操作权限，不表示角色绑定功能包，也不比较数据范围和字段设置。",
+        "requiredBy": "由以下操作带入：{names}",
+        "crossDependencies": "当前资源操作需要的跨资源权限",
+        "restrictions": "数据范围与字段",
+        "inactiveRestrictions": "尚未授予操作，已有范围和字段限制将保留，授予操作后生效。",
+        "emptyResources": "暂无可配置的权限资源",
+        "counts": "直接授予 {direct} 项 · 自动依赖 {implied} 项",
+        "changes": "草稿变更：新增 {added} / 移除 {removed} · 范围与字段 {scopes} 项",
+        "noChanges": "无变更",
+        "reset": "撤销草稿",
+        "review": "预览并保存",
+        "reviewTitle": "待保存的权限变更",
+        "back": "返回调整",
+        "save": "保存权限",
+        "addedCodes": "新增直接权限",
+        "removedCodes": "移除直接权限",
+        "addedImplied": "新增自动依赖",
+        "removedImplied": "移除自动依赖",
+        "keepRestrictions": "保持原有设置",
+        "oneTimeHint": "功能包为一次性快捷配置。保存后记录最终权限，后续修改服务器功能包不会自动改动该角色。",
+        "loadFailed": "权限配置加载失败，暂不能编辑或保存",
+        "retry": "重新加载",
+        "unsavedTitle": "放弃未保存的权限变更？",
+        "unsavedHint": "关闭后，本次草稿将丢失，角色现有权限保持不变。",
+        "discard": "放弃草稿",
+        "continueEditing": "继续编辑",
+        "invalidCodesHint": "存在失效权限码，请明确移除后再保存",
+        "removeInvalid": "从草稿移除失效权限码",
+        "repairInvalid": "使用当前生效值修正草稿",
+        "repairSummary": "保存时将修正以下失效配置",
+        "noRestrictionOptions": "此资源仅需配置操作权限，无额外的数据范围或字段设置。",
+        "dependencyDetails": "查看「{name}」的依赖来源"
+      }
     },
     "user": {
       "addUser": "新增用户",
@@ -825,92 +848,6 @@
         "commandFailed": "Worker 未确认操作成功，请检查后重试。",
         "commandSent": "操作指令已发送，请刷新确认 Worker 状态。"
       }
-    },
-    "permissionExtension": {
-      "title": "权限扩展",
-      "tabExtensions": "扩展列表",
-      "tabDenials": "最近被拒",
-      "add": "新增扩展",
-      "edit": "编辑扩展",
-      "export": "导出为代码声明",
-      "exportTip": "仅导出生效中的扩展，可交给开发者固化到代码基线",
-      "copy": "复制",
-      "copied": "已复制",
-      "kind": "类型",
-      "code": "权限码",
-      "target": "目标",
-      "routeKey": "接口",
-      "dependsOn": "追加依赖",
-      "resource": "所属资源",
-      "label": "显示名称",
-      "abacAction": "动作",
-      "note": "备注",
-      "status": "状态",
-      "reason": "说明",
-      "createTime": "创建时间",
-      "kindOptions": {
-        "route_binding": "接口绑定",
-        "depends": "追加依赖",
-        "custom_code": "自定义码"
-      },
-      "statusOptions": {
-        "active": "生效",
-        "cleanable": "可清理",
-        "invalid": "已失效"
-      },
-      "reasonOptions": {
-        "covered_by_baseline": "代码基线已覆盖，可删除",
-        "redundant": "与其他扩展重复，可删除",
-        "invalid_format": "权限码格式不正确",
-        "unknown_resource": "资源不存在",
-        "resource_mismatch": "权限码前缀与资源不一致",
-        "invalid_action": "动作不合法",
-        "unknown_code": "引用的权限码已不存在",
-        "unknown_route": "接口已不存在或未声明权限码",
-        "cycle": "依赖形成循环"
-      },
-      "actionOptions": {
-        "read": "读",
-        "write": "写"
-      },
-      "structureLocked": "类型与目标不可修改，如需调整请删除后重建",
-      "denials": {
-        "days": "统计天数",
-        "count": "次数",
-        "lastAt": "最近一次",
-        "lastUser": "最近用户",
-        "bind": "据此新增绑定",
-        "empty": "最近没有被拒记录"
-      },
-      "form": {
-        "code": "选择或输入权限码",
-        "routeKey": "选择接口",
-        "dependsOn": "选择要追加的依赖码",
-        "resource": "选择资源",
-        "label": "例如：审计用户",
-        "note": "说明为什么需要这条扩展"
-      }
-    },
-    "permissionPackage": {
-      "title": "功能包",
-      "addPackage": "新增功能包",
-      "editPackage": "编辑功能包",
-      "viewPackage": "查看功能包",
-      "key": "标识",
-      "label": "名称",
-      "description": "描述",
-      "codes": "权限码",
-      "type": "类型",
-      "builtin": "内置",
-      "custom": "自定义",
-      "builtinReadonly": "内置功能包由代码维护，只读",
-      "form": {
-        "key": "仅限小写字母、数字和连字符",
-        "label": "请输入功能包名称",
-        "codes": "选择权限码",
-        "scopesEmpty": "所选权限码涉及的资源没有可配置的数据范围或字段"
-      },
-      "scopes": "数据范围 / 字段"
     }
   },
   "notification": {

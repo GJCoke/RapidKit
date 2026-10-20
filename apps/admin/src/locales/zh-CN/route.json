@@ -6,7 +6,6 @@
     "home": "首页",
     "manage": "系统管理",
     "manage_user": "用户管理",
-    "manage_permission-extension": "权限扩展",
     "manage_user-detail": "用户详情",
     "manage_role": "角色管理",
     "manage_menu": "菜单管理",
@@ -27,7 +26,6 @@
     "notification_manage": "通知管理",
     "notification_manage_templates": "模板管理",
     "notification_manage_announcements": "公告管理",
-    "notification_manage_deliveries": "投递状态",
-    "manage_permission-package": "功能包"
+    "notification_manage_deliveries": "投递状态"
   }
 }

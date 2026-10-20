@@ -8,7 +8,7 @@ const catalog: Api.Permission.Catalog = {
   ],
   codes: [
     { code: "user:read", resource: "user", label: "查看用户", abacAction: "read", depends: [], source: "code" },
-    { code: "user:sync", resource: "user", label: "同步用户", abacAction: "write", depends: [], source: "extension" },
+    { code: "user:sync", resource: "user", label: "同步用户", abacAction: "write", depends: [], source: "code" },
   ],
 }
 

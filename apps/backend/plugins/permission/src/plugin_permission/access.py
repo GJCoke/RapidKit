@@ -15,11 +15,10 @@ from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.status_codes import StatusCode
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from plugin_permission.audit import log_permission_denied
 from plugin_permission.bypass import is_permission_bypass
 from plugin_permission.catalog.registry import PermissionCatalog, get_catalog
-from plugin_permission.catalog.runtime import ensure_catalog_fresh
 from plugin_permission.context import PermissionContext
-from plugin_permission.extension.denials import record_denial
 from plugin_permission.role.crud import RoleCRUD
 from plugin_permission.role.schemas import PermissionDeniedDetail
 from plugin_permission.scope_binding import bind_request_scope, clear_request_scope
@@ -54,7 +53,7 @@ async def resolve_access(
     """
     校验当前用户是否持有可访问本接口的权限码。
 
-    可接受的码 = 接口声明码 ∪ 目录中绑定到该接口的码（扩展层，P5）。
+    可接受的码来自接口的代码声明，用户码已按代码依赖展开。
     启动后动态注册、未进入目录的接口只接受声明码。
 
     Args:
@@ -70,7 +69,6 @@ async def resolve_access(
     Raises:
         AppException: 权限不足（34001，``data`` 为缺失码详情）。
     """
-    await ensure_catalog_fresh(redis, session)
     if is_permission_bypass(user):
         clear_request_scope()
         return Scope(user=user, code=code)
@@ -89,8 +87,7 @@ async def resolve_access(
             code=code,
             route_key=route_key,
         )
-        await record_denial(
-            redis,
+        log_permission_denied(
             user_id=user.id,
             code=code,
             route_key=route_key,

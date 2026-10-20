@@ -1,15 +1,12 @@
 <script setup lang="ts">
   import { computed, ref, watch } from "vue"
   import { jsonClone } from "@rapidkit/utils"
-  import { useBoolean } from "@rapidkit/hooks"
   import { useOperationAccess } from "@/hooks/business/table-actions/use-operation-access"
   import { enableStatusOptions } from "@/constants/business"
   import { fetchCreateRole, fetchUpdateRole } from "@/service/api"
   import { translateOptions } from "@/utils/common"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
-  import { useAuth } from "@/hooks/business/auth"
-  import PermissionModal from "./permission-modal.vue"
   import { buildRoleUpdatePayload } from "./role-update-payload"
 
   defineOptions({
@@ -41,8 +38,6 @@
 
   const { formRef, validate, restoreValidation } = useNaiveForm()
   const { defaultRequiredRule } = useFormRules()
-  const { bool: permissionVisible, setTrue: openPermissionModal } = useBoolean()
-  const { hasAuth } = useAuth()
 
   const title = computed(() => {
     const titles: Record<NaiveUI.TableOperateType, string> = {
@@ -72,10 +67,6 @@
     code: defaultRequiredRule,
     status: defaultRequiredRule,
   }
-
-  const roleId = computed(() => props.rowData?.id || "")
-
-  const isEdit = computed(() => props.operateType === "edit")
 
   function handleInitModel() {
     model.value = createDefaultModel()
@@ -136,12 +127,6 @@
           <NInput v-model:value="model.description" :placeholder="$t('page.manage.role.form.roleDesc')" />
         </NFormItem>
       </NForm>
-      <NSpace v-if="isEdit">
-        <NButton v-if="hasAuth('role:grant')" @click="openPermissionModal">
-          {{ $t("page.manage.role.permissionConfig") }}
-        </NButton>
-        <PermissionModal v-model:visible="permissionVisible" :role-id="roleId" />
-      </NSpace>
       <template #footer>
         <NSpace :size="16">
           <NButton @click="closeDrawer">{{ $t("common.cancel") }}</NButton>

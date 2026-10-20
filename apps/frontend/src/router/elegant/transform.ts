@@ -173,8 +173,6 @@ const routeMap: RouteMap = {
   "manage_audit-log": "/manage/audit-log",
   "manage_department": "/manage/department",
   "manage_menu": "/manage/menu",
-  "manage_permission-extension": "/manage/permission-extension",
-  "manage_permission-package": "/manage/permission-package",
   "manage_role": "/manage/role",
   "manage_user": "/manage/user",
   "manage_user-detail": "/manage/user-detail/:id",

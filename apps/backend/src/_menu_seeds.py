@@ -212,37 +212,6 @@ def build_menus() -> list[Menu]:
         permission="audit-log:read",
     )
 
-    # 2.8 权限扩展（仅超级管理员：不授予任何内置角色；P3 设置 Menu.permission = "permission-extension:manage"）
-    manage_permission_extension = Menu(
-        id=uuid8(),
-        parent_id=manage_id,
-        menu_name="权限扩展",
-        menu_type=MenuType.MENU,
-        order=8,
-        route_name="manage_permission-extension",
-        route_path="/manage/permission-extension",
-        component="view.manage_permission-extension",
-        icon="mdi:puzzle-outline",
-        icon_type=MenuIconType.ICONIFY,
-        i18n_key="route.manage_permission-extension",
-        permission="permission-extension:manage",
-    )
-
-    manage_permission_package = Menu(
-        id=uuid8(),
-        parent_id=manage_id,
-        menu_name="功能包",
-        menu_type=MenuType.MENU,
-        order=9,
-        route_name="manage_permission-package",
-        route_path="/manage/permission-package",
-        component="view.manage_permission-package",
-        icon="mdi:package-variant-closed",
-        icon_type=MenuIconType.ICONIFY,
-        i18n_key="route.manage_permission-package",
-        permission="permission-package:read",
-    )
-
     socketio_id = uuid8()
 
     # 3. 即时通讯 (目录)
@@ -493,8 +462,6 @@ def build_menus() -> list[Menu]:
         manage_menu,
         manage_department,
         manage_audit_log,
-        manage_permission_extension,
-        manage_permission_package,
         socketio,
         socketio_chat,
         socketio_debug,

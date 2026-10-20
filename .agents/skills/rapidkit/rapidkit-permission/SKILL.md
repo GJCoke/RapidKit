@@ -136,7 +136,9 @@ Naming rules (validated at startup by `catalog/registry.py` — violations raise
 
 Conventional actions: `read`, `create`, `update`, `delete`, plus `options` for lightweight dropdown/select endpoints that other modules depend on (e.g. `user:read` depends on `role:options` and `department:read` because the user list renders role and department pickers). Add a dedicated code for a distinct capability (`user:reset-password`, `user:stats`, `notification:retry`) rather than overloading `update`.
 
-Other catalog checks: no duplicate resources/codes, every `depends` target exists, no dependency cycles, and a resource with `data_scopes` or `field_groups` must have a `model`; scope columns must belong to that model and each field may belong to only one field group. A resource without a model (`ResourceDef(key="permission-extension", label="权限扩展")`) is fine for codes that don't map to a table.
+Other catalog checks: no duplicate resources/codes, every `depends` target exists, no dependency cycles, and a resource with `data_scopes` or `field_groups` must have a `model`; scope columns must belong to that model and each field may belong to only one field group. A resource without a model (`ResourceDef(key="dashboard", label="仪表盘")`) is fine for codes that don't map to a table.
+
+Permission packages exist only in server `PluginManifest.permission_packages` declarations. There is no package database model or user-facing package CRUD. The role editor reads `GET /permission-packages/all` and uses packages as bulk checkbox shortcuts; final grants are saved with `PUT /roles/{role_id}/permissions`. Both endpoints require `role:grant`. Runtime permission extensions are retired: codes, depends and route access must be declared in code.
 
 ### 2. Wire Into `register()`
 

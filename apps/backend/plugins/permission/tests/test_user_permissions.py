@@ -12,7 +12,6 @@ USER_ID = UUID("00000000-0000-0000-0000-0000000000aa")
 
 
 def _patch(monkeypatch, cached, versions, rebuilt, catalog_version=1):
-    monkeypatch.setattr(user_permissions, "ensure_catalog_fresh", AsyncMock())
     cache = MagicMock(get=AsyncMock(return_value=cached), set=AsyncMock())
     monkeypatch.setattr(user_permissions, "build_permission_cache", lambda redis: cache)
     monkeypatch.setattr(

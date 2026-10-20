@@ -60,8 +60,3 @@ async def read_catalog_version(redis: AsyncRedisClient) -> int:
     """读取目录版本；缺失时按时间戳初始化。"""
     [version] = await get_versions(redis, [CATALOG_VERSION_KEY])
     return version
-
-
-async def bump_catalog_version(redis: AsyncRedisClient) -> int:
-    """无条件递增目录版本（运行时目录变更，例如 P5 扩展层）。"""
-    return await bump_version(redis, CATALOG_VERSION_KEY)

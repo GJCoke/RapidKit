@@ -1,1 +1,0 @@
-"""Permission extension layer."""

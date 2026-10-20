@@ -7,7 +7,7 @@ export function createRoleActionModel<Row>(): ActionModel<Row> {
     {
       key: "grant",
       access: { kind: "all", codes: ["role:grant"] },
-      width: () => textButtonWidth($t("page.manage.role.applyPackage.button")),
+      width: () => textButtonWidth($t("page.manage.role.permissionConfig")),
     },
     { key: "edit", access: { kind: "all", codes: ["role:update"] }, width: () => textButtonWidth($t("common.edit")) },
     {

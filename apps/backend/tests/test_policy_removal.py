@@ -5,7 +5,6 @@ import importlib.util
 
 from plugin_permission import register
 from plugin_permission.models import Role
-from plugin_permission.package.models import PermissionPackage
 from rapidkit_framework.plugin import ResourceDef
 from src._menu_seeds import build_menus
 
@@ -17,7 +16,6 @@ def test_policy_modules_are_gone():
 
 def test_policy_columns_and_codes_are_gone():
     assert "data_policy_ids" not in Role.model_fields and "field_policy_ids" not in Role.model_fields
-    assert "data_policy_ids" not in PermissionPackage.model_fields
     codes = {code.code for code in register().permission_codes}
     assert not {code for code in codes if code.startswith(("data-policy:", "field-policy:"))}
     assert "data_scope" not in ResourceDef.__dataclass_fields__ and "fields" not in ResourceDef.__dataclass_fields__

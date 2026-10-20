@@ -61,7 +61,7 @@ def seed_role_codes(catalog: PermissionCatalog) -> tuple[list[str], list[str]]:
         (ADMIN：目录内全部码, GUEST：访客菜单对应的查看码，依赖由 depends 展开)。
     """
     guest = set(GUEST_PERMISSION_CODES)
-    return sorted(set(catalog.codes) - {"permission-extension:manage"}), sorted(guest & set(catalog.codes))
+    return sorted(catalog.codes), sorted(guest & set(catalog.codes))
 
 
 async def create_roles_and_users(session: AsyncSession, catalog: PermissionCatalog) -> None:

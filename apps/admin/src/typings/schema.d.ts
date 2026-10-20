@@ -1313,118 +1313,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  "/api/v1/permission-extensions": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Extensions
-     * @description 全部扩展及其当前判定（数量少，不分页）。
-     */
-    get: operations["list_extensions_api_v1_permission_extensions_get"]
-    put?: never
-    /**
-     * Create Extension
-     * @description 创建权限扩展，并刷新权限目录与缓存。
-     */
-    post: operations["create_extension_api_v1_permission_extensions_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/permission-extensions/{extension_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /**
-     * Update Extension
-     * @description 更新权限扩展，并刷新权限目录与缓存。
-     */
-    put: operations["update_extension_api_v1_permission_extensions__extension_id__put"]
-    post?: never
-    /**
-     * Delete Extension
-     * @description 删除权限扩展，并刷新权限目录与缓存。
-     */
-    delete: operations["delete_extension_api_v1_permission_extensions__extension_id__delete"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/permission-extensions/export": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Export Extensions
-     * @description 生效扩展导出为代码声明文本。
-     */
-    get: operations["export_extensions_api_v1_permission_extensions_export_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/permission-extensions/denials": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Denials
-     * @description 最近被拒的码（按次数降序）。
-     */
-    get: operations["list_denials_api_v1_permission_extensions_denials_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/permission-packages": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Packages
-     * @description 分页查询权限功能包，支持按名称或标识搜索。
-     */
-    get: operations["list_packages_api_v1_permission_packages_get"]
-    put?: never
-    /**
-     * Create Package
-     * @description 校验权限码、范围和字段设置后创建自定义功能包。
-     */
-    post: operations["create_package_api_v1_permission_packages_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   "/api/v1/permission-packages/all": {
     parameters: {
       query?: never
@@ -1434,36 +1322,12 @@ export interface paths {
     }
     /**
      * List All Packages
-     * @description 全部功能包（不分页，用于应用到角色）。
+     * @description 读取服务器代码中的功能包，不查询数据库。
      */
     get: operations["list_all_packages_api_v1_permission_packages_all_get"]
     put?: never
     post?: never
     delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/permission-packages/{package_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /**
-     * Update Package
-     * @description 校验并更新自定义功能包，内置功能包不可修改。
-     */
-    put: operations["update_package_api_v1_permission_packages__package_id__put"]
-    post?: never
-    /**
-     * Delete Package
-     * @description 删除自定义功能包，内置功能包不可删除。
-     */
-    delete: operations["delete_package_api_v1_permission_packages__package_id__delete"]
     options?: never
     head?: never
     patch?: never
@@ -3496,21 +3360,6 @@ export interface components {
       }
       message?: components["schemas"]["DeliveryMessageResponse"] | null
     }
-    /** DenialRecord */
-    DenialRecord: {
-      /** Code */
-      code: string
-      /** Routekey */
-      routeKey: string
-      /** Codelabel */
-      codeLabel?: string | null
-      /** Count */
-      count: number
-      /** Lastat */
-      lastAt?: string | null
-      /** Lastuserid */
-      lastUserId?: string | null
-    }
     /**
      * DepartmentCreate
      * @description 创建部门请求。
@@ -3647,94 +3496,6 @@ export interface components {
       deadLetters: components["schemas"]["DeadLetterResponse"][]
       /** Deadlettercount */
       deadLetterCount: number
-    }
-    /** ExtensionCreate */
-    ExtensionCreate: {
-      /**
-       * Kind
-       * @enum {string}
-       */
-      kind: "route_binding" | "depends" | "custom_code"
-      /** Code */
-      code: string
-      /** Routekey */
-      routeKey?: string | null
-      /** Dependson */
-      dependsOn?: string | null
-      /** Resource */
-      resource?: string | null
-      /** Label */
-      label?: string | null
-      /** Abacaction */
-      abacAction?: ("read" | "write") | null
-      /**
-       * Note
-       * @default
-       */
-      note: string
-    }
-    /** ExtensionExport */
-    ExtensionExport: {
-      /** Text */
-      text: string
-    }
-    /** ExtensionResponse */
-    ExtensionResponse: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Createtime
-       * @example 2024-07-31 16:07:34
-       */
-      createTime: string
-      /**
-       * Updatetime
-       * @example 2024-07-31 16:07:34
-       */
-      updateTime: string
-      /**
-       * Kind
-       * @enum {string}
-       */
-      kind: "route_binding" | "depends" | "custom_code"
-      /** Code */
-      code: string
-      /** Routekey */
-      routeKey: string | null
-      /** Dependson */
-      dependsOn: string | null
-      /** Resource */
-      resource: string | null
-      /** Label */
-      label: string | null
-      /** Abacaction */
-      abacAction: string | null
-      /** Note */
-      note: string
-      /** Createdby */
-      createdBy: string | null
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "active" | "cleanable" | "invalid"
-      /** Reason */
-      reason: string | null
-    }
-    /**
-     * ExtensionUpdate
-     * @description 只允许修改非结构字段；结构变化请删除后重建。
-     */
-    ExtensionUpdate: {
-      /** Note */
-      note?: string | null
-      /** Label */
-      label?: string | null
-      /** Abacaction */
-      abacAction?: ("read" | "write") | null
     }
     /**
      * FastAPIRouterResponse
@@ -4777,53 +4538,8 @@ export interface components {
      * @enum {string}
      */
     OutboxStatus: "pending" | "processing" | "retrying" | "sent" | "dead" | "cancelled"
-    /** PackageCreate */
-    PackageCreate: {
-      /** Key */
-      key: string
-      /** Label */
-      label: string
-      /**
-       * Description
-       * @default
-       */
-      description: string
-      /** Codes */
-      codes: string[]
-      /**
-       * Datascopes
-       * @default {}
-       */
-      dataScopes: {
-        [key: string]: string
-      }
-      /**
-       * Fieldmodes
-       * @default {}
-       */
-      fieldModes: {
-        [key: string]: {
-          [key: string]: "visible" | "masked" | "hidden"
-        }
-      }
-    }
     /** PackageResponse */
     PackageResponse: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Createtime
-       * @example 2024-07-31 16:07:34
-       */
-      createTime: string
-      /**
-       * Updatetime
-       * @example 2024-07-31 16:07:34
-       */
-      updateTime: string
       /** Key */
       key: string
       /** Label */
@@ -4838,27 +4554,6 @@ export interface components {
       }
       /** Fieldmodes */
       fieldModes: {
-        [key: string]: {
-          [key: string]: "visible" | "masked" | "hidden"
-        }
-      }
-      /** Builtin */
-      builtin: boolean
-    }
-    /** PackageUpdate */
-    PackageUpdate: {
-      /** Label */
-      label?: string
-      /** Description */
-      description?: string
-      /** Codes */
-      codes?: string[]
-      /** Datascopes */
-      dataScopes?: {
-        [key: string]: string
-      }
-      /** Fieldmodes */
-      fieldModes?: {
         [key: string]: {
           [key: string]: "visible" | "masked" | "hidden"
         }
@@ -4978,29 +4673,6 @@ export interface components {
        * @description 记录列表。
        */
       records: components["schemas"]["MessageAdminResponse"][]
-    }
-    /** PaginatedResponse[PackageResponse] */
-    PaginatedResponse_PackageResponse_: {
-      /**
-       * Page
-       * @description 页码。
-       */
-      page: number
-      /**
-       * Pagesize
-       * @description 每页条数。
-       */
-      pageSize: number
-      /**
-       * Total
-       * @description 总条数。
-       */
-      total: number
-      /**
-       * Records
-       * @description 记录列表。
-       */
-      records: components["schemas"]["PackageResponse"][]
     }
     /** PaginatedResponse[PeriodicTaskListResponse] */
     PaginatedResponse_PeriodicTaskListResponse_: {
@@ -5779,38 +5451,6 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["EventBusStats"] | null
     }
-    /** Response[ExtensionExport] */
-    Response_ExtensionExport_: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["ExtensionExport"] | null
-    }
-    /** Response[ExtensionResponse] */
-    Response_ExtensionResponse_: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["ExtensionResponse"] | null
-    }
     /** Response[HealthStats] */
     Response_HealthStats_: {
       /**
@@ -6006,22 +5646,6 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["OperationsOverviewResponse"] | null
     }
-    /** Response[PackageResponse] */
-    Response_PackageResponse_: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["PackageResponse"] | null
-    }
     /** Response[PaginatedResponse[ApiListItem]] */
     Response_PaginatedResponse_ApiListItem__: {
       /**
@@ -6101,22 +5725,6 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["PaginatedResponse_MessageAdminResponse_"] | null
-    }
-    /** Response[PaginatedResponse[PackageResponse]] */
-    Response_PaginatedResponse_PackageResponse__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /** @description 响应数据。 */
-      data?: components["schemas"]["PaginatedResponse_PackageResponse_"] | null
     }
     /** Response[PaginatedResponse[PeriodicTaskListResponse]] */
     Response_PaginatedResponse_PeriodicTaskListResponse__: {
@@ -6824,25 +6432,6 @@ export interface components {
        */
       data?: components["schemas"]["ApiTrendPoint"][] | null
     }
-    /** Response[list[DenialRecord]] */
-    Response_list_DenialRecord__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /**
-       * Data
-       * @description 响应数据。
-       */
-      data?: components["schemas"]["DenialRecord"][] | null
-    }
     /** Response[list[DepartmentTreeNode]] */
     Response_list_DepartmentTreeNode__: {
       /**
@@ -6861,25 +6450,6 @@ export interface components {
        * @description 响应数据。
        */
       data?: components["schemas"]["DepartmentTreeNode"][] | null
-    }
-    /** Response[list[ExtensionResponse]] */
-    Response_list_ExtensionResponse__: {
-      /**
-       * Code
-       * @description 状态码。
-       * @default 0
-       */
-      code: number
-      /**
-       * Message
-       * @description 响应消息。
-       */
-      message?: string
-      /**
-       * Data
-       * @description 响应数据。
-       */
-      data?: components["schemas"]["ExtensionResponse"][] | null
     }
     /** Response[list[FastAPIRouterResponse]] */
     Response_list_FastAPIRouterResponse__: {
@@ -10570,256 +10140,6 @@ export interface operations {
       }
     }
   }
-  list_extensions_api_v1_permission_extensions_get: {
-    parameters: {
-      query?: {
-        kind?: ("route_binding" | "depends" | "custom_code") | null
-        status?: ("active" | "cleanable" | "invalid") | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_list_ExtensionResponse__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  create_extension_api_v1_permission_extensions_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ExtensionCreate"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_ExtensionResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  update_extension_api_v1_permission_extensions__extension_id__put: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        extension_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ExtensionUpdate"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_ExtensionResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  delete_extension_api_v1_permission_extensions__extension_id__delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        extension_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_NoneType_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  export_extensions_api_v1_permission_extensions_export_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_ExtensionExport_"]
-        }
-      }
-    }
-  }
-  list_denials_api_v1_permission_extensions_denials_get: {
-    parameters: {
-      query?: {
-        days?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_list_DenialRecord__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  list_packages_api_v1_permission_packages_get: {
-    parameters: {
-      query?: {
-        /** @description 当前页码。 */
-        page?: number
-        /** @description 每页条数。 */
-        pageSize?: number
-        keyword?: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PaginatedResponse_PackageResponse__"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  create_package_api_v1_permission_packages_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PackageCreate"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PackageResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
   list_all_packages_api_v1_permission_packages_all_get: {
     parameters: {
       query?: never
@@ -10836,72 +10156,6 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Response_list_PackageResponse__"]
-        }
-      }
-    }
-  }
-  update_package_api_v1_permission_packages__package_id__put: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        package_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PackageUpdate"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PackageResponse_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  delete_package_api_v1_permission_packages__package_id__delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        package_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_bool_"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
         }
       }
     }

@@ -1,20 +1,15 @@
-from plugin_permission.cache import RoleSnapshot
 """角色快照缓存与 AuthRoleResolver 测试。"""
 
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
-from uuid import UUID
-
-from rapidkit_common.enums import Status
 
 from plugin_permission import adapters
 from plugin_permission.adapters import AuthRoleResolver
-from plugin_permission.role_snapshots import load_role_snapshots, role_snapshot_key
-
+from plugin_permission.cache import RoleSnapshot
 from plugin_permission.catalog.registry import set_catalog
+from plugin_permission.role_snapshots import load_role_snapshots, role_snapshot_key
 from plugins.permission.tests.catalog_fixtures import make_scoped_catalog
-from plugins.permission.tests.catalog_fixtures import install_catalog
-
+from rapidkit_common.enums import Status
 
 
 class FakeRedis:
@@ -53,6 +48,7 @@ def _role(code: str, status: Status = Status.ON, **fields):
         data_scopes=fields.get("data_scopes", {}),
         field_modes=fields.get("field_modes", {}),
     )
+
 
 def _crud(*roles):
     by_code = {r.code: r for r in roles}
@@ -123,10 +119,14 @@ async def test_snapshot_carries_role_scopes():
 async def test_resolver_merges_active_role_scopes(monkeypatch):
     set_catalog(make_scoped_catalog())
     monkeypatch.setattr(adapters, "get_permission_versions", AsyncMock(return_value=({"a": 1, "b": 1, "c": 1}, 1)))
-    monkeypatch.setattr(adapters, "ensure_catalog_fresh", AsyncMock())
     snapshots = [
-        RoleSnapshot(code="a", active=True, permission_codes=["item:read"], data_scopes={"item": "self"},
-                     field_modes={"item": {"contact": "hidden"}}),
+        RoleSnapshot(
+            code="a",
+            active=True,
+            permission_codes=["item:read"],
+            data_scopes={"item": "self"},
+            field_modes={"item": {"contact": "hidden"}},
+        ),
         RoleSnapshot(code="b", active=True, data_scopes={"item": "dept"}, field_modes={"item": {"contact": "masked"}}),
         RoleSnapshot(code="c", active=False, data_scopes={}),
     ]

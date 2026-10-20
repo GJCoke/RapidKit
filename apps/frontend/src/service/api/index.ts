@@ -8,6 +8,4 @@ export * from "./notification"
 export * from "./worker"
 export * from "./impersonation"
 
-export * from "./permission-extension"
-
 export * from "./permission-package"

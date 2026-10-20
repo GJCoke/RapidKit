@@ -2,9 +2,9 @@
 
 from typing import Literal, TypeAlias
 
-LANGUAGE_TYPE: TypeAlias = Literal['en-US', 'zh-CN']
+LANGUAGE_TYPE: TypeAlias = Literal["zh-CN", "en-US"]
 
-languages: set[LANGUAGE_TYPE] = {'en-US', 'zh-CN'}
+languages: set[LANGUAGE_TYPE] = {"zh-CN", "en-US"}
 
 I18nKey = Literal[
     "auth.error.accountLocked",
@@ -151,16 +151,7 @@ I18nKey = Literal[
     "notification.error.templateDisabled",
     "notification.error.templateNotFound",
     "notification.error.templateVariableInvalid",
-    "permission.error.extensionAlreadyExists",
-    "permission.error.extensionDependsCycle",
-    "permission.error.extensionDuplicatesBaseline",
-    "permission.error.extensionInUse",
-    "permission.error.extensionInvalidCustomCode",
-    "permission.error.extensionNotFound",
-    "permission.error.extensionUnknownCode",
-    "permission.error.extensionUnknownRoute",
     "permission.error.invalidDataScope",
-    "permission.error.packageBuiltinReadonly",
     "permission.error.packageInvalidCodes",
     "permission.error.packageInvalidScopes",
     "permission.error.packageNotFound",

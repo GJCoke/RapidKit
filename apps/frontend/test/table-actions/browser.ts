@@ -5,7 +5,6 @@ import type { DataTableColumns, DataTableRowData } from "naive-ui"
 import { $t, getLocale, setLocale } from "@/locales"
 import { createUserActionModel } from "@/views/manage/user/composables/user-actions"
 import { createRoleActionModel } from "@/views/manage/role/modules/table-actions"
-import { createPackageActionModel } from "@/views/manage/permission-package/modules/package-actions"
 import {
   createAnnouncementActionModel,
   announcementActionLabel,
@@ -27,7 +26,6 @@ const state = reactive({
 const partial = new Set<PermissionCode>([
   "user:delete",
   "user:reset-password",
-  "permission-package:update",
   "notification:create",
   "role:update",
   "role:delete",
@@ -157,20 +155,13 @@ const UserScenario = scenario(
   [user("user-1", "1"), user("user-2", "3"), user("user-3", "2")],
   (_, key) => $t(userLabels[key]),
 )
-const PackageScenario = scenario(
-  "package",
-  "权限包互斥模型",
-  () => createPackageActionModel<{ builtin: boolean }>(),
-  [{ builtin: true }, { builtin: false }],
-  (_, key) => $t(key === "detail" ? "common.detail" : key === "edit" ? "common.edit" : "common.delete"),
-)
 const RoleScenario = scenario(
   "role",
   "角色操作模型",
   () => createRoleActionModel<Record<string, unknown>>(),
   [{}],
   (_, key) =>
-    $t(key === "grant" ? "page.manage.role.applyPackage.button" : key === "edit" ? "common.edit" : "common.delete"),
+    $t(key === "grant" ? "page.manage.role.permissionConfig" : key === "edit" ? "common.edit" : "common.delete"),
 )
 const announcement = (status: Api.Notification.AnnouncementItem["status"]): Api.Notification.AnnouncementItem => ({
   id: status,
@@ -254,7 +245,6 @@ createApp({
               ]),
               h(UserScenario),
               h(RoleScenario),
-              h(PackageScenario),
               h(AnnouncementScenario),
             ],
           ),

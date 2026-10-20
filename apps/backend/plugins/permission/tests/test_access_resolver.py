@@ -7,12 +7,11 @@ from uuid import UUID
 
 import pytest
 from fastapi.routing import APIRoute
-from rapidkit_framework.exceptions import AppException
-
 from plugin_permission import access
 from plugin_permission.cache import CachedPermissions
 from plugin_permission.status_codes import RbacStatusCode
 from plugins.permission.tests.catalog_fixtures import install_catalog
+from rapidkit_framework.exceptions import AppException
 
 USER = SimpleNamespace(id=UUID("00000000-0000-0000-0000-0000000000aa"), is_admin=False, roles=["editor"])
 
@@ -22,12 +21,13 @@ async def _endpoint() -> None: ...
 
 def _request(method: str, path: str):
     route = APIRoute(path, _endpoint, methods=[method])
-    return SimpleNamespace(scope={"route": route}, state=SimpleNamespace(), method=method, url=SimpleNamespace(path=path))
+    return SimpleNamespace(
+        scope={"route": route}, state=SimpleNamespace(), method=method, url=SimpleNamespace(path=path)
+    )
 
 
 def _codes(monkeypatch, codes):
-    monkeypatch.setattr(access, "ensure_catalog_fresh", AsyncMock())
-    monkeypatch.setattr(access, "record_denial", AsyncMock())
+    monkeypatch.setattr(access, "log_permission_denied", MagicMock())
     cached = CachedPermissions(codes=codes, role_versions={"editor": 1}, catalog_version=1)
     monkeypatch.setattr(access, "get_fresh_permissions", AsyncMock(return_value=(cached, {"editor": 1})))
 
@@ -51,6 +51,7 @@ async def test_missing_code_raises_with_detail(monkeypatch):
     with pytest.raises(AppException) as error:
         await access.resolve_access("user:delete", request, USER, object(), object())
 
+    access.log_permission_denied.assert_called_once()
     assert error.value.code == RbacStatusCode.ROLE_PERMISSION_DENIED.code
     assert error.value.data == {
         "code": "user:delete",
@@ -71,8 +72,6 @@ async def test_route_not_in_catalog_falls_back_to_declared_code(monkeypatch):
 
 
 async def test_admin_bypasses(monkeypatch):
-    refresh = AsyncMock()
-    monkeypatch.setattr(access, "ensure_catalog_fresh", refresh)
     install_catalog()
     fresh = AsyncMock()
     monkeypatch.setattr(access, "get_fresh_permissions", fresh)
@@ -83,7 +82,6 @@ async def test_admin_bypasses(monkeypatch):
 
     assert scope.code == "user:delete"
     fresh.assert_not_awaited()
-    refresh.assert_awaited_once_with(redis, session)
 
 
 @pytest.mark.parametrize("admin", [False, True])
