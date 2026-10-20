@@ -94,11 +94,13 @@ class TokenStore:
         relogin_key = _FORCE_RELOGIN_KEY.format(user_id=user_id)
         await self._redis.set(relogin_key, "1", ex=auth_settings.REFRESH_TOKEN_EXP)
         revoker = get_service_optional(ImpersonationRevoker)
-        if revoker is not None:
-            await revoker.revoke_user(user_id, self._redis)
-        closer = get_service_optional(UserSocketCloser)
-        if closer is not None:
-            await closer.close_user(user_id, self._redis)
+        try:
+            if revoker is not None:
+                await revoker.revoke_user(user_id, self._redis)
+        finally:
+            closer = get_service_optional(UserSocketCloser)
+            if closer is not None:
+                await closer.close_user(user_id, self._redis)
 
     async def clear_force_relogin(self, user_id: UUID) -> None:
         """Clear the force-relogin flag (called after successful login)."""

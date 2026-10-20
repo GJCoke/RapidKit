@@ -7,6 +7,7 @@ from uuid import uuid4
 import pytest
 from plugin_auth.auth.services import refresh_user_token
 from plugin_auth.auth.token_store import TokenStore
+from plugin_auth.providers import SessionInvalidatorImpl
 from rapidkit_common.protocols.auth import UserSocketCloser
 from rapidkit_common.protocols.impersonation import ImpersonationRevoker
 from rapidkit_framework.exceptions import AppException
@@ -113,3 +114,29 @@ async def test_force_relogin_without_optional_services(redis, monkeypatch, entry
     user_id = uuid4()
     await getattr(TokenStore(redis), entry)(user_id)
     assert await redis.get(f"auth:force_relogin:<{user_id}>") == "1"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("entry", ["force_relogin", "revoke_all", "invalidator"])
+async def test_force_relogin_still_closes_sockets_if_impersonation_revocation_fails(redis, monkeypatch, entry):
+    user_id = uuid4()
+    key = f"sio:user:<{user_id}>:sockets"
+    await redis.sadd(key, socket_member("/notifications", "sid"))
+    external, revoker = AsyncMock(), AsyncMock()
+    revoker.revoke_user.side_effect = RuntimeError("revocation offline")
+    closer = RedisSocketCloser(external)
+    for module in ("plugin_auth.auth.token_store", "plugin_auth.providers"):
+        monkeypatch.setattr(
+            module + ".get_service_optional",
+            lambda protocol: {UserSocketCloser: closer, ImpersonationRevoker: revoker}.get(protocol),
+        )
+    with pytest.raises(RuntimeError, match="revocation offline"):
+        if entry == "invalidator":
+            await SessionInvalidatorImpl().invalidate_user_sessions(user_id, redis)
+        else:
+            await getattr(TokenStore(redis), entry)(user_id)
+    assert not await redis.exists(key)
+    external.disconnect.assert_awaited_once_with("sid", namespace="/notifications")
+    external.emit.assert_awaited_once_with(
+        "auth:revoked", {"code": "unauthorized"}, to="sid", namespace="/notifications"
+    )
