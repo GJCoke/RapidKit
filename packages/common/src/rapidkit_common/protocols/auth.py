@@ -23,7 +23,7 @@ class AuthContext:
 class AuthContextResolver(Protocol):
     """Resolve the effective and initiating identities from a token."""
 
-    async def resolve(self, token: str, request: "Request | None" = None) -> AuthContext: ...
+    async def resolve(self, token: str, request: "Request | None" = None, *, fresh: bool = False) -> AuthContext: ...
 
 
 class TokenDecoder(Protocol):
@@ -45,7 +45,7 @@ class CurrentUserProvider(Protocol):
 
     async def get_current_user(self, token: str) -> UserProtocol | None: ...
 
-    async def get_auth_context(self, token: str) -> AuthContext | None: ...
+    async def get_auth_context(self, token: str, *, fresh: bool = False) -> AuthContext | None: ...
 
 
 class PasswordDecryptor(Protocol):

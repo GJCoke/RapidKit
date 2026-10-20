@@ -73,7 +73,7 @@ class AuthContextResolverImpl:
     def redis(self):
         return self._redis() if callable(self._redis) and not hasattr(self._redis, "get") else self._redis
 
-    async def resolve(self, token, request=None):
+    async def resolve(self, token, request=None, *, fresh=False):
         try:
             ordinary = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
         except (JoseError, ValidationError) as original:
@@ -99,7 +99,7 @@ class AuthContextResolverImpl:
                 raise AppException(AuthStatusCode.IMPERSONATION_SESSION_INVALID) from exc
         else:
             self._publish_auth(IdentifiedAuth(ordinary.sub, ordinary.sub, None), request)
-            auth = await self._resolve_normal(ordinary)
+            auth = await self._resolve_normal(ordinary, fresh=fresh)
         self._publish_auth(auth, request)
         if request is not None:
             ctx.user_id = auth.subject.id
@@ -116,11 +116,11 @@ class AuthContextResolverImpl:
             )
         return auth
 
-    async def _resolve_normal(self, ordinary):
+    async def _resolve_normal(self, ordinary, *, fresh=False):
         if await self.redis.exists(force_relogin_structure.format(user_id=ordinary.sub)):
             raise AppException(AuthStatusCode.TOKEN_INVALID)
         key = user_structure.format(user_id=ordinary.sub)
-        cached = await self.redis.get(key)
+        cached = None if fresh else await self.redis.get(key)
         user: User | None
         if cached:
             user = User.model_validate_json(cached)
@@ -129,9 +129,10 @@ class AuthContextResolverImpl:
                 user = cast(User | None, await session.get(User, ordinary.sub))
             if user is None:
                 raise AppException(AuthStatusCode.USER_NOT_FOUND)
-            await self.redis.set(
-                key, user.model_dump_json(include=USER_CACHE_FIELDS), ex=auth_settings.ACCESS_TOKEN_EXP
-            )
+            if not fresh:
+                await self.redis.set(
+                    key, user.model_dump_json(include=USER_CACHE_FIELDS), ex=auth_settings.ACCESS_TOKEN_EXP
+                )
         if user.status == Status.PENDING:
             raise AppException(AuthStatusCode.ACCOUNT_NOT_ACTIVATED)
         if user.status != Status.ON:

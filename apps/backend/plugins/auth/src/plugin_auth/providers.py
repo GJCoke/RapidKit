@@ -48,9 +48,9 @@ class CurrentUserProviderImpl:
     def __init__(self, resolver):
         self.resolver = resolver
 
-    async def get_auth_context(self, token):
+    async def get_auth_context(self, token, *, fresh=False):
         try:
-            return await self.resolver.resolve(token)
+            return await self.resolver.resolve(token, fresh=fresh)
         except AppException:
             return None
 

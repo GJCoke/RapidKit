@@ -29,14 +29,14 @@ def token_expiry(token: str) -> int | None:
         return None
 
 
-async def authenticate(auth: object) -> tuple[IdentityMetadata, int]:
+async def authenticate(auth: object, *, fresh: bool = False) -> tuple[IdentityMetadata, int]:
     if not isinstance(auth, dict) or not isinstance(auth.get("access_token"), str) or not auth["access_token"].strip():
         raise ConnectionRefusedError("unauthorized")
     token = auth["access_token"]
     expires_at = token_expiry(token)
     if expires_at is not None and expires_at <= time.time():
         raise ConnectionRefusedError("token_expired")
-    context = await get_service(CurrentUserProvider).get_auth_context(token)
+    context = await get_service(CurrentUserProvider).get_auth_context(token, fresh=fresh)
     if context is None or expires_at is None:
         raise ConnectionRefusedError("unauthorized")
     session_id = context.impersonation_session_id
@@ -78,6 +78,10 @@ class IdentityAwareAsyncServer(AsyncServer):
             identity, expires_at = await authenticate(args[2] if len(args) > 2 else None)
             redis = RedisManager.client()
             await register_socket(self, redis, sid, namespace, identity, expires_at)
+            # Revocation before indexing must reject admission; after indexing it can find and close us.
+            checked_identity, _ = await authenticate(args[2] if len(args) > 2 else None, fresh=True)
+            if checked_identity != identity:
+                raise ConnectionRefusedError("unauthorized")
             with identity_scope(identity):
                 result = await super()._trigger_event(event, namespace, *args)
             if result is False:
