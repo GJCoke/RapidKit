@@ -49,7 +49,7 @@ def test_command_i18n_mode_defaults_to_in_app_channel():
         i18n_key="notification.user.invited",
         i18n_params={"username": "alice"},
         audience=[AudienceRule(type="user", value="018f0000-0000-7000-8000-000000000001")],
-        action=NotificationAction(route="user-detail", params={"id": "018f-user-uuid"}),
+        action=NotificationAction(route="example-detail", params={"id": "018f-user-uuid"}),
     )
 
     assert command.content_mode == "i18n"

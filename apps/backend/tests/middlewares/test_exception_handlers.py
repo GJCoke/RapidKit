@@ -24,7 +24,7 @@ class TestAppExceptionHandler:
         """Accessing a non-existent resource returns AppException."""
         from tests.testing.utils import random_uuid
 
-        resp = await client.get(f"/users/{random_uuid()}")
+        resp = await client.put(f"/users/{random_uuid()}", json={"remark": "missing user"})
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] != 0

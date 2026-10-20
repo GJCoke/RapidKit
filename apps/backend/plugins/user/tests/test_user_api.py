@@ -83,20 +83,6 @@ class TestReadUser:
         assert body["code"] == 0
         assert body["data"]["total"] >= 2  # admin + guest
 
-    async def test_get_by_id(self, client: AsyncClient, init, auth_headers: dict):
-        # Get user list first
-        resp = await client.get("/users?page=1&pageSize=1", headers=auth_headers)
-        user_id = resp.json()["data"]["records"][0]["id"]
-
-        resp = await client.get(f"/users/{user_id}", headers=auth_headers)
-        assert resp.status_code == 200
-        assert resp.json()["code"] == 0
-        assert resp.json()["data"]["id"] == user_id
-
-    async def test_get_not_found(self, client: AsyncClient, init, auth_headers: dict):
-        resp = await client.get(f"/users/{random_uuid()}", headers=auth_headers)
-        assert resp.json()["code"] != 0
-
 
 class TestUpdateUser:
     async def test_update_name(self, client: AsyncClient, init, auth_headers: dict):

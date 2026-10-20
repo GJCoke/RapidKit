@@ -488,8 +488,6 @@
       "status": {
         "pending": "Pending"
       },
-      "detailTitle": "User details",
-      "detailEmpty": "Unable to load user details",
       "impersonation": {
         "start": "Impersonate",
         "confirmTitle": "Confirm user impersonation",
@@ -1327,7 +1325,6 @@
           "actionQueryParameter": "Query parameter {name}",
           "actionPathDescription": "Enter the actual value of {name} in the page path to identify the page or record to open.",
           "actionQueryDescription": "Enter the menu-defined query parameter {name} for page filters or display settings.",
-          "actionUserIdDescription": "Enter the user ID from User Management. This is the unique user record identifier, not the username.",
           "actionParameterRequired": "Required",
           "actionParameterOptional": "Optional",
           "actionParameterExample": "Example: {value}",

@@ -11,8 +11,8 @@ vi.mock("@/router", async () => {
       routes: [
         { name: "home", path: "/", component: {} },
         { name: "notification_center", path: "/notifications", component: {} },
-        { name: "manage_user-detail", path: "/manage/user-detail/:id", component: {} },
-        { name: "manage_user-create", path: "/manage/user-detail/create", component: {} },
+        { name: "example_detail", path: "/examples/detail/:id", component: {} },
+        { name: "example_create", path: "/examples/detail/create", component: {} },
         { name: "login", path: "/login/:module(pwd-login|code-login|set-password)?", component: {} },
         { name: "403", path: "/403", component: {} },
       ],
@@ -53,13 +53,13 @@ describe("action-nav", () => {
     expect(
       await navigateToAction({
         type: "menu",
-        route: "manage_user-detail",
-        path: "/manage/user-detail/user-17",
+        route: "example_detail",
+        path: "/examples/detail/user-17",
         params: { id: "user-17" },
         query: { tab: "profile" },
       }),
     ).toBe(true)
-    expect(router.currentRoute.value.fullPath).toBe("/manage/user-detail/user-17?tab=profile")
+    expect(router.currentRoute.value.fullPath).toBe("/examples/detail/user-17?tab=profile")
   })
 
   it("rejects inaccessible menu routes and changed path snapshots", async () => {
@@ -67,7 +67,7 @@ describe("action-nav", () => {
     expect(
       await navigateToAction({
         type: "menu",
-        route: "manage_user-detail",
+        route: "example_detail",
         path: "/old-user-path/17",
         params: { id: "17" },
       }),
@@ -75,7 +75,7 @@ describe("action-nav", () => {
     expect(
       await navigateToAction({
         type: "menu",
-        route: "manage_user-detail",
+        route: "example_detail",
         path: "https://example.com",
         params: { id: "17" },
       }),
@@ -85,8 +85,8 @@ describe("action-nav", () => {
   it.each(["a:b", "a!b'c(d)*e$f&g;h,i=j[k]", "a/b", "中文 空格"])(
     "matches equivalent backend and router encodings for %s",
     async (id) => {
-      const path = `/manage/user-detail/${encodeURIComponent(id).replace(/[!'()*]/g, (value) => `%${value.charCodeAt(0).toString(16).toUpperCase()}`)}`
-      expect(await navigateToAction({ type: "menu", route: "manage_user-detail", path, params: { id } })).toBe(true)
+      const path = `/examples/detail/${encodeURIComponent(id).replace(/[!'()*]/g, (value) => `%${value.charCodeAt(0).toString(16).toUpperCase()}`)}`
+      expect(await navigateToAction({ type: "menu", route: "example_detail", path, params: { id } })).toBe(true)
       expect(router.currentRoute.value.params.id).toBe(id)
     },
   )
@@ -95,16 +95,16 @@ describe("action-nav", () => {
     expect(
       await navigateToAction({
         type: "menu",
-        route: "manage_user-detail",
-        path: "/manage/user-detail/a/b",
+        route: "example_detail",
+        path: "/examples/detail/a/b",
         params: { id: "a/b" },
       }),
     ).toBe(false)
     expect(
       await navigateToAction({
         type: "menu",
-        route: "manage_user-detail",
-        path: "/manage/user-detail/%zz",
+        route: "example_detail",
+        path: "/examples/detail/%zz",
         params: { id: "%zz" },
       }),
     ).toBe(false)
@@ -114,12 +114,12 @@ describe("action-nav", () => {
     expect(
       await navigateToAction({
         type: "menu",
-        route: "manage_user-detail",
-        path: "/manage/user-detail/create",
+        route: "example_detail",
+        path: "/examples/detail/create",
         params: { id: "create" },
       }),
     ).toBe(true)
-    expect(router.currentRoute.value.name).toBe("manage_user-detail")
+    expect(router.currentRoute.value.name).toBe("example_detail")
   })
 
   it("opens editor validation in a new tab without changing the current route", async () => {
@@ -129,15 +129,15 @@ describe("action-nav", () => {
       await navigateToAction(
         {
           type: "menu",
-          route: "manage_user-detail",
-          path: "/manage/user-detail/17",
+          route: "example_detail",
+          path: "/examples/detail/17",
           params: { id: "17" },
           query: { tab: "profile" },
         },
         { newWindow: true },
       ),
     ).toBe(true)
-    expect(open).toHaveBeenCalledWith("/manage/user-detail/17?tab=profile", "_blank", "noopener,noreferrer")
+    expect(open).toHaveBeenCalledWith("/examples/detail/17?tab=profile", "_blank", "noopener,noreferrer")
     expect(router.currentRoute.value.fullPath).toBe(before)
   })
 
@@ -145,7 +145,7 @@ describe("action-nav", () => {
     const open = vi.spyOn(window, "open").mockReturnValue(null)
     expect(
       await navigateToAction(
-        { type: "menu", route: "manage_user-detail", path: "/manage/user-detail/create", params: { id: "create" } },
+        { type: "menu", route: "example_detail", path: "/examples/detail/create", params: { id: "create" } },
         { newWindow: true },
       ),
     ).toBe(false)
@@ -172,8 +172,8 @@ describe("action-nav", () => {
   })
 
   it("stringifies finite numeric path params", async () => {
-    expect(await navigateToAction({ route: "manage_user-detail", params: { id: 2 } })).toBe(true)
-    expect(router.currentRoute.value.path).toBe("/manage/user-detail/2")
+    expect(await navigateToAction({ route: "example_detail", params: { id: 2 } })).toBe(true)
+    expect(router.currentRoute.value.path).toBe("/examples/detail/2")
   })
 
   it("rejects malformed actions, unknown routes and unsafe params", async () => {

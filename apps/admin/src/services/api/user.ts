@@ -16,10 +16,6 @@ export function fetchUsers(params?: UserSearchParams) {
   return request<UserList>({ url: "/users", method: "get", params })
 }
 
-export function fetchUser(userId: string) {
-  return request<User>({ url: `/users/${userId}`, method: "get" })
-}
-
 export function createUser(data: CreateUserBody) {
   return request<User>({ url: "/users", method: "post", data })
 }

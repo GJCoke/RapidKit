@@ -6,7 +6,6 @@ from src._menu_seeds import build_menus
 EXPECTED_MENU_PERMISSIONS = {
     "home": "dashboard:read",
     "manage_user": "user:read",
-    "manage_user-detail": "user:read",
     "manage_role": "role:read",
     "manage_menu": "menu:read",
     "manage_department": "department:read",
@@ -69,14 +68,9 @@ def test_notification_management_seed_has_ordered_route_tree() -> None:
         assert by_name[route_name].parent_id == parent.id
 
 
-def test_user_detail_seed_registers_hidden_authorized_page() -> None:
+def test_user_detail_page_is_retired() -> None:
     by_name = {menu.route_name: menu for menu in build_menus()}
-    detail = by_name["manage_user-detail"]
-    assert detail.parent_id == by_name["manage"].id
-    assert detail.route_path == "/manage/user-detail/:id"
-    assert detail.component == "view.manage_user-detail"
-    assert detail.hide_in_menu and not detail.constant
-    assert detail.permission == "user:read"
+    assert "manage_user-detail" not in by_name
 
 
 def test_permission_management_menus_are_retired():

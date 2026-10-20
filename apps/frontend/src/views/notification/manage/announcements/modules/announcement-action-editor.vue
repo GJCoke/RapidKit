@@ -111,15 +111,6 @@
     return t(parameter.location === "path" ? "actionPathParameter" : "actionQueryParameter", { name: parameter.name })
   }
   function parameterDescription(parameter: ActionParameter) {
-    if (
-      [
-        "page.notification.announcements.actionUserIdHelp",
-        "notification.action.userId",
-        "notification.action.userDetailId",
-      ].includes(parameter.descriptionKey ?? "")
-    ) {
-      return t("actionUserIdDescription")
-    }
     return t(parameter.location === "path" ? "actionPathDescription" : "actionQueryDescription", {
       name: parameter.name,
     })

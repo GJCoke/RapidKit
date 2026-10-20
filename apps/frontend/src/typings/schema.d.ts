@@ -216,34 +216,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/users/{user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get User
-         * @description 获取范围内单个用户详情；范围外与不存在同样返回 RESOURCE_NOT_FOUND。
-         */
-        get: operations["get_user_api_v1_users__user_id__get"];
-        /**
-         * Update User
-         * @description 更新用户信息；目标与更新结果都必须在数据范围内（由会话范围校验）。
-         */
-        put: operations["update_user_api_v1_users__user_id__put"];
-        post?: never;
-        /**
-         * Delete User
-         * @description 删除单个用户。
-         */
-        delete: operations["delete_user_api_v1_users__user_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/users/{user_id}/resend-invite": {
         parameters: {
             query?: never;
@@ -259,6 +231,30 @@ export interface paths {
          */
         post: operations["resend_invite_api_v1_users__user_id__resend_invite_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update User
+         * @description 更新用户信息；目标与更新结果都必须在数据范围内（由会话范围校验）。
+         */
+        put: operations["update_user_api_v1_users__user_id__put"];
+        post?: never;
+        /**
+         * Delete User
+         * @description 删除单个用户。
+         */
+        delete: operations["delete_user_api_v1_users__user_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -7638,7 +7634,7 @@ export interface operations {
             };
         };
     };
-    get_user_api_v1_users__user_id__get: {
+    resend_invite_api_v1_users__user_id__resend_invite_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -7655,7 +7651,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response_UserManageResponse_"];
+                    "application/json": components["schemas"]["Response_bool_"];
                 };
             };
             /** @description Validation Error */
@@ -7705,37 +7701,6 @@ export interface operations {
         };
     };
     delete_user_api_v1_users__user_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_bool_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    resend_invite_api_v1_users__user_id__resend_invite_post: {
         parameters: {
             query?: never;
             header?: never;

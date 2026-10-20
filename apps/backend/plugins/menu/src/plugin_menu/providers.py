@@ -71,9 +71,6 @@ class MenuNavigationProvider:
                     name=match[1],
                     location="path",
                     required=match[2] not in {"?", "*"},
-                    description_key="page.notification.announcements.actionUserIdHelp"
-                    if menu.route_name in {"user_detail", "manage_user-detail"} and match[1] == "id"
-                    else None,
                 )
                 for match in _PATH_PARAMETER.finditer(menu.route_path)
             ]

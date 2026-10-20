@@ -29,7 +29,6 @@ declare module "@elegant-router/types" {
     "manage_menu": "/manage/menu";
     "manage_role": "/manage/role";
     "manage_user": "/manage/user";
-    "manage_user-detail": "/manage/user-detail/:id";
     "monitoring": "/monitoring";
     "monitoring_api": "/monitoring/api";
     "monitoring_plugin": "/monitoring/plugin";
@@ -116,7 +115,6 @@ declare module "@elegant-router/types" {
     | "manage_department"
     | "manage_menu"
     | "manage_role"
-    | "manage_user-detail"
     | "manage_user"
     | "monitoring_api"
     | "monitoring_plugin"

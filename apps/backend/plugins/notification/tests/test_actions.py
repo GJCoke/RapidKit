@@ -16,8 +16,8 @@ from plugin_notification.orchestrator import MessageOrchestrator
 from plugin_notification.preference import PreferenceResolver
 from plugin_notification.validation import validate_action
 from pydantic import ValidationError
-from rapidkit_common.access import access_guard_dependency, inspect_route_access
-from rapidkit_common.access_testing import allow_access, deny_access
+from rapidkit_common.access import access_guard_dependency
+from rapidkit_common.access_testing import allow_access
 from rapidkit_common.auth import _get_current_user_placeholder
 from rapidkit_common.deps import get_async_session
 from rapidkit_common.protocols.menu import ActionParameter, ActionTarget
@@ -32,7 +32,7 @@ class Targets:
             menu_id=uuid4(),
             label="Detail",
             breadcrumb=["Users", "Detail"],
-            route="user_detail",
+            route="example_detail",
             path="/users/:id",
             parameters=[
                 ActionParameter(name="id", location="path", required=True),
@@ -145,7 +145,7 @@ async def test_menu_action_resolves_encoded_path_and_defaults():
     result = await resolve_action(action(targets), session=None, provider=targets, user=SimpleNamespace())
     assert result["path"] == "/users/a%2Fb%20%3F%E4%B8%AD"
     assert result["query"] == {"tab": "profile"}
-    assert result["route"] == "user_detail"
+    assert result["route"] == "example_detail"
 
 
 @pytest.mark.asyncio
@@ -206,7 +206,7 @@ async def test_external_and_legacy_actions_remain_supported():
     ] == "https://example.com/a?q=1"
     assert await resolve_action({"route": "home", "params": {}}, session=None) == {"route": "home", "params": {}}
     with pytest.raises(AppException):
-        await resolve_action({"route": "user_detail", "params": {}}, session=None)
+        await resolve_action({"route": "example_detail", "params": {}}, session=None)
 
 
 @pytest.mark.asyncio
@@ -272,7 +272,7 @@ async def test_disabled_menu_blocks_publication_before_fanout(db_session):
 async def test_action_preview_http_contract_is_camel_case_and_read_only(db_session, monkeypatch):
 
     targets = Targets()
-    targets.target.route = "manage_user-detail"
+    targets.target.route = "example_detail"
 
     async def list_targets(session, user):
         return [targets.target] if targets.authorized else []
@@ -301,7 +301,7 @@ async def test_action_preview_http_contract_is_camel_case_and_read_only(db_sessi
             },
         )
         assert preview.status_code == 200
-        assert preview.json()["data"]["route"] == "manage_user-detail"
+        assert preview.json()["data"]["route"] == "example_detail"
         assert preview.json()["data"]["path"] == "/users/abc"
         assert preview.json()["data"]["query"] == {"tab": "profile"}
         assert preview.json()["data"]["localizedLabel"] == LOCALIZED_LABEL

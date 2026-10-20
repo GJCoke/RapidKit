@@ -488,8 +488,6 @@
       "status": {
         "pending": "待激活"
       },
-      "detailTitle": "用户详情",
-      "detailEmpty": "无法加载用户详情",
       "impersonation": {
         "start": "模拟登录",
         "confirmTitle": "确认模拟用户身份",
@@ -1327,7 +1325,6 @@
           "actionQueryParameter": "查询参数 {name}",
           "actionPathDescription": "填写页面路径中 {name} 对应的实际值，用于定位要打开的页面或记录。",
           "actionQueryDescription": "填写菜单定义的查询参数 {name}，用于打开页面时的筛选或显示设置。",
-          "actionUserIdDescription": "填写要查看的用户 ID，可从用户管理获取；这是用户记录的唯一标识，不是用户名。",
           "actionParameterRequired": "必填",
           "actionParameterOptional": "选填",
           "actionParameterExample": "示例：{value}",

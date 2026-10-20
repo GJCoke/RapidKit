@@ -14,7 +14,6 @@
   "manage_user": "用户管理",
   "manage_department": "部门管理",
   "manage_audit-log": "审计日志",
-  "manage_user-detail": "用户详情",
   "queue": "任务队列",
   "queue_dashboard": "队列概览",
   "queue_task": "任务记录",

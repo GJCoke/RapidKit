@@ -10,7 +10,7 @@ const target = {
   menuId: "menu-user",
   label: "User details",
   breadcrumb: ["Administration", "Users", "User details"],
-  route: "manage_user-detail",
+  route: "example_detail",
   path: "/manage/user/:id",
   parameters: [
     { name: "id", location: "path", required: true, defaultValue: null, descriptionKey: "userId", example: "user-1" },

@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 import pytest_asyncio
-from plugin_user.api import batch_delete_users, get_user, get_users, update_user
+from plugin_user.api import batch_delete_users, get_users, update_user
 from plugin_user.crud import UserManageCRUD
 from plugin_user.models import User
 from plugin_user.permissions import RESOURCES
@@ -71,13 +71,6 @@ async def test_list_is_filtered_and_contact_is_masked(session):
     assert [r["username"] for r in records] == ["zhangsan"]
     assert records[0]["phone"] == "138****8000"
     assert records[0]["email"] == "z***@example.com"
-
-
-async def test_detail_outside_scope_is_not_found(session):
-    other = await _id_of(session, "lisi00")
-    with pytest.raises(AppException) as exc:
-        await get_user(user_id=other, user_crud=UserManageCRUD(session))
-    assert exc.value.status_code_enum is StatusCode.RESOURCE_NOT_FOUND
 
 
 async def test_moving_user_out_of_scope_is_rejected(session):

@@ -10,7 +10,6 @@
     fetchGetUserList,
     fetchResendInvite,
   } from "@/service/api"
-  import { useRouterPush } from "@/hooks/common/router"
   import { useAppStore } from "@/store/modules/app"
   import { defaultTransform, useNaivePaginatedTable, useTableOperate } from "@/hooks/common/table"
   import { $t } from "@/locales"
@@ -25,7 +24,6 @@
   import { createDepartmentMap } from "./composables/department-map"
 
   defineOptions({ name: "ManageUser" })
-  const { routerPushByKey } = useRouterPush()
   const appStore = useAppStore()
   const { hasAuth, getActionContext } = useAuth()
   const authStore = useAuthStore()
@@ -80,9 +78,6 @@
         title: $t("page.manage.user.name"),
         align: "center",
         minWidth: 100,
-        render: (row) => authStore.userInfo.isAdmin
-          ? <NButton text type="primary" onClick={() => routerPushByKey("manage_user-detail", { params: { id: row.id } })}>{row.name}</NButton>
-          : row.name,
       },
       {
         key: "email",

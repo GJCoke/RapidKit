@@ -17,18 +17,18 @@ vi.mock("@/locales", async () => {
   return { $t: createI18n({ locale: "zh-CN", legacy: false, messages: { "zh-CN": { page } } }).global.t }
 })
 const target = {
-  menuId: "user-detail",
-  label: "用户详情",
-  breadcrumb: ["系统管理", "用户详情"],
-  route: "manage_user-detail",
-  path: "/manage/user/:id",
+  menuId: "example-detail",
+  label: "示例详情",
+  breadcrumb: ["系统管理", "示例详情"],
+  route: "example_detail",
+  path: "/examples/detail/:id",
   parameters: [
     {
       name: "id",
       location: "path",
       required: true,
       defaultValue: null,
-      descriptionKey: "page.notification.announcements.actionUserIdHelp",
+      descriptionKey: null,
       example: "user-123",
     },
   ],
@@ -128,7 +128,7 @@ describe("announcement action editor", () => {
     await settle()
     const option = await vi.waitFor(() => {
       const result = [...document.querySelectorAll<HTMLElement>(".n-tree-node-content")].find((node) =>
-        node.textContent?.includes("用户详情"),
+        node.textContent?.includes("示例详情"),
       )
       expect(result).toBeDefined()
       return result!
@@ -154,17 +154,17 @@ describe("announcement action editor", () => {
     const state = reactive(createAnnouncementState())
     state.actionEnabled = true
     state.actionType = "menu"
-    state.actionMenuId = "user-detail"
+    state.actionMenuId = "example-detail"
     state.actionValues = { id: "saved-user" }
     await mount(state)
     await vi.waitFor(() =>
       expect(host.querySelector<HTMLInputElement>('input[aria-label="路径参数 id"]')?.value).toBe("saved-user"),
     )
-    expect(host.textContent).toContain("用户 ID")
+    expect(host.textContent).toContain("填写页面路径中 id 对应的实际值")
     expect(host.textContent).toContain("user-123")
     expect(host.textContent).toContain("必填")
     expect(host.querySelector("textarea")).toBeNull()
-    expect(state.actionTarget?.menuId).toBe("user-detail")
+    expect(state.actionTarget?.menuId).toBe("example-detail")
   })
 
   it("fills the selected page label and required fields when choosing a menu", async () => {
@@ -177,17 +177,17 @@ describe("announcement action editor", () => {
     await vi.waitFor(() =>
       expect(
         [...document.querySelectorAll<HTMLElement>(".n-tree-node-content")].some((element) =>
-          element.textContent?.includes("用户详情"),
+          element.textContent?.includes("示例详情"),
         ),
       ).toBe(true),
     )
     const option = [...document.querySelectorAll<HTMLElement>(".n-tree-node-content")].find((element) =>
-      element.textContent?.includes("用户详情"),
+      element.textContent?.includes("示例详情"),
     )!
     option.click()
     await settle()
-    expect(state.actionMenuId).toBe("user-detail")
-    expect(state.model.actionLabel).toBe("用户详情")
+    expect(state.actionMenuId).toBe("example-detail")
+    expect(state.model.actionLabel).toBe("示例详情")
     expect(host.querySelector('input[aria-label="路径参数 id"]')).not.toBeNull()
     button("验证目标").click()
     await settle()
@@ -263,7 +263,7 @@ describe("announcement action editor", () => {
     })
     const state = reactive(createAnnouncementState())
     state.actionEnabled = true
-    state.actionMenuId = "user-detail"
+    state.actionMenuId = "example-detail"
     await mount(state)
     await vi.waitFor(() => expect(host.textContent).toContain("填写页面路径中 id 对应的实际值"))
     expect(host.textContent).not.toContain("internal.secret.translation")
@@ -292,12 +292,12 @@ describe("announcement action editor", () => {
     api.targets.mockResolvedValueOnce({ data: null, error: { message: "failure" } })
     const state = reactive(createAnnouncementState())
     state.actionEnabled = true
-    state.actionMenuId = "user-detail"
+    state.actionMenuId = "example-detail"
     state.actionValues = { id: "saved-user" }
     await mount(state)
     await vi.waitFor(() => expect(host.textContent).toContain("菜单目标加载失败"))
     button("重试").click()
-    await vi.waitFor(() => expect(state.actionTarget?.menuId).toBe("user-detail"))
+    await vi.waitFor(() => expect(state.actionTarget?.menuId).toBe("example-detail"))
     expect(state.actionValues).toEqual({ id: "saved-user" })
     expect(host.textContent).not.toContain("菜单目标加载失败")
   })

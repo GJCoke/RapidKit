@@ -22,7 +22,7 @@ describe("announcement editor payload", () => {
     Object.assign(form, {
       actionEnabled: true,
       actionType: "menu",
-      actionMenuId: "menu-user-detail",
+      actionMenuId: "menu-example-detail",
       actionValues: { id: "user-17" },
       actionQuery: { tab: "profile" },
       actionTarget: null,
@@ -30,7 +30,7 @@ describe("announcement editor payload", () => {
     form.model.actionLabel = "查看用户"
     expect(buildAnnouncementPayload(form, "draft", now).action).toEqual({
       type: "menu",
-      menuId: "menu-user-detail",
+      menuId: "menu-example-detail",
       params: { id: "user-17" },
       query: { tab: "profile" },
       label: "查看用户",

@@ -32,11 +32,7 @@ export function useUpdateUser() {
   const client = useQueryClient()
   return useMutation({
     mutationFn: ({ userId, data }: { userId: string; data: UpdateUserBody }) => unwrap(updateUser(userId, data)),
-    onSuccess: (user) =>
-      Promise.all([
-        client.invalidateQueries({ queryKey: userQueryKeys.lists(token) }),
-        client.invalidateQueries({ queryKey: userQueryKeys.detail(token, user.id) }),
-      ]),
+    onSuccess: () => client.invalidateQueries({ queryKey: userQueryKeys.lists(token) }),
   })
 }
 export function useDeleteUsers() {

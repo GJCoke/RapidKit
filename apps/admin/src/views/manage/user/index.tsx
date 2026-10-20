@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react"
-import { useNavigate } from "react-router"
 import type { ColumnPinningState, RowSelectionState, VisibilityState } from "@tanstack/react-table"
 import { Button, toast } from "@rapidkit/ui"
 import { Can } from "@/features/auth"
@@ -16,7 +15,6 @@ import { UserSearch, type UserFilters } from "./modules/user-search"
 import { createUserColumns } from "./user-columns"
 
 export default function UserManagementPage() {
-  const navigate = useNavigate()
   const currentUserId = useAuthStore((state) => state.userInfo?.id)
   const [filters, setFilters] = useState<UserFilters>({})
   const [selection, setSelection] = useState<RowSelectionState>({})
@@ -32,9 +30,6 @@ export default function UserManagementPage() {
     () =>
       createUserColumns(users.page, users.pageSize, (user) => (
         <div className="flex flex-wrap gap-1">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/manage/user-detail/${user.id}`)}>
-            详情
-          </Button>
           <Can permission="user:update">
             <Button variant="ghost" size="sm" onClick={() => operate.openEdit(user)}>
               编辑
@@ -62,7 +57,7 @@ export default function UserManagementPage() {
           </Can>
         </div>
       )),
-    [navigate, operate.openEdit, resend.isPending, resend.mutate, users.page, users.pageSize],
+    [operate.openEdit, resend.isPending, resend.mutate, users.page, users.pageSize],
   )
   const defaultOrder = useMemo(
     () => columns.map((column) => String(column.id ?? ("accessorKey" in column ? column.accessorKey : ""))),

@@ -31,7 +31,6 @@ GUEST_ROUTER_PERMISSIONS = [
     "home",
     "manage",
     "manage_user",
-    "manage_user-detail",
     "manage_role",
     "manage_menu",
     "manage_department",

@@ -14,7 +14,6 @@ def test_user_routes_declare_expected_access():
         "GET:/api/v1/users/all": "require:user:options",
         "POST:/api/v1/users/validate-username-pinyin": "require:user:validate-name",
         "GET:/api/v1/users": "require:user:read",
-        "GET:/api/v1/users/{user_id}": "require:user:read",
         "POST:/api/v1/users": "require:user:create",
         "POST:/api/v1/users/{user_id}/resend-invite": "require:user:create",
         "PUT:/api/v1/users/{user_id}": "require:user:update",

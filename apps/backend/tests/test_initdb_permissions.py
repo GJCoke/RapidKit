@@ -46,8 +46,7 @@ async def test_explicit_reset_still_supports_disposable_database_initialization(
 async def test_menu_sync_preserves_custom_metadata_and_is_idempotent():
     existing = build_menus()
     user = next(menu for menu in existing if menu.route_name == "manage_user")
-    root = next(menu for menu in existing if menu.route_name == "manage")
-    existing = [menu for menu in existing if menu.route_name != "manage_user-detail"]
+    existing = [menu for menu in existing if menu.route_name != "manage_audit-log"]
     user.menu_name = "自定义用户"
     user.status = Status.OFF
     role = next(menu for menu in existing if menu.route_name == "manage_role")
@@ -71,9 +70,9 @@ async def test_menu_sync_preserves_custom_metadata_and_is_idempotent():
     assert role.permission == "user:read"
     assert department.permission == "department:read"
     assert custom.permission is None
-    detail = next(menu for menu in existing if menu.route_name == "manage_user-detail")
-    assert detail.parent_id == root.id
-    assert detail.permission == "user:read"
+    audit = next(menu for menu in existing if menu.route_name == "manage_audit-log")
+    assert audit.parent_id == next(menu for menu in existing if menu.route_name == "manage").id
+    assert audit.permission == "audit-log:read"
     before = [item.model_dump(warnings=False) for item in existing]
     await initdb.create_menus(session)
     assert [item.model_dump(warnings=False) for item in existing] == before
@@ -100,7 +99,7 @@ def test_seed_role_codes_come_from_catalog():
 
     assert admin_codes == sorted(catalog.codes)
     assert guest_codes == ["department:read", "role:read", "user:read"]
-    assert "manage_user-detail" in initdb.GUEST_ROUTER_PERMISSIONS
+    assert "manage_user-detail" not in initdb.GUEST_ROUTER_PERMISSIONS
 
 
 def test_guest_permissions_are_derived_from_seed_menu_permissions():

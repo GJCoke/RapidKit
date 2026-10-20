@@ -171,13 +171,6 @@ async def get_users(
     return Response(data=users)
 
 
-@router.get("/{user_id}", dependencies=[Require("user:read")])
-async def get_user(user_id: UUID, user_crud: UserManageCrudDep) -> Response[UserManageResponse]:
-    """获取范围内单个用户详情；范围外与不存在同样返回 RESOURCE_NOT_FOUND。"""
-    user = await user_crud.get(user_id, nullable=False)
-    return Response(data=UserManageResponse.model_validate(user))
-
-
 @contact_router.put(
     "/{user_id}/password",
     summary="修改用户密码",

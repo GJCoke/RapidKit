@@ -50,7 +50,9 @@ async def test_declared_scopes_and_fields_apply_through_http_and_refresh_after_r
     assert restricted["data"]["restrictedFields"] == {"user": {"phone": "masked", "email": "masked"}}
 
     admin_row = (await session.exec(select(User).where(User.username == "admin"))).one()
-    outside = (await strict_client.get(f"/users/{admin_row.id}", headers=identity)).json()
+    outside = (
+        await strict_client.put(f"/users/{admin_row.id}", headers=identity, json={"remark": "范围外编辑"})
+    ).json()
     assert outside["code"] == StatusCode.RESOURCE_NOT_FOUND.code
     edited = (await strict_client.put(f"/users/{guest_id}", headers=identity, json={"remark": "范围内编辑"})).json()
     assert edited["code"] == 0, edited

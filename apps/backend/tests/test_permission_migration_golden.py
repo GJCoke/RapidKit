@@ -12,10 +12,11 @@ from src._permission_migration import LegacyRole, find_residual_interfaces, plan
 
 from tests.legacy_menu_fixture import collect_seed_permissions, legacy_menus
 
-RETIRED_MENUS = {"manage_data-policy", "manage_field-policy", "script"}
+RETIRED_MENUS = {"manage_data-policy", "manage_field-policy", "script", "manage_user-detail"}
 RETIRED_RESOURCES = {"data-policy", "field-policy", "script", "api-route"}
 
 RETIRED_INTERFACES = {
+    "GET:/api/v1/users/{user_id}",
     "GET:/api/v1/manage/menus/tree",
     "GET:/api/v1/router/backend",
     "GET:/api/v1/roles/mine",

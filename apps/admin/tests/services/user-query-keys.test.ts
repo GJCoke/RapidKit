@@ -12,7 +12,6 @@ test("user query keys are scoped by account and normalized search params", () =>
     "list",
     { keyword: "Ada", page: 2, pageSize: 20 },
   ])
-  assert.deepEqual(userQueryKeys.detail(token, "user-1"), ["users", token, "detail", "user-1"])
 })
 
 test("user option keys remain separate from paginated list keys", () => {
