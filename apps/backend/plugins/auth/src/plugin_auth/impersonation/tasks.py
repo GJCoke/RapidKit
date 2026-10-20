@@ -4,7 +4,7 @@ from rapidkit_common.protocols.impersonation import ImpersonationAuditWriter, Im
 from rapidkit_framework.services import get_service_optional
 from src.queues.app import app
 from src.queues.deps import TaskRedis, TaskSession
-from src.sio.impersonation import register_socket_closer
+from src.sio.sessions import register_socket_closer
 
 from plugin_auth.impersonation.service import ImpersonationService
 
