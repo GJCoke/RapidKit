@@ -3,12 +3,13 @@ from typing import Any, Literal, TypeAlias
 
 from fastapi_sio_di import SID
 from rapidkit_common.schemas import BaseModel
-from rapidkit_core.log import get_plugin_logger
+from rapidkit_core.log import logger
+from rapidkit_framework.identity import current_identity
 from rapidkit_core.timezone import timezone
 
 from src.sio.app import socket
 
-logger = get_plugin_logger("Chat")
+CHAT_CHARACTERS = frozenset({"Doraemon", "Nobita", "Shizuka", "Gian", "Suneo"})
 
 MessageType: TypeAlias = Literal["text", "image", "video", "audio", "file", "system"]
 
@@ -55,26 +56,26 @@ Message: TypeAlias = TextMessage | SystemMessage | MediaMessage
 class MessageEvent(BaseModel):
     group: str
     content: str
-    avatar: str | None = None
-
-
-class ConnectEvent(BaseModel):
-    username: str
 
 
 @socket.on("connect", namespace="/chat")
-async def on_connect(sid: SID, auth: ConnectEvent) -> None:
-    """客户端连接聊天室"""
-    # 将用户信息存入 session 方便后续使用
-    await socket.save_session(sid, {"username": auth.username}, namespace="/chat")
-    logger.info("User {username} ({sid}) connected", username=auth.username, sid=sid)
+async def on_connect(sid: SID, auth: dict[str, object] | None) -> Literal[False] | None:
+    display_name = (auth or {}).get("display_name")
+    if not isinstance(display_name, str) or display_name not in CHAT_CHARACTERS:
+        return False
+    async with socket.session(sid, namespace="/chat") as session:
+        session["display_name"] = display_name
+    logger.debug("Chat connected user_id={}", current_identity().user_id)
+    return None
 
 
 @socket.on("join", namespace="/chat")
 async def on_join(sid: SID, group: str) -> None:
     """处理加入房间逻辑"""
+    if not isinstance(group, str) or not 1 <= len(group) <= 64:
+        return
     session = await socket.get_session(sid, namespace="/chat")
-    username = session.get("username", "Unknown")
+    username = session.get("display_name", "Unknown")
 
     # 将该连接加入指定的房间
     await socket.enter_room(sid, group, namespace="/chat")
@@ -90,7 +91,7 @@ async def on_join(sid: SID, group: str) -> None:
 
     # 广播给房间内的所有人
     await socket.emit("message", notification, room=group, namespace="/chat")
-    logger.info("{username} joined room: {group}", username=username, group=group)
+    logger.debug("Chat joined group={} user_id={}", group, current_identity().user_id)
 
 
 @socket.on("message", namespace="/chat")
@@ -99,31 +100,31 @@ async def on_message(sid: SID, data: MessageEvent) -> None:
     group = data.group
     content = data.content
 
-    if not group or not content:
+    if not 1 <= len(group) <= 64 or not content:
         return
 
     session = await socket.get_session(sid, namespace="/chat")
-    sender = session.get("username", "Unknown")
+    sender = session.get("display_name", "Unknown")
 
     # 构造发往前端的消息负载
     message_payload = TextMessage(
         id=str(uuid.uuid4()),
         sender=sender,
         content=content,
-        avatar=data.avatar,
+        extra={"user_id": current_identity().user_id},
         time=timezone.f_time(timezone.now_local()),
     )
 
     # 广播给该组内的所有人（包括发送者自己）
     await socket.emit("message", message_payload, room=group, namespace="/chat")
-    logger.info("Message in {group} from {sender}: {content}", group=group, sender=sender, content=content)
+    logger.debug("Chat message group={} user_id={} length={}", group, current_identity().user_id, len(content))
 
 
 @socket.on("disconnect", namespace="/chat")
 async def on_disconnect(sid: SID) -> None:
     """客户端断开连接"""
     session = await socket.get_session(sid, namespace="/chat")
-    username = session.get("username", "Unknown")
+    username = session.get("display_name", "Unknown")
     rooms = socket.rooms(sid, namespace="/chat")
 
     for group in rooms:
@@ -140,6 +141,6 @@ async def on_disconnect(sid: SID) -> None:
         )
 
         await socket.emit("message", notification, room=group, namespace="/chat")
-        logger.info("{username} left room: {group}", username=username, group=group)
+        logger.debug("Chat left group={} user_id={}", group, current_identity().user_id)
 
-    logger.info("User {username} ({sid}) disconnected", username=username, sid=sid)
+    logger.debug("Chat disconnected user_id={}", current_identity().user_id)
