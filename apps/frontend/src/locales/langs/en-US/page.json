@@ -548,7 +548,9 @@
       },
       "result": {
         "success": "Success",
-        "failure": "Failure"
+        "failure": "Failure",
+        "partial": "Partially succeeded",
+        "unknown": "Outcome unconfirmed"
       },
       "risk": {
         "normal": "Normal",

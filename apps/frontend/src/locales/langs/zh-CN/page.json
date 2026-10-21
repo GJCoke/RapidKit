@@ -548,7 +548,9 @@
       },
       "result": {
         "success": "成功",
-        "failure": "失败"
+        "failure": "失败",
+        "partial": "部分成功",
+        "unknown": "结果未确认"
       },
       "risk": {
         "normal": "普通",

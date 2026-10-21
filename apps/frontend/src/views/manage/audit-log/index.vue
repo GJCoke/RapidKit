@@ -12,6 +12,7 @@
   import { useAppStore } from "@/store/modules/app"
   import AuditLogDetailDrawer from "./modules/audit-log-detail-drawer.vue"
   import AuditLogSearch from "./modules/audit-log-search.vue"
+  import { getAuditResultPresentation } from "./audit-log-display"
 
   const { getActionContext } = useAuth()
 
@@ -23,10 +24,6 @@
   const selectedAuditId = ref<string | null>(null)
   const searchParams: Api.SystemManage.AuditLogQuery = reactive({ page: 1, pageSize: DEFAULT_PAGE_SIZE })
 
-  const resultType: Record<Api.SystemManage.AuditResult, "success" | "error"> = {
-    success: "success",
-    failure: "error",
-  }
   const riskType: Record<Api.SystemManage.AuditRiskLevel, "default" | "warning" | "error"> = {
     normal: "default",
     sensitive: "warning",
@@ -83,7 +80,7 @@
         title: $t("page.manage.auditLog.resultLabel"),
         align: "center",
         width: 88,
-        render: (row) => <NTag type={resultType[row.result]}>{$t(`page.manage.auditLog.result.${row.result}` as any)}</NTag>,
+        render: (row) => <NTag type={getAuditResultPresentation(row.result).type}>{$t(getAuditResultPresentation(row.result).key as any)}</NTag>,
       },
       {
         key: "riskLevel",

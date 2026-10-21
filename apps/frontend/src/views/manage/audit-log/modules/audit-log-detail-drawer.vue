@@ -3,6 +3,7 @@
   import dayjs from "dayjs"
   import { $t } from "@/locales"
   import { fetchGetAuditLogDetail } from "@/service/api"
+  import { getAuditResultPresentation } from "../audit-log-display"
 
   defineOptions({ name: "AuditLogDetailDrawer" })
 
@@ -58,7 +59,7 @@
               valueOrDash(detail.resourceName)
             }}</NDescriptionsItem>
             <NDescriptionsItem :label="$t('page.manage.auditLog.resultLabel')">{{
-              $t(`page.manage.auditLog.result.${detail.result}` as any)
+              $t(getAuditResultPresentation(detail.result).key as any)
             }}</NDescriptionsItem>
             <NDescriptionsItem :label="$t('page.manage.auditLog.riskLabel')">{{
               $t(`page.manage.auditLog.risk.${detail.riskLevel}` as any)
