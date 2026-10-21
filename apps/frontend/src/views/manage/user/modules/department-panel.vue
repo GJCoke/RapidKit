@@ -30,10 +30,10 @@
     scopePath.value.length > 3 ? [scopePath.value[0], null, scopePath.value.at(-1)!] : scopePath.value,
   )
   const ancestorOptions = computed(() =>
-    scopePath.value.slice(0, -1).map((department, index) => ({
+    scopePath.value.slice(1, -1).map((department) => ({
       key: department.id,
       label: () => h("span", { "data-department-ancestor": department.id }, department.name),
-      icon: () => h(SvgIcon, { icon: index ? "ic:outline-folder" : "ic:outline-business" }),
+      icon: () => h(SvgIcon, { icon: "ic:outline-folder" }),
     })),
   )
   let requestId = 0

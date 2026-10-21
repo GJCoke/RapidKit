@@ -253,12 +253,17 @@ it("enters deep branches and returns home without changing the selected departme
   expect(selectedId.value).toBe("level-6")
 })
 
-it("jumps to an ancestor through the complete breadcrumb path", async () => {
+it("shows only hidden intermediate ancestors in the breadcrumb menu and supports jumping to them", async () => {
   api.tree.mockResolvedValue({ data: deepFixture(), error: null })
   const { host, selectedId } = mount()
   await enterFourthLevel(host)
   ;(host.querySelector("[data-department-ancestors]") as HTMLElement).click()
   await vi.waitFor(() => expect(document.querySelector('[data-department-ancestor="level-2"]')).not.toBeNull())
+  expect(
+    [...document.querySelectorAll("[data-department-ancestor]")].map((node) =>
+      node.getAttribute("data-department-ancestor"),
+    ),
+  ).toEqual(["level-2", "level-3"])
   ;(document.querySelector('[data-department-ancestor="level-2"]') as HTMLElement).click()
   await nextTick()
   expect(treeRow(host, "level-2")).toBeTruthy()
