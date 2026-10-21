@@ -71,7 +71,7 @@
         {{ $t("page.manage.role.workbench.resourceAll") }}
       </NCheckbox>
       <h3 v-else class="m-0 text-18px font-600">{{ row.resource.label }}</h3>
-      <NTag size="small" :bordered="false" :type="match ? 'primary' : 'default'">
+      <NTag v-if="!embedded || packages.length" size="small" :bordered="false" :type="match ? 'primary' : 'default'">
         {{
           match
             ? $t("page.manage.role.workbench.match", { name: match.label })
@@ -79,7 +79,7 @@
         }}
       </NTag>
     </div>
-    <div class="shrink-0">
+    <div v-if="!embedded || packages.length" class="shrink-0">
       <div
         v-if="!embedded"
         class="mb-14px flex flex-wrap items-center justify-between gap-10px border-b border-theme-default pb-10px"
@@ -112,7 +112,7 @@
       class="permission-operations-scrollbar min-h-0 flex-1 flex-col gap-16px"
       :content-class="embedded ? undefined : 'flex-col gap-16px pb-2px pr-18px'"
     >
-      <div class="grid grid-cols-1 gap-12px sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-12px sm:grid-cols-2" :class="{ 'lg:grid-cols-4': embedded }">
         <div v-for="item in visibleCodes" :key="item.code" class="min-h-24px min-w-0 flex items-start gap-6px">
           <NCheckbox
             :checked="direct.has(item.code) || implied.has(item.code)"

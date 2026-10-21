@@ -404,6 +404,7 @@
             <PermissionChangeReview
               :diff="diff"
               :catalog="catalog"
+              :modules="menuSnapshot ? modules : undefined"
               :repairs="repairAcknowledged ? invalidScopes : []"
             />
           </NScrollbar>
@@ -413,7 +414,9 @@
               <nav
                 ref="resourceNavigation"
                 class="resource-nav min-h-0 min-w-0 flex-col"
-                :aria-label="$t('page.manage.role.workbench.resources')"
+                :aria-label="
+                  $t(menuSnapshot ? 'page.manage.role.workbench.modules' : 'page.manage.role.workbench.resources')
+                "
               >
                 <div class="mb-8px px-2px text-12px text-base-text-3">
                   {{ $t(menuSnapshot ? "page.manage.role.workbench.modules" : "page.manage.role.workbench.resources") }}

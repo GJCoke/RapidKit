@@ -613,3 +613,71 @@ it("does not report a cleared module as empty when another module still requires
     expect(api.save).toHaveBeenCalledWith("role", expect.objectContaining({ permissionCodes: ["user:publish"] })),
   )
 })
+
+it("reviews direct grants and cross-module dependencies under their owning modules", async () => {
+  const system = menu("system", {
+    menuName: "系统管理",
+    menuType: "1",
+    children: [
+      menu("users", { permission: "user:options" }),
+      menu("departments", { permission: "department:read" }),
+      menu("roles", { permission: "role:options" }),
+    ],
+  })
+  const catalog = {
+    ...notificationCatalog,
+    resources: notificationCatalog.resources.map((r) =>
+      r.key === "user"
+        ? {
+            ...r,
+            dataScopes: [{ key: "self", label: "本人" }],
+            fieldGroups: [{ key: "contact", label: "联系方式", fields: ["phone"], modes: ["hidden" as const] }],
+          }
+        : r,
+    ),
+  }
+  await open({
+    modules: true,
+    catalog,
+    codes: ["user:options"],
+    menuResults: [menuPage([...notificationMenus, system])],
+  })
+  const scope = document.querySelector<HTMLSelectElement>('select[aria-label="用户管理 / page.manage.role.dataScope"]')!
+  scope.value = "all"
+  scope.dispatchEvent(new Event("change"))
+  await nextTick()
+  await navigateModule("通知管理")
+  checkbox("新增公告").click()
+  await nextTick()
+  button(key("review")).click()
+  await nextTick()
+  expect(document.querySelector('[data-review-module="notifications"]')?.textContent).toContain("新增公告")
+  expect(document.querySelector('[data-review-module="system"]')?.textContent).toContain("查看部门")
+  expect(document.querySelector('[data-review-module="system"]')?.textContent).toContain("用户管理")
+  button(key("back")).click()
+  await nextTick()
+  expect(document.querySelector('[data-permission-module="notifications"]')).toBeTruthy()
+  expect(checkbox("新增公告").getAttribute("aria-checked")).toBe("true")
+  button(key("review")).click()
+  await nextTick()
+  button(key("save")).click()
+  button(key("save")).click()
+  await vi.waitFor(() =>
+    expect(api.save).toHaveBeenCalledExactlyOnceWith("role", {
+      permissionCodes: ["user:options", "notification:create"],
+      dataScopes: {},
+      fieldModes: { user: { contact: "masked" } },
+    }),
+  )
+})
+
+it("retains removed unknown codes in the grouped change review", async () => {
+  await open({ modules: true, invalid: true })
+  button(key("removeInvalid")).click()
+  button(key("repairInvalid")).click()
+  await nextTick()
+  button(key("review")).click()
+  await nextTick()
+  expect(document.querySelector('[data-review-module="other"]')?.textContent).toContain("old:read")
+  expect(document.body.textContent).toContain(key("repairSummary"))
+})
