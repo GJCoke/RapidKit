@@ -2692,11 +2692,6 @@ export interface components {
        * @example 2024-07-31 16:07:34
        */
       updateTime: string
-      /**
-       * Schemaversion
-       * @default 1
-       */
-      schemaVersion: number
       /** @default unknown */
       actorType: components["schemas"]["AuditActorType"]
       /** Actorusername */
@@ -2780,11 +2775,6 @@ export interface components {
        * @example 2024-07-31 16:07:34
        */
       updateTime: string
-      /**
-       * Schemaversion
-       * @default 1
-       */
-      schemaVersion: number
       /** @default unknown */
       actorType: components["schemas"]["AuditActorType"]
       /** Actorusername */

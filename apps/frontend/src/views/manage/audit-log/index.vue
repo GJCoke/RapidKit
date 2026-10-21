@@ -102,7 +102,6 @@
                     {$t(`page.manage.auditLog.risk.${row.riskLevel}` as any)}
                   </NTag>
                 ) : null}
-                {row.schemaVersion === 1 ? <NTag size="small">{$t("page.manage.auditLog.legacy")}</NTag> : null}
               </div>
             </div>
           ),

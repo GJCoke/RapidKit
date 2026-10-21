@@ -42,7 +42,6 @@ async def test_retry_replay_and_out_of_order_events_keep_one_audit_per_attempt(m
     from sqlmodel import select
     from sqlmodel.ext.asyncio.session import AsyncSession
 
-    monkeypatch.setattr(event_service.settings, "AUDIT_V2_ENABLED", True)
     monkeypatch.setattr(event_service, "get_service_optional", lambda _: AuditWriterImpl())
     monkeypatch.setattr(event_service.event_bus, "fire_and_forget", lambda _: None)
     engine = create_async_engine("sqlite+aiosqlite://", connect_args={"autocommit": False})

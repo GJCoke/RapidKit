@@ -43,7 +43,7 @@ class EventService:
         self.sio = sio
 
     async def _audit_execution(self, task, data, result):
-        if not settings.AUDIT_V2_ENABLED:
+        if not settings.AUDIT_ENABLED:
             return
         writer = get_service_optional(AuditWriter)
         if writer is None:

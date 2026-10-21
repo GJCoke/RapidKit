@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from rapidkit_common.audit import AuditRecord
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.status_codes import StatusCode
 from src.middlewares import audit
@@ -20,7 +21,6 @@ async def test_v2_failure_records_business_code_and_safe_reason(monkeypatch):
         "settings",
         SimpleNamespace(
             AUDIT_ENABLED=True,
-            AUDIT_V2_ENABLED=True,
             AUDIT_EXCLUDE_PATHS=[],
             AUDIT_SENSITIVE_FIELDS=[],
             AUDIT_MAX_BODY_SIZE=10240,
@@ -40,6 +40,8 @@ async def test_v2_failure_records_business_code_and_safe_reason(monkeypatch):
         response = await client.post("/fail")
     assert response.status_code == 200
     assert len(records) == 1
+    assert isinstance(records[0], AuditRecord)
+    assert "schema_version" not in records[0].model_dump()
     assert records[0].result == "failure"
     assert records[0].business_code != 0
     assert records[0].action == "http.request"
@@ -50,7 +52,6 @@ async def test_v2_failure_records_business_code_and_safe_reason(monkeypatch):
 async def test_v2_validation_failure_is_not_success(monkeypatch):
     records = []
     monkeypatch.setattr(audit, "audit_queue", SimpleNamespace(put=AsyncMock(side_effect=records.append)))
-    monkeypatch.setattr(audit.settings, "AUDIT_V2_ENABLED", True)
     from src.main import setup_exception_handlers
 
     app = FastAPI()
@@ -71,7 +72,6 @@ async def test_exception_after_committed_business_does_not_publish_false_failure
 
     records = []
     monkeypatch.setattr(audit, "audit_queue", SimpleNamespace(put=AsyncMock(side_effect=records.append)))
-    monkeypatch.setattr(audit.settings, "AUDIT_V2_ENABLED", True)
     app = FastAPI()
     app.add_middleware(AuditMiddleware)
 

@@ -91,7 +91,6 @@ class AuditLogQuery(PaginatedRequest):
 
 
 class AuditLogListItem(BaseSchema):
-    schema_version: int = 1
     actor_type: AuditActorType = AuditActorType.UNKNOWN
     actor_username: str | None = None
     subject_username: str | None = None

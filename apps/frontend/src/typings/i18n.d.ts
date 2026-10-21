@@ -505,8 +505,6 @@ declare namespace I18nKeys {
     | "manage.auditLog.impersonatedAction"
     | "manage.auditLog.initiatedBy"
     | "manage.auditLog.ip"
-    | "manage.auditLog.legacy"
-    | "manage.auditLog.legacyHint"
     | "manage.auditLog.loadFailed"
     | "manage.auditLog.logId"
     | "manage.auditLog.noChanges"

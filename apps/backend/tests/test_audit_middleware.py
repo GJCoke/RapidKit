@@ -3,9 +3,10 @@
 from types import SimpleNamespace
 from uuid import uuid4
 
+from fastapi import FastAPI
+from rapidkit_common.audit import AuditRecord
 from src.middlewares.audit import (
     AuditMiddleware,
-    _build_audit_record,
     _is_excluded_path,
     _read_auth_identity,
     _sanitize_mapping,
@@ -16,9 +17,9 @@ from starlette.responses import Response
 
 class AuditQueueStub:
     def __init__(self):
-        self.records: list[dict] = []
+        self.records: list[AuditRecord] = []
 
-    async def put(self, record: dict) -> None:
+    async def put(self, record: AuditRecord) -> None:
         self.records.append(record)
 
 
@@ -46,25 +47,6 @@ def test_sensitive_values_are_removed_recursively():
     }
 
 
-def test_audit_record_uses_technical_audit_shape():
-    record = _build_audit_record(
-        method="POST",
-        path="/api/v1/users",
-        actor_id=None,
-        actor_name="admin",
-        ip="127.0.0.1",
-        user_agent="pytest",
-        request_summary={"name": "Alice"},
-        response_code=1000,
-        http_status=200,
-    )
-    assert record["action"] == "users.create"
-    assert record["result"] == "success"
-    assert record["resource_type"] == "users"
-    assert "event_type" not in record
-    assert "request_body" not in record
-
-
 def test_authenticated_request_reads_verified_actor():
     actor_id = uuid4()
     request = Request({"type": "http"})
@@ -87,7 +69,6 @@ async def test_audit_middleware_extracts_client_info_from_request(monkeypatch):
             AUDIT_SENSITIVE_FIELDS=[],
         ),
     )
-    monkeypatch.setattr("src.middlewares.audit.timezone", SimpleNamespace(now=lambda: None))
 
     async def receive():
         return {"type": "http.request", "body": b"", "more_body": False}
@@ -95,6 +76,7 @@ async def test_audit_middleware_extracts_client_info_from_request(monkeypatch):
     request = Request(
         {
             "type": "http",
+            "app": FastAPI(),
             "method": "POST",
             "path": "/api/v1/users",
             "query_string": b"",
@@ -112,6 +94,6 @@ async def test_audit_middleware_extracts_client_info_from_request(monkeypatch):
 
     await middleware.dispatch(request, call_next)
 
-    assert queue.records[0]["ip"] == "203.0.113.9"
-    assert queue.records[0]["user_agent"] == "audit-regression-test"
-    assert queue.records[0]["response_code"] == 200
+    assert queue.records[0].ip == "203.0.113.9"
+    assert queue.records[0].user_agent == "audit-regression-test"
+    assert queue.records[0].response_code == 200

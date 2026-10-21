@@ -27,7 +27,7 @@ async def test_duplicate_delivery_preserves_one_row(session):
     await writer.append_in_transaction(session, record)
     rows = (await session.exec(select(AuditLog))).all()
     assert len(rows) == 1
-    assert rows[0].schema_version == 2
+    assert "schema_version" not in rows[0].model_dump()
     assert rows[0].resource_id == "target"
 
 

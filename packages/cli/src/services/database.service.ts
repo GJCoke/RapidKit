@@ -2,11 +2,10 @@ import { resolve } from "node:path"
 import { readdirSync, unlinkSync, existsSync } from "node:fs"
 import { type TaskRunner } from "../infra/runner"
 import { hasCommand } from "../infra/runner"
-import { buildComposeCommand, buildComposeRunCommand } from "../infra/compose"
+import { buildComposeRunCommand } from "../infra/compose"
 import { t } from "../infra/i18n"
 import { getContext, type FluxContext } from "../context"
-import { BACKEND_DIR, DEV_COMPOSE, MIGRATION_DIR, PLUGINS_DIR } from "../constants"
-import type { DbCredentials } from "../infra/env"
+import { BACKEND_DIR, MIGRATION_DIR, PLUGINS_DIR } from "../constants"
 
 /**
  * Delete all .py migration files (preserve __init__.py) across all plugin version dirs.
@@ -102,30 +101,10 @@ export function cleanPluginMigrationFiles(pluginName: string): number {
   return cleanPyFiles(dir)
 }
 
-/**
- * DROP SCHEMA public CASCADE; CREATE SCHEMA public; via psql in compose container.
- */
-export async function dropAndRecreateSchema(
-  runner: TaskRunner,
-  ctx: FluxContext,
-  credentials: DbCredentials,
-): Promise<void> {
-  const dropSql = "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-  const { cmd, args } = buildComposeCommand(ctx, DEV_COMPOSE, [
-    "exec",
-    "-T",
-    "-e",
-    `PGPASSWORD=${credentials.password}`,
-    "postgresql",
-    "psql",
-    "-U",
-    credentials.user,
-    "-d",
-    credentials.database,
-    "-c",
-    dropSql,
-  ])
-  await runner.run({ label: t("db.reset.dropSchema") }, cmd, args)
+/** Reset the same configured database used by local migration commands. */
+export async function dropAndRecreateSchema(runner: TaskRunner): Promise<void> {
+  const cwd = resolve(getContext().cwd, BACKEND_DIR)
+  await runner.run({ label: t("db.reset.dropSchema"), cwd }, "uv", ["run", "python", "scripts/alembic/reset_schema.py"])
 }
 
 /**
@@ -140,10 +119,15 @@ export async function upgrade(runner: TaskRunner): Promise<void> {
 /**
  * Run python src/initdb.py (local mode).
  */
-export async function seed(runner: TaskRunner): Promise<void> {
+export async function seed(runner: TaskRunner, reset = false): Promise<void> {
   if (!hasCommand("uv")) return
   const cwd = resolve(getContext().cwd, BACKEND_DIR)
-  await runner.run({ label: t("db.seeding"), cwd }, "uv", ["run", "python", "src/initdb.py"])
+  await runner.run({ label: t("db.seeding"), cwd }, "uv", [
+    "run",
+    "python",
+    "src/initdb.py",
+    ...(reset ? ["--reset"] : []),
+  ])
 }
 
 /**

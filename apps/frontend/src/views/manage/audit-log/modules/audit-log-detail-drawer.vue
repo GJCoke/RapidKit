@@ -96,9 +96,6 @@
               }}</span
             >
           </div>
-          <NAlert v-if="detail.schemaVersion === 1" type="warning" class="mb-16px">{{
-            $t("page.manage.auditLog.legacyHint")
-          }}</NAlert>
           <NDescriptions :column="1" label-placement="left" bordered size="small">
             <NDescriptionsItem :label="$t('page.manage.auditLog.actor')"
               >{{

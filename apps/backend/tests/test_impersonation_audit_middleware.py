@@ -10,34 +10,10 @@ from plugin_auth.status_codes import AuthStatusCode
 from rapidkit_core.config import settings
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.identity import IdentityMetadata, bind_identity, current_identity, identity_scope
-from src.middlewares.audit import AuditMiddleware, _build_audit_record, _is_excluded_path
+from src.middlewares.audit import AuditMiddleware, _is_excluded_path, record_audit_outcome
 from src.middlewares.context import ContextMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
-
-
-def test_dual_identity_record_and_business_failure():
-    actor, subject, session = uuid4(), uuid4(), uuid4()
-    record = _build_audit_record(
-        method="PUT",
-        path="/api/v1/users/one",
-        actor_id=actor,
-        actor_name="Admin",
-        subject_user_id=subject,
-        impersonation_session_id=session,
-        ip=None,
-        user_agent=None,
-        request_summary=None,
-        response_code=200,
-        http_status=200,
-        audit_business_code=14017,
-    )
-    assert (record["actor_id"], record["subject_user_id"], record["impersonation_session_id"]) == (
-        actor,
-        subject,
-        session,
-    )
-    assert record["result"] == "failure"
 
 
 def test_configured_exclusions():
@@ -65,6 +41,7 @@ async def test_identity_is_read_after_downstream(monkeypatch, identified, method
     request = Request(
         {
             "type": "http",
+            "app": FastAPI(),
             "method": method,
             "path": "/api/v1/users/one",
             "query_string": b"",
@@ -78,7 +55,7 @@ async def test_identity_is_read_after_downstream(monkeypatch, identified, method
             request.state.auth = SimpleNamespace(
                 actor_id=actor, subject_user_id=subject, impersonation_session_id=session
             )
-        request.state.audit_business_code = 14017
+        record_audit_outcome(request, business_code=14017)
         request.state.impersonation_lifecycle_audited = audited
         return Response(status_code=200)
 
@@ -86,10 +63,10 @@ async def test_identity_is_read_after_downstream(monkeypatch, identified, method
     if method == "GET" or audited:
         assert records == []
     else:
-        assert records[0]["actor_id"] == (actor if identified else None)
-        assert records[0]["subject_user_id"] == (subject if identified else None)
-        assert records[0]["impersonation_session_id"] == (session if identified else None)
-        assert records[0]["result"] == "failure"
+        assert records[0].actor_id == (actor if identified else None)
+        assert records[0].subject_user_id == (subject if identified else None)
+        assert records[0].impersonation_session_id == (session if identified else None)
+        assert records[0].result == "failure"
 
 
 @pytest.mark.parametrize("error_name", ["AUTHENTICATION_FAILED", "INSUFFICIENT_PERMISSIONS"])
@@ -123,11 +100,12 @@ async def test_real_exception_handler_preserves_failure_identity(monkeypatch, er
         response = await client.put("/api/v1/audit-failure")
     assert response.status_code == 200
     assert response.json()["code"] == int(getattr(AuthStatusCode, error_name))
-    assert records[0]["result"] == "failure"
-    assert records[0]["actor_id"] == actor
-    assert records[0]["subject_user_id"] == subject
-    assert records[0]["impersonation_session_id"] == session
-    assert records[0]["extra_data"] == {"subject_name": "Target", "subject_username": "target"}
+    assert records[0].result == "failure"
+    assert records[0].actor_id == actor
+    assert records[0].subject_user_id == subject
+    assert records[0].impersonation_session_id == session
+    assert records[0].metadata.subject_name == "Target"
+    assert records[0].metadata.subject_username == "target"
 
 
 @pytest.mark.parametrize("method,path", [("GET", "/api/v1/users"), ("POST", "/api/v1/auth/token/refresh")])

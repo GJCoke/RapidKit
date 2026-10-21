@@ -44,7 +44,6 @@ class AuditLog(SQLModel, table=True):
         Index("ix_audit_actor_time_id", "actor_id", "occurred_at", "id"),
     )
 
-    schema_version: int = Field(default=1, sa_column_kwargs={"server_default": "1"})
     actor_type: AuditActorType = Field(
         default=AuditActorType.UNKNOWN,
         sa_column=Column(_varchar_enum(AuditActorType), nullable=False, server_default="unknown"),

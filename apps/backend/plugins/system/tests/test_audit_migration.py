@@ -1,45 +1,39 @@
+"""The system baseline initializes the current audit schema on an empty database."""
+
 import runpy
 from pathlib import Path
-from uuid import uuid4
 
 import sqlalchemy as sa
+from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from plugin_system.models import AuditLog
-from rapidkit_core.timezone import timezone
+from alembic.script import ScriptDirectory
+from plugin_system.models import AuditLog, AuditLogTarget
 
 
-def test_migration_preserves_historical_payload_and_adds_v1_defaults():
-    metadata = sa.MetaData()
-    old = AuditLog.__table__.to_metadata(metadata)
-    for name in ("schema_version", "actor_type", "actor_username", "business_code", "error_key", "duration_ms"):
-        old._columns.remove(old.c[name])
-    old.indexes = {index for index in old.indexes if not index.name.startswith("ix_audit_")}
+def test_initial_migration_creates_structured_audit_schema():
+    root = Path(__file__).parents[3]
+    config = Config()
+    config.set_main_option("path_separator", "os")
+    config.set_main_option("script_location", str(root / "alembic"))
+    config.set_main_option("version_locations", str(root / "plugins/system/migrations/versions"))
+    history = ScriptDirectory.from_config(config)
+    head = history.get_revision("system@head")
+    assert head.down_revision is None
+    assert len(list(history.walk_revisions())) == 1
+    migration = runpy.run_path(head.path)
     engine = sa.create_engine("sqlite://")
-    migration = runpy.run_path(str(Path(__file__).parents[1] / "migrations/versions/20261021_structured_audit.py"))
-    with engine.begin() as connection:
-        metadata.create_all(connection)
-        connection.execute(
-            old.insert().values(
-                id=uuid4(),
-                action="publish.create",
-                result="success",
-                source="http",
-                resource_name="old",
-                metadata={},
-                occurred_at=timezone.now(),
-            )
-        )
-        with Operations.context(MigrationContext.configure(connection)):
-            migration["upgrade"]()
-        target_migration = runpy.run_path(
-            str(Path(__file__).parents[1] / "migrations/versions/20261021_audit_targets.py")
-        )
-        with Operations.context(MigrationContext.configure(connection)):
-            target_migration["upgrade"]()
-        assert "system_audit_log_targets" in sa.inspect(connection).get_table_names()
-        row = connection.execute(
-            sa.text("SELECT action, resource_name, schema_version, actor_type FROM system_audit_logs")
-        ).one()
-        assert tuple(row) == ("publish.create", "old", 1, "unknown")
-    engine.dispose()
+    try:
+        with engine.begin() as connection:
+            with Operations.context(MigrationContext.configure(connection)):
+                migration["upgrade"]()
+            inspector = sa.inspect(connection)
+            assert "system_activity_events" in inspector.get_table_names()
+            for model in (AuditLog, AuditLogTarget):
+                columns = {column["name"] for column in inspector.get_columns(model.__tablename__)}
+                assert columns == set(model.__table__.columns.keys())
+                assert "schema_version" not in columns
+                indexes = {index["name"] for index in inspector.get_indexes(model.__tablename__)}
+                assert {index.name for index in model.__table__.indexes} <= indexes
+    finally:
+        engine.dispose()

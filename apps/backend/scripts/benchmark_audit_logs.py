@@ -31,7 +31,6 @@ async def benchmark(url: str, rows: int) -> None:
             batch = [
                 {
                     "id": uuid7(),
-                    "schema_version": 2,
                     "actor_type": "system",
                     "actor_id": actors[index % len(actors)],
                     "actor_name": "Benchmark",

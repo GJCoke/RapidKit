@@ -8,7 +8,42 @@ vi.mock("../../context", () => ({
 }))
 
 import { getContext } from "../../context"
-import { getMigrationFileStats, cleanPluginMigrationFiles } from "../../services/database.service"
+import {
+  getMigrationFileStats,
+  cleanPluginMigrationFiles,
+  dropAndRecreateSchema,
+  seed,
+} from "../../services/database.service"
+import type { TaskRunner } from "../../infra/runner"
+import * as runnerInfra from "../../infra/runner"
+
+it("initializes a reset database and invalidates stale user caches", async () => {
+  vi.mocked(getContext).mockReturnValue({ runtime: "docker", region: "global", locale: "zh-CN", cwd: "/workspace" })
+  const available = vi.spyOn(runnerInfra, "hasCommand").mockReturnValue(true)
+  const run = vi.fn().mockResolvedValue(undefined)
+  try {
+    await seed({ run } as unknown as TaskRunner, true)
+    expect(run).toHaveBeenCalledWith(expect.objectContaining({ cwd: "/workspace/apps/backend" }), "uv", [
+      "run",
+      "python",
+      "src/initdb.py",
+      "--reset",
+    ])
+  } finally {
+    available.mockRestore()
+  }
+})
+
+it("resets the database using the same backend configuration as migrations", async () => {
+  vi.mocked(getContext).mockReturnValue({ runtime: "docker", region: "global", locale: "zh-CN", cwd: "/workspace" })
+  const run = vi.fn().mockResolvedValue(undefined)
+  await dropAndRecreateSchema({ run } as unknown as TaskRunner)
+  expect(run).toHaveBeenCalledWith(expect.objectContaining({ cwd: "/workspace/apps/backend" }), "uv", [
+    "run",
+    "python",
+    "scripts/alembic/reset_schema.py",
+  ])
+})
 
 describe("getMigrationFileStats", () => {
   let tempDir: string

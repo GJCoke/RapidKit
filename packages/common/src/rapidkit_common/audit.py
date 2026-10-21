@@ -82,7 +82,6 @@ class AuditMetadata(BaseModel):
 
 class AuditRecord(BaseModel):
     id: UUID = Field(default_factory=uuid7)
-    schema_version: int = 2
     actor_type: AuditActorType = AuditActorType.UNKNOWN
     actor_id: UUID | None = None
     actor_name: str | None = Field(default=None, max_length=100)

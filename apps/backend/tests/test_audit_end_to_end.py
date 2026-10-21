@@ -26,7 +26,6 @@ async def test_verified_actor_actual_object_and_generated_request_id_survive_com
         await connection.run_sync(Department.__table__.create)
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     monkeypatch.setattr(database, "get_async_session_factory", lambda: factory)
-    monkeypatch.setattr(audit.settings, "AUDIT_V2_ENABLED", True)
     records = []
 
     async def put(record):

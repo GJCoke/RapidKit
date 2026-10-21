@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from fastapi import FastAPI
+from rapidkit_common.audit import AuditRecord
 from rapidkit_core.config import settings
 from rapidkit_core.database import RedisManager, async_engine, sync_engine
 from rapidkit_core.leader_election import LeaderElection
@@ -23,21 +24,14 @@ from src.sio.events.connection import renew_session_keys_loop
 from src.sio.sessions import register_socket_closer, shutdown_socket_timers
 
 
-async def _flush_audit_batch(batch: list) -> None:
+async def _flush_audit_batch(batch: list[AuditRecord]) -> None:
     """批量写入审计日志到数据库。"""
     from plugin_system.audit_crud import AuditLogCRUD
     from rapidkit_core.database import AsyncSessionLocal
 
     async with AsyncSessionLocal() as session:
         crud = AuditLogCRUD(session)
-        from rapidkit_common.audit import AuditRecord
-
-        structured = [item for item in batch if isinstance(item, AuditRecord)]
-        legacy = [item for item in batch if not isinstance(item, AuditRecord)]
-        if structured:
-            await crud.append_batch(structured)
-        if legacy:
-            await crud.create_all(legacy)
+        await crud.append_batch(batch)
         await session.commit()
 
 

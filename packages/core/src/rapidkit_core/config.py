@@ -166,7 +166,6 @@ class AuditMixin(BaseSettings):
     """审计日志配置。"""
 
     AUDIT_ENABLED: bool = True
-    AUDIT_V2_ENABLED: bool = False
     AUDIT_EXCLUDE_PATHS: list[str] = [
         "/health",
         "/metrics",
