@@ -14,6 +14,7 @@
   import SvgIcon from "@/components/custom/svg-icon.vue"
   import ImpersonationConfirmModal from "@/components/impersonation/impersonation-confirm-modal.vue"
   import { createUserActionModel } from "./composables/user-actions"
+  import { createDepartmentNavigationIndex } from "./composables/department-navigation"
   import UserOperateDrawer from "./modules/user-operate-drawer.vue"
   import ChangePasswordModal from "./modules/change-password-modal.vue"
   import UserSearch from "./modules/user-search.vue"
@@ -252,14 +253,10 @@
   function onDepartmentsLoaded(tree: Api.SystemManage.DepartmentTree[]) {
     const names: Record<string, string> = {}
     const paths: Record<string, string> = {}
-    function visit(nodes: Api.SystemManage.DepartmentTree[], ancestors: string[]) {
-      for (const node of nodes) {
-        names[node.id] = node.name
-        paths[node.id] = [...ancestors, node.name].join(" / ")
-        visit(node.children ?? [], [...ancestors, node.name])
-      }
+    for (const [id, { department, path }] of createDepartmentNavigationIndex(tree)) {
+      names[id] = department.name
+      paths[id] = path.map(node => node.name).join(" / ")
     }
-    visit(tree, [])
     departmentNames.value = names
     departmentPaths.value = paths
   }
@@ -326,6 +323,13 @@
             {{ contextTitle }}
             <div class="mt-4px text-13px text-base-text-3">
               {{ $t("page.manage.user.directory.members", { count: pagination.itemCount ?? 0 }) }}
+            </div>
+            <div
+              v-if="departmentPaths[selectedDepartment]"
+              class="mt-8px break-words text-12px font-normal text-base-text-3"
+              :aria-label="$t('page.manage.user.directory.completePath')"
+            >
+              {{ departmentPaths[selectedDepartment] }}
             </div>
           </template>
           <TableHeaderOperation

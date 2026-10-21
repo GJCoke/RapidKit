@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, h, ref, shallowRef } from "vue"
+  import { computed, h, nextTick, ref, shallowRef, watch } from "vue"
   import type { TreeOption } from "naive-ui"
   import { NButton, NDropdown, NEllipsis, NHighlight } from "naive-ui"
   import { fetchDeleteDepartment, fetchGetDepartmentTree, fetchGetUserDepartmentCounts } from "@/service/api"
@@ -7,7 +7,7 @@
   import { $t } from "@/locales"
   import SvgIcon from "@/components/custom/svg-icon.vue"
   import DepartmentOperateDrawer from "../../department/modules/department-operate-drawer.vue"
-  import { createDepartmentMap } from "../composables/department-map"
+  import { createDepartmentNavigationIndex } from "../composables/department-navigation"
 
   defineOptions({ name: "UserDepartmentPanel" })
   const selectedId = defineModel<string>("selectedId", { required: true })
@@ -20,25 +20,33 @@
   const keyword = ref("")
   const searchPattern = computed(() => keyword.value.trim())
   const openMenuId = ref<string | null>(null)
+  const scopeId = ref<string | null>(null)
+  const expandedKeys = ref<string[]>([])
+  const ancestorMenuOpen = ref(false)
+  const directoryElement = ref<HTMLElement>()
+  const departmentIndex = computed(() => createDepartmentNavigationIndex(tree.value))
+  const scopePath = computed(() => (scopeId.value ? (departmentIndex.value.get(scopeId.value)?.path ?? []) : []))
+  const breadcrumbs = computed(() =>
+    scopePath.value.length > 3 ? [scopePath.value[0], null, scopePath.value.at(-1)!] : scopePath.value,
+  )
+  const ancestorOptions = computed(() =>
+    scopePath.value.slice(0, -1).map((department, index) => ({
+      key: department.id,
+      label: () => h("span", { "data-department-ancestor": department.id }, department.name),
+      icon: () => h(SvgIcon, { icon: index ? "ic:outline-folder" : "ic:outline-business" }),
+    })),
+  )
   let requestId = 0
   const drawerVisible = ref(false)
   const operateType = ref<"add" | "addChild" | "edit">("add")
   const editingData = shallowRef<Api.SystemManage.DepartmentTree | null>(null)
   const parentData = shallowRef<Api.SystemManage.DepartmentTree | null>(null)
 
-  function findDepartment(id: string, nodes = tree.value): Api.SystemManage.DepartmentTree | undefined {
-    for (const department of nodes) {
-      if (department.id === id) return department
-      const child = findDepartment(id, department.children ?? [])
-      if (child) return child
-    }
-    return undefined
-  }
-
-  const options = computed(() => {
-    const visibleDepartments = createDepartmentMap(tree.value)
+  const directoryOptions = computed(() => {
+    const byId = new Map<string, TreeOption>()
     // Hidden departments make their ancestor totals unknowable from the visible tree.
-    const completeCounts = counts.value && Object.keys(counts.value.departments).every((id) => id in visibleDepartments)
+    const completeCounts =
+      counts.value && Object.keys(counts.value.departments).every((id) => departmentIndex.value.has(id))
     function build(nodes: Api.SystemManage.DepartmentTree[]): TreeOption[] {
       return nodes.map((department) => {
         const children = build(department.children ?? [])
@@ -47,7 +55,7 @@
             ? (counts.value.departments[department.id] ?? 0) +
               children.reduce((sum, child) => sum + Number(child.count), 0)
             : null
-        return {
+        const option: TreeOption = {
           key: department.id,
           label: department.name,
           count,
@@ -58,9 +66,109 @@
             }),
           children: children.length ? children : undefined,
         }
+        byId.set(department.id, option)
+        return option
       })
     }
-    return build(tree.value)
+    return { roots: build(tree.value), byId }
+  })
+
+  const visibleOptions = computed(() => {
+    const scoped = scopeId.value && directoryOptions.value.byId.get(scopeId.value)
+    return scoped ? [scoped] : directoryOptions.value.roots
+  })
+  const searchResults = computed(() =>
+    [...departmentIndex.value.values()].filter(({ department }) =>
+      department.name.toLowerCase().includes(searchPattern.value.toLowerCase()),
+    ),
+  )
+  const visibleExpandedKeys = computed(() => expandedKeys.value.filter((id) => !isDepthBoundary(id)))
+  const visibleSelectedKeys = computed(() => {
+    const path = departmentIndex.value.get(selectedId.value)?.path
+    if (!path) return []
+    const start = scopeId.value ? path.findIndex((node) => node.id === scopeId.value) : 0
+    if (start < 0) return []
+    const visiblePath = path.slice(start)
+    if (visiblePath.length > (scopeId.value ? 3 : 4)) return []
+    return visiblePath.slice(0, -1).every((node) => visibleExpandedKeys.value.includes(node.id))
+      ? [selectedId.value]
+      : []
+  })
+
+  function isDepthBoundary(id: string) {
+    const depth = (departmentIndex.value.get(id)?.path.length ?? 0) - 1
+    return depth - Math.max(0, scopePath.value.length - 1) >= (scopeId.value ? 2 : 3)
+  }
+
+  function seedExpansion() {
+    const keys = new Set(expandedKeys.value.filter((id) => departmentIndex.value.has(id)))
+    for (const [id, { department, path }] of departmentIndex.value) {
+      const inScope = !scopeId.value || path.some((ancestor) => ancestor.id === scopeId.value)
+      const relativeDepth = path.length - 1 - Math.max(0, scopePath.value.length - 1)
+      if (inScope && relativeDepth < 2 && department.children?.length) keys.add(id)
+    }
+    for (const ancestor of departmentIndex.value.get(selectedId.value)?.path.slice(0, -1) ?? []) keys.add(ancestor.id)
+    expandedKeys.value = [...keys]
+  }
+
+  function navigateScope(id: string | number | null) {
+    if (id !== null && !departmentIndex.value.has(String(id))) return
+    scopeId.value = id === null ? null : String(id)
+    keyword.value = ""
+    openMenuId.value = null
+    ancestorMenuOpen.value = false
+    seedExpansion()
+  }
+
+  function focusDirectory() {
+    nextTick(() => directoryElement.value?.querySelector<HTMLElement>(".n-tree")?.focus())
+  }
+
+  function locateDepartment(id: string) {
+    const path = departmentIndex.value.get(id)?.path
+    if (!path) return
+    navigateScope(path.length > 3 ? path.at(-3)!.id : null)
+    expandedKeys.value = [...new Set([...expandedKeys.value, ...path.slice(0, -1).map((node) => node.id)])]
+    selectedId.value = id
+    focusDirectory()
+  }
+
+  function updateExpandedKeys(
+    keys: Array<string | number>,
+    _options: Array<TreeOption | null>,
+    meta: { node: TreeOption | null; action: string },
+  ) {
+    if (meta.action === "expand" && meta.node && isDepthBoundary(String(meta.node.key))) {
+      navigateScope(String(meta.node.key))
+      focusDirectory()
+    } else expandedKeys.value = keys.map(String)
+  }
+
+  function renderSwitcherIcon({ option }: { option: TreeOption }) {
+    if (!option.children?.length || !isDepthBoundary(String(option.key)))
+      return h("span", { class: "inline-flex" }, h(SvgIcon, { icon: "ic:round-keyboard-arrow-right" }))
+    return h(
+      NButton,
+      {
+        text: true,
+        size: "tiny",
+        class: "department-enter text-primary",
+        "data-department-enter": option.key,
+        "aria-label": $t("page.manage.user.directory.enterDepartment", { name: String(option.label) }),
+        onClick: (event: MouseEvent) => {
+          event.stopPropagation()
+          navigateScope(String(option.key))
+          focusDirectory()
+        },
+        onKeydown: (event: KeyboardEvent) => event.stopPropagation(),
+      },
+      { icon: () => h(SvgIcon, { icon: "ic:round-subdirectory-arrow-right" }) },
+    )
+  }
+
+  watch(searchPattern, () => {
+    openMenuId.value = null
+    ancestorMenuOpen.value = false
   })
 
   async function reload() {
@@ -72,8 +180,17 @@
     failed.value = Boolean(departments.error)
     counts.value = members.error ? null : members.data
     if (departments.error) return
+    const oldPath = scopePath.value
+    const initial = tree.value.length === 0
     tree.value = departments.data
-    if (!["all", "unassigned"].includes(selectedId.value) && !findDepartment(selectedId.value)) selectedId.value = "all"
+    if (!["all", "unassigned"].includes(selectedId.value) && !departmentIndex.value.has(selectedId.value))
+      selectedId.value = "all"
+    if (scopeId.value && !departmentIndex.value.has(scopeId.value)) {
+      navigateScope([...oldPath].reverse().find((node) => departmentIndex.value.has(node.id))?.id ?? null)
+    } else if (initial) {
+      if (departmentIndex.value.has(selectedId.value)) locateDepartment(selectedId.value)
+      else seedExpansion()
+    } else expandedKeys.value = expandedKeys.value.filter((id) => departmentIndex.value.has(id))
     emit("loaded", tree.value)
   }
 
@@ -122,7 +239,7 @@
   }
 
   function selectAction(key: string, departmentId: string) {
-    const department = findDepartment(departmentId)
+    const department = departmentIndex.value.get(departmentId)?.department
     if (!department || failed.value || !menuOptions.value.some((option) => option.key === key)) return
     if (key === "delete") {
       window.$dialog?.warning({
@@ -131,7 +248,7 @@
         positiveText: $t("common.confirm"),
         negativeText: $t("common.cancel"),
         onPositiveClick: async () => {
-          if (!hasAuth("department:delete") || !findDepartment(department.id) || failed.value) return
+          if (!hasAuth("department:delete") || !departmentIndex.value.has(department.id) || failed.value) return
           const { error } = await fetchDeleteDepartment(department.id)
           if (error) return false
           window.$message?.success($t("common.deleteSuccess"))
@@ -157,11 +274,7 @@
       NEllipsis,
       { tooltip: { placement: "right", delay: 400 } },
       {
-        default: () =>
-          h(NHighlight, {
-            text: String(option.label),
-            patterns: searchPattern.value ? [searchPattern.value] : [],
-          }),
+        default: () => String(option.label),
         tooltip: () => String(option.label),
       },
     )
@@ -270,10 +383,78 @@
         <span class="directory-count mr-28px">{{ item.count ?? "—" }}</span>
       </button>
     </div>
-    <div class="department-section flex-col-stretch gap-8px pt-14px">
-      <h3 class="m-0 px-4px text-12px font-normal text-base-text-3">
-        {{ $t("page.manage.user.directory.organization") }}
-      </h3>
+    <div ref="directoryElement" class="department-section flex-col-stretch gap-8px pt-14px">
+      <div class="flex items-center justify-between gap-8px px-4px">
+        <h3 class="m-0 text-12px font-normal text-base-text-3">{{ $t("page.manage.user.directory.organization") }}</h3>
+        <span class="text-11px text-base-text-3" aria-live="polite">{{
+          $t("page.manage.user.directory.depth", { level: Math.max(1, scopePath.length) })
+        }}</span>
+      </div>
+      <nav
+        class="department-browse flex-col-stretch gap-8px px-4px pb-12px"
+        :aria-label="$t('page.manage.user.directory.browseLocation')"
+      >
+        <div class="flex items-center justify-between gap-8px">
+          <NButton
+            text
+            size="tiny"
+            :disabled="!scopeId"
+            data-department-back
+            @click="navigateScope(scopePath.at(-2)?.id ?? null)"
+          >
+            <template #icon><SvgIcon icon="ic:round-arrow-back" /></template>{{ $t("page.manage.user.directory.back") }}
+          </NButton>
+          <NTooltip
+            ><template #trigger
+              ><NButton
+                quaternary
+                size="tiny"
+                data-department-home
+                :aria-label="$t('page.manage.user.directory.allDepartments')"
+                @click="navigateScope(null)"
+                ><template #icon><SvgIcon icon="ic:outline-home" /></template></NButton></template
+            >{{ $t("page.manage.user.directory.allDepartments") }}</NTooltip
+          >
+        </div>
+        <div class="flex min-w-0 items-center gap-2px text-12px">
+          <span v-if="!scopePath.length" class="text-base-text-3">{{
+            $t("page.manage.user.directory.allDepartments")
+          }}</span>
+          <template v-for="(department, index) in breadcrumbs" :key="department?.id ?? 'ancestors'">
+            <SvgIcon v-if="index" icon="ic:round-chevron-right" class="shrink-0 text-12px text-base-text-3" />
+            <NButton
+              v-if="department"
+              text
+              size="tiny"
+              class="department-crumb min-w-0 max-w-120px"
+              :aria-current="department.id === scopeId ? 'location' : undefined"
+              @click="navigateScope(department.id)"
+            >
+              <NEllipsis :tooltip="{ placement: 'bottom' }"
+                >{{ department.name
+                }}<template #tooltip>{{ scopePath.map((node) => node.name).join(" / ") }}</template></NEllipsis
+              >
+            </NButton>
+            <NDropdown
+              v-else
+              v-model:show="ancestorMenuOpen"
+              :options="ancestorOptions"
+              trigger="click"
+              placement="bottom-start"
+              @select="navigateScope"
+            >
+              <NButton
+                text
+                size="tiny"
+                data-department-ancestors
+                :aria-expanded="ancestorMenuOpen"
+                :aria-label="$t('page.manage.user.directory.completePath')"
+                ><template #icon><SvgIcon icon="ic:round-more-horiz" /></template
+              ></NButton>
+            </NDropdown>
+          </template>
+        </div>
+      </nav>
       <NSpin :show="loading && tree.length > 0" class="min-h-100px">
         <div v-if="loading && !tree.length" class="flex-col-stretch gap-16px px-8px py-12px" aria-busy="true">
           <NSkeleton text width="80%" />
@@ -288,42 +469,72 @@
           {{ $t("page.manage.user.directory.loadFailed") }}
           <NButton size="small" @click="reload">{{ $t("common.refresh") }}</NButton>
         </div>
+        <div v-else-if="searchPattern && tree.length" class="flex-col-stretch gap-4px">
+          <div class="px-4px text-12px text-base-text-3" role="status">
+            {{ $t("page.manage.user.directory.searchResults", { count: searchResults.length }) }}
+          </div>
+          <div
+            v-for="result in searchResults"
+            :key="result.department.id"
+            class="department-search-row flex min-w-0 items-center gap-8px rd-6px px-6px py-8px"
+            :class="{ active: selectedId === result.department.id }"
+          >
+            <button
+              type="button"
+              class="department-search-result min-w-0 flex-1 text-left"
+              :data-department-result="result.department.id"
+              :aria-pressed="selectedId === result.department.id"
+              @click="locateDepartment(result.department.id)"
+            >
+              <NEllipsis :tooltip="{ placement: 'right' }"
+                ><NHighlight :text="result.department.name" :patterns="[searchPattern]" /><template #tooltip>{{
+                  result.department.name
+                }}</template></NEllipsis
+              >
+              <NEllipsis class="block text-11px text-base-text-3" :tooltip="{ placement: 'right' }">{{
+                result.path
+                  .slice(0, -1)
+                  .map((node) => node.name)
+                  .join(" / ") || $t("page.manage.user.directory.allDepartments")
+              }}</NEllipsis>
+            </button>
+            <span class="directory-count">{{ directoryOptions.byId.get(result.department.id)?.count ?? "—" }}</span>
+          </div>
+          <NEmpty
+            v-if="!searchResults.length"
+            size="small"
+            class="py-24px"
+            :description="$t('page.manage.user.directory.noResults')"
+            role="status"
+            ><template #extra
+              ><NButton text type="primary" size="small" @click="keyword = ''">{{
+                $t("page.manage.user.directory.clearSearch")
+              }}</NButton></template
+            ></NEmpty
+          >
+        </div>
         <NTree
           v-else-if="tree.length"
+          :key="scopeId ?? 'all'"
           class="department-tree"
-          :data="options"
+          :data="visibleOptions"
           :theme-overrides="{ nodeHeight: '40px', nodeWrapperPadding: '1px 0', nodeBorderRadius: '6px' }"
           :indent="18"
-          :pattern="searchPattern"
-          :show-irrelevant-nodes="false"
-          :selected-keys="[selectedId]"
+          :expanded-keys="visibleExpandedKeys"
+          :selected-keys="visibleSelectedKeys"
           :render-suffix="renderDepartmentSuffix"
           :render-label="renderDepartmentLabel"
+          :render-switcher-icon="renderSwitcherIcon"
           ellipsis
           block-line
-          default-expand-all
           :expand-on-click="false"
+          @update:expanded-keys="updateExpandedKeys"
           @update:selected-keys="
             (keys) => {
               if (keys.length) selectedId = String(keys[0])
             }
           "
-        >
-          <template #empty>
-            <NEmpty
-              size="small"
-              class="py-24px"
-              :description="$t('page.manage.user.directory.noResults')"
-              role="status"
-            >
-              <template #extra
-                ><NButton text type="primary" size="small" @click="keyword = ''">{{
-                  $t("page.manage.user.directory.clearSearch")
-                }}</NButton></template
-              >
-            </NEmpty>
-          </template>
-        </NTree>
+        />
         <NEmpty
           v-else-if="!loading"
           size="small"
@@ -375,6 +586,37 @@
   .department-section {
     border-top: 1px solid rgb(var(--base-text-4-color) / 0.32);
   }
+  .department-browse {
+    border-bottom: 1px solid rgb(var(--base-text-4-color) / 0.32);
+  }
+  .department-browse :deep(.n-button__content) {
+    min-width: 0;
+  }
+  .department-crumb {
+    flex: 0 1 auto;
+  }
+  .department-search-result {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+  }
+  .department-search-row:hover {
+    background: rgb(var(--base-text-4-color) / 0.12);
+  }
+  .department-search-row.active {
+    background: rgb(var(--primary-color) / 0.1);
+    color: rgb(var(--primary-color));
+  }
+  .department-tree :deep(.department-enter) {
+    width: 18px;
+    height: 28px;
+  }
   .department-search :deep(.n-input-wrapper) {
     background: rgb(var(--base-text-4-color) / 0.08);
     border-radius: inherit;
@@ -408,7 +650,7 @@
     color: rgb(var(--primary-color));
     background: rgb(var(--primary-color) / 0.06);
   }
-  .department-tree :deep(.n-highlight__mark) {
+  .department-section :deep(.n-highlight__mark) {
     color: rgb(var(--primary-color));
     background: rgb(var(--primary-color) / 0.12);
   }
@@ -444,7 +686,8 @@
       height: 44px;
     }
     .directory-heading :deep(.n-button),
-    .department-tree :deep(.department-menu-button) {
+    .department-tree :deep(.department-menu-button),
+    .department-tree :deep(.department-enter) {
       width: 44px;
       height: 44px;
     }
@@ -465,6 +708,10 @@
       min-width: 44px;
     }
     .department-search {
+      min-height: 44px;
+    }
+    .department-search-result,
+    .department-browse :deep(.n-button) {
       min-height: 44px;
     }
     .department-search :deep(.n-input__input-el) {

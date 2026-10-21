@@ -110,8 +110,7 @@ it("selects a parent without toggling expansion until its arrow is clicked", asy
   expect(selectedId.value).toBe("root")
   expect(root.querySelector(".n-tree-node-switcher--expanded")).not.toBeNull()
   ;(root.querySelector(".n-tree-node-switcher") as HTMLElement).click()
-  await nextTick()
-  expect(root.querySelector(".n-tree-node-switcher--expanded")).toBeNull()
+  await vi.waitFor(() => expect(root.querySelector(".n-tree-node-switcher--expanded")).toBeNull())
   expect(selectedId.value).toBe("root")
 })
 
@@ -192,6 +191,172 @@ it("highlights department matches and clears an empty search without changing th
   clear.click()
   await nextTick()
   expect(input.value).toBe("")
-  expect(host.textContent).toContain("Engineering")
+  expect(host.querySelector('[data-department-count="child"]')).not.toBeNull()
   expect(selectedId.value).toBe("child")
+})
+
+function deepFixture(depth = 8) {
+  let children: unknown[] = []
+  for (let level = depth; level >= 1; level--) {
+    children = [
+      {
+        ...tree[0],
+        id: `level-${level}`,
+        name: level === 8 ? "Shared team" : `Level ${level}`,
+        parentId: level > 1 ? `level-${level - 1}` : null,
+        children,
+      },
+    ]
+  }
+  return children
+}
+
+function treeRow(host: HTMLElement, id: string) {
+  return host.querySelector(`[data-department-count="${id}"]`)?.closest(".n-tree-node") as HTMLElement
+}
+
+async function enterFourthLevel(host: HTMLElement) {
+  await vi.waitFor(() => expect(treeRow(host, "level-3")).toBeTruthy())
+  ;(treeRow(host, "level-3").querySelector(".n-tree-node-switcher") as HTMLElement).click()
+  await vi.waitFor(() => expect(host.querySelector('[data-department-enter="level-4"]')).not.toBeNull())
+  ;(host.querySelector('[data-department-enter="level-4"]') as HTMLElement).click()
+  await nextTick()
+}
+
+it("opens only the first two levels by default", async () => {
+  api.tree.mockResolvedValue({ data: deepFixture(), error: null })
+  const { host } = mount()
+  await vi.waitFor(() => expect(treeRow(host, "level-3")).toBeTruthy())
+  expect(treeRow(host, "level-3").querySelector(".n-tree-node-switcher--expanded")).toBeNull()
+  expect(treeRow(host, "level-4")).toBeFalsy()
+})
+
+it("enters deep branches and returns home without changing the selected department or subtree totals", async () => {
+  api.tree.mockResolvedValue({ data: deepFixture(), error: null })
+  api.counts.mockResolvedValue({ data: { total: 3, unassigned: 0, departments: { "level-8": 3 } }, error: null })
+  const { host, selectedId } = mount()
+  await enterFourthLevel(host)
+  expect(treeRow(host, "level-1")).toBeFalsy()
+  expect(host.querySelector('[data-department-count="level-4"]')?.textContent).toBe("3")
+  expect(selectedId.value).toBe("all")
+  ;(treeRow(host, "level-6").querySelector(".n-tree-node-content") as HTMLElement).click()
+  await nextTick()
+  expect(selectedId.value).toBe("level-6")
+  ;(host.querySelector("[data-department-back]") as HTMLElement).click()
+  await nextTick()
+  expect(treeRow(host, "level-3")).toBeTruthy()
+  expect(selectedId.value).toBe("level-6")
+  ;(host.querySelector("[data-department-home]") as HTMLElement).click()
+  await nextTick()
+  expect(treeRow(host, "level-1")).toBeTruthy()
+  expect(treeRow(host, "level-5")).toBeFalsy()
+  expect(selectedId.value).toBe("level-6")
+})
+
+it("jumps to an ancestor through the complete breadcrumb path", async () => {
+  api.tree.mockResolvedValue({ data: deepFixture(), error: null })
+  const { host, selectedId } = mount()
+  await enterFourthLevel(host)
+  ;(host.querySelector("[data-department-ancestors]") as HTMLElement).click()
+  await vi.waitFor(() => expect(document.querySelector('[data-department-ancestor="level-2"]')).not.toBeNull())
+  ;(document.querySelector('[data-department-ancestor="level-2"]') as HTMLElement).click()
+  await nextTick()
+  expect(treeRow(host, "level-2")).toBeTruthy()
+  expect(treeRow(host, "level-1")).toBeFalsy()
+  expect(selectedId.value).toBe("all")
+})
+
+it("searches all branches with distinguishing paths and locates the selected result", async () => {
+  api.tree.mockResolvedValue({
+    data: [
+      ...deepFixture(),
+      {
+        ...tree[0],
+        id: "other",
+        name: "Other company",
+        children: [{ ...tree[0], id: "duplicate", name: "Shared team", parentId: "other", children: [] }],
+      },
+    ],
+    error: null,
+  })
+  const { host, selectedId } = mount()
+  await enterFourthLevel(host)
+  const input = host.querySelector(
+    'input[placeholder="page.manage.user.directory.searchDepartments"]',
+  ) as HTMLInputElement
+  input.value = "shared"
+  input.dispatchEvent(new Event("input", { bubbles: true }))
+  await nextTick()
+  const results = host.querySelectorAll("[data-department-result]")
+  expect(results).toHaveLength(2)
+  expect(results[0].textContent).toContain("Level 1 / Level 2")
+  expect(results[1].textContent).toContain("Other company")
+  ;(host.querySelector('[data-department-result="level-8"]') as HTMLElement).click()
+  await nextTick()
+  expect(selectedId.value).toBe("level-8")
+  expect(input.value).toBe("")
+  expect(treeRow(host, "level-6")).toBeTruthy()
+  expect(treeRow(host, "level-8")).toBeTruthy()
+})
+
+it("recovers the nearest surviving ancestor when the scoped department is deleted", async () => {
+  api.tree.mockResolvedValue({ data: deepFixture(), error: null })
+  const { host, selectedId, panel } = mount()
+  await enterFourthLevel(host)
+  api.tree.mockResolvedValue({ data: deepFixture(3), error: null })
+  await panel.value!.reload()
+  await nextTick()
+  expect(treeRow(host, "level-3")).toBeTruthy()
+  expect(treeRow(host, "level-1")).toBeFalsy()
+  expect(selectedId.value).toBe("all")
+})
+
+it("uses keyboard expansion to enter the same depth boundary", async () => {
+  api.tree.mockResolvedValue({ data: deepFixture(), error: null })
+  const { host, selectedId } = mount()
+  await vi.waitFor(() => expect(treeRow(host, "level-3")).toBeTruthy())
+  const directory = host.querySelector(".department-tree")!
+  for (const key of ["ArrowDown", "ArrowDown", "ArrowDown", "ArrowRight", "ArrowDown", "ArrowRight"]) {
+    directory.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }))
+    await nextTick()
+    if (key === "ArrowRight") await vi.waitFor(() => expect(host.querySelector(".n-tree-motion-wrapper")).toBeNull())
+  }
+  expect(treeRow(host, "level-1")).toBeFalsy()
+  expect(treeRow(host, "level-4")).toBeTruthy()
+  expect(selectedId.value).toBe("all")
+})
+
+it("keeps keyboard navigation working when the selected filter is outside the visible tree levels", async () => {
+  api.tree.mockResolvedValue({ data: deepFixture(), error: null })
+  const { host, selectedId } = mount()
+  await enterFourthLevel(host)
+  ;(treeRow(host, "level-6").querySelector(".n-tree-node-content") as HTMLElement).click()
+  await nextTick()
+  ;(host.querySelector("[data-department-back]") as HTMLElement).click()
+  await nextTick()
+  const directory = host.querySelector(".department-tree")!
+  for (const key of ["ArrowDown", "ArrowDown", "ArrowDown", "ArrowRight"]) {
+    directory.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }))
+    await nextTick()
+  }
+  expect(treeRow(host, "level-3")).toBeFalsy()
+  expect(treeRow(host, "level-5")).toBeTruthy()
+  expect(selectedId.value).toBe("level-6")
+})
+
+it("updates the breadcrumb when the scoped department moves under another root", async () => {
+  api.tree.mockResolvedValue({ data: deepFixture(), error: null })
+  const { host, panel } = mount()
+  await enterFourthLevel(host)
+  let scoped = (deepFixture() as Api.SystemManage.DepartmentTree[])[0]
+  for (let level = 1; level < 4; level++) scoped = scoped.children![0]
+  api.tree.mockResolvedValue({
+    data: [{ ...tree[0], id: "moved-root", name: "Moved company", children: [{ ...scoped, parentId: "moved-root" }] }],
+    error: null,
+  })
+  await panel.value!.reload()
+  await nextTick()
+  expect(host.querySelector(".department-browse")?.textContent).toContain("Moved company")
+  expect(host.querySelector(".department-browse")?.textContent).not.toContain("Level 1")
+  expect(treeRow(host, "level-4")).toBeTruthy()
 })
