@@ -170,3 +170,28 @@ it("does not invent subtree totals when the department scope hides some user dep
   await vi.waitFor(() => expect(host.textContent).toContain("Company"))
   expect(host.querySelector('[data-department-count="root"]')?.textContent).toBe("—")
 })
+
+it("highlights department matches and clears an empty search without changing the active filter", async () => {
+  const { host, selectedId } = mount("child")
+  await vi.waitFor(() => expect(host.textContent).toContain("Engineering"))
+  const input = host.querySelector(
+    'input[placeholder="page.manage.user.directory.searchDepartments"]',
+  ) as HTMLInputElement
+  input.value = "engineer"
+  input.dispatchEvent(new Event("input", { bubbles: true }))
+  await nextTick()
+  expect(host.querySelector("mark")?.textContent).toBe("Engineer")
+  expect(host.textContent).toContain("Company")
+  input.value = "missing department"
+  input.dispatchEvent(new Event("input", { bubbles: true }))
+  await nextTick()
+  expect(host.textContent).toContain("page.manage.user.directory.noResults")
+  const clear = [...host.querySelectorAll("button")].find((button) =>
+    button.textContent?.includes("page.manage.user.directory.clearSearch"),
+  )!
+  clear.click()
+  await nextTick()
+  expect(input.value).toBe("")
+  expect(host.textContent).toContain("Engineering")
+  expect(selectedId.value).toBe("child")
+})

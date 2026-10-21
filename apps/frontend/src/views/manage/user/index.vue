@@ -400,7 +400,7 @@
     border: 1px solid rgb(var(--base-text-4-color) / 0.4);
   }
   .department-rail {
-    width: 256px;
+    width: 280px;
     overflow: auto;
     border-right: 1px solid rgb(var(--base-text-4-color) / 0.4);
   }
