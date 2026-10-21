@@ -30,7 +30,7 @@ from starlette_context import context
 
 from src.lifecycle import lifespan
 from src.locales.i18n import is_i18n_key, t
-from src.middlewares.audit import AuditMiddleware
+from src.middlewares.audit import AuditMiddleware, record_audit_outcome
 from src.middlewares.context import ContextMiddleware
 from src.middlewares.i18n import I18nMiddleware
 from src.middlewares.limiter import SlowAPIMiddleware
@@ -102,6 +102,7 @@ def setup_middlewares(app: FastAPI) -> None:
         allow_credentials=True,
         allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
         allow_headers=settings.CORS_HEADERS,
+        expose_headers=("X-Request-ID",),
     )
 
 
@@ -111,6 +112,9 @@ def setup_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(RateLimitExceeded)
     async def handle_rate_limit_exceeded(request: Request, exc: RateLimitExceeded) -> JSONResponse:
         """处理请求速率限制超出异常。"""
+        record_audit_outcome(
+            request, business_code=int(StatusCode.TOO_MANY_REQUESTS), error_key=StatusCode.TOO_MANY_REQUESTS.description
+        )
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=AppException(StatusCode.TOO_MANY_REQUESTS).dump(),
@@ -119,6 +123,9 @@ def setup_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     async def handle_request_validation_errors(request: Request, exc: RequestValidationError) -> JSONResponse:
         """捕获参数校验异常并处理其结构。"""
+        record_audit_outcome(
+            request, business_code=int(StatusCode.VALIDATION_ERROR), error_key=StatusCode.VALIDATION_ERROR.description
+        )
         details = format_validation_errors(exc)
         logger.warning(
             '{user} "{method} {path}" RequestValidationError: {details}',
@@ -135,7 +142,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppException)
     async def handle_app_exception(request: Request, exc: AppException) -> JSONResponse:
         """应用业务异常处理，使用业务状态码。"""
-        request.state.audit_business_code = exc.code
+        record_audit_outcome(request, business_code=exc.code, error_key=exc.status_code_enum.description)
         logger.warning(
             '{user} "{method} {path}" AppException[{code}]: {message}',
             user=_get_request_user(request),
@@ -163,6 +170,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
             status_code=exc.status_code,
             detail=exc.detail,
         )
+        record_audit_outcome(request, business_code=exc.status_code, error_key="common.error.invalidOperation")
         detail = str(exc.detail)
         msg = t(detail) if is_i18n_key(detail) else detail  # type: ignore
 

@@ -137,10 +137,16 @@ async def get_async_session() -> AsyncIterator[AsyncSession]:
     async with factory() as session:
         try:
             yield session
+            prepare = session.info.pop("_audit_prepare", None)
+            if prepare is not None:
+                await prepare(session)
             await session.commit()
             await run_after_commit_hooks(session)
-        except Exception:
+        except Exception as exc:
             await session.rollback()
+            failed = session.info.pop("_audit_rollback", None)
+            if failed is not None:
+                failed(exc)
             raise
 
 

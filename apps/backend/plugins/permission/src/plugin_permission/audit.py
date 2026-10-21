@@ -10,7 +10,11 @@ Date   : 2026-05-08
 
 from uuid import UUID
 
+from rapidkit_common.audit import bind_audit_routes
 from rapidkit_core.log import get_plugin_logger
+from rapidkit_framework.audit import AuditActionDef, AuditRiskLevel
+
+from plugin_permission.models import Role
 
 audit_logger = get_plugin_logger("RBACaudit")
 
@@ -54,3 +58,76 @@ def log_permission_denied(
         role_versions=role_versions,
         catalog_version=catalog_version,
     )
+
+
+AUDIT_ROUTES = {
+    "create_role": AuditActionDef(
+        "role.create",
+        "audit.actions.role.create",
+        "role",
+        "audit.resources.role",
+        risk_level=AuditRiskLevel.NORMAL,
+        model=Role,
+        name_field="name",
+        id_parameter=None,
+        fields={"name": "audit.fields.name", "code": "audit.fields.code", "status": "audit.fields.status"},
+        transactional=False,
+    ),
+    "update_role": AuditActionDef(
+        "role.update",
+        "audit.actions.role.update",
+        "role",
+        "audit.resources.role",
+        risk_level=AuditRiskLevel.NORMAL,
+        model=Role,
+        name_field="name",
+        id_parameter="role_id",
+        fields={"name": "audit.fields.name", "code": "audit.fields.code", "status": "audit.fields.status"},
+        transactional=False,
+    ),
+    "delete_role": AuditActionDef(
+        "role.delete",
+        "audit.actions.role.delete",
+        "role",
+        "audit.resources.role",
+        risk_level=AuditRiskLevel.SENSITIVE,
+        model=Role,
+        name_field="name",
+        id_parameter="role_id",
+        fields={},
+        transactional=False,
+    ),
+    "batch_delete_role": AuditActionDef(
+        "role.batch-delete",
+        "audit.actions.role.batch-delete",
+        "role",
+        "audit.resources.role",
+        risk_level=AuditRiskLevel.SENSITIVE,
+        model=Role,
+        name_field="name",
+        id_parameter=None,
+        fields={},
+        transactional=False,
+    ),
+    "update_role_permissions": AuditActionDef(
+        "role.grant-permissions",
+        "audit.actions.role.grant-permissions",
+        "role",
+        "audit.resources.role",
+        risk_level=AuditRiskLevel.CRITICAL,
+        model=Role,
+        name_field="name",
+        id_parameter="role_id",
+        fields={
+            "permission_codes": "audit.fields.permission_codes",
+            "data_scopes": "audit.fields.data_scopes",
+            "field_modes": "audit.fields.field_modes",
+        },
+        transactional=True,
+    ),
+}
+
+
+def configure_audit(router):
+    actions = bind_audit_routes(router, AUDIT_ROUTES)
+    return actions

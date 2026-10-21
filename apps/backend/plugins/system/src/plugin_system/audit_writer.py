@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from plugin_system.models import AuditLog
+from plugin_system.models import AuditLog, AuditLogTarget
 
 
 class AuditWriterImpl:
@@ -20,6 +20,9 @@ class AuditWriterImpl:
         try:
             async with session.begin_nested():
                 session.add(AuditLog.model_validate(values))
+                await session.flush()
+                for target in record.targets:
+                    session.add(AuditLogTarget(audit_log_id=record.id, **target.model_dump()))
                 await session.flush()
         except IntegrityError:
             existing = (await session.execute(select(AuditLog).where(AuditLog.id == record.id))).scalar_one_or_none()

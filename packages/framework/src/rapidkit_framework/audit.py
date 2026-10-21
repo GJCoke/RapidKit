@@ -40,6 +40,9 @@ class AuditActionDef:
     risk_level: AuditRiskLevel = AuditRiskLevel.NORMAL
     fields: dict[str, str] = field(default_factory=dict)
     transactional: bool = False
+    model: type | None = None
+    name_field: str = "name"
+    id_parameter: str | None = None
 
     def __post_init__(self) -> None:
         if not re.fullmatch(r"[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*", self.code):

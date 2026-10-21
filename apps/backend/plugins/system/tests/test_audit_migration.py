@@ -32,6 +32,12 @@ def test_migration_preserves_historical_payload_and_adds_v1_defaults():
         )
         with Operations.context(MigrationContext.configure(connection)):
             migration["upgrade"]()
+        target_migration = runpy.run_path(
+            str(Path(__file__).parents[1] / "migrations/versions/20261021_audit_targets.py")
+        )
+        with Operations.context(MigrationContext.configure(connection)):
+            target_migration["upgrade"]()
+        assert "system_audit_log_targets" in sa.inspect(connection).get_table_names()
         row = connection.execute(
             sa.text("SELECT action, resource_name, schema_version, actor_type FROM system_audit_logs")
         ).one()

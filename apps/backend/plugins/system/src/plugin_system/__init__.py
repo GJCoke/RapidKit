@@ -30,9 +30,15 @@ async def _startup(app: FastAPI) -> None:
     from rapidkit_framework.events import event_bus
 
     from plugin_system.activity_projector import configure_activity_publisher
+    from plugin_system.audit_catalog import build_audit_catalog
     from plugin_system.push import push_error_stats_loop, push_resources_loop
 
     app.state.started_at = timezone.now()
+    app.state.audit_catalog = build_audit_catalog(getattr(app.state, "plugins", []))
+    for route in app.routes:
+        declaration = (getattr(route, "openapi_extra", None) or {}).get("x-audit", {})
+        if declaration.get("action") and declaration["action"] not in app.state.audit_catalog:
+            raise ValueError(f"Unknown audit action: {declaration['action']}")
     redis = RedisManager.client()
     _leader = LeaderElection(redis, "leader:system_push")
     await _leader.start()
@@ -82,7 +88,7 @@ def register() -> PluginManifest:
 
     from plugin_system.activity_projector import handle_activity_event
     from plugin_system.api import router
-    from plugin_system.models import ActivityEvent, AuditLog
+    from plugin_system.models import ActivityEvent, AuditLog, AuditLogTarget
 
     return PluginManifest(
         name="system",
@@ -90,7 +96,7 @@ def register() -> PluginManifest:
         resources=RESOURCES,
         permission_codes=PERMISSION_CODES,
         router=router,
-        models=[AuditLog, ActivityEvent],
+        models=[AuditLog, ActivityEvent, AuditLogTarget],
         provides=[ImpersonationAuditWriter, AuditWriter],
         service_factories={ImpersonationAuditWriter: register_audit_services, AuditWriter: register_audit_services},
         dashboard_modules=[

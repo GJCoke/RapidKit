@@ -8,6 +8,8 @@ from plugin_worker.permissions import PERMISSION_CODES, PERMISSION_PACKAGES, RES
 
 
 def register() -> PluginManifest:
+    from plugin_worker.audit import configure_audit
+
     """返回 worker 插件的 manifest。"""
     from fastapi import APIRouter
 
@@ -30,6 +32,7 @@ def register() -> PluginManifest:
         permission_codes=PERMISSION_CODES,
         permission_packages=PERMISSION_PACKAGES,
         router=combined,
+        audit_actions=configure_audit(combined),
         models=[CeleryWorker, CeleryTaskResult, QueueDepthSnapshot],
         provides=[WorkerOperationsProvider],
         service_factories={WorkerOperationsProvider: register_services},

@@ -8,6 +8,8 @@ from plugin_notification.permissions import PERMISSION_CODES, RESOURCES
 
 
 def register() -> PluginManifest:
+    from plugin_notification.audit import configure_audit
+
     """返回 notification 插件的完整 manifest。"""
     from fastapi import APIRouter
     from rapidkit_common.protocols.notification import AdminNotifier, Notifier
@@ -45,6 +47,7 @@ def register() -> PluginManifest:
         permission_codes=PERMISSION_CODES,
         version="0.3.0",
         router=router,
+        audit_actions=configure_audit(router),
         models=[
             NotificationMessage,
             NotificationBannerState,

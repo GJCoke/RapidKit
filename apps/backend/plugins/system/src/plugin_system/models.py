@@ -81,6 +81,18 @@ class AuditLog(SQLModel, table=True):
     occurred_at: datetime = Field(default_factory=timezone.now, index=True)
 
 
+class AuditLogTarget(SQLModel, table=True):
+    __tablename__ = "system_audit_log_targets"
+    __table_args__ = (Index("ix_audit_target_resource", "resource_type", "resource_id", "audit_log_id"),)
+
+    audit_log_id: UUID = Field(foreign_key="system_audit_logs.id", index=True)
+    resource_type: str = Field(max_length=50)
+    resource_id: str = Field(max_length=100)
+    resource_name: str | None = Field(default=None, max_length=200)
+    result: AuditResult = Field(sa_column=Column(_varchar_enum(AuditResult), nullable=False))
+    error_message: str | None = Field(default=None, max_length=1024)
+
+
 class ActivityEvent(SQLModel, table=True):
     """Curated, localized dashboard activity projected from domain events."""
 

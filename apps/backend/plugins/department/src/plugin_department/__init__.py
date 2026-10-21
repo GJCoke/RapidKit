@@ -15,6 +15,7 @@ from plugin_department.providers import DepartmentResolverImpl
 
 def register() -> PluginManifest:
     from plugin_department.api import router
+    from plugin_department.audit import configure_audit
     from plugin_department.models import Department
 
     def register_services(registry: ServiceRegistry) -> None:
@@ -27,6 +28,7 @@ def register() -> PluginManifest:
         permission_codes=PERMISSION_CODES,
         permission_packages=PERMISSION_PACKAGES,
         router=router,
+        audit_actions=configure_audit(router),
         models=[Department],
         provides=[DepartmentResolver],
         service_factories={DepartmentResolver: register_services},

@@ -7,6 +7,7 @@ Date    : 2025-04-18
 
 from uuid import UUID
 
+from rapidkit_common.audit import current_audit
 from rapidkit_common.enums import Status
 from rapidkit_common.events import UserLoginEvent
 from rapidkit_common.protocols.permission import PermissionCacheManager
@@ -15,6 +16,7 @@ from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_core.timezone import timezone
 from rapidkit_core.uuid7 import uuid7
+from rapidkit_framework.audit import AuditActorType
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.services import get_service
@@ -76,6 +78,9 @@ async def user_login(
     user_agent: str,
 ) -> TokenResponse:
     # Fix 3: Check login rate limit
+    audit_context = current_audit.get()
+    if audit_context is not None:
+        audit_context.record.metadata.attempted_username = username[:100]
     attempts_key = login_attempts_structure.format(username=username)
     attempts = await redis.get(attempts_key)
     if attempts and int(attempts) >= auth_settings.LOGIN_MAX_ATTEMPTS:
@@ -120,6 +125,12 @@ async def user_login(
 
     await token_store.clear_force_relogin(user_info.id)
 
+    if audit_context is not None:
+        audit_context.record.actor_id = user_info.id
+        audit_context.record.actor_name = user_info.name
+        audit_context.record.actor_username = user_info.username
+        audit_context.record.actor_type = AuditActorType.USER
+        audit_context.confirm()
     logger.info("Login success for user {user_id}", user_id=user_info.id)
     event_bus.fire_and_forget(
         UserLoginEvent(

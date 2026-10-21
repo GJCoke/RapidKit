@@ -9,7 +9,7 @@ class TestSystemRegister:
         assert m.name == "system"
         assert m.version == "0.1.0"
         assert m.router is not None
-        assert len(m.models) == 2
+        assert len(m.models) == 3
 
     def test_models_are_correct(self):
         from plugin_system import register

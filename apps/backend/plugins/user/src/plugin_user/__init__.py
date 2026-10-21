@@ -59,6 +59,7 @@ def register() -> PluginManifest:
     from fastapi import APIRouter
 
     from plugin_user.api import contact_router, router
+    from plugin_user.audit import configure_audit
     from plugin_user.models import User, UserDailyActivity
     from plugin_user.operations import UserOperationsProviderImpl, record_user_activity
     from plugin_user.providers import UserQueryServiceImpl, UserResolverImpl
@@ -79,6 +80,7 @@ def register() -> PluginManifest:
         permission_codes=PERMISSION_CODES,
         permission_packages=PERMISSION_PACKAGES,
         router=combined,
+        audit_actions=configure_audit(combined),
         models=[User, UserDailyActivity],
         dashboard_modules=[
             DashboardModuleDef(
