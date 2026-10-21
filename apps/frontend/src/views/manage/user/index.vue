@@ -306,7 +306,16 @@
           @changed="search"
         />
       </div>
-      <section class="user-table-pane min-w-0 flex flex-1 flex-col" :aria-label="$t('page.manage.user.title')">
+      <section class="user-table-pane min-w-0 flex flex-1 flex-col gap-16px" :aria-label="$t('page.manage.user.title')">
+        <NButton
+          v-if="appStore.isMobile"
+          size="small"
+          :aria-expanded="mobileDepartments"
+          @click="mobileDepartments = !mobileDepartments"
+        >
+          {{ $t("page.manage.user.directory.showDepartments") }}
+        </NButton>
+        <UserSearch :model="searchParams" @search="search" />
         <NCard
           :bordered="false"
           size="small"
@@ -319,15 +328,6 @@
               {{ $t("page.manage.user.directory.members", { count: pagination.itemCount ?? 0 }) }}
             </div>
           </template>
-          <NButton
-            v-if="appStore.isMobile"
-            size="small"
-            :aria-expanded="mobileDepartments"
-            @click="mobileDepartments = !mobileDepartments"
-          >
-            {{ $t("page.manage.user.directory.showDepartments") }}
-          </NButton>
-          <UserSearch :model="searchParams" @search="search" />
           <TableHeaderOperation
             v-model:columns="columnChecks"
             :loading="loading"
