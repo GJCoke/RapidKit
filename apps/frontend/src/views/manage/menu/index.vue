@@ -175,7 +175,7 @@
               </NButton>
             )}
             {actions.visible(row, "delete") && (
-              <NPopconfirm onPositiveClick={() => actions.run(() => data.value.find((item) => item.id === row.id), "delete", (latest) => handleDelete(latest.id))}>
+              <NPopconfirm onPositiveClick={() => actions.run(() => findMenu(row.id), "delete", (latest) => handleDelete(latest.id))}>
                 {{
                   default: () => $t("common.confirmDelete"),
                   trigger: () => (
@@ -206,6 +206,15 @@
     const { error } = await fetchBatchDeleteMenus(checkedRowKeys.value as string[])
     if (error) return
     onBatchDeleted()
+  }
+
+  function findMenu(id: string, menus = data.value): Api.SystemManage.Menu | undefined {
+    for (const menu of menus) {
+      if (menu.id === id) return menu
+      const child = findMenu(id, menu.children ?? [])
+      if (child) return child
+    }
+    return undefined
   }
 
   async function handleDelete(id: string) {
