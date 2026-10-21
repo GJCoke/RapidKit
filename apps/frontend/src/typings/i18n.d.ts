@@ -748,6 +748,7 @@ declare namespace I18nKeys {
     | "manage.user.returnToEdit"
     | "manage.user.status.pending"
     | "manage.user.submitAnyway"
+    | "manage.user.superAdmin"
     | "manage.user.title"
     | "manage.user.userEmail"
     | "manage.user.userGender"

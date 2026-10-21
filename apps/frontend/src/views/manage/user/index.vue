@@ -112,11 +112,17 @@
           minWidth: 90,
           render: (row) => (
             <div class="flex flex-wrap gap-4px">
-              {row.roles?.map((role) => (
-                <NTag key={role} size="small" bordered={false}>
-                  {role}
+              {row.isAdmin ? (
+                <NTag type="warning" size="small" bordered={false}>
+                  {$t("page.manage.user.superAdmin")}
                 </NTag>
-              ))}
+              ) : (
+                row.roles?.map((role) => (
+                  <NTag key={role} size="small" bordered={false}>
+                    {role}
+                  </NTag>
+                ))
+              )}
             </div>
           ),
         },

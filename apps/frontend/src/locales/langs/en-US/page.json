@@ -455,6 +455,7 @@
         "other": "Other"
       },
       "isAdmin": "Admin",
+      "superAdmin": "Super Administrator",
       "name": "Name",
       "nickName": "Nick Name",
       "nickname": "Nickname",
