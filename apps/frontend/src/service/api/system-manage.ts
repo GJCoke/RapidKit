@@ -92,6 +92,11 @@ export function fetchGetAdminContacts() {
 }
 
 /** get user list */
+export function fetchGetUserDepartmentCounts() {
+  return request<Api.SystemManage.UserDepartmentCounts>({ url: "/users/department-counts", method: "get" })
+}
+
+/** get user list */
 export function fetchGetUserList(params?: Api.SystemManage.UserSearchParams) {
   return request<Api.SystemManage.UserList>({
     url: "/users",

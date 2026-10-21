@@ -38,6 +38,14 @@ it("keeps administrator permission bypass separate from impersonation restrictio
   expect(resolveRow(model, ctx, user("3")).flatMap((entry) => entry.actions)).not.toContain("impersonate")
 })
 
+it("keeps edit visible and groups account actions into one compact menu", () => {
+  const entries = resolveRow(createUserActionModel(), { ...context(), isAdmin: true, hasAuth: () => true }, user())
+  expect(entries.map((entry) => [entry.kind, entry.actions])).toEqual([
+    ["action", ["edit"]],
+    ["menu", ["impersonate", "password", "delete"]],
+  ])
+})
+
 it.each([false, true])(
   "does not reserve both self-password and another user's invitation (impersonating=%s)",
   (impersonating) => {

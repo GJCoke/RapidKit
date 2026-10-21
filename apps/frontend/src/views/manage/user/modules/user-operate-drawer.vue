@@ -26,6 +26,7 @@
     operateType: NaiveUI.TableOperateType
     /** the edit row data */
     rowData?: Api.SystemManage.User | null
+    departmentId?: string | null
   }
 
   const props = defineProps<Props>()
@@ -90,7 +91,7 @@
       roles: [],
       status: "1",
       isAdmin: false,
-      departmentId: null,
+      departmentId: props.departmentId ?? null,
       remark: "",
     }
   }

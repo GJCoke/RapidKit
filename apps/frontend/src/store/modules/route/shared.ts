@@ -75,8 +75,10 @@ export function sortRoutesByOrder(routes: ElegantConstRoute[]) {
  */
 export function getGlobalMenusByAuthRoutes(routes: ElegantConstRoute[]) {
   const menus: App.Global.Menu[] = []
+  const hasUserWorkspace = routes.some((route) => route.name === "manage_user" && !route.meta?.hideInMenu)
 
   routes.forEach((route) => {
+    if (route.name === "manage_department" && hasUserWorkspace) return
     if (!route.meta?.hideInMenu) {
       const menu = getGlobalMenuByBaseRoute(route)
 

@@ -501,7 +501,24 @@
         "restoreHint": "点击头像旁的匿名图标，即可恢复管理员身份。",
         "auditHint": "当前操作以该用户身份执行，并记录管理员与目标用户。"
       },
-      "restrictedField": "当前角色无权修改此字段"
+      "restrictedField": "当前角色无权修改此字段",
+      "directory": {
+        "description": "管理组织架构与用户账号",
+        "allUsers": "全部用户",
+        "unassigned": "未分配部门",
+        "searchDepartments": "搜索部门",
+        "addChild": "添加子部门",
+        "addRoot": "新增顶级部门",
+        "departmentActions": "部门操作",
+        "loadFailed": "部门加载失败，请重试",
+        "more": "更多操作",
+        "members": "共 {count} 位用户",
+        "selected": "已选择 {count} 位用户",
+        "clearSelection": "取消选择",
+        "identity": "用户",
+        "allStatuses": "全部状态",
+        "showDepartments": "部门"
+      }
     },
     "department": {
       "title": "部门管理",

@@ -1,10 +1,9 @@
 import { canImpersonate } from "@/components/impersonation/eligibility"
 import { $t } from "@/locales"
 import { textButtonWidth } from "@/hooks/business/table-actions/layout"
-import type { ActionEntry, ActionModel } from "@/hooks/business/table-actions/types"
+import type { ActionModel } from "@/hooks/business/table-actions/types"
 
 export function createUserActionModel(): ActionModel<Api.SystemManage.User> {
-  const action = (key: string): ActionEntry => ({ kind: "action", key })
   return {
     actions: [
       {
@@ -34,33 +33,11 @@ export function createUserActionModel(): ActionModel<Api.SystemManage.User> {
     ],
     layouts: [
       {
-        key: "invited",
-        available: (ctx) => ctx.isAdmin,
-        matches: (row) => row.status === "3",
-        entries: ["edit", "password", "resend", "delete"].map(action),
-      },
-      {
-        key: "active",
-        available: (ctx) => ctx.isAdmin,
-        matches: (row) => row.status === "1",
-        entries: ["impersonate", "edit", "password", "delete"].map(action),
-      },
-      {
-        key: "other",
-        available: (ctx) => ctx.isAdmin,
+        key: "user",
         matches: () => true,
-        entries: ["edit", "password", "delete"].map(action),
-      },
-      {
-        key: "member",
-        available: (ctx) => !ctx.isAdmin,
-        matches: () => true,
-        // Members reset their own password or resend another user's invitation.
-        // These controls cannot coexist on a reachable row for a signed-in member.
         entries: [
-          action("edit"),
-          { kind: "choice", key: "account", actions: ["password", "resend"] },
-          action("delete"),
+          { kind: "action", key: "edit" },
+          { kind: "menu", key: "more", actions: ["impersonate", "password", "resend", "delete"], width: 32 },
         ],
       },
     ],
