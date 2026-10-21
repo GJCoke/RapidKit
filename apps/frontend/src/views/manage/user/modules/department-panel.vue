@@ -155,6 +155,7 @@
         class: "department-enter text-primary",
         "data-department-enter": option.key,
         "aria-label": $t("page.manage.user.directory.enterDepartment", { name: String(option.label) }),
+        title: $t("page.manage.user.directory.enterDepartment", { name: String(option.label) }),
         onClick: (event: MouseEvent) => {
           event.stopPropagation()
           navigateScope(String(option.key))
@@ -162,7 +163,7 @@
         },
         onKeydown: (event: KeyboardEvent) => event.stopPropagation(),
       },
-      { icon: () => h(SvgIcon, { icon: "ic:round-subdirectory-arrow-right" }) },
+      { icon: () => h(SvgIcon, { icon: "ic:round-login", class: "text-14px" }) },
     )
   }
 
@@ -614,8 +615,21 @@
     color: rgb(var(--primary-color));
   }
   .department-tree :deep(.department-enter) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
     width: 18px;
-    height: 28px;
+    height: 24px;
+    border-radius: 4px;
+    background: rgb(var(--primary-color) / 0.06);
+    transform: translate(-50%, -50%);
+  }
+  .department-tree :deep(.department-enter:hover) {
+    background: rgb(var(--primary-color) / 0.12);
+  }
+  .department-tree :deep(.department-enter:focus-visible) {
+    outline: 2px solid rgb(var(--primary-color));
+    outline-offset: 1px;
   }
   .department-search :deep(.n-input-wrapper) {
     background: rgb(var(--base-text-4-color) / 0.08);
