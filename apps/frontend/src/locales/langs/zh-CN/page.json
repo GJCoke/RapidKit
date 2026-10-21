@@ -422,7 +422,22 @@
         "repairInvalid": "使用当前生效值修正草稿",
         "repairSummary": "保存时将修正以下失效配置",
         "noRestrictionOptions": "此资源仅需配置操作权限，无额外的数据范围或字段设置。",
-        "dependencyDetails": "查看「{name}」的依赖来源"
+        "dependencyDetails": "查看「{name}」的依赖来源",
+        "modules": "业务模块",
+        "moduleReadonly": "整组只读",
+        "moduleAll": "整组全选",
+        "moduleClear": "清空本组",
+        "moduleBulkHint": "操作覆盖本模块全部 {count} 项权限（含搜索隐藏项），其他模块权限、数据范围和字段设置保持原值。",
+        "menuLoadFailed": "菜单结构加载失败，已切换为按资源配置，草稿仍保留。",
+        "retryMenus": "重试菜单分组",
+        "sharedResource": "{name} 为共享资源，前往所属模块配置",
+        "search": "搜索模块、资源或操作权限",
+        "searchEmpty": "没有匹配的权限",
+        "otherResources": "其他资源",
+        "unknownMenuPermission": "以下菜单引用了不存在的权限，相关资源仍可在其他资源中配置",
+        "dependencyStillEffective": "部分权限仍被其他操作依赖，因此继续生效；请查看依赖来源后取消对应操作。",
+        "dependencyPageAccess": "新增或编辑公告会依赖查看部门、选择角色和选择用户，其中查看部门可能同时开放部门页面。",
+        "resourceAll": "全选本资源"
       }
     },
     "user": {

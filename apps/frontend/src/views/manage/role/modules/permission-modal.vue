@@ -1,10 +1,11 @@
 <script setup lang="ts">
-  import { computed, inject, onBeforeUnmount, ref, shallowRef, watch } from "vue"
+  import { computed, inject, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue"
   import { routerKey } from "vue-router"
   import { useThemeVars } from "naive-ui"
   import { jsonClone } from "@rapidkit/utils"
   import { useOperationAccess } from "@/hooks/business/table-actions/use-operation-access"
   import {
+    fetchGetMenuList,
     fetchGetAllPermissionPackages,
     fetchGetPermissionCatalog,
     fetchGetRolePermissions,
@@ -21,6 +22,8 @@
     type FieldModes,
     type InvalidScope,
   } from "./resource-scope"
+  import { buildPermissionModules } from "./permission-menu-groups"
+  import PermissionModuleEditor from "./permission-module-editor.vue"
   import PermissionResourceEditor from "./permission-resource-editor.vue"
   import PermissionChangeReview from "./permission-change-review.vue"
 
@@ -49,7 +52,98 @@
   const resourceNavigation = ref<HTMLElement | null>(null)
   const reviewing = ref(false)
   const baseline = ref<RoleGrant>({ permissionCodes: [], dataScopes: {}, fieldModes: {} })
+  const menuSnapshot = shallowRef<Api.SystemManage.Menu[] | null>(null)
+  const menuLoading = ref(false)
+  const menuFailed = ref(false)
+  const moduleFocus = ref("")
+  const query = ref("")
+  const jumpResource = ref("")
+  let menuVersion = 0
   let version = 0
+  function localizeMenus(items: Api.SystemManage.Menu[]): Api.SystemManage.Menu[] {
+    return items.map((item) => ({
+      ...item,
+      menuName: item.i18nKey ? $t(item.i18nKey as I18nFullKey) : item.menuName,
+      children: item.children ? localizeMenus(item.children) : item.children,
+    }))
+  }
+  const grouping = computed(() =>
+    catalog.value && menuSnapshot.value
+      ? buildPermissionModules(catalog.value, localizeMenus(menuSnapshot.value))
+      : null,
+  )
+  const modules = computed(() =>
+    (grouping.value?.modules ?? []).map((module) => ({
+      ...module,
+      label: module.key === "other" ? $t("page.manage.role.workbench.otherResources") : module.label,
+    })),
+  )
+  const moduleMatches = (module: (typeof modules.value)[number]) => {
+    const term = query.value.trim().toLocaleLowerCase()
+    return (
+      (module.key === moduleFocus.value && !!jumpResource.value) ||
+      !term ||
+      module.label.toLocaleLowerCase().includes(term) ||
+      module.entries.some((entry) =>
+        [entry.row.resource.label, ...entry.path, ...entry.row.codes.flatMap((c) => [c.code, c.label])].some((label) =>
+          label.toLocaleLowerCase().includes(term),
+        ),
+      )
+    )
+  }
+  const visibleModules = computed(() => modules.value.filter(moduleMatches))
+  const activeModule = computed(
+    () =>
+      visibleModules.value.find((m) => m.key === moduleFocus.value) ??
+      visibleModules.value.find((m) => m.entries.some((e) => e.row.resource.key === "user" && e.ownerKey === m.key)) ??
+      visibleModules.value[0],
+  )
+  const moduleOptions = computed(() => visibleModules.value.map((m) => ({ label: m.label, value: m.key })))
+  function moduleCount(module: (typeof modules.value)[number]) {
+    const codes = new Set(
+      module.entries.filter((e) => e.ownerKey === module.key).flatMap((e) => e.row.codes.map((c) => c.code)),
+    )
+    return `${[...codes].filter((c) => effective.value.has(c)).length}/${codes.size}`
+  }
+  function focusModule(key: string) {
+    moduleFocus.value = key
+    jumpResource.value = ""
+  }
+  async function focusResource(resource: string) {
+    const owner = modules.value.find((m) =>
+      m.entries.some((e) => e.row.resource.key === resource && e.ownerKey === m.key),
+    )
+    if (!owner) return
+    moduleFocus.value = owner.key
+    jumpResource.value = resource
+    await nextTick()
+    document.querySelector(`[data-resource-key="${resource}"]`)?.scrollIntoView?.({ block: "nearest" })
+  }
+  async function loadMenuSnapshot(currentVersion: number) {
+    const requestVersion = ++menuVersion
+    const current = () => currentVersion === version && requestVersion === menuVersion && visible.value
+    menuLoading.value = true
+    menuFailed.value = false
+    const snapshot: Api.SystemManage.Menu[] = []
+    try {
+      for (let page = 1; ; page++) {
+        const { data, error } = await fetchGetMenuList({ page, pageSize: 500 })
+        if (!current()) return
+        if (error || !data || (!data.records.length && snapshot.length < data.total))
+          throw new Error("Incomplete menu snapshot")
+        snapshot.push(...data.records)
+        if (snapshot.length >= data.total) break
+      }
+      if (current()) menuSnapshot.value = snapshot
+    } catch {
+      if (current()) {
+        menuSnapshot.value = null
+        menuFailed.value = true
+      }
+    } finally {
+      if (current()) menuLoading.value = false
+    }
+  }
 
   const rows = computed(() => (catalog.value ? buildPermissionRows(catalog.value) : []))
   const activeRow = computed(() => rows.value.find((row) => row.resource.key === focus.value) ?? rows.value[0])
@@ -127,6 +221,11 @@
   async function loadData() {
     const currentVersion = ++version
     const roleId = props.roleId
+    menuSnapshot.value = null
+    moduleFocus.value = ""
+    query.value = ""
+    jumpResource.value = ""
+    void loadMenuSnapshot(currentVersion)
     loading.value = true
     loaded.value = false
     reviewing.value = false
@@ -201,7 +300,7 @@
     window.removeEventListener("beforeunload", protectUnload)
   })
   watch(
-    [focus, loaded],
+    [focus, moduleFocus, loaded],
     () => {
       if (loaded.value)
         resourceNavigation.value?.querySelector('[aria-pressed="true"]')?.scrollIntoView?.({ block: "nearest" })
@@ -216,6 +315,7 @@
         ++version
         loaded.value = false
         loading.value = false
+        menuLoading.value = false
       }
     },
     { immediate: true },
@@ -283,6 +383,22 @@
               }}</NButton>
             </NAlert>
           </NScrollbar>
+          <NAlert
+            v-if="menuFailed && !reviewing"
+            type="warning"
+            :title="$t('page.manage.role.workbench.menuLoadFailed')"
+          >
+            <NButton size="small" :disabled="busy || menuLoading" @click="loadMenuSnapshot(version)">{{
+              $t("page.manage.role.workbench.retryMenus")
+            }}</NButton>
+          </NAlert>
+          <NAlert
+            v-if="grouping?.invalidMenuPermissions.length && !reviewing"
+            type="warning"
+            :title="$t('page.manage.role.workbench.unknownMenuPermission')"
+          >
+            {{ grouping.invalidMenuPermissions.join("、") }}
+          </NAlert>
           <NScrollbar v-if="reviewing && diff" class="min-h-0 flex-1" content-class="flex-col gap-16px pr-18px">
             <h3 class="m-0 font-600">{{ $t("page.manage.role.workbench.reviewTitle") }}</h3>
             <PermissionChangeReview
@@ -292,49 +408,115 @@
             />
           </NScrollbar>
           <template v-else>
-            <div class="permission-workspace min-h-0 flex-1 gap-20px">
+            <NSpin v-if="menuLoading" class="min-h-0 flex-1" />
+            <div v-else class="permission-workspace min-h-0 flex-1 gap-20px">
               <nav
                 ref="resourceNavigation"
                 class="resource-nav min-h-0 min-w-0 flex-col"
                 :aria-label="$t('page.manage.role.workbench.resources')"
               >
                 <div class="mb-8px px-2px text-12px text-base-text-3">
-                  {{ $t("page.manage.role.workbench.resources") }}
+                  {{ $t(menuSnapshot ? "page.manage.role.workbench.modules" : "page.manage.role.workbench.resources") }}
                 </div>
                 <NScrollbar
                   class="min-h-0 flex-1"
                   vertical-rail-style="right: 0"
                   content-class="flex-col gap-4px py-2px pr-18px"
                 >
-                  <button
-                    v-for="row in rows"
-                    :key="row.resource.key"
-                    type="button"
-                    class="resource-item relative min-h-36px flex items-center justify-between gap-8px border border-theme-default rd-6px bg-transparent py-6px pl-16px pr-10px text-left text-13px text-base-text-2 transition-colors hover:bg-theme-fill"
-                    :class="{ 'resource-active': activeRow?.resource.key === row.resource.key }"
-                    :aria-pressed="activeRow?.resource.key === row.resource.key"
-                    :disabled="busy"
-                    @click="focus = row.resource.key"
-                  >
-                    <span class="font-500">{{ row.resource.label }}</span>
-                    <span
-                      class="resource-count shrink-0 rd-4px bg-theme-fill px-6px py-1px text-12px tabular-nums text-base-text-3"
+                  <template v-if="menuSnapshot">
+                    <button
+                      v-for="module in visibleModules"
+                      :key="module.key"
+                      type="button"
+                      class="resource-item relative min-h-36px flex items-center justify-between gap-8px border border-theme-default rd-6px bg-transparent py-6px pl-16px pr-10px text-left text-13px text-base-text-2 transition-colors hover:bg-theme-fill"
+                      :class="{ 'resource-active': activeModule?.key === module.key }"
+                      :aria-pressed="activeModule?.key === module.key"
+                      :disabled="busy"
+                      @click="focusModule(module.key)"
                     >
-                      {{ row.codes.filter((c) => effective.has(c.code)).length }}/{{ row.codes.length }}
-                    </span>
-                  </button>
+                      <SvgIcon
+                        v-if="module.icon"
+                        :icon="module.iconType === '2' ? undefined : module.icon"
+                        :local-icon="module.iconType === '2' ? module.icon : undefined"
+                        class="shrink-0 text-16px"
+                      />
+                      <span class="flex-1 font-500">{{ module.label }}</span>
+                      <span
+                        class="resource-count shrink-0 rd-4px bg-theme-fill px-6px py-1px text-12px tabular-nums text-base-text-3"
+                        >{{ moduleCount(module) }}</span
+                      >
+                    </button>
+                  </template>
+                  <template v-else>
+                    <button
+                      v-for="row in rows"
+                      :key="row.resource.key"
+                      type="button"
+                      class="resource-item relative min-h-36px flex items-center justify-between gap-8px border border-theme-default rd-6px bg-transparent py-6px pl-16px pr-10px text-left text-13px text-base-text-2 transition-colors hover:bg-theme-fill"
+                      :class="{ 'resource-active': activeRow?.resource.key === row.resource.key }"
+                      :aria-pressed="activeRow?.resource.key === row.resource.key"
+                      :disabled="busy"
+                      @click="focus = row.resource.key"
+                    >
+                      <span class="font-500">{{ row.resource.label }}</span>
+                      <span
+                        class="resource-count shrink-0 rd-4px bg-theme-fill px-6px py-1px text-12px tabular-nums text-base-text-3"
+                      >
+                        {{ row.codes.filter((c) => effective.has(c.code)).length }}/{{ row.codes.length }}
+                      </span>
+                    </button>
+                  </template>
                 </NScrollbar>
               </nav>
               <div class="resource-picker">
                 <NSelect
+                  v-if="menuSnapshot"
+                  :value="activeModule?.key"
+                  :options="moduleOptions"
+                  :disabled="busy"
+                  :aria-label="$t('page.manage.role.workbench.modules')"
+                  @update:value="
+                    (value) => {
+                      moduleFocus = value
+                      jumpResource = ''
+                    }
+                  "
+                />
+                <NSelect
+                  v-else
                   v-model:value="focus"
                   :options="resourceOptions"
                   :disabled="busy"
                   :aria-label="$t('page.manage.role.workbench.resources')"
                 />
               </div>
+              <div v-if="menuSnapshot" class="min-h-0 min-w-0 flex-col gap-12px">
+                <NInput
+                  v-model:value="query"
+                  :disabled="busy"
+                  clearable
+                  :placeholder="$t('page.manage.role.workbench.search')"
+                  :aria-label="$t('page.manage.role.workbench.search')"
+                  @update:value="jumpResource = ''"
+                />
+                <PermissionModuleEditor
+                  v-if="activeModule"
+                  :key="activeModule.key"
+                  :module="activeModule"
+                  :query="jumpResource ? '' : query"
+                  v-model:selected="selected"
+                  v-model:data-scopes="dataScopes"
+                  v-model:field-modes="fieldModes"
+                  :catalog="catalog"
+                  :packages="packages"
+                  :disabled="busy"
+                  :invalid-keys="invalidKeys"
+                  @focus-resource="focusResource"
+                />
+                <NEmpty v-else :description="$t('page.manage.role.workbench.searchEmpty')" />
+              </div>
               <PermissionResourceEditor
-                v-if="activeRow"
+                v-else-if="activeRow"
                 :key="activeRow.resource.key"
                 v-model:selected="selected"
                 v-model:data-scopes="dataScopes"
