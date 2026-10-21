@@ -13,12 +13,23 @@ from sqlalchemy import ColumnElement
 from sqlmodel import col, func, select
 
 from plugin_user.models import User
+from plugin_user.schemas import UserDepartmentCounts
 
 
 class UserManageCRUD(BaseCRUD[User]):
     """基于 SQLAlchemy 的用户管理 CRUD 操作。"""
 
     model = User
+
+    async def get_department_counts(self) -> UserDepartmentCounts:
+        """计数与用户列表共享请求会话的数据范围。"""
+        statement = select(User.department_id, func.count(User.id)).group_by(User.department_id)
+        rows = (await self.session.exec(statement)).all()
+        return UserDepartmentCounts(
+            total=sum(count for _, count in rows),
+            unassigned=next((count for department, count in rows if department is None), 0),
+            departments={str(department): count for department, count in rows if department is not None},
+        )
 
     async def get_user_count_summary(self, *filters: ColumnElement[bool]) -> dict:
         """获取用户统计摘要：总数、今日新增、昨日新增。"""

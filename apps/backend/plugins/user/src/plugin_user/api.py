@@ -22,12 +22,14 @@ from rapidkit_common.events import (
     UserPasswordChangedEvent,
     UserRolesChangedEvent,
 )
+from rapidkit_common.protocols.department import DepartmentResolver
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_common.transaction import after_commit
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.realtime import emit_permission_changed
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.services import get_service
 from rapidkit_framework.status_codes import StatusCode
 from rapidkit_security import check_password, hash_password
 from sqlmodel import col
@@ -38,6 +40,7 @@ from plugin_user.schemas import (
     AdminContactResponse,
     ChangePasswordBody,
     UserActivityTrend,
+    UserDepartmentCounts,
     UserManageBatchBody,
     UserManageCreate,
     UserManageOptionResponse,
@@ -154,6 +157,11 @@ async def validate_username_pinyin(
     )
 
 
+@router.get("/department-counts", summary="部门用户人数", dependencies=[Require("user:read")])
+async def get_user_department_counts(user_crud: UserManageCrudDep) -> Response[UserDepartmentCounts]:
+    return Response(data=await user_crud.get_department_counts())
+
+
 @router.get("", dependencies=[Require("user:read")])
 async def get_users(
     query: Annotated[UserManagePageQuery, Query(...)],
@@ -161,6 +169,13 @@ async def get_users(
 ) -> Response[PaginatedResponse[UserManageResponse]]:
     """获取范围内的分页用户列表。"""
     filters = filter_user(query.status, query.keyword)
+    if query.unassigned:
+        filters.append(col(User.department_id).is_(None))
+    elif query.department_id is not None:
+        department_ids = [query.department_id]
+        if query.include_children:
+            department_ids = await get_service(DepartmentResolver).get_subtree_ids(query.department_id)
+        filters.append(col(User.department_id).in_(department_ids))
     users = await user_crud.get_paginate(
         *filters,
         page=query.page,

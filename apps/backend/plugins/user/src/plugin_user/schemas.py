@@ -101,6 +101,18 @@ class UserManageQueriesSchema(BaseModel):
 class UserManagePageQuery(UserManageQueriesSchema, PaginatedRequest):
     """用户分页查询请求。"""
 
+    department_id: UUID | None = None
+    unassigned: bool = False
+    include_children: bool = True
+
+
+class UserDepartmentCounts(BaseModel):
+    """当前用户数据范围内的部门归属人数。"""
+
+    total: int
+    unassigned: int
+    departments: dict[str, int]
+
 
 class UserManageBatchBody(BatchRequest):
     """批量用户操作数据结构。"""

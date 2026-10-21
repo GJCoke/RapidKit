@@ -501,7 +501,24 @@
         "restoreHint": "Select the incognito icon next to your avatar to return to your administrator account.",
         "auditHint": "Actions run as this user. Both the administrator and target user are recorded in the audit log."
       },
-      "restrictedField": "Your role cannot modify this field"
+      "restrictedField": "Your role cannot modify this field",
+      "directory": {
+        "description": "Manage your organization and user accounts",
+        "allUsers": "All users",
+        "unassigned": "Unassigned",
+        "searchDepartments": "Search departments",
+        "addChild": "Add subdepartment",
+        "addRoot": "Add top-level department",
+        "departmentActions": "Department actions",
+        "loadFailed": "Could not load departments. Try again.",
+        "more": "More actions",
+        "members": "{count} users",
+        "selected": "{count} users selected",
+        "clearSelection": "Clear selection",
+        "identity": "User",
+        "allStatuses": "All statuses",
+        "showDepartments": "Departments"
+      }
     },
     "department": {
       "title": "Department Manage",

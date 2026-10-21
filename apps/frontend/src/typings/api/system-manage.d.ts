@@ -85,6 +85,8 @@ declare global {
       /** user search params */
       type UserSearchParams = Service.ApiRequest<"/api/v1/users", "get", "query">
 
+      type UserDepartmentCounts = Service.ApiResponse<"/api/v1/users/department-counts">
+
       /** create user body */
       type CreateUserBody = Service.ApiRequest<"/api/v1/users", "post", "body">
 

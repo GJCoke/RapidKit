@@ -1,79 +1,42 @@
 <script setup lang="ts">
-  import { toRaw } from "vue"
-  import { jsonClone } from "@rapidkit/utils"
-  import { enableStatusOptions } from "@/constants/business"
-  import { useNaiveForm } from "@/hooks/common/form"
-  import { translateOptions } from "@/utils/common"
+  import { computed } from "vue"
+  import { userStatusRecord } from "@/constants/business"
   import { $t } from "@/locales"
 
-  defineOptions({
-    name: "UserSearch",
-  })
-
-  interface Emits {
-    (e: "search"): void
-  }
-
-  const emit = defineEmits<Emits>()
-
-  const { formRef, restoreValidation } = useNaiveForm()
-
+  defineOptions({ name: "UserSearch" })
+  const emit = defineEmits<{ search: [] }>()
   const model = defineModel<Api.SystemManage.UserSearchParams>("model", { required: true })
+  const statusOptions = computed(() =>
+    Object.entries(userStatusRecord).map(([value, label]) => ({ value, label: $t(label) })),
+  )
 
-  const defaultModel = jsonClone(toRaw(model.value))
-
-  function resetModel() {
-    Object.assign(model.value, defaultModel)
-  }
-
-  async function reset() {
-    await restoreValidation()
-    resetModel()
-  }
-
-  function search() {
+  function reset() {
+    model.value.keyword = ""
+    model.value.status = null
     emit("search")
   }
 </script>
 
 <template>
-  <NCard :bordered="false" size="small" class="card-wrapper">
-    <NCollapse :default-expanded-names="['user-search']">
-      <NCollapseItem :title="$t('common.search')" name="user-search">
-        <NForm ref="formRef" :model="model" label-placement="left" :label-width="100">
-          <NGrid responsive="screen" item-responsive>
-            <NFormItemGi span="24 s:12 m:6" :label="$t('page.manage.user.keyword')" path="keyword" class="pr-24px">
-              <NInput v-model:value="model.keyword" :placeholder="$t('page.manage.user.form.keyword')" />
-            </NFormItemGi>
-            <NFormItemGi span="24 s:12 m:6" :label="$t('page.manage.user.userStatus')" path="status" class="pr-24px">
-              <NSelect
-                v-model:value="model.status"
-                :placeholder="$t('page.manage.user.form.userStatus')"
-                :options="translateOptions(enableStatusOptions)"
-                clearable
-              />
-            </NFormItemGi>
-            <NFormItemGi span="24 m:12" class="pr-24px">
-              <NSpace class="w-full" justify="end">
-                <NButton @click="reset">
-                  <template #icon>
-                    <icon-ic-round-refresh class="text-icon" />
-                  </template>
-                  {{ $t("common.reset") }}
-                </NButton>
-                <NButton type="primary" ghost @click="search">
-                  <template #icon>
-                    <icon-ic-round-search class="text-icon" />
-                  </template>
-                  {{ $t("common.search") }}
-                </NButton>
-              </NSpace>
-            </NFormItemGi>
-          </NGrid>
-        </NForm>
-      </NCollapseItem>
-    </NCollapse>
-  </NCard>
+  <form class="flex flex-wrap items-center gap-10px" @submit.prevent="emit('search')">
+    <NInput
+      v-model:value="model.keyword"
+      clearable
+      class="min-w-180px !w-auto flex-1"
+      :placeholder="$t('page.manage.user.form.keyword')"
+      :aria-label="$t('page.manage.user.keyword')"
+    >
+      <template #prefix><icon-ic-round-search class="text-base-text-3" /></template>
+    </NInput>
+    <NSelect
+      v-model:value="model.status"
+      clearable
+      :options="statusOptions"
+      class="w-140px"
+      :placeholder="$t('page.manage.user.directory.allStatuses')"
+      :aria-label="$t('page.manage.user.userStatus')"
+    />
+    <NButton attr-type="submit" type="primary">{{ $t("common.search") }}</NButton>
+    <NButton @click="reset">{{ $t("common.reset") }}</NButton>
+  </form>
 </template>
-
-<style scoped></style>
