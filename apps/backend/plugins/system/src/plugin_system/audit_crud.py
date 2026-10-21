@@ -1,5 +1,6 @@
 """Data access for technical audit logs."""
 
+from rapidkit_common.audit import AuditRecord
 from rapidkit_common.crud import BaseCRUD
 from rapidkit_common.schemas.response import PaginatedResponse
 from sqlmodel import col
@@ -10,6 +11,13 @@ from plugin_system.schemas import AuditLogListItem, AuditLogQuery
 
 class AuditLogCRUD(BaseCRUD[AuditLog]):
     model = AuditLog
+
+    async def append_batch(self, records: list[AuditRecord]) -> None:
+        from plugin_system.audit_writer import AuditWriterImpl
+
+        writer = AuditWriterImpl()
+        for record in records:
+            await writer.append_in_transaction(self.session, record)
 
     async def get_audit_page(self, query: AuditLogQuery) -> PaginatedResponse[AuditLogListItem]:
         filters = []

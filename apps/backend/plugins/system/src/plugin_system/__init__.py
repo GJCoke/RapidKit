@@ -4,9 +4,11 @@ import asyncio
 from typing import TYPE_CHECKING, Any
 
 from rapidkit_common.protocols import ImpersonationAuditWriter
+from rapidkit_common.protocols.audit import AuditWriter
 from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
 from rapidkit_framework.services import ServiceRegistry
 
+from plugin_system.audit_writer import AuditWriterImpl
 from plugin_system.impersonation_audit import ImpersonationAuditWriterImpl
 from plugin_system.permissions import PERMISSION_CODES, RESOURCES
 
@@ -65,6 +67,7 @@ async def _shutdown(_app: FastAPI) -> None:
 def register_audit_services(registry: ServiceRegistry) -> None:
     """Provide synchronous impersonation lifecycle auditing."""
     registry.register(ImpersonationAuditWriter, ImpersonationAuditWriterImpl())
+    registry.register(AuditWriter, AuditWriterImpl())
 
 
 def register() -> PluginManifest:
@@ -88,8 +91,8 @@ def register() -> PluginManifest:
         permission_codes=PERMISSION_CODES,
         router=router,
         models=[AuditLog, ActivityEvent],
-        provides=[ImpersonationAuditWriter],
-        service_factories={ImpersonationAuditWriter: register_audit_services},
+        provides=[ImpersonationAuditWriter, AuditWriter],
+        service_factories={ImpersonationAuditWriter: register_audit_services, AuditWriter: register_audit_services},
         dashboard_modules=[
             DashboardModuleDef(
                 key="dashboard.overview",
