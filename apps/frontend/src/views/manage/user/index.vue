@@ -351,17 +351,6 @@
               {{ $t("common.confirmDelete") }}
             </NPopconfirm>
           </TableHeaderOperation>
-          <div
-            v-if="checkedRowKeys.length"
-            class="flex flex-wrap items-center gap-12px rd-6px bg-theme-fill px-12px py-8px"
-          >
-            <span class="text-13px">{{
-              $t("page.manage.user.directory.selected", { count: checkedRowKeys.length })
-            }}</span>
-            <NButton text type="primary" size="small" @click="checkedRowKeys = []">{{
-              $t("page.manage.user.directory.clearSelection")
-            }}</NButton>
-          </div>
           <NDataTable
             v-model:checked-row-keys="checkedRowKeys"
             :columns="columns"
