@@ -1,15 +1,15 @@
 """Add structured audit fields without rewriting historical events.
 
 Revision ID: 20261021_audit_v2
-Revises: None
+Revises: sys_imp_20261015
 """
 
 import sqlalchemy as sa
 from alembic import op
 
 revision = "20261021_audit_v2"
-down_revision = None
-branch_labels = ("system",)
+down_revision = "sys_imp_20261015"
+branch_labels = None
 depends_on = None
 
 

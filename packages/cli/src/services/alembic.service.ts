@@ -38,12 +38,12 @@ export function parseHeads(output: string): Map<string, string> {
   for (const line of output.split("\n")) {
     const trimmed = line.trim()
     if (!trimmed) continue
-    const match = trimmed.match(/^([0-9a-f]{12,})\s+\((\w+)\)\s+\(head\)/)
+    const match = trimmed.match(/^([\w-]+)\s+\((\w+)\)\s+\(head\)/)
     if (match) {
       heads.set(match[2], match[1])
       continue
     }
-    const mainMatch = trimmed.match(/^([0-9a-f]{12,})\s+\(head\)/)
+    const mainMatch = trimmed.match(/^([\w-]+)\s+\(head\)/)
     if (mainMatch) {
       heads.set("main", mainMatch[1])
     }
@@ -56,7 +56,7 @@ export function parseCurrent(output: string): Set<string> {
   for (const line of output.split("\n")) {
     const trimmed = line.trim()
     if (!trimmed) continue
-    const match = trimmed.match(/^([0-9a-f]{12,})\b/)
+    const match = trimmed.match(/^([\w-]+)(?:\s+\([^)]*\))*$/)
     if (match) current.add(match[1])
   }
   return current

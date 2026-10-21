@@ -1,15 +1,15 @@
 """Retire the built-in user detail menu.
 
 Revision ID: 20261020_user_detail
-Revises: None
+Revises: menu_detail_20261015
 """
 
 import sqlalchemy as sa
 from alembic import op
 
 revision = "20261020_user_detail"
-down_revision = None
-branch_labels = ("menu",)
+down_revision = "menu_detail_20261015"
+branch_labels = None
 depends_on = None
 
 

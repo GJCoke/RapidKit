@@ -1,15 +1,15 @@
 """Retire the route inventory and its permission code.
 
 Revision ID: 20261020_route_inventory
-Revises: None
+Revises: perm_static_catalog_20261019
 """
 
 import sqlalchemy as sa
 from alembic import op
 
 revision = "20261020_route_inventory"
-down_revision = None
-branch_labels = ("permission",)
+down_revision = "perm_static_catalog_20261019"
+branch_labels = None
 depends_on = None
 
 

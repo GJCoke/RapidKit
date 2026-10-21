@@ -68,6 +68,12 @@ describe("buildDowngradeArgs", () => {
 })
 
 describe("parseHeads", () => {
+  it("parses named audit and legacy migration revisions", () => {
+    const heads = parseHeads("20261021_audit_targets (system) (head)\nauth_imp_20261015 (auth) (head)")
+    expect(heads.get("system")).toBe("20261021_audit_targets")
+    expect(heads.get("auth")).toBe("auth_imp_20261015")
+  })
+
   it("parses multi-branch heads", () => {
     const output = ["a1b2c3d4e5f6 (auth) (head)", "f6e5d4c3b2a1 (menu) (head)"].join("\n")
 
@@ -97,6 +103,13 @@ describe("parseHeads", () => {
 })
 
 describe("parseCurrent", () => {
+  it("parses complete named revisions without treating log lines as revisions", () => {
+    const current = parseCurrent(
+      "INFO migration complete\n20261021_audit_targets (system) (head)\nauth_imp_20261015 (auth) (head)",
+    )
+    expect([...current]).toEqual(["20261021_audit_targets", "auth_imp_20261015"])
+  })
+
   it("parses current revisions", () => {
     const output = ["a1b2c3d4e5f6 (head)", "f6e5d4c3b2a1"].join("\n")
 
