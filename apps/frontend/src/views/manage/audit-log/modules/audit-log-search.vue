@@ -12,6 +12,19 @@
   const props = defineProps<{ catalog: Api.SystemManage.AuditCatalog | null }>()
   const model = defineModel<Api.SystemManage.AuditLogQuery>("model", { required: true })
   const emit = defineEmits<{ search: []; range: [value: "24h" | "custom" | "all"] }>()
+  const expandedNames = ref<string[]>([])
+  watch(
+    () => [
+      model.value.requestId,
+      model.value.resourceId,
+      model.value.correlationId,
+      model.value.impersonationSessionId,
+    ],
+    (values) => {
+      if (values.some(Boolean)) expandedNames.value = ["advanced"]
+    },
+    { immediate: true },
+  )
   const actors = ref<{ label: string; value: string }[]>([])
   const actorLoading = ref(false)
   let actorGeneration = 0
@@ -114,7 +127,8 @@
         /></NFormItemGi>
         <NFormItemGi :label="$t('page.manage.auditLog.actor')"
           ><NSelect
-            v-model:value="model.actorId"
+            :value="model.actorId ?? null"
+            @update:value="model.actorId = $event"
             :options="actors"
             :loading="actorLoading"
             clearable
@@ -124,20 +138,30 @@
         /></NFormItemGi>
         <NFormItemGi :label="$t('page.manage.auditLog.resourceType')"
           ><NSelect
-            v-model:value="model.resourceType"
+            :value="model.resourceType ?? null"
             :options="resources"
             filterable
             clearable
-            @update:value="model.action = undefined"
+            @update:value="
+              (value) => {
+                model.resourceType = value
+                model.action = undefined
+              }
+            "
         /></NFormItemGi>
         <NFormItemGi :label="$t('page.manage.auditLog.action')"
-          ><NSelect v-model:value="model.action" :options="actions" filterable clearable
+          ><NSelect
+            :value="model.action ?? null"
+            :options="actions"
+            filterable
+            clearable
+            @update:value="model.action = $event"
         /></NFormItemGi>
         <NFormItemGi :label="$t('page.manage.auditLog.resultLabel')"
-          ><NSelect v-model:value="model.result" :options="results" clearable
+          ><NSelect :value="model.result ?? null" :options="results" clearable @update:value="model.result = $event"
         /></NFormItemGi>
       </NGrid>
-      <NCollapse>
+      <NCollapse v-model:expanded-names="expandedNames">
         <NCollapseItem :title="$t('page.manage.auditLog.advancedSearch')" name="advanced">
           <NGrid :x-gap="16" cols="1 s:2 l:4" responsive="screen">
             <NFormItemGi :label="$t('page.manage.auditLog.resourceName')"
@@ -166,7 +190,8 @@
             /></NFormItemGi>
             <NFormItemGi :label="$t('page.manage.auditLog.riskLabel')"
               ><NSelect
-                v-model:value="model.riskLevel"
+                :value="model.riskLevel ?? null"
+                @update:value="model.riskLevel = $event"
                 clearable
                 :options="
                   (['normal', 'sensitive', 'critical'] as const).map((value) => ({
@@ -177,7 +202,8 @@
             /></NFormItemGi>
             <NFormItemGi :label="$t('page.manage.auditLog.sourceLabel')"
               ><NSelect
-                v-model:value="model.source"
+                :value="model.source ?? null"
+                @update:value="model.source = $event"
                 clearable
                 :options="
                   (['http', 'domain_event', 'system'] as const).map((value) => ({
