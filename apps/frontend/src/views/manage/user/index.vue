@@ -313,27 +313,6 @@
               {{ $t("page.manage.user.directory.members", { count: pagination.itemCount ?? 0 }) }}
             </div>
           </template>
-          <template #header-extra>
-            <TableHeaderOperation
-              v-model:columns="columnChecks"
-              :loading="loading"
-              :show-business-actions="hasAuth('user:create') || hasAuth('user:delete')"
-              @refresh="refreshAfterWrite"
-            >
-              <NButton v-if="hasAuth('user:create')" size="small" ghost type="primary" @click="handleAdd">
-                <template #icon><icon-ic-round-plus class="text-icon" /></template>{{ $t("page.manage.user.addUser") }}
-              </NButton>
-              <NPopconfirm v-if="hasAuth('user:delete')" @positive-click="handleBatchDelete">
-                <template #trigger>
-                  <NButton size="small" ghost type="error" :disabled="checkedRowKeys.length === 0">
-                    <template #icon><icon-ic-round-delete class="text-icon" /></template>
-                    {{ $t("common.batchDelete") }}
-                  </NButton>
-                </template>
-                {{ $t("common.confirmDelete") }}
-              </NPopconfirm>
-            </TableHeaderOperation>
-          </template>
           <NButton
             v-if="appStore.isMobile"
             size="small"
@@ -343,6 +322,25 @@
             {{ $t("page.manage.user.directory.showDepartments") }}
           </NButton>
           <UserSearch :model="searchParams" @search="search" />
+          <TableHeaderOperation
+            v-model:columns="columnChecks"
+            :loading="loading"
+            :show-business-actions="hasAuth('user:create') || hasAuth('user:delete')"
+            @refresh="refreshAfterWrite"
+          >
+            <NButton v-if="hasAuth('user:create')" size="small" ghost type="primary" @click="handleAdd">
+              <template #icon><icon-ic-round-plus class="text-icon" /></template>{{ $t("page.manage.user.addUser") }}
+            </NButton>
+            <NPopconfirm v-if="hasAuth('user:delete')" @positive-click="handleBatchDelete">
+              <template #trigger>
+                <NButton size="small" ghost type="error" :disabled="checkedRowKeys.length === 0">
+                  <template #icon><icon-ic-round-delete class="text-icon" /></template>
+                  {{ $t("common.batchDelete") }}
+                </NButton>
+              </template>
+              {{ $t("common.confirmDelete") }}
+            </NPopconfirm>
+          </TableHeaderOperation>
           <div
             v-if="checkedRowKeys.length"
             class="flex flex-wrap items-center gap-12px rd-6px bg-theme-fill px-12px py-8px"
