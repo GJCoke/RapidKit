@@ -104,6 +104,15 @@
           :name="entry.row.resource.key"
           :title="entry.row.resource.label"
         >
+          <template #header="{ collapsed }">
+            <button
+              type="button"
+              class="cursor-pointer border-0 bg-transparent p-0 text-left text-inherit focus-visible:outline-theme-primary"
+              :aria-expanded="!collapsed"
+            >
+              {{ entry.row.resource.label }}
+            </button>
+          </template>
           <p v-if="entry.path.length" class="mb-12px mt-0 text-12px text-base-text-3">{{ entry.path.join(" / ") }}</p>
           <NButton
             v-if="entry.ownerKey !== module.key"

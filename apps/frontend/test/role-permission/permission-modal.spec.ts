@@ -681,3 +681,22 @@ it("retains removed unknown codes in the grouped change review", async () => {
   expect(document.querySelector('[data-review-module="other"]')?.textContent).toContain("old:read")
   expect(document.body.textContent).toContain(key("repairSummary"))
 })
+
+it("exposes resource expansion as a keyboard-focusable button without changing grants", async () => {
+  await open({ modules: true })
+  await navigateModule("通知管理")
+  const header = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+    (b) => b.textContent?.trim() === "模板管理",
+  )
+  expect(header).toBeTruthy()
+  expect(header!.tabIndex).toBe(0)
+  expect(header!.getAttribute("aria-expanded")).toBe("true")
+  header!.click()
+  await nextTick()
+  expect(header!.getAttribute("aria-expanded")).toBe("false")
+  header!.click()
+  await nextTick()
+  expect(header!.getAttribute("aria-expanded")).toBe("true")
+  expect(button(key("review")).disabled).toBe(true)
+  expect(api.save).not.toHaveBeenCalled()
+})
