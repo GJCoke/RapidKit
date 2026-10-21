@@ -89,3 +89,26 @@ it("reveals related filters on initial navigation and when switching queries", a
   expect(host.querySelector(".n-collapse-item--active")).not.toBeNull()
   expect([...host.querySelectorAll("input")].some((input) => input.value === "request-1")).toBe(true)
 })
+
+it("clears manually entered text filters on reset and restores the default day", async () => {
+  const { host, model } = mount({ requestId: "initial-request", pageSize: 50 })
+  await nextTick()
+  const inputs = [...host.querySelectorAll<HTMLInputElement>(".n-collapse-item .n-input input")]
+  expect(inputs).toHaveLength(8)
+  inputs.forEach((input, index) => {
+    input.value = `filter-${index}`
+    input.dispatchEvent(new Event("input", { bubbles: true }))
+  })
+  await nextTick()
+  expect(model.value.resourceId).toBe("filter-1")
+  ;([...host.querySelectorAll("button")].find((button) => button.textContent === "common.reset") as HTMLElement).click()
+  await nextTick()
+  expect(
+    [...host.querySelectorAll<HTMLInputElement>(".n-collapse-item .n-input input")].map((input) => input.value),
+  ).toEqual(["", "", "", "", "", "", "", ""])
+  expect(model.value.resourceId).toBeUndefined()
+  expect(model.value.requestId).toBeUndefined()
+  expect(model.value.page).toBe(1)
+  expect(model.value.pageSize).toBe(50)
+  expect(Date.parse(model.value.endTime!) - Date.parse(model.value.startTime!)).toBe(86400000)
+})

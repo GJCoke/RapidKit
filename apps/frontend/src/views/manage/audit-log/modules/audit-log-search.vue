@@ -88,8 +88,14 @@
       }))
   }
   function reset() {
-    model.value = { page: 1, pageSize: model.value.pageSize || 20 }
-    selectRange("24h")
+    const now = dayjs()
+    model.value = {
+      page: 1,
+      pageSize: model.value.pageSize || 20,
+      startTime: now.subtract(24, "hour").toISOString(),
+      endTime: now.toISOString(),
+    }
+    emit("range", "24h")
     emit("search")
   }
   watch(
@@ -165,28 +171,47 @@
         <NCollapseItem :title="$t('page.manage.auditLog.advancedSearch')" name="advanced">
           <NGrid :x-gap="16" cols="1 s:2 l:4" responsive="screen">
             <NFormItemGi :label="$t('page.manage.auditLog.resourceName')"
-              ><NInput v-model:value="model.resourceKeyword" clearable @keyup.enter="emit('search')"
+              ><NInput
+                :value="model.resourceKeyword ?? null"
+                @update:value="model.resourceKeyword = $event"
+                clearable
+                @keyup.enter="emit('search')"
             /></NFormItemGi>
             <NFormItemGi :label="$t('page.manage.auditLog.resourceId')"
-              ><NInput v-model:value="model.resourceId" clearable @keyup.enter="emit('search')"
+              ><NInput
+                :value="model.resourceId ?? null"
+                @update:value="model.resourceId = $event"
+                clearable
+                @keyup.enter="emit('search')"
             /></NFormItemGi>
             <NFormItemGi label="Request ID"
-              ><NInput v-model:value="model.requestId" clearable @keyup.enter="emit('search')"
+              ><NInput
+                :value="model.requestId ?? null"
+                @update:value="model.requestId = $event"
+                clearable
+                @keyup.enter="emit('search')"
             /></NFormItemGi>
             <NFormItemGi label="Correlation ID"
-              ><NInput v-model:value="model.correlationId" clearable @keyup.enter="emit('search')"
+              ><NInput
+                :value="model.correlationId ?? null"
+                @update:value="model.correlationId = $event"
+                clearable
+                @keyup.enter="emit('search')"
             /></NFormItemGi>
             <NFormItemGi :label="$t('page.manage.auditLog.detail.subjectId')"
-              ><NInput v-model:value="model.subjectUserId" clearable
+              ><NInput :value="model.subjectUserId ?? null" @update:value="model.subjectUserId = $event" clearable
             /></NFormItemGi>
             <NFormItemGi :label="$t('page.manage.auditLog.detail.sessionId')"
-              ><NInput v-model:value="model.impersonationSessionId" clearable
+              ><NInput
+                :value="model.impersonationSessionId ?? null"
+                @update:value="model.impersonationSessionId = $event"
+                clearable
             /></NFormItemGi>
             <NFormItemGi :label="$t('page.manage.auditLog.ip')"
-              ><NInput v-model:value="model.ip" clearable
+              ><NInput :value="model.ip ?? null" @update:value="model.ip = $event" clearable
             /></NFormItemGi>
             <NFormItemGi :label="$t('page.manage.auditLog.actorAccount')"
-              ><NInput v-model:value="model.actorKeyword" clearable
+              ><NInput :value="model.actorKeyword ?? null" @update:value="model.actorKeyword = $event" clearable
             /></NFormItemGi>
             <NFormItemGi :label="$t('page.manage.auditLog.riskLabel')"
               ><NSelect
