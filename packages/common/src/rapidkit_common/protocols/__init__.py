@@ -1,5 +1,6 @@
 """Cross-plugin protocol definitions — the shared contracts between plugins."""
 
+from rapidkit_common.protocols.audit import AuditWriter
 from rapidkit_common.protocols.auth import (
     AuthContext,
     AuthContextResolver,
@@ -37,6 +38,7 @@ from rapidkit_common.protocols.permission import (
 from rapidkit_common.protocols.user import UserProtocol, UserQueryService, UserResolver
 
 __all__ = [
+    "AuditWriter",
     "AuthContext",
     "AuthContextResolver",
     "Authenticator",
