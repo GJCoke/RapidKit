@@ -431,7 +431,7 @@
               :aria-current="department.id === scopeId ? 'location' : undefined"
               @click="navigateScope(department.id)"
             >
-              <NEllipsis :tooltip="{ placement: 'bottom' }"
+              <NEllipsis class="leading-20px" :tooltip="{ placement: 'bottom' }"
                 >{{ department.name
                 }}<template #tooltip>{{ scopePath.map((node) => node.name).join(" / ") }}</template></NEllipsis
               >
