@@ -19,6 +19,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import col, delete, func, select, update
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from rapidkit_common.audit import capture_audit_model, current_audit
 from rapidkit_common.models import SQLModel as _SQLModel
 from rapidkit_common.schemas.response import CursorPaginatedResponse, PaginatedResponse
 
@@ -385,6 +386,10 @@ class BaseCRUD(Generic[Model]):
         if not ids:
             raise AppException(StatusCode.MISSING_REQUIRED_FIELD)
 
+        context = current_audit.get()
+        if context is not None and context.action_def is not None and context.action_def.model is self.model:
+            for record in await self.get_by_ids(list(set(ids))):
+                capture_audit_model(self.session, record, record.model_dump(mode="json"), None)
         statement = delete(self.model).filter(col(self.model.id).in_(ids))
         await self.session.exec(statement)
         await self.session.flush()

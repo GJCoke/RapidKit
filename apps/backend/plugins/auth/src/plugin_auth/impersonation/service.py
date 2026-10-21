@@ -78,6 +78,7 @@ class ImpersonationService:
                 {
                     "actor_id": record.actor_id,
                     "actor_name": actor.name if actor else None,
+                    "actor_username": actor.username if actor else None,
                     "subject_user_id": record.subject_user_id,
                     "impersonation_session_id": record.id,
                     "action": action,

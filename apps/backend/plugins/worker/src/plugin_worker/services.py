@@ -6,8 +6,11 @@ Date    : 2026-03-30
 """
 
 from celery import Celery
+from rapidkit_common.audit import current_audit
 from rapidkit_core.log import get_plugin_logger
+from rapidkit_core.uuid7 import uuid7
 from rapidkit_framework.exceptions import AppException
+from rapidkit_framework.identity import identity_headers
 
 from plugin_worker.schemas import ActiveTaskInfo, TriggerTaskResponse
 from plugin_worker.status_codes import WorkerStatusCode
@@ -25,7 +28,25 @@ async def trigger_task(celery_app: Celery, task_name: str, args: list, kwargs: d
     if task_name not in registered:
         raise AppException(WorkerStatusCode.TASK_NOT_REGISTERED)
     try:
-        task = celery_app.send_task(task_name, args=args, kwargs=kwargs)
+        context = current_audit.get()
+        headers: dict[str, object] = dict(identity_headers())
+        if context is not None:
+            if context.identity_provider:
+                for key, value in context.identity_provider().items():
+                    setattr(context.record, key, value)
+            context.record.correlation_id = str(uuid7())
+            headers["audit_correlation_id"] = context.record.correlation_id
+            headers["audit_initiated_by"] = {
+                "id": str(context.record.actor_id) if context.record.actor_id else None,
+                "name": context.record.actor_name,
+                "username": context.record.actor_username,
+            }
+        task = celery_app.send_task(task_name, args=args, kwargs=kwargs, headers=headers)
+        if context is not None:
+            context.record.resource_id = task.id
+            context.record.resource_name = task_name
+            context.record.metadata.task_id = task.id
+            context.confirm()
     except Exception:
         logger.exception("Failed to trigger task: {task_name}", task_name=task_name)
         raise AppException(WorkerStatusCode.TASK_TRIGGER_FAILED)

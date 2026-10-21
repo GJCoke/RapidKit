@@ -1,0 +1,114 @@
+{
+  "resources": {
+    "user": "User",
+    "role": "Role",
+    "menu": "Menu",
+    "department": "Department",
+    "schedule": "Scheduled task",
+    "notification": "Notification",
+    "notification-template": "Notification template",
+    "auth-session": "Authentication session",
+    "impersonation": "Impersonation",
+    "task": "Background task",
+    "worker": "Worker"
+  },
+  "fields": {
+    "name": "Name",
+    "username": "Username",
+    "status": "Status",
+    "is_admin": "Administrator",
+    "roles": "Roles",
+    "permission_codes": "Permissions",
+    "data_scopes": "Data scopes",
+    "field_modes": "Field visibility",
+    "menu_name": "Menu name",
+    "parent_id": "Parent",
+    "permission": "Permission",
+    "leader_id": "Leader",
+    "enabled": "Enabled",
+    "task": "Task function",
+    "description": "Description",
+    "title": "Title",
+    "category": "Category",
+    "code": "Code",
+    "password": "Password",
+    "n": "Process count",
+    "queue": "Queue"
+  },
+  "actions": {
+    "user": {
+      "create": "Create user",
+      "update": "Update user",
+      "delete": "Delete user",
+      "batch-delete": "Batch delete user",
+      "change-password": "Change password",
+      "resend-invite": "Resend invitation"
+    },
+    "role": {
+      "create": "Create role",
+      "update": "Update role",
+      "delete": "Delete role",
+      "batch-delete": "Batch delete role",
+      "grant-permissions": "Grant permissions"
+    },
+    "menu": {
+      "create": "Create menu",
+      "update": "Update menu",
+      "delete": "Delete menu",
+      "batch-delete": "Batch delete menu"
+    },
+    "department": {
+      "create": "Create department",
+      "update": "Update department",
+      "delete": "Delete department"
+    },
+    "schedule": {
+      "create": "Create scheduled task",
+      "update": "Update scheduled task",
+      "delete": "Delete scheduled task",
+      "toggle": "Toggle status",
+      "enable": "Enable scheduled task",
+      "disable": "Disable scheduled task"
+    },
+    "notification": {
+      "create": "Create notification",
+      "update": "Update notification",
+      "delete": "Delete notification",
+      "publish": "Publish notification",
+      "recall": "Recall notification",
+      "cancel": "Cancel notification",
+      "retry-delivery": "Retry delivery"
+    },
+    "notification-template": {
+      "create": "Create notification template",
+      "update": "Update notification template",
+      "delete": "Delete notification template"
+    },
+    "auth": {
+      "login": "Sign in",
+      "logout": "Sign out",
+      "request-password-reset": "Request password reset",
+      "confirm-password-reset": "Confirm password reset",
+      "accept-invite": "Accept invitation"
+    },
+    "impersonation": {
+      "start": "Start impersonation",
+      "stop": "Stop impersonation",
+      "expire": "Impersonation expired",
+      "revoke": "Revoke impersonation"
+    },
+    "task": {
+      "revoke": "Revoke impersonation",
+      "submit": "Submit task",
+      "execute": "Execute task"
+    },
+    "worker": {
+      "send-shutdown": "Send worker shutdown command",
+      "grow-pool": "Grow worker pool",
+      "shrink-pool": "Shrink worker pool",
+      "add-consumer": "Send add-consumer command",
+      "cancel-consumer": "Send cancel-consumer command"
+    }
+  },
+  "taskExecutionFailed": "Task execution failed. Use the task ID to investigate."
+}

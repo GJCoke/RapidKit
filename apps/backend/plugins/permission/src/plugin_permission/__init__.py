@@ -27,6 +27,7 @@ def _register_access_resolver() -> None:
 def register() -> PluginManifest:
     from fastapi import APIRouter
 
+    from plugin_permission.audit import configure_audit
     from plugin_permission.catalog.api import router as catalog_router
     from plugin_permission.dashboard.api import router as dashboard_router
     from plugin_permission.models import Role
@@ -53,6 +54,7 @@ def register() -> PluginManifest:
         permission_codes=PERMISSION_CODES,
         permission_packages=PERMISSION_PACKAGES,
         router=combined,
+        audit_actions=configure_audit(combined),
         models=[Role],
         dependencies=["auth"],
         middlewares=[MiddlewareDef(cls=ScopeContextMiddleware)],

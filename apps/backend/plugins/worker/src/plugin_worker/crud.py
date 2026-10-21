@@ -72,8 +72,10 @@ class TaskResultCRUD(BaseCRUD[CeleryTaskResult]):
 
     model = CeleryTaskResult
 
-    async def get_by_task_id(self, task_id: str) -> CeleryTaskResult | None:
+    async def get_by_task_id(self, task_id: str, *, for_update: bool = False) -> CeleryTaskResult | None:
         statement = select(self.model).filter(col(self.model.task_id) == task_id)
+        if for_update:
+            statement = statement.with_for_update()
         result = await self.session.exec(statement)
         return result.first()
 

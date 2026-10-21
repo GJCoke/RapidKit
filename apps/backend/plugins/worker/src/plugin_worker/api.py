@@ -11,6 +11,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
 from rapidkit_common.access import Require
+from rapidkit_common.audit import current_audit
 from rapidkit_common.deps import SessionDep
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_core.timezone import timezone
@@ -18,6 +19,7 @@ from rapidkit_framework.exceptions import AppException
 
 from plugin_worker.dashboard import get_queue_dashboard, resolve_worker_subscriptions
 from plugin_worker.deps import TaskResultCrudDep, WorkerCrudDep
+from plugin_worker.models import CeleryWorker
 from plugin_worker.runtime import inspect_worker_runtime
 from plugin_worker.schemas import (
     ActiveTaskInfo,
@@ -59,6 +61,15 @@ router = APIRouter(
 )
 
 
+async def _control_worker(worker_id: UUID, crud: WorkerCrudDep) -> CeleryWorker:
+    worker = await crud.get(worker_id, nullable=False)
+    context = current_audit.get()
+    if context is not None:
+        context.record.resource_id = str(worker.id)
+        context.record.resource_name = worker.hostname
+    return worker
+
+
 @router.get("/all", dependencies=[Require("worker:read")])
 async def get_all_workers(crud: WorkerCrudDep) -> Response[list[WorkerResponse]]:
     """获取全部工作节点。"""
@@ -91,7 +102,7 @@ async def ping_worker_endpoint(
 ) -> Response[WorkerControlResponse]:
     """检测指定工作节点是否可达。"""
     celery_app = request.app.state.celery_app
-    worker = await crud.get(worker_id, nullable=False)
+    worker = await _control_worker(worker_id, crud)
     reachable = ping_worker(celery_app, worker.hostname)
     return Response(
         data=WorkerControlResponse(
@@ -109,7 +120,7 @@ async def shutdown_worker_endpoint(
 ) -> Response[WorkerControlResponse]:
     """向指定工作节点发送关闭命令。"""
     celery_app = request.app.state.celery_app
-    worker = await crud.get(worker_id, nullable=False)
+    worker = await _control_worker(worker_id, crud)
     shutdown_worker(celery_app, worker.hostname)
     return Response(data=WorkerControlResponse(success=True, message="Shutdown command sent"))
 
@@ -120,7 +131,7 @@ async def pool_grow_endpoint(
 ) -> Response[WorkerControlResponse]:
     """向指定工作节点发送进程池扩容命令。"""
     celery_app = request.app.state.celery_app
-    worker = await crud.get(worker_id, nullable=False)
+    worker = await _control_worker(worker_id, crud)
     await to_thread(pool_grow, celery_app, worker.hostname, body.n)
     return Response(data=WorkerControlResponse(success=True, message=f"Pool grow +{body.n} command sent"))
 
@@ -131,7 +142,7 @@ async def pool_shrink_endpoint(
 ) -> Response[WorkerControlResponse]:
     """向指定工作节点发送进程池缩容命令。"""
     celery_app = request.app.state.celery_app
-    worker = await crud.get(worker_id, nullable=False)
+    worker = await _control_worker(worker_id, crud)
     await to_thread(pool_shrink, celery_app, worker.hostname, body.n)
     return Response(data=WorkerControlResponse(success=True, message=f"Pool shrink -{body.n} command sent"))
 
@@ -142,7 +153,7 @@ async def add_queue_endpoint(
 ) -> Response[WorkerControlResponse]:
     """为指定工作节点添加消费队列。"""
     celery_app = request.app.state.celery_app
-    worker = await crud.get(worker_id, nullable=False)
+    worker = await _control_worker(worker_id, crud)
     add_consumer(celery_app, worker.hostname, body.queue)
     return Response(data=WorkerControlResponse(success=True, message=f"Add consumer '{body.queue}' command sent"))
 
@@ -153,7 +164,7 @@ async def cancel_queue_endpoint(
 ) -> Response[WorkerControlResponse]:
     """取消指定工作节点对队列的消费订阅。"""
     celery_app = request.app.state.celery_app
-    worker = await crud.get(worker_id, nullable=False)
+    worker = await _control_worker(worker_id, crud)
     cancel_consumer(celery_app, worker.hostname, body.queue)
     return Response(data=WorkerControlResponse(success=True, message=f"Cancel consumer '{body.queue}' command sent"))
 

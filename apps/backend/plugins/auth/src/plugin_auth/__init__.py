@@ -30,6 +30,7 @@ def register() -> PluginManifest:
     from fastapi import APIRouter
     from rapidkit_common.auth import DenyImpersonation, _get_current_user_placeholder
 
+    from plugin_auth.audit import configure_audit
     from plugin_auth.auth.api import router as auth_router
     from plugin_auth.auth.deps import get_current_user_form_db
     from plugin_auth.impersonation.api import router as impersonation_router
@@ -68,6 +69,7 @@ def register() -> PluginManifest:
         name="auth",
         version="0.1.0",
         router=router,
+        audit_actions=configure_audit(router),
         models=[ImpersonationSession],
         dependencies=["user"],
         requires=[UserResolver],

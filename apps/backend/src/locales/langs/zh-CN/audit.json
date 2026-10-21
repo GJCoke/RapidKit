@@ -1,0 +1,114 @@
+{
+  "resources": {
+    "user": "用户",
+    "role": "角色",
+    "menu": "菜单",
+    "department": "部门",
+    "schedule": "定时任务",
+    "notification": "通知",
+    "notification-template": "通知模板",
+    "auth-session": "登录会话",
+    "impersonation": "身份模拟",
+    "task": "后台任务",
+    "worker": "工作节点"
+  },
+  "fields": {
+    "name": "名称",
+    "username": "账号",
+    "status": "状态",
+    "is_admin": "管理员身份",
+    "roles": "角色",
+    "permission_codes": "权限码",
+    "data_scopes": "数据范围",
+    "field_modes": "字段权限",
+    "menu_name": "菜单名称",
+    "parent_id": "上级对象",
+    "permission": "访问权限",
+    "leader_id": "负责人",
+    "enabled": "启用状态",
+    "task": "任务函数",
+    "description": "说明",
+    "title": "标题",
+    "category": "分类",
+    "code": "编码",
+    "password": "密码",
+    "n": "进程数量",
+    "queue": "队列"
+  },
+  "actions": {
+    "user": {
+      "create": "创建用户",
+      "update": "更新用户",
+      "delete": "删除用户",
+      "batch-delete": "批量删除用户",
+      "change-password": "修改密码",
+      "resend-invite": "重发邀请"
+    },
+    "role": {
+      "create": "创建角色",
+      "update": "更新角色",
+      "delete": "删除角色",
+      "batch-delete": "批量删除角色",
+      "grant-permissions": "修改权限"
+    },
+    "menu": {
+      "create": "创建菜单",
+      "update": "更新菜单",
+      "delete": "删除菜单",
+      "batch-delete": "批量删除菜单"
+    },
+    "department": {
+      "create": "创建部门",
+      "update": "更新部门",
+      "delete": "删除部门"
+    },
+    "schedule": {
+      "create": "创建定时任务",
+      "update": "更新定时任务",
+      "delete": "删除定时任务",
+      "toggle": "切换状态",
+      "enable": "启用定时任务",
+      "disable": "停用定时任务"
+    },
+    "notification": {
+      "create": "创建通知",
+      "update": "更新通知",
+      "delete": "删除通知",
+      "publish": "发布通知",
+      "recall": "撤回通知",
+      "cancel": "取消通知",
+      "retry-delivery": "重试投递"
+    },
+    "notification-template": {
+      "create": "创建通知模板",
+      "update": "更新通知模板",
+      "delete": "删除通知模板"
+    },
+    "auth": {
+      "login": "登录",
+      "logout": "退出登录",
+      "request-password-reset": "申请密码重置",
+      "confirm-password-reset": "确认密码重置",
+      "accept-invite": "接受邀请"
+    },
+    "impersonation": {
+      "start": "开始模拟",
+      "stop": "结束模拟",
+      "expire": "模拟过期",
+      "revoke": "撤销模拟"
+    },
+    "task": {
+      "revoke": "撤销模拟",
+      "submit": "提交任务",
+      "execute": "执行任务"
+    },
+    "worker": {
+      "send-shutdown": "发送节点关闭指令",
+      "grow-pool": "扩容节点进程池",
+      "shrink-pool": "缩容节点进程池",
+      "add-consumer": "发送添加消费队列指令",
+      "cancel-consumer": "发送取消消费队列指令"
+    }
+  },
+  "taskExecutionFailed": "任务执行失败，可通过任务 ID 排查。"
+}

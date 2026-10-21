@@ -6,8 +6,9 @@ from uuid import UUID
 
 from rapidkit_common.models import SQLModel
 from rapidkit_core.timezone import timezone
+from rapidkit_framework.audit import AuditActorType, AuditResult, AuditRiskLevel, AuditSource
 from sqlalchemy import Enum as SQLAlchemyEnum
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import Index, UniqueConstraint
 from sqlmodel import JSON, Column, Field
 
 
@@ -25,23 +26,6 @@ class ActivityLevel(StrEnum):
     ERROR = "error"
 
 
-class AuditResult(StrEnum):
-    SUCCESS = "success"
-    FAILURE = "failure"
-
-
-class AuditRiskLevel(StrEnum):
-    NORMAL = "normal"
-    SENSITIVE = "sensitive"
-    CRITICAL = "critical"
-
-
-class AuditSource(StrEnum):
-    HTTP = "http"
-    DOMAIN_EVENT = "domain_event"
-    SYSTEM = "system"
-
-
 def _varchar_enum(enum_type: type[StrEnum]) -> SQLAlchemyEnum:
     return SQLAlchemyEnum(
         enum_type,
@@ -54,6 +38,21 @@ class AuditLog(SQLModel, table=True):
     """Technical record used for security review and diagnostics."""
 
     __tablename__ = "system_audit_logs"
+    __table_args__ = (
+        Index("ix_audit_time_id", "occurred_at", "id"),
+        Index("ix_audit_resource_time_id", "resource_type", "resource_id", "occurred_at", "id"),
+        Index("ix_audit_actor_time_id", "actor_id", "occurred_at", "id"),
+    )
+
+    schema_version: int = Field(default=1, sa_column_kwargs={"server_default": "1"})
+    actor_type: AuditActorType = Field(
+        default=AuditActorType.UNKNOWN,
+        sa_column=Column(_varchar_enum(AuditActorType), nullable=False, server_default="unknown"),
+    )
+    actor_username: str | None = Field(default=None, max_length=100)
+    business_code: int | None = None
+    error_key: str | None = Field(default=None, max_length=150)
+    duration_ms: float | None = Field(default=None, ge=0)
 
     actor_id: UUID | None = Field(default=None, index=True)
     subject_user_id: UUID | None = Field(default=None, index=True)
@@ -80,6 +79,18 @@ class AuditLog(SQLModel, table=True):
     error_message: str | None = Field(default=None, max_length=1024)
     extra_data: dict = Field(default_factory=dict, sa_column=Column("metadata", JSON, nullable=False))
     occurred_at: datetime = Field(default_factory=timezone.now, index=True)
+
+
+class AuditLogTarget(SQLModel, table=True):
+    __tablename__ = "system_audit_log_targets"
+    __table_args__ = (Index("ix_audit_target_resource", "resource_type", "resource_id", "audit_log_id"),)
+
+    audit_log_id: UUID = Field(foreign_key="system_audit_logs.id", index=True)
+    resource_type: str = Field(max_length=50)
+    resource_id: str = Field(max_length=100)
+    resource_name: str | None = Field(default=None, max_length=200)
+    result: AuditResult = Field(sa_column=Column(_varchar_enum(AuditResult), nullable=False))
+    error_message: str | None = Field(default=None, max_length=1024)
 
 
 class ActivityEvent(SQLModel, table=True):

@@ -40,6 +40,9 @@ class AsyncBatchQueue(Generic[T]):
         handler: Callable[[list[T]], Awaitable[None]],
         batch_size: int,
         flush_interval: float,
+        max_buffer_size: int | None = None,
+        retry_delays: tuple[float, ...] = (),
+        on_state: Callable[[str, int], None] | None = None,
     ) -> None:
         self._handler = handler
         self._batch_size = batch_size
@@ -48,6 +51,16 @@ class AsyncBatchQueue(Generic[T]):
         self._lock = asyncio.Lock()
         self._flush_task: asyncio.Task[None] | None = None
         self._running = False
+        self._max_buffer_size = max_buffer_size
+        self._retry_delays = retry_delays
+        self._on_state = on_state
+
+    def _notify(self, event: str, count: int) -> None:
+        if self._on_state is not None:
+            try:
+                self._on_state(event, count)
+            except Exception:
+                logger.exception("Batch queue state callback failed")
 
     async def start(self) -> None:
         """启动定时刷新任务。"""
@@ -57,7 +70,12 @@ class AsyncBatchQueue(Generic[T]):
     async def put(self, item: T) -> None:
         """添加一条记录。达到 batch_size 时自动触发 flush。"""
         async with self._lock:
+            if self._max_buffer_size is not None and len(self._buffer) >= self._max_buffer_size:
+                self._notify("failed", 1)
+                raise BufferError("Batch queue capacity exceeded")
             self._buffer.append(item)
+            self._notify("queued", 1)
+            self._notify("buffer_size", len(self._buffer))
             if len(self._buffer) >= self._batch_size:
                 await self._do_flush()
 
@@ -83,10 +101,28 @@ class AsyncBatchQueue(Generic[T]):
         if not self._buffer:
             return
         batch, self._buffer = self._buffer[:], []
-        try:
-            await self._handler(batch)
-        except Exception:
-            logger.exception("Handler error, {} items lost", len(batch))
+        self._notify("buffer_size", 0)
+        for attempt in range(len(self._retry_delays) + 1):
+            try:
+                await self._handler(batch)
+                self._notify("flushed", len(batch))
+                return
+            except asyncio.CancelledError:
+                self._buffer[:0] = batch
+                self._notify("buffer_size", len(self._buffer))
+                raise
+            except Exception:
+                if attempt == len(self._retry_delays):
+                    self._notify("failed", len(batch))
+                    logger.exception("Handler error after {} attempts, {} items not persisted", attempt + 1, len(batch))
+                else:
+                    self._notify("retried", len(batch))
+                    try:
+                        await asyncio.sleep(self._retry_delays[attempt])
+                    except asyncio.CancelledError:
+                        self._buffer[:0] = batch
+                        self._notify("buffer_size", len(self._buffer))
+                        raise
 
     async def _periodic_flush(self) -> None:
         """定时 flush 循环。"""

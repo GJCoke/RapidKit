@@ -6,6 +6,57 @@ import pytest
 from rapidkit_core.batch_queue import AsyncBatchQueue
 
 
+@pytest.mark.asyncio
+async def test_bounded_queue_reports_retry_exhaustion():
+    from rapidkit_core.batch_queue import AsyncBatchQueue
+
+    attempts = []
+    states = []
+
+    async def failing(batch):
+        attempts.append(tuple(batch))
+        raise RuntimeError("database unavailable")
+
+    queue = AsyncBatchQueue(
+        handler=failing,
+        batch_size=1,
+        flush_interval=10,
+        max_buffer_size=2,
+        retry_delays=(0, 0, 0),
+        on_state=lambda event, count: states.append((event, count)),
+    )
+    await queue.put("event-id")
+    assert len(attempts) == 4
+    assert ("failed", 1) in states
+    assert attempts == [("event-id",)] * 4
+
+
+@pytest.mark.asyncio
+async def test_cancellation_during_retry_preserves_unflushed_batch():
+    from rapidkit_core.batch_queue import AsyncBatchQueue
+
+    retrying = asyncio.Event()
+    persisted = []
+    healthy = False
+
+    async def handler(batch):
+        if not healthy:
+            retrying.set()
+            raise RuntimeError("offline")
+        persisted.extend(batch)
+
+    queue = AsyncBatchQueue(handler=handler, batch_size=100, flush_interval=10, retry_delays=(60,))
+    await queue.put("event")
+    flush = asyncio.create_task(queue.flush())
+    await retrying.wait()
+    flush.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await flush
+    healthy = True
+    await queue.flush()
+    assert persisted == ["event"]
+
+
 @pytest.fixture
 def collected():
     """Shared list to collect flushed batches."""

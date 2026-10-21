@@ -10,12 +10,17 @@ Date    : 2026-04-02
 from datetime import UTC, timedelta
 
 from fastapi_sio_di import AsyncServer
+from rapidkit_common.audit import AuditMetadata, AuditRecord
 from rapidkit_common.enums import TaskStatus, WorkerStatus
 from rapidkit_common.events import TaskFailedEvent, TaskSucceededEvent, WorkerOfflineEvent
+from rapidkit_common.protocols.audit import AuditWriter
+from rapidkit_core.config import settings
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from rapidkit_core.uuid7 import uuid7
+from rapidkit_framework.audit import AuditActorType, AuditResult, AuditSource
 from rapidkit_framework.events import event_bus
+from rapidkit_framework.services import get_service_optional
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_worker.crud import TaskResultCRUD, WorkerCRUD
@@ -36,6 +41,33 @@ class EventService:
         self.worker_crud = WorkerCRUD(session)
         self.task_crud = TaskResultCRUD(session)
         self.sio = sio
+
+    async def _audit_execution(self, task, data, result):
+        if not settings.AUDIT_V2_ENABLED:
+            return
+        writer = get_service_optional(AuditWriter)
+        if writer is None:
+            raise RuntimeError("Audit writer required for structured task auditing")
+        record = AuditRecord(
+            action="task.execute",
+            actor_type=AuditActorType.SYSTEM,
+            actor_name=task.task_name,
+            source=AuditSource.SYSTEM,
+            resource_type="task",
+            resource_id=task.task_id,
+            resource_name=task.task_name,
+            result=AuditResult(result),
+            correlation_id=data.get("audit_correlation_id") or task.task_id,
+            duration_ms=task.runtime * 1000 if task.runtime is not None else None,
+            metadata=AuditMetadata(
+                task_id=task.task_id,
+                attempt=data.get("attempt", task.retries),
+                initiated_by=data.get("audit_initiated_by"),
+            ),
+        )
+        if result == "failure":
+            record.error_key = "audit.taskExecutionFailed"
+        await writer.append_in_transaction(self.session, record)
 
     # ==================== Socket.IO Helpers ====================
 
@@ -128,6 +160,13 @@ class EventService:
     # ==================== Task Events ====================
 
     async def handle_task_started(self, data: dict) -> None:
+        existing = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
+        attempt = data.get("attempt", existing.retries if existing else 0)
+        if existing is not None:
+            if attempt < existing.retries or (
+                attempt == existing.retries and existing.status in _TERMINAL_STATES | {TaskStatus.STARTED}
+            ):
+                return
         now = timezone.now()
         task = await self.task_crud.upsert_by_task_id(
             data["task_id"],
@@ -138,6 +177,9 @@ class EventService:
                 "args": data.get("args", []),
                 "kwargs": data.get("kwargs", {}),
                 "started_at": now,
+                "retries": attempt,
+                "finished_at": None,
+                "runtime": None,
                 "update_time": now,
             },
         )
@@ -149,11 +191,15 @@ class EventService:
             await self._emit_worker_status(worker)
 
     async def handle_task_success(self, data: dict) -> None:
-        task = await self.task_crud.get_by_task_id(data["task_id"])
+        task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
         now = timezone.now()
         if task:
-            if task.status in _TERMINAL_STATES:
+            attempt = data.get("attempt", task.retries)
+            if attempt < task.retries or (attempt == task.retries and task.status in _TERMINAL_STATES):
                 return
+            if attempt > task.retries:
+                task.started_at = None
+            task.retries = attempt
             task.status = TaskStatus.SUCCESS
             task.finished_at = now
             task.result = data.get("retval")
@@ -171,6 +217,7 @@ class EventService:
                     "finished_at": now,
                     "result": data.get("retval"),
                     "logs": data.get("logs"),
+                    "retries": data.get("attempt", 0),
                 },
             )
         hostname = data.get("hostname", "")
@@ -179,6 +226,7 @@ class EventService:
         await self._emit_task_update(task, runtime=task.runtime)
         if worker:
             await self._emit_worker_status(worker)
+        await self._audit_execution(task, data, "success")
         event_bus.fire_and_forget(
             TaskSucceededEvent(
                 event_id=str(uuid7()),
@@ -190,11 +238,15 @@ class EventService:
         )
 
     async def handle_task_failure(self, data: dict) -> None:
-        task = await self.task_crud.get_by_task_id(data["task_id"])
+        task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
         now = timezone.now()
         if task:
-            if task.status in _TERMINAL_STATES:
+            attempt = data.get("attempt", task.retries)
+            if attempt < task.retries or (attempt == task.retries and task.status in _TERMINAL_STATES):
                 return
+            if attempt > task.retries:
+                task.started_at = None
+            task.retries = attempt
             task.status = TaskStatus.FAILURE
             task.finished_at = now
             task.exception = data.get("exception", "")
@@ -214,6 +266,7 @@ class EventService:
                     "exception": data.get("exception", ""),
                     "traceback": data.get("traceback", ""),
                     "logs": data.get("logs"),
+                    "retries": data.get("attempt", 0),
                 },
             )
         hostname = data.get("hostname", "")
@@ -222,6 +275,7 @@ class EventService:
         await self._emit_task_update(task, exception=data.get("exception", ""))
         if worker:
             await self._emit_worker_status(worker)
+        await self._audit_execution(task, data, "failure")
         event_bus.fire_and_forget(
             TaskFailedEvent(
                 event_id=str(uuid7()),
@@ -233,24 +287,35 @@ class EventService:
         )
 
     async def handle_task_retry(self, data: dict) -> None:
-        task = await self.task_crud.get_by_task_id(data["task_id"])
+        task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
         if not task:
             return
+        attempt = data.get("attempt", task.retries)
+        if attempt < task.retries or task.status in _TERMINAL_STATES:
+            return
+        if task.started_at:
+            task.runtime = (timezone.now() - task.started_at).total_seconds()
+        await self._audit_execution(task, data, "failure")
         task.status = TaskStatus.RETRY
-        task.retries = (task.retries or 0) + 1
+        task.retries = attempt + 1
         task.update_time = timezone.now()
         await self.session.flush()
         await self._emit_task_update(task)
 
     async def handle_task_revoked(self, data: dict) -> None:
-        task = await self.task_crud.get_by_task_id(data["task_id"])
+        task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
         if not task:
+            return
+        attempt = data.get("attempt", task.retries)
+        if attempt < task.retries or (attempt == task.retries and task.status in _TERMINAL_STATES):
             return
         now = timezone.now()
         task.status = TaskStatus.REVOKED
+        task.retries = attempt
         task.finished_at = now
         task.update_time = now
         await self.session.flush()
+        await self._audit_execution(task, data, "failure")
         await self._emit_task_update(task)
 
     # ==================== Offline Check ====================

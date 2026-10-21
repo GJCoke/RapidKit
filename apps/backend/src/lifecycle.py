@@ -23,14 +23,21 @@ from src.sio.events.connection import renew_session_keys_loop
 from src.sio.sessions import register_socket_closer, shutdown_socket_timers
 
 
-async def _flush_audit_batch(batch: list[dict]) -> None:
+async def _flush_audit_batch(batch: list) -> None:
     """批量写入审计日志到数据库。"""
     from plugin_system.audit_crud import AuditLogCRUD
     from rapidkit_core.database import AsyncSessionLocal
 
     async with AsyncSessionLocal() as session:
         crud = AuditLogCRUD(session)
-        await crud.create_all(batch)
+        from rapidkit_common.audit import AuditRecord
+
+        structured = [item for item in batch if isinstance(item, AuditRecord)]
+        legacy = [item for item in batch if not isinstance(item, AuditRecord)]
+        if structured:
+            await crud.append_batch(structured)
+        if legacy:
+            await crud.create_all(legacy)
         await session.commit()
 
 
@@ -57,10 +64,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     from src.middlewares import audit as audit_module
 
     if settings.AUDIT_ENABLED:
+        from plugin_system.audit_metrics import record_delivery
+
         audit_module.audit_queue = AsyncBatchQueue(
             handler=_flush_audit_batch,
             batch_size=settings.AUDIT_BATCH_SIZE,
             flush_interval=settings.AUDIT_FLUSH_INTERVAL,
+            max_buffer_size=max(10 * settings.AUDIT_BATCH_SIZE, 1000),
+            retry_delays=(0.5, 1, 2),
+            on_state=record_delivery,
         )
         await audit_module.audit_queue.start()
         logger.info(

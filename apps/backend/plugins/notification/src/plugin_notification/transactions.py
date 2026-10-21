@@ -33,6 +33,9 @@ def defer_notification_effect(session: AsyncSession, callback: Callable[..., Any
 
 async def complete_notification_write(session: AsyncSession, *, owned: bool) -> None:
     if owned:
+        prepare = session.info.pop("_audit_prepare", None)
+        if prepare is not None:
+            await prepare(session)
         await session.commit()
         await run_after_commit_hooks(session)
     else:

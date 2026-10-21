@@ -249,6 +249,11 @@ declare global {
       type AuditLogList = Service.ApiResponse<"/api/v1/system/audit-logs/paginate">
       type AuditLogItem = AuditLogList["records"][number]
       type AuditLogDetail = Service.ApiResponse<"/api/v1/system/audit-logs/{item_id}">
+      type AuditCatalog = Service.ApiResponse<"/api/v1/system/audit-logs/catalog">
+      type AuditActorQuery = Service.ApiRequest<"/api/v1/system/audit-logs/actors", "get", "query">
+      type AuditActors = Service.ApiResponse<"/api/v1/system/audit-logs/actors">
+      type AuditTargets = Service.ApiResponse<"/api/v1/system/audit-logs/{item_id}/targets">
+      type AuditTargetQuery = Service.ApiRequest<"/api/v1/system/audit-logs/{item_id}/targets", "get", "query">
       type AuditResult = NonNullable<AuditLogQuery["result"]>
       type AuditRiskLevel = AuditLogItem["riskLevel"]
       type AuditSource = AuditLogItem["source"]

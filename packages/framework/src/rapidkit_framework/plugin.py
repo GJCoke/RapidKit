@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Coroutine, Literal, Union
 
 from sqlmodel import SQLModel
 
+from rapidkit_framework.audit import AuditActionDef
 from rapidkit_framework.events import Event
 from rapidkit_framework.scopes import DataScopeDef, FieldGroupDef
 
@@ -183,6 +184,8 @@ class PluginManifest:
 
     name: str
     version: str
+
+    audit_actions: list[AuditActionDef] = field(default_factory=list)
 
     # FastAPI APIRouter（可选）
     router: Any | None = None

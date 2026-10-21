@@ -109,11 +109,16 @@ def _heartbeat_loop(hostname: str) -> None:
         _heartbeat_stop.wait(HEARTBEAT_INTERVAL)
 
 
-def _request_identity(request) -> dict[str, str]:
+def _request_identity(request) -> dict[str, object]:
     headers = getattr(request, "headers", None)
     if headers is None:
         headers = getattr(request, "request_dict", None) or {}
-    return identity_headers(identity_from_headers(headers))
+    values: dict[str, object] = dict(identity_headers(identity_from_headers(headers)))
+    for key in ("audit_correlation_id", "audit_initiated_by"):
+        if headers.get(key) is not None:
+            values[key] = headers[key]
+    values["attempt"] = getattr(request, "retries", 0) or 0
+    return values
 
 
 # ==================== Task Signals ====================

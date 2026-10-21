@@ -12,6 +12,7 @@ from plugin_schedule.permissions import PERMISSION_CODES, PERMISSION_PACKAGES, R
 
 def register() -> PluginManifest:
     from plugin_schedule.api import router
+    from plugin_schedule.audit import configure_audit
     from plugin_schedule.models import CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
 
     return PluginManifest(
@@ -21,5 +22,6 @@ def register() -> PluginManifest:
         permission_codes=PERMISSION_CODES,
         permission_packages=PERMISSION_PACKAGES,
         router=router,
+        audit_actions=configure_audit(router),
         models=[IntervalSchedule, CrontabSchedule, SolarSchedule, PeriodicTask],
     )

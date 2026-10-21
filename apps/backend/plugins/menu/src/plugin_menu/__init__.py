@@ -32,6 +32,7 @@ def register() -> PluginManifest:
     from fastapi import APIRouter
 
     from plugin_menu.api import router as menu_router
+    from plugin_menu.audit import configure_audit
     from plugin_menu.models import Menu
     from plugin_menu.route_api import router as route_router
 
@@ -46,6 +47,7 @@ def register() -> PluginManifest:
         permission_codes=PERMISSION_CODES,
         permission_packages=PERMISSION_PACKAGES,
         router=combined,
+        audit_actions=configure_audit(combined),
         models=[Menu],
         dependencies=["permission"],
         provides=[MenuNavigationProvider],

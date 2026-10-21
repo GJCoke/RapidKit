@@ -308,3 +308,15 @@ export function fetchGetAuditLogDetail(id: string) {
     method: "get",
   })
 }
+
+export function fetchGetAuditLogCatalog() {
+  return request<Api.SystemManage.AuditCatalog>({ url: "/system/audit-logs/catalog", method: "get" })
+}
+
+export function fetchGetAuditLogActors(params?: Api.SystemManage.AuditActorQuery) {
+  return request<Api.SystemManage.AuditActors>({ url: "/system/audit-logs/actors", method: "get", params })
+}
+
+export function fetchGetAuditLogTargets(id: string, params?: Api.SystemManage.AuditTargetQuery) {
+  return request<Api.SystemManage.AuditTargets>({ url: `/system/audit-logs/${id}/targets`, method: "get", params })
+}
