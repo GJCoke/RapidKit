@@ -1,6 +1,6 @@
 <script setup lang="tsx">
   import { computed, reactive, ref, watch } from "vue"
-  import { NAvatar, NButton, NDropdown, NTag } from "naive-ui"
+  import { NButton, NDropdown, NTag } from "naive-ui"
   import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
   import { userStatusRecord } from "@/constants/business"
   import { fetchBatchDeleteUsers, fetchDeleteUser, fetchGetUserList, fetchResendInvite } from "@/service/api"
@@ -10,6 +10,7 @@
   import { useAuth } from "@/hooks/business/auth"
   import { useTableActions } from "@/hooks/business/table-actions/use-table-actions"
   import { useAuthStore } from "@/store/modules/auth"
+  import AppAvatar from "@/components/common/app-avatar.vue"
   import SvgIcon from "@/components/custom/svg-icon.vue"
   import ImpersonationConfirmModal from "@/components/impersonation/impersonation-confirm-modal.vue"
   import { createUserActionModel } from "./composables/user-actions"
@@ -69,16 +70,14 @@
         searchParams.pageSize = params.pageSize
       },
       columns: () => [
-        { type: "selection", width: 36 },
+        { type: "selection", align: "center", width: 48 },
         {
           key: "username",
           title: $t("page.manage.user.directory.identity"),
           minWidth: 130,
           render: (row) => (
-            <div class="flex items-center gap-10px py-8px">
-              <NAvatar round size={32} src={row.avatar || undefined} class="shrink-0 bg-primary-50 text-primary">
-                {(row.name || row.username).slice(0, 1)}
-              </NAvatar>
+            <div class="flex items-center gap-10px">
+              <AppAvatar src={row.avatar} name={row.name || row.username} seed={row.id} size={32} />
               <div class="min-w-0">
                 <div class="truncate font-medium" title={row.name}>
                   {row.name || "—"}
@@ -124,10 +123,13 @@
         {
           key: "status",
           title: $t("page.manage.user.userStatus"),
-          width: 80,
+          align: "center",
+          width: 100,
           render: (row) =>
             row.status ? (
-              <span class={["user-status", `status-${row.status}`]}>{$t(userStatusRecord[row.status])}</span>
+              <NTag type={row.status === "1" ? "success" : row.status === "2" ? "warning" : "info"}>
+                {$t(userStatusRecord[row.status])}
+              </NTag>
             ) : (
               "—"
             ),
@@ -140,7 +142,7 @@
             <div class="flex items-center gap-8px whitespace-nowrap">
               {actions.visible(row, "edit") && (
                 <NButton
-                  text
+                  ghost
                   type="primary"
                   size="small"
                   onClick={() =>
@@ -298,67 +300,74 @@
           @changed="search"
         />
       </div>
-      <section
-        class="user-table-pane min-w-0 flex flex-1 flex-col gap-16px p-20px"
-        :aria-label="$t('page.manage.user.title')"
-      >
-        <div class="flex flex-wrap items-start justify-between gap-12px">
-          <div>
-            <h2 class="m-0 text-17px font-semibold">{{ contextTitle }}</h2>
+      <section class="user-table-pane min-w-0 flex flex-1 flex-col" :aria-label="$t('page.manage.user.title')">
+        <NCard
+          :bordered="false"
+          size="small"
+          class="card-wrapper sm:flex-1-hidden"
+          content-class="min-h-0 flex-col-stretch gap-16px"
+        >
+          <template #header>
+            {{ contextTitle }}
             <div class="mt-4px text-13px text-base-text-3">
               {{ $t("page.manage.user.directory.members", { count: pagination.itemCount ?? 0 }) }}
             </div>
-          </div>
-          <TableHeaderOperation
-            v-model:columns="columnChecks"
-            :loading="loading"
-            :show-business-actions="hasAuth('user:create')"
-            @refresh="refreshAfterWrite"
-          >
-            <NButton v-if="hasAuth('user:create')" size="small" type="primary" @click="handleAdd">
-              <template #icon><icon-ic-round-plus /></template>{{ $t("page.manage.user.addUser") }}
-            </NButton>
-          </TableHeaderOperation>
-        </div>
-        <NButton
-          v-if="appStore.isMobile"
-          size="small"
-          :aria-expanded="mobileDepartments"
-          @click="mobileDepartments = !mobileDepartments"
-        >
-          {{ $t("page.manage.user.directory.showDepartments") }}
-        </NButton>
-        <UserSearch :model="searchParams" @search="search" />
-        <div
-          v-if="checkedRowKeys.length"
-          class="flex flex-wrap items-center gap-12px rd-6px bg-theme-fill px-12px py-8px"
-        >
-          <span class="text-13px">{{
-            $t("page.manage.user.directory.selected", { count: checkedRowKeys.length })
-          }}</span>
-          <NButton text type="primary" size="small" @click="checkedRowKeys = []">{{
-            $t("page.manage.user.directory.clearSelection")
-          }}</NButton>
-          <NPopconfirm v-if="hasAuth('user:delete')" @positive-click="handleBatchDelete">
-            <template #trigger
-              ><NButton size="small" type="error" ghost>{{ $t("common.batchDelete") }}</NButton></template
+          </template>
+          <template #header-extra>
+            <TableHeaderOperation
+              v-model:columns="columnChecks"
+              :loading="loading"
+              :show-business-actions="hasAuth('user:create') || hasAuth('user:delete')"
+              @refresh="refreshAfterWrite"
             >
-            {{ $t("common.confirmDelete") }}
-          </NPopconfirm>
-        </div>
-        <NDataTable
-          v-model:checked-row-keys="checkedRowKeys"
-          :columns="columns"
-          :data="data"
-          size="small"
-          :flex-height="!appStore.isMobile"
-          :scroll-x="scrollX"
-          :loading="loading"
-          remote
-          :row-key="(row) => row.id"
-          :pagination="mobilePagination"
-          class="min-h-0 flex-1"
-        />
+              <NButton v-if="hasAuth('user:create')" size="small" ghost type="primary" @click="handleAdd">
+                <template #icon><icon-ic-round-plus class="text-icon" /></template>{{ $t("page.manage.user.addUser") }}
+              </NButton>
+              <NPopconfirm v-if="hasAuth('user:delete')" @positive-click="handleBatchDelete">
+                <template #trigger>
+                  <NButton size="small" ghost type="error" :disabled="checkedRowKeys.length === 0">
+                    <template #icon><icon-ic-round-delete class="text-icon" /></template>
+                    {{ $t("common.batchDelete") }}
+                  </NButton>
+                </template>
+                {{ $t("common.confirmDelete") }}
+              </NPopconfirm>
+            </TableHeaderOperation>
+          </template>
+          <NButton
+            v-if="appStore.isMobile"
+            size="small"
+            :aria-expanded="mobileDepartments"
+            @click="mobileDepartments = !mobileDepartments"
+          >
+            {{ $t("page.manage.user.directory.showDepartments") }}
+          </NButton>
+          <UserSearch :model="searchParams" @search="search" />
+          <div
+            v-if="checkedRowKeys.length"
+            class="flex flex-wrap items-center gap-12px rd-6px bg-theme-fill px-12px py-8px"
+          >
+            <span class="text-13px">{{
+              $t("page.manage.user.directory.selected", { count: checkedRowKeys.length })
+            }}</span>
+            <NButton text type="primary" size="small" @click="checkedRowKeys = []">{{
+              $t("page.manage.user.directory.clearSelection")
+            }}</NButton>
+          </div>
+          <NDataTable
+            v-model:checked-row-keys="checkedRowKeys"
+            :columns="columns"
+            :data="data"
+            size="small"
+            :flex-height="!appStore.isMobile"
+            :scroll-x="scrollX"
+            :loading="loading"
+            remote
+            :row-key="(row) => row.id"
+            :pagination="mobilePagination"
+            class="min-h-0 flex-1"
+          />
+        </NCard>
       </section>
     </div>
     <UserOperateDrawer
@@ -391,32 +400,6 @@
     overflow: auto;
     border-right: 1px solid rgb(var(--base-text-4-color) / 0.4);
   }
-  .user-table-pane :deep(.n-data-table-th) {
-    font-weight: 500;
-  }
-  .user-table-pane :deep(.n-data-table-td) {
-    height: 64px;
-  }
-  :deep(.user-status) {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    white-space: nowrap;
-    font-size: 13px;
-  }
-  :deep(.user-status)::before {
-    content: "";
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: rgb(var(--warning-color));
-  }
-  :deep(.status-1)::before {
-    background: rgb(var(--success-color));
-  }
-  :deep(.status-2)::before {
-    background: rgb(var(--base-text-3-color));
-  }
   @media (max-width: 639px) {
     .directory-workspace {
       flex-direction: column;
@@ -433,7 +416,6 @@
       display: block;
     }
     .user-table-pane {
-      padding: 16px;
       min-height: 450px;
     }
   }
