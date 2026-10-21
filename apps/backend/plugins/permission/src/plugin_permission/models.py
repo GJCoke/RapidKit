@@ -24,11 +24,6 @@ class Role(SQLModel, table=True):
         sa_column=Column(JSON, nullable=False, default=[], server_default="[]"),
         description="直接授予的权限码（未展开 depends）",
     )
-    interface_permissions: list[str] = Field([], sa_column=Column(JSON), description="已废弃：旧接口权限，仅迁移读取")
-    button_permissions: list[str] = Field([], sa_column=Column(JSON), description="已废弃：旧按钮权限，仅迁移读取")
-    router_permissions: list[str] = Field(
-        [], sa_column=Column(JSON), description="已废弃：旧路由权限，P3 前用于自定义菜单可见性"
-    )
 
     data_scopes: dict[str, str] = Field(
         default_factory=dict,

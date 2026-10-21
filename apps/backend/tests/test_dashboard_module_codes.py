@@ -1,10 +1,10 @@
 # apps/backend/tests/test_dashboard_module_codes.py
-"""首页模块所需权限码 = 原来所需接口在 P1 中的声明码（按 C7 规则自动映射）。"""
+"""首页模块所需权限码与对应接口的权限声明保持一致。"""
 
 from plugin_permission.catalog.loader import catalog_from_app
 from plugin_permission.dashboard.services import collect_dashboard_modules
 
-LEGACY_REQUIRED_ROUTES = {
+REQUIRED_ROUTES = {
     "dashboard.overview": ("GET:/api/v1/system/stats/operations-overview",),
     "dashboard.application-health": ("GET:/api/v1/system/stats/health",),
     "dashboard.infrastructure": ("GET:/api/v1/system/stats/infrastructure", "GET:/api/v1/system/stats/resources"),
@@ -19,10 +19,10 @@ LEGACY_REQUIRED_ROUTES = {
 }
 
 
-def test_dashboard_modules_require_codes_of_legacy_routes(loaded_app):
+def test_dashboard_modules_require_codes_of_declared_routes(loaded_app):
     _, bindings = catalog_from_app(loaded_app)
     expected = {
-        key: tuple(sorted({bindings[route] for route in routes})) for key, routes in LEGACY_REQUIRED_ROUTES.items()
+        key: tuple(sorted({bindings[route] for route in routes})) for key, routes in REQUIRED_ROUTES.items()
     }
     actual = {
         definition.key: tuple(sorted(definition.required_permissions))

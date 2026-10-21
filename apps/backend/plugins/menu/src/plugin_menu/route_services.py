@@ -115,7 +115,7 @@ async def get_user_routes(
     """
     获取当前用户的授权路由。
 
-    管理员获取所有非常量路由；普通用户根据角色的 router_permissions 过滤。
+    管理员获取所有非常量路由；普通用户根据角色权限码与菜单 permission 过滤。
     """
     statement = (
         select(Menu)

@@ -76,34 +76,15 @@ Refresh Token 存储在 Redis 中，key 格式为 `auth:refresh:<user_id>:<jti>`
 
 ## RBAC 权限体系
 
-权限系统分为四个层级，覆盖前后端完整的访问控制需求：
+角色统一通过 `permission_codes` 授予权限码，菜单、接口和按钮使用同一套权限码校验；数据范围与字段状态分别由 `data_scopes`、`field_modes` 配置。
 
-| 层级     | 字段                    | 说明                     |
-| -------- | ----------------------- | ------------------------ |
-| 路由权限 | `router_permissions`    | 前端页面路由访问控制     |
-| 接口权限 | `interface_permissions` | 后端 API 端点访问控制    |
-| 按钮权限 | `button_permissions`    | 前端 UI 按钮显示控制     |
-| 数据权限 | `data_scope`            | 行级数据过滤（详见下文） |
+| 字段               | 说明                               |
+| ------------------ | ---------------------------------- |
+| `permission_codes` | 直接授予的权限码，依赖由目录展开     |
+| `data_scopes`      | 资源对应的数据范围                 |
+| `field_modes`      | 资源下各字段组的显示、脱敏或隐藏状态 |
 
-角色模型定义（`plugins/auth/src/plugin_auth/role/models.py`）：
-
-```python
-class Role(SQLModel, table=True):
-    __tablename__ = "auth_roles"
-
-    name: str = Field(..., unique=True, min_length=2, max_length=100, description="角色名称")
-    description: str | None = Field(None, max_length=500, description="角色描述")
-    code: str = Field(..., unique=True, min_length=5, max_length=100, description="角色编码")
-    status: Status = Field(Status.ON, description="角色状态")
-    interface_permissions: list[str] = Field([], sa_column=Column(JSON), description="接口权限编码列表")
-    button_permissions: list[str] = Field([], sa_column=Column(JSON), description="按钮权限编码列表")
-    router_permissions: list[str] = Field([], sa_column=Column(JSON), description="路由权限编码列表")
-
-    # 数据级权限
-    data_scope: int = Field(default=DataScope.SELF, description="数据范围")
-    custom_dept_ids: list[UUID] = Field(default_factory=list, sa_column=Column(JSON), description="自定义部门列表")
-    data_rule_ids: list[UUID] = Field(default_factory=list, sa_column=Column(JSON), description="数据规则 ID 列表")
-```
+角色模型定义位于 `apps/backend/plugins/permission/src/plugin_permission/models.py`，对应数据库表 `permission_roles`。
 
 接口权限由各插件在代码中声明资源与权限码，并通过 `Require("资源:动作")` 绑定路由。启动时直接检查 FastAPI 路由，不再将接口清单存入数据库。
 

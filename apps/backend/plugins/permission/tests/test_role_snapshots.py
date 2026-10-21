@@ -44,7 +44,6 @@ def _role(code: str, status: Status = Status.ON, **fields):
         code=code,
         status=status,
         permission_codes=fields.get("permission_codes", []),
-        router_permissions=fields.get("router_permissions", []),
         data_scopes=fields.get("data_scopes", {}),
         field_modes=fields.get("field_modes", {}),
     )
@@ -100,10 +99,6 @@ async def test_missing_role_is_negative_cached():
 
     assert snapshot.active is False
     assert crud.get_role_by_codes.await_count == 1
-
-
-def test_snapshot_has_no_legacy_router_permissions():
-    assert "legacy_router_permissions" not in RoleSnapshot.model_fields
 
 
 async def test_snapshot_carries_role_scopes():

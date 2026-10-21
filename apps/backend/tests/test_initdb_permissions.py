@@ -110,8 +110,8 @@ def test_guest_permissions_are_derived_from_seed_menu_permissions():
 
 @pytest.mark.asyncio
 async def test_existing_users_and_role_grants_are_preserved():
-    admin = Role(name="restricted admin", code="ADMIN", interface_permissions=["GET:/custom"])
-    guest = Role(name="custom guest", code="GUEST", router_permissions=["home"])
+    admin = Role(name="restricted admin", code="ADMIN", permission_codes=["user:read"])
+    guest = Role(name="custom guest", code="GUEST", permission_codes=["role:read"])
     results = []
     for item in (User(username="existing", name="Existing", password="unchanged"), admin, guest):
         result = MagicMock()
@@ -120,8 +120,8 @@ async def test_existing_users_and_role_grants_are_preserved():
     session = MagicMock(exec=AsyncMock(side_effect=results), commit=AsyncMock())
     await initdb.create_roles_and_users(session, make_catalog())
     session.add.assert_not_called()
-    assert admin.interface_permissions == ["GET:/custom"]
-    assert guest.router_permissions == ["home"]
+    assert admin.permission_codes == ["user:read"]
+    assert guest.permission_codes == ["role:read"]
 
 
 @pytest.mark.asyncio
@@ -160,7 +160,7 @@ async def test_real_bootstrap_and_repeat_preserve_stored_users_roles_and_custom_
             user = next(user for user in users if user.username == "zhangsan")
             original_user = (user.id, user.password, user.is_admin, list(user.roles))
             guest = (await session.exec(select(Role).where(Role.code == "GUEST"))).one()
-            guest.interface_permissions = ["GET:/custom"]
+            guest.permission_codes = ["role:read"]
             user_menu = next(menu for menu in menus if menu.route_name == "manage_user")
             user_menu.menu_name = "自定义用户"
             user_menu.permission = "role:read"
@@ -175,7 +175,7 @@ async def test_real_bootstrap_and_repeat_preserve_stored_users_roles_and_custom_
             stored_user = await session.get(User, user_id)
             assert (stored_user.id, stored_user.password, stored_user.is_admin, stored_user.roles) == original_user
             stored_guest = await session.get(Role, guest_id)
-            assert stored_guest.interface_permissions == ["GET:/custom"]
+            assert stored_guest.permission_codes == ["role:read"]
             stored_menu = await session.get(Menu, menu_id)
             assert stored_menu.menu_name == "自定义用户"
             assert stored_menu.permission == "role:read"

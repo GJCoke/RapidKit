@@ -31,7 +31,6 @@ def changed_catalog(monkeypatch):
         code="editor",
         status=Status.ON,
         permission_codes=["user:read"],
-        router_permissions=[],
         data_scopes={},
         field_modes={},
     )
