@@ -1,8 +1,9 @@
 <script setup lang="ts">
   import { computed } from "vue"
+  import { NScrollbar } from "naive-ui"
   import { $t } from "@/locales"
   import { expandImpliedCodes, toggleCode, type PermissionMatrixRow } from "./permission-matrix"
-  import { matchingResourcePackage } from "./permission-draft"
+  import { applyPermissionSelection, matchingResourcePackage } from "./permission-draft"
   import ResourceScopeCell from "./resource-scope-cell.vue"
   import { hasScopeControls, type DataScopes, type FieldModes } from "./resource-scope"
 
@@ -13,12 +14,22 @@
     packages: Api.PermissionPackage.Package[]
     disabled: boolean
     invalidKeys: Set<string>
+    embedded?: boolean
+    query?: string
   }>()
   const selected = defineModel<string[]>("selected", { required: true })
   const dataScopes = defineModel<DataScopes>("dataScopes", { required: true })
   const fieldModes = defineModel<FieldModes>("fieldModes", { required: true })
   const direct = computed(() => new Set(selected.value))
+  const visibleCodes = computed(() =>
+    props.row.codes.filter((c) =>
+      `${c.label} ${c.code}`.toLocaleLowerCase().includes(props.query?.trim().toLocaleLowerCase() ?? ""),
+    ),
+  )
   const implied = computed(() => new Set(expandImpliedCodes(selected.value, props.catalog)))
+  function effectiveHas(code: string) {
+    return direct.value.has(code) || implied.value.has(code)
+  }
   const labels = computed(() => new Map(props.catalog.codes.map((c) => [c.code, c.label])))
   const match = computed(() => matchingResourcePackage(selected.value, props.row.resource.key, props.packages))
   const hasOperations = computed(() =>
@@ -47,8 +58,20 @@
 <template>
   <section class="min-h-0 min-w-0 flex-col gap-16px" :aria-label="row.resource.label">
     <div class="flex shrink-0 flex-wrap items-center justify-between gap-8px">
-      <h3 class="m-0 text-18px font-600">{{ row.resource.label }}</h3>
-      <NTag size="small" :bordered="false" :type="match ? 'primary' : 'default'">
+      <NCheckbox
+        v-if="embedded"
+        :aria-label="`${row.resource.label} / ${$t('page.manage.role.workbench.resourceAll')}`"
+        :checked="row.codes.every((c) => effectiveHas(c.code))"
+        :indeterminate="row.codes.some((c) => effectiveHas(c.code)) && !row.codes.every((c) => effectiveHas(c.code))"
+        :disabled="disabled"
+        @update:checked="
+          (checked) => (selected = applyPermissionSelection(selected, row.codes, checked ? 'all' : 'clear'))
+        "
+      >
+        {{ $t("page.manage.role.workbench.resourceAll") }}
+      </NCheckbox>
+      <h3 v-else class="m-0 text-18px font-600">{{ row.resource.label }}</h3>
+      <NTag v-if="!embedded || packages.length" size="small" :bordered="false" :type="match ? 'primary' : 'default'">
         {{
           match
             ? $t("page.manage.role.workbench.match", { name: match.label })
@@ -56,8 +79,11 @@
         }}
       </NTag>
     </div>
-    <div class="shrink-0">
-      <div class="mb-14px flex flex-wrap items-center justify-between gap-10px border-b border-theme-default pb-10px">
+    <div v-if="!embedded || packages.length" class="shrink-0">
+      <div
+        v-if="!embedded"
+        class="mb-14px flex flex-wrap items-center justify-between gap-10px border-b border-theme-default pb-10px"
+      >
         <h4 class="m-0 text-15px font-600 text-base-text-1">{{ $t("page.manage.role.actions") }}</h4>
       </div>
       <div
@@ -81,9 +107,13 @@
         {{ $t("page.manage.role.workbench.packageHint") }}
       </p>
     </div>
-    <NScrollbar class="permission-operations-scrollbar min-h-0 flex-1" content-class="flex-col gap-16px pb-2px pr-18px">
-      <div class="grid grid-cols-1 gap-12px sm:grid-cols-2">
-        <div v-for="item in row.codes" :key="item.code" class="min-h-24px min-w-0 flex items-start gap-6px">
+    <component
+      :is="embedded ? 'div' : NScrollbar"
+      class="permission-operations-scrollbar min-h-0 flex-1 flex-col gap-16px"
+      :content-class="embedded ? undefined : 'flex-col gap-16px pb-2px pr-18px'"
+    >
+      <div class="grid grid-cols-1 gap-12px sm:grid-cols-2" :class="{ 'lg:grid-cols-4': embedded }">
+        <div v-for="item in visibleCodes" :key="item.code" class="min-h-24px min-w-0 flex items-start gap-6px">
           <NCheckbox
             :checked="direct.has(item.code) || implied.has(item.code)"
             :disabled="disabled || (!direct.has(item.code) && implied.has(item.code))"
@@ -107,7 +137,7 @@
           </NPopover>
         </div>
       </div>
-      <div v-if="crossDependencies.length" class="rd-8px bg-theme-fill p-12px">
+      <div v-if="!embedded && crossDependencies.length" class="rd-8px bg-theme-fill p-12px">
         <div class="mb-8px text-12px text-base-text-3">{{ $t("page.manage.role.workbench.crossDependencies") }}</div>
         <div class="flex flex-wrap gap-6px">
           <NTag v-for="code in crossDependencies" :key="code" size="small" :bordered="false">{{
@@ -115,7 +145,7 @@
           }}</NTag>
         </div>
       </div>
-      <div class="border-t border-theme-default pt-16px">
+      <div v-if="!embedded || hasScopeControls(row.resource)" class="border-t border-theme-default pt-16px">
         <h4 class="mb-12px mt-0 text-15px font-600 text-base-text-1">
           {{ $t("page.manage.role.workbench.restrictions") }}
         </h4>
@@ -130,8 +160,10 @@
           :disabled="disabled || !hasOperations"
         />
       </div>
-      <p class="m-0 text-12px text-base-text-3">{{ $t("page.manage.role.workbench.matchHint") }}</p>
-    </NScrollbar>
+      <p v-if="packages.length" class="m-0 text-12px text-base-text-3">
+        {{ $t("page.manage.role.workbench.matchHint") }}
+      </p>
+    </component>
   </section>
 </template>
 

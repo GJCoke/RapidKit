@@ -1,6 +1,22 @@
 import { computePackageApplyDiff, type RoleGrant } from "./package-apply-diff"
 import { expandImpliedCodes } from "./permission-matrix"
 
+export function applyPermissionSelection(
+  selected: readonly string[],
+  codes: readonly Api.Permission.CatalogCode[],
+  mode: "all" | "readonly" | "clear",
+): string[] {
+  const targets = new Set(codes.map((item) => item.code))
+  return [
+    ...new Set([
+      ...selected.filter((code) => !targets.has(code)),
+      ...codes
+        .filter((item) => mode === "all" || (mode === "readonly" && item.abacAction === "read"))
+        .map((item) => item.code),
+    ]),
+  ]
+}
+
 export function packagesForResource<T extends Pick<Api.PermissionPackage.Package, "codes">>(
   packages: T[],
   resource: string,

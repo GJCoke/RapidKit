@@ -3,8 +3,11 @@ import {
   diffPermissionDraft,
   matchingResourcePackage,
   packagesForResource,
+  applyPermissionSelection,
 } from "@/views/manage/role/modules/permission-draft"
 import type { RoleGrant } from "@/views/manage/role/modules/package-apply-diff"
+import { expandImpliedCodes } from "@/views/manage/role/modules/permission-matrix"
+import { notificationCatalog, notificationCodes, permissionCode } from "./fixtures"
 
 const catalog: Api.Permission.Catalog = {
   resources: [
@@ -31,6 +34,33 @@ const catalog: Api.Permission.Catalog = {
     { code: "role:options", resource: "role", label: "选项", source: "code", abacAction: "read", depends: [] },
   ],
 }
+
+it("applies all, read-only and clear to the full module while keeping other direct codes", () => {
+  const input = ["user:update"]
+  const all = applyPermissionSelection(input, notificationCodes, "all")
+  expect(all).toHaveLength(15)
+  expect(input).toEqual(["user:update"])
+  const readonly = applyPermissionSelection(all, notificationCodes, "readonly")
+  expect(readonly).toEqual([
+    "user:update",
+    "notification-template:read",
+    "notification:read",
+    "notification:preview",
+    "notification-delivery:read",
+  ])
+  expect(applyPermissionSelection(readonly, notificationCodes, "clear")).toEqual(input)
+})
+
+it("retains effective write dependencies from outside a cleared or read-only module", () => {
+  const external = permissionCode("user:publish", ["notification:update"])
+  const graph = { ...notificationCatalog, codes: [...notificationCatalog.codes, external] }
+  for (const mode of ["clear", "readonly"] as const) {
+    const next = applyPermissionSelection([external.code, "notification:update"], notificationCodes, mode)
+    expect(next).not.toContain("notification:update")
+    expect(next).toContain(external.code)
+    expect(expandImpliedCodes(next, graph)).toContain("notification:update")
+  }
+})
 const current: RoleGrant = {
   permissionCodes: ["user:read", "old:read"],
   dataScopes: { user: "self" },
