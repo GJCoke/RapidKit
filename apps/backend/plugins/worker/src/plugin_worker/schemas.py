@@ -32,14 +32,6 @@ class WorkerSchema(BaseModel):
     last_heartbeat: LocalDatetime | None = None
 
 
-class WorkerCreate(WorkerSchema, BaseRequest):
-    """创建 Worker 数据结构。"""
-
-
-class WorkerUpdate(WorkerSchema, BaseRequest):
-    """更新 Worker 数据结构。"""
-
-
 class WorkerResponse(WorkerSchema, BaseSchema):
     """Worker 响应数据结构；运行时字段仅在详情检查成功时存在。"""
 
@@ -68,14 +60,6 @@ class TaskResultSchema(BaseModel):
     finished_at: LocalDatetime | None = None
     runtime: float | None = None
     retries: int = 0
-
-
-class TaskResultCreate(TaskResultSchema, BaseRequest):
-    """创建 Task Result 数据结构。"""
-
-
-class TaskResultUpdate(TaskResultSchema, BaseRequest):
-    """更新 Task Result 数据结构。"""
 
 
 class TaskResponse(TaskResultSchema, BaseSchema):
@@ -201,12 +185,6 @@ class TaskGroupQuery(TaskTimeRange, PaginatedRequest):
 
 
 # ==================== Stats Schemas ====================
-
-
-class TaskStatsQuery(BaseModel):
-    """统计查询参数。"""
-
-    days: int = Field(7, ge=1, le=90, description="统计天数范围")
 
 
 class TaskStatsSummary(BaseModel):

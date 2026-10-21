@@ -15,7 +15,7 @@ Usage in any conftest.py:
 
 import os
 import socket
-from typing import Any, AsyncIterator, cast
+from typing import AsyncIterator, cast
 
 import pytest
 import pytest_asyncio
@@ -216,9 +216,6 @@ async def client(
     reset_database()
     database.override_async_engine(pg_engine)
     monkeypatch.setattr(database, "get_redis_url", lambda: pytest_settings.REDIS_DATABASE_URL)
-
-    async def async_none(*_args: Any, **_kwargs: Any) -> None:
-        return None
 
     original_overrides = app.dependency_overrides.copy()
     app.dependency_overrides[access_guard_dependency] = allow_current_user_access

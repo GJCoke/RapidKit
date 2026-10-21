@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from rapidkit_core.redis_client import AsyncRedisClient
 from redis.asyncio import Redis
 
-from tests.utils import random_lowercase, random_uppercase
+from tests.testing.utils import random_lowercase, random_uppercase
 
 
 @pytest_asyncio.fixture

@@ -37,9 +37,6 @@ class CategoryRegistry:
             ),
         )
 
-    def is_registered(self, code: str) -> bool:
-        return code in self._items
-
     def all(self) -> list[CategoryDef]:
         return list(self._items.values())
 

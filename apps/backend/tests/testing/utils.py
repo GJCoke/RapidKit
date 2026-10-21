@@ -1,15 +1,8 @@
-"""
-Test utilities — random data generators.
-
-Migrated from tests/utils.py.
-"""
+"""Test utilities — random data generators."""
 
 import random
 import string
 import uuid
-from datetime import datetime, timedelta
-
-from rapidkit_core.timezone import timezone
 
 
 def random_string(
@@ -42,39 +35,10 @@ def random_lowercase(length: int = 8) -> str:
     return "".join(random.choices(string.ascii_lowercase, k=length))
 
 
-def random_digits(length: int = 6) -> str:
-    return "".join(random.choices(string.digits, k=length))
-
-
-def random_punctuation(length: int = 5) -> str:
-    return "".join(random.choices(string.punctuation, k=length))
-
-
 def random_email(domain: str = "example.com") -> str:
     local = random_string(8, lower=True)
     return f"{local}@{domain}"
 
 
-def random_username(prefix: str = "user") -> str:
-    suffix = random_string(6)
-    return f"{prefix}_{suffix}"
-
-
-def random_password(length: int = 12) -> str:
-    return random_string(length, upper=True, lower=True, digits=True, punctuation=True)
-
-
 def random_uuid() -> uuid.UUID:
     return uuid.uuid4()
-
-
-def random_text(min_words: int = 5, max_words: int = 15) -> str:
-    words = ["alpha", "beta", "gamma", "delta", "omega", "test", "random", "value", "check", "input"]
-    num_words = random.randint(min_words, max_words)
-    return " ".join(random.choices(words, k=num_words)).capitalize() + "."
-
-
-def random_datetime(start_days_ago: int = 30, end_days_ago: int = 0) -> datetime:
-    start = timezone.now() - timedelta(days=start_days_ago)
-    end = timezone.now() - timedelta(days=end_days_ago)
-    return start + (end - start) * random.random()
