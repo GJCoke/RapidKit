@@ -40,7 +40,6 @@
 - [Prettier - Code formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) — 代码格式化
 - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) — JavaScript / TypeScript 代码检查
 - [Document This](https://marketplace.visualstudio.com/items?itemName=oouo-diogo-perdigao.docthis) — JS/TS 自动注释
-- [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker) — 拼写检查
 - [TODO Highlight](https://marketplace.visualstudio.com/items?itemName=wayou.vscode-todo-highlight) — 高亮显示 TODO/FIXME/NOTE
 
 ## 远程开发与 Git

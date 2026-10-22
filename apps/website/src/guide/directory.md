@@ -29,8 +29,7 @@ rapidkit/
 ├── tsconfig.json            # TypeScript 全局编译配置
 ├── eslint.config.ts         # ESLint 代码检查配置
 ├── prettier.config.ts       # Prettier 格式化配置
-├── commitlint.config.ts     # Git 提交规范配置
-└── cspell.json              # 拼写检查配置
+└── commitlint.config.ts     # Git 提交规范配置
 ```
 
 ## 应用目录 (apps/)
@@ -74,4 +73,3 @@ rapidkit/
 | `eslint.config.ts`     | ESLint 静态分析规则，统一前端代码风格                              |
 | `prettier.config.ts`   | Prettier 代码格式化规则                                            |
 | `commitlint.config.ts` | Conventional Commits 提交信息校验规则                              |
-| `cspell.json`          | 拼写检查词库与规则配置                                             |

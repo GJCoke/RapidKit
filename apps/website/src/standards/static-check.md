@@ -1,7 +1,6 @@
 # 静态检查
 
-本项目使用多种静态分析工具保证代码质量：前端通过 **TypeScript** 类型检查，后端通过 **mypy** 和 **ty** 双重类型检查，全项目通过
-**cSpell** 拼写检查。
+本项目使用多种静态分析工具保证代码质量：前端通过 **TypeScript** 类型检查，后端通过 **mypy** 和 **ty** 双重类型检查。
 
 ## TypeScript 类型检查
 
@@ -96,23 +95,6 @@ uv run ty check src
 pnpm --filter backend typecheck
 ```
 
-## cSpell 拼写检查
-
-项目使用 [cSpell](https://cspell.org/) 对代码、文档和配置文件进行拼写检查，配置文件为根目录的 `cspell.json`。
-
-### 配置要点
-
-- **import** -- 引入 TypeScript 和 Python 外部字典
-- **words** -- 自定义单词列表（项目名、缩写、工具名等）
-- **ignorePaths** -- 排除 `node_modules`、`dist`、`.venv` 等目录
-- **自定义字典** -- `.cspell/custom-dictionary.txt`，支持自动添加新单词
-
-### 运行命令
-
-```bash
-pnpm check:spell
-```
-
 ## 命令汇总
 
 | 工具       | 命令                              | 作用                             |
@@ -122,7 +104,6 @@ pnpm check:spell
 | mypy       | `pnpm --filter backend lint`      | Monorepo 统一命令                |
 | ty         | `uv run ty check src`             | 下一代 Python 类型检查           |
 | ty         | `pnpm --filter backend typecheck` | Monorepo 统一命令                |
-| cSpell     | `pnpm check:spell`                | 拼写检查                         |
 
 ::: warning 注意
 提交代码前建议依次运行 `check:format`、`check:lint` 和 `check:types`，确保代码风格和类型安全性。实际上 Husky Hooks

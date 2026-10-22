@@ -49,11 +49,10 @@ rm -f .git/staged-backup.patch
 
 lint-staged 在 pre-commit 阶段对 **暂存区文件** 执行检查，配置位于 `.lintstagedrc.json`：
 
-| 文件匹配                                                      | 执行操作                                   |
-| ------------------------------------------------------------- | ------------------------------------------ |
-| `*.{ts,tsx,js,jsx,vue,md}`                                    | Prettier 格式化 + ESLint 检查修复          |
-| `*.{js,ts,mjs,cjs,json,jsx,tsx,css,less,scss,vue,html,md,py}` | cSpell 拼写检查                            |
-| `*.py`                                                        | Ruff 格式化 + Ruff Lint 检查 + ty 类型检查 |
+| 文件匹配                   | 执行操作                                   |
+| -------------------------- | ------------------------------------------ |
+| `*.{ts,tsx,js,jsx,vue,md}` | Prettier 格式化 + ESLint 检查修复          |
+| `*.py`                     | Ruff 格式化 + Ruff Lint 检查 + ty 类型检查 |
 
 ::: info 说明
 lint-staged 仅处理暂存区中的文件，不会影响未暂存的修改，保证检查范围精准且执行速度快。

@@ -12,7 +12,6 @@
 
 ### 质量保障工具
 
-- **.cspell/**、**cspell.json**：拼写检查配置，涵盖代码、注释、文档，可自定义词库。
 - **.husky/**：Git 钩子配置（如 pre-commit、commit-msg、pre-push），用于自动化 lint、格式化、提交校验与测试。
 - **commitlint.config.ts**：约定式提交规范配置（如 feat、fix），用于统一提交信息格式。
 - **eslint.config.ts**：ESLint 静态分析配置，统一语法规则与风格检查。

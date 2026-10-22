@@ -122,7 +122,6 @@
 
 - 前端：ESLint、Prettier
 - 后端：mypy、ruff
-- 文档/注释拼写检查：cSpell
 
 #### 提交与版本管理
 
