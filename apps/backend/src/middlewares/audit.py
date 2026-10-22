@@ -22,6 +22,8 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Match
 
+from src.health import is_internal_path
+
 if TYPE_CHECKING:
     from rapidkit_core.batch_queue import AsyncBatchQueue
 
@@ -32,6 +34,7 @@ audit_queue: "AsyncBatchQueue[AuditRecord] | None" = None
 def record_audit_outcome(
     request: Request, *, business_code: int | None, error_key: str | None = None, error_message: str | None = None
 ) -> None:
+    request.state.business_code = business_code
     context = getattr(request.state, "audit_context", None)
     if context is not None:
         context.record.business_code = business_code
@@ -171,6 +174,8 @@ class AuditMiddleware(BaseHTTPMiddleware):
     """审计中间件：自动记录变更操作到 AuditLog。"""
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        if is_internal_path(request.url.path):
+            return await call_next(request)
         if not settings.AUDIT_ENABLED:
             return await call_next(request)
 

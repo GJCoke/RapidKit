@@ -130,6 +130,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         watch_task.cancel()
 
     await event_bus.shutdown()
+    app.state.prometheus.shutdown()
     await app.state.limiter.close()
     await RedisManager.clear()
     await async_engine.dispose()

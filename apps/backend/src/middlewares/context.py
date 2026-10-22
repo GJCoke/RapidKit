@@ -24,6 +24,7 @@ class ContextMiddleware(StarletteContextMiddleware):
             context = await self.set_context(request)
         except MiddleWareValidationError:
             error = AppException(StatusCode.BAD_REQUEST)
+            request.state.business_code = error.code
             language = resolve_language(request.headers.get("accept-language"), languages)
 
             return Response(

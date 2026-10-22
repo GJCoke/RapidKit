@@ -52,6 +52,8 @@ services:
   # ==================== Backend ====================
 
   backend-api:
+    environment:
+      PROMETHEUS_MULTIPROC_DIR: /tmp/rapidkit-prometheus
     image: rapidkit-backend:prod
     build: &backend-build
       context: ../..

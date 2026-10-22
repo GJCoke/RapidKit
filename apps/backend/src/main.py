@@ -38,6 +38,8 @@ from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.metrics import MetricsMiddleware
 from src.middlewares.state import StateMiddleware
 from src.observability import init_sentry
+from src.prometheus import HTTPMetrics, PrometheusMiddleware
+from src.prometheus import router as prometheus_router
 from src.sio.app import socket_app
 
 _background_tasks: set[asyncio.Task] = set()
@@ -105,6 +107,8 @@ def setup_middlewares(app: FastAPI) -> None:
         allow_headers=settings.CORS_HEADERS,
         expose_headers=("X-Request-ID",),
     )
+
+    app.add_middleware(PrometheusMiddleware, metrics=app.state.prometheus)
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
@@ -180,6 +184,11 @@ def setup_exception_handlers(app: FastAPI) -> None:
             status_code=int(StatusCode.INTERNAL_SERVER_ERROR),
             detail=str(exc),
         )
+        record_audit_outcome(
+            request,
+            business_code=int(StatusCode.INTERNAL_SERVER_ERROR),
+            error_key=StatusCode.INTERNAL_SERVER_ERROR.description,
+        )
         error_data = str(exc) if settings.ENVIRONMENT.is_debug else None
         return JSONResponse(
             status_code=status.HTTP_200_OK,
@@ -201,6 +210,7 @@ def setup_router(app: FastAPI) -> None:
 
     app.include_router(v1_router)
     app.include_router(health_router)
+    app.include_router(prometheus_router)
 
 
 def create_app() -> FastAPI:
@@ -228,6 +238,7 @@ def create_app() -> FastAPI:
         app_configs["openapi_url"] = None
 
     app = FastAPI(**app_configs, lifespan=lifespan)
+    app.state.prometheus = HTTPMetrics(settings.PROMETHEUS_MULTIPROC_DIR)
 
     result = discover_and_load_plugins(config_path=Path(__file__).resolve().parent.parent / "plugins.toml")
     app.state.plugins = result.plugins

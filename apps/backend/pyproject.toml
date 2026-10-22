@@ -57,6 +57,7 @@ dependencies = [
   "fastapi-sio-di>=0.5.3",
   "psutil>=7.0.0,<8.0",
   "sentry-sdk>=2,<3",
+  "prometheus-client>=0.20,<1",
 ]
 
 [dependency-groups]

@@ -8,6 +8,7 @@ Date   : 2025-03-11
 """
 
 import warnings
+from pathlib import Path
 from typing import Any, Self, cast
 
 from pydantic import Field, PostgresDsn, RedisDsn, Secret, field_validator, model_validator
@@ -246,6 +247,7 @@ class Config(
 
     API_PREFIX_V1: str = "/api/v1"
     FORWARDED_ALLOW_IPS: str = "172.30.0.0/24"
+    PROMETHEUS_MULTIPROC_DIR: Path | None = None
 
     # App info
     APP_NAME: str = "RapidKit"

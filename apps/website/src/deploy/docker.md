@@ -262,3 +262,11 @@ nginx 每 10 秒刷新 Docker DNS，API 和 Socket.IO 都保留完整 URI 与 qu
 Uvicorn 只信任 `FORWARDED_ALLOW_IPS` 指定网段；默认与 compose 网络 `172.30.0.0/24` 一致。若网段冲突，同时修改网络 subnet 与 env。
 共享客户端地址读取只使用 Uvicorn 解析后的 ASGI client，不直接采信 CF-Connecting-IP/X-Real-IP/XFF。后端端口不对外发布。
 如果前置新的负载均衡、CDN 或 TLS 终止层，必须重新审核该信任链和 HSTS 位置。
+
+### Prometheus 内部抓取
+
+API 在容器根路径 `/metrics` 提供 Prometheus 文本指标，包含按路由模板统计的请求数、延迟和正在处理的请求数；业务错误即使返回 HTTP 200 也计为 error。标签中不使用用户、请求 ID、原始资源 ID 或查询参数。`/health/*` 和 `/metrics` 本身不进入统计或限流，nginx 对这些内部出口返回 404。
+
+Compose 只在 API 服务中导出 `PROMETHEUS_MULTIPROC_DIR=/tmp/rapidkit-prometheus`，并在 Uvicorn import 前生效。API entrypoint 每次容器主进程启动前清理旧指标文件，worker 进程启动和 lifespan 不会清空计数；优雅退出与抓取时会清理死进程的 live gauge。worker、beat、迁移进程移除此变量。自定义启动命令应保留同样的环境注入和主进程清理顺序。
+
+四个 Uvicorn worker 在一个副本内汇总。多个 API 副本之间不共享目录，scraper 应通过内部网络逐副本访问 `:8006/metrics`（例如基于服务发现逐个枚举容器），不能通过 nginx 随机抓到其中一个副本。项目不附带 Prometheus/Grafana 服务；本地不设置该变量时使用独立的进程内 registry。
