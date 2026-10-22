@@ -11,12 +11,12 @@ Date   : 2025-03-11
 import secrets
 from datetime import timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from pydantic import Secret, field_validator, model_validator
 from rapidkit_core.config import BaseSettings, ConfigError, settings
-from rapidkit_core.constants import DAYS, WEEKS
+from rapidkit_core.constants import WEEKS
 from rapidkit_core.path import BASE_PATH
 from rapidkit_security import (
     AccessSecret,
@@ -33,10 +33,10 @@ _KEYS_DIR = BASE_PATH / ".keys"
 class AuthConfig(BaseSettings):
     """认证配置。"""
 
-    JWT_ALG: str = "HS256"
+    JWT_ALG: Literal["HS256"] = "HS256"
 
     ACCESS_TOKEN_KEY: AccessSecret
-    ACCESS_TOKEN_EXP: timedelta = timedelta(seconds=1 * DAYS)
+    ACCESS_TOKEN_EXP: timedelta = timedelta(minutes=15)
 
     REFRESH_TOKEN_KEY: RefreshSecret
     REFRESH_TOKEN_EXP: timedelta = timedelta(seconds=1 * WEEKS)

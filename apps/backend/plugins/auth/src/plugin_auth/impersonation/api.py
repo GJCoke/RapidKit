@@ -53,6 +53,7 @@ async def create_impersonation(
         sid=record.id,
         jti=uuid7(),
         exp=int(record.expires_at.replace(tzinfo=UTC).timestamp()),
+        iat=record.created_at.replace(tzinfo=UTC).timestamp(),
     )
     token = create_impersonation_token(claims, auth_settings.IMPERSONATION_TOKEN_KEY, auth_settings.JWT_ALG)
     async with service.session_factory() as session:

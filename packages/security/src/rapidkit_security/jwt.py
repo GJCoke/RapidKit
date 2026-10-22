@@ -1,13 +1,18 @@
 """JWT token creation and decoding."""
 
-from datetime import UTC, datetime, timedelta
-from typing import Literal, overload
+import time
+from datetime import timedelta
+from typing import Annotated, Literal, overload
 from uuid import UUID
 
-from authlib.jose import JsonWebToken, jwt
-from pydantic import BaseModel, ConfigDict
+from authlib.jose import JsonWebToken
+from authlib.jose.errors import UnsupportedAlgorithmError
+from pydantic import BaseModel, ConfigDict, Field
 
 from rapidkit_security.types import AccessSecret, ImpersonationSecret, RefreshSecret
+
+_codec = JsonWebToken(["HS256"])
+_NumericDate = Annotated[float, Field(strict=True, allow_inf_nan=False)]
 
 
 class AccessJWT(BaseModel):
@@ -16,6 +21,8 @@ class AccessJWT(BaseModel):
     sub: UUID
     name: str
     jti: UUID
+    iat: _NumericDate | None = None
+    exp: _NumericDate | None = None
 
 
 class RefreshJWT(AccessJWT):
@@ -42,11 +49,14 @@ def create_token(
     Returns:
         生成的 JWT 字符串。
     """
-    header = dict(alg=alg, typ="JWT")
+    if alg != "HS256":
+        raise UnsupportedAlgorithmError()
+    header = dict(alg="HS256", typ="JWT")
     payload = user.model_dump(mode="json")
-    payload["exp"] = datetime.now(UTC) + expires_delta
+    payload["iat"] = time.time()
+    payload["exp"] = payload["iat"] + expires_delta.total_seconds()
 
-    return jwt.encode(header=header, payload=payload, key=key.get_secret_value()).decode("utf-8")
+    return _codec.encode(header=header, payload=payload, key=key.get_secret_value()).decode("utf-8")
 
 
 @overload
@@ -71,8 +81,9 @@ def decode_token(token: str, key: AccessSecret | RefreshSecret) -> AccessJWT | R
     Raises:
         JoseError: 令牌无效或解码失败时抛出。
     """
-    payload = jwt.decode(token, key=key.get_secret_value())
-    payload.validate()
+    payload = _codec.decode(token, key=key.get_secret_value(), claims_options={"exp": {"essential": True}})
+    # Authlib's default clock truncates seconds and rejects freshly issued fractional iat.
+    payload.validate(now=time.time())
 
     return AccessJWT(**payload) if isinstance(key, AccessSecret) else RefreshJWT(**payload)
 
@@ -87,15 +98,19 @@ class ImpersonationJWT(BaseModel):
     act: UUID
     sid: UUID
     jti: UUID
-    exp: int
+    exp: Annotated[int, Field(strict=True)]
+    iat: _NumericDate | None = None
 
 
 def create_impersonation_token(claims: ImpersonationJWT, key: ImpersonationSecret, alg: str) -> str:
     """使用独立密钥签发令牌，保留会话的固定到期时间。"""
-    codec = JsonWebToken([alg])
-    return codec.encode(
-        {"alg": alg, "typ": "JWT"},
-        claims.model_dump(mode="json"),
+    if alg != "HS256":
+        raise UnsupportedAlgorithmError()
+    payload = claims.model_dump(mode="json", exclude_none=True)
+    payload.setdefault("iat", time.time())
+    return _codec.encode(
+        {"alg": "HS256", "typ": "JWT"},
+        payload,
         key.get_secret_value(),
     ).decode("utf-8")
 
@@ -108,16 +123,17 @@ def decode_impersonation_token(
     allow_expired: bool = False,
 ) -> ImpersonationJWT:
     """验证模拟令牌；停止会话时只允许跳过过期校验。"""
-    codec = JsonWebToken([alg])
-    payload = codec.decode(token, key.get_secret_value())
+    if alg != "HS256":
+        raise UnsupportedAlgorithmError()
+    payload = _codec.decode(token, key.get_secret_value())
     if allow_expired:
         # Keep signature, algorithm and all other registered-claim checks active.
         expiration = payload.pop("exp", None)
         try:
-            payload.validate()
+            payload.validate(now=time.time())
         finally:
             if expiration is not None:
                 payload["exp"] = expiration
     else:
-        payload.validate()
+        payload.validate(now=time.time())
     return ImpersonationJWT.model_validate(dict(payload))

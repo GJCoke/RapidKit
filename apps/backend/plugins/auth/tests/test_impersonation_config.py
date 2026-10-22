@@ -56,3 +56,17 @@ def test_local_missing_secret_generated(config_values, monkeypatch):
     monkeypatch.setattr(settings, "ENVIRONMENT", Environment.TESTING)
     del config_values["IMPERSONATION_TOKEN_KEY"]
     assert AuthConfig.ensure_keys_config(config_values)["IMPERSONATION_TOKEN_KEY"]
+
+
+def test_auth_expiry_defaults_and_override(config_values, monkeypatch):
+    monkeypatch.delenv("ACCESS_TOKEN_EXP", raising=False)
+    monkeypatch.delenv("REFRESH_TOKEN_EXP", raising=False)
+    config = AuthConfig(_env_file=None, **config_values)
+    assert config.ACCESS_TOKEN_EXP.total_seconds() == 900
+    assert config.REFRESH_TOKEN_EXP.total_seconds() == 604800
+    assert AuthConfig(_env_file=None, **config_values, ACCESS_TOKEN_EXP="123").ACCESS_TOKEN_EXP.total_seconds() == 123
+
+
+def test_non_hs256_config_rejected(config_values):
+    with pytest.raises(ValidationError, match="JWT_ALG"):
+        AuthConfig(_env_file=None, **config_values, JWT_ALG="HS512")

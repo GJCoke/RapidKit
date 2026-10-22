@@ -35,7 +35,7 @@ def signed(payload, alg="HS256", key="simulation-key"):
 
 
 def test_roundtrip_fixed_exp_and_access_isolation():
-    value = ImpersonationJWT(**claims())
+    value = ImpersonationJWT(**claims(iat=1700000000.125))
     token = create_impersonation_token(value, KEY, "HS256")
     assert decode_impersonation_token(token, KEY, "HS256") == value
     with pytest.raises(JoseError):
@@ -76,3 +76,16 @@ def test_algorithm_and_signature_rejected(alg, key, allow_expired):
 def test_stop_mode_still_validates_future_not_before():
     with pytest.raises(JoseError):
         decode_impersonation_token(signed(claims(nbf=4102444800)), KEY, "HS256", allow_expired=True)
+
+
+@pytest.mark.parametrize("allow_expired", [False, True])
+def test_algorithm_parameter_cannot_unlock_non_hs256(allow_expired):
+    with pytest.raises(JoseError):
+        decode_impersonation_token(signed(claims(), "HS512"), KEY, "HS512", allow_expired=allow_expired)
+
+
+@pytest.mark.parametrize("claim", ["iat", "exp"])
+@pytest.mark.parametrize("value", [True, float("nan"), float("inf"), "123"])
+def test_stop_mode_validates_numeric_dates(claim, value):
+    with pytest.raises((JoseError, ValidationError)):
+        decode_impersonation_token(signed(claims(**{claim: value})), KEY, "HS256", allow_expired=True)
