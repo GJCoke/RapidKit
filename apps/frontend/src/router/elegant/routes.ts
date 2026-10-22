@@ -87,14 +87,6 @@ export const generatedRoutes: GeneratedRoute[] = [{
       i18nKey: 'route.manage_audit-log'
     }
   }, {
-    name: 'manage_department',
-    path: '/manage/department',
-    component: 'view.manage_department',
-    meta: {
-      title: 'manage_department',
-      i18nKey: 'route.manage_department'
-    }
-  }, {
     name: 'manage_menu',
     path: '/manage/menu',
     component: 'view.manage_menu',

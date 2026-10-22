@@ -51,8 +51,8 @@ async def test_menu_sync_preserves_custom_metadata_and_is_idempotent():
     user.status = Status.OFF
     role = next(menu for menu in existing if menu.route_name == "manage_role")
     role.permission = "user:read"
-    department = next(menu for menu in existing if menu.route_name == "manage_department")
-    department.permission = None
+    menu_editor = next(menu for menu in existing if menu.route_name == "manage_menu")
+    menu_editor.permission = None
     custom = Menu(menu_name="Custom", menu_type=MenuType.MENU, route_name="custom", route_path="/custom")
     existing.append(custom)
     result = MagicMock()
@@ -68,7 +68,7 @@ async def test_menu_sync_preserves_custom_metadata_and_is_idempotent():
     await initdb.create_menus(session)
     assert user.menu_name == "自定义用户" and user.status == Status.OFF
     assert role.permission == "user:read"
-    assert department.permission == "department:read"
+    assert menu_editor.permission == "menu:read"
     assert custom.permission is None
     audit = next(menu for menu in existing if menu.route_name == "manage_audit-log")
     assert audit.parent_id == next(menu for menu in existing if menu.route_name == "manage").id
@@ -98,7 +98,7 @@ def test_seed_role_codes_come_from_catalog():
     admin_codes, guest_codes = initdb.seed_role_codes(catalog)
 
     assert admin_codes == sorted(catalog.codes)
-    assert guest_codes == ["department:read", "role:read", "user:read"]
+    assert guest_codes == ["role:read", "user:read"]
     assert "manage_user-detail" not in initdb.GUEST_ROUTER_PERMISSIONS
 
 

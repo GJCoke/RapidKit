@@ -19,7 +19,7 @@ function routes(withUsers: boolean): ElegantConstRoute[] {
   ] as ElegantConstRoute[]
 }
 
-it("merges the department menu only when the user workspace is accessible", () => {
+it("hides the retired department menu even when only its old database record is accessible", () => {
   expect(getGlobalMenusByAuthRoutes(routes(true))[0].children?.map((menu) => menu.key)).toEqual(["manage_user"])
-  expect(getGlobalMenusByAuthRoutes(routes(false))[0].children?.map((menu) => menu.key)).toEqual(["manage_department"])
+  expect(getGlobalMenusByAuthRoutes(routes(false))[0].children?.map((menu) => menu.key)).toEqual([])
 })

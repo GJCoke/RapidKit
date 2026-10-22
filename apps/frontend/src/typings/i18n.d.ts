@@ -1842,7 +1842,6 @@ declare namespace I18nKeys {
     | "login"
     | "manage"
     | "manage_audit-log"
-    | "manage_department"
     | "manage_menu"
     | "manage_role"
     | "manage_user"

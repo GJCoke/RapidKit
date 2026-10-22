@@ -8,8 +8,6 @@
     "manage_user": "Users",
     "manage_role": "Roles",
     "manage_menu": "Menus",
-    "manage_department": "Departments",
-    "manage_audit-dict": "Audit dictionary",
     "manage_audit-log": "Audit logs",
     "socketio": "Realtime communication",
     "socketio_chat": "Chat",

@@ -32,7 +32,7 @@ vi.mock("@/hooks/business/auth", () => ({
   }),
 }))
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
-vi.mock("@/views/manage/department/modules/department-operate-drawer.vue", () => ({ default: { render: () => null } }))
+vi.mock("@/views/manage/user/modules/department-operate-drawer.vue", () => ({ default: { render: () => null } }))
 vi.mock("@/views/manage/user/modules/user-operate-drawer.vue", () => ({ default: { render: () => null } }))
 vi.mock("@/views/manage/user/modules/change-password-modal.vue", () => ({ default: { render: () => null } }))
 vi.mock("@/components/impersonation/impersonation-confirm-modal.vue", () => ({ default: { render: () => null } }))

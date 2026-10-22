@@ -33,7 +33,6 @@ GUEST_ROUTER_PERMISSIONS = [
     "manage_user",
     "manage_role",
     "manage_menu",
-    "manage_department",
     "manage_audit-log",
     "socketio",
     "socketio_chat",

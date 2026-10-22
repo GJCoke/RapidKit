@@ -8,8 +8,6 @@
     "manage_user": "用户管理",
     "manage_role": "角色管理",
     "manage_menu": "菜单管理",
-    "manage_department": "部门管理",
-    "manage_audit-dict": "审计字典",
     "manage_audit-log": "审计日志",
     "socketio": "即时通讯",
     "socketio_chat": "聊天室",

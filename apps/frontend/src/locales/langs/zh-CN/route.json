@@ -12,7 +12,6 @@
   "manage_menu": "菜单管理",
   "manage_role": "角色管理",
   "manage_user": "用户管理",
-  "manage_department": "部门管理",
   "manage_audit-log": "审计日志",
   "queue": "任务队列",
   "queue_dashboard": "队列概览",

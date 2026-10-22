@@ -166,21 +166,6 @@ def build_menus() -> list[Menu]:
         permission="menu:read",
     )
 
-    # 2.4 部门管理
-    manage_department = Menu(
-        id=uuid8(),
-        parent_id=manage_id,
-        menu_name="部门管理",
-        menu_type=MenuType.MENU,
-        order=4,
-        route_name="manage_department",
-        route_path="/manage/department",
-        component="view.manage_department",
-        icon="ic:outline-corporate-fare",
-        i18n_key="route.manage_department",
-        permission="department:read",
-    )
-
     # 2.7 审计日志
     manage_audit_log = Menu(
         id=uuid8(),
@@ -443,7 +428,6 @@ def build_menus() -> list[Menu]:
         manage_user,
         manage_role,
         manage_menu,
-        manage_department,
         manage_audit_log,
         socketio,
         socketio_chat,

@@ -6,7 +6,7 @@
   import { useAuth } from "@/hooks/business/auth"
   import { $t } from "@/locales"
   import SvgIcon from "@/components/custom/svg-icon.vue"
-  import DepartmentOperateDrawer from "../../department/modules/department-operate-drawer.vue"
+  import DepartmentOperateDrawer from "./department-operate-drawer.vue"
   import { createDepartmentNavigationIndex } from "../composables/department-navigation"
 
   defineOptions({ name: "UserDepartmentPanel" })

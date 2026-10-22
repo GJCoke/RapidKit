@@ -8,7 +8,6 @@ EXPECTED_MENU_PERMISSIONS = {
     "manage_user": "user:read",
     "manage_role": "role:read",
     "manage_menu": "menu:read",
-    "manage_department": "department:read",
     "manage_audit-log": "audit-log:read",
     "queue_dashboard": "worker:read",
     "queue_schedule": "schedule:read",
