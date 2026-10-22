@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { createPinia, setActivePinia } from "pinia"
 
 type Listener = (...args: any[]) => unknown
 
@@ -39,6 +40,14 @@ const mocks = vi.hoisted(() => ({
   onRealtimeUnreadCount: vi.fn(),
   reset: vi.fn(),
 }))
+
+const api = vi.hoisted(() => ({
+  fetchGetNotifications: vi.fn(),
+  fetchGetUnreadCount: vi.fn(),
+  fetchReadAllNotifications: vi.fn(),
+  fetchReadNotification: vi.fn(),
+}))
+vi.mock("@/service/api", () => api)
 
 vi.mock("@/store/modules/banner", () => ({
   useBannerStore: () => ({
@@ -129,5 +138,35 @@ describe("notification socket", () => {
     connectNotificationSocket()
     expect(mocks.io).toHaveBeenCalledExactlyOnceWith("/notifications")
     expect(sockets[0].disconnect).not.toHaveBeenCalled()
+  })
+  it("calibrates notifications missed during disconnect and deduplicates realtime replay", async () => {
+    const actual = await vi.importActual<typeof import("@/store/modules/notification")>("@/store/modules/notification")
+    setActivePinia(createPinia())
+    const store = actual.useNotificationStore()
+    mocks.calibrate.mockImplementation(store.calibrate)
+    mocks.onRealtimeNew.mockImplementation(store.onRealtimeNew)
+    api.fetchGetUnreadCount.mockResolvedValue({ data: { count: 0 }, error: null })
+    api.fetchGetNotifications.mockResolvedValue({ data: { items: [], nextCursor: null, size: 20 }, error: null })
+    connectNotificationSocket()
+    await sockets[0].emitFromServer("connect")
+    await vi.waitFor(() => expect(store.latest).toEqual([]))
+    const missed = {
+      id: "missed",
+      messageId: "missed-message",
+      title: "During disconnect",
+      status: "published",
+      readAt: null,
+    } as Api.Notification.Message
+    api.fetchGetUnreadCount.mockResolvedValue({ data: { count: 1 }, error: null })
+    api.fetchGetNotifications.mockResolvedValue({ data: { items: [missed], nextCursor: null, size: 20 }, error: null })
+    await sockets[0].emitFromServer("disconnect", "io server disconnect")
+    await sockets[0].emitFromServer("connect")
+    await vi.waitFor(() => expect(store.latest.map((message) => message.id)).toEqual(["missed"]))
+    await sockets[0].emitFromServer("notification:new", missed)
+    expect(store.latest.map((message) => message.id)).toEqual(["missed"])
+    expect(store.unreadCount).toBe(1)
+    expect(mocks.calibrate).toHaveBeenCalledTimes(2)
+    expect(api.fetchGetUnreadCount).toHaveBeenCalledTimes(2)
+    expect(api.fetchGetNotifications).toHaveBeenCalledTimes(2)
   })
 })

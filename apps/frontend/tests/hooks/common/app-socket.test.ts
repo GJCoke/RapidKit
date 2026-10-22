@@ -53,7 +53,10 @@ vi.mock("socket.io-client", () => {
   }
   class Manager {
     sockets = new Map<string, Socket>()
-    constructor() {
+    constructor(
+      public url: string,
+      public options: unknown,
+    ) {
       state.managers.push(this)
     }
     socket(namespace: string, opts: { auth: unknown }) {
@@ -262,6 +265,48 @@ it("does not resurrect an unmounted page while refresh finishes", async () => {
   expired(socket)
   page.disconnect()
   finish(true)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  expect(socket.connect).toHaveBeenCalledOnce()
+})
+
+it("uses only websocket and cannot silently fall back to polling", () => {
+  open("/notifications")
+  expect((state.managers[0] as { options: { transports: string[] } }).options.transports).toEqual(["websocket"])
+})
+
+it("renews two expired namespaces once and handshakes with the rotated token", async () => {
+  let finish!: (value: boolean) => void
+  state.refresh.mockImplementation(
+    () =>
+      new Promise<boolean>((resolve) => {
+        finish = resolve
+      }),
+  )
+  const notifications = open("/notifications"),
+    dashboard = open("/dashboard")
+  for (const socket of [notifications, dashboard]) {
+    socket.fire("auth:revoked", { code: "token_expired" })
+    socket.fire("disconnect", "io server disconnect")
+  }
+  expect(state.refresh).toHaveBeenCalledOnce()
+  state.token = token(Date.now() / 1000 + 900)
+  finish(true)
+  await vi.waitFor(() => expect(notifications.connect).toHaveBeenCalledTimes(2))
+  expect(dashboard.connect).toHaveBeenCalledTimes(2)
+  for (const socket of [notifications, dashboard]) {
+    const callback = vi.fn()
+    if (typeof socket.auth === "function") socket.auth(callback)
+    expect(callback).toHaveBeenCalledWith({ access_token: state.token })
+  }
+  expect(state.reset).not.toHaveBeenCalled()
+})
+
+it.each([false, "rejected"])("does not reconnect when renewal fails: %s", async (result) => {
+  if (result === false) state.refresh.mockResolvedValue(false)
+  else state.refresh.mockRejectedValue(new Error("failed"))
+  const socket = open("/notifications")
+  socket.fire("auth:revoked", { code: "token_expired" })
+  socket.fire("disconnect", "io server disconnect")
   await new Promise((resolve) => setTimeout(resolve, 0))
   expect(socket.connect).toHaveBeenCalledOnce()
 })

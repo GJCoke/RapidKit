@@ -4,6 +4,7 @@ import base64
 import json
 import math
 import time
+from typing import cast
 
 from fastapi_sio_di import AsyncServer
 from rapidkit_common.protocols.auth import CurrentUserProvider
@@ -18,21 +19,21 @@ from src.sio.sessions import IDENTITY_SESSION_KEY, register_socket, session_expi
 PROTECTED_NAMESPACES = frozenset({"/", "/worker", "/notifications", "/dashboard", "/chat"})
 
 
-def token_expiry(token: str) -> int | None:
+def token_expiry(token: str) -> float | None:
     try:
         _, payload, _ = token.split(".")
         exp = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))["exp"]
         if isinstance(exp, bool) or not isinstance(exp, (int, float)) or not math.isfinite(exp):
             return None
-        return int(exp)
+        return float(exp)
     except ValueError, KeyError, TypeError, OverflowError:
         return None
 
 
-async def authenticate(auth: object, *, fresh: bool = False) -> tuple[IdentityMetadata, int]:
-    if not isinstance(auth, dict) or not isinstance(auth.get("access_token"), str) or not auth["access_token"].strip():
+async def authenticate(auth: object, *, fresh: bool = False) -> tuple[IdentityMetadata, float]:
+    token = cast(dict[str, object], auth).get("access_token") if isinstance(auth, dict) else None
+    if not isinstance(token, str) or not token.strip():
         raise ConnectionRefusedError("unauthorized")
-    token = auth["access_token"]
     expires_at = token_expiry(token)
     if expires_at is not None and expires_at <= time.time():
         raise ConnectionRefusedError("token_expired")

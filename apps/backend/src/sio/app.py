@@ -48,6 +48,7 @@ def socket_cors_origins(
 redis_manager = AsyncRedisManager(url=str(settings.REDIS_URL))
 socket = IdentityAwareAsyncServer(
     async_mode="asgi",
+    transports=["websocket"],
     cors_allowed_origins=socket_cors_origins(
         settings.CORS_ORIGINS, settings.CORS_ORIGINS_REGEX, settings.ENVIRONMENT.is_debug
     ),

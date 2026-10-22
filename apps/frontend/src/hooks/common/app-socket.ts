@@ -75,7 +75,7 @@ export function bindAuthRecovery(socket: Socket): void {
 export function openAppSocket(namespace: string): Socket {
   manager ??= new Manager(new URL(import.meta.env.VITE_SERVICE_BASE_URL || "", window.location.origin).origin, {
     path: "/socket.io",
-    transports: ["websocket", "polling"],
+    transports: ["websocket"],
     autoConnect: false,
   })
   const socket = manager.socket(namespace, { auth: (callback) => callback({ access_token: getToken() }) })

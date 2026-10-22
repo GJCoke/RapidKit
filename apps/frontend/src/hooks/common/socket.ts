@@ -50,8 +50,8 @@ export function useSocket(): Result {
     const instance = io(socketUrl, {
       path,
       auth,
-      transports: ["websocket", "polling"],
       ...ioOptions,
+      transports: ["websocket"],
     })
 
     instance.on("connect", () => {

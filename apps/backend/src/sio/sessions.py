@@ -66,7 +66,9 @@ async def session_expiry(session_id: UUID) -> int:
     return expiry
 
 
-async def register_socket(server, redis, sid: str, namespace: str, identity: IdentityMetadata, expires_at: int) -> None:
+async def register_socket(
+    server, redis, sid: str, namespace: str, identity: IdentityMetadata, expires_at: float
+) -> None:
     member = socket_member(namespace, sid)
     keys = [user_sockets_structure.format(user_id=identity.user_id)]
     if identity.impersonation_session_id:
@@ -80,7 +82,10 @@ async def register_socket(server, redis, sid: str, namespace: str, identity: Ide
             await redis.expire(key, ttl, gt=True)
         if identity.impersonation_session_id:
             valid = await get_service(ImpersonationSessionReader).validate_identity(
-                UUID(identity.impersonation_session_id), UUID(identity.actor_id), UUID(identity.user_id), expires_at
+                UUID(identity.impersonation_session_id),
+                UUID(identity.actor_id),
+                UUID(identity.user_id),
+                int(expires_at),
             )
             if not valid:
                 raise ConnectionRefusedError("unauthorized")
