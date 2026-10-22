@@ -1,6 +1,6 @@
 ---
 name: using-git-worktrees
-description: Use when starting feature work that needs isolation from current workspace or before executing implementation plans - ensures an isolated workspace exists via native tools or git worktree fallback
+description: Use only when your human partner explicitly asks for a git worktree (for example to run several agents in parallel) - sets one up via native tools or git worktree fallback; never use it on your own initiative
 ---
 
 # Using Git Worktrees

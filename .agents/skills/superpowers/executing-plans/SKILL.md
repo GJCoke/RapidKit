@@ -37,7 +37,7 @@ going. Deviating from the plan without a ledgered ruling is a decision made
 in secret.
 
 Four things stop you, and only these: an irreversible or destructive
-operation; a security-sensitive action; a side effect outside this worktree
+operation; a security-sensitive action; a side effect outside this checkout
 that norms say you ask about first (a merge, a push to a shared branch, a
 publish); and a plan so broken that every path forward is a guess. For
 those, stop and ask.

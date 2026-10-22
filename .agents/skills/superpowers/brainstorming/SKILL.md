@@ -249,8 +249,8 @@ description: in chat for a small change, the document for a project.
 Building includes writing product code, scaffolding, installing
 dependencies, creating projects, and invoking an implementation skill.
 Reading and exploring are fine, including reading `rapidkit-*` domain
-skills for reference, and so is the worktree and branch setup
-`AGENTS.md` requires.
+skills for reference, and so is the branch setup `AGENTS.md`
+requires.
 
 Two exceptions. If they opted out of the questions, the skill is done
 and the gate goes with it. A spike they said yes to may be built; it
