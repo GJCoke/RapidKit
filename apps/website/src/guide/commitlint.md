@@ -1,12 +1,10 @@
-## CommitLint & cz-git 使用指南
+## CommitLint 使用指南
 
-本项目使用 **CommitLint** 配合 **cz-git** 对 Git 提交信息进行规范化管理，保证提交信息统一、可读、便于自动生成变更日志（Changelog）和版本发布。
+本项目使用 **CommitLint** 对 Git 提交信息进行校验，保证提交信息统一、可读、便于自动生成变更日志（Changelog）和版本发布。
 ::: warning 注意
 CommitLint CLI 用于执行提交信息校验
 
 config-conventional 提供官方规范规则
-
-cz-git 用于交互式提交提示
 :::
 
 ## 规则说明
@@ -51,30 +49,11 @@ cz-git 用于交互式提交提示
 | utils                           | 工具函数   |
 | alova/axios/builder/color/hooks | 各功能模块 |
 
-::: warning 注意
-`allowCustomScopes: true` 允许自定义 scope。
-
-如果需要添加新的作用域，请前往 `commitlint.config.ts` 文件中的 `scopes` 配置项进行添加。
-:::
-
-## 提交交互提示（prompt）
-
-- **type**: 选择提交类型
-- **scope**: 选择影响范围（可选）
-- **subject**: 简述提交内容
-- **body**: 详细描述（可选）
-- **footer**: 关联 Issue 或 BREAKING CHANGE（可选）
-- **confirmCommit**: 提交前确认
+scope 为可选项，当前校验规则不限制 scope 的取值，可按功能或模块填写。
 
 ## 使用方式
 
-### 交互式提交
-
-运行 `pnpm commit`，会按提示选择 type、scope、subject、body、footer 等信息。
-
-### 普通提交（校验会自动生效）
-
-例如：
+使用普通 Git 提交命令，Husky 会自动调用 CommitLint 校验提交信息：
 
 ```bash
 git commit -m "feat(frontend): add login page"
@@ -84,6 +63,6 @@ git commit -m "feat(frontend): add login page"
 
 ## 总结
 
-- CommitLint + cz-git 强制团队使用统一的提交规范
+- CommitLint 校验提交信息是否符合统一规范
 - 保证提交信息可读、可追踪，便于自动生成 Changelog
 - 与 CI/CD、自动发布流程结合，提升项目管理规范性
