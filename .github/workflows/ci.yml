@@ -324,6 +324,15 @@ jobs:
       needs.detect-changes.outputs.backend_changed == 'true' ||
       needs.detect-changes.outputs.has_plugins == 'true'
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -357,7 +366,8 @@ jobs:
           echo "Alembic heads: $heads"
           echo "Head count: $head_count"
           # 多个 head 是正常的（多分支），但不能有 "mergepoint" 冲突
-          uv run alembic check 2>&1 || true
+          uv run alembic upgrade heads
+          uv run alembic check
 
       - name: Verify migration history
         working-directory: apps/backend
@@ -377,3 +387,14 @@ jobs:
           CORS_ORIGINS: '["*"]'
           CORS_HEADERS: '["*"]'
         run: uv run alembic history --verbose
+
+  production-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - run: uv sync --all-packages --all-groups --frozen
+      - name: Build production backend (no push)
+        run: docker build --target prod -f docker/backend/Dockerfile -t rapidkit-backend:prod .
+      - name: Check production workspace, non-root runtime and migration heads
+        run: uv run --directory apps/backend pytest tests/test_production_image.py -m docker -v

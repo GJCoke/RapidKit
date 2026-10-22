@@ -1,7 +1,7 @@
 # Docker 容器化
 
 项目通过 Docker Compose 提供**开发**和**生产**两套容器编排方案。开发环境仅运行基础设施（数据库、缓存、对象存储），应用代码在宿主机执行；生产环境则将全部
-7 个服务打包为容器，统一交付。
+8 个服务打包为容器，统一交付。
 
 ## 项目结构
 
@@ -12,7 +12,7 @@ docker/
 ├── dev/
 │   └── docker-compose.yml       # 开发环境：仅基础设施
 ├── prod/
-│   ├── docker-compose.yml       # 生产环境：全栈 7 服务
+│   ├── docker-compose.yml       # 生产环境：全栈 8 服务
 │   ├── nginx.conf               # Nginx 反向代理配置
 │   └── .env.example             # 生产环境变量模板
 ├── backend/
@@ -66,7 +66,7 @@ pnpm dev:frontend
 
 ### 服务架构
 
-生产环境包含 7 个服务，仅 Nginx 的 `18080` 端口对外暴露：
+生产环境包含 8 个服务，仅 Nginx 的 `18080` 端口对外暴露：
 
 ```
 Internet -> Nginx (:18080)
@@ -80,7 +80,7 @@ Celery Worker <-> PostgreSQL, Redis
 Celery Beat   <-> PostgreSQL, Redis
 ```
 
-7 个服务清单：
+8 个服务清单：
 
 | 服务            | 镜像来源               | 说明                      |
 | --------------- | ---------------------- | ------------------------- |
@@ -227,3 +227,19 @@ lsof -i :35432
 | 前端白屏       | 未构建或 nginx.conf 配置错误 | 检查 `nginx` 容器日志                   |
 | API 502        | 后端未启动或崩溃             | 查看 `backend-api` 日志排查错误         |
 | MinIO 上传失败 | `client_max_body_size` 限制  | 确认 nginx.conf 中 `/minio/` 段的配置   |
+
+## 生产镜像与迁移
+
+后端镜像包含四个 Python 共享包、全部插件源码和迁移，使用锁文件安装生产依赖，以非 root 用户运行。
+`backend-migrate` 每次发布先执行 `alembic upgrade heads`；API、worker 和 beat 仅在其成功退出后启动。
+部署已有环境时先重新运行该一次性服务，不能依靠已退出容器的历史成功状态：
+
+```bash
+docker compose --env-file docker/prod/.env.prod -f docker/prod/docker-compose.yml build
+docker compose --env-file docker/prod/.env.prod -f docker/prod/docker-compose.yml run --rm backend-migrate
+docker compose --env-file docker/prod/.env.prod -f docker/prod/docker-compose.yml up -d
+```
+
+自动迁移不调用 `initdb`。该脚本虽然补缺逻辑可重复执行，但会创建示例账号；首次种子初始化须作为单独运维步骤审查，生产不得使用 `--reset`。
+ACCESS/REFRESH/IMPERSONATION 三个签名密钥必须独立配置，RSA 密钥需要匹配。
+MinIO 从固定安全发布 `RELEASE.2025-10-15T17-29-55Z` 构建，首次构建需要获取上游源码和 Go 依赖。

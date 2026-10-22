@@ -31,7 +31,12 @@ services:
     restart: unless-stopped
 
   minio:
-    image: ${REGISTRY_PREFIX:-}minio/minio:latest
+    image: rapidkit-minio:RELEASE.2025-10-15T17-29-55Z
+    build:
+      context: ../..
+      dockerfile: docker/minio/Dockerfile
+      args:
+        REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
     container_name: rapidkit-prod-minio
     env_file: .env.prod
     command: server /data --console-address ":9001"
@@ -47,7 +52,8 @@ services:
   # ==================== Backend ====================
 
   backend-api:
-    build:
+    image: rapidkit-backend:prod
+    build: &backend-build
       context: ../..
       dockerfile: docker/backend/Dockerfile
       target: prod
@@ -59,6 +65,8 @@ services:
     environment:
       CELERY_WORKER_NAMES: '["${CELERY_WORKER_NAME:-celery@rapidkit-prod-celery-worker}"]'
     depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
       postgresql:
         condition: service_healthy
       redis:
@@ -73,20 +81,29 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  backend-migrate:
+    image: rapidkit-backend:prod
+    build: *backend-build
+    command: ["sh", "scripts/alembic/migrate.sh"]
+    env_file: .env.prod
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"
+
   celery-worker:
-    build:
-      context: ../..
-      dockerfile: docker/backend/Dockerfile
-      target: prod
-      args:
-        REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
-        UV_IMAGE: ${UV_IMAGE:-ghcr.io/astral-sh/uv:latest}
+    image: rapidkit-backend:prod
+    build: *backend-build
     container_name: rapidkit-prod-celery-worker
-    command: ["uv", "run", "celery", "-A", "src.queues.app", "worker", "-l", "info", "--hostname", "${CELERY_WORKER_NAME:-celery@rapidkit-prod-celery-worker}"]
+    command: ["celery", "-A", "src.queues.app", "worker", "-l", "info", "--hostname", "${CELERY_WORKER_NAME:-celery@rapidkit-prod-celery-worker}"]
     env_file: .env.prod
     environment:
       CELERY_WORKER_NAMES: '["${CELERY_WORKER_NAME:-celery@rapidkit-prod-celery-worker}"]'
     depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
       postgresql:
         condition: service_healthy
       redis:
@@ -94,19 +111,16 @@ services:
     restart: unless-stopped
 
   celery-beat:
-    build:
-      context: ../..
-      dockerfile: docker/backend/Dockerfile
-      target: prod
-      args:
-        REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
-        UV_IMAGE: ${UV_IMAGE:-ghcr.io/astral-sh/uv:latest}
+    image: rapidkit-backend:prod
+    build: *backend-build
     container_name: rapidkit-prod-celery-beat
-    command: uv run celery -A src.queues.app beat -S src.queues.scheduler:AsyncDatabaseScheduler -l info
+    command: celery -A src.queues.app beat -S src.queues.scheduler:AsyncDatabaseScheduler -l info
     env_file: .env.prod
     environment:
       CELERY_WORKER_NAMES: '["${CELERY_WORKER_NAME:-celery@rapidkit-prod-celery-worker}"]'
     depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
       postgresql:
         condition: service_healthy
       redis:

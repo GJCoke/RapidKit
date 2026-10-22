@@ -11,3 +11,11 @@ docs
 .env
 .env.*
 apps/desktop
+
+# Local configuration and generated keys must never enter a build context.
+**/.env
+**/.env.*
+**/.keys
+**/.pytest_cache
+**/__pycache__
+.superpowers

@@ -91,7 +91,8 @@ include = ["src/"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-addopts = "--import-mode=importlib"
+addopts = "--import-mode=importlib -m 'not docker'"
+markers = ["docker: requires the built production image and Docker daemon"]
 consider_namespace_packages = true
 testpaths = ["tests"]
 asyncio_mode = "auto"

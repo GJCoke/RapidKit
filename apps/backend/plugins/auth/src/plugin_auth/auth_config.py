@@ -8,10 +8,9 @@ Author : Coke
 Date   : 2025-03-11
 """
 
-import os
-import re
 import secrets
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
@@ -175,29 +174,14 @@ class AuthConfig(BaseSettings):
 
     @classmethod
     def load_rsa_key(cls, key: str) -> str:
-        """
-        如果提供的 `key` 是文件路径，则从文件加载 RSA 密钥；否则直接返回该 `key`。
-
-        本函数检查 `key` 是否包含目录分隔符（例如 `/` 或 `\\`），
-        若包含则尝试读取文件内容；文件不存在时抛出错误。
-
-        Args:
-            key: RSA 私钥或公钥，可为文件路径或原始字符串。
-
-        Raises:
-            ValueError: 当 `key` 包含目录分隔符但路径不存在时。
-
-        Returns:
-            RSA 密钥字符串（文件内容或原始提供的 `key`）。
-        """
-        if re.search(r"[\\/]", key):
-            if not os.path.exists(key):
-                raise ConfigError("'RSA_PRIVATE_KEY' or 'RSA_PUBLIC_KEY' path does not exist.")
-
-            with open(key, "r", encoding="utf-8") as file:
-                return file.read()
-
-        return key
+        """Load PEM text (including escaped newlines) or a mounted key file."""
+        pem = key.replace("\\n", "\n")
+        if pem.lstrip().startswith("-----BEGIN "):
+            return pem
+        try:
+            return Path(key).read_text(encoding="utf-8")
+        except OSError as exc:
+            raise ConfigError("'RSA_PRIVATE_KEY' or 'RSA_PUBLIC_KEY' path does not exist.") from exc
 
 
 auth_settings = AuthConfig()  # type: ignore
