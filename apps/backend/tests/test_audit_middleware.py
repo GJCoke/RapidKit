@@ -80,8 +80,9 @@ async def test_audit_middleware_extracts_client_info_from_request(monkeypatch):
             "method": "POST",
             "path": "/api/v1/users",
             "query_string": b"",
+            "client": ("203.0.113.9", 1234),
             "headers": [
-                (b"x-forwarded-for", b"203.0.113.9"),
+                (b"x-forwarded-for", b"198.51.100.99"),
                 (b"user-agent", b"audit-regression-test"),
             ],
         },

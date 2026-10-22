@@ -49,4 +49,4 @@ USER app
 WORKDIR /app/apps/backend
 EXPOSE 8006
 ENTRYPOINT ["rapidkit-entrypoint"]
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8006", "--workers", "4", "--timeout-graceful-shutdown", "30"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8006", "--workers", "4", "--timeout-graceful-shutdown", "30", "--proxy-headers"]

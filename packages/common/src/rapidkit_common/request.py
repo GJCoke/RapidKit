@@ -1,5 +1,3 @@
-import ipaddress
-
 from fastapi import Request
 from user_agents import parse
 from user_agents.parsers import UserAgent as UAParser
@@ -8,40 +6,10 @@ from rapidkit_common.schemas.request import UserAgent
 
 
 def get_client_ip(request: Request) -> str | None:
-    headers = request.headers
-
-    # Cloudflare
-    cf_ip = headers.get("cf-connecting-ip")
-    if cf_ip:
-        return cf_ip
-
-    # X-Forwarded-For
-    xff = headers.get("x-forwarded-for")
-    if xff:
-        ip = xff.split(",")[0].strip()
-        if _is_valid_ip(ip):
-            return ip
-
-    # X-Real-IP
-    real_ip = headers.get("x-real-ip")
-    if real_ip and _is_valid_ip(real_ip):
-        return real_ip
-
-    # pytest TestClient
-    if request.client and request.client.host == "testclient":
-        return "127.0.0.1"
-
-    # fallback
-    if request.client:
-        return request.client.host
-
-
-def _is_valid_ip(ip: str) -> bool:
-    try:
-        ipaddress.ip_address(ip)
-        return True
-    except ValueError:
-        return False
+    # ProxyHeadersMiddleware is the single authority for forwarded client addresses.
+    if request.client is None:
+        return None
+    return "127.0.0.1" if request.client.host == "testclient" else request.client.host
 
 
 def parse_user_agent(request: Request) -> UserAgent | None:

@@ -224,6 +224,7 @@ class Config(
         return environment
 
     API_PREFIX_V1: str = "/api/v1"
+    FORWARDED_ALLOW_IPS: str = "172.30.0.0/24"
 
     # App info
     APP_NAME: str = "RapidKit"

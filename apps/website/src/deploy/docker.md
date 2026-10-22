@@ -108,7 +108,7 @@ FROM base AS dev
 # Stage 3: prod -- 生产镜像
 FROM base AS prod
 # uv sync --no-dev 仅安装生产依赖
-# 复制 src/, scripts/, alembic/, alembic.ini
+# 复制全部 Python workspace 成员源码、插件迁移与应用配置
 # 创建非 root 用户 app:app 并切换
 # CMD: uvicorn --workers 4
 ```
@@ -116,8 +116,8 @@ FROM base AS prod
 关键设计：
 
 - **共用镜像**：`backend-api`、`celery-worker`、`celery-beat` 三个服务使用同一镜像（`target: prod`），仅通过 `command` 区分启动方式。
-- **稳定 Worker 标识**：生产 Compose 使用 `CELERY_WORKER_NAME`（默认 `celery@rapidkit-prod-celery-worker`）作为 Celery 节点名，容器重建后仍更新同一个节点。后端的 `CELERY_WORKER_NAMES` 由 Compose 使用同一名称生成，队列概览、首页服务状态和队列采样只统计当前配置的节点。旧容器留下的 Worker 和任务记录保留在数据库中，不再混入当前节点概览。
-- **真实离线监控**：配置的 Worker 停止或心跳超时后仍显示离线；尚未注册的配置节点也计入首页服务总数。非 Compose 部署中，`CELERY_WORKER_NAMES=[]` 表示自动发现；多 Worker 部署需给每个节点配置不同的稳定名称，并将所有名称写入后端的 `CELERY_WORKER_NAMES` JSON 数组。
+- **副本 Worker 标识**：生产 worker 使用 `celery@%h`，每个副本的主机名不同；`CELERY_WORKER_NAMES=[]` 自动发现全部节点，支持 Compose 扩容。
+- **离线监控**：停止或心跳超时的 Worker 显示离线。需要固定管理节点清单的非 Compose 部署，仍可显式配置不同的稳定节点名和 `CELERY_WORKER_NAMES` JSON 数组。
 - **非 root 运行**：生产阶段创建 `app` 用户，以最小权限运行。
 - **uv 管理依赖**：利用 `uv sync --frozen` 保证锁文件一致性。
 
@@ -250,3 +250,15 @@ MinIO 从固定安全发布 `RELEASE.2025-10-15T17-29-55Z` 构建，首次构建
 任一依赖不可用时 ready 返回 HTTP 503，不包含连接配置。两个接口均无需登录、无审计与流量统计，nginx 对公网返回 404。
 Compose 在容器内调用 ready，不发布后端端口。收到 TERM/INT 后 ready 标记为未就绪，随后沿用 Uvicorn 的退出流程。
 Uvicorn 等待进行中请求最多 30 秒，Compose 停机宽限 45 秒。Compose **不会按健康状态自动摘除副本**，因此这不是零丢请求的滚动发布保证。
+
+## 多副本与真实客户端 IP
+
+```bash
+docker compose --env-file docker/prod/.env.prod -f docker/prod/docker-compose.yml up -d --scale backend-api=2 --scale celery-worker=2
+```
+
+API 和 worker 不固定 container_name；worker 使用 `celery@%h`，`CELERY_WORKER_NAMES=[]` 自动发现所有节点。beat 保持一个。
+nginx 每 10 秒刷新 Docker DNS，API 和 Socket.IO 都保留完整 URI 与 query。连接失败或超时最多换一个上游，已发送到上游的非幂等请求不会重试。
+Uvicorn 只信任 `FORWARDED_ALLOW_IPS` 指定网段；默认与 compose 网络 `172.30.0.0/24` 一致。若网段冲突，同时修改网络 subnet 与 env。
+共享客户端地址读取只使用 Uvicorn 解析后的 ASGI client，不直接采信 CF-Connecting-IP/X-Real-IP/XFF。后端端口不对外发布。
+如果前置新的负载均衡、CDN 或 TLS 终止层，必须重新审核该信任链和 HSTS 位置。
