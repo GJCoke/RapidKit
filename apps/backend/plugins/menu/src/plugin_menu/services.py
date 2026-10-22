@@ -25,8 +25,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from plugin_menu.crud import MenuCRUD
 from plugin_menu.menu_responses import to_menu_response
 from plugin_menu.models import Menu
-from plugin_menu.route_schemas import MenuRouteResponse, UserRouteResponse
-from plugin_menu.route_services import get_constant_routes, get_user_routes
+from plugin_menu.route.schemas import MenuRouteResponse, UserRouteResponse
+from plugin_menu.route.services import get_constant_routes, get_user_routes
 from plugin_menu.schemas import ActiveMenuOption, MenuCreate, MenuResponse, MenuUpdate
 from plugin_menu.status_codes import MenuStatusCode
 

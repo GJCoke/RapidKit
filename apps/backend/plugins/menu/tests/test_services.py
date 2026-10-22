@@ -5,11 +5,11 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, call
 from uuid import uuid4
 
-import plugin_menu.route_services as route_services
+import plugin_menu.route.services as route_services
 import pytest
 from plugin_menu.crud import MenuCRUD
 from plugin_menu.models import Menu
-from plugin_menu.route_services import build_route_tree, get_user_routes, menu_to_route, permitted_route_names
+from plugin_menu.route.services import build_route_tree, get_user_routes, menu_to_route, permitted_route_names
 from plugin_menu.schemas import ActiveMenuOption, MenuCreate, MenuResponse, MenuUpdate
 from plugin_menu.services import (
     create_menu,
@@ -748,7 +748,7 @@ async def test_directory_is_visible_only_with_a_visible_child(monkeypatch: pytes
 
 @pytest.mark.asyncio
 async def test_user_route_cache_separates_admin_and_non_admin_with_same_roles(monkeypatch: pytest.MonkeyPatch):
-    from plugin_menu.route_schemas import UserRouteResponse
+    from plugin_menu.route.schemas import UserRouteResponse
     from plugin_menu.services import get_cached_user_routes
 
     redis = AsyncMock()
@@ -772,7 +772,7 @@ async def test_user_route_cache_separates_admin_and_non_admin_with_same_roles(mo
 
 @pytest.mark.asyncio
 async def test_user_route_cache_role_hash_has_no_delimiter_collision(monkeypatch: pytest.MonkeyPatch):
-    from plugin_menu.route_schemas import UserRouteResponse
+    from plugin_menu.route.schemas import UserRouteResponse
     from plugin_menu.services import get_cached_user_routes
 
     redis = AsyncMock()
@@ -1060,7 +1060,7 @@ async def test_update_to_directory_clears_permission_and_partial_update_keeps_it
 
 @pytest.mark.asyncio
 async def test_user_route_cache_key_changes_with_catalog_version(monkeypatch: pytest.MonkeyPatch):
-    from plugin_menu.route_schemas import UserRouteResponse
+    from plugin_menu.route.schemas import UserRouteResponse
     from plugin_menu.services import get_cached_user_routes
 
     redis = AsyncMock()

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from plugin_menu import services
-from plugin_menu.route_schemas import UserRouteResponse
+from plugin_menu.route.schemas import UserRouteResponse
 
 pytestmark = pytest.mark.asyncio
 

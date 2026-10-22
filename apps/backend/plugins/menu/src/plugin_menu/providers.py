@@ -12,7 +12,7 @@ from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_menu.models import Menu
-from plugin_menu.route_services import permitted_route_names
+from plugin_menu.route.services import permitted_route_names
 
 _PATH_PARAMETER = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?([?*+]?)")
 

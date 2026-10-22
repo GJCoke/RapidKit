@@ -15,7 +15,7 @@ from rapidkit_common.schemas.response import Response
 from sqlmodel import col, select
 
 from plugin_menu.models import Menu
-from plugin_menu.route_schemas import MenuRouteResponse, UserRouteResponse
+from plugin_menu.route.schemas import MenuRouteResponse, UserRouteResponse
 from plugin_menu.services import get_cached_constant_routes, get_cached_user_routes
 
 router = APIRouter(

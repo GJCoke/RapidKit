@@ -21,7 +21,7 @@ from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_menu.models import Menu
-from plugin_menu.route_schemas import MenuRouteResponse, RouteMeta, UserRouteResponse
+from plugin_menu.route.schemas import MenuRouteResponse, RouteMeta, UserRouteResponse
 
 
 def menu_to_route(menu: Menu, route_names: dict[UUID, str]) -> MenuRouteResponse:

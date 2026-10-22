@@ -34,7 +34,7 @@ def register() -> PluginManifest:
     from plugin_menu.api import router as menu_router
     from plugin_menu.audit import configure_audit
     from plugin_menu.models import Menu
-    from plugin_menu.route_api import router as route_router
+    from plugin_menu.route.api import router as route_router
 
     combined = APIRouter()
     combined.include_router(menu_router)

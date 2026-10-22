@@ -2,7 +2,7 @@
 
 from plugin_menu import register
 from plugin_menu.api import router as menu_router
-from plugin_menu.route_api import router as route_router
+from plugin_menu.route.api import router as route_router
 from tests.testing.access import declared_access
 
 
