@@ -26,6 +26,7 @@ from celery.signals import (
 )
 from rapidkit_core.config import settings
 from rapidkit_core.log import logger
+from rapidkit_core.nanoid import publication_request_id
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.identity import identity_from_headers, identity_headers
 
@@ -112,8 +113,16 @@ def _heartbeat_loop(hostname: str) -> None:
 def _request_identity(request) -> dict[str, object]:
     headers = getattr(request, "headers", None)
     if headers is None:
-        headers = getattr(request, "request_dict", None) or {}
+        headers = getattr(request, "request_dict", None)
+    if headers is None:
+        headers = {}
+        request.headers = headers
     values: dict[str, object] = dict(identity_headers(identity_from_headers(headers)))
+    request_id = headers.get("request_id")
+    if not isinstance(request_id, str) or not request_id:
+        request_id = publication_request_id({})
+        headers["request_id"] = request_id
+    values["request_id"] = request_id
     for key in ("audit_correlation_id", "audit_initiated_by"):
         if headers.get(key) is not None:
             values[key] = headers[key]

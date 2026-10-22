@@ -5,6 +5,7 @@ Author  : Coke
 Date    : 2025-04-10
 """
 
+from celery.signals import setup_logging as setup_logging_signal
 from celery.signals import worker_process_init
 from rapidkit_core.config import settings
 
@@ -63,10 +64,16 @@ if settings.ENABLE_CELERY_MONITOR:
     import src.queues.signals  # noqa: F401, E402
 
 
-@worker_process_init.connect
-def init_worker_logging(**kwargs):
-    """在 Celery worker 子进程中初始化 Loguru 日志管道。"""
+@setup_logging_signal.connect
+def configure_process_logging(**kwargs):
+    """Own the pipeline in worker/beat parents, before Celery redirects stdout."""
     from rapidkit_core.log import set_custom_logfile, setup_logging
 
     setup_logging()
     set_custom_logfile()
+
+
+@worker_process_init.connect
+def init_worker_logging(**kwargs):
+    """Rebind each prefork child's file sinks and stdout pipeline."""
+    configure_process_logging()

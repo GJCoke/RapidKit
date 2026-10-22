@@ -1,16 +1,19 @@
 import inspect
+import json
 import logging
 import os
 import re
 import socket
 import sys
+import traceback
+from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TextIO
 
 from loguru import logger as ruLogger
 
 if TYPE_CHECKING:
-    from loguru import Logger
+    from loguru import Logger, Message
 
 from rapidkit_core.config import settings
 from rapidkit_core.nanoid import get_request_nanoid
@@ -56,6 +59,23 @@ def request_id_filter(record: dict) -> bool:
     return True
 
 
+def json_sink(message: "Message", *, stream: TextIO | None = None) -> None:
+    record = message.record
+    exception = record["exception"]
+    payload = {
+        "time": record["time"].isoformat(),
+        "level": record["level"].name,
+        "message": record["message"],
+        "plugin": record["extra"].get("plugin", "Core"),
+        "request_id": record.get("request_id", get_request_nanoid()),
+        "logger": record["name"],
+        "exception": "".join(traceback.format_exception(exception.type, exception.value, exception.traceback))
+        if exception is not None
+        else None,
+    }
+    (stream if stream is not None else sys.stdout).write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
 def setup_logging() -> None:
     """设置日志处理器。"""
     logging.root.handlers = [InterceptHandler()]
@@ -73,7 +93,7 @@ def setup_logging() -> None:
     ruLogger.configure(
         handlers=[  # type: ignore
             {
-                "sink": sys.stdout,
+                "sink": partial(json_sink, stream=sys.stdout) if settings.LOG_JSON else sys.stdout,
                 "level": settings.LOG_LEVEL,
                 "format": default_formatter,
                 "filter": lambda record: request_id_filter(record),

@@ -8,9 +8,9 @@ Date   : 2025-03-11
 """
 
 import warnings
-from typing import Any, cast
+from typing import Any, Self, cast
 
-from pydantic import Field, PostgresDsn, RedisDsn, Secret, field_validator
+from pydantic import Field, PostgresDsn, RedisDsn, Secret, field_validator, model_validator
 from pydantic_settings import BaseSettings as _BaseSettings
 from pydantic_settings import SettingsConfigDict
 
@@ -123,6 +123,7 @@ class LogConfigMixin(BaseSettings):
     """日志配置。"""
 
     LOG_LEVEL: LOG_LEVELS = "INFO"
+    LOG_JSON: bool = False
     LOG_FILE_ACCESS_LEVEL: LOG_LEVELS = "INFO"
     LOG_FILE_ERROR_LEVEL: LOG_LEVELS = "WARNING"
 
@@ -216,6 +217,12 @@ class Config(
 
     # Current environment (e.g., TESTING, PRODUCTION)
     ENVIRONMENT: Environment = Environment.PRODUCTION
+
+    @model_validator(mode="after")
+    def environment_defaults(self) -> Self:
+        if "LOG_JSON" not in self.model_fields_set:
+            self.LOG_JSON = self.ENVIRONMENT.is_deployed
+        return self
 
     # noinspection PyNestedDecorators
     @field_validator("ENVIRONMENT")

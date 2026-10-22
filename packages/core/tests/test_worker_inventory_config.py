@@ -30,15 +30,15 @@ def test_invalid_worker_names_are_rejected(names):
         config(CELERY_WORKER_NAMES=names)
 
 
-def test_compose_worker_identity_matches_backend_roster():
+def test_compose_workers_use_unique_hostnames_and_discovery():
     root = Path(__file__).resolve().parents[3]
     compose = (root / "docker/prod/docker-compose.yml").read_text()
     worker = re.search(r"^  celery-worker:\n(.*?)(?=^  [a-z]|\Z)", compose, re.MULTILINE | re.DOTALL).group(1)
     command = json.loads(re.search(r"^    command: (\[.*\])$", worker, re.MULTILINE).group(1))
     name = command[command.index("--hostname") + 1]
-    assert "%h" not in name
-    assert "celery@rapidkit-prod-celery-worker" in name
+    assert name == "celery@%h"
     for service in ("backend-api", "celery-worker", "celery-beat"):
         block = re.search(rf"^  {service}:\n(.*?)(?=^  [a-z]|\Z)", compose, re.MULTILINE | re.DOTALL).group(1)
-        roster = block.split("CELERY_WORKER_NAMES:", 1)[1].splitlines()[0].strip().strip("'")
-        assert json.loads(roster) == [name]
+        assert "CELERY_WORKER_NAMES:" not in block
+        if service != "celery-beat":
+            assert "container_name:" not in block

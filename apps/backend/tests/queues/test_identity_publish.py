@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from celery import Celery as BaseCelery
+from rapidkit_core.nanoid import request_id_scope
 from rapidkit_framework.identity import IdentityMetadata, identity_headers, identity_scope
 from src.queues.celery import Celery
 
@@ -18,12 +19,17 @@ def test_send_task_carries_identity_and_strips_reserved_overrides(metadata):
         "actor_id": "forged",
         "impersonation_session_id": "forged",
         "correlation_id": "trace",
+        "request_id": "forged",
     }
-    with identity_scope(metadata), patch.object(BaseCelery, "send_task", return_value="queued") as parent:
+    with (
+        request_id_scope("req-publish"),
+        identity_scope(metadata),
+        patch.object(BaseCelery, "send_task", return_value="queued") as parent,
+    ):
         assert app.send_task("example", [1], {"value": 2}, headers=supplied, countdown=3) == "queued"
     assert parent.call_args.args == ("example", [1], {"value": 2})
     assert parent.call_args.kwargs == {
-        "headers": {"correlation_id": "trace", **identity_headers(metadata)},
+        "headers": {"correlation_id": "trace", "request_id": "req-publish", **identity_headers(metadata)},
         "countdown": 3,
     }
     assert supplied["actor_id"] == "forged"

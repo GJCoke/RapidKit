@@ -22,6 +22,8 @@ from celery.app.routes import Router
 from celery.canvas import Signature
 from celery.result import AsyncResult
 from kombu import Connection, Producer
+from nanoid import generate
+from rapidkit_core.nanoid import publication_request_id, request_id_scope
 from rapidkit_core.timezone import timezone as tz
 from rapidkit_framework.identity import IDENTITY_HEADER_KEYS, identity_from_headers, identity_headers, identity_scope
 from typing_extensions import Annotated, Doc
@@ -281,6 +283,7 @@ class Task(_Task):
         options["headers"] = {
             **{key: value for key, value in (options.get("headers") or {}).items() if key not in IDENTITY_HEADER_KEYS},
             **identity_headers(),
+            "request_id": publication_request_id(options.get("headers") or {}),
         }
         has_di = bool(self._resolve_deps_hints())
         if has_di:
@@ -388,7 +391,11 @@ class Task(_Task):
 
     def __call__(self, *args: tuple[Any], **kwargs: dict[str, Any]) -> Any:
         headers = dict(getattr(self.request, "headers", None) or {})
-        with identity_scope(identity_from_headers(headers)):
+        request_id = headers.get("request_id")
+        if not isinstance(request_id, str) or not request_id:
+            request_id = generate()
+        headers["request_id"] = request_id
+        with identity_scope(identity_from_headers(headers)), request_id_scope(request_id):
             return self._call_in_identity(args, kwargs, headers)
 
     def _call_in_identity(self, args, kwargs, saved_headers) -> Any:

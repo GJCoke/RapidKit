@@ -9,6 +9,7 @@ from typing import Any, Callable
 
 from celery import Celery as _Celery
 from celery.result import AsyncResult
+from rapidkit_core.nanoid import publication_request_id
 from rapidkit_framework.identity import IDENTITY_HEADER_KEYS, identity_headers
 from typing_extensions import Annotated, Doc
 
@@ -32,6 +33,7 @@ class Celery(_Celery):
         options["headers"] = {
             **{key: value for key, value in (options.get("headers") or {}).items() if key not in IDENTITY_HEADER_KEYS},
             **identity_headers(),
+            "request_id": publication_request_id(options.get("headers") or {}),
         }
         return super().send_task(name, *args, **options)
 

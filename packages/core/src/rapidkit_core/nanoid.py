@@ -6,6 +6,9 @@ Nanoid 插件实现。
 """
 
 import re
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 from nanoid import generate
 from nanoid.resources import alphabet as default_alphabet
@@ -18,12 +21,30 @@ from starlette_context.errors import MiddleWareValidationError
 from starlette_context.header_keys import HeaderKeys
 from starlette_context.plugins import Plugin
 
+_task_request_id: ContextVar[str | None] = ContextVar("task_request_id", default=None)
+
+
+@contextmanager
+def request_id_scope(request_id: str | None) -> Iterator[None]:
+    token = _task_request_id.set(request_id)
+    try:
+        yield
+    finally:
+        _task_request_id.reset(token)
+
+
+def publication_request_id(headers: Mapping[str, object]) -> str:
+    """Prefer the current request, retain forwarded IDs, otherwise allocate once."""
+    current = get_request_nanoid("")
+    supplied = headers.get("request_id")
+    return current or (supplied if isinstance(supplied, str) and supplied else generate())
+
 
 def get_request_nanoid(default: str = "-") -> str:
     """获取当前请求的 Nanoid。"""
     if context.exists():
         return context.get(HeaderKeys.request_id, default)
-    return default
+    return _task_request_id.get() or default
 
 
 class WrongNanoIdError(MiddleWareValidationError):

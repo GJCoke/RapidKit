@@ -1,0 +1,91 @@
+"""Structured stdout and scoped request IDs remain useful outside HTTP."""
+
+import asyncio
+import json
+
+import pytest
+from rapidkit_core.config import Config, settings
+from rapidkit_core.log import logger, setup_logging
+from rapidkit_core.nanoid import get_request_nanoid, request_id_scope
+
+
+@pytest.mark.parametrize(
+    "environment,expected", [("LOCAL", False), ("TESTING", False), ("STAGING", True), ("PRODUCTION", True)]
+)
+def test_json_default_follows_environment(environment, expected, monkeypatch):
+    monkeypatch.delenv("LOG_JSON", raising=False)
+    assert Config(_env_file=None, ENVIRONMENT=environment).LOG_JSON is expected
+    assert Config(_env_file=None, ENVIRONMENT=environment, LOG_JSON=not expected).LOG_JSON is not expected
+    monkeypatch.setenv("LOG_JSON", str(not expected))
+    assert Config(_env_file=None, ENVIRONMENT=environment).LOG_JSON is not expected
+
+
+def test_stdout_json_contains_context_and_exception(capsys, monkeypatch):
+    monkeypatch.setattr(settings, "LOG_JSON", True)
+    setup_logging()
+    try:
+        with request_id_scope("req-test"):
+            try:
+                local_secret = "never-in-traceback-locals"
+                raise ValueError("boom")
+            except ValueError:
+                logger.bind(plugin="Test").exception("first line\nsecond line")
+        raw = capsys.readouterr().out
+        assert len(raw.splitlines()) == 1
+        record = json.loads(raw)
+        assert {"time", "level", "message", "plugin", "request_id", "logger", "exception"} <= record.keys()
+        assert record["message"] == "first line\nsecond line"
+        assert record["request_id"] == "req-test"
+        assert record["plugin"] == "Test"
+        assert "ValueError" in record["exception"]
+        assert local_secret not in record["exception"]
+    finally:
+        logger.remove()
+
+
+def test_text_mode_and_default_plugin(capsys, monkeypatch):
+    monkeypatch.setattr(settings, "LOG_JSON", False)
+    monkeypatch.setattr(settings, "LOG_FORMAT", "{extra[plugin]} {request_id} {message}")
+    setup_logging()
+    try:
+        with request_id_scope("req-text"):
+            logger.info("hello")
+        assert capsys.readouterr().out == "Core req-text hello\n"
+    finally:
+        logger.remove()
+
+
+@pytest.mark.asyncio
+async def test_request_scopes_are_nested_and_concurrent_without_leaks():
+    assert get_request_nanoid() == "-"
+    with request_id_scope("outer"):
+        with pytest.raises(ValueError), request_id_scope("inner"):
+            assert get_request_nanoid() == "inner"
+            raise ValueError
+        assert get_request_nanoid() == "outer"
+
+        async def read(value):
+            with request_id_scope(value):
+                await asyncio.sleep(0)
+                return get_request_nanoid()
+
+        assert await asyncio.gather(read("one"), read("two")) == ["one", "two"]
+        assert get_request_nanoid() == "outer"
+    assert get_request_nanoid() == "-"
+
+
+def test_json_stdout_survives_task_print_capture(capsys, monkeypatch):
+    import io
+    from contextlib import redirect_stdout
+
+    monkeypatch.setattr(settings, "LOG_JSON", True)
+    setup_logging()
+    task_prints = io.StringIO()
+    try:
+        with request_id_scope("req-worker"), redirect_stdout(task_prints):
+            logger.info("worker remains observable")
+            print("captured task output")
+        assert json.loads(capsys.readouterr().out)["request_id"] == "req-worker"
+        assert task_prints.getvalue() == "captured task output\n"
+    finally:
+        logger.remove()

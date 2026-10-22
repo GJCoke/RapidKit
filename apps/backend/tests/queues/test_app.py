@@ -55,3 +55,20 @@ def test_celery_plugin_discovery_registers_runtime_services(monkeypatch) -> None
         assert get_service(_WorkerService).value() == "registered"
     finally:
         service_registry.clear()
+
+
+def test_celery_logging_does_not_redirect_json_sink_back_into_itself(monkeypatch):
+    import sys
+
+    from celery.app.log import Logging
+    from rapidkit_core.config import settings
+
+    monkeypatch.setattr(settings, "LOG_JSON", True)
+    monkeypatch.setattr(Logging, "_setup", False)
+    original_out, original_err = sys.stdout, sys.stderr
+    try:
+        app.log.setup(loglevel="INFO", redirect_stdouts=True)
+        assert sys.stdout is original_out
+        assert sys.stderr is original_err
+    finally:
+        sys.stdout, sys.stderr = original_out, original_err

@@ -46,8 +46,6 @@ class LoggerMiddleware(BaseHTTPMiddleware):
         user = _get_user_id(request)
         method = request.method
         path = str(request.url.path)
-        if request.url.query:
-            path = f"{path}?{request.url.query}"
 
         logger.info(
             '{client} {user} "{method} {path}" {status} {duration}ms',
