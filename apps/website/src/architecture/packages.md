@@ -51,7 +51,7 @@ RapidKit 后端 Python 包采用三层架构，每层职责明确、依赖单向
 | `limiter.py`      | 速率限制服务                                |
 | `context.py`      | 请求上下文                                  |
 
-**依赖：** rapidkit-core, fastapi, slowapi, starlette-context, packaging
+**依赖：** rapidkit-core, fastapi, limits[redis], starlette-context, packaging
 
 ### rapidkit-security — 安全工具
 

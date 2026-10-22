@@ -30,15 +30,12 @@ def _enqueue_password_reset_email(*, email: str, platform_name: str, user_name: 
 
 async def request_password_reset(
     email: str,
-    ip: str,
     *,
     store: PasswordResetTokenStore,
     user_crud: UserCRUD,
 ) -> None:
     """Issue and queue a reset email without exposing account eligibility."""
     normalized = email.strip().casefold()
-    if not await store.allow_request(normalized, ip):
-        return
     user = await user_crud.get_user_by_email(normalized)
     if not user or user.status != Status.ON:
         return

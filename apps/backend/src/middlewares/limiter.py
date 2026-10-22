@@ -1,42 +1,29 @@
-import json
+"""Await shared rate counters before dispatching business requests."""
 
+from rapidkit_core.config import settings
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.status_codes import StatusCode
-from slowapi import Limiter
-from slowapi.middleware import _find_route_handler, _should_exempt, sync_check_limits
-from starlette.applications import Starlette
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 
 from src.health import is_internal_path
 
 
-class SlowAPIMiddleware(BaseHTTPMiddleware):
+class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         if is_internal_path(request.url.path):
             return await call_next(request)
-        app: Starlette = request.app
-        limiter: Limiter = app.state.limiter
-
-        if not limiter.enabled:
-            return await call_next(request)
-
-        handler = _find_route_handler(app.routes, request.scope)
-        if _should_exempt(limiter, handler):
-            return await call_next(request)
-
-        error_response, should_inject_headers = sync_check_limits(limiter, request, handler, app)
-        if error_response is not None:
-            return Response(
-                json.dumps(
-                    AppException(StatusCode.TOO_MANY_REQUESTS).dump(),
-                    ensure_ascii=False,
-                ),
-                media_type="application/json",
+        provider = getattr(request.app.state, "rate_limit_rules", None)
+        if provider is not None:
+            rules = await provider(request)
+        else:
+            ip = request.client.host if request.client else "unknown"
+            rules = [("default", f"ip:{ip}", settings.RATE_LIMIT_ANONYMOUS)]
+        retry_after = await request.app.state.limiter.check(rules)
+        if retry_after is not None:
+            return JSONResponse(
+                AppException(StatusCode.TOO_MANY_REQUESTS).dump(),
+                headers={"Retry-After": str(retry_after)},
             )
-
-        response = await call_next(request)
-        if should_inject_headers:
-            response = limiter._inject_headers(response, request.state.view_rate_limit)
-        return response
+        return await call_next(request)

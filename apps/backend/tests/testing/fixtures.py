@@ -217,6 +217,9 @@ async def client(
     database.override_async_engine(pg_engine)
     monkeypatch.setattr(database, "get_redis_url", lambda: pytest_settings.REDIS_DATABASE_URL)
 
+    from rapidkit_framework.limiter import RateLimiterService
+
+    monkeypatch.setattr(app.state, "limiter", RateLimiterService(pytest_settings.REDIS_DATABASE_URL))
     original_overrides = app.dependency_overrides.copy()
     app.dependency_overrides[access_guard_dependency] = allow_current_user_access
 

@@ -18,13 +18,9 @@ class FakeUser:
 
 
 class FakeStore:
-    def __init__(self, *, allowed: bool = True, consumed: str | None = None) -> None:
-        self.allowed = allowed
+    def __init__(self, *, consumed: str | None = None) -> None:
         self.consumed = consumed
         self.issued_for = None
-
-    async def allow_request(self, email: str, ip: str) -> bool:
-        return self.allowed
 
     async def issue(self, user_id):
         self.issued_for = user_id
@@ -76,7 +72,6 @@ async def test_request_does_not_queue_email_for_ineligible_account(monkeypatch, 
 
     await service.request_password_reset(
         " User@Example.com ",
-        "192.0.2.1",
         store=FakeStore(),
         user_crud=FakeCRUD(user),
     )
@@ -94,7 +89,6 @@ async def test_request_normalizes_email_and_queues_active_user(monkeypatch) -> N
 
     await service.request_password_reset(
         " User@Example.com ",
-        "192.0.2.1",
         store=store,
         user_crud=crud,
     )
@@ -174,3 +168,18 @@ async def test_consumed_token_is_not_restored_when_update_fails(monkeypatch) -> 
         )
 
     assert store.consumed is None
+
+
+@pytest.mark.asyncio
+async def test_password_reset_no_legacy_nat_cap(redis, monkeypatch):
+    from plugin_auth.password_reset.token_store import PasswordResetTokenStore
+    from rapidkit_core.redis_client import AsyncRedisClient
+
+    queued = []
+    monkeypatch.setattr(service, "_enqueue_password_reset_email", lambda **kwargs: queued.append(kwargs))
+    store = PasswordResetTokenStore(AsyncRedisClient(connection_pool=redis.connection_pool))
+    for index in range(11):
+        user = FakeUser(Status.ON)
+        user.email = f"user{index}@example.com"
+        await service.request_password_reset(user.email, store=store, user_crud=FakeCRUD(user))
+    assert len(queued) == 11

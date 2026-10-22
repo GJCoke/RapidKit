@@ -24,7 +24,6 @@ from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.limiter import RateLimiterService
 from rapidkit_framework.status_codes import StatusCode
-from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException
 from starlette_context import context
 
@@ -34,7 +33,7 @@ from src.locales.i18n import is_i18n_key, t
 from src.middlewares.audit import AuditMiddleware, record_audit_outcome
 from src.middlewares.context import ContextMiddleware
 from src.middlewares.i18n import I18nMiddleware
-from src.middlewares.limiter import SlowAPIMiddleware
+from src.middlewares.limiter import RateLimitMiddleware
 from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.metrics import MetricsMiddleware
 from src.middlewares.state import StateMiddleware
@@ -89,7 +88,7 @@ def setup_middlewares(app: FastAPI) -> None:
     app.add_middleware(StateMiddleware)
     app.add_middleware(AuditMiddleware)
     app.add_middleware(MetricsMiddleware)
-    app.add_middleware(SlowAPIMiddleware)
+    app.add_middleware(RateLimitMiddleware)
     app.add_middleware(I18nMiddleware)
     app.add_middleware(LoggerMiddleware)
     app.add_middleware(
@@ -109,17 +108,6 @@ def setup_middlewares(app: FastAPI) -> None:
 
 def setup_exception_handlers(app: FastAPI) -> None:
     """配置异常处理器。"""
-
-    @app.exception_handler(RateLimitExceeded)
-    async def handle_rate_limit_exceeded(request: Request, exc: RateLimitExceeded) -> JSONResponse:
-        """处理请求速率限制超出异常。"""
-        record_audit_outcome(
-            request, business_code=int(StatusCode.TOO_MANY_REQUESTS), error_key=StatusCode.TOO_MANY_REQUESTS.description
-        )
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content=AppException(StatusCode.TOO_MANY_REQUESTS).dump(),
-        )
 
     @app.exception_handler(RequestValidationError)
     async def handle_request_validation_errors(request: Request, exc: RequestValidationError) -> JSONResponse:
@@ -281,8 +269,11 @@ def create_app() -> FastAPI:
         app.state.celery_app = celery_app
 
     # 初始化速率限制服务
-    limiter = RateLimiterService.init_limiter()
-    app.state.limiter = limiter
+    app.state.limiter = RateLimiterService(str(settings.REDIS_URL))
+    if any(plugin.name == "auth" for plugin in result.plugins):
+        from plugin_auth.rate_limit import rate_limit_rules
+
+        app.state.rate_limit_rules = rate_limit_rules
 
     # 配置中间件和异常处理器
     setup_middlewares(app)

@@ -13,7 +13,6 @@ from typing import Any, cast
 from pydantic import Field, PostgresDsn, RedisDsn, Secret, field_validator
 from pydantic_settings import BaseSettings as _BaseSettings
 from pydantic_settings import SettingsConfigDict
-from slowapi.extension import StrOrCallableStr
 
 from rapidkit_core.constants import LANGUAGE_TYPE, LOG_LEVELS
 from rapidkit_core.environment import Environment
@@ -152,7 +151,14 @@ class CorsConfigMixin(BaseSettings):
 class RateLimitConfigMixin(BaseSettings):
     """速率限制配置。"""
 
-    DEFAULT_LIMITS: list[StrOrCallableStr] = ["20/minute"]
+    RATE_LIMIT_AUTHENTICATED: str = "600/minute"
+    RATE_LIMIT_ANONYMOUS: str = "120/minute"
+    RATE_LIMIT_LOGIN_ACCOUNT: str = "10/minute"
+    RATE_LIMIT_LOGIN_IP: str = "200/minute"
+    RATE_LIMIT_RESET_ACCOUNT: str = "5/minute"
+    RATE_LIMIT_RESET_IP: str = "60/minute"
+    RATE_LIMIT_REFRESH: str = "30/minute"
+    RATE_LIMIT_CREDENTIAL_SETUP: str = "30/minute"
 
 
 class SocketIOConfigMixin(BaseSettings):

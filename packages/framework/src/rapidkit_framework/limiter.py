@@ -1,78 +1,31 @@
-"""
-速率限制服务封装。
+"""Asynchronous Redis rate limits shared by every application replica."""
 
-Author : Coke
-Date   : 2025-03-10
-"""
+import math
+import time
+from typing import cast
 
-from typing import Callable, Optional
+from limits import parse
+from limits.aio.storage import RedisStorage
+from limits.aio.storage.redis.redispy import RedispyBridge
+from limits.aio.strategies import FixedWindowRateLimiter
 
-from rapidkit_core.config import settings
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from starlette.requests import Request
+RateLimitRule = tuple[str, str, str]
 
 
 class RateLimiterService:
-    """速率限制服务，提供统一的限制配置和策略管理。"""
+    def __init__(self, redis_url: str) -> None:
+        self._storage = RedisStorage(redis_url, implementation="redispy")
+        self._strategy = FixedWindowRateLimiter(self._storage)
 
-    _limiter: Optional[Limiter] = None
+    async def check(self, rules: list[RateLimitRule]) -> int | None:
+        retry_after = None
+        for scope, key, limit in rules:
+            item = parse(limit)
+            if not await self._strategy.hit(item, scope, key):
+                window = await self._strategy.get_window_stats(item, scope, key)
+                delay = max(1, math.ceil(window.reset_time - time.time()))
+                retry_after = max(retry_after or 0, delay)
+        return retry_after
 
-    @classmethod
-    def init_limiter(cls) -> Limiter:
-        if cls._limiter is None:
-            cls._limiter = Limiter(
-                key_func=cls._default_key_func,
-                default_limits=settings.DEFAULT_LIMITS,
-                storage_uri=str(settings.REDIS_URL),
-            )
-        return cls._limiter
-
-    @classmethod
-    def get_limiter(cls) -> Limiter:
-        if cls._limiter is None:
-            cls.init_limiter()
-        return cls._limiter  # type: ignore
-
-    @staticmethod
-    def _default_key_func(request: Request) -> str:
-        return get_remote_address(request)
-
-    @staticmethod
-    def key_by_ip(request: Request) -> str:
-        return get_remote_address(request)
-
-    @staticmethod
-    def key_by_user_id(request: Request) -> str:
-        user_id = getattr(request.state, "user_id", None)
-        if user_id:
-            return f"user_{user_id}"
-        return get_remote_address(request)
-
-    @staticmethod
-    def key_by_user_or_ip(request: Request) -> str:
-        return RateLimiterService.key_by_user_id(request)
-
-    @staticmethod
-    def key_by_custom(key_func: Callable[[Request], str]) -> Callable[[Request], str]:
-        return key_func
-
-    @staticmethod
-    def create_composite_key(*args: str, separator: str = "::") -> str:
-        return separator.join(args)
-
-
-def get_rate_limiter() -> Limiter:
-    return RateLimiterService.get_limiter()
-
-
-def rate_limit_by_ip() -> Callable[[Request], str]:
-    return RateLimiterService.key_by_ip
-
-
-def rate_limit_by_user() -> Callable[[Request], str]:
-    return RateLimiterService.key_by_user_id
-
-
-def rate_limit_by_user_or_ip() -> Callable[[Request], str]:
-    return RateLimiterService.key_by_user_or_ip
+    async def close(self) -> None:
+        await cast(RedispyBridge, self._storage.bridge).storage.aclose()

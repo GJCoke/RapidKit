@@ -16,7 +16,7 @@ def setup_middlewares(app: FastAPI) -> None:
     # 全局中间件（基础设施层，最靠近请求入口）
     app.add_middleware(StateMiddleware)        # 注册 1 → 执行 7（最内层）
     app.add_middleware(MetricsMiddleware)      # 注册 2 → 执行 6
-    app.add_middleware(SlowAPIMiddleware)      # 注册 3 → 执行 5
+    app.add_middleware(RateLimitMiddleware)      # 注册 3 → 执行 5
     app.add_middleware(I18nMiddleware)         # 注册 4 → 执行 4
     app.add_middleware(LoggerMiddleware)       # 注册 5 → 执行 3
     app.add_middleware(ContextMiddleware, ...) # 注册 6 → 执行 2
@@ -30,7 +30,7 @@ def setup_middlewares(app: FastAPI) -> None:
 | 插件     | 插件中间件（按 order 排序） | 最内层       |
 | 1        | StateMiddleware             | 7            |
 | 2        | MetricsMiddleware           | 6            |
-| 3        | SlowAPIMiddleware           | 5            |
+| 3        | RateLimitMiddleware           | 5            |
 | 4        | I18nMiddleware              | 4            |
 | 5        | LoggerMiddleware            | 3            |
 | 6        | ContextMiddleware           | 2            |
@@ -122,33 +122,45 @@ class I18nMiddleware(BaseHTTPMiddleware):
         return response
 ```
 
-## SlowAPIMiddleware
+## RateLimitMiddleware
 
-基于 SlowAPI 实现的速率限制中间件。当请求超出限流阈值时，返回 `TOO_MANY_REQUESTS`（状态码 1006）的统一响应格式，而非标准的 HTTP 429。
+基于 `limits` 的异步 Redis 存储实现速率限制。当请求超出限流阈值时，返回 `TOO_MANY_REQUESTS`（状态码 1006）的统一响应格式，而非标准的 HTTP 429。
 
 ```python
-class SlowAPIMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        limiter = request.app.state.limiter
-        if not limiter.enabled:
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        if is_internal_path(request.url.path):
             return await call_next(request)
-        # ... 限流检查
-        if error_response is not None:
-            return Response(json.dumps(
+        provider = getattr(request.app.state, "rate_limit_rules", None)
+        if provider is not None:
+            rules = await provider(request)
+        else:
+            ip = request.client.host if request.client else "unknown"
+            rules = [("default", f"ip:{ip}", settings.RATE_LIMIT_ANONYMOUS)]
+        retry_after = await request.app.state.limiter.check(rules)
+        if retry_after is not None:
+            return JSONResponse(
                 AppException(StatusCode.TOO_MANY_REQUESTS).dump(),
-                ensure_ascii=False,
-            ), media_type="application/json")
-        response = await call_next(request)
-        return response
+                headers={"Retry-After": str(retry_after)},
+            )
+        return await call_next(request)
 ```
 
-默认限流规则通过 `DEFAULT_LIMITS` 环境变量配置，默认值为 `20/minute`。
+默认限流使用异步 Redis 存储，多个 API 副本共享额度。通过签名和有效期检查的令牌按用户 `sub` 计数，其他请求按可信客户端 IP 计数；身份解析不查询 Redis。
+
+- `RATE_LIMIT_AUTHENTICATED=600/minute`：已登录用户。
+- `RATE_LIMIT_ANONYMOUS=120/minute`：匿名 IP。
+- 登录叠加 IP + 原始用户名 `10/minute` 和 IP 总量 `200/minute`。
+- 密码重置申请叠加 IP + 规范化邮箱 `5/minute` 和 IP 总量 `60/minute`。
+- 刷新令牌按已验签的 refresh `sub` 计 `30/minute`；邀请与密码设置入口共享 IP `30/minute`。
+
+敏感额度对应 `RATE_LIMIT_LOGIN_ACCOUNT`、`RATE_LIMIT_LOGIN_IP`、`RATE_LIMIT_RESET_ACCOUNT`、`RATE_LIMIT_RESET_IP`、`RATE_LIMIT_REFRESH` 和 `RATE_LIMIT_CREDENTIAL_SETUP`，均可通过环境变量覆盖。默认额度跨路由累计，不按 URL 拆分。健康检查和 `/metrics` 跳过限流；超限保持 HTTP 200、业务码 `1006`，并带正整数 `Retry-After` 头。
 
 ## StateMiddleware
 
 位于最内层，负责从请求中提取客户端信息并写入上下文，包括：
 
-- **IP 地址**：通过 `get_client_ip()` 提取，支持代理头解析
+- **IP 地址**：通过 `get_client_ip()` 读取 ASGI 客户端地址；代理头由 Uvicorn 按可信网段处理
 - **User-Agent 信息**：通过 `parse_user_agent()` 解析为 `user_agent`、`os`、`browser`、`device` 四个字段
 
 ```python
@@ -175,7 +187,7 @@ class StateMiddleware(BaseHTTPMiddleware):
 
 ## MetricsMiddleware
 
-负责采集每个请求的处理耗时、状态码等指标，供 monitoring 插件聚合分析。位于 SlowAPIMiddleware 之上（更靠近业务层），确保限流拦截的请求不计入业务指标。
+负责采集每个请求的处理耗时、状态码等指标，供 monitoring 插件聚合分析。位于 RateLimitMiddleware 之上（更靠近业务层），确保限流拦截的请求不计入业务指标。
 
 ## 插件中间件
 

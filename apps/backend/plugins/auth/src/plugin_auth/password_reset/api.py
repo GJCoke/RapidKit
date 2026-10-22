@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query
 from rapidkit_common.access import Public
 from rapidkit_common.auth import DenyImpersonation
 from rapidkit_common.deps import RedisDep, SessionDep
@@ -24,13 +24,11 @@ router = APIRouter(prefix="/auth/password-reset", tags=["Auth Password Reset"])
 @router.post("/request", dependencies=[Depends(DenyImpersonation), Public])
 async def request_reset(
     body: PasswordResetRequestBody,
-    request: Request,
     store: PasswordResetTokenStoreDep,
     user_crud: AuthCrudDep,
 ) -> Response[bool]:
     """提交密码重置申请，并按账号校验和频率限制规则发送重置邮件。"""
-    client_ip = request.client.host if request.client else "unknown"
-    await request_password_reset(str(body.email), client_ip, store=store, user_crud=user_crud)
+    await request_password_reset(str(body.email), store=store, user_crud=user_crud)
     return Response(data=True)
 
 
