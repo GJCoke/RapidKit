@@ -5,6 +5,8 @@ GET:/api/v1/auth/keys/public
 GET:/api/v1/auth/password-reset/validate
 GET:/api/v1/route/constant
 GET:/api/v1/route/exist
+GET:/health/live
+GET:/health/ready
 POST:/api/v1/auth/invite/set-password
 POST:/api/v1/auth/login
 POST:/api/v1/auth/login/swagger

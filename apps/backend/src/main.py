@@ -28,6 +28,7 @@ from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException
 from starlette_context import context
 
+from src.health import router as health_router
 from src.lifecycle import lifespan
 from src.locales.i18n import is_i18n_key, t
 from src.middlewares.audit import AuditMiddleware, record_audit_outcome
@@ -210,6 +211,7 @@ def setup_router(app: FastAPI) -> None:
             v1_router.include_router(plugin.router)
 
     app.include_router(v1_router)
+    app.include_router(health_router)
 
 
 def create_app() -> FastAPI:

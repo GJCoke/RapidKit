@@ -18,6 +18,7 @@ from rapidkit_core.leader_election import LeaderElection
 from rapidkit_core.log import logger
 from rapidkit_framework.events import event_bus
 
+from src.health import shutdown_readiness
 from src.locales.watch import watch_locale_files
 from src.queues.consumer import check_worker_offline, consume_events
 from src.sio.events.connection import renew_session_keys_loop
@@ -103,7 +104,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     logger.info("Application startup complete.")
 
-    yield
+    with shutdown_readiness(app):
+        yield
 
     # 关闭审计批量队列（flush 剩余记录）
     if audit_module.audit_queue is not None:

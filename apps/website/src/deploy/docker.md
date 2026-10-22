@@ -243,3 +243,10 @@ docker compose --env-file docker/prod/.env.prod -f docker/prod/docker-compose.ym
 自动迁移不调用 `initdb`。该脚本虽然补缺逻辑可重复执行，但会创建示例账号；首次种子初始化须作为单独运维步骤审查，生产不得使用 `--reset`。
 ACCESS/REFRESH/IMPERSONATION 三个签名密钥必须独立配置，RSA 密钥需要匹配。
 MinIO 从固定安全发布 `RELEASE.2025-10-15T17-29-55Z` 构建，首次构建需要获取上游源码和 Go 依赖。
+
+## 健康检查与停机
+
+`/health/live` 只检查进程；`/health/ready` 在每项 2 秒超时内并发检查 PostgreSQL 和 Redis。
+任一依赖不可用时 ready 返回 HTTP 503，不包含连接配置。两个接口均无需登录、无审计与流量统计，nginx 对公网返回 404。
+Compose 在容器内调用 ready，不发布后端端口。收到 TERM/INT 后 ready 标记为未就绪，随后沿用 Uvicorn 的退出流程。
+Uvicorn 等待进行中请求最多 30 秒，Compose 停机宽限 45 秒。Compose **不会按健康状态自动摘除副本**，因此这不是零丢请求的滚动发布保证。

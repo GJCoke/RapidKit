@@ -9,9 +9,13 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 
+from src.health import is_internal_path
+
 
 class SlowAPIMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        if is_internal_path(request.url.path):
+            return await call_next(request)
         app: Starlette = request.app
         limiter: Limiter = app.state.limiter
 

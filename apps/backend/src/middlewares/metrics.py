@@ -20,6 +20,8 @@ from rapidkit_core.log import logger
 from rapidkit_core.timezone import timezone
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from src.health import is_internal_path
+
 _background_tasks: set[asyncio.Task] = set()
 
 # Redis key TTL
@@ -99,6 +101,8 @@ class MetricsMiddleware(BaseHTTPMiddleware):
     """请求指标采集中间件，记录全局和按 API 维度的 QPS、响应时间和错误到 Redis。"""
 
     async def dispatch(self, request: Request, callback: Callable[[Request], Awaitable[Response]]) -> Response:
+        if is_internal_path(request.url.path):
+            return await callback(request)
         before = time.time()
         response = await callback(request)
         duration_ms = round((time.time() - before) * 1000, 2)
