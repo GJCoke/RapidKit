@@ -1518,6 +1518,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/plugins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 插件状态列表
+         * @description 返回所有插件的加载状态、版本、耗时和健康信息。
+         */
+        get: operations["get_plugin_status_api_v1_system_plugins_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/plugins/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 插件依赖关系图
+         * @description 返回插件依赖关系图的节点和边，用于前端可视化。
+         */
+        get: operations["get_plugin_dependencies_api_v1_system_plugins_dependencies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * EventBus 统计
+         * @description 返回 EventBus 的死信记录和 handler 错误统计。
+         */
+        get: operations["get_event_bus_stats_api_v1_system_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/activities": {
         parameters: {
             query?: never;
@@ -1621,66 +1681,6 @@ export interface paths {
          * @description 获取单条审计日志及其关联对象信息，不存在时返回空。
          */
         get: operations["get_audit_log_detail_api_v1_system_audit_logs__item_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/system/plugins": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 插件状态列表
-         * @description 返回所有插件的加载状态、版本、耗时和健康信息。
-         */
-        get: operations["get_plugin_status_api_v1_system_plugins_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/system/plugins/dependencies": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 插件依赖关系图
-         * @description 返回插件依赖关系图的节点和边，用于前端可视化。
-         */
-        get: operations["get_plugin_dependencies_api_v1_system_plugins_dependencies_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/system/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * EventBus 统计
-         * @description 返回 EventBus 的死信记录和 handler 错误统计。
-         */
-        get: operations["get_event_bus_stats_api_v1_system_events_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2686,6 +2686,10 @@ export interface components {
             before?: unknown;
             /** After */
             after?: unknown;
+            /** Beforedisplay */
+            beforeDisplay?: string | null;
+            /** Afterdisplay */
+            afterDisplay?: string | null;
             /**
              * Redacted
              * @default false
@@ -10212,6 +10216,66 @@ export interface operations {
             };
         };
     };
+    get_plugin_status_api_v1_system_plugins_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_PluginStatusItem__"];
+                };
+            };
+        };
+    };
+    get_plugin_dependencies_api_v1_system_plugins_dependencies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PluginDependencyGraph_"];
+                };
+            };
+        };
+    };
+    get_event_bus_stats_api_v1_system_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_EventBusStats_"];
+                };
+            };
+        };
+    };
     get_activities_api_v1_system_activities_get: {
         parameters: {
             query?: {
@@ -10252,6 +10316,8 @@ export interface operations {
                 /** @description 当前页码。 */
                 page?: number;
                 pageSize?: number;
+                keyword?: string | null;
+                view?: "all" | "attention" | "impersonation" | "system";
                 action?: string | null;
                 result?: components["schemas"]["AuditResult"] | null;
                 actorId?: string | null;
@@ -10410,66 +10476,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_plugin_status_api_v1_system_plugins_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_list_PluginStatusItem__"];
-                };
-            };
-        };
-    };
-    get_plugin_dependencies_api_v1_system_plugins_dependencies_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_PluginDependencyGraph_"];
-                };
-            };
-        };
-    };
-    get_event_bus_stats_api_v1_system_events_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Response_EventBusStats_"];
                 };
             };
         };

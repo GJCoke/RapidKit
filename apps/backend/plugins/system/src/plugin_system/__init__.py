@@ -1,4 +1,4 @@
-"""RapidKit system dashboard plugin."""
+"""System dashboard, audit, and activity plugin."""
 
 import asyncio
 from typing import TYPE_CHECKING, Any
@@ -8,8 +8,8 @@ from rapidkit_common.protocols.audit import AuditWriter
 from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
 from rapidkit_framework.services import ServiceRegistry
 
-from plugin_system.audit_writer import AuditWriterImpl
-from plugin_system.impersonation_audit import ImpersonationAuditWriterImpl
+from plugin_system.audit.impersonation import ImpersonationAuditWriterImpl
+from plugin_system.audit.writer import AuditWriterImpl
 from plugin_system.permissions import PERMISSION_CODES, RESOURCES
 
 if TYPE_CHECKING:
@@ -29,9 +29,9 @@ async def _startup(app: FastAPI) -> None:
     from rapidkit_core.uuid7 import uuid7
     from rapidkit_framework.events import event_bus
 
-    from plugin_system.activity_projector import configure_activity_publisher
-    from plugin_system.audit_catalog import build_audit_catalog
-    from plugin_system.push import push_error_stats_loop, push_resources_loop
+    from plugin_system.activity.projector import configure_activity_publisher
+    from plugin_system.audit.catalog import build_audit_catalog
+    from plugin_system.dashboard.push import push_error_stats_loop, push_resources_loop
 
     app.state.started_at = timezone.now()
     app.state.audit_catalog = build_audit_catalog(getattr(app.state, "plugins", []))
@@ -78,6 +78,7 @@ def register_audit_services(registry: ServiceRegistry) -> None:
 
 def register() -> PluginManifest:
     """返回 system 插件的 manifest。"""
+    from fastapi import APIRouter
     from rapidkit_common.events import (
         PluginLoadFailedEvent,
         TaskFailedEvent,
@@ -86,9 +87,17 @@ def register() -> PluginManifest:
         WorkerOfflineEvent,
     )
 
-    from plugin_system.activity_projector import handle_activity_event
-    from plugin_system.api import router
-    from plugin_system.models import ActivityEvent, AuditLog, AuditLogTarget
+    from plugin_system.activity.api import router as activity_router
+    from plugin_system.activity.models import ActivityEvent
+    from plugin_system.activity.projector import handle_activity_event
+    from plugin_system.audit.api import router as audit_router
+    from plugin_system.audit.models import AuditLog, AuditLogTarget
+    from plugin_system.dashboard.api import router as dashboard_router
+
+    router = APIRouter()
+    router.include_router(dashboard_router)
+    router.include_router(activity_router)
+    router.include_router(audit_router)
 
     return PluginManifest(
         name="system",
@@ -130,7 +139,7 @@ def register() -> PluginManifest:
             ),
         ],
         dependencies=["auth", "menu"],
-        sio_modules=["plugin_system.events"],
+        sio_modules=["plugin_system.dashboard.events"],
         on_startup=[_startup],
         on_shutdown=[_shutdown],
         event_listeners=[

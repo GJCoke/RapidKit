@@ -20,7 +20,7 @@
     "notificationNotFound": "Notification not found",
     "bannerRevisionConflict": "Banner changed; review the current banner and schedule",
     "bannerReplacementRequired": "Confirm replacement of the current banner or reservation",
-    "bannerStateMissing": "Banner state is missing; apply the notification migration"
+    "bannerStateMissing": "Banner state data is inconsistent; contact an administrator"
   },
   "category": {
     "adminAnnouncement": "Announcements",

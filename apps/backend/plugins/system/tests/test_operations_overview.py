@@ -1,11 +1,10 @@
 """Operations overview orchestration tests."""
 
 import pytest
+from plugin_system.dashboard.api import router
+from plugin_system.dashboard.operations import calculate_percent_change, server_status
+from plugin_system.dashboard.schemas import OperationsOverviewQuery
 from pydantic import ValidationError
-
-from plugin_system.api import router
-from plugin_system.operations import calculate_percent_change, server_status
-from plugin_system.schemas import OperationsOverviewQuery
 
 
 def test_percent_change_zero_rules() -> None:

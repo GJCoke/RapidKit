@@ -1,6 +1,6 @@
 """Global banner boundaries, durable transitions, consent and fanout isolation."""
 
-from asyncio import Event, create_task
+from asyncio import Event, create_task, gather
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from types import SimpleNamespace
@@ -30,7 +30,10 @@ from plugin_notification.orchestrator import MessageOrchestrator
 from plugin_notification.status_codes import NotificationStatusCode
 from pydantic import ValidationError
 from rapidkit_framework.exceptions import AppException
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.schema import CreateSchema, DropSchema
 from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 NOW = datetime(2035, 1, 2, 3, 4, 5)
 OPERATOR = uuid4()
@@ -69,6 +72,109 @@ async def save(service, **kwargs):
 
 async def snapshot(service, session):
     return await service.snapshot(session, user=SimpleNamespace(id=uuid4()))
+
+
+@pytest.mark.asyncio
+async def test_empty_banner_reads_need_no_seed_and_do_not_write(db_session):
+    service = BannerAnnouncementService()
+    public = await snapshot(service, db_session)
+    check = await service.snapshot(db_session)
+    assert public.current is None and public.revision == 0 and public.next_change_at is None
+    assert check.current is None and check.scheduled is None and check.revision == 0
+    assert await service.project_changes(db_session) == {}
+    assert not db_session.new and not db_session.dirty
+    await db_session.commit()
+    assert await db_session.get(NotificationBannerState, BANNER_STATE_ID) is None
+
+
+@pytest.mark.asyncio
+async def test_first_banner_write_initializes_in_its_transaction_and_can_retry(db_session):
+    service = BannerAnnouncementService(session=db_session, broadcaster=AsyncMock())
+    request = body(banner_revision=0, client_request_id=uuid4())
+    result = await service.save(_to_command(request), operator_id=OPERATOR, body=request)
+    state = await db_session.get(NotificationBannerState, BANNER_STATE_ID)
+    assert state.revision == 1 and state.active_message_id == result.message_id
+    await db_session.rollback()
+    assert await db_session.get(NotificationBannerState, BANNER_STATE_ID) is None
+    assert await db_session.get(NotificationMessage, result.message_id) is None
+
+    result = await service.save(_to_command(request), operator_id=OPERATOR, body=request)
+    await db_session.commit()
+    assert (await snapshot(service, db_session)).current.id == result.message_id
+    state, _, _ = await service.advance_due(db_session)
+    assert state.revision == 1 and state.active_message_id == result.message_id
+
+
+@pytest.mark.asyncio
+async def test_worker_can_initialize_an_unused_banner_slot(db_session):
+    service = BannerAnnouncementService()
+    state, active, scheduled = await service.advance_due(db_session)
+    assert state.revision == 0 and active is None and scheduled is None
+    assert not service.transitioned
+    await db_session.commit()
+    assert await db_session.get(NotificationBannerState, BANNER_STATE_ID) is state
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", ["published", "scheduled"])
+@pytest.mark.parametrize("lock", [False, True])
+async def test_missing_state_does_not_hide_existing_live_banners(db_session, status, lock):
+    db_session.add(
+        NotificationMessage(
+            source="admin",
+            category="announcement",
+            display_mode="top_banner",
+            status=status,
+            content_mode="raw",
+            title="Existing banner",
+            content="Content",
+            correlation_id="existing",
+        )
+    )
+    await db_session.commit()
+    service = BannerAnnouncementService()
+    with pytest.raises(AppException) as error:
+        if lock:
+            await service.advance_due(db_session)
+        else:
+            await snapshot(service, db_session)
+    assert error.value.code == NotificationStatusCode.BANNER_STATE_MISSING.code
+    assert await db_session.get(NotificationBannerState, BANNER_STATE_ID) is None
+
+
+@pytest.mark.asyncio
+async def test_concurrent_first_banner_publications_preserve_revision_checks(pg_engine):
+    schema = f"banner_init_{uuid4().hex}"
+    async with pg_engine.begin() as connection:
+        await connection.execute(CreateSchema(schema))
+    engine = pg_engine.execution_options(schema_translate_map={None: schema})
+    try:
+        async with engine.begin() as connection:
+            for model in (NotificationMessage, NotificationBannerState):
+                await connection.run_sync(model.__table__.create)
+        factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        requests = [body(banner_revision=0, client_request_id=uuid4()) for _ in range(2)]
+        results = await gather(
+            *(
+                BannerAnnouncementService(factory, broadcaster=AsyncMock()).save(
+                    _to_command(request), operator_id=OPERATOR, body=request
+                )
+                for request in requests
+            ),
+            return_exceptions=True,
+        )
+        failures = [result for result in results if isinstance(result, BaseException)]
+        assert len(failures) == 1
+        assert isinstance(failures[0], AppException)
+        assert failures[0].code == NotificationStatusCode.BANNER_REVISION_CONFLICT.code
+        async with factory() as session:
+            states = (await session.exec(select(NotificationBannerState))).all()
+            messages = (await session.exec(select(NotificationMessage))).all()
+            assert len(states) == len(messages) == 1
+            assert states[0].revision == 1 and states[0].active_message_id == messages[0].id
+    finally:
+        async with pg_engine.begin() as connection:
+            await connection.execute(DropSchema(schema, cascade=True))
 
 
 @pytest.mark.parametrize("level", ["info", "success", "warning", "error"])

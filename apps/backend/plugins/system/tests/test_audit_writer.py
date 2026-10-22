@@ -1,7 +1,7 @@
 import pytest
 import pytest_asyncio
-from plugin_system.audit_writer import AuditWriterImpl
-from plugin_system.models import AuditLog
+from plugin_system.audit.models import AuditLog
+from plugin_system.audit.writer import AuditWriterImpl
 from rapidkit_common.audit import AuditRecord
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import select

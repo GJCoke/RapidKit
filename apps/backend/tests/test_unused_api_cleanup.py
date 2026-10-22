@@ -46,7 +46,7 @@ async def test_business_route_count_uses_visible_runtime_routes_without_inventor
     from unittest.mock import AsyncMock, MagicMock
 
     from fastapi import FastAPI, Request
-    from plugin_system.api import get_business_summary
+    from plugin_system.dashboard.api import get_business_summary
 
     app = FastAPI()
     app.add_api_route("/visible", lambda: None)

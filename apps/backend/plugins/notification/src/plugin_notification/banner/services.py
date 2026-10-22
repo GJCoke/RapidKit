@@ -14,6 +14,7 @@ from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.services import get_service
+from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import col, delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -87,8 +88,34 @@ class BannerAnnouncementService:
             statement = statement.with_for_update().execution_options(populate_existing=True)
         state = (await session.exec(statement)).one_or_none()
         if state is None:
-            # Never race to insert the lock row: it must be seeded by migration.
-            raise AppException(NotificationStatusCode.BANNER_STATE_MISSING)
+            existing_banner = (
+                await session.exec(
+                    select(NotificationMessage.id)
+                    .where(
+                        col(NotificationMessage.display_mode) == "top_banner",
+                        col(NotificationMessage.status).in_(
+                            [MessageStatus.PUBLISHED.value, MessageStatus.SCHEDULED.value]
+                        ),
+                    )
+                    .limit(1)
+                )
+            ).first()
+            if existing_banner is not None:
+                # A concurrent first publication may have committed since the initial read.
+                state = (await session.exec(statement)).one_or_none()
+                if state is None:
+                    raise AppException(NotificationStatusCode.BANNER_STATE_MISSING)
+        if state is None:
+            if lock:
+                now = timezone.now()
+                await session.exec(
+                    insert(NotificationBannerState)
+                    .values(id=BANNER_STATE_ID, create_time=now, update_time=now, revision=0)
+                    .on_conflict_do_nothing(index_elements=["id"])
+                )
+                state = (await session.exec(statement)).one()
+            else:
+                state = NotificationBannerState(id=BANNER_STATE_ID)
         active = await session.get(NotificationMessage, state.active_message_id) if state.active_message_id else None
         scheduled = (
             await session.get(NotificationMessage, state.scheduled_message_id) if state.scheduled_message_id else None

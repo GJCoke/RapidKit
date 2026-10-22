@@ -43,8 +43,11 @@ class AuditActionDef:
     model: type | None = None
     name_field: str = "name"
     id_parameter: str | None = None
+    reference_fields: dict[str, tuple[type, str]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        if self.reference_fields.keys() - self.fields.keys():
+            raise ValueError("Audit references must be declared audit fields")
         if not re.fullmatch(r"[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*", self.code):
             raise ValueError("Audit action must be resource.business-action")
         if not re.fullmatch(r"[a-z][a-z0-9-]*", self.resource_type):

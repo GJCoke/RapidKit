@@ -15,9 +15,11 @@ from rapidkit_core.uuid7 import uuid7
 from rapidkit_framework.audit import AuditActorType, AuditResult, AuditRiskLevel, AuditSource
 from sqlalchemy import event, inspect
 from sqlalchemy.orm import Session
+from sqlmodel import select
 from starlette.requests import Request
 
 from rapidkit_common.schemas.base import BaseModel
+from rapidkit_common.scope_runtime import apply_field_rules
 
 
 def is_sensitive_audit_field(name: str) -> bool:
@@ -40,12 +42,15 @@ class AuditChange(BaseModel):
     field: str
     before: Any = None
     after: Any = None
+    before_display: str | None = Field(default=None, max_length=200)
+    after_display: str | None = Field(default=None, max_length=200)
     redacted: bool = False
 
     @model_validator(mode="after")
     def redact_secret(self):
         if self.redacted or is_sensitive_audit_field(self.field):
             self.before = self.after = None
+            self.before_display = self.after_display = None
             self.redacted = True
         return self
 
@@ -232,6 +237,25 @@ async def prepare_audit_commit(session, context: AuditContext) -> None:
     if context.identity_provider:
         for key, value in context.identity_provider().items():
             setattr(context.record, key, value)
+    for change in context.record.metadata.changes:
+        reference = context.action_def.reference_fields.get(change.field) if context.action_def else None
+        if not reference or change.redacted:
+            continue
+        model, name_field = reference
+        for side in ("before", "after"):
+            value = getattr(change, side)
+            if value is None:
+                continue
+            try:
+                reference_id = UUID(str(value))
+            except ValueError:
+                continue
+            # Use the request session so reference names respect its row scopes.
+            item = (await session.exec(select(model).where(getattr(model, "id") == reference_id))).one_or_none()
+            name = getattr(item, name_field, None) if item is not None else None
+            name = apply_field_rules({name_field: name}, model).get(name_field)
+            if name is not None:
+                setattr(change, f"{side}_display", str(name)[:200])
     context.confirm()
     record = context.snapshot()
 

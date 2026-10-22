@@ -11,9 +11,9 @@ import time
 from datetime import timedelta
 from urllib.parse import urlparse
 
-from plugin_system.audit_crud import AuditLogCRUD
-from plugin_system.models import AuditLog
-from plugin_system.schemas import AuditLogQuery
+from plugin_system.audit.crud import AuditLogCRUD
+from plugin_system.audit.models import AuditLog
+from plugin_system.audit.schemas import AuditLogQuery
 from rapidkit_core.timezone import timezone
 from rapidkit_core.uuid7 import uuid7
 from sqlalchemy import event, inspect

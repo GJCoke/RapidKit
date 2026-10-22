@@ -4,8 +4,8 @@ import asyncio
 import threading
 
 import pytest
-from plugin_system import health
-from plugin_system.schemas import ServiceHealth
+from plugin_system.dashboard import health
+from plugin_system.dashboard.schemas import ServiceHealth
 
 
 @pytest.mark.asyncio

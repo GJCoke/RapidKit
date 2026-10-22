@@ -2,7 +2,6 @@ from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
-
 from rapidkit_common.audit import AuditChange, AuditMetadata, AuditRecord
 
 
@@ -29,8 +28,11 @@ def test_record_rejects_negative_duration():
 
 
 def test_sensitive_change_never_retains_old_or_new_secret():
-    change = AuditChange(field="password", before="old", after="new", redacted=True)
+    change = AuditChange(
+        field="password", before="old", after="new", before_display="old", after_display="new", redacted=True
+    )
     assert change.before is None and change.after is None
+    assert change.before_display is None and change.after_display is None
 
 
 def test_metadata_rejects_uncontrolled_payload():

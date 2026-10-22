@@ -8,7 +8,7 @@ from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from alembic.script import ScriptDirectory
-from plugin_system.models import AuditLog, AuditLogTarget
+from plugin_system.audit.models import AuditLog, AuditLogTarget
 
 
 def test_initial_migration_creates_structured_audit_schema():

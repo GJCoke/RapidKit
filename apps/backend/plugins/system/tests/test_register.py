@@ -13,7 +13,8 @@ class TestSystemRegister:
 
     def test_models_are_correct(self):
         from plugin_system import register
-        from plugin_system.models import ActivityEvent, AuditLog
+        from plugin_system.activity.models import ActivityEvent
+        from plugin_system.audit.models import AuditLog
 
         m = register()
         assert AuditLog in m.models

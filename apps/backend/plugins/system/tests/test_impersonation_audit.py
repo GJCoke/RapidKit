@@ -5,8 +5,8 @@ from uuid import uuid4
 
 import pytest
 from plugin_system import register
-from plugin_system.impersonation_audit import ImpersonationAuditWriterImpl
-from plugin_system.models import AuditLog
+from plugin_system.audit.impersonation import ImpersonationAuditWriterImpl
+from plugin_system.audit.models import AuditLog
 from rapidkit_common.protocols import ImpersonationAuditWriter
 from rapidkit_framework.services import ServiceRegistry
 from sqlalchemy.exc import SQLAlchemyError

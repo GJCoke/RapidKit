@@ -1,12 +1,11 @@
 """system 插件接口访问声明。"""
 
 from plugin_system import register
-from plugin_system.api import router
 from tests.testing.access import declared_access
 
 
 def test_system_routes_declare_expected_access():
-    assert declared_access(router) == {
+    assert declared_access(register().router) == {
         "GET:/api/v1/system/stats/operations-overview": "require:dashboard:read",
         "GET:/api/v1/system/stats/resources": "require:dashboard:infrastructure",
         "GET:/api/v1/system/stats/errors": "require:dashboard:errors",

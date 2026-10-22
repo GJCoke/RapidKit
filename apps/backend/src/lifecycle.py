@@ -26,7 +26,7 @@ from src.sio.sessions import register_socket_closer, shutdown_socket_timers
 
 async def _flush_audit_batch(batch: list[AuditRecord]) -> None:
     """批量写入审计日志到数据库。"""
-    from plugin_system.audit_crud import AuditLogCRUD
+    from plugin_system.audit.crud import AuditLogCRUD
     from rapidkit_core.database import AsyncSessionLocal
 
     async with AsyncSessionLocal() as session:
@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     from src.middlewares import audit as audit_module
 
     if settings.AUDIT_ENABLED:
-        from plugin_system.audit_metrics import record_delivery
+        from plugin_system.audit.metrics import record_delivery
 
         audit_module.audit_queue = AsyncBatchQueue(
             handler=_flush_audit_batch,

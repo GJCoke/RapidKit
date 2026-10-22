@@ -10,6 +10,7 @@ const fields = [
   "action",
   "actorId",
   "actorKeyword",
+  "keyword",
   "subjectUserId",
   "impersonationSessionId",
   "resourceType",
@@ -48,6 +49,9 @@ export function parseAuditLogQuery(query: Record<string, unknown>, now = dayjs()
     filters.riskLevel = risk as Api.SystemManage.AuditRiskLevel
   const source = value("source")
   if (["http", "domain_event", "system"].includes(source || "")) filters.source = source as Api.SystemManage.AuditSource
+  const view = value("view")
+  if (["all", "attention", "impersonation", "system"].includes(view || ""))
+    filters.view = view as Api.SystemManage.AuditLogQuery["view"]
   let timeRange: AuditLogPageState["timeRange"] = value("timeRange") === "all" ? "all" : "24h"
   const start = value("startTime"),
     end = value("endTime")
@@ -61,7 +65,7 @@ export function parseAuditLogQuery(query: Record<string, unknown>, now = dayjs()
   ) {
     filters.startTime = dayjs(start).toISOString()
     filters.endTime = dayjs(end).toISOString()
-    timeRange = "custom"
+    timeRange = value("timeRange") === "24h" ? "24h" : "custom"
   } else if (timeRange !== "all") {
     filters.startTime = now.subtract(24, "hour").toISOString()
     filters.endTime = now.toISOString()

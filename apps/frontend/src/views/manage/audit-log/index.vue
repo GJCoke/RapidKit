@@ -1,7 +1,6 @@
 <script setup lang="tsx">
   import { computed, ref, watch } from "vue"
   import { useRoute, useRouter } from "vue-router"
-  import dayjs from "dayjs"
   import { NButton, NTag } from "naive-ui"
   import { defaultTransform, useNaivePaginatedTable } from "@/hooks/common/table"
   import { $t } from "@/locales"
@@ -9,7 +8,7 @@
   import { useAppStore } from "@/store/modules/app"
   import AuditLogDetailDrawer from "./modules/audit-log-detail-drawer.vue"
   import AuditLogSearch from "./modules/audit-log-search.vue"
-  import { getAuditResultPresentation, auditIdentity } from "./audit-log-display"
+  import { getAuditResultPresentation, auditIdentity, formatAuditTime } from "./audit-log-display"
   import { parseAuditLogQuery, serializeAuditLogQuery } from "./audit-log-query"
   import { useAuditDetail, createLatestAuditRequest } from "./audit-log-detail"
 
@@ -19,7 +18,9 @@
   const router = useRouter()
   const initial = parseAuditLogQuery(route.query)
   const searchParams = ref(initial.filters)
+  const draftParams = ref({ ...initial.filters })
   const timeRange = ref(initial.timeRange)
+  const draftTimeRange = ref(initial.timeRange)
   const selectedAuditId = ref(initial.selectedAuditId)
   const detailVisible = ref(Boolean(initial.selectedAuditId))
   const catalogState = useAuditDetail(async () => {
@@ -64,7 +65,7 @@
           key: "occurredAt",
           title: $t("page.manage.auditLog.time"),
           width: 176,
-          render: (row) => dayjs(row.occurredAt).format("YYYY-MM-DD HH:mm:ss"),
+          render: (row) => formatAuditTime(row.occurredAt, catalog.value?.timezone),
         },
         {
           key: "actorName",
@@ -115,6 +116,8 @@
               <div>
                 {row.targetCount
                   ? $t("page.manage.auditLog.targetCount", { count: row.targetCount })
+                  : row.resourceType === "impersonation"
+                    ? $t("page.manage.auditLog.sessionFor", { user: row.subjectName || row.subjectUsername || $t("page.manage.auditLog.notRecorded") })
                   : row.resourceName || row.resourceId || $t("page.manage.auditLog.notRecorded")}
               </div>
               <div class="text-12px text-base-text-3">
@@ -134,7 +137,7 @@
                 {$t(getAuditResultPresentation(row.result).key as any)}
               </NTag>
               {row.result !== "success" ? (
-                <div class="mt-4px truncate text-12px text-error" title={row.errorMessage || undefined}>
+                <div class={['mt-4px truncate text-12px', row.result === "failure" ? "text-error" : "text-base-text-2"]} title={row.errorMessage || undefined}>
                   {row.errorMessage || $t("page.manage.auditLog.openFailure")}
                 </div>
               ) : null}
@@ -174,13 +177,16 @@
   pagination.pageSize = initial.filters.pageSize || 20
   void getData()
   async function search() {
-    searchParams.value.page = 1
+    searchParams.value = { ...draftParams.value, page: 1 }
+    timeRange.value = draftTimeRange.value
     await syncUrl()
     await getDataByPage(1)
   }
   function clearFilters() {
     searchParams.value = { page: 1, pageSize: 20 }
+    draftParams.value = { ...searchParams.value }
     timeRange.value = "all"
+    draftTimeRange.value = "all"
     void search()
   }
   const signature = (value: object) =>
@@ -189,12 +195,48 @@
         .filter(([, v]) => v !== undefined && v !== null && v !== "")
         .sort(([a], [b]) => a.localeCompare(b)),
     )
+  const filterSignature = (value: Api.SystemManage.AuditLogQuery) =>
+    signature({ ...value, page: undefined, pageSize: undefined })
+  const pendingFilters = computed(() => filterSignature(draftParams.value) !== filterSignature(searchParams.value))
+  const appliedConditions = computed(() => {
+    const labels: Record<string, string> = {
+      keyword: $t("page.manage.auditLog.keyword"),
+      actorId: $t("page.manage.auditLog.actor"),
+      resourceType: $t("page.manage.auditLog.resourceType"),
+      resourceKeyword: $t("page.manage.auditLog.resourceName"),
+      actorKeyword: $t("page.manage.auditLog.actorAccount"),
+      resourceId: $t("page.manage.auditLog.resourceId"),
+      subjectUserId: $t("page.manage.auditLog.detail.subjectId"),
+      impersonationSessionId: $t("page.manage.auditLog.detail.sessionId"),
+      startTime: $t("page.manage.auditLog.fromTime"),
+      endTime: $t("page.manage.auditLog.toTime"),
+      result: $t("page.manage.auditLog.resultLabel"),
+      riskLevel: $t("page.manage.auditLog.riskLabel"),
+      source: $t("page.manage.auditLog.sourceLabel"),
+      action: $t("page.manage.auditLog.action"),
+      ip: "IP", requestId: "Request ID", correlationId: "Correlation ID",
+    }
+    return Object.entries(searchParams.value)
+      .filter(([key, value]) => !["page", "pageSize", "view"].includes(key) && value !== undefined && value !== null && value !== "")
+      .map(([key, value]) => {
+        let label = String(value)
+        if (["startTime", "endTime"].includes(key)) label = formatAuditTime(label, catalog.value?.timezone)
+        const category = { result: "result", riskLevel: "risk", source: "source" }[key]
+        if (category) label = $t(`page.manage.auditLog.${category}.${label}` as any)
+        if (key === "action") label = actionLabels.value.get(label)?.label || label
+        if (key === "resourceType")
+          label = catalog.value?.actions.find(action => action.resourceType === label)?.resourceLabel || label
+        return `${labels[key] || key}: ${label}`
+      })
+  })
   watch(
     () => route.query,
     (query) => {
       const state = parseAuditLogQuery(query)
       if (signature(state.filters) !== signature(searchParams.value)) {
         searchParams.value = state.filters
+        draftParams.value = { ...state.filters }
+        draftTimeRange.value = state.timeRange
         void getDataByPage(state.filters.page || 1)
       }
       timeRange.value = state.timeRange
@@ -213,25 +255,30 @@
     (locale) => void catalogState.load(locale),
     { immediate: true },
   )
-  function related(filters: Api.SystemManage.AuditLogQuery) {
-    searchParams.value = { ...filters, page: 1, pageSize: searchParams.value.pageSize }
-    timeRange.value = "all"
-    detailVisible.value = false
-    selectedAuditId.value = null
-    void search()
-  }
 </script>
 
 <template>
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <AuditLogSearch v-model:model="searchParams" :catalog="catalog" @search="search" @range="timeRange = $event" />
+    <AuditLogSearch v-model:model="draftParams" :catalog="catalog" @search="search" @range="draftTimeRange = $event" />
     <NAlert v-if="catalogState.failed.value" type="warning">{{ $t("page.manage.auditLog.catalogFailed") }}</NAlert>
     <NCard
       :title="$t('page.manage.auditLog.title')"
       :bordered="false"
       size="small"
       class="card-wrapper sm:flex-1-hidden"
+      content-class="flex-col min-h-0"
     >
+      <div class="mb-12px flex-col gap-8px" aria-live="polite">
+        <div class="flex flex-wrap items-center gap-8px">
+          <span class="font-500">{{ $t("page.manage.auditLog.appliedFilters") }}</span>
+          <NTag size="small">{{ $t(`page.manage.auditLog.views.${searchParams.view || 'all'}` as any) }}</NTag>
+          <NTag v-if="timeRange === 'all'" size="small">{{ $t("page.manage.auditLog.ranges.all") }}</NTag>
+          <span v-for="condition in appliedConditions" :key="condition" class="break-all text-12px text-base-text-2">{{
+            condition
+          }}</span>
+        </div>
+        <span v-if="pendingFilters" class="text-warning">{{ $t("page.manage.auditLog.filtersPending") }}</span>
+      </div>
       <template #header-extra
         ><TableHeaderOperation v-model:columns="columnChecks" :loading="loading" @refresh="getData"
       /></template>
@@ -240,6 +287,7 @@
         <NButton text @click="getData">{{ $t("common.refresh") }}</NButton></NAlert
       >
       <NDataTable
+        v-if="!listFailed"
         :columns="columns"
         :data="data"
         size="small"
@@ -250,10 +298,10 @@
         :row-key="(row) => row.id"
         :row-props="row => ({ class: 'cursor-pointer', tabindex: 0, onClick: () => openDetail(row.id), onKeydown: (event: KeyboardEvent) => { if (event.key === 'Enter') openDetail(row.id) } })"
         :pagination="mobilePagination"
-        class="sm:h-full"
+        class="sm:flex-1-hidden"
       >
         <template #empty
-          ><NEmpty :description="$t('page.manage.auditLog.noMatches')"
+          ><NEmpty v-if="!loading" :description="$t('page.manage.auditLog.noMatches')"
             ><template #extra
               ><NButton size="small" @click="clearFilters">{{
                 $t("page.manage.auditLog.clearFilters")
@@ -263,11 +311,6 @@
         >
       </NDataTable>
     </NCard>
-    <AuditLogDetailDrawer
-      v-model:visible="detailVisible"
-      :audit-id="selectedAuditId"
-      :catalog="catalog"
-      @related="related"
-    />
+    <AuditLogDetailDrawer v-model:visible="detailVisible" :audit-id="selectedAuditId" :catalog="catalog" />
   </div>
 </template>

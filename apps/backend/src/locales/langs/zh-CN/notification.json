@@ -20,7 +20,7 @@
     "notificationNotFound": "通知不存在",
     "bannerRevisionConflict": "顶部公告已变更，请重新检查当前公告与预约",
     "bannerReplacementRequired": "请确认替换当前公告或预约",
-    "bannerStateMissing": "顶部公告状态未初始化，请执行通知插件迁移"
+    "bannerStateMissing": "顶部公告状态数据异常，请联系管理员检查"
   },
   "category": {
     "adminAnnouncement": "系统公告",

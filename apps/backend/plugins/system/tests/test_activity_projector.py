@@ -1,7 +1,7 @@
 """Tests for explicit domain-event to activity projections."""
 
-from plugin_system.activity_projector import project_activity
-from plugin_system.models import ActivityCategory, ActivityLevel
+from plugin_system.activity.models import ActivityCategory, ActivityLevel
+from plugin_system.activity.projector import project_activity
 from rapidkit_common.events import (
     PluginLoadFailedEvent,
     TaskFailedEvent,

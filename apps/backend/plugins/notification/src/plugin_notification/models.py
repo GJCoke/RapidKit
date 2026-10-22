@@ -146,7 +146,7 @@ BANNER_STATE_ID = UUID("00000000-0000-7000-8000-000000000001")
 
 
 class NotificationBannerState(SQLModel, table=True):
-    """Migration-seeded global slot; every banner write locks this fixed row."""
+    """Global slot initialized on first write and locked for every banner mutation."""
 
     __tablename__ = "notification_banner_state"
 

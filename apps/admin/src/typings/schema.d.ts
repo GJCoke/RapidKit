@@ -2669,6 +2669,10 @@ export interface components {
       before?: unknown
       /** After */
       after?: unknown
+      /** Beforedisplay */
+      beforeDisplay?: string | null
+      /** Afterdisplay */
+      afterDisplay?: string | null
       /**
        * Redacted
        * @default false
@@ -10223,6 +10227,8 @@ export interface operations {
         /** @description 当前页码。 */
         page?: number
         pageSize?: number
+        keyword?: string | null
+        view?: "all" | "attention" | "impersonation" | "system"
         action?: string | null
         result?: components["schemas"]["AuditResult"] | null
         actorId?: string | null

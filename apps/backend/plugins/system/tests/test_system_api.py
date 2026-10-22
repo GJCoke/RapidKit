@@ -5,8 +5,8 @@ from contextlib import suppress
 
 import pytest
 from httpx import AsyncClient
-from plugin_system import api as system_api
-from plugin_system.schemas import ServiceHealth
+from plugin_system.dashboard import api as system_api
+from plugin_system.dashboard.schemas import ServiceHealth
 
 
 class TestResourceStats:

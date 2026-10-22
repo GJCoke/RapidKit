@@ -1,3 +1,33 @@
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+import timezone from "dayjs/plugin/timezone"
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+
+export function formatAuditTime(value?: string | null, zone?: string) {
+  return value
+    ? dayjs(value)
+        .tz(zone || Intl.DateTimeFormat().resolvedOptions().timeZone)
+        .format("YYYY-MM-DD HH:mm:ss")
+    : "—"
+}
+
+export function auditChangeValue(
+  change: NonNullable<NonNullable<Api.SystemManage.AuditLogDetail>["changes"]>[number],
+  side: "before" | "after",
+) {
+  if (change.redacted) return null
+  return change[side === "before" ? "beforeDisplay" : "afterDisplay"] ?? change[side]
+}
+
+export function auditNoChangesKey(result: string, action: string) {
+  if (result === "failure") return "page.manage.auditLog.noChangesFailure" as const
+  if (result === "unknown") return "page.manage.auditLog.noChangesUnknown" as const
+  if (action.startsWith("impersonation.")) return "page.manage.auditLog.noChangesSession" as const
+  return "page.manage.auditLog.noChanges" as const
+}
+
 export function getAuditResultPresentation(result: string): {
   key: string
   type: "success" | "error" | "warning" | "default"

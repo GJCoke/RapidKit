@@ -1,6 +1,6 @@
 """Dashboard realtime security policy tests."""
 
-from plugin_system.realtime_access import is_dashboard_realtime_allowed
+from plugin_system.dashboard.realtime_access import is_dashboard_realtime_allowed
 
 
 class User:

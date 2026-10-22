@@ -3,9 +3,10 @@ from uuid import uuid4
 
 from plugin_auth.impersonation.models import EndReason, ImpersonationSession
 from plugin_auth.impersonation.schemas import ImpersonationCreated, ImpersonationCurrent, UserSummary
-from plugin_system.models import AuditLog, AuditResult, AuditSource
-from plugin_system.schemas import AuditLogDetail, AuditLogListItem
+from plugin_system.audit.models import AuditLog
+from plugin_system.audit.schemas import AuditLogDetail, AuditLogListItem
 from rapidkit_core.timezone import timezone
+from rapidkit_framework.audit import AuditResult, AuditSource
 
 
 def test_columns_and_indexes():

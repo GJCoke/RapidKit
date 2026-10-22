@@ -4,10 +4,7 @@ from dataclasses import dataclass, field
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from plugin_system.services import (
-    build_plugin_dependency_graph,
-    build_plugin_status_list,
-)
+from plugin_system.dashboard.services import build_plugin_dependency_graph, build_plugin_status_list
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -46,7 +43,7 @@ class _FakePluginError:
 class TestBuildBusinessSummary:
     @pytest.mark.asyncio
     async def test_returns_counts(self):
-        from plugin_system.services import build_business_summary
+        from plugin_system.dashboard.services import build_business_summary
 
         session = AsyncMock()
         result_mock = MagicMock()
@@ -64,7 +61,7 @@ class TestBuildBusinessSummary:
 
     @pytest.mark.asyncio
     async def test_celery_enabled_counts_schedules(self):
-        from plugin_system.services import build_business_summary
+        from plugin_system.dashboard.services import build_business_summary
 
         session = AsyncMock()
         result_mock = MagicMock()
@@ -77,7 +74,7 @@ class TestBuildBusinessSummary:
 
     @pytest.mark.asyncio
     async def test_celery_count_failure_returns_zero(self):
-        from plugin_system.services import build_business_summary
+        from plugin_system.dashboard.services import build_business_summary
 
         async def _execute(stmt):
             if "schedule_periodic_tasks" in str(stmt):

@@ -247,7 +247,7 @@ event_bus.on_pattern("role.*", _on_any_role_event)
 当一个插件只需要另一个插件的数据统计，且不需要完整的 ORM 语义时，可以通过约定的表名直接查询：
 
 ```python
-# plugins/system/src/plugin_system/api.py
+# plugins/system/src/plugin_system/dashboard/services.py
 
 from sqlalchemy import text
 

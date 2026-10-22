@@ -3,7 +3,7 @@
 
 import pytest
 from plugin_auth.auth_config import auth_settings
-from plugin_system.models import AuditLog
+from plugin_system.audit.models import AuditLog
 from plugins.auth.tests.impersonation_helpers import strict_client, target  # noqa: F401, F811
 from rapidkit_common.protocols import ImpersonationAuditWriter
 from rapidkit_framework.services import get_service

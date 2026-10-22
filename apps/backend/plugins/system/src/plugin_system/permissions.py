@@ -9,7 +9,7 @@ Date   : 2026-10-17
 
 from rapidkit_framework.plugin import PermissionCodeDef, ResourceDef
 
-from plugin_system.models import AuditLog
+from plugin_system.audit.models import AuditLog
 
 RESOURCES = [
     ResourceDef(key="dashboard", label="首页"),

@@ -20,6 +20,7 @@ AUDIT_ROUTES = {
             "parent_id": "audit.fields.parent_id",
             "leader_id": "audit.fields.leader_id",
         },
+        reference_fields={"parent_id": (Department, "name")},
         transactional=False,
     ),
     "update_department": AuditActionDef(
@@ -36,6 +37,7 @@ AUDIT_ROUTES = {
             "parent_id": "audit.fields.parent_id",
             "leader_id": "audit.fields.leader_id",
         },
+        reference_fields={"parent_id": (Department, "name")},
         transactional=False,
     ),
     "delete_department": AuditActionDef(

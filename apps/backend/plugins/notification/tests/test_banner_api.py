@@ -28,8 +28,6 @@ from rapidkit_framework.status_codes import StatusCode
 
 @pytest.mark.asyncio
 async def test_public_read_requires_auth_but_no_management_permission_and_hides_future(db_session):
-    db_session.add(NotificationBannerState(id=BANNER_STATE_ID))
-    await db_session.commit()
     app = FastAPI()
     app.include_router(public_router, prefix="/api/v1")
 
@@ -53,12 +51,11 @@ async def test_public_read_requires_auth_but_no_management_permission_and_hides_
         data = response.json()["data"]
         assert data == {"current": None, "revision": 0, "serverNow": data["serverNow"], "nextChangeAt": None}
         assert data["serverNow"].endswith("+00:00")
+        assert await db_session.get(NotificationBannerState, BANNER_STATE_ID) is None
 
 
 @pytest.mark.asyncio
 async def test_banner_preflight_readonly_and_create_requires_publish_permission(db_session, monkeypatch):
-    db_session.add(NotificationBannerState(id=BANNER_STATE_ID))
-    await db_session.commit()
     user = SimpleNamespace(id=uuid4(), is_admin=False)
     permissions = []
 

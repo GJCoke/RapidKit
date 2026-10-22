@@ -1,17 +1,27 @@
 <script setup lang="ts">
   import { computed, ref, watch } from "vue"
-  import dayjs from "dayjs"
   import { $t } from "@/locales"
   import { fetchGetAuditLogDetail, fetchGetAuditLogTargets } from "@/service/api"
   import { useAppStore } from "@/store/modules/app"
-  import { getAuditResultPresentation, auditIdentity, auditValue } from "../audit-log-display"
+  import {
+    getAuditResultPresentation,
+    auditIdentity,
+    auditValue,
+    auditChangeValue,
+    auditNoChangesKey,
+    formatAuditTime,
+  } from "../audit-log-display"
   import { useAuditDetail } from "../audit-log-detail"
+  import AuditLogRelatedRecords from "./audit-log-related-records.vue"
 
   defineOptions({ name: "AuditLogDetailDrawer" })
   const props = defineProps<{ auditId: string | null; catalog: Api.SystemManage.AuditCatalog | null }>()
   const visible = defineModel<boolean>("visible", { default: false })
-  const emit = defineEmits<{ related: [filters: Api.SystemManage.AuditLogQuery] }>()
   const appStore = useAppStore()
+  const detailHistory = ref<string[]>([])
+  const activeAuditId = computed(() => detailHistory.value.at(-1) || null)
+  const relatedFilters = ref<Api.SystemManage.AuditLogQuery | null>(null)
+  const technicalExpanded = ref<string[]>([])
   const state = useAuditDetail(async (id) => {
     const { data, error } = await fetchGetAuditLogDetail(id)
     return { data: data || null, error }
@@ -23,6 +33,44 @@
     return { data: data || null, error }
   })
   const action = computed(() => props.catalog?.actions.find((item) => item.code === detail.value?.action))
+  const resourceLabel = computed(() => {
+    const row = detail.value
+    if (!row) return ""
+    if (row.resourceType === "impersonation")
+      return $t("page.manage.auditLog.sessionFor", {
+        user: row.subjectName || row.subjectUsername || $t("page.manage.auditLog.notRecorded"),
+      })
+    return (
+      row.resourceName ||
+      (row.targetCount
+        ? $t("page.manage.auditLog.targetCount", { count: row.targetCount })
+        : row.resourceId || $t("page.manage.auditLog.notRecorded"))
+    )
+  })
+  const summary = computed(() => {
+    const row = detail.value
+    if (!row) return ""
+    let actor = auditIdentity(row) || $t(`page.manage.auditLog.identity.${row.actorType || "unknown"}` as any)
+    if (row.action === "impersonation.start" || row.action === "impersonation.stop")
+      return $t(
+        row.action === "impersonation.start"
+          ? "page.manage.auditLog.sessionStartSummary"
+          : "page.manage.auditLog.sessionEndSummary",
+        {
+          actor,
+          subject: row.subjectName || row.subjectUsername || $t("page.manage.auditLog.notRecorded"),
+          result: $t(getAuditResultPresentation(row.result).key as any),
+        },
+      )
+    if (row.impersonationSessionId)
+      actor += ` · ${$t("page.manage.auditLog.asUser", { user: row.subjectName || row.subjectUsername || row.subjectUserId || "—" })}`
+    return $t(`page.manage.auditLog.summary.${row.result}` as any, {
+      actor,
+      resource: resourceLabel.value,
+      action:
+        action.value?.label || (row.action === "http.request" ? $t("page.manage.auditLog.unclassified") : row.action),
+    })
+  })
   const initiator = computed(
     () => detail.value?.metadata?.initiated_by as { name?: string; username?: string; id?: string } | undefined,
   )
@@ -39,7 +87,7 @@
       : $t("page.manage.auditLog.notRecorded"),
   )
   function formatTime(value?: string | null) {
-    return value ? dayjs(value).format("YYYY-MM-DD HH:mm:ss.SSS") : "—"
+    return formatAuditTime(value, props.catalog?.timezone)
   }
   async function copy(value: string) {
     try {
@@ -50,13 +98,25 @@
     }
   }
   function filter(value: Api.SystemManage.AuditLogQuery) {
-    emit("related", value)
+    relatedFilters.value = value
+  }
+  function openRelated(id: string) {
+    if (id !== activeAuditId.value) detailHistory.value.push(id)
   }
   watch(
-    [() => props.auditId, visible, () => appStore.locale],
+    [() => props.auditId, visible],
+    () => {
+      detailHistory.value = visible.value && props.auditId ? [props.auditId] : []
+    },
+    { immediate: true },
+  )
+  watch(
+    [activeAuditId, () => appStore.locale],
     () => {
       targetPage.value = 1
-      void state.load(visible.value ? props.auditId : null)
+      relatedFilters.value = null
+      technicalExpanded.value = []
+      void state.load(activeAuditId.value)
     },
     { immediate: true },
   )
@@ -71,10 +131,13 @@
     :auto-focus="true"
   >
     <NDrawerContent :title="$t('page.manage.auditLog.detail.title')" closable>
+      <NButton v-if="detailHistory.length > 1" class="mb-16px" size="small" @click="detailHistory.pop()">{{
+        $t("page.manage.auditLog.backToEvent")
+      }}</NButton>
       <NSpin :show="state.loading.value">
         <NAlert v-if="state.failed.value" type="error"
           >{{ $t("page.manage.auditLog.loadFailed") }}
-          <NButton text @click="state.load(auditId)">{{ $t("common.refresh") }}</NButton></NAlert
+          <NButton text @click="state.load(activeAuditId)">{{ $t("common.refresh") }}</NButton></NAlert
         >
         <template v-else-if="detail">
           <div class="mb-20px flex-col gap-8px">
@@ -96,6 +159,7 @@
               }}</span
             >
           </div>
+          <p class="mb-20px text-18px font-500 leading-relaxed">{{ summary }}</p>
           <NDescriptions :column="1" label-placement="left" bordered size="small">
             <NDescriptionsItem :label="$t('page.manage.auditLog.actor')"
               >{{
@@ -104,10 +168,7 @@
               <div v-if="detail.actorType === 'system' && detail.actorName" class="text-12px text-base-text-3">
                 {{ detail.actorName }}
               </div>
-              <div v-if="detail.actorId" class="text-12px text-base-text-3">
-                {{ detail.actorId }}
-              </div></NDescriptionsItem
-            >
+            </NDescriptionsItem>
             <NDescriptionsItem
               v-if="detail.metadata?.attempted_username"
               :label="$t('page.manage.auditLog.attemptedUsername')"
@@ -125,7 +186,6 @@
                   user: detail.subjectName || detail.subjectUsername || detail.subjectUserId || "—",
                 })
               }}
-              <div class="text-12px text-base-text-3">{{ detail.subjectUserId }}</div>
               <div>{{ $t("page.manage.auditLog.detail.reason") }}: {{ detail.metadata?.reason || "—" }}</div>
               <div v-if="detail.metadata?.end_reason">
                 {{ $t("page.manage.auditLog.detail.endReason") }}: {{ detail.metadata.end_reason }}
@@ -133,34 +193,11 @@
             >
             <NDescriptionsItem :label="$t('page.manage.auditLog.resource')"
               >{{ action?.resourceLabel || detail.resourceType || "—" }} ·
-              {{
-                detail.resourceName ||
-                (detail.targetCount
-                  ? $t("page.manage.auditLog.targetCount", { count: detail.targetCount })
-                  : $t("page.manage.auditLog.notRecorded"))
-              }}
-              <div v-if="detail.resourceId" class="break-all text-12px text-base-text-3">
-                {{ detail.resourceId }}
-                <NButton text size="tiny" @click="copy(detail.resourceId!)">{{
-                  $t("page.manage.auditLog.copy")
-                }}</NButton>
-              </div></NDescriptionsItem
-            >
-            <NDescriptionsItem :label="$t('page.manage.auditLog.actionCode')"
-              ><code>{{ detail.action }}</code></NDescriptionsItem
-            >
+              {{ resourceLabel }}
+            </NDescriptionsItem>
             <NDescriptionsItem :label="$t('page.manage.auditLog.riskLabel')">{{
               $t(`page.manage.auditLog.risk.${detail.riskLevel}` as any)
             }}</NDescriptionsItem>
-            <NDescriptionsItem :label="$t('page.manage.auditLog.sourceLabel')">{{
-              $t(`page.manage.auditLog.source.${detail.source}` as any)
-            }}</NDescriptionsItem>
-            <NDescriptionsItem :label="$t('page.manage.auditLog.logId')"
-              ><span class="break-all">{{ detail.id }}</span>
-              <NButton text size="tiny" @click="copy(detail.id)">{{
-                $t("page.manage.auditLog.copy")
-              }}</NButton></NDescriptionsItem
-            >
           </NDescriptions>
 
           <h3 class="mt-24px text-15px font-600">{{ $t("page.manage.auditLog.changes") }}</h3>
@@ -180,20 +217,28 @@
               <tr v-for="change in detail.changes" :key="change.field">
                 <td>{{ action?.fields?.[change.field] || change.field }}</td>
                 <td class="max-w-240px break-all">
-                  {{ change.redacted ? "•••" : changeValue(change.before, change.field) }}
+                  {{ change.redacted ? "•••" : changeValue(auditChangeValue(change, "before"), change.field) }}
                 </td>
                 <td class="max-w-240px break-all">
                   {{
-                    change.redacted ? $t("page.manage.auditLog.secretChanged") : changeValue(change.after, change.field)
+                    change.redacted
+                      ? $t("page.manage.auditLog.secretChanged")
+                      : changeValue(auditChangeValue(change, "after"), change.field)
                   }}
                 </td>
               </tr>
             </tbody>
           </NTable>
-          <NEmpty v-else size="small" :description="$t('page.manage.auditLog.noChanges')" />
+          <NEmpty v-else size="small" :description="$t(auditNoChangesKey(detail.result, detail.action))" />
+          <p v-if="detail.changes?.length" class="mt-8px text-12px text-base-text-2">
+            {{ $t("page.manage.auditLog.snapshotHint") }}
+          </p>
           <template v-if="detail.targetCount">
             <h3 class="mt-24px text-15px font-600">{{ $t("page.manage.auditLog.batchTargets") }}</h3>
-            <NAlert v-if="targetsState.failed.value" type="error">{{ $t("page.manage.auditLog.loadFailed") }}</NAlert>
+            <NAlert v-if="targetsState.failed.value" type="error"
+              >{{ $t("page.manage.auditLog.loadFailed") }}
+              <NButton text @click="targetsState.load(detail.id)">{{ $t("common.refresh") }}</NButton>
+            </NAlert>
             <NSpin :show="targetsState.loading.value"
               ><NList bordered
                 ><NListItem v-for="target in targetsState.data.value?.records || []" :key="target.id"
@@ -207,6 +252,7 @@
                     <NTag :type="getAuditResultPresentation(target.result).type">{{
                       $t(getAuditResultPresentation(target.result).key as any)
                     }}</NTag
+                    ><span v-if="target.errorMessage" class="break-all text-error">{{ target.errorMessage }}</span
                     ><NButton
                       text
                       size="small"
@@ -230,15 +276,41 @@
             :type="detail.result === 'failure' ? 'error' : 'warning'"
             class="mt-24px"
             :title="$t('page.manage.auditLog.failureReason')"
-            >{{ detail.errorMessage || $t("page.manage.auditLog.failureNotRecorded") }}
+            >{{
+              detail.errorMessage ||
+              $t(
+                detail.result === "unknown"
+                  ? "page.manage.auditLog.unknownReason"
+                  : detail.result === "partial"
+                    ? "page.manage.auditLog.partialReason"
+                    : "page.manage.auditLog.failureNotRecorded",
+              )
+            }}
             <div class="mt-8px text-12px">
               {{ $t("page.manage.auditLog.businessCode") }}: {{ detail.businessCode ?? "—" }} · HTTP:
               {{ detail.httpStatus ?? detail.responseCode ?? "—" }}
             </div></NAlert
           >
-          <NCollapse class="mt-24px"
-            ><NCollapseItem :title="$t('page.manage.auditLog.detail.request')" name="request">
+          <NCollapse v-model:expanded-names="technicalExpanded" class="mt-24px"
+            ><NCollapseItem :title="$t('page.manage.auditLog.technicalInfo')" name="request">
               <NDescriptions :column="1" label-placement="left" bordered size="small">
+                <NDescriptionsItem
+                  v-for="item in [
+                    { label: $t('page.manage.auditLog.logId'), value: detail.id },
+                    { label: $t('page.manage.auditLog.actionCode'), value: detail.action },
+                    { label: $t('page.manage.auditLog.actor'), value: detail.actorId },
+                    { label: $t('page.manage.auditLog.resourceId'), value: detail.resourceId },
+                    { label: $t('page.manage.auditLog.detail.subjectId'), value: detail.subjectUserId },
+                  ].filter((item) => item.value)"
+                  :key="item.label"
+                  :label="item.label"
+                >
+                  <span class="break-all">{{ item.value }}</span>
+                  <NButton text size="tiny" @click="copy(item.value!)">{{ $t("page.manage.auditLog.copy") }}</NButton>
+                </NDescriptionsItem>
+                <NDescriptionsItem :label="$t('page.manage.auditLog.sourceLabel')">{{
+                  $t(`page.manage.auditLog.source.${detail.source}` as any)
+                }}</NDescriptionsItem>
                 <NDescriptionsItem :label="$t('page.manage.auditLog.path')"
                   ><code class="break-all"
                     >{{ detail.httpMethod }} {{ detail.path || $t("page.manage.auditLog.notRecorded") }}</code
@@ -300,6 +372,13 @@
               >{{ $t("page.manage.auditLog.sameSession") }}</NButton
             >
           </NSpace>
+          <AuditLogRelatedRecords
+            v-if="relatedFilters"
+            :filters="relatedFilters"
+            :catalog="catalog"
+            @select="openRelated"
+            @close="relatedFilters = null"
+          />
         </template>
         <NEmpty v-else-if="!state.loading.value" :description="$t('page.manage.auditLog.detail.empty')" />
       </NSpin>

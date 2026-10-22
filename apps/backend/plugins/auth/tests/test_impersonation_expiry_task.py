@@ -5,7 +5,7 @@ from importlib import import_module
 import pytest
 from plugin_auth import register
 from plugin_auth.impersonation.models import ImpersonationSession
-from plugin_system.models import AuditLog
+from plugin_system.audit.models import AuditLog
 from plugins.auth.tests.test_impersonation_service import setup_service, start  # noqa: F401
 from rapidkit_common.protocols.impersonation import ImpersonationRevoker
 from rapidkit_core.timezone import timezone

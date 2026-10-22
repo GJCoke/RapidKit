@@ -1,6 +1,6 @@
+from plugin_system.activity.models import ActivityEvent
+from plugin_system.audit.models import AuditLog
 from sqlalchemy import UniqueConstraint
-
-from plugin_system.models import ActivityEvent, AuditLog
 
 
 def test_activity_and_audit_use_separate_tables():

@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 from plugin_auth.impersonation.cache import active_key
 from plugin_auth.impersonation.models import ImpersonationSession
-from plugin_system.models import AuditLog
+from plugin_system.audit.models import AuditLog
 from plugin_user.models import UserDailyActivity
 from plugins.auth.tests.impersonation_helpers import (  # noqa: F401
     drain_identity_events,

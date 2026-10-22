@@ -4,7 +4,7 @@ import importlib.metadata
 import importlib.util
 
 from plugin_permission.catalog.loader import catalog_from_app
-from plugin_system.schemas import BusinessSummary
+from plugin_system.dashboard.schemas import BusinessSummary
 from rapidkit_core.config import settings
 from src._menu_seeds import build_menus
 

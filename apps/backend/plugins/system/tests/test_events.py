@@ -6,7 +6,7 @@ from fastapi_sio_di import AsyncServer
 from rapidkit_framework.identity import IdentityMetadata, identity_scope
 
 with patch.object(AsyncServer, "instrument"):
-    from plugin_system import events
+    from plugin_system.dashboard import events
 
 
 async def test_dashboard_refuses_non_admin(monkeypatch):

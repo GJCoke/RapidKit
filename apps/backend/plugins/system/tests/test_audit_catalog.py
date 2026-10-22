@@ -1,5 +1,5 @@
 import pytest
-from plugin_system.audit_catalog import build_audit_catalog
+from plugin_system.audit.catalog import build_audit_catalog
 from rapidkit_framework.audit import AuditActionDef
 from rapidkit_framework.plugin import PluginManifest
 

@@ -4,7 +4,7 @@ from datetime import UTC, timedelta
 import pytest
 from plugin_auth.auth_config import auth_settings
 from plugin_auth.impersonation.models import ImpersonationSession
-from plugin_system.models import AuditLog
+from plugin_system.audit.models import AuditLog
 from plugin_user.models import User
 from plugins.auth.tests.impersonation_helpers import login_headers, strict_client, target  # noqa: F401, F811
 from rapidkit_common.enums import Status

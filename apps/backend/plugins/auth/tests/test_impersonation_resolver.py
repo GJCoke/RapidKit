@@ -12,7 +12,7 @@ from plugin_auth.impersonation.cache import active_key
 from plugin_auth.impersonation.models import EndReason, ImpersonationSession
 from plugin_auth.impersonation.service import ImpersonationService
 from plugin_auth.providers import CurrentUserProviderImpl, TokenDecoderImpl
-from plugin_system.impersonation_audit import ImpersonationAuditWriterImpl
+from plugin_system.audit.impersonation import ImpersonationAuditWriterImpl
 from plugin_user.models import User
 from rapidkit_common.enums import Status
 from rapidkit_framework.exceptions import AppException

@@ -32,8 +32,8 @@ async def test_submitted_task_carries_correlation_without_claiming_completion():
 async def test_retry_replay_and_out_of_order_events_keep_one_audit_per_attempt(monkeypatch):
     from unittest.mock import AsyncMock
 
-    from plugin_system.audit_writer import AuditWriterImpl
-    from plugin_system.models import AuditLog, AuditLogTarget
+    from plugin_system.audit.models import AuditLog, AuditLogTarget
+    from plugin_system.audit.writer import AuditWriterImpl
     from plugin_worker import event_service
     from plugin_worker.event_service import EventService
     from plugin_worker.models import CeleryTaskResult

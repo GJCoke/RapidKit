@@ -20,6 +20,7 @@ AUDIT_ROUTES = {
             "status": "audit.fields.status",
             "parent_id": "audit.fields.parent_id",
         },
+        reference_fields={"parent_id": (Menu, "menu_name")},
         transactional=False,
     ),
     "update_menu": AuditActionDef(
@@ -37,6 +38,7 @@ AUDIT_ROUTES = {
             "parent_id": "audit.fields.parent_id",
             "permission": "audit.fields.permission",
         },
+        reference_fields={"parent_id": (Menu, "menu_name")},
         transactional=False,
     ),
     "delete_menu": AuditActionDef(

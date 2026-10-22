@@ -11,6 +11,48 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.parametrize("reference", ["existing", "missing", "malformed", "scoped-out", "hidden-name", "masked-name"])
+async def test_reference_names_are_snapshotted_before_publish_and_survive_rename(reference):
+    from uuid import uuid4
+
+    from plugin_department.audit import AUDIT_ROUTES
+    from rapidkit_common.audit import AuditChange, prepare_audit_commit
+    from rapidkit_common.scope_runtime import bind_session_scope, install_scope_listeners, set_field_rules
+    from sqlalchemy import false
+
+    engine = create_async_engine("sqlite+aiosqlite://", connect_args={"autocommit": False})
+    async with engine.begin() as connection:
+        await connection.run_sync(Department.__table__.create)
+    try:
+        async with AsyncSession(engine, expire_on_commit=False) as session:
+            parent = Department(name="Engineering", code="eng")
+            session.add(parent)
+            await session.commit()
+            context = AuditContext(action_def=AUDIT_ROUTES["update_department"])
+            reference_id = (
+                str(uuid4()) if reference == "missing" else "malformed" if reference == "malformed" else str(parent.id)
+            )
+            context.record.metadata.changes = [AuditChange(field="parent_id", after=reference_id)]
+            if reference == "scoped-out":
+                install_scope_listeners()
+                bind_session_scope(session, Department, false())
+            if reference in {"hidden-name", "masked-name"}:
+                set_field_rules({Department: {"name": "hidden" if reference == "hidden-name" else "masked"}})
+            await prepare_audit_commit(session, context)
+            if reference not in {"scoped-out", "hidden-name", "masked-name"}:
+                parent.name = "Renamed later"
+                await session.commit()
+            change = context.snapshot().metadata.changes[0]
+            assert change.after == reference_id
+            assert change.after_display == (
+                "Engineering" if reference == "existing" else "******" if reference == "masked-name" else None
+            )
+            assert change.before_display is None
+    finally:
+        set_field_rules({})
+        await engine.dispose()
+
+
 async def test_commit_publishes_only_confirmed_object_snapshot(monkeypatch):
     engine = create_async_engine("sqlite+aiosqlite://", connect_args={"autocommit": False})
     async with engine.begin() as connection:
