@@ -11,6 +11,7 @@ from authlib.jose.errors import ExpiredTokenError, JoseError
 from fastapi import Depends, Header, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from plugin_user.models import User
+from pydantic import ValidationError
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.events import UserActivityObservedEvent
 from rapidkit_common.protocols.auth import AuthContext, AuthContextResolver
@@ -26,8 +27,8 @@ from rapidkit_security import AccessJWT, RefreshJWT, decode_token
 from typing_extensions import Annotated, Doc
 
 from plugin_auth.auth.crud import UserCRUD
-from plugin_auth.auth.resolver import force_relogin_structure, user_structure
-from plugin_auth.auth.token_store import TokenStore
+from plugin_auth.auth.resolver import user_structure
+from plugin_auth.auth.token_store import REVOKED_BEFORE_KEY, TokenStore, issued_before_revocation
 from plugin_auth.auth_config import auth_settings
 from plugin_auth.status_codes import AuthStatusCode
 
@@ -47,7 +48,6 @@ __all__ = [
     "TokenStoreDep",
     "refresh_structure",
     "user_structure",
-    "force_relogin_structure",
     "oauth2_scheme",
 ]
 
@@ -91,11 +91,10 @@ async def parse_access_jwt_user(token: HeaderAccessTokenDep, redis: RedisDep) ->
         user = decode_token(token, auth_settings.ACCESS_TOKEN_KEY)
     except ExpiredTokenError:
         raise AppException(AuthStatusCode.TOKEN_EXPIRED)
-    except JoseError:
+    except JoseError, ValidationError:
         raise AppException(AuthStatusCode.TOKEN_INVALID)
 
-    relogin_key = force_relogin_structure.format(user_id=user.sub)
-    if await redis.exists(relogin_key):
+    if await TokenStore(redis).is_revoked(user.sub, user.jti, user.iat):
         raise AppException(AuthStatusCode.TOKEN_INVALID)
 
     ctx.user_id = user.sub
@@ -110,7 +109,7 @@ def parse_refresh_jwt_user(
         user = decode_token(x_refresh_token, auth_settings.REFRESH_TOKEN_KEY)
     except ExpiredTokenError:
         raise AppException(AuthStatusCode.TOKEN_EXPIRED)
-    except JoseError:
+    except JoseError, ValidationError:
         raise AppException(AuthStatusCode.TOKEN_INVALID)
 
     if user.agent != user_agent:
@@ -152,7 +151,11 @@ async def get_current_user_form_db(auth: AuthContextDep) -> User:
 
 
 async def get_current_user_form_redis_and_db(user: UserRefreshJWTDep, db_user: AuthCrudDep, redis: RedisDep) -> User:
-    refresh_token = await redis.get(refresh_structure.format(user_id=user.sub, jti=user.jti))
+    refresh_token, cutoff = await redis.mget(
+        [refresh_structure.format(user_id=user.sub, jti=user.jti), REVOKED_BEFORE_KEY.format(user_id=user.sub)]
+    )
+    if issued_before_revocation(user.iat, cutoff):
+        raise AppException(AuthStatusCode.TOKEN_INVALID)
     if not refresh_token:
         logger.debug("No refresh token found in the redis.")
         raise AppException(AuthStatusCode.TOKEN_EXPIRED)

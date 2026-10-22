@@ -6,7 +6,8 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 from plugin_auth.auth.deps import get_current_user_form_db
-from plugin_auth.auth.resolver import AuthContextResolverImpl, force_relogin_structure, user_structure
+from plugin_auth.auth.resolver import AuthContextResolverImpl, user_structure
+from plugin_auth.auth.token_store import REVOKED_BEFORE_KEY
 from plugin_auth.auth_config import auth_settings
 from plugin_auth.impersonation.cache import active_key
 from plugin_auth.impersonation.models import EndReason, ImpersonationSession
@@ -32,6 +33,7 @@ async def setup_resolver(session, pg_engine, redis):
     record = await service.start(actor.id, subject.id, reason=None, ip=None, user_agent=None)
     claims = ImpersonationJWT(
         token_type="impersonation",
+        iat=record.created_at.replace(tzinfo=UTC).timestamp(),
         act=actor.id,
         sub=subject.id,
         sid=record.id,
@@ -86,7 +88,7 @@ async def test_authoritative_revocation(setup_resolver, session, redis, who, fie
 @pytest.mark.parametrize("who", [0, 1])
 async def test_force_relogin(setup_resolver, redis, who):
     resolver, actor, subject, _, claims = setup_resolver
-    await redis.set(force_relogin_structure.format(user_id=[actor, subject][who].id), "1")
+    await redis.set(REVOKED_BEFORE_KEY.format(user_id=[actor, subject][who].id), int(claims.iat * 1000) + 1)
     assert await CurrentUserProviderImpl(resolver).get_current_user(token(claims)) is None
     assert await TokenDecoderImpl(resolver).decode_user_id(token(claims)) is None
 
@@ -182,7 +184,7 @@ async def test_cache_read_failure_falls_back(setup_resolver):
     concrete = resolver.redis
     resolver._redis = Mock()
     resolver._redis.get = AsyncMock(side_effect=RuntimeError("read failed"))
-    resolver._redis.exists = concrete.exists
+    resolver._redis.mget = concrete.mget
     resolver._redis.set = concrete.set
     resolver._redis.sadd = concrete.sadd
     assert (await resolver.resolve(token(claims))).subject.id == subject.id
@@ -254,7 +256,7 @@ async def test_rejection_does_not_depend_on_end_success(setup_resolver, redis):
     resolver, actor, _, _, claims = setup_resolver
     resolver.impersonations = AsyncMock()
     resolver.impersonations.end.side_effect = RuntimeError("audit unavailable")
-    await redis.set(force_relogin_structure.format(user_id=actor.id), "1")
+    await redis.set(REVOKED_BEFORE_KEY.format(user_id=actor.id), int(claims.iat * 1000) + 1)
     with pytest.raises(AppException) as exc:
         await resolver.resolve(token(claims))
     assert exc.value.code == 14017

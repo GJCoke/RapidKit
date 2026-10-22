@@ -78,8 +78,10 @@ async def logout(auth: UserAccessJWTDep, token_store: TokenStoreDep, redis: Redi
     """撤销当前会话并清理用户信息与权限缓存。"""
     cache_mgr = get_service(PermissionCacheManager)
     # Attempt every cleanup even if one Redis operation fails.
+    assert auth.exp is not None  # Verified JWT decoding requires exp.
     results = await gather(
         token_store.revoke(auth.sub, auth.jti),
+        token_store.revoke_access(auth.jti, auth.exp),
         token_store.clear_user_cache(auth.sub),
         cache_mgr.invalidate(auth.sub, redis),
         return_exceptions=True,

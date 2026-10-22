@@ -1,9 +1,11 @@
 """Tests for SessionInvalidator protocol and implementation."""
 
+from datetime import timedelta
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from plugin_auth.auth_config import auth_settings
 from plugin_auth.providers import SessionInvalidatorImpl
 from rapidkit_common.protocols.auth import SessionInvalidator, UserSocketCloser
 from rapidkit_common.protocols.impersonation import ImpersonationRevoker
@@ -59,38 +61,29 @@ class TestSessionInvalidatorImpl:
         redis.delete.assert_called_once_with(f"auth:user:<{user_id}>")
 
     @pytest.mark.asyncio
-    async def test_invalidate_user_sessions_full_flow(self):
-        from unittest.mock import MagicMock
-
-        redis = AsyncMock()
-        redis.scan_iter = MagicMock(
-            return_value=AsyncIteratorMock([b"auth:refresh:<uid>:<jti1>", b"auth:refresh:<uid>:<jti2>"])
-        )
-        impl = SessionInvalidatorImpl()
+    async def test_invalidate_user_sessions_full_flow(self, redis, monkeypatch):
+        monkeypatch.setattr(auth_settings, "REFRESH_TOKEN_EXP", timedelta(seconds=42))
         user_id = uuid4()
-
-        await impl.invalidate_user_sessions(user_id, redis)
-
-        # Should delete permission cache
-        redis.delete.assert_any_call(f"auth:permission:<{user_id}>")
-        # Should delete each refresh token
-        redis.delete.assert_any_call(b"auth:refresh:<uid>:<jti1>")
-        redis.delete.assert_any_call(b"auth:refresh:<uid>:<jti2>")
-        # Should set force relogin flag
-        redis.set.assert_called_once_with(f"auth:force_relogin:<{user_id}>", "1", ex=86400)
+        refresh = f"auth:refresh:<{user_id}>:<{uuid4()}>"
+        permission = f"auth:permission:<{user_id}>"
+        await redis.mset({refresh: "legacy-refresh", permission: "cached"})
+        await SessionInvalidatorImpl().invalidate_user_sessions(user_id, redis)
+        assert await redis.mget([refresh, permission]) == [None, None]
+        assert int(await redis.get(f"auth:revoked_before:{user_id}")) > 0
+        assert 41 <= await redis.ttl(f"auth:revoked_before:{user_id}") <= 42
 
 
 @pytest.fixture(autouse=True)
 def optional_revoker_absent(monkeypatch):
     """Unit tests exercise the original contract with no impersonation plugin."""
-    monkeypatch.setattr("plugin_auth.providers.get_service_optional", lambda protocol: None)
+    monkeypatch.setattr("plugin_auth.auth.token_store.get_service_optional", lambda protocol: None)
 
 
 @pytest.mark.asyncio
 async def test_invalidator_calls_optional_revoker(monkeypatch):
     revoker = AsyncMock()
     monkeypatch.setattr(
-        "plugin_auth.providers.get_service_optional",
+        "plugin_auth.auth.token_store.get_service_optional",
         lambda protocol: revoker if protocol is ImpersonationRevoker else None,
     )
     redis = AsyncMock()
@@ -104,7 +97,8 @@ async def test_invalidator_calls_optional_revoker(monkeypatch):
 async def test_invalidate_user_sessions_closes_user_sockets(monkeypatch):
     closer = AsyncMock()
     monkeypatch.setattr(
-        "plugin_auth.providers.get_service_optional", lambda protocol: closer if protocol is UserSocketCloser else None
+        "plugin_auth.auth.token_store.get_service_optional",
+        lambda protocol: closer if protocol is UserSocketCloser else None,
     )
     redis = AsyncMock()
     redis.scan_iter = lambda **kwargs: AsyncIteratorMock([])

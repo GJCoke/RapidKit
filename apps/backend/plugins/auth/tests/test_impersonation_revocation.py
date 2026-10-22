@@ -24,7 +24,7 @@ async def test_revocation_without_user_index(setup_service, monkeypatch, entry, 
     service, users, factory = setup_service
     record = await start(service, users)
     await service.redis.delete(actor_key(users[0].id), subject_key(users[2].id))
-    module = "plugin_auth.auth.token_store" if entry == "token" else "plugin_auth.providers"
+    module = "plugin_auth.auth.token_store"
     monkeypatch.setattr(
         module + ".get_service_optional", lambda protocol: service if protocol is ImpersonationRevoker else None
     )

@@ -123,8 +123,6 @@ async def user_login(
     cache_mgr = get_service(PermissionCacheManager)
     await cache_mgr.build(user_info.id, user_info.roles, redis)
 
-    await token_store.clear_force_relogin(user_info.id)
-
     if audit_context is not None:
         audit_context.record.actor_id = user_info.id
         audit_context.record.actor_name = user_info.name

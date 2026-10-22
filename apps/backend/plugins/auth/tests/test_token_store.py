@@ -1,5 +1,7 @@
 """Tests for TokenStore — auth token lifecycle management."""
 
+import time
+from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -7,9 +9,11 @@ from uuid import uuid4
 import pytest
 from plugin_auth.auth.services import refresh_user_token
 from plugin_auth.auth.token_store import TokenStore
+from plugin_auth.auth_config import auth_settings
 from plugin_auth.providers import SessionInvalidatorImpl
 from rapidkit_common.protocols.auth import UserSocketCloser
 from rapidkit_common.protocols.impersonation import ImpersonationRevoker
+from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_framework.exceptions import AppException
 from src.sio.sessions import RedisSocketCloser, socket_member
 
@@ -100,7 +104,7 @@ async def test_force_relogin_entries_close_registered_sockets(redis, monkeypatch
         await getattr(store, entry)(user_id)
 
     assert not await redis.exists(key)
-    assert await redis.get(f"auth:force_relogin:<{user_id}>") == "1"
+    assert int(await redis.get(f"auth:revoked_before:{user_id}")) > 0
     assert {call.kwargs["namespace"] for call in external.disconnect.await_args_list} == {"/notifications", "/worker"}
     assert len(external.emit.await_args_list) == 2
     assert all(call.args == ("auth:revoked", {"code": "unauthorized"}) for call in external.emit.await_args_list)
@@ -113,7 +117,7 @@ async def test_force_relogin_without_optional_services(redis, monkeypatch, entry
     monkeypatch.setattr("plugin_auth.auth.token_store.get_service_optional", lambda protocol: None)
     user_id = uuid4()
     await getattr(TokenStore(redis), entry)(user_id)
-    assert await redis.get(f"auth:force_relogin:<{user_id}>") == "1"
+    assert int(await redis.get(f"auth:revoked_before:{user_id}")) > 0
 
 
 @pytest.mark.asyncio
@@ -125,7 +129,7 @@ async def test_force_relogin_still_closes_sockets_if_impersonation_revocation_fa
     external, revoker = AsyncMock(), AsyncMock()
     revoker.revoke_user.side_effect = RuntimeError("revocation offline")
     closer = RedisSocketCloser(external)
-    for module in ("plugin_auth.auth.token_store", "plugin_auth.providers"):
+    for module in ("plugin_auth.auth.token_store",):
         monkeypatch.setattr(
             module + ".get_service_optional",
             lambda protocol: {UserSocketCloser: closer, ImpersonationRevoker: revoker}.get(protocol),
@@ -140,3 +144,104 @@ async def test_force_relogin_still_closes_sockets_if_impersonation_revocation_fa
     external.emit.assert_awaited_once_with(
         "auth:revoked", {"code": "unauthorized"}, to="sid", namespace="/notifications"
     )
+
+
+@pytest.fixture
+def real_store(redis, monkeypatch):
+    monkeypatch.setattr("plugin_auth.auth.token_store.get_service_optional", lambda protocol: None)
+    return TokenStore(AsyncRedisClient(connection_pool=redis.connection_pool))
+
+
+@pytest.mark.parametrize(
+    "iat, expected", [(1760000000.100, True), (1760000000.500, False), (1760000000.900, False), (None, True)]
+)
+async def test_legacy_iat_and_same_second_cutoff(real_store, redis, iat, expected):
+    user_id, jti = uuid4(), uuid4()
+    assert await real_store.is_revoked(user_id, jti, iat) is False
+    await redis.set(f"auth:revoked_before:{user_id}", 1760000000500, ex=604800)
+    assert await real_store.is_revoked(user_id, jti, iat) is expected
+
+
+async def test_revoke_reads_are_one_round_trip(redis_mock):
+    redis_mock.mget.return_value = [None, None]
+    store = TokenStore(redis_mock)
+    assert await store.is_revoked(uuid4(), uuid4(), 1760000000.100) is False
+    assert redis_mock.mget.await_count == 1
+    redis_mock.get.assert_not_awaited()
+    redis_mock.exists.assert_not_awaited()
+
+
+async def test_access_blacklist_expires_at_token_deadline(real_store, redis):
+    user_id, jti, other_jti, expired_jti = uuid4(), uuid4(), uuid4(), uuid4()
+    now = time.time()
+    await real_store.revoke_access(jti, now + 900)
+    assert await real_store.is_revoked(user_id, jti, now) is True
+    assert await real_store.is_revoked(user_id, other_jti, now) is False
+    assert 899 <= await redis.ttl(f"auth:access_revoked:{jti}") <= 900
+    await real_store.revoke_access(expired_jti, now - 1)
+    assert not await redis.exists(f"auth:access_revoked:{expired_jti}")
+
+
+async def test_revoke_all_uses_scan_and_preserves_other_users(real_store, redis, monkeypatch):
+    user_id, other_id = uuid4(), uuid4()
+    keys = [f"auth:refresh:<{user_id}>:<{uuid4()}>" for _ in range(103)]
+    await redis.mset(dict.fromkeys(keys, "refresh"))
+    other = f"auth:refresh:<{other_id}>:<{uuid4()}>"
+    await redis.set(other, "refresh")
+
+    async def forbidden_keys(*args, **kwargs):
+        raise AssertionError("KEYS blocks Redis")
+
+    monkeypatch.setattr(real_store._redis, "keys", forbidden_keys)
+    await real_store.revoke_all(user_id)
+    assert not any(await redis.mget(keys))
+    assert await redis.get(other) == "refresh"
+    assert int(await redis.get(f"auth:revoked_before:{user_id}")) > 0
+
+
+async def test_cutoff_never_moves_backwards_and_uses_refresh_ttl(real_store, redis, monkeypatch):
+    user_id = uuid4()
+    monkeypatch.setattr(auth_settings, "REFRESH_TOKEN_EXP", timedelta(seconds=42))
+    monkeypatch.setattr(time, "time", lambda: 1760000000.900)
+    await real_store.force_relogin(user_id)
+    monkeypatch.setattr(time, "time", lambda: 1760000000.100)
+    await real_store.force_relogin(user_id)
+    assert int(await redis.get(f"auth:revoked_before:{user_id}")) == 1760000000900
+    assert 41 <= await redis.ttl(f"auth:revoked_before:{user_id}") <= 42
+
+
+async def test_issue_waits_past_revocation_boundary(real_store, redis):
+    from rapidkit_security import decode_token
+
+    user_id = uuid4()
+    await real_store.force_relogin(user_id)
+    cutoff = int(await redis.get(f"auth:revoked_before:{user_id}"))
+    pair = await real_store.issue(user_id, "test", "test-agent")
+    for token, key in (
+        (pair.access_token, auth_settings.ACCESS_TOKEN_KEY),
+        (pair.refresh_token, auth_settings.REFRESH_TOKEN_KEY),
+    ):
+        claims = decode_token(token, key)
+        assert claims.iat * 1000 > cutoff
+
+
+async def test_revoke_all_preserves_new_login_during_scan(real_store, monkeypatch):
+    from rapidkit_security import decode_token
+
+    user_id = uuid4()
+    old = await real_store.issue(user_id, "test", "test-agent")
+    old_claims = decode_token(old.refresh_token, auth_settings.REFRESH_TOKEN_KEY)
+    scan = real_store._redis.scan_iter
+    issued = []
+
+    async def scan_after_login(**kwargs):
+        issued.append(await real_store.issue(user_id, "test", "test-agent"))
+        async for key in scan(**kwargs):
+            yield key
+
+    monkeypatch.setattr(real_store._redis, "scan_iter", scan_after_login)
+    await real_store.revoke_all(user_id)
+    assert len(issued) == 1
+    new_claims = decode_token(issued[0].refresh_token, auth_settings.REFRESH_TOKEN_KEY)
+    assert await real_store.is_valid(user_id, old_claims.jti) is False
+    assert await real_store.is_valid(user_id, new_claims.jti) is True

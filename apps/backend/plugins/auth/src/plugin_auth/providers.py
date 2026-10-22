@@ -7,16 +7,14 @@ Date   : 2026-05-11
 
 from uuid import UUID
 
-from rapidkit_common.protocols.auth import UserSocketCloser
-from rapidkit_common.protocols.impersonation import ImpersonationRevoker
 from rapidkit_common.protocols.user import UserProtocol, UserResolver
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_framework.exceptions import AppException
-from rapidkit_framework.services import get_service_optional
 from rapidkit_framework.status_codes import StatusCode
 from rapidkit_security import decrypt_message, hash_password
 
+from plugin_auth.auth.token_store import TokenStore
 from plugin_auth.auth_config import auth_settings
 
 logger = get_plugin_logger("Auth")
@@ -76,27 +74,12 @@ class PasswordDecryptorImpl:
 class SessionInvalidatorImpl:
     """Concrete implementation — manages auth Redis key namespace for session invalidation."""
 
-    REFRESH_KEY = "auth:refresh:<{user_id}>:<{jti}>"
     USER_CACHE_KEY = "auth:user:<{user_id}>"
-    FORCE_RELOGIN_KEY = "auth:force_relogin:<{user_id}>"
     PERMISSION_CACHE_KEY = "auth:permission:<{user_id}>"
-    CACHE_TTL = 86400
 
     async def invalidate_user_sessions(self, user_id: UUID, redis: AsyncRedisClient) -> None:
         await self.invalidate_permission_cache(user_id, redis)
-        refresh_pattern = self.REFRESH_KEY.format(user_id=user_id, jti="*")
-        async for key in redis.scan_iter(match=refresh_pattern):
-            await redis.delete(key)
-        relogin_key = self.FORCE_RELOGIN_KEY.format(user_id=user_id)
-        await redis.set(relogin_key, "1", ex=self.CACHE_TTL)
-        revoker = get_service_optional(ImpersonationRevoker)
-        try:
-            if revoker is not None:
-                await revoker.revoke_user(user_id, redis)
-        finally:
-            closer = get_service_optional(UserSocketCloser)
-            if closer is not None:
-                await closer.close_user(user_id, redis)
+        await TokenStore(redis).revoke_all(user_id)
 
     async def invalidate_permission_cache(self, user_id: UUID, redis: AsyncRedisClient) -> None:
         redis_key = self.PERMISSION_CACHE_KEY.format(user_id=user_id)

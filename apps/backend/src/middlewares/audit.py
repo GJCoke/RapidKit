@@ -53,8 +53,10 @@ def _audit_identity(request: Request) -> dict:
     context = getattr(request.state, "audit_context", None)
     subject = getattr(auth, "subject", None)
     if context is not None and subject is not None and values.get("impersonation_session_id"):
-        context.record.metadata.subject_name = vars(subject).get("name")
-        context.record.metadata.subject_username = vars(subject).get("username")
+        context.record.metadata.subject_name = getattr(auth, "subject_name", None) or vars(subject).get("name")
+        context.record.metadata.subject_username = getattr(auth, "subject_username", None) or vars(subject).get(
+            "username"
+        )
     return values
 
 
@@ -247,8 +249,10 @@ class AuditMiddleware(BaseHTTPMiddleware):
             auth = getattr(request.state, "auth", None)
             subject = getattr(auth, "subject", None)
             if subject is not None and context.record.impersonation_session_id:
-                context.record.metadata.subject_name = vars(subject).get("name")
-                context.record.metadata.subject_username = vars(subject).get("username")
+                context.record.metadata.subject_name = getattr(auth, "subject_name", None) or vars(subject).get("name")
+                context.record.metadata.subject_username = getattr(auth, "subject_username", None) or vars(subject).get(
+                    "username"
+                )
             if not context.confirmed and not context.deferred:
                 context.confirm(
                     AuditResult.SUCCESS if context.action_def and response.status_code < 400 else AuditResult.UNKNOWN

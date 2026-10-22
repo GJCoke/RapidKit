@@ -1,5 +1,6 @@
 """Logout cleans user caches without revoking other sessions or users."""
 
+import time
 from uuid import uuid4
 
 import pytest
@@ -13,6 +14,9 @@ class RedisState:
     def __init__(self, values, failing_key=None):
         self.values = dict(values)
         self.failing_key = failing_key
+
+    async def set(self, key, value, **kwargs):
+        self.values[key] = value
 
     async def delete(self, *keys):
         if self.failing_key in keys:
@@ -37,10 +41,14 @@ async def test_logout_attempts_all_cleanup_and_preserves_other_sessions(monkeypa
     }
     redis = RedisState({**dict.fromkeys(keys.values(), "cached"), **other}, keys.get(failure))
     monkeypatch.setattr("plugin_auth.auth.api.get_service", lambda _: PermissionCacheManagerImpl())
-    auth = AccessJWT(sub=user_id, jti=jti, name="User")
+    auth = AccessJWT(sub=user_id, jti=jti, name="User", exp=time.time() + 900)
     if failure:
         with pytest.raises(RuntimeError, match="Redis deletion failed"):
             await logout(auth, TokenStore(redis), redis)
     else:
         assert (await logout(auth, TokenStore(redis), redis)).data is True
-    assert redis.values == {**other, **({keys[failure]: "cached"} if failure else {})}
+    assert redis.values == {
+        **other,
+        f"auth:access_revoked:{jti}": "1",
+        **({keys[failure]: "cached"} if failure else {}),
+    }

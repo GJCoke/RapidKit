@@ -21,6 +21,7 @@ from rapidkit_framework.identity import IdentityMetadata, bind_identity
 from rapidkit_security import decode_impersonation_token, decode_token
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from plugin_auth.auth.token_store import REVOKED_BEFORE_KEY, TokenStore, issued_before_revocation
 from plugin_auth.auth_config import auth_settings
 from plugin_auth.impersonation.cache import active_key, cache_active
 from plugin_auth.impersonation.models import EndReason, ImpersonationSession
@@ -28,7 +29,6 @@ from plugin_auth.status_codes import AuthStatusCode
 
 logger = get_plugin_logger("Auth")
 user_structure = "auth:user:<{user_id}>"
-force_relogin_structure = "auth:force_relogin:<{user_id}>"
 USER_CACHE_FIELDS = {
     "id",
     "name",
@@ -117,7 +117,7 @@ class AuthContextResolverImpl:
         return auth
 
     async def _resolve_normal(self, ordinary, *, fresh=False):
-        if await self.redis.exists(force_relogin_structure.format(user_id=ordinary.sub)):
+        if await TokenStore(self.redis).is_revoked(ordinary.sub, ordinary.jti, ordinary.iat):
             raise AppException(AuthStatusCode.TOKEN_INVALID)
         key = user_structure.format(user_id=ordinary.sub)
         cached = None if fresh else await self.redis.get(key)
@@ -206,12 +206,13 @@ class AuthContextResolverImpl:
         if subject is None or subject.status != Status.ON or subject.is_admin:
             await self._reject(claims.sid, EndReason.SUBJECT_REVOKED, claims.act)
         try:
-            actor_revoked = await self.redis.exists(force_relogin_structure.format(user_id=claims.act))
-            subject_revoked = await self.redis.exists(force_relogin_structure.format(user_id=claims.sub))
+            actor_cutoff, subject_cutoff = await self.redis.mget(
+                [REVOKED_BEFORE_KEY.format(user_id=claims.act), REVOKED_BEFORE_KEY.format(user_id=claims.sub)]
+            )
         except Exception as exc:
             raise AppException(AuthStatusCode.IMPERSONATION_SESSION_INVALID) from exc
-        if actor_revoked:
+        if issued_before_revocation(claims.iat, actor_cutoff):
             await self._reject(claims.sid, EndReason.ACTOR_REVOKED, claims.act)
-        if subject_revoked:
+        if issued_before_revocation(claims.iat, subject_cutoff):
             await self._reject(claims.sid, EndReason.SUBJECT_REVOKED, claims.act)
         return AuthContext(subject=subject, actor=actor, impersonation_session_id=claims.sid)

@@ -73,7 +73,7 @@ async def test_denied_audit_failure_still_blocks_business(strict_client, auth_he
     records = (await session.exec(select(AuditLog).where(AuditLog.action == "impersonation.denied"))).all()
     assert not records
     assert len(queued) == 1
-    audit = queued[0]
+    audit = queued[0].persistence_data()
     claims = decode_impersonation_token(token, auth_settings.IMPERSONATION_TOKEN_KEY, auth_settings.JWT_ALG)
     assert audit["actor_id"] == claims.act
     assert str(audit["subject_user_id"]) == str(target.id)

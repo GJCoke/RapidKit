@@ -1,5 +1,7 @@
 """Auth token refresh and logout API tests."""
 
+import math
+import time
 from typing import cast
 
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
@@ -85,3 +87,54 @@ class TestLogout:
         resp = await client.post("/auth/logout")
         assert resp.status_code == 200
         assert resp.json()["code"] != 0
+
+
+async def login_pair(client):
+    from rapidkit_security import encrypt_message, load_public_pem
+    from src.initdb import PASSWORD, USERNAME
+
+    key_response = await client.get("/auth/keys/public")
+    public = cast(RSAPublicKey, load_public_pem(key_response.json()["data"]))
+    response = await client.post(
+        "/auth/login", json={"username": USERNAME, "password": encrypt_message(public, PASSWORD)}
+    )
+    assert response.json()["code"] == 0, response.text
+    return response.json()["data"]
+
+
+async def test_old_tokens_stay_revoked_after_login_in_same_second(client, init, redis, monkeypatch):
+    from plugin_auth.auth.token_store import TokenStore
+    from plugin_auth.auth_config import auth_settings
+    from rapidkit_security import decode_token
+
+    clock = [1760000000.100]
+    monkeypatch.setattr(time, "time", lambda: clock[0])
+    old = await login_pair(client)
+    claims = decode_token(old["accessToken"], auth_settings.ACCESS_TOKEN_KEY)
+    clock[0] = 1760000000.500
+    await TokenStore(redis).force_relogin(claims.sub)
+    clock[0] = 1760000000.900
+    new = await login_pair(client)
+    for token, expected in [(old["accessToken"], 14003), (new["accessToken"], 0)]:
+        response = await client.get("/auth/user/info", headers={"Authorization": "Bearer " + token})
+        assert response.json()["code"] == expected, response.text
+    response = await client.post("/auth/token/refresh", headers={"X-Refresh-Token": old["refreshToken"]})
+    assert response.json()["code"] == 14003
+    response = await client.post("/auth/token/refresh", headers={"X-Refresh-Token": new["refreshToken"]})
+    assert response.json()["code"] == 0, response.text
+    assert await redis.get(f"auth:revoked_before:{claims.sub}") == "1760000000500"
+
+
+async def test_logout_revokes_only_current_access_until_expiry(client, init, redis):
+    from plugin_auth.auth_config import auth_settings
+    from rapidkit_security import decode_token
+
+    first, other = await login_pair(client), await login_pair(client)
+    claims = decode_token(first["accessToken"], auth_settings.ACCESS_TOKEN_KEY)
+    response = await client.post("/auth/logout", headers={"Authorization": "Bearer " + first["accessToken"]})
+    assert response.json()["code"] == 0
+    for token, expected in [(first["accessToken"], 14003), (other["accessToken"], 0)]:
+        response = await client.get("/auth/user/info", headers={"Authorization": "Bearer " + token})
+        assert response.json()["code"] == expected, response.text
+    ttl = await redis.ttl(f"auth:access_revoked:{claims.jti}")
+    assert 0 < ttl <= math.ceil(claims.exp - time.time()) + 1
