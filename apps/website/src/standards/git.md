@@ -1,6 +1,6 @@
 # Git 规范
 
-本项目通过 **Husky + lint-staged + CommitLint + cz-git** 构建完整的 Git 工作流规范，在提交前自动检查代码质量、校验提交信息格式。
+本项目通过 **Husky + lint-staged + CommitLint** 构建完整的 Git 工作流规范，在提交前自动检查代码质量、校验提交信息格式。
 
 ## Husky Git Hooks
 
@@ -59,16 +59,14 @@ lint-staged 在 pre-commit 阶段对 **暂存区文件** 执行检查，配置�
 lint-staged 仅处理暂存区中的文件，不会影响未暂存的修改，保证检查范围精准且执行速度快。
 :::
 
-## CommitLint & cz-git
+## CommitLint
 
-本项目使用 **CommitLint** 配合 **cz-git** 对 Git 提交信息进行规范化管理，保证提交信息统一、可读、便于自动生成变更日志（Changelog）和版本发布。
+本项目使用 **CommitLint** 对 Git 提交信息进行校验，保证提交信息统一、可读、便于自动生成变更日志（Changelog）和版本发布。
 
 ::: warning 注意
 CommitLint CLI 用于执行提交信息校验
 
 config-conventional 提供官方规范规则
-
-cz-git 用于交互式提交提示
 :::
 
 ### 规则说明
@@ -113,26 +111,11 @@ cz-git 用于交互式提交提示
 | utils                           | 工具函数   |
 | alova/axios/builder/color/hooks | 各功能模块 |
 
-::: warning 注意
-`allowCustomScopes: true` 允许自定义 scope。
-
-如果需要添加新的作用域，请前往 `commitlint.config.ts` 文件中的 `scopes` 配置项进行添加。
-:::
-
-### 提交交互提示（prompt）
-
-- **type**: 选择提交类型
-- **scope**: 选择影响范围（可选）
-- **subject**: 简述提交内容
-- **body**: 详细描述（可选）
-- **footer**: 关联 Issue 或 BREAKING CHANGE（可选）
-- **confirmCommit**: 提交前确认
+scope 为可选项，当前校验规则不限制 scope 的取值，可按功能或模块填写。
 
 ### 使用方式
 
-**交互式提交：** 运行 `pnpm commit`，按提示选择 type、scope、subject 等信息。
-
-**普通提交：** 校验会自动生效。
+使用普通 Git 提交命令，Husky 会自动调用 CommitLint 校验提交信息。
 
 ```bash
 git commit -m "feat(frontend): add login page"
@@ -157,5 +140,5 @@ git commit -m "feat(frontend): add login page"
 7. **pre-push** -- TypeScript 类型检查
 
 ::: tip 提示
-建议使用 `pnpm commit` 进行交互式提交，避免手写提交信息格式错误。
+提交信息使用 `type(scope): subject` 格式，scope 可省略。
 :::

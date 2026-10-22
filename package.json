@@ -14,7 +14,6 @@
     "check:deps": "depcheck",
     "check:commit": "commitlint --edit $1",
     "check:types": "turbo typecheck",
-    "commit": "git-cz",
     "prepare": "husky",
     "check:python": "uv run ruff format . && uv run ruff check --fix . && uv run ty check",
     "check:push": "pnpm check:permission-codes && turbo lint format typecheck --parallel && pnpm --filter @rapidkit/frontend test && pnpm --filter @rapidkit/admin test && pnpm check:python && pnpm report:permission-codes && pnpm report:unscoped",
@@ -42,9 +41,7 @@
     "@cspell/dict-typescript": "^3.2.3",
     "@types/node": "^25.5.2",
     "@vitejs/plugin-vue": "^6.0.5",
-    "commitizen": "^4.3.1",
     "cspell": "^10.0.0",
-    "cz-git": "^1.12.0",
     "depcheck": "^1.4.7",
     "husky": "^9.1.7",
     "openapi-typescript": "^7.13.0",
@@ -54,11 +51,6 @@
     "turbo": "^2.9.4",
     "typescript": "^6.0.2",
     "vue": "^3.5.32"
-  },
-  "config": {
-    "commitizen": {
-      "path": "node_modules/cz-git"
-    }
   },
   "engines": {
     "node": ">=24.11.0",
