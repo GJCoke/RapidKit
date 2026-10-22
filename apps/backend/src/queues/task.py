@@ -28,6 +28,8 @@ from rapidkit_core.timezone import timezone as tz
 from rapidkit_framework.identity import IDENTITY_HEADER_KEYS, identity_from_headers, identity_headers, identity_scope
 from typing_extensions import Annotated, Doc
 
+from src.observability import sentry_scope
+
 
 class Task(_Task):
     """
@@ -395,7 +397,7 @@ class Task(_Task):
         if not isinstance(request_id, str) or not request_id:
             request_id = generate()
         headers["request_id"] = request_id
-        with identity_scope(identity_from_headers(headers)), request_id_scope(request_id):
+        with identity_scope(identity_from_headers(headers)), request_id_scope(request_id), sentry_scope():
             return self._call_in_identity(args, kwargs, headers)
 
     def _call_in_identity(self, args, kwargs, saved_headers) -> Any:

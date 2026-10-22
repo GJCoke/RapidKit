@@ -56,6 +56,7 @@ dependencies = [
   "loguru>=0.7.3",
   "fastapi-sio-di>=0.5.3",
   "psutil>=7.0.0,<8.0",
+  "sentry-sdk>=2,<3",
 ]
 
 [dependency-groups]

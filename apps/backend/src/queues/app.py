@@ -5,10 +5,11 @@ Author  : Coke
 Date    : 2025-04-10
 """
 
+from celery.signals import beat_init, worker_process_init
 from celery.signals import setup_logging as setup_logging_signal
-from celery.signals import worker_process_init
 from rapidkit_core.config import settings
 
+from src.observability import init_sentry
 from src.queues.celery import Celery
 
 REDIS_URL = str(settings.CELERY_REDIS_URL)
@@ -71,9 +72,15 @@ def configure_process_logging(**kwargs):
 
     setup_logging()
     set_custom_logfile()
+    init_sentry()
 
 
 @worker_process_init.connect
 def init_worker_logging(**kwargs):
     """Rebind each prefork child's file sinks and stdout pipeline."""
+    configure_process_logging()
+
+
+@beat_init.connect
+def init_beat_observability(**kwargs):
     configure_process_logging()

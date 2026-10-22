@@ -141,6 +141,13 @@ class LogConfigMixin(BaseSettings):
     SLOW_REQUEST_THRESHOLD_MS: int = Field(3000, description="慢请求告警阈值（毫秒）")
 
 
+class SentryConfigMixin(BaseSettings):
+    SENTRY_DSN: str | None = None
+    SENTRY_RELEASE: str | None = None
+    SENTRY_ERROR_SAMPLE_RATE: float = Field(1.0, ge=0, le=1)
+    SENTRY_TRACES_SAMPLE_RATE: float = Field(0.0, ge=0, le=1)
+
+
 class CorsConfigMixin(BaseSettings):
     """CORS 跨域配置。"""
 
@@ -204,6 +211,7 @@ class Config(
     PostgreSQLConfigMixin,
     CeleryConfigMixin,
     LogConfigMixin,
+    SentryConfigMixin,
     CorsConfigMixin,
     RateLimitConfigMixin,
     SocketIOConfigMixin,

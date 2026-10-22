@@ -13,6 +13,7 @@ from starlette_context.middleware import ContextMiddleware as StarletteContextMi
 from src.locales.i18n import t
 from src.locales.types import languages
 from src.locales.utils import resolve_language
+from src.observability import sentry_scope
 
 
 class ContextMiddleware(StarletteContextMiddleware):
@@ -37,7 +38,7 @@ class ContextMiddleware(StarletteContextMiddleware):
                 media_type="application/json",
             )
 
-        with request_cycle_context(context), identity_scope(IdentityMetadata()):
+        with request_cycle_context(context), identity_scope(IdentityMetadata()), sentry_scope(request):
             response = await call_next(request)
             for plugin in self.plugins:
                 await plugin.enrich_response(response)

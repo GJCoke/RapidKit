@@ -37,6 +37,7 @@ from src.middlewares.limiter import RateLimitMiddleware
 from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.metrics import MetricsMiddleware
 from src.middlewares.state import StateMiddleware
+from src.observability import init_sentry
 from src.sio.app import socket_app
 
 _background_tasks: set[asyncio.Task] = set()
@@ -213,6 +214,7 @@ def create_app() -> FastAPI:
     set_translator(lambda s: actual_t(s), actual_is_key)
 
     setup_logging_config()
+    init_sentry()
 
     # 加载插件 — entry points 自动发现 + plugins.toml 配置
     from rapidkit_framework.loader import discover_and_load_plugins

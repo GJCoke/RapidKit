@@ -8,17 +8,19 @@ import sys
 import traceback
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, TextIO
+from typing import TYPE_CHECKING, TextIO, cast
 
 from loguru import logger as ruLogger
 
 if TYPE_CHECKING:
-    from loguru import Logger, Message
+    from loguru import Logger, Message, Record
 
 from rapidkit_core.config import settings
 from rapidkit_core.nanoid import get_request_nanoid
 from rapidkit_core.path import LOG_PATH
 from rapidkit_core.timezone import timezone
+
+_owned_handlers: set[int] = {0}  # Loguru's initial default handler.
 
 
 class InterceptHandler(logging.Handler):
@@ -38,7 +40,7 @@ class InterceptHandler(logging.Handler):
         ruLogger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
-def default_formatter(record: dict) -> str:
+def default_formatter(record: "Record") -> str:
     """默认日志格式化程序"""
     record["extra"].setdefault("plugin", "Core")
     record_name = record["name"] or ""
@@ -52,10 +54,10 @@ def default_formatter(record: dict) -> str:
     return format_str
 
 
-def request_id_filter(record: dict) -> bool:
+def request_id_filter(record: "Record") -> bool:
     """请求 ID 过滤器"""
     rid = get_request_nanoid()
-    record["request_id"] = rid
+    cast(dict, record)["request_id"] = rid
     return True
 
 
@@ -89,17 +91,19 @@ def setup_logging() -> None:
         else:
             logging.getLogger(name).propagate = True
 
-    ruLogger.remove()
-    ruLogger.configure(
-        handlers=[  # type: ignore
-            {
-                "sink": partial(json_sink, stream=sys.stdout) if settings.LOG_JSON else sys.stdout,
-                "level": settings.LOG_LEVEL,
-                "format": default_formatter,
-                "filter": lambda record: request_id_filter(record),
-            }
-        ]
+    for handler in _owned_handlers:
+        try:
+            ruLogger.remove(handler)
+        except ValueError:
+            pass
+    _owned_handlers.clear()
+    handler = ruLogger.add(
+        partial(json_sink, stream=sys.stdout) if settings.LOG_JSON else sys.stdout,
+        level=settings.LOG_LEVEL,
+        format=default_formatter,
+        filter=request_id_filter,
     )
+    _owned_handlers.add(handler)
 
 
 def set_custom_logfile() -> None:
@@ -128,7 +132,7 @@ def set_custom_logfile() -> None:
         "compression": lambda filepath: os.rename(filepath, compression(filepath)),
     }
 
-    ruLogger.add(
+    access_handler = ruLogger.add(
         str(log_access_file),
         level=settings.LOG_FILE_ACCESS_LEVEL,
         filter=lambda record: record["level"].no <= 25,
@@ -137,7 +141,7 @@ def set_custom_logfile() -> None:
         **log_config,
     )  # ty:ignore[no-matching-overload]
 
-    ruLogger.add(
+    error_handler = ruLogger.add(
         str(log_error_file),
         level=settings.LOG_FILE_ERROR_LEVEL,
         filter=lambda record: record["level"].no >= 30,
@@ -145,6 +149,7 @@ def set_custom_logfile() -> None:
         diagnose=True,
         **log_config,
     )  # ty:ignore[no-matching-overload]
+    _owned_handlers.update((access_handler, error_handler))
 
 
 logger = ruLogger
