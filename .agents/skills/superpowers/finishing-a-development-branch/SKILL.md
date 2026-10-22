@@ -15,7 +15,7 @@ precedence over this skill:
   yourself: merging, pushing, opening a PR, rebasing, amending history,
   discarding work and deleting branches or worktrees each need your human
   partner's explicit choice.
-- Keep the task branch and worktree by default.
+- Keep the task branch (and its worktree, if one was requested) by default.
 - `docs/superpowers/` is git-ignored, so `git worktree remove` deletes it
   silently. Before removing a worktree, list its `docs/superpowers/` files
   and ask your human partner whether to copy them back to the main

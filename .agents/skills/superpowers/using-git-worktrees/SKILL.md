@@ -5,15 +5,17 @@ description: Use when starting feature work that needs isolation from current wo
 
 # Using Git Worktrees
 
-## RapidKit Override: New Worktree Per Non-Simple Task
+## RapidKit Override: Worktree Only On Request
 
 In the RapidKit repository, the root `AGENTS.md` Git workflow takes
 precedence over this skill:
 
-- Every non-simple task gets a new worktree; consent is already declared,
-  so skip the Step 0 question. A simple task (no design/plan, 1–2 files,
-  no migration, no API or permission change) stays on the current branch
-  in place and does not use this skill.
+- Use this skill only when your human partner explicitly asks for a
+  worktree (typically to run several agents in parallel); that request is
+  the consent, so skip the Step 0 question. Otherwise do not use this
+  skill: work in the current checkout, on the current branch, or on a
+  `<type>/<slug>` branch created in place with `git switch -c` when
+  starting from `main`/`master`.
 - Create it with git from the current HEAD, not a native tool that
   branches from elsewhere or places it in another directory:
   `git worktree add -b <type>/<slug> .worktrees/<type>-<slug> HEAD`, then
@@ -22,8 +24,7 @@ precedence over this skill:
 - Branch names are `<type>/<slug>`: `<type>` is one of `feature`, `fix`,
   `refactor`, `perf`, `docs`, `test`, `chore`; `<slug>` is lowercase
   English kebab-case, e.g. `feature/login`, `fix/login-cooldown`. Never
-  use the `codex/` prefix. Never work on the entry branch or a detached
-  HEAD.
+  use the `codex/` prefix. Never work on a detached HEAD.
 - `.worktrees/` is already ignored. Never edit or commit `.gitignore` on
   your own.
 - Uncommitted changes in the main checkout are not carried into the

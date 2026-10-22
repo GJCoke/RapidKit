@@ -173,10 +173,10 @@ async def get_user() -> Response[UserSchema]:
 
 The canonical repository-wide policy is `AGENTS.md` at the repository root. Read and follow it before any repository edit:
 
-- A simple task (no design/plan, 1–2 files, no migration, no API or permission change) may be done on the current branch in place. Every other new task starts in a new worktree `.worktrees/<type>-<slug>` on a fresh `<type>/<slug>` branch (`feature`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`; e.g. `feature/login`), preserving existing work. A continuation of the same task stays in that worktree and branch.
+- Work in the current checkout; create a worktree only when the user asks for one. On a non-`main`/`master` branch, keep working on it. On `main`/`master`, a simple task (no design/plan, 1–2 files, no migration, no API or permission change) may be done in place; any other task first creates a `<type>/<slug>` branch in place with `git switch -c` (`feature`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`; e.g. `feature/login`), preserving existing work.
 - After validation, implementation changes may be committed automatically using explicit task-owned paths or hunks; exclude unrelated pre-existing changes.
 - Never stage or commit design documents, specifications or implementation plans, including `docs/superpowers/specs/` and `docs/superpowers/plans/`.
-- Do not push, merge or rewrite history without explicit user authorization. If branch setup is blocked, do not edit the entry branch or detached HEAD.
+- Do not push, merge or rewrite history without explicit user authorization. If branch setup is blocked, do not fall back to `main`/`master` or a detached HEAD.
 
 These rules override incompatible Git steps in generic workflow skills.
 
@@ -223,7 +223,7 @@ Solve the whole task with the least new code. Take the first option that fully w
 - Use `datetime.now()` or `datetime.utcnow()`
 - Log passwords, tokens, or PII
 - Manually prefix log messages with [PluginName] — use get_plugin_logger() instead
-- Edit the task entry branch, commit design/plan artifacts, or include unrelated changes in a task commit.
+- Implement a non-simple task directly on `main`/`master`, commit design/plan artifacts, or include unrelated changes in a task commit.
 - Delay imports without an actual initialization-cycle or test-bootstrap reason.
 - Pass hardcoded user-facing text to AppException `message=` or `data=` — always use StatusCode i18n
 

@@ -11,7 +11,7 @@ Write implementation plans for an engineer who has not seen this codebase or thi
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** Continue in the task worktree and branch created under the root `AGENTS.md` Git workflow; if planning starts a separate new task, create a new worktree `.worktrees/<type>-<slug>` on a fresh `<type>/<slug>` branch (e.g. `feature/login`) before saving any file. Never edit the entry branch or a detached HEAD.
+**Context:** Follow the root `AGENTS.md` Git workflow: stay in the current checkout and on the current branch; only on `main`/`master` create a `<type>/<slug>` branch in place (`git switch -c`) before saving any file. Do not create a worktree unless your human partner asks for one. Never edit a detached HEAD.
 
 **Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
@@ -82,7 +82,7 @@ independently testable deliverable.
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task (under Codex: superpowers:executing-plans only, in the current session, no subagents). Follow root `AGENTS.md` and the `rapidkit-*` conventions; work in the task worktree and branch; never stage or commit anything under `docs/superpowers/`, this plan included. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task (under Codex: superpowers:executing-plans only, in the current session, no subagents). Follow root `AGENTS.md` and the `rapidkit-*` conventions; stay on the current task branch (no new branch or worktree unless `AGENTS.md` calls for it); never stage or commit anything under `docs/superpowers/`, this plan included. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** [One sentence describing what this builds]
 

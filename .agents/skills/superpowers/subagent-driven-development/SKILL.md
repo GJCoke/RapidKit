@@ -15,8 +15,8 @@ review is a self-review in this session.
 In other harnesses, the RapidKit rules still apply: read the root
 `AGENTS.md`, `rapidkit-conventions` and the relevant `rapidkit-*` domain
 skills before Task 1 and pass the applicable conventions into each
-implementer brief; work in the `AGENTS.md` task worktree and branch
-(`.worktrees/<type>-<slug>` on `<type>/<slug>`); commit only
+implementer brief; work on the task branch per the `AGENTS.md` Git
+workflow (current checkout, no worktree unless asked); commit only
 explicit task-owned implementation paths; never stage or commit anything
 under `docs/superpowers/`.
 
@@ -99,14 +99,14 @@ digraph process {
         "Append completion to ledger, mark todo complete" [shape=box];
     }
 
-    "Setup: worktree, ledger check, read plan, pre-flight review" [shape=box];
+    "Setup: branch, ledger check, read plan, pre-flight review" [shape=box];
     "More tasks remain?" [shape=diamond];
     "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" [shape=box];
     "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals" [shape=box];
     "Final review clean: delete this plan's workspace" [shape=box];
     "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
-    "Setup: worktree, ledger check, read plan, pre-flight review" -> "Dispatch implementer subagent (./implementer-prompt.md)";
+    "Setup: branch, ledger check, read plan, pre-flight review" -> "Dispatch implementer subagent (./implementer-prompt.md)";
     "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer asks questions?";
     "Implementer asks questions?" -> "Answer questions, provide context" [label="yes"];
     "Answer questions, provide context" -> "Implementer implements, tests, commits, self-reviews";
@@ -139,10 +139,10 @@ digraph process {
 
 ## Setup
 
-Ensure the work happens in an isolated workspace: use
-superpowers:using-git-worktrees to create one or verify the existing one.
-Never start implementation on a main/master branch without your human
-partner's explicit consent.
+Ensure the work happens on a task branch per the `AGENTS.md` Git
+workflow: on main/master, create a `<type>/<slug>` branch in place;
+otherwise keep the current branch. Use superpowers:using-git-worktrees only
+when your human partner asked for a worktree (e.g. for parallel agents).
 
 Conversation memory does not survive compaction. In real sessions,
 controllers that lost their place have re-dispatched entire completed task
@@ -521,7 +521,7 @@ Use superpowers:finishing-a-development-branch.
 ```
 You: I'm using Subagent-Driven Development to execute this plan.
 
-[Setup: worktree verified]
+[Setup: task branch verified]
 [Read plan file once: docs/superpowers/plans/feature-plan.md]
 [Resolve workspace: bash scripts/sdd-workspace docs/superpowers/plans/feature-plan.md — no ledger inside, fresh start]
 [Create todos for all tasks]

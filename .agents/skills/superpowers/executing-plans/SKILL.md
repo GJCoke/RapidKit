@@ -52,12 +52,12 @@ These rules override the generic workflow below wherever they conflict.
   Before editing in a task, re-check the domain skill for that task. A
   plan step that contradicts the conventions is a plan defect: rule in
   favour of the conventions and ledger it.
-- **Task worktree.** Work in the task worktree and branch created under
-  the `AGENTS.md` Git workflow. If execution is a separate new task, create
-  a new worktree `.worktrees/<type>-<slug>` on a fresh `<type>/<slug>`
-  branch from the current HEAD first (e.g. `feature/login`). Never
-  implement on the entry branch or a detached HEAD. Preserve all
-  pre-existing staged, unstaged and untracked changes.
+- **Branch, not worktree.** Follow the `AGENTS.md` Git workflow: work in
+  the current checkout on the current branch. Only on `main`/`master`,
+  create a `<type>/<slug>` branch in place with `git switch -c` first.
+  Never create a worktree unless your human partner asks for one, and
+  never implement on a detached HEAD. Preserve all pre-existing staged,
+  unstaged and untracked changes.
 - **Never commit anything under `docs/superpowers/`.** That covers the
   spec, the plan and every other file in the directory. Commit only
   validated task-owned implementation files: stage explicit paths or
@@ -113,14 +113,14 @@ digraph process {
         "task-done: run tests, ledger the result; mark todo complete" [shape=box];
     }
 
-    "Setup: worktree, workspace + ledger, read plan + spec, pre-flight scan" [shape=box];
+    "Setup: branch, workspace + ledger, read plan + spec, pre-flight scan" [shape=box];
     "More tasks remain?" [shape=diamond];
     "Final whole-branch review (fresh reviewer if you have one)" [shape=box];
     "Re-grade, then: Critical/Important → ONE fix pass, each fix RED→GREEN + green suite; Minor → ledger" [shape=box];
     "Final review clean: delete this plan's workspace" [shape=box];
     "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
-    "Setup: worktree, workspace + ledger, read plan + spec, pre-flight scan" -> "task-start: brief + BASE; read the brief";
+    "Setup: branch, workspace + ledger, read plan + spec, pre-flight scan" -> "task-start: brief + BASE; read the brief";
     "task-start: brief + BASE; read the brief" -> "Work the steps in order: TDD, run every verification, read every output";
     "Work the steps in order: TDD, run every verification, read every output" -> "Step output matches plan's Expected?";
     "Step output matches plan's Expected?" -> "Plan wrong? Rule and ledger. Code wrong? systematic-debugging" [label="no"];
@@ -140,11 +140,11 @@ digraph process {
 
 ## Setup
 
-Ensure the work happens in the task worktree required by `AGENTS.md`
-(see RapidKit Repository Rules above): verify you are inside the task
-worktree on its `<type>/<slug>` branch, or create one for a new task with
-superpowers:using-git-worktrees. Never start implementation on
-main/master, the entry branch, or a detached HEAD.
+Ensure the work happens on a task branch as `AGENTS.md` requires (see
+RapidKit Repository Rules above): if you are on main/master, create a
+`<type>/<slug>` branch in place; otherwise keep the current branch. Use
+superpowers:using-git-worktrees only when your human partner asked for a
+worktree. Never start implementation on main/master or a detached HEAD.
 
 Conversation memory does not survive compaction. An inline executor that
 loses its place re-implements tasks whose commits already exist — the same
@@ -364,7 +364,7 @@ explicit choice.
 ```
 You: I'm using the executing-plans skill to implement this plan inline.
 
-[Setup: AGENTS.md + rapidkit-conventions + domain skills read; worktree .worktrees/feature-login on branch feature/login verified]
+[Setup: AGENTS.md + rapidkit-conventions + domain skills read; was on main, created branch feature/login in place]
 [Read plan once: docs/superpowers/plans/feature-plan.md; spec read]
 [Resolve workspace: sdd-workspace docs/superpowers/plans/feature-plan.md — no ledger inside, fresh start]
 [Pre-flight scan: 2 shared-interface rows, 4 self-consistency rows, clean; written to ledger]

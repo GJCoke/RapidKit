@@ -14,14 +14,38 @@ People often haven't finished working out what they want. Good questions
 help them think it through. When you understand the why, you make the
 hundred decisions they never mention the way they would have made them.
 
+## Ask First, Speak Plainly
+
+These rules apply in every harness and matter most under Codex, where the
+pull is to explore quietly and return a finished proposal. Do not.
+
+- **Your first reply is a question, nothing else.** No code reading, no
+  recon, no plan, no proposal before it. The only exception is a request
+  where everything that matters is already stated (see below).
+- **No proposal until they ask for one** ("go ahead", "what do you
+  think?", "just guess") or until you have asked at least three questions
+  and played back what you heard. Until then, every reply ends with exactly
+  one question.
+- **Write in your human partner's language** (Chinese if they write
+  Chinese). Short sentences. Every term you introduce is either explained
+  in one plain clause or removed. No file paths, function names, class
+  names or internal jargon unless they asked or used them first.
+- **Proposals use this shape and stay under about 15 lines:**
+  1. What problem this solves, in their words.
+  2. What it will and will not do.
+  3. What they will see change.
+  4. The one decision that is theirs to make, as the closing question.
+  Technical detail goes into the written design, not the chat.
+
 ## RapidKit Repository Rules
 
 These rules override the generic workflow below wherever they conflict.
 
-- **Read the project conventions before designing.** Read the root
-  `AGENTS.md` and `rapidkit-conventions`
-  (`.agents/skills/rapidkit/rapidkit-conventions/SKILL.md`) first. Once
-  you know what the topic touches, read the relevant domain skills under
+- **Read the project conventions before designing, not before asking.**
+  After your first question has been answered, and before you propose
+  anything, read the root `AGENTS.md` and `rapidkit-conventions`
+  (`.agents/skills/rapidkit/rapidkit-conventions/SKILL.md`). Once you know
+  what the topic touches, read the relevant domain skills under
   `.agents/skills/rapidkit/` so the design follows existing patterns:
 
   | What the design touches | Skill to read |
@@ -40,13 +64,12 @@ These rules override the generic workflow below wherever they conflict.
 
   Domain skills are read as references during design; executing their
   implementation procedures waits for the approved design and plan.
-- **Task worktree.** Follow the Git workflow in `AGENTS.md`: a task that
-  needs a written design is never simple, so before writing any repository
-  file (the design document included), create a new worktree
-  `.worktrees/<type>-<slug>` on a fresh `<type>/<slug>` branch (e.g.
-  `feature/login`) and work inside it, or reuse the current task worktree
-  when this is a continuation. A simple task may stay on the current
-  branch in place. Worktree and branch setup is preparation, not building.
+- **Branch, not worktree.** Follow the Git workflow in `AGENTS.md`. Work
+  in the current checkout; never create a worktree unless your human
+  partner asks for one. Before writing any repository file (the design
+  document included): on `main`/`master`, create a `<type>/<slug>` branch
+  in place with `git switch -c`; on any other branch, stay on it. Branch
+  setup is preparation, not building.
 - **Never commit anything under `docs/superpowers/`.** Not only specs and
   plans: every file in that directory (specs, plans, mockups, notes,
   scratch files) stays local. Never stage it, never force-add it, and
