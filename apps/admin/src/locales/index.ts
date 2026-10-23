@@ -3,6 +3,9 @@ import { initReactI18next } from "react-i18next"
 
 import { useLocaleStore } from "@/stores/locale"
 
+import enUSRole from "./en-US/role.json"
+import zhCNRole from "./zh-CN/role.json"
+
 import enUS from "./en-US/common.json"
 import enUSDatatable from "./en-US/datatable.json"
 import enUSForm from "./en-US/form.json"
@@ -20,8 +23,12 @@ const defaultLocale = useLocaleStore.getState().locale
 
 i18n.use(initReactI18next).init({
   resources: {
-    "zh-CN": { translation: { ...zhCN, ...zhCNRoute, ...zhCNRequest, ...zhCNForm, ...zhCNDatatable, ...zhCNTheme } },
-    "en-US": { translation: { ...enUS, ...enUSRoute, ...enUSRequest, ...enUSForm, ...enUSDatatable, ...enUSTheme } },
+    "zh-CN": {
+      translation: { ...zhCN, ...zhCNRoute, ...zhCNRequest, ...zhCNForm, ...zhCNDatatable, ...zhCNTheme, ...zhCNRole },
+    },
+    "en-US": {
+      translation: { ...enUS, ...enUSRoute, ...enUSRequest, ...enUSForm, ...enUSDatatable, ...enUSTheme, ...enUSRole },
+    },
   },
   lng: defaultLocale,
   fallbackLng: "zh-CN",
