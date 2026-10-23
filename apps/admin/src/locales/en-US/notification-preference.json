@@ -1,0 +1,8 @@
+{
+  "notificationPreferences": {
+    "title": "Notification preferences",
+    "mandatoryHint": "This category is mandatory or reserved and cannot be turned off",
+    "optionalHint": "Choose whether to receive messages in this category",
+    "loadFailed": "Failed to load notification preferences"
+  }
+}

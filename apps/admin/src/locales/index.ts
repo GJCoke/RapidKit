@@ -1,3 +1,5 @@
+import enUSPreference from "./en-US/notification-preference.json"
+import zhCNPreference from "./zh-CN/notification-preference.json"
 import enUSDelivery from "./en-US/notification-delivery.json"
 import zhCNDelivery from "./zh-CN/notification-delivery.json"
 import enUSTemplate from "./en-US/notification-template.json"
@@ -52,6 +54,7 @@ i18n.use(initReactI18next).init({
         ...zhCNAnnouncement,
         ...zhCNTemplate,
         ...zhCNDelivery,
+        ...zhCNPreference,
       },
     },
     "en-US": {
@@ -69,6 +72,7 @@ i18n.use(initReactI18next).init({
         ...enUSAnnouncement,
         ...enUSTemplate,
         ...enUSDelivery,
+        ...enUSPreference,
       },
     },
   },

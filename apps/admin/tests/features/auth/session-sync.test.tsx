@@ -304,32 +304,35 @@ test("a first-connect permission snapshot on the public login page does not bloc
   }
 })
 
-test("an authenticated inbox without a backend menu entry stays open after permission synchronization", async () => {
-  window.history.replaceState({}, "", "/notification/center")
-  const client = new QueryClient()
-  useAuthStore.getState().setToken("access", "refresh")
-  useAuthStore.getState().setUserInfo(user)
-  server.use(
-    http.get(`${base}/auth/user/info`, () =>
-      HttpResponse.json({ code: 0, data: { ...user, name: "Inbox refreshed" } }),
-    ),
-    http.get(`${base}/route/user`, () => HttpResponse.json({ code: 0, data: { routes: [], home: "home" } })),
-  )
-  try {
-    render(
-      <QueryClientProvider client={client}>
-        <SessionSync />
-      </QueryClientProvider>,
+test.each(["/notification/center", "/notification/preferences"])(
+  "an authenticated personal page %s without a backend menu entry stays open after permission synchronization",
+  async (path) => {
+    window.history.replaceState({}, "", path)
+    const client = new QueryClient()
+    useAuthStore.getState().setToken("access", "refresh")
+    useAuthStore.getState().setUserInfo(user)
+    server.use(
+      http.get(`${base}/auth/user/info`, () =>
+        HttpResponse.json({ code: 0, data: { ...user, name: "Inbox refreshed" } }),
+      ),
+      http.get(`${base}/route/user`, () => HttpResponse.json({ code: 0, data: { routes: [], home: "home" } })),
     )
-    act(() => {
-      network.socket?.emit("connect")
-    })
-    await waitFor(() => expect(useAuthStore.getState().userInfo?.name).toBe("Inbox refreshed"))
-    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
-  } finally {
-    window.history.replaceState({}, "", "/")
-  }
-})
+    try {
+      render(
+        <QueryClientProvider client={client}>
+          <SessionSync />
+        </QueryClientProvider>,
+      )
+      act(() => {
+        network.socket?.emit("connect")
+      })
+      await waitFor(() => expect(useAuthStore.getState().userInfo?.name).toBe("Inbox refreshed"))
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
+    } finally {
+      window.history.replaceState({}, "", "/")
+    }
+  },
+)
 
 const recalledMessage: NotificationMessage = {
   id: "inbox",

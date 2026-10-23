@@ -1,0 +1,8 @@
+{
+  "notificationPreferences": {
+    "title": "通知偏好",
+    "mandatoryHint": "该分类为强制或保留通知，不可关闭",
+    "optionalHint": "可按需接收该分类的消息",
+    "loadFailed": "加载通知偏好失败"
+  }
+}

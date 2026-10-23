@@ -1,17 +1,22 @@
 import type { BackendRoute } from "@/services/api/route"
 import { normalizeRoutes } from "@/features/router/route-model"
 
-/** Self-service inbox access is authenticated, independent of backend menu grants. */
+/** Personal notification pages require login, independently of backend menu grants. */
 export function withNotificationRoutes(routes: BackendRoute[]): BackendRoute[] {
   const snapshot = normalizeRoutes(routes)
-  if (snapshot.byName.notification_center || snapshot.byPath["/notification/center"]) return routes
+  const personalRoutes = [
+    { name: "notification_center", path: "/notification/center" },
+    { name: "notification_preferences", path: "/notification/preferences" },
+  ]
+  const missing = personalRoutes.filter((route) => !snapshot.byName[route.name] && !snapshot.byPath[route.path])
+  if (!missing.length) return routes
   return [
     ...routes,
-    {
-      name: "notification_center",
-      path: "/notification/center",
-      component: "view.notification_center",
-      meta: { title: "notification_center", i18nKey: "route.notification_center", hideInMenu: true, constant: false },
-    },
+    ...missing.map(({ name, path }) => ({
+      name,
+      path,
+      component: `view.${name}`,
+      meta: { title: name, i18nKey: `route.${name}`, hideInMenu: true, constant: false },
+    })),
   ]
 }
