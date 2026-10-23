@@ -173,6 +173,21 @@ nginx 按 `Accept-Language` 中首个支持的中文/英文语言选择译文，
 
 ## 数据持久化
 
+异步 HTTP 审计先 `RPUSH audit:pending`，返回后不依赖生产者 API 进程的内存。
+一个 `leader:audit-consumer` 消费者通过 `LMOVE` 将记录放入 `audit:processing`，
+优先恢复遗留记录，数据库提交成功后才确认删除。重放保留原始 ID、耗时、批量目标及对象快照，
+现有数据库 writer 按 ID 幂等，消费者在提交与确认之间崩溃也不会重复插入记录或目标。
+权限等关键操作的审计仍在业务事务中同步写入，写入失败会回滚业务操作。
+
+Redis 不可用或排队操作被取消时，已捕获的快照保留在本地队列并记录 WARNING，
+恢复后重试写回 Redis，不因达到重试次数而丢弃。Redis 命令等待超过 2 秒也进入该降级。
+本地降级队列不设丢弃上限；持续故障时应关注内存和 `queued/flushed/retried/failed/buffer_size` 投递指标。
+Redis 完全不可用期间，本地 fallback 仍可能随 API 进程崩溃而丢失，不能将其视为全链路零丢失。
+
+生产 Redis 启用 `appendonly yes`、`appendfsync everysec` 并复用现有数据卷。
+这提供 API 崩溃后的审计恢复能力；Redis 自身异常断电仍可能损失最近约一秒尚未刷盘的写入，
+数据卷丢失或人为清空 Redis 也不在队列的持久性保证内。
+
 所有有状态服务数据通过 Docker Named Volumes 持久化：
 
 | Volume 名称       | 服务       | 数据内容       |

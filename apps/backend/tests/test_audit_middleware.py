@@ -1,8 +1,10 @@
 """Unit tests for audit collection boundaries and sanitization."""
 
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
+import pytest
 from fastapi import FastAPI
 from rapidkit_common.audit import AuditRecord
 from src.middlewares.audit import (
@@ -98,3 +100,35 @@ async def test_audit_middleware_extracts_client_info_from_request(monkeypatch):
     assert queue.records[0].ip == "203.0.113.9"
     assert queue.records[0].user_agent == "audit-regression-test"
     assert queue.records[0].response_code == 200
+
+
+async def test_audit_enqueue_failure_is_visible_to_caller(monkeypatch):
+    from rapidkit_core.config import settings
+
+    monkeypatch.setattr(
+        "src.middlewares.audit.audit_queue", SimpleNamespace(put=AsyncMock(side_effect=BufferError("queue full")))
+    )
+    monkeypatch.setattr(settings, "AUDIT_ENABLED", True)
+    monkeypatch.setattr(settings, "AUDIT_EXCLUDE_PATHS", [])
+
+    async def receive():
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    request = Request(
+        {
+            "type": "http",
+            "app": FastAPI(),
+            "method": "POST",
+            "path": "/change",
+            "query_string": b"",
+            "client": ("127.0.0.1", 1234),
+            "headers": [],
+        },
+        receive,
+    )
+
+    async def call_next(_):
+        return Response(status_code=200)
+
+    with pytest.raises(BufferError, match="queue full"):
+        await AuditMiddleware(lambda scope, receive, send: None).dispatch(request, call_next)

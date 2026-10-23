@@ -11,7 +11,7 @@ import json
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from rapidkit_common.audit import AuditBatch, AuditContext, AuditRecord, current_audit
+from rapidkit_common.audit import AuditBatch, AuditContext, current_audit
 from rapidkit_common.request import get_client_ip, parse_user_agent
 from rapidkit_core.config import settings
 from rapidkit_core.log import logger
@@ -25,10 +25,10 @@ from starlette.routing import Match
 from src.health import is_internal_path
 
 if TYPE_CHECKING:
-    from rapidkit_core.batch_queue import AsyncBatchQueue
+    from src.audit_queue import RedisAuditQueue
 
 # 模块级 queue 实例，由 lifecycle.py 在 startup 时初始化
-audit_queue: "AsyncBatchQueue[AuditRecord] | None" = None
+audit_queue: "RedisAuditQueue | None" = None
 
 
 def record_audit_outcome(
@@ -201,6 +201,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
                     await audit_queue.put(record)
                 except Exception:
                     logger.error("Audit event could not be queued id={}", record.id, exc_info=True)
+                    raise
 
         context.publish = publish
         definitions = {

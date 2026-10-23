@@ -20,7 +20,7 @@ services:
     image: ${REGISTRY_PREFIX:-}redis:7-alpine
     container_name: rapidkit-prod-redis
     env_file: .env.prod
-    command: [ "sh", "-c", "redis-server --requirepass $$REDIS_ROOT_PASSWORD" ]
+    command: [ "sh", "-c", "redis-server --requirepass $$REDIS_ROOT_PASSWORD --appendonly yes --appendfsync everysec" ]
     volumes:
       - prod-redis-data:/data
     healthcheck:

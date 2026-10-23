@@ -18,6 +18,7 @@ from rapidkit_core.leader_election import LeaderElection
 from rapidkit_core.log import logger
 from rapidkit_framework.events import event_bus
 
+from src.audit_queue import RedisAuditQueue
 from src.health import shutdown_readiness
 from src.locales.watch import watch_locale_files
 from src.queues.consumer import check_worker_offline, consume_events
@@ -53,25 +54,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     RedisManager.connect()
     await event_bus.start_subscriber()
 
-    # 初始化审计批量队列
-    from rapidkit_core.batch_queue import AsyncBatchQueue
-
     from src.middlewares import audit as audit_module
 
+    audit_module.audit_queue = None
     if settings.AUDIT_ENABLED:
         from plugin_system.audit.metrics import record_delivery
 
-        audit_module.audit_queue = AsyncBatchQueue(
+        audit_module.audit_queue = RedisAuditQueue(
+            RedisManager.client(),
             handler=_flush_audit_batch,
             batch_size=settings.AUDIT_BATCH_SIZE,
             flush_interval=settings.AUDIT_FLUSH_INTERVAL,
-            max_buffer_size=max(10 * settings.AUDIT_BATCH_SIZE, 1000),
-            retry_delays=(0.5, 1, 2),
             on_state=record_delivery,
         )
         await audit_module.audit_queue.start()
         logger.info(
-            "Audit batch queue started (batch_size={}, interval={}s)",
+            "Audit Redis queue started (batch_size={}, interval={}s)",
             settings.AUDIT_BATCH_SIZE,
             settings.AUDIT_FLUSH_INTERVAL,
         )
@@ -110,7 +108,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # 关闭审计批量队列（flush 剩余记录）
     if audit_module.audit_queue is not None:
         await audit_module.audit_queue.shutdown()
-        logger.info("Audit batch queue shut down.")
+        audit_module.audit_queue = None
+        logger.info("Audit Redis queue shut down.")
 
     # 执行插件 on_shutdown 回调（逆序）
     for plugin in reversed(getattr(app.state, "plugins", [])):

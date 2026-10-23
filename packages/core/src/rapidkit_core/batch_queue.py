@@ -1,7 +1,7 @@
 """
 Generic async batch queue — collects items and flushes in batches.
 
-Used by AuditMiddleware to batch-write audit logs, reducing DB pressure.
+Used for non-durable batching. HTTP audit delivery uses the application's Redis queue.
 
 Author : Coke
 Date   : 2026-04-20
@@ -25,9 +25,8 @@ class AsyncBatchQueue(Generic[T]):
     调用 ``handler`` 批量处理。
 
     **Crash durability:** Items buffered in memory are lost if the process
-    crashes before flush. For audit logs this is an accepted trade-off
-    (performance vs durability). If zero-loss is required, consider writing
-    to a Redis Stream first and consuming from there.
+    crashes before flush. Callers requiring crash durability must use a
+    persistent transport rather than this in-memory queue.
 
     Args:
         handler: 批量处理回调，接收 ``list[T]``。
