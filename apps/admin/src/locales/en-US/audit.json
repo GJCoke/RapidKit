@@ -1,0 +1,187 @@
+{
+  "audit": {
+    "title": "Audit Log",
+    "time": "Time",
+    "actor": "Actor",
+    "action": "Action",
+    "resource": "Resource",
+    "resourceType": "Resource Type",
+    "resourceName": "Resource Name",
+    "resultLabel": "Result",
+    "riskLabel": "Risk Level",
+    "sourceLabel": "Record source",
+    "ip": "IP Address",
+    "httpMethod": "HTTP Method",
+    "path": "Request Path",
+    "responseCode": "Response Code",
+    "userAgent": "User Agent",
+    "requestSummary": "Request Summary",
+    "errorMessage": "Error Message",
+    "form": {
+      "actor": "Select an actor",
+      "action": "Enter an action",
+      "result": "Select a result"
+    },
+    "result": {
+      "success": "Success",
+      "failure": "Failure",
+      "partial": "Partially succeeded",
+      "unknown": "Outcome unconfirmed"
+    },
+    "risk": {
+      "normal": "Normal",
+      "sensitive": "Sensitive",
+      "critical": "Critical"
+    },
+    "source": {
+      "http": "HTTP",
+      "domain_event": "Domain Event",
+      "system": "System"
+    },
+    "detail": {
+      "title": "Audit Details",
+      "event": "Event Information",
+      "request": "Request Information",
+      "trace": "Tracing and Diagnostics",
+      "empty": "No audit details",
+      "identity": "Impersonation identity",
+      "actorId": "Administrator ID",
+      "subjectId": "Target user ID",
+      "subjectName": "Target user",
+      "sessionId": "Impersonation session ID",
+      "reason": "Reason",
+      "endReason": "End reason"
+    },
+    "impersonatedAction": "Administrator {{actor}} performed {{action}} as user {{subject}}",
+    "timeRange": "Time range",
+    "displayTimezone": "Display time zone",
+    "advancedSearch": "More filters",
+    "resourceId": "Object ID",
+    "actorAccount": "Name or account",
+    "duration": "Duration",
+    "asUser": "Acting as {{user}}",
+    "notRecorded": "Not recorded",
+    "targetCount": "{{count}} objects",
+    "openFailure": "Open details to investigate",
+    "catalogFailed": "Action directory unavailable. Showing original action codes.",
+    "loadFailed": "Could not load records. Please retry.",
+    "noMatches": "No records match the current time range and filters",
+    "clearFilters": "Clear filters and search all time",
+    "copied": "Copied",
+    "copyFailed": "Could not copy",
+    "copy": "Copy",
+    "actionCode": "Action code",
+    "logId": "Log ID",
+    "changes": "Changes",
+    "field": "Field",
+    "before": "Before",
+    "after": "After",
+    "secretChanged": "Changed; values are not recorded",
+    "noChanges": "No field changes were provided. This does not prove that nothing changed.",
+    "batchTargets": "Batch targets",
+    "sameResource": "Object history",
+    "failureReason": "Outcome details",
+    "businessCode": "Business error code",
+    "failureNotRecorded": "No reason was recorded. Use the request ID to continue investigating.",
+    "redacted": "Safe fields only",
+    "truncated": "Request summary was truncated",
+    "related": "Continue investigation",
+    "sameRequest": "Same request",
+    "sameCorrelation": "Same business flow",
+    "sameSession": "Same impersonation session",
+    "ranges": {
+      "24h": "Last 24 hours",
+      "today": "Today",
+      "7d": "Last 7 days",
+      "all": "All time"
+    },
+    "identity": {
+      "user": "User",
+      "system": "System",
+      "anonymous": "Anonymous visitor",
+      "unknown": "Actor not recorded"
+    },
+    "unclassified": "Unclassified operation",
+    "attemptedUsername": "Attempted account",
+    "initiatedBy": "Task initiator",
+    "attempt": "Attempt (starting at 0)",
+    "values": {
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "introduction": "Trace who did what, to which object, and when.",
+    "recordHelp": "Coverage and explanations",
+    "viewLabel": "Investigation purpose",
+    "views": {
+      "all": "All records",
+      "attention": "Failed or unconfirmed",
+      "impersonation": "Impersonation",
+      "system": "Background tasks"
+    },
+    "keyword": "Person or object name",
+    "keywordPlaceholder": "Search a name, account or object",
+    "appliedFilters": "Applied filters",
+    "filtersPending": "Filters have changed. Search to apply them; the list still shows the previous query.",
+    "fromTime": "From",
+    "toTime": "To",
+    "backToEvent": "Back to previous event",
+    "relatedAllTime": "Related records cover all time. Your original list filters and page are preserved.",
+    "noRelated": "No persisted related records match this query.",
+    "openEvent": "View event",
+    "closeRelated": "Collapse related records",
+    "technicalInfo": "Technical details for investigation",
+    "noChangesFailure": "This failed record provides no confirmed field changes. Check the outcome details to verify its impact.",
+    "noChangesUnknown": "The business outcome is unconfirmed; field changes cannot be determined from this record.",
+    "noChangesSession": "This is an impersonation lifecycle event, with no business field comparison.",
+    "unknownReason": "The business outcome is unconfirmed. Check related records and object history.",
+    "partialReason": "Only part of this operation succeeded. Check the outcome of each batch target.",
+    "snapshotHint": "Names are captured at event time. Historical records without name snapshots retain their original values.",
+    "summary": {
+      "success": "{{actor}} performed “{{action}}” on “{{resource}}”. Outcome: success.",
+      "failure": "{{actor}} attempted “{{action}}” on “{{resource}}”. Outcome: failure.",
+      "partial": "{{actor}} performed “{{action}}” on “{{resource}}”. Outcome: partial success.",
+      "unknown": "{{actor}} performed “{{action}}” on “{{resource}}”. The business outcome is unconfirmed."
+    },
+    "help": {
+      "coverage": {
+        "title": "What is recorded?",
+        "text": "Integrated user, role permission, menu, department, notification, schedule, authentication and impersonation operations, plus background task execution. Not every browsing action is recorded."
+      },
+      "delay": {
+        "title": "Why might a recent operation be missing?",
+        "text": "Ordinary operations are saved in batches, triggered every 5 seconds or at 50 records by default. Timing depends on configuration and runtime conditions. Some critical operations are saved in the business transaction."
+      },
+      "results": {
+        "title": "What do the outcomes mean?",
+        "text": "Failure means the record reports a failure. Partial success requires checking each target. Unconfirmed means the record cannot establish the business outcome. Check details to verify the actual impact."
+      },
+      "risk": {
+        "title": "Does high risk mean an incident?",
+        "text": "Risk describes the potential impact of an action, such as granting permissions or impersonation. It is independent of the outcome and does not establish an incident."
+      },
+      "absence": {
+        "title": "Does no record mean nothing happened?",
+        "text": "No. Check the time range, filters and coverage, and ask an administrator to confirm delivery health. The in-memory batch queue for ordinary operations cannot guarantee immediate or lossless storage."
+      },
+      "privacy": {
+        "title": "Are passwords visible?",
+        "text": "Sensitive changes show only that a value changed. Request summaries are limited to allowed fields, redacted and size-limited."
+      }
+    },
+    "sessionFor": "Impersonation session for {{user}}",
+    "sessionStartSummary": "Actual operator {{actor}} started using the system as “{{subject}}”. Outcome: {{result}}.",
+    "sessionEndSummary": "Actual operator {{actor}} ended the session acting as “{{subject}}”. Outcome: {{result}}.",
+    "allOptions": "All",
+    "searchActor": "Search actors",
+    "searchOption": "Search resources or actions",
+    "invalidRange": "Enter valid start and end times, with the end after the start.",
+    "optionsFailed": "Could not load options",
+    "requestId": "Request ID",
+    "correlationId": "Correlation ID",
+    "yes": "Yes",
+    "no": "No",
+    "actions": "Actions",
+    "detailAction": "Detail",
+    "invalidIdentifier": "Enter a valid user or session UUID."
+  }
+}

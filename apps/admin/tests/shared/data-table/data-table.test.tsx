@@ -64,3 +64,27 @@ test("data table exposes empty and recoverable error states", async () => {
   await userEvent.click(screen.getByRole("button", { name: "重试" }))
   expect(retry).toHaveBeenCalledOnce()
 })
+
+test("optional row activation supports pointer and Enter without consuming interactive controls", async () => {
+  const user = userEvent.setup(),
+    activate = vi.fn()
+  renderAdmin(
+    <DataTable
+      columns={columns}
+      data={[{ id: "1", name: "Ada" }]}
+      getRowId={(row) => row.id}
+      pagination={{ page: 1, pageSize: 10, total: 1 }}
+      onPageChange={vi.fn()}
+      onPageSizeChange={vi.fn()}
+      onRowActivate={activate}
+    />,
+  )
+  const row = screen.getByText("Ada").closest("tr")!
+  await user.click(screen.getByText("Ada"))
+  expect(activate).toHaveBeenCalledWith({ id: "1", name: "Ada" })
+  row.focus()
+  await user.keyboard("{Enter}")
+  expect(activate).toHaveBeenCalledTimes(2)
+  await user.click(screen.getByRole("checkbox", { name: "选择Ada" }))
+  expect(activate).toHaveBeenCalledTimes(2)
+})

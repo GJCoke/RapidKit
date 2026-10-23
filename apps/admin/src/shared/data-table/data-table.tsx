@@ -21,6 +21,7 @@ interface DataTableProps<T> {
   loading?: boolean
   error?: boolean
   onRetry?: () => void
+  onRowActivate?: (row: T) => void
   emptyText?: string
   rowSelection?: RowSelectionState
   onRowSelectionChange?: (selection: RowSelectionState) => void
@@ -57,6 +58,7 @@ export function DataTable<T>({
   error,
   onRetry,
   emptyText,
+  onRowActivate,
   rowSelection = {},
   onRowSelectionChange,
   columnVisibility = {},
@@ -118,7 +120,25 @@ export function DataTable<T>({
               </TableRow>
             ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() ? "selected" : undefined}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() ? "selected" : undefined}
+                  tabIndex={onRowActivate ? 0 : undefined}
+                  onClick={(event) => {
+                    if (
+                      event.target instanceof Element &&
+                      event.target.closest('button, a, input, select, textarea, [role="checkbox"], [role="button"]')
+                    )
+                      return
+                    onRowActivate?.(row.original)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.target === event.currentTarget && event.key === "Enter" && onRowActivate) {
+                      event.preventDefault()
+                      onRowActivate(row.original)
+                    }
+                  }}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}

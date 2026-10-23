@@ -1,0 +1,187 @@
+{
+  "audit": {
+    "title": "审计日志",
+    "time": "时间",
+    "actor": "操作人",
+    "action": "动作",
+    "resource": "资源",
+    "resourceType": "资源类型",
+    "resourceName": "资源名称",
+    "resultLabel": "结果",
+    "riskLabel": "风险等级",
+    "sourceLabel": "记录来源",
+    "ip": "IP 地址",
+    "httpMethod": "HTTP 方法",
+    "path": "请求路径",
+    "responseCode": "响应状态码",
+    "userAgent": "User Agent",
+    "requestSummary": "请求摘要",
+    "errorMessage": "错误信息",
+    "form": {
+      "actor": "请选择操作人",
+      "action": "请输入动作",
+      "result": "请选择执行结果"
+    },
+    "result": {
+      "success": "成功",
+      "failure": "失败",
+      "partial": "部分成功",
+      "unknown": "结果未确认"
+    },
+    "risk": {
+      "normal": "普通",
+      "sensitive": "敏感",
+      "critical": "高风险"
+    },
+    "source": {
+      "http": "HTTP",
+      "domain_event": "领域事件",
+      "system": "系统"
+    },
+    "detail": {
+      "title": "审计详情",
+      "event": "事件信息",
+      "request": "请求信息",
+      "trace": "追踪与诊断",
+      "empty": "暂无审计详情",
+      "identity": "模拟身份",
+      "actorId": "管理员 ID",
+      "subjectId": "目标用户 ID",
+      "subjectName": "目标用户",
+      "sessionId": "模拟会话 ID",
+      "reason": "模拟原因",
+      "endReason": "结束原因"
+    },
+    "impersonatedAction": "管理员 {{actor}} 以用户 {{subject}} 的身份执行了 {{action}}",
+    "timeRange": "时间范围",
+    "displayTimezone": "显示时区",
+    "advancedSearch": "更多筛选",
+    "resourceId": "对象 ID",
+    "actorAccount": "姓名或账号",
+    "duration": "耗时",
+    "asUser": "以 {{user}} 身份",
+    "notRecorded": "未记录",
+    "targetCount": "{{count}} 个对象",
+    "openFailure": "查看详情以排查原因",
+    "catalogFailed": "动作目录加载失败，暂时显示原始动作码。",
+    "loadFailed": "加载失败，请重试。",
+    "noMatches": "当前时间范围和筛选条件下没有记录",
+    "clearFilters": "清空筛选并查看全部时间",
+    "copied": "已复制",
+    "copyFailed": "复制失败",
+    "copy": "复制",
+    "actionCode": "动作码",
+    "logId": "日志 ID",
+    "changes": "变更内容",
+    "field": "字段",
+    "before": "变更前",
+    "after": "变更后",
+    "secretChanged": "已修改，不记录原值",
+    "noChanges": "此记录未提供字段变化，不能据此推断没有变化。",
+    "batchTargets": "批量操作对象",
+    "sameResource": "查看对象历史",
+    "failureReason": "结果说明",
+    "businessCode": "业务错误码",
+    "failureNotRecorded": "未记录具体原因，可通过 Request ID 继续排查。",
+    "redacted": "仅保留安全字段",
+    "truncated": "请求摘要已截断",
+    "related": "继续排查",
+    "sameRequest": "同一请求",
+    "sameCorrelation": "同一业务流程",
+    "sameSession": "同一模拟会话",
+    "ranges": {
+      "24h": "最近24小时",
+      "today": "今天",
+      "7d": "最近7天",
+      "all": "全部时间"
+    },
+    "identity": {
+      "user": "用户",
+      "system": "系统",
+      "anonymous": "未登录访问者",
+      "unknown": "操作人未记录"
+    },
+    "unclassified": "未分类操作",
+    "attemptedUsername": "尝试登录的账号",
+    "initiatedBy": "任务发起人",
+    "attempt": "执行轮次（从 0 开始）",
+    "values": {
+      "enabled": "启用",
+      "disabled": "停用"
+    },
+    "introduction": "追溯谁在什么时候，对什么做了什么。",
+    "recordHelp": "记录范围与说明",
+    "viewLabel": "按排查目的查看",
+    "views": {
+      "all": "全部记录",
+      "attention": "失败与未确认",
+      "impersonation": "身份模拟",
+      "system": "后台任务"
+    },
+    "keyword": "人员或对象名称",
+    "keywordPlaceholder": "输入姓名、账号或对象名称，例如：研发一部",
+    "appliedFilters": "已应用条件",
+    "filtersPending": "筛选条件已修改，点击搜索应用；当前列表仍显示上一次查询结果。",
+    "fromTime": "开始",
+    "toTime": "结束",
+    "backToEvent": "返回上一条事件",
+    "relatedAllTime": "关联查询覆盖全部时间，原列表的筛选和页码保持不变。",
+    "noRelated": "未找到符合条件的已入库关联记录。",
+    "openEvent": "查看此事件",
+    "closeRelated": "收起关联记录",
+    "technicalInfo": "技术信息 · 提供给技术人员排查",
+    "noChangesFailure": "本条失败记录未提供已生效的字段变化；请结合结果说明核实影响。",
+    "noChangesUnknown": "业务结果尚未确认，此处不能判断是否发生了字段变化。",
+    "noChangesSession": "这是身份模拟的生命周期事件，无需展示业务字段变化。",
+    "unknownReason": "此记录尚未确认业务结果，请结合关联过程和对象历史核实。",
+    "partialReason": "本次操作仅部分成功，请逐项核对批量对象的结果。",
+    "snapshotHint": "名称取自事件发生时的快照；没有名称快照的历史记录保留原始值。",
+    "summary": {
+      "success": "{{actor}} 对「{{resource}}」执行了「{{action}}」，结果：成功。",
+      "failure": "{{actor}} 尝试对「{{resource}}」执行「{{action}}」，结果：失败。",
+      "partial": "{{actor}} 对「{{resource}}」执行「{{action}}」，结果：部分成功。",
+      "unknown": "{{actor}} 对「{{resource}}」执行「{{action}}」，业务结果尚未确认。"
+    },
+    "help": {
+      "coverage": {
+        "title": "这里能查到什么？",
+        "text": "已接入的用户、角色权限、菜单、部门、通知、定时任务、登录与身份模拟等操作，以及后台任务执行记录。这里不会记录所有浏览行为。"
+      },
+      "delay": {
+        "title": "刚操作完，为什么可能查不到？",
+        "text": "普通操作批量写入，默认每 5 秒或满 50 条触发保存，实际时间受配置和运行状况影响。部分关键操作与业务在同一事务中保存。"
+      },
+      "results": {
+        "title": "失败、部分成功和未确认有什么区别？",
+        "text": "失败表示记录报告失败；部分成功需要逐项核对；未确认表示现有记录不足以判断业务结果。应结合详情核实实际影响。"
+      },
+      "risk": {
+        "title": "高风险就是异常吗？",
+        "text": "风险等级表示动作的影响程度，例如权限调整或身份模拟，不等于已经发生异常；它与执行结果相互独立。"
+      },
+      "absence": {
+        "title": "没有记录，代表没有发生吗？",
+        "text": "不能据此判断。请检查时间、筛选与记录范围，并联系管理员确认写入状态。普通操作使用内存批量队列，不能保证即时保存或零丢失。"
+      },
+      "privacy": {
+        "title": "密码等内容会显示吗？",
+        "text": "敏感字段仅显示已变更，不保留原值。请求摘要经过字段筛选、脱敏和大小限制。"
+      }
+    },
+    "sessionFor": "{{user}} 的模拟会话",
+    "sessionStartSummary": "实际操作人 {{actor}} 开始以「{{subject}}」身份使用系统，结果：{{result}}。",
+    "sessionEndSummary": "实际操作人 {{actor}} 结束了以「{{subject}}」身份进行的会话，结果：{{result}}。",
+    "allOptions": "全部",
+    "searchActor": "搜索操作人",
+    "searchOption": "搜索资源或动作",
+    "invalidRange": "请同时填写有效起止时间，结束必须晚于开始。",
+    "optionsFailed": "选项加载失败",
+    "requestId": "请求 ID",
+    "correlationId": "关联 ID",
+    "yes": "是",
+    "no": "否",
+    "actions": "操作",
+    "detailAction": "详情",
+    "invalidIdentifier": "请输入有效的用户或会话 UUID。"
+  }
+}
