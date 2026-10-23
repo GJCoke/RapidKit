@@ -17,7 +17,7 @@ from src.sio.presence import prune_user
 @app.task(name="cleanup_stale_online_users")
 async def cleanup_stale_online_users(redis: TaskRedis) -> None:
     """清理 online_users 集合中过期的 user_id（由 Celery Beat 每 120 秒调用）。"""
-    lock = DistributedLock(redis, "lock:cleanup_stale_online_users", ttl=60)
+    lock = DistributedLock(redis, "lock:cleanup_stale_online_users", ttl=60, auto_renew=True)
     if not await lock.acquire():
         logger.debug("cleanup_stale_online_users skipped — another instance is running.")
         return

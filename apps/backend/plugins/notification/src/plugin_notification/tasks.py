@@ -115,7 +115,7 @@ async def deliver_pending_notifications(redis: TaskRedis, session: TaskSession) 
 @app.task(name="cleanup_notification_outbox")
 async def cleanup_notification_outbox(redis: TaskRedis, session: TaskSession) -> None:
     """定期兜底推进到期的 Outbox 任务。"""
-    lock = DistributedLock(redis, "lock:cleanup_notification_outbox", ttl=60)
+    lock = DistributedLock(redis, "lock:cleanup_notification_outbox", ttl=60, auto_renew=True)
     if not await lock.acquire():
         return
     try:
@@ -132,7 +132,7 @@ async def publish_scheduled_notifications(
     session: TaskSession,
 ) -> None:
     """Publish due scheduled notifications under a cluster-wide lock."""
-    lock = DistributedLock(redis, "lock:publish_scheduled_notifications", ttl=60)
+    lock = DistributedLock(redis, "lock:publish_scheduled_notifications", ttl=60, auto_renew=True)
     if not await lock.acquire():
         return
     try:
@@ -161,7 +161,7 @@ async def publish_scheduled_notifications(
 @app.task(name="expire_notifications")
 async def expire_notifications(redis: TaskRedis, session: TaskSession) -> None:
     """Expire published notifications under a cluster-wide lock."""
-    lock = DistributedLock(redis, "lock:expire_notifications", ttl=60)
+    lock = DistributedLock(redis, "lock:expire_notifications", ttl=60, auto_renew=True)
     if not await lock.acquire():
         return
     try:

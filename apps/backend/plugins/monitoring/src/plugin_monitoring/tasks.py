@@ -16,7 +16,7 @@ from plugin_monitoring.aggregator import aggregate_once, cleanup_old_metrics
 @app.task(name="aggregate_api_metrics")
 async def aggregate_api_metrics(redis: TaskRedis, session: TaskSession) -> None:
     """单次执行 API 指标聚合（由 Celery Beat 每 60 秒调用）。"""
-    lock = DistributedLock(redis, "lock:aggregate_api_metrics", ttl=120)
+    lock = DistributedLock(redis, "lock:aggregate_api_metrics", ttl=120, auto_renew=True)
     if not await lock.acquire():
         logger.debug("aggregate_api_metrics skipped — another instance is running.")
         return
@@ -32,7 +32,7 @@ async def aggregate_api_metrics(redis: TaskRedis, session: TaskSession) -> None:
 @app.task(name="cleanup_old_api_metrics")
 async def cleanup_old_api_metrics(redis: TaskRedis, session: TaskSession) -> None:
     """清理过期 API 指标归档数据（由 Celery Beat 每天凌晨调用）。"""
-    lock = DistributedLock(redis, "lock:cleanup_old_api_metrics", ttl=300)
+    lock = DistributedLock(redis, "lock:cleanup_old_api_metrics", ttl=300, auto_renew=True)
     if not await lock.acquire():
         logger.debug("cleanup_old_api_metrics skipped — another instance is running.")
         return
