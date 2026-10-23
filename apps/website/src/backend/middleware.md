@@ -6,43 +6,49 @@
 
 FastAPI 中间件采用 **LIFO（先进后出）** 的注册机制 -- 最先注册的中间件最后执行（最内层），最后注册的中间件最先执行（最外层）。请求从外层向内层穿透，响应从内层向外层返回。
 
-`setup_middlewares` 中的注册代码如下：
+`apps/backend/src/main.py` 的 `setup_middlewares` 先挂载插件中间件，再按以下顺序注册全局中间件（CORS 参数见下文）：
 
 ```python
 def setup_middlewares(app: FastAPI) -> None:
-    # 插件中间件（按 order 排序挂载）
     mount_plugin_middlewares(app, getattr(app.state, "plugins", []))
 
-    # 全局中间件（基础设施层，最靠近请求入口）
-    app.add_middleware(StateMiddleware)        # 注册 1 → 执行 7（最内层）
-    app.add_middleware(MetricsMiddleware)      # 注册 2 → 执行 6
-    app.add_middleware(RateLimitMiddleware)      # 注册 3 → 执行 5
-    app.add_middleware(I18nMiddleware)         # 注册 4 → 执行 4
-    app.add_middleware(LoggerMiddleware)       # 注册 5 → 执行 3
-    app.add_middleware(ContextMiddleware, ...) # 注册 6 → 执行 2
-    app.add_middleware(CORSMiddleware, ...)    # 注册 7 → 执行 1（最外层）
+    app.add_middleware(StateMiddleware)
+    app.add_middleware(AuditMiddleware)
+    app.add_middleware(MetricsMiddleware)
+    app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(I18nMiddleware)
+    app.add_middleware(LoggerMiddleware)
+    app.add_middleware(ContextMiddleware, plugins=(NanoIdPlugin(),))
+    app.add_middleware(CORSMiddleware, ...)
+    app.add_middleware(SecurityMiddleware)
+    app.add_middleware(PrometheusMiddleware, metrics=app.state.prometheus)
 ```
 
-完整的执行顺序如下表所示：
+应用中间件的请求执行顺序如下，响应按相反方向返回：
 
-| 注册顺序 | 中间件                      | 请求执行顺序 |
-| -------- | --------------------------- | ------------ |
-| 插件     | 插件中间件（按 order 排序） | 最内层       |
-| 1        | StateMiddleware             | 7            |
-| 2        | MetricsMiddleware           | 6            |
-| 3        | RateLimitMiddleware           | 5            |
-| 4        | I18nMiddleware              | 4            |
-| 5        | LoggerMiddleware            | 3            |
-| 6        | ContextMiddleware           | 2            |
-| 7        | CORSMiddleware              | 1（最外层）  |
+| 注册顺序 | 中间件                           | 请求执行顺序       |
+| -------- | -------------------------------- | ------------------ |
+| 插件     | 插件中间件（`order` 越小越靠外） | 所有全局中间件内侧 |
+| 1        | StateMiddleware                  | 10（全局最内层）   |
+| 2        | AuditMiddleware                  | 9                  |
+| 3        | MetricsMiddleware                | 8                  |
+| 4        | RateLimitMiddleware              | 7                  |
+| 5        | I18nMiddleware                   | 6                  |
+| 6        | LoggerMiddleware                 | 5                  |
+| 7        | ContextMiddleware                | 4                  |
+| 8        | CORSMiddleware                   | 3                  |
+| 9        | SecurityMiddleware               | 2                  |
+| 10       | PrometheusMiddleware             | 1（全局最外层）    |
+
+这里的“最外层”和“最内层”指应用注册的中间件。Starlette 还会在外侧添加 `ServerErrorMiddleware`，在内侧添加 `ExceptionMiddleware`。未处理异常由外侧错误处理器生成响应时，应用的统一异常处理器会补齐安全响应头。
 
 :::tip
-理解 LIFO 顺序是调试中间件问题的关键。例如 `LoggerMiddleware` 虽然最后注册，但它在最外层运行，因此能够记录完整的请求/响应周期耗时。
+注册顺序与请求执行顺序相反。`PrometheusMiddleware` 最后注册，因此能统计安全校验、CORS、上下文校验和限流提前返回的请求；`LoggerMiddleware` 只记录到达其内层的请求。
 :::
 
 ## LoggerMiddleware
 
-位于最外层，负责记录每个 HTTP 请求的访问日志，包括客户端地址、请求方法、路径、HTTP 版本、响应状态码和耗时。
+位于 `ContextMiddleware` 内层、`I18nMiddleware` 外层，记录到达这一层的请求访问日志，包括客户端地址、请求方法、路径、响应状态码和耗时。外层安全校验、CORS 或上下文校验提前返回的请求不会经过它。
 
 ```python
 class LoggerMiddleware(BaseHTTPMiddleware):
@@ -159,7 +165,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 ## StateMiddleware
 
-位于最内层，负责从请求中提取客户端信息并写入上下文，包括：
+位于全局中间件最内层、插件中间件外侧，负责从请求中提取客户端信息并写入上下文，包括：
 
 - **IP 地址**：通过 `get_client_ip()` 读取 ASGI 客户端地址；代理头由 Uvicorn 按可信网段处理
 - **User-Agent 信息**：通过 `parse_user_agent()` 解析为 `user_agent`、`os`、`browser`、`device` 四个字段
@@ -183,12 +189,24 @@ class StateMiddleware(BaseHTTPMiddleware):
 ```
 
 :::warning
-`StateMiddleware` 依赖 `ContextMiddleware` 提供的请求上下文（`ctx`），因此必须在 `ContextMiddleware` 之后注册（即在更内层执行）。调整中间件注册顺序时需注意这一依赖关系。
+`StateMiddleware` 依赖 `ContextMiddleware` 提供的请求上下文（`ctx`），因此必须在 `ContextMiddleware` 之前注册（请求阶段在其内层执行）。调整中间件注册顺序时需注意这一依赖关系。
 :::
 
 ## MetricsMiddleware
 
-负责采集每个请求的处理耗时、状态码等指标，供 monitoring 插件聚合分析。位于 RateLimitMiddleware 之上（更靠近业务层），确保限流拦截的请求不计入业务指标。
+负责采集处理耗时、状态码等业务指标，供 monitoring 插件聚合分析。位于 `RateLimitMiddleware` 内层、`AuditMiddleware` 外层，因此限流提前返回的请求不计入这组业务指标。
+
+## AuditMiddleware
+
+位于 `MetricsMiddleware` 内层、`StateMiddleware` 外层，在下游执行后读取身份和业务结果，记录审计事件。限流等外层中间件提前返回的请求不会进入这一层。
+
+## SecurityMiddleware
+
+位于 `CORSMiddleware` 外层、`PrometheusMiddleware` 内层，检查请求体大小并添加安全响应头，因此 CORS 预检和提前返回的响应也带有安全头。自身拒绝请求时仍能由外层 Prometheus 统计。
+
+## PrometheusMiddleware
+
+位于全局中间件最外层，独立于 monitoring 业务指标，统计请求数、延迟和在途请求。按路由模板及业务结果标记指标，覆盖内层提前返回的错误；健康检查和 `/metrics` 不计入这组指标。
 
 ## 插件中间件
 

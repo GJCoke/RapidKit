@@ -8,6 +8,7 @@ from rapidkit_core.database import RedisManager
 from rapidkit_core.log import logger
 from rapidkit_core.realtime import PERMISSION_BROADCAST_ROOM, permission_user_room
 from rapidkit_framework.identity import current_identity
+from socketio.exceptions import ConnectionRefusedError
 
 from src.sio.app import socket
 from src.sio.constants import SESSION_TTL, online_users_structure
@@ -18,6 +19,8 @@ from src.sio.sessions import IDENTITY_SESSION_KEY
 @socket.event
 async def connect(sid: SID, redis: RedisDep) -> None:
     identity = current_identity()
+    if not identity.user_id:
+        raise ConnectionRefusedError("unauthorized")
     await socket.enter_room(sid, permission_user_room(identity.user_id))
     await socket.enter_room(sid, PERMISSION_BROADCAST_ROOM)
     if not identity.impersonation_session_id:

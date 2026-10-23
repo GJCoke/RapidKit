@@ -23,7 +23,7 @@ class UserManageCRUD(BaseCRUD[User]):
 
     async def get_department_counts(self) -> UserDepartmentCounts:
         """计数与用户列表共享请求会话的数据范围。"""
-        statement = select(User.department_id, func.count(User.id)).group_by(User.department_id)
+        statement = select(User.department_id, func.count(col(User.id))).group_by(col(User.department_id))
         rows = (await self.session.exec(statement)).all()
         return UserDepartmentCounts(
             total=sum(count for _, count in rows),

@@ -168,7 +168,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
         )
         record_audit_outcome(request, business_code=exc.status_code, error_key="common.error.invalidOperation")
         detail = str(exc.detail)
-        msg = t(detail) if is_i18n_key(detail) else detail  # type: ignore
+        msg = t(detail) if is_i18n_key(detail) else detail
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
