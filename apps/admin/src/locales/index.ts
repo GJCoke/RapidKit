@@ -1,3 +1,5 @@
+import enUSPluginMonitoring from "./en-US/plugin-monitoring.json"
+import zhCNPluginMonitoring from "./zh-CN/plugin-monitoring.json"
 import enUSApiMonitoring from "./en-US/api-monitoring.json"
 import zhCNApiMonitoring from "./zh-CN/api-monitoring.json"
 import enUSSchedule from "./en-US/schedule.json"
@@ -67,6 +69,7 @@ i18n.use(initReactI18next).init({
         ...zhCNTask,
         ...zhCNSchedule,
         ...zhCNApiMonitoring,
+        ...zhCNPluginMonitoring,
       },
     },
     "en-US": {
@@ -89,6 +92,7 @@ i18n.use(initReactI18next).init({
         ...enUSTask,
         ...enUSSchedule,
         ...enUSApiMonitoring,
+        ...enUSPluginMonitoring,
       },
     },
   },
