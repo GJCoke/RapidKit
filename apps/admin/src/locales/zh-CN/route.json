@@ -23,6 +23,7 @@
     "notification_manage": "通知管理",
     "notification_manage_templates": "模板管理",
     "notification_manage_announcements": "公告管理",
-    "notification_manage_deliveries": "投递状态"
+    "notification_manage_deliveries": "投递状态",
+    "notification_center": "我的消息"
   }
 }

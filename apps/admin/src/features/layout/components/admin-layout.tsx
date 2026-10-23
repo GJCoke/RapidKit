@@ -15,6 +15,7 @@ import { MenuProvider, useLayoutMenu } from "./menu/menu-context"
 import { resolveLayoutRegions } from "./menu/menu-mode-renderer"
 import { HorizontalMenu } from "./menu/horizontal-menu"
 import { MixedSidebar } from "./menu/mixed-sidebar"
+import { GlobalAnnouncement } from "@/features/notifications/global-announcement"
 
 function AdminLayoutContent() {
   const { siderCollapse, isMobile, mixSiderFixed, fullContent, setSiderCollapse } = useAppStore()
@@ -107,12 +108,15 @@ function AdminLayoutContent() {
       scrollMode={theme.layout.scrollMode}
       fixedHeaderTabs={theme.layout.fixedHeaderTabs}
       header={
-        <Header
-          showLogo={regions.showLogo}
-          showSidebarToggle={regions.showSidebarToggle}
-          menu={headerMenu}
-          showBreadcrumb={!headerMenu}
-        />
+        <>
+          <GlobalAnnouncement />
+          <Header
+            showLogo={regions.showLogo}
+            showSidebarToggle={regions.showSidebarToggle}
+            menu={headerMenu}
+            showBreadcrumb={!headerMenu}
+          />
+        </>
       }
       tabs={theme.layout.showTabs ? <PageTabs /> : undefined}
     >

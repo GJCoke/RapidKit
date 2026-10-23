@@ -1,0 +1,74 @@
+{
+  "notification": {
+    "popover": {
+      "title": "Messages",
+      "unreadCount": "{{displayCount}} unread",
+      "required": "Required",
+      "viewAll": "View all messages",
+      "openAction": "Open",
+      "expandContent": "Expand message",
+      "collapseContent": "Collapse message",
+      "completeTitle": "Full title",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "other": "Earlier messages"
+    },
+    "title": "Notifications",
+    "listTitle": "Message list",
+    "readAll": "Mark all read",
+    "empty": "No messages",
+    "viewAll": "View all",
+    "loadMore": "Load more",
+    "noMore": "No more",
+    "mandatory": "Required",
+    "recalled": "This message has been recalled",
+    "recalledContent": "Message content is no longer available",
+    "archive": "Archive",
+    "delete": "Delete",
+    "tabs": {
+      "all": "All",
+      "unread": "Unread",
+      "announcement": "Announcements"
+    },
+    "level": {
+      "info": "Info",
+      "success": "Success",
+      "warning": "Warning",
+      "error": "Error"
+    },
+    "filters": {
+      "unreadOnly": "Unread only",
+      "active": "Active",
+      "archived": "Archived",
+      "all": "All archive states",
+      "category": "Category",
+      "createdFrom": "Created from",
+      "createdTo": "Created to",
+      "level": "Level",
+      "loadedOnly": "Filters currently loaded messages only"
+    },
+    "actionUnavailable": "This action is no longer available",
+    "banner": {
+      "topBanner": "Top announcement",
+      "viewDetails": "View details",
+      "detailTitle": "Announcement details",
+      "openAction": "Open"
+    },
+    "category": {
+      "adminAnnouncement": "System announcements",
+      "systemSecurity": "System security",
+      "userInvited": "User invitations",
+      "userMention": "Mentions",
+      "taskCompleted": "Completed tasks"
+    },
+    "archiveState": "Archive state",
+    "operationFailed": "Unable to update this notification",
+    "loadFailed": "Unable to load messages",
+    "refresh": "Refresh",
+    "expired": "This message has expired",
+    "description": "Read and manage your messages.",
+    "confirmDelete": "Delete this notification?",
+    "confirmDeleteHint": "This removes the message from your inbox.",
+    "close": "Close"
+  }
+}

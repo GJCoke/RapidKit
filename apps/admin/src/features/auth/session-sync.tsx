@@ -13,6 +13,7 @@ import { useRouteCacheStore } from "@/features/router/route-cache-store"
 import { findRouteForPath, findFirstNavigablePath, normalizeRoutes } from "@/features/router/route-model"
 import { ConfirmActionDialog } from "@/shared/crud"
 import { createPermissionSync } from "./permission-sync"
+import { withNotificationRoutes } from "@/features/notifications/notification-routes"
 
 const changeSchema = z.object({
   scope: z.enum(["roles", "user", "menu"]),
@@ -87,13 +88,14 @@ export function SessionSync() {
         path === "/login" ||
         path.startsWith("/login/") ||
         ["/403", "/404", "/500"].includes(path) ||
-        Boolean(findRouteForPath(normalizeRoutes(snapshot.routes.routes), path))
+        Boolean(findRouteForPath(normalizeRoutes(withNotificationRoutes(snapshot.routes.routes)), path))
       )
     }
     const apply = async (snapshot: Snapshot) => {
       const business = {
         predicate: (query: { queryKey: readonly unknown[] }) =>
-          !["userInfo", "user-routes"].includes(String(query.queryKey[0])),
+          // Recalled messages and banner revisions remain authoritative for this login.
+          !["userInfo", "user-routes", "notification-session"].includes(String(query.queryKey[0])),
       }
       await client.cancelQueries()
       if (!current()) return

@@ -16,6 +16,7 @@ import { LocaleSwitch } from "@/features/locale/locale-switch"
 import { APP_LOCALES } from "@/features/locale/locale-model"
 import { ThemeWorkbench, ThemeWorkbenchTrigger } from "@/features/theme/components/theme-workbench-trigger"
 import { useLocaleStore } from "@/stores/locale"
+import { NotificationMessages } from "@/features/notifications/notification-messages"
 
 import { BrowserFullscreen } from "./browser-fullscreen"
 import { GlobalSearch } from "./global-search/global-search"
@@ -72,7 +73,12 @@ export function HeaderTools({ isMobile }: { isMobile: boolean }) {
       case "theme":
         return <ThemeToggle key={tool} />
       case "user":
-        return <UserMenu key={tool} />
+        return (
+          <div key={tool} className="flex items-center gap-1">
+            <NotificationMessages />
+            <UserMenu />
+          </div>
+        )
     }
   }
 

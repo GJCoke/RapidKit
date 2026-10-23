@@ -14,6 +14,7 @@ import { constantRoutes, generateRoutes } from "@/features/router"
 import { resolveAuthorizedHomePath } from "@/features/router/generate-routes"
 import { EMPTY_ROUTE_SNAPSHOT, normalizeRoutes } from "@/features/router/route-model"
 import { RouteErrorBoundary } from "@/features/router/route-error-boundary"
+import { withNotificationRoutes } from "@/features/notifications/notification-routes"
 import { AppProviders } from "./providers"
 import { AppLoading } from "./app-loading"
 import { finishBootstrapLoading } from "./bootstrap-loading"
@@ -29,7 +30,7 @@ function AppRouter() {
   const { data: routeResponse, isLoading, isError, refetch } = useUserRoutes()
   const backendRoutes = routeResponse?.data?.routes
   const routeSnapshot = useMemo(
-    () => (backendRoutes ? normalizeRoutes(backendRoutes) : EMPTY_ROUTE_SNAPSHOT),
+    () => (backendRoutes ? normalizeRoutes(withNotificationRoutes(backendRoutes)) : EMPTY_ROUTE_SNAPSHOT),
     [backendRoutes],
   )
   const routeLoadState = resolveRouteLoadState({

@@ -1,5 +1,14 @@
 // @vitest-environment jsdom
 import { EventEmitter } from "node:events"
+import { useState } from "react"
+import { useLocation } from "react-router"
+import userEvent from "@testing-library/user-event"
+import { renderAdmin } from "@test/setup/render"
+import { useNotificationOperations } from "@/features/notifications/use-notification-operations"
+import { useNotificationInbox, recallNotification, notificationKeys } from "@/services/hooks/use-notifications"
+import { useRouteStore } from "@/stores/route"
+import { normalizeRoutes } from "@/features/router/route-model"
+import type { NotificationMessage } from "@/services/api/notification"
 import { act, render, screen, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { afterEach, expect, test, vi } from "vitest"
@@ -292,5 +301,126 @@ test("a first-connect permission snapshot on the public login page does not bloc
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
   } finally {
     window.history.replaceState({}, "", "/")
+  }
+})
+
+test("an authenticated inbox without a backend menu entry stays open after permission synchronization", async () => {
+  window.history.replaceState({}, "", "/notification/center")
+  const client = new QueryClient()
+  useAuthStore.getState().setToken("access", "refresh")
+  useAuthStore.getState().setUserInfo(user)
+  server.use(
+    http.get(`${base}/auth/user/info`, () =>
+      HttpResponse.json({ code: 0, data: { ...user, name: "Inbox refreshed" } }),
+    ),
+    http.get(`${base}/route/user`, () => HttpResponse.json({ code: 0, data: { routes: [], home: "home" } })),
+  )
+  try {
+    render(
+      <QueryClientProvider client={client}>
+        <SessionSync />
+      </QueryClientProvider>,
+    )
+    act(() => {
+      network.socket?.emit("connect")
+    })
+    await waitFor(() => expect(useAuthStore.getState().userInfo?.name).toBe("Inbox refreshed"))
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
+  } finally {
+    window.history.replaceState({}, "", "/")
+  }
+})
+
+const recalledMessage: NotificationMessage = {
+  id: "inbox",
+  messageId: "message",
+  title: "Private notice",
+  content: "Private body",
+  contentMode: "raw",
+  level: "info",
+  category: "system.security",
+  mandatory: false,
+  status: "published",
+  createTime: "2026-10-23T08:00:00Z",
+  action: { route: "manage_user" },
+}
+function PendingNotificationRead() {
+  const inbox = useNotificationInbox({})
+  const operations = useNotificationOperations()
+  const location = useLocation()
+  const [settled, setSettled] = useState(false)
+  return (
+    <>
+      <button
+        onClick={async () => {
+          await operations.read(recalledMessage, true)
+          setSettled(true)
+        }}
+      >
+        Open notice
+      </button>
+      <output aria-label="Read result">{settled ? "done" : "pending"}</output>
+      <output aria-label="Current path">{location.pathname}</output>
+      <output aria-label="Notice title">{inbox.items[0]?.title}</output>
+    </>
+  )
+}
+test("permission synchronization retains recalls while a pending read and fresh inbox overlap", async () => {
+  vi.spyOn(Math, "random").mockReturnValue(0)
+  useAuthStore.getState().setToken("access", "recall-permission-refresh")
+  useAuthStore.getState().setUserInfo(user)
+  useRouteStore
+    .getState()
+    .replaceSnapshot(normalizeRoutes([{ name: "manage_user", path: "/manage/user", component: "view.manage_user" }]))
+  let releaseRead!: () => void,
+    releaseList!: () => void,
+    reads = 0,
+    reading = false
+  const readGate = new Promise<void>((resolve) => {
+    releaseRead = resolve
+  })
+  const listGate = new Promise<void>((resolve) => {
+    releaseList = resolve
+  })
+  server.use(
+    http.get(`${base}/notifications`, async () => {
+      if (++reads > 1) await listGate
+      return HttpResponse.json({ code: 0, data: { items: [recalledMessage], size: 20 } })
+    }),
+    http.patch(`${base}/notifications/inbox/read`, async () => {
+      reading = true
+      await readGate
+      return HttpResponse.json({ code: 0, data: {} })
+    }),
+    http.get(`${base}/auth/user/info`, () =>
+      HttpResponse.json({ code: 0, data: { ...user, name: "Permissions refreshed" } }),
+    ),
+    http.get(`${base}/route/user`, () => HttpResponse.json({ code: 0, data: { routes: [], home: "home" } })),
+  )
+  const { queryClient } = renderAdmin(
+    <>
+      <SessionSync />
+      <PendingNotificationRead />
+    </>,
+  )
+  try {
+    await waitFor(() => expect(screen.getByLabelText("Notice title")).toHaveTextContent("Private notice"))
+    await userEvent.setup().click(screen.getByRole("button", { name: "Open notice" }))
+    await waitFor(() => expect(reading).toBe(true))
+    act(() => recallNotification(queryClient, getAuthSession(), "message"))
+    act(() => network.socket?.emit("permission:changed", { scope: "user", revision: 7 }))
+    await waitFor(() => expect(useAuthStore.getState().userInfo?.name).toBe("Permissions refreshed"))
+    await waitFor(() => expect(reads).toBeGreaterThan(1))
+    act(() => releaseRead())
+    await waitFor(() => expect(screen.getByLabelText("Read result")).toHaveTextContent("done"))
+    expect(screen.getByLabelText("Current path")).toHaveTextContent(/^\/$/)
+    act(() => releaseList())
+    await waitFor(() =>
+      expect(queryClient.isFetching({ queryKey: notificationKeys.inboxes(getAuthSession()) })).toBe(0),
+    )
+    expect(screen.getByLabelText("Notice title")).not.toHaveTextContent("Private notice")
+  } finally {
+    releaseRead()
+    releaseList()
   }
 })

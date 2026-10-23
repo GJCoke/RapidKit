@@ -2,6 +2,8 @@ import i18n from "i18next"
 import { initReactI18next } from "react-i18next"
 
 import { useLocaleStore } from "@/stores/locale"
+import enUSNotification from "./en-US/notification.json"
+import zhCNNotification from "./zh-CN/notification.json"
 
 import enUSAudit from "./en-US/audit.json"
 import zhCNAudit from "./zh-CN/audit.json"
@@ -40,6 +42,7 @@ i18n.use(initReactI18next).init({
         ...zhCNRole,
         ...zhCNMenu,
         ...zhCNAudit,
+        ...zhCNNotification,
       },
     },
     "en-US": {
@@ -53,6 +56,7 @@ i18n.use(initReactI18next).init({
         ...enUSRole,
         ...enUSMenu,
         ...enUSAudit,
+        ...enUSNotification,
       },
     },
   },

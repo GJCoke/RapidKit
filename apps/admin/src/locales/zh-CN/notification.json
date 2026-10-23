@@ -1,0 +1,74 @@
+{
+  "notification": {
+    "popover": {
+      "title": "消息",
+      "unreadCount": "{{displayCount}} 条未读",
+      "required": "必读",
+      "viewAll": "查看全部消息",
+      "openAction": "前往查看",
+      "expandContent": "展开全文",
+      "collapseContent": "收起全文",
+      "completeTitle": "完整标题",
+      "today": "今天",
+      "yesterday": "昨天",
+      "other": "更早消息"
+    },
+    "title": "消息通知",
+    "listTitle": "消息列表",
+    "readAll": "全部已读",
+    "empty": "暂无消息",
+    "viewAll": "查看全部",
+    "loadMore": "加载更多",
+    "noMore": "没有更多了",
+    "mandatory": "强制",
+    "recalled": "该消息已被撤回",
+    "recalledContent": "消息内容已不可查看",
+    "archive": "归档",
+    "delete": "删除",
+    "tabs": {
+      "all": "全部",
+      "unread": "未读",
+      "announcement": "公告"
+    },
+    "level": {
+      "info": "信息",
+      "success": "成功",
+      "warning": "警告",
+      "error": "错误"
+    },
+    "filters": {
+      "unreadOnly": "只看未读",
+      "active": "未归档",
+      "archived": "已归档",
+      "all": "全部归档状态",
+      "category": "分类",
+      "createdFrom": "开始时间",
+      "createdTo": "结束时间",
+      "level": "级别",
+      "loadedOnly": "仅筛选当前已加载消息"
+    },
+    "actionUnavailable": "此操作已不可用",
+    "banner": {
+      "topBanner": "顶部公告",
+      "viewDetails": "查看详情",
+      "detailTitle": "公告详情",
+      "openAction": "前往查看"
+    },
+    "category": {
+      "adminAnnouncement": "系统公告",
+      "systemSecurity": "系统安全",
+      "userInvited": "用户邀请",
+      "userMention": "提及我的消息",
+      "taskCompleted": "任务完成"
+    },
+    "archiveState": "归档状态",
+    "operationFailed": "更新通知失败",
+    "loadFailed": "加载消息失败",
+    "refresh": "刷新",
+    "expired": "此消息已过期",
+    "description": "查看和管理你的消息。",
+    "confirmDelete": "删除这条通知？",
+    "confirmDeleteHint": "此操作会从收件箱中移除该消息。",
+    "close": "关闭"
+  }
+}

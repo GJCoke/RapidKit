@@ -8,6 +8,7 @@ import { useThemeStore } from "@/stores/theme"
 import i18n from "@/locales"
 import { LocaleSync } from "@/features/locale/locale-sync"
 import { SessionSync } from "@/features/auth/session-sync"
+import { NotificationRuntime } from "@/features/notifications/notification-runtime"
 
 function AppFeedback() {
   const colorScheme = useThemeStore((state) => state.colorScheme)
@@ -20,6 +21,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       <I18nextProvider i18n={i18n}>
         <LocaleSync />
         <SessionSync />
+        <NotificationRuntime />
         <ThemeProvider>
           <TooltipProvider delay={0}>
             {children}
