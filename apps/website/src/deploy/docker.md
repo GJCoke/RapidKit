@@ -97,19 +97,22 @@ Celery Beat   <-> PostgreSQL, Redis
 `docker/backend/Dockerfile` 采用多阶段构建：
 
 ```dockerfile
-# Stage 1: base -- 公共基础层
-FROM python:3.14-slim AS base
-# 安装 libpq-dev（PostgreSQL 客户端库）
-# 从 ghcr.io/astral-sh/uv 复制 uv 二进制
+# Stage 1: manifests -- 自动收集全部 workspace 成员的 pyproject.toml
+FROM python:3.14.7-slim AS manifests
 
-# Stage 2: dev -- 开发容器（volume mount 源码 + --reload）
+# Stage 2: base -- 公共基础层
+FROM python:3.14.7-slim AS base
+# 从 ghcr.io/astral-sh/uv:0.12.5 复制 uv 二进制（版本固定，保证可复现）
+# 复制锁文件与全部 manifest，依赖层不随源码变化失效
+
+# Stage 3: dev -- 开发容器（volume mount 源码 + --reload，venv 位于 /opt/venv）
 FROM base AS dev
 
-# Stage 3: prod -- 生产镜像
+# Stage 4: prod -- 生产镜像
 FROM base AS prod
-# uv sync --no-dev 仅安装生产依赖
-# 复制全部 Python workspace 成员源码、插件迁移与应用配置
-# 创建非 root 用户 app:app 并切换
+# uv sync --no-dev 仅安装生产依赖，并预编译字节码；uv 缓存使用 BuildKit cache mount
+# 复制全部 Python workspace 成员源码、插件迁移与应用配置（COPY --chown，避免 chown -R 复制整层 venv）
+# 以非 root 用户 app:app 运行，venv 归 root 所有且只读
 # CMD: uvicorn --workers 4
 ```
 
