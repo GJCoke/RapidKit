@@ -1,0 +1,39 @@
+{
+  "apiMonitoring": {
+    "title": "API Monitoring",
+    "path": "Path",
+    "method": "Method",
+    "requestCount": "Requests",
+    "errorCount": "Errors",
+    "errorRate": "Err Rate",
+    "avgMs": "Avg RT (ms)",
+    "p95Ms": "P95 RT (ms)",
+    "totalRequests": "Total Requests",
+    "totalErrors": "Total Errors",
+    "avgErrorRate": "Avg Error Rate",
+    "avgResponseTime": "Avg Response Time",
+    "distribution": "Request Distribution",
+    "trend": "Request Trend",
+    "topRequests": "Top Requests",
+    "topP95": "Top P95 Response Time",
+    "topFailures": "Top Failures",
+    "detail": "Detail List",
+    "searchPlaceholder": "Search by path",
+    "allMethods": "All Methods",
+    "last1h": "1h",
+    "last6h": "6h",
+    "last24h": "24h",
+    "last7d": "7d",
+    "other": "Other",
+    "noData": "No monitoring data",
+    "description": "Monitor endpoint traffic, errors and response times.",
+    "summary": "API summary",
+    "timeRange": "Time range",
+    "sort": {
+      "none": "Unsorted",
+      "desc": "Descending",
+      "asc": "Ascending"
+    },
+    "sortHint": "Cycle descending, ascending and default sorting"
+  }
+}

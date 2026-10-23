@@ -1,0 +1,39 @@
+{
+  "apiMonitoring": {
+    "title": "API 监控",
+    "path": "路径",
+    "method": "方法",
+    "requestCount": "请求数",
+    "errorCount": "失败数",
+    "errorRate": "错误率",
+    "avgMs": "平均响应时间",
+    "p95Ms": "P95 响应时间",
+    "totalRequests": "总请求数",
+    "totalErrors": "总失败数",
+    "avgErrorRate": "平均错误率",
+    "avgResponseTime": "平均响应时间",
+    "distribution": "请求分布",
+    "trend": "请求趋势",
+    "topRequests": "请求量排行",
+    "topP95": "响应时间排行",
+    "topFailures": "失败排行",
+    "detail": "明细列表",
+    "searchPlaceholder": "按路径搜索",
+    "allMethods": "全部方法",
+    "last1h": "近1小时",
+    "last6h": "近6小时",
+    "last24h": "近24小时",
+    "last7d": "近7天",
+    "other": "其他",
+    "noData": "暂无监控数据",
+    "description": "查看接口流量、错误和响应时间。",
+    "summary": "API 汇总",
+    "timeRange": "时间范围",
+    "sort": {
+      "none": "未排序",
+      "desc": "降序",
+      "asc": "升序"
+    },
+    "sortHint": "点击切换降序、升序或默认排序"
+  }
+}
