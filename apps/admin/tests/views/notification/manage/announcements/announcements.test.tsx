@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { AnnouncementDetail } from "@/views/notification/manage/announcements/modules/announcement-detail"
 import "@test/setup/layout"
 import { act, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -165,4 +166,26 @@ test("an unrelated banner refresh preserves an open row action menu", async () =
   })
   await screen.findByText("New banner notice")
   expect(screen.getByRole("menuitem", { name: "Delete draft" })).toBeVisible()
+})
+
+test("reused announcement details treat i18n content parameters only as interpolation data", async () => {
+  await setup()
+  server.use(
+    http.get(`${base}/localized`, () =>
+      HttpResponse.json({
+        code: 0,
+        data: {
+          ...draft,
+          id: "localized",
+          contentMode: "i18n",
+          title: "common.success",
+          content: "common.cancel",
+          contentParams: { returnDetails: true, lng: "zh-CN", defaultValue: "Wrong fallback" },
+        },
+      }),
+    ),
+  )
+  renderAdmin(<AnnouncementDetail id="localized" onClose={() => {}} />)
+  expect(await screen.findByRole("heading", { name: "Success" })).toBeInTheDocument()
+  expect(screen.getByText("Cancel", { selector: "p" })).toBeInTheDocument()
 })

@@ -3,7 +3,7 @@ import "@test/setup/layout"
 import { useState } from "react"
 import { screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { expect, test } from "vitest"
+import { expect, test, vi } from "vitest"
 import { renderAdmin } from "@test/setup/render"
 import i18n from "@/locales"
 import { SearchableChoice } from "@/shared/crud/searchable-choice"
@@ -40,4 +40,19 @@ test("a searchable choice filters real options, selects a value, and restores fo
   await user.keyboard("{Escape}")
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
   await waitFor(() => expect(trigger).toHaveFocus())
+})
+
+test("required selections hide clearing while existing callers keep their clear action", async () => {
+  await i18n.changeLanguage("en-US")
+  const user = userEvent.setup(),
+    change = vi.fn()
+  const props = { label: "Message", value: "reader", options: [{ value: "reader", label: "Reader" }], onChange: change }
+  const view = renderAdmin(<SearchableChoice {...props} clearable={false} />)
+  await user.click(screen.getByRole("combobox", { name: "Message" }))
+  expect(screen.queryByRole("button", { name: "Reset" })).toBeNull()
+  await user.keyboard("{Escape}")
+  view.rerender(<SearchableChoice {...props} />)
+  await user.click(screen.getByRole("combobox", { name: "Message" }))
+  await user.click(screen.getByRole("button", { name: "Reset" }))
+  expect(change).toHaveBeenCalledWith(null)
 })

@@ -1,3 +1,4 @@
+import { translateText } from "@/shared/i18n-text"
 import { parseApiDate } from "@/shared/date-time"
 import dayjs from "dayjs"
 import { useTranslation } from "react-i18next"
@@ -10,7 +11,7 @@ export function AnnouncementDetail({ id, onClose }: { id: string; onClose: () =>
   const { t, i18n } = useTranslation(),
     query = useAnnouncementDetail(id)
   const data = query.data,
-    text = data ? renderNotification(data, i18n.language, (key, params) => t(key, params ?? {})) : null
+    text = data ? renderNotification(data, i18n.language, (key, params) => translateText(t, key, params)) : null
   const date = (value?: string | null) =>
     value ? dayjs(parseApiDate(value)).format("YYYY-MM-DD HH:mm") : t("announcement.banner.unlimited")
   return (

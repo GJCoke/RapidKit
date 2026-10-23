@@ -26,6 +26,7 @@ export function SearchableChoice({
   disabled = false,
   loading = false,
   placeholder,
+  clearable = true,
 }: {
   label: string
   value: string | null
@@ -35,6 +36,7 @@ export function SearchableChoice({
   disabled?: boolean
   loading?: boolean
   placeholder?: string
+  clearable?: boolean
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false),
@@ -109,7 +111,7 @@ export function SearchableChoice({
             ))}
           </CommandList>
         </Command>
-        {value && (
+        {clearable && value && (
           <Button type="button" variant="ghost" size="sm" onClick={() => select(null)}>
             {t("common.reset")}
           </Button>

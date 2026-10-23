@@ -1,3 +1,4 @@
+import { translateText } from "@/shared/i18n-text"
 import { useTranslation } from "react-i18next"
 import { templatePreview, type TemplateForm, type TemplateVariableRow } from "./template-model"
 export function TemplatePreviewPanel({
@@ -15,16 +16,7 @@ export function TemplatePreviewPanel({
     prefix = `notificationTemplate.${detail ? "list" : "editor"}`,
     preview = invalid
       ? { title: "", content: "", issues: [] }
-      : templatePreview(template, rows, (key, params) => {
-          // Template variable names are interpolation data, never i18next configuration.
-          const value = t(key, {
-            replace: params,
-            returnObjects: true,
-            returnDetails: false,
-            ...(typeof params?.count === "number" ? { count: params.count } : {}),
-          })
-          return typeof value === "string" ? value : key
-        }),
+      : templatePreview(template, rows, (key, params) => translateText(t, key, params)),
     groups = new Map<string, string[]>()
   for (const issue of preview.issues) groups.set(issue.kind, [...(groups.get(issue.kind) ?? []), issue.name])
   return (
