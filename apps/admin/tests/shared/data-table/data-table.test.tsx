@@ -88,3 +88,22 @@ test("optional row activation supports pointer and Enter without consuming inter
   await user.click(screen.getByRole("checkbox", { name: "选择Ada" }))
   expect(activate).toHaveBeenCalledTimes(2)
 })
+
+test("row activation accepts Space and prevents page scrolling", async () => {
+  const activate = vi.fn(),
+    user = userEvent.setup()
+  renderAdmin(
+    <DataTable
+      columns={columns}
+      data={[{ id: "1", name: "Ada" }]}
+      getRowId={(row) => row.id}
+      pagination={{ page: 1, pageSize: 10, total: 1 }}
+      onPageChange={vi.fn()}
+      onPageSizeChange={vi.fn()}
+      onRowActivate={activate}
+    />,
+  )
+  screen.getByText("Ada").closest("tr")!.focus()
+  await user.keyboard(" ")
+  expect(activate).toHaveBeenCalledExactlyOnceWith({ id: "1", name: "Ada" })
+})

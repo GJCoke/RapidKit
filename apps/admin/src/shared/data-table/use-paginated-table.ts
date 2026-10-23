@@ -6,6 +6,7 @@ import { nextPageAfterDelete } from "./table-state"
 export interface UsePaginatedTableOptions<T> {
   initialPage?: number
   initialPageSize?: number
+  staleTime?: number
   queryKey: QueryKey
   queryFn: (pagination: { page: number; pageSize: number }) => Promise<PaginatedResponse<T>>
 }
@@ -13,6 +14,7 @@ export interface UsePaginatedTableOptions<T> {
 export function usePaginatedTable<T>({
   initialPage = 1,
   initialPageSize = 10,
+  staleTime,
   queryKey,
   queryFn,
 }: UsePaginatedTableOptions<T>) {
@@ -40,6 +42,7 @@ export function usePaginatedTable<T>({
     queryKey: [...queryKey, { page, pageSize }],
     queryFn: () => queryFn({ page, pageSize }),
     placeholderData: keepPreviousData,
+    ...(staleTime === undefined ? {} : { staleTime }),
   })
   const tableData = bind(query.data)
 

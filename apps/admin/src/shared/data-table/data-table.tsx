@@ -123,6 +123,7 @@ export function DataTable<T>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() ? "selected" : undefined}
+                  aria-selected={onRowActivate ? row.getIsSelected() : undefined}
                   tabIndex={onRowActivate ? 0 : undefined}
                   onClick={(event) => {
                     if (
@@ -133,7 +134,11 @@ export function DataTable<T>({
                     onRowActivate?.(row.original)
                   }}
                   onKeyDown={(event) => {
-                    if (event.target === event.currentTarget && event.key === "Enter" && onRowActivate) {
+                    if (
+                      event.target === event.currentTarget &&
+                      (event.key === "Enter" || event.key === " ") &&
+                      onRowActivate
+                    ) {
                       event.preventDefault()
                       onRowActivate(row.original)
                     }
