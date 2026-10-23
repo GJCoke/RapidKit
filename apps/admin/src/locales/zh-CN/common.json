@@ -113,5 +113,9 @@
       "placeholder": "搜索页面",
       "empty": "未找到页面"
     }
+  },
+  "session": {
+    "permissionChanged": "访问权限已变更",
+    "permissionChangedHint": "当前页面的访问权限已失效。确认后将更新权限并返回可访问的页面。"
   }
 }

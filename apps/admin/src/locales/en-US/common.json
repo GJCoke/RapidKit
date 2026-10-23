@@ -113,5 +113,9 @@
       "placeholder": "Search pages",
       "empty": "No pages found"
     }
+  },
+  "session": {
+    "permissionChanged": "Access permissions changed",
+    "permissionChangedHint": "You no longer have access to this page. Confirm to refresh permissions and return to an accessible page."
   }
 }

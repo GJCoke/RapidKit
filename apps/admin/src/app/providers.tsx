@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/features/theme"
 import { useThemeStore } from "@/stores/theme"
 import i18n from "@/locales"
 import { LocaleSync } from "@/features/locale/locale-sync"
+import { SessionSync } from "@/features/auth/session-sync"
 
 function AppFeedback() {
   const colorScheme = useThemeStore((state) => state.colorScheme)
@@ -18,6 +19,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <I18nextProvider i18n={i18n}>
         <LocaleSync />
+        <SessionSync />
         <ThemeProvider>
           <TooltipProvider delay={0}>
             {children}

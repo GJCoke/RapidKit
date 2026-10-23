@@ -17,7 +17,7 @@ export function FormField({
   children: ReactNode
 }) {
   return (
-    <Field>
+    <Field data-invalid={Boolean(error) || undefined}>
       <FieldLabel htmlFor={htmlFor}>
         {label}
         {required && (

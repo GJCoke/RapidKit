@@ -22,6 +22,7 @@ export interface AuthUserInfo {
   isAdmin: boolean
   roles: string[]
   buttons: string[]
+  restrictedFields?: ApiResponse<"/api/v1/auth/user/info">["restrictedFields"]
 }
 
 export function fetchLogin(params: LoginParams) {
