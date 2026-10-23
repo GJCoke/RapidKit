@@ -1,3 +1,5 @@
+import enUSSchedule from "./en-US/schedule.json"
+import zhCNSchedule from "./zh-CN/schedule.json"
 import enUSTask from "./en-US/task.json"
 import zhCNTask from "./zh-CN/task.json"
 import enUSQueueDashboard from "./en-US/queue-dashboard.json"
@@ -61,6 +63,7 @@ i18n.use(initReactI18next).init({
         ...zhCNPreference,
         ...zhCNQueueDashboard,
         ...zhCNTask,
+        ...zhCNSchedule,
       },
     },
     "en-US": {
@@ -81,6 +84,7 @@ i18n.use(initReactI18next).init({
         ...enUSPreference,
         ...enUSQueueDashboard,
         ...enUSTask,
+        ...enUSSchedule,
       },
     },
   },
