@@ -50,13 +50,13 @@ socket = IdentityAwareAsyncServer(
     async_mode="asgi",
     transports=["websocket"],
     cors_allowed_origins=socket_cors_origins(
-        settings.CORS_ORIGINS, settings.CORS_ORIGINS_REGEX, settings.ENVIRONMENT.is_debug
+        settings.CORS_ORIGINS, settings.CORS_ORIGINS_REGEX, settings.EXPOSE_API_DOCS
     ),
     serializer="serializable_dict",
     client_manager=redis_manager,
 )
 
-if settings.ENVIRONMENT.is_debug:
+if settings.EXPOSE_API_DOCS:
     socket.instrument(
         {
             "username": settings.SOCKETIO_ADMIN_USERNAME,

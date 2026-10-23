@@ -11,7 +11,7 @@ from typing import cast
 from fastapi import APIRouter, Depends
 from rapidkit_common.access import Authenticated, Public
 from rapidkit_common.auth import DenyImpersonation
-from rapidkit_common.deps import RedisDep, check_debug
+from rapidkit_common.deps import RedisDep, check_api_docs
 from rapidkit_common.events import UserLogoutEvent
 from rapidkit_common.protocols.permission import PermissionCacheManager
 from rapidkit_common.protocols.user import UserProtocol
@@ -108,7 +108,7 @@ async def refresh_token(
     return Response(data=token)
 
 
-@router.post("/login/swagger", include_in_schema=False, dependencies=[Depends(check_debug), Public])
+@router.post("/login/swagger", include_in_schema=False, dependencies=[Depends(check_api_docs), Public])
 async def login_swagger(
     form: OAuth2Form,
     auth: AuthCrudDep,

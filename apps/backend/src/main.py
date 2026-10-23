@@ -189,7 +189,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
             business_code=int(StatusCode.INTERNAL_SERVER_ERROR),
             error_key=StatusCode.INTERNAL_SERVER_ERROR.description,
         )
-        error_data = str(exc) if settings.ENVIRONMENT.is_debug else None
+        error_data = str(exc) if settings.EXPOSE_ERROR_DETAILS else None
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=AppException(StatusCode.INTERNAL_SERVER_ERROR, data=error_data).dump(),
@@ -234,8 +234,8 @@ def create_app() -> FastAPI:
         "description": settings.APP_DESCRIPTION,
         "version": settings.APP_VERSION,
     }
-    if not settings.ENVIRONMENT.is_debug:
-        app_configs["openapi_url"] = None
+    if not settings.EXPOSE_API_DOCS:
+        app_configs.update(docs_url=None, redoc_url=None, openapi_url=None)
 
     app = FastAPI(**app_configs, lifespan=lifespan)
     app.state.prometheus = HTTPMetrics(settings.PROMETHEUS_MULTIPROC_DIR)
@@ -265,8 +265,8 @@ def create_app() -> FastAPI:
 
     auto_register_events(result.plugins)
 
-    # Socket.IO 文档 (仅 debug 模式)
-    if settings.ENVIRONMENT.is_debug:
+    # Socket.IO documentation follows the same explicit exposure policy as OpenAPI.
+    if settings.EXPOSE_API_DOCS:
         socket.setup_docs(
             app,
             path="/sio/docs",

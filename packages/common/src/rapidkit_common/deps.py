@@ -18,6 +18,7 @@ __all__ = [
     "SessionDep",
     "RedisDep",
     "check_debug",
+    "check_api_docs",
 ]
 
 SessionDep = Annotated[
@@ -64,4 +65,10 @@ def check_debug() -> None:
         NotFoundException: 当前环境不是调试模式时抛出。
     """
     if not settings.ENVIRONMENT.is_debug:
+        raise AppException(StatusCode.INVALID_OPERATION)
+
+
+def check_api_docs() -> None:
+    """Restrict documentation-only operations independently of debug behavior."""
+    if not settings.EXPOSE_API_DOCS:
         raise AppException(StatusCode.INVALID_OPERATION)

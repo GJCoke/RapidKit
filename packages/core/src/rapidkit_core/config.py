@@ -226,11 +226,16 @@ class Config(
 
     # Current environment (e.g., TESTING, PRODUCTION)
     ENVIRONMENT: Environment = Environment.PRODUCTION
+    EXPOSE_API_DOCS: bool = False
+    EXPOSE_ERROR_DETAILS: bool = False
 
     @model_validator(mode="after")
     def environment_defaults(self) -> Self:
         if "LOG_JSON" not in self.model_fields_set:
             self.LOG_JSON = self.ENVIRONMENT.is_deployed
+        for name in ("EXPOSE_API_DOCS", "EXPOSE_ERROR_DETAILS"):
+            if name not in self.model_fields_set:
+                setattr(self, name, self.ENVIRONMENT in (Environment.LOCAL, Environment.TESTING))
         return self
 
     # noinspection PyNestedDecorators
