@@ -1,0 +1,40 @@
+{
+  "socketChat": {
+    "userJoined": "用户 {{username}} 已加入群组 {{group}}",
+    "userLeft": "用户 {{username}} 已离开群组 {{group}}",
+    "selectCharacter": "选择角色",
+    "targetRoom": "目标房间",
+    "confirmJoin": "确定让 {{username}} 加入 \"{{group}}\" 房间吗？",
+    "activeInstances": "活跃实例: {{current}} / {{max}}",
+    "noInstances": "点击上方角色头像加入对话",
+    "alreadyInRoom": "{{username}} 已经在 \"{{group}}\" 房间中了",
+    "sendRoomMessage": "发送给{{group}}",
+    "characters": {
+      "Doraemon": "哆啦A梦",
+      "Nobita": "野比大雄",
+      "Shizuka": "源静香",
+      "Gian": "刚田武",
+      "Suneo": "骨川小夫"
+    },
+    "rooms": {
+      "Nobis-Home": "大雄的家",
+      "Secret-Base": "后山秘密基地",
+      "School": "月见台小学",
+      "Doraemon-Fans": "哆啦A梦粉丝团"
+    },
+    "online": "在线",
+    "offline": "离线",
+    "title": "Socket.IO 聊天",
+    "description": "最多同时打开四个独立角色会话，在选定房间中交流。",
+    "joinCharacter": "加入 {{username}}",
+    "joinTitle": "加入房间",
+    "closeWindow": "关闭 {{username}} · {{group}}",
+    "messages": "{{username}} 在 {{group}} 的消息",
+    "send": "发送",
+    "reconnect": "重新连接",
+    "connecting": "连接中…",
+    "connectionError": "连接失败：{{error}}",
+    "noMessages": "暂无消息",
+    "latestMessages": "最新消息"
+  }
+}

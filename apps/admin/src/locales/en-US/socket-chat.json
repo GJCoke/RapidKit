@@ -1,0 +1,40 @@
+{
+  "socketChat": {
+    "userJoined": "User {{username}} has joined the group {{group}}",
+    "userLeft": "User {{username}} has left the group {{group}}",
+    "selectCharacter": "Select Character",
+    "targetRoom": "Target Room",
+    "confirmJoin": "Are you sure to let {{username}} join the \"{{group}}\" room?",
+    "activeInstances": "Active Instances: {{current}} / {{max}}",
+    "noInstances": "Click a character avatar above to join the conversation",
+    "alreadyInRoom": "{{username}} is already in the \"{{group}}\" room",
+    "sendRoomMessage": "Send to {{group}}",
+    "characters": {
+      "Doraemon": "Doraemon",
+      "Nobita": "Nobita",
+      "Shizuka": "Shizuka",
+      "Gian": "Gian",
+      "Suneo": "Suneo"
+    },
+    "rooms": {
+      "Nobis-Home": "Nobi's Home",
+      "Secret-Base": "Secret Base",
+      "School": "Tsukimidai Elementary",
+      "Doraemon-Fans": "Doraemon Fans"
+    },
+    "online": "Online",
+    "offline": "Offline",
+    "title": "Socket.IO Chat",
+    "description": "Open up to four independent character sessions and chat within a room.",
+    "joinCharacter": "Join {{username}}",
+    "joinTitle": "Join room",
+    "closeWindow": "Close {{username}} · {{group}}",
+    "messages": "Messages for {{username}} in {{group}}",
+    "send": "Send",
+    "reconnect": "Reconnect",
+    "connecting": "Connecting…",
+    "connectionError": "Connection failed: {{error}}",
+    "noMessages": "No messages yet",
+    "latestMessages": "Latest messages"
+  }
+}

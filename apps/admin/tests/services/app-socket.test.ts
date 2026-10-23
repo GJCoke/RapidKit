@@ -36,7 +36,7 @@ vi.mock("socket.io-client", async () => {
 import { http, HttpResponse } from "msw"
 import { server } from "@test/setup/server"
 import { waitFor } from "@testing-library/react"
-import { openAppSocket, closeAppSocket, resetAppSockets } from "@/services/app-socket"
+import { openAppSocket, openPrivateAppSocket, closeAppSocket, resetAppSockets } from "@/services/app-socket"
 import { useAuthStore } from "@/stores/auth"
 
 afterEach(() => {
@@ -170,4 +170,37 @@ test("a server outage lasting three recovery attempts still reconnects when it r
   socket.emit("connect_error", new Error("token_expired"))
   await waitFor(() => expect(socket.connected).toBe(true), { timeout: 8500 })
   expect(attempts).toBe(4)
+})
+
+test("private identities have independent transports and release without disconnecting a shared namespace", () => {
+  const shared = openAppSocket("/chat")
+  const one = openPrivateAppSocket("/chat", { display_name: "Doraemon" }, { group: "Nobis-Home" })
+  const two = openPrivateAppSocket("/chat", { display_name: "Nobita" }, { group: "Nobis-Home" })
+  expect(one).not.toBe(two)
+  expect(one).not.toBe(shared)
+  closeAppSocket(one)
+  expect(one.connected).toBe(false)
+  expect(two.connected).toBe(true)
+  expect(shared.connected).toBe(true)
+  resetAppSockets()
+  expect(two.connected).toBe(false)
+  expect(shared.connected).toBe(false)
+})
+test("private identity authentication keeps character metadata while reading the rotated token at every handshake", () => {
+  const socket = openPrivateAppSocket(
+    "/chat",
+    { display_name: "Doraemon", access_token: "must-not-override" },
+    { group: "School" },
+  )
+  const credentials: unknown[] = []
+  const auth = socket.auth
+  if (typeof auth !== "function") throw new Error("Expected dynamic private authentication")
+  localStorage.setItem("accessToken", "current")
+  auth((value: unknown) => credentials.push(value))
+  localStorage.setItem("accessToken", "rotated")
+  auth((value: unknown) => credentials.push(value))
+  expect(credentials).toEqual([
+    { display_name: "Doraemon", access_token: "current" },
+    { display_name: "Doraemon", access_token: "rotated" },
+  ])
 })

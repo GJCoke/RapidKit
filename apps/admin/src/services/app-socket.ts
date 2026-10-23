@@ -92,6 +92,31 @@ export function openAppSocket(namespace: string): Socket {
   return socket
 }
 
+/** A separate transport keeps each first-party chat identity independent while sharing auth recovery. */
+export function openPrivateAppSocket(
+  namespace: string,
+  identity: Record<string, string>,
+  query: Record<string, string>,
+) {
+  const metadata = { ...identity }
+  const privateManager = new Manager(
+    new URL(import.meta.env.VITE_SERVICE_BASE_URL || "/", window.location.origin).origin,
+    {
+      path: "/socket.io",
+      transports: ["websocket"],
+      autoConnect: false,
+      query: { ...query },
+    },
+  )
+  const socket = privateManager.socket(namespace, {
+    auth: (callback) => callback({ ...metadata, access_token: localStorage.getItem("accessToken") || "" }),
+  })
+  owners.set(socket, 1)
+  bindRecovery(socket)
+  socket.connect()
+  return socket
+}
+
 export function closeAppSocket(socket: Socket) {
   const count = owners.get(socket)
   if (count === undefined) return
