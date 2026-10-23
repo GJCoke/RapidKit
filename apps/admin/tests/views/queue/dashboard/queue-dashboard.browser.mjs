@@ -473,8 +473,25 @@ try {
           }
           const checkRecordURL = async (action, filter, custom = true) => {
             const before = Date.now()
+            const records = page.waitForResponse(
+              (response) =>
+                /\/(?:api\/v1|proxy-default)\/tasks(?:\?|$)/.test(response.url()) &&
+                response.request().method() === "GET",
+            )
             await action()
             await page.waitForURL((url) => url.pathname === "/queue/task")
+            const recordResponse = await records
+            assert(recordResponse.ok())
+            const recordQuery = new URL(recordResponse.url()).searchParams
+            await main.getByRole("button", { name: "执行记录", exact: true }).waitFor()
+            assert.equal(recordQuery.get("page"), "1")
+            assert.equal(recordQuery.get("pageSize"), "20")
+            assert.equal(recordQuery.get("taskNameMatch"), filter.task ? "exact" : "contains")
+            for (const [key, value] of Object.entries(filter))
+              assert.equal(
+                recordQuery.get(key === "task" ? "taskName" : key === "worker" ? "workerHostname" : key),
+                value,
+              )
             const query = new URL(page.url()).searchParams
             assert.equal(query.get("view"), "records")
             for (const [key, value] of Object.entries(filter)) assert.equal(query.get(key), value)
@@ -484,6 +501,8 @@ try {
                 end = Date.parse(query.get("endTime"))
               assert.equal(end - start, 86400000)
               assert(end >= before - 1000 && end <= Date.now() + 1000)
+              assert.equal(Date.parse(recordQuery.get("startTime")), start)
+              assert.equal(Date.parse(recordQuery.get("endTime")), end)
             }
             await returnToDashboard()
           }

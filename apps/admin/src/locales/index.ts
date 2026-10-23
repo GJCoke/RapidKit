@@ -1,3 +1,5 @@
+import enUSTask from "./en-US/task.json"
+import zhCNTask from "./zh-CN/task.json"
 import enUSQueueDashboard from "./en-US/queue-dashboard.json"
 import zhCNQueueDashboard from "./zh-CN/queue-dashboard.json"
 import enUSPreference from "./en-US/notification-preference.json"
@@ -58,6 +60,7 @@ i18n.use(initReactI18next).init({
         ...zhCNDelivery,
         ...zhCNPreference,
         ...zhCNQueueDashboard,
+        ...zhCNTask,
       },
     },
     "en-US": {
@@ -77,6 +80,7 @@ i18n.use(initReactI18next).init({
         ...enUSDelivery,
         ...enUSPreference,
         ...enUSQueueDashboard,
+        ...enUSTask,
       },
     },
   },

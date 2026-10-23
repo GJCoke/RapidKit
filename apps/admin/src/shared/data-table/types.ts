@@ -14,6 +14,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface DataTablePaginationState {
+  pageSizes?: number[]
   page: number
   pageSize: number
   total: number
