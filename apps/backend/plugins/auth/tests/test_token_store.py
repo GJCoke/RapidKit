@@ -1,5 +1,6 @@
 """Tests for TokenStore — auth token lifecycle management."""
 
+import asyncio
 import time
 from datetime import timedelta
 from types import SimpleNamespace
@@ -7,14 +8,17 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from plugin_auth.auth.deps import get_current_user_form_redis_and_db
 from plugin_auth.auth.services import refresh_user_token
 from plugin_auth.auth.token_store import TokenStore
 from plugin_auth.auth_config import auth_settings
 from plugin_auth.providers import SessionInvalidatorImpl
+from plugin_auth.status_codes import AuthStatusCode
 from rapidkit_common.protocols.auth import UserSocketCloser
 from rapidkit_common.protocols.impersonation import ImpersonationRevoker
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_framework.exceptions import AppException
+from rapidkit_security import RefreshJWT, decode_token
 from src.sio.sessions import RedisSocketCloser, socket_member
 
 
@@ -163,7 +167,7 @@ async def test_legacy_iat_and_same_second_cutoff(real_store, redis, iat, expecte
 
 
 async def test_revoke_reads_are_one_round_trip(redis_mock):
-    redis_mock.mget.return_value = [None, None]
+    redis_mock.mget.return_value = [None, None, None]
     store = TokenStore(redis_mock)
     assert await store.is_revoked(uuid4(), uuid4(), 1760000000.100) is False
     assert redis_mock.mget.await_count == 1
@@ -200,6 +204,7 @@ async def test_revoke_all_uses_scan_and_preserves_other_users(real_store, redis,
 
 
 async def test_cutoff_never_moves_backwards_and_uses_refresh_ttl(real_store, redis, monkeypatch):
+    monkeypatch.setattr(auth_settings, "ACCESS_TOKEN_EXP", timedelta(seconds=20))
     user_id = uuid4()
     monkeypatch.setattr(auth_settings, "REFRESH_TOKEN_EXP", timedelta(seconds=42))
     monkeypatch.setattr(time, "time", lambda: 1760000000.900)
@@ -208,6 +213,39 @@ async def test_cutoff_never_moves_backwards_and_uses_refresh_ttl(real_store, red
     await real_store.force_relogin(user_id)
     assert int(await redis.get(f"auth:revoked_before:{user_id}")) == 1760000000900
     assert 41 <= await redis.ttl(f"auth:revoked_before:{user_id}") <= 42
+
+
+@pytest.mark.asyncio
+async def test_cutoff_outlives_longer_access_tokens(real_store, monkeypatch):
+    monkeypatch.setattr(auth_settings, "REFRESH_TOKEN_EXP", timedelta(milliseconds=250))
+    monkeypatch.setattr(auth_settings, "ACCESS_TOKEN_EXP", timedelta(seconds=3))
+    user_id, jti = uuid4(), uuid4()
+    issued = time.time() - 0.1
+    await real_store.force_relogin(user_id)
+    await asyncio.sleep(1.1)
+    assert await real_store.is_revoked(user_id, jti, issued)
+
+
+@pytest.mark.asyncio
+async def test_legacy_marker_blocks_old_token_without_blocking_new_login(real_store, redis):
+    user_id, jti = uuid4(), uuid4()
+    key = f"auth:force_relogin:<{user_id}>"
+    await redis.set(key, "1", ex=60)
+    assert await real_store.is_revoked(user_id, jti, None)
+    pair = await real_store.issue(user_id, "User", "agent")
+    claims = decode_token(pair.access_token, auth_settings.ACCESS_TOKEN_KEY)
+    assert not await real_store.is_revoked(user_id, claims.jti, claims.iat)
+    assert await redis.exists(key)
+
+
+@pytest.mark.asyncio
+async def test_legacy_revocation_blocks_cached_refresh(redis):
+    claims = RefreshJWT(sub=uuid4(), jti=uuid4(), name="User", agent="agent")
+    await redis.set(f"auth:force_relogin:<{claims.sub}>", "1", ex=60)
+    await redis.set(f"auth:refresh:<{claims.sub}>:<{claims.jti}>", "old-refresh")
+    with pytest.raises(AppException) as error:
+        await get_current_user_form_redis_and_db(claims, AsyncMock(), redis)
+    assert error.value.code == int(AuthStatusCode.TOKEN_INVALID)
 
 
 async def test_issue_waits_past_revocation_boundary(real_store, redis):

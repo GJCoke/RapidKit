@@ -62,6 +62,7 @@ class TestSessionInvalidatorImpl:
 
     @pytest.mark.asyncio
     async def test_invalidate_user_sessions_full_flow(self, redis, monkeypatch):
+        monkeypatch.setattr(auth_settings, "ACCESS_TOKEN_EXP", timedelta(seconds=20))
         monkeypatch.setattr(auth_settings, "REFRESH_TOKEN_EXP", timedelta(seconds=42))
         user_id = uuid4()
         refresh = f"auth:refresh:<{user_id}>:<{uuid4()}>"

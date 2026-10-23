@@ -5,6 +5,7 @@ import json
 from urllib.parse import parse_qs
 
 from authlib.jose.errors import JoseError
+from fastapi import FastAPI
 from pydantic import ValidationError
 from rapidkit_core.config import settings
 from rapidkit_framework.limiter import RateLimitRule
@@ -12,6 +13,11 @@ from rapidkit_security import decode_impersonation_token, decode_token
 from starlette.requests import Request
 
 from plugin_auth.auth_config import auth_settings
+
+
+async def configure_rate_limits(app: FastAPI) -> None:
+    """Install auth-owned policy through the plugin lifecycle, before serving requests."""
+    app.state.rate_limit_rules = rate_limit_rules
 
 
 def _identity(token: str, *, refresh: bool = False) -> str | None:

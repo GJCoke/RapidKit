@@ -21,7 +21,7 @@ from rapidkit_framework.identity import IdentityMetadata, bind_identity
 from rapidkit_security import decode_impersonation_token, decode_token
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from plugin_auth.auth.token_store import REVOKED_BEFORE_KEY, TokenStore, issued_before_revocation
+from plugin_auth.auth.token_store import LEGACY_RELOGIN_KEY, REVOKED_BEFORE_KEY, TokenStore, issued_before_revocation
 from plugin_auth.auth_config import auth_settings
 from plugin_auth.impersonation.cache import active_key, cache_active
 from plugin_auth.impersonation.models import EndReason, ImpersonationSession
@@ -206,13 +206,18 @@ class AuthContextResolverImpl:
         if subject is None or subject.status != Status.ON or subject.is_admin:
             await self._reject(claims.sid, EndReason.SUBJECT_REVOKED, claims.act)
         try:
-            actor_cutoff, subject_cutoff = await self.redis.mget(
-                [REVOKED_BEFORE_KEY.format(user_id=claims.act), REVOKED_BEFORE_KEY.format(user_id=claims.sub)]
+            actor_cutoff, subject_cutoff, actor_legacy, subject_legacy = await self.redis.mget(
+                [
+                    REVOKED_BEFORE_KEY.format(user_id=claims.act),
+                    REVOKED_BEFORE_KEY.format(user_id=claims.sub),
+                    LEGACY_RELOGIN_KEY.format(user_id=claims.act),
+                    LEGACY_RELOGIN_KEY.format(user_id=claims.sub),
+                ]
             )
         except Exception as exc:
             raise AppException(AuthStatusCode.IMPERSONATION_SESSION_INVALID) from exc
-        if issued_before_revocation(claims.iat, actor_cutoff):
+        if issued_before_revocation(claims.iat, actor_cutoff, actor_legacy):
             await self._reject(claims.sid, EndReason.ACTOR_REVOKED, claims.act)
-        if issued_before_revocation(claims.iat, subject_cutoff):
+        if issued_before_revocation(claims.iat, subject_cutoff, subject_legacy):
             await self._reject(claims.sid, EndReason.SUBJECT_REVOKED, claims.act)
         return AuthContext(subject=subject, actor=actor, impersonation_session_id=claims.sid)

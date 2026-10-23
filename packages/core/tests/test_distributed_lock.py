@@ -214,3 +214,36 @@ async def test_release_error_cannot_replace_business_exception(mock_redis):
     with pytest.raises(ValueError, match="business failure"):
         async with DistributedLock(redis, "test:release", auto_renew=True):
             raise ValueError("business failure")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("blocked", ["renewal", "release"])
+async def test_unresponsive_redis_does_not_leave_owner_running(mock_redis, blocked):
+    redis, underlying = mock_redis
+
+    async def never_returns():
+        await asyncio.Event().wait()
+
+    if blocked == "renewal":
+        underlying.reacquire.side_effect = never_returns
+    else:
+        underlying.reacquire.side_effect = ConnectionError("offline")
+        underlying.release.side_effect = never_returns
+
+    async def work():
+        lock = DistributedLock(redis, "test:unresponsive", ttl=1, auto_renew=True)
+        assert await lock.acquire()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await lock.release()
+
+    owner = asyncio.create_task(work())
+    try:
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(asyncio.shield(owner), 1.2)
+    finally:
+        owner.cancel()
+        await asyncio.sleep(0)
+        owner.cancel()
+        await asyncio.gather(owner, return_exceptions=True)

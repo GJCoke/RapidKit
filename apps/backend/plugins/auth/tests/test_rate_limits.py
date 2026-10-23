@@ -6,14 +6,43 @@ from uuid import uuid4
 
 import pytest
 from authlib.jose import JsonWebToken
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
+from plugin_auth import register
 from plugin_auth.auth_config import auth_settings
 from plugin_auth.rate_limit import rate_limit_rules
 from rapidkit_core.config import settings
 from rapidkit_framework.limiter import RateLimiterService
 from rapidkit_framework.status_codes import StatusCode
 from rapidkit_security import AccessJWT, ImpersonationJWT, RefreshJWT, create_impersonation_token, create_token
+from src.middlewares.limiter import RateLimitMiddleware
 from starlette.requests import Request
 from tests.testing.fixtures import pytest_settings
+
+
+@pytest.mark.asyncio
+async def test_auth_startup_installs_sensitive_policy(redis, monkeypatch):
+    monkeypatch.setattr(settings, "RATE_LIMIT_ANONYMOUS", "10000/minute")
+    monkeypatch.setattr(settings, "RATE_LIMIT_LOGIN_IP", "10000/minute")
+    monkeypatch.setattr(settings, "RATE_LIMIT_LOGIN_ACCOUNT", "1/minute")
+    app = FastAPI()
+    app.state.limiter = RateLimiterService(pytest_settings.REDIS_DATABASE_URL)
+    for callback in register().on_startup:
+        await callback(app)
+    app.add_middleware(RateLimitMiddleware)
+
+    @app.post("/api/v1/auth/login")
+    async def login():
+        return {"code": 0}
+
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            first = await client.post("/api/v1/auth/login", json={"username": "startup-policy"})
+            second = await client.post("/api/v1/auth/login", json={"username": "startup-policy"})
+        assert first.json()["code"] == 0
+        assert second.json()["code"] == 1006
+    finally:
+        await app.state.limiter.close()
 
 
 def access(user_id=None, *, expiry=timedelta(minutes=15)):

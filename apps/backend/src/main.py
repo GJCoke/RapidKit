@@ -286,10 +286,6 @@ def create_app() -> FastAPI:
 
     # 初始化速率限制服务
     app.state.limiter = RateLimiterService(str(settings.REDIS_URL))
-    if any(plugin.name == "auth" for plugin in result.plugins):
-        from plugin_auth.rate_limit import rate_limit_rules
-
-        app.state.rate_limit_rules = rate_limit_rules
 
     # 配置中间件和异常处理器
     setup_middlewares(app)

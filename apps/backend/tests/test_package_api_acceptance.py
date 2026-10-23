@@ -7,7 +7,7 @@ from rapidkit_security import hash_password
 
 
 @pytest.mark.asyncio
-async def test_code_package_apply_invalidates_live_role_cache(strict_client, session):  # noqa: F811
+async def test_code_package_grants_via_permissions_invalidate_live_role_cache(strict_client, session):  # noqa: F811
     admin = await login_headers(strict_client, "admin", "123456")
 
     async def ok(method, path, **kwargs):
@@ -41,14 +41,22 @@ async def test_code_package_apply_invalidates_live_role_cache(strict_client, ses
     packages = await ok("GET", "/permission-packages/all")
     assert {p["key"] for p in packages} >= {"user.readonly", "user.full"}
     assert not any(p["key"].startswith("custom.") for p in packages)
-    merged = await ok("POST", f"/roles/{role_id}/apply-packages", json={"packageKeys": ["user.readonly"]})
-    assert merged["permissionCodes"] == ["role:read", "user:read"]
-    assert merged["addedCodes"] == ["user:read"]
+    readonly = next(package for package in packages if package["key"] == "user.readonly")
+    await ok(
+        "PUT",
+        f"/roles/{role_id}/permissions",
+        json={"permissionCodes": ["role:read", *readonly["codes"]], "dataScopes": {}, "fieldModes": {}},
+    )
+    assert (await ok("GET", f"/roles/{role_id}/permissions"))["permissionCodes"] == ["role:read", "user:read"]
     assert (await strict_client.get("/users", headers=identity)).json()["code"] == 0
     invalid = (
-        await strict_client.post(
-            f"/roles/{role_id}/apply-packages", headers=admin, json={"packageKeys": ["custom.old"]}
+        await strict_client.put(
+            f"/roles/{role_id}/permissions", headers=admin, json={"permissionCodes": ["custom.old"]}
         )
     ).json()
-    assert invalid["code"] == 35101
+    assert invalid["code"] == 34006
     assert (await ok("GET", f"/roles/{role_id}/permissions"))["permissionCodes"] == ["role:read", "user:read"]
+    retired = await strict_client.post(
+        f"/roles/{role_id}/apply-packages", headers=admin, json={"packageKeys": ["user.readonly"]}
+    )
+    assert retired.json()["code"] == 404

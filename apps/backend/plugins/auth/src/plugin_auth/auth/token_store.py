@@ -32,6 +32,7 @@ _REFRESH_KEY = "auth:refresh:<{user_id}>:<{jti}>"
 _USED_KEY = "auth:used_refresh:<{user_id}>:<{jti}>"
 REVOKED_BEFORE_KEY = "auth:revoked_before:{user_id}"
 ACCESS_REVOKED_KEY = "auth:access_revoked:{jti}"
+LEGACY_RELOGIN_KEY = "auth:force_relogin:<{user_id}>"
 _ADVANCE_CUTOFF = """
 local cutoff = math.max(tonumber(redis.call('GET', KEYS[1]) or '0'), tonumber(ARGV[1]))
 redis.call('SET', KEYS[1], string.format('%.0f', cutoff), 'EX', ARGV[2])
@@ -39,8 +40,10 @@ return cutoff
 """
 
 
-def issued_before_revocation(iat: float | None, cutoff: str | bytes | int | None) -> bool:
-    return cutoff is not None and (iat is None or iat * 1000 < int(cutoff))
+def issued_before_revocation(
+    iat: float | None, cutoff: str | bytes | int | None, legacy: str | bytes | int | None = None
+) -> bool:
+    return (cutoff is not None and (iat is None or iat * 1000 < int(cutoff))) or (iat is None and bool(legacy))
 
 
 class TokenStore:
@@ -121,10 +124,14 @@ class TokenStore:
             await self._redis.delete(*stale)
 
     async def is_revoked(self, user_id: UUID, jti: UUID, iat: float | None) -> bool:
-        cutoff, blacklisted = await self._redis.mget(
-            [REVOKED_BEFORE_KEY.format(user_id=user_id), ACCESS_REVOKED_KEY.format(jti=jti)]
+        cutoff, blacklisted, legacy = await self._redis.mget(
+            [
+                REVOKED_BEFORE_KEY.format(user_id=user_id),
+                ACCESS_REVOKED_KEY.format(jti=jti),
+                LEGACY_RELOGIN_KEY.format(user_id=user_id),
+            ]
         )
-        return bool(blacklisted) or issued_before_revocation(iat, cutoff)
+        return bool(blacklisted) or issued_before_revocation(iat, cutoff, legacy)
 
     async def revoke_access(self, jti: UUID, exp: float) -> None:
         ttl = math.ceil(exp - time.time())
@@ -148,7 +155,7 @@ class TokenStore:
             1,
             REVOKED_BEFORE_KEY.format(user_id=user_id),
             math.ceil(time.time() * 1000),
-            math.ceil(auth_settings.REFRESH_TOKEN_EXP.total_seconds()),
+            math.ceil(max(auth_settings.REFRESH_TOKEN_EXP, auth_settings.ACCESS_TOKEN_EXP).total_seconds()),
         )
         revoker = get_service_optional(ImpersonationRevoker)
         try:

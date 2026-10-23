@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 import pytest_asyncio
+from authlib.jose import JsonWebToken
 from plugin_auth.auth.deps import get_current_user_form_db
 from plugin_auth.auth.resolver import AuthContextResolverImpl, user_structure
 from plugin_auth.auth.token_store import REVOKED_BEFORE_KEY
@@ -91,6 +92,20 @@ async def test_force_relogin(setup_resolver, redis, who):
     await redis.set(REVOKED_BEFORE_KEY.format(user_id=[actor, subject][who].id), int(claims.iat * 1000) + 1)
     assert await CurrentUserProviderImpl(resolver).get_current_user(token(claims)) is None
     assert await TokenDecoderImpl(resolver).decode_user_id(token(claims)) is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("who", [0, 1])
+async def test_legacy_force_marker_still_rejects_old_impersonation(setup_resolver, redis, who):
+    resolver, actor, subject, _, claims = setup_resolver
+    old = claims.model_dump(mode="json", exclude={"iat"})
+    signed = (
+        JsonWebToken(["HS256"])
+        .encode({"alg": "HS256"}, old, auth_settings.IMPERSONATION_TOKEN_KEY.get_secret_value())
+        .decode()
+    )
+    await redis.set(f"auth:force_relogin:<{[actor, subject][who].id}>", "1", ex=60)
+    assert await CurrentUserProviderImpl(resolver).get_current_user(signed) is None
 
 
 @pytest.mark.asyncio

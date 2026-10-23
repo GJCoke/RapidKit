@@ -2,9 +2,12 @@
 
 import asyncio
 import json
+from uuid import uuid4
 
 import pytest
+from rapidkit_core import log
 from rapidkit_core.config import Config, settings
+from rapidkit_core.environment import Environment
 from rapidkit_core.log import logger, setup_logging
 from rapidkit_core.nanoid import get_request_nanoid, request_id_scope
 
@@ -87,5 +90,31 @@ def test_json_stdout_survives_task_print_capture(capsys, monkeypatch):
             print("captured task output")
         assert json.loads(capsys.readouterr().out)["request_id"] == "req-worker"
         assert task_prints.getvalue() == "captured task output\n"
+    finally:
+        logger.remove()
+
+
+@pytest.mark.parametrize("json_output", [False, True])
+def test_deployed_file_tracebacks_do_not_include_local_secrets(tmp_path, monkeypatch, capsys, json_output):
+    monkeypatch.setattr(log, "LOG_PATH", tmp_path)
+    monkeypatch.setattr(settings, "ENVIRONMENT", Environment.PRODUCTION)
+    monkeypatch.setattr(settings, "LOG_JSON", json_output)
+    secret = uuid4().hex
+
+    def failure(password):
+        raise RuntimeError("expected failure")
+
+    setup_logging()
+    log.set_custom_logfile()
+    try:
+        try:
+            failure(secret)
+        except RuntimeError:
+            logger.exception("file privacy verification")
+        logger.complete()
+        contents = "\n".join(path.read_text() for path in tmp_path.rglob("*.log"))
+        assert "RuntimeError: expected failure" in contents
+        assert secret not in capsys.readouterr().out
+        assert secret not in contents
     finally:
         logger.remove()

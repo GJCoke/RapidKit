@@ -147,6 +147,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 ```
 
 默认限流使用异步 Redis 存储，多个 API 副本共享额度。通过签名和有效期检查的令牌按用户 `sub` 计数，其他请求按可信客户端 IP 计数；身份解析不查询 Redis。
+认证插件通过自身的启动回调安装敏感入口策略；未启用认证插件时使用匿名 IP 默认额度，应用主入口不导入认证业务代码。
 
 - `RATE_LIMIT_AUTHENTICATED=600/minute`：已登录用户。
 - `RATE_LIMIT_ANONYMOUS=120/minute`：匿名 IP。

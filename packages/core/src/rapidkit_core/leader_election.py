@@ -43,9 +43,12 @@ class LeaderElection:
         ttl: int = 15,
         renew_interval: float = 5.0,
     ) -> None:
+        if ttl <= 0 or not 0 < renew_interval < ttl:
+            raise ValueError("ttl must be positive and renewal must happen before lease expiry")
         self._lock: Lock = redis.lock(key, timeout=ttl, blocking=False)
         self._ttl = ttl
         self._renew_interval = renew_interval
+        self._operation_timeout = min(ttl / 3, (ttl - renew_interval) / 2)
         self._is_leader = False
         self._task: asyncio.Task | None = None
         self._key = key
@@ -73,7 +76,8 @@ class LeaderElection:
 
         if self._is_leader:
             try:
-                await self._lock.release()
+                async with asyncio.timeout(self._operation_timeout):
+                    await self._lock.release()
             except Exception:
                 logger.debug("Failed to release leader key '{}'", self._key, exc_info=True)
             self._is_leader = False
@@ -82,14 +86,15 @@ class LeaderElection:
         """Periodically try to acquire or renew leadership."""
         while True:
             try:
-                if self._is_leader:
-                    # Renew: extends TTL if we still own the lock
-                    await self._lock.reacquire()
-                else:
-                    acquired = await self._lock.acquire()
-                    if acquired:
-                        self._is_leader = True
-                        logger.info("Acquired leadership for '{}'", self._key)
+                async with asyncio.timeout(self._operation_timeout):
+                    if self._is_leader:
+                        # Renew only while the ownership token still matches.
+                        await self._lock.reacquire()
+                    else:
+                        acquired = await self._lock.acquire()
+                        if acquired:
+                            self._is_leader = True
+                            logger.info("Acquired leadership for '{}'", self._key)
             except asyncio.CancelledError:
                 raise
             except Exception:

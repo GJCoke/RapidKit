@@ -102,6 +102,7 @@ def setup_logging() -> None:
         level=settings.LOG_LEVEL,
         format=default_formatter,
         filter=request_id_filter,
+        diagnose=not settings.ENVIRONMENT.is_deployed,
     )
     _owned_handlers.add(handler)
 
@@ -146,7 +147,7 @@ def set_custom_logfile() -> None:
         level=settings.LOG_FILE_ERROR_LEVEL,
         filter=lambda record: record["level"].no >= 30,
         backtrace=True,
-        diagnose=True,
+        diagnose=not settings.ENVIRONMENT.is_deployed,
         **log_config,
     )  # ty:ignore[no-matching-overload]
     _owned_handlers.update((access_handler, error_handler))

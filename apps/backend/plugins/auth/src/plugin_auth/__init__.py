@@ -45,6 +45,7 @@ def register() -> PluginManifest:
         SessionInvalidatorImpl,
         TokenDecoderImpl,
     )
+    from plugin_auth.rate_limit import configure_rate_limits
 
     router = APIRouter()
     router.include_router(auth_router)
@@ -84,6 +85,7 @@ def register() -> PluginManifest:
             SessionInvalidator,
         ],
         service_factories={TokenDecoder: register_services},
+        on_startup=[configure_rate_limits],
         event_listeners=[
             (UserCreatedEvent, on_user_created),
             (UserInviteRequestedEvent, on_invite_requested),

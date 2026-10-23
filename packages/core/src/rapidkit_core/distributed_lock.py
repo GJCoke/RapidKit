@@ -53,7 +53,8 @@ class DistributedLock:
         try:
             while True:
                 await asyncio.sleep(self._ttl / 3)
-                await self._lock.reacquire()
+                async with asyncio.timeout(self._ttl / 3):
+                    await self._lock.reacquire()
         except asyncio.CancelledError:
             raise
         except Exception:
@@ -83,7 +84,11 @@ class DistributedLock:
             self._renew_task = None
         self._owner = None
         try:
-            await self._lock.release()
+            if self._auto_renew:
+                async with asyncio.timeout(self._ttl / 3):
+                    await self._lock.release()
+            else:
+                await self._lock.release()
         except Exception:
             if not self._auto_renew or (not self._lost and active_exception is None):
                 raise

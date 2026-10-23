@@ -91,3 +91,49 @@ async def test_start_is_idempotent(mock_redis):
     await leader.start()  # second call should be no-op
     await asyncio.sleep(0.1)
     await leader.stop()
+
+
+@pytest.mark.asyncio
+async def test_unresponsive_renewal_loses_leadership_before_lease_expiry(mock_redis):
+    redis, underlying = mock_redis
+
+    async def blocked():
+        await asyncio.Event().wait()
+
+    underlying.reacquire.side_effect = blocked
+    leader = LeaderElection(redis, "test:blocked-renewal", ttl=1, renew_interval=0.05)
+    await leader.start()
+    try:
+        await asyncio.sleep(0.05)
+        assert leader.is_leader
+        underlying.acquire.return_value = False
+        await asyncio.sleep(0.6)
+        assert not leader.is_leader
+    finally:
+        await leader.stop()
+
+
+@pytest.mark.asyncio
+async def test_shutdown_does_not_hang_on_unresponsive_release(mock_redis):
+    redis, underlying = mock_redis
+
+    async def blocked():
+        await asyncio.Event().wait()
+
+    underlying.release.side_effect = blocked
+    leader = LeaderElection(redis, "test:blocked-release", ttl=1, renew_interval=0.05)
+    await leader.start()
+    await asyncio.sleep(0.05)
+    try:
+        async with asyncio.timeout(0.6):
+            await leader.stop()
+        assert not leader.is_leader
+    finally:
+        underlying.release.side_effect = None
+        await leader.stop()
+
+
+@pytest.mark.parametrize("ttl,interval", [(0, 5), (15, 0), (15, 15)])
+def test_lease_requires_renewal_before_expiry(mock_redis, ttl, interval):
+    with pytest.raises(ValueError):
+        LeaderElection(mock_redis[0], "test:invalid-lease", ttl=ttl, renew_interval=interval)

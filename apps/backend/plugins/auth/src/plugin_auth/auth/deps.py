@@ -28,7 +28,7 @@ from typing_extensions import Annotated, Doc
 
 from plugin_auth.auth.crud import UserCRUD
 from plugin_auth.auth.resolver import user_structure
-from plugin_auth.auth.token_store import REVOKED_BEFORE_KEY, TokenStore, issued_before_revocation
+from plugin_auth.auth.token_store import LEGACY_RELOGIN_KEY, REVOKED_BEFORE_KEY, TokenStore, issued_before_revocation
 from plugin_auth.auth_config import auth_settings
 from plugin_auth.status_codes import AuthStatusCode
 
@@ -151,10 +151,14 @@ async def get_current_user_form_db(auth: AuthContextDep) -> User:
 
 
 async def get_current_user_form_redis_and_db(user: UserRefreshJWTDep, db_user: AuthCrudDep, redis: RedisDep) -> User:
-    refresh_token, cutoff = await redis.mget(
-        [refresh_structure.format(user_id=user.sub, jti=user.jti), REVOKED_BEFORE_KEY.format(user_id=user.sub)]
+    refresh_token, cutoff, legacy = await redis.mget(
+        [
+            refresh_structure.format(user_id=user.sub, jti=user.jti),
+            REVOKED_BEFORE_KEY.format(user_id=user.sub),
+            LEGACY_RELOGIN_KEY.format(user_id=user.sub),
+        ]
     )
-    if issued_before_revocation(user.iat, cutoff):
+    if issued_before_revocation(user.iat, cutoff, legacy):
         raise AppException(AuthStatusCode.TOKEN_INVALID)
     if not refresh_token:
         logger.debug("No refresh token found in the redis.")
