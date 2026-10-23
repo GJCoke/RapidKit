@@ -1,0 +1,42 @@
+{
+  "socketDebug": {
+    "title": "Socket.IO Debug",
+    "description": "Configure a connection, send custom events and inspect live logs",
+    "connectionTitle": "Socket.IO Connection",
+    "url": "URL",
+    "path": "Path",
+    "namespace": "Namespace",
+    "auth": "Auth Payload (JSON)",
+    "advanced": "Advanced configuration",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "emitTitle": "Emit Event",
+    "eventName": "Event Name",
+    "dataJson": "Data (JSON)",
+    "sendEvent": "Send Event",
+    "logsTitle": "Logs",
+    "clear": "Clear",
+    "noMessages": "No messages yet",
+    "invalidJson": "Invalid JSON data",
+    "invalidAuth": "Authentication must be a JSON object",
+    "invalidUrl": "Enter a valid Socket.IO URL",
+    "requiredPath": "Enter a connection path",
+    "requiredEvent": "Enter an event name",
+    "connected": "Connected (ID: {{value}})",
+    "disconnected": "Disconnected: {{value}}",
+    "connectionError": "Connection Error: {{value}}",
+    "emitError": "Send failed: {{value}}",
+    "status": {
+      "offline": "Offline",
+      "connecting": "Connecting…",
+      "online": "Online",
+      "error": "Connection failed"
+    },
+    "logType": {
+      "info": "Info",
+      "error": "Error",
+      "send": "Send",
+      "receive": "Receive"
+    }
+  }
+}
