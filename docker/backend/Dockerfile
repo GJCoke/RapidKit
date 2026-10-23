@@ -3,14 +3,18 @@ ARG UV_IMAGE=ghcr.io/astral-sh/uv:0.12.5
 ARG PYTHON_IMAGE=python:3.14.7-slim
 FROM ${UV_IMAGE} AS uv
 
-# Collect every workspace manifest so new packages or plugins need no Dockerfile edits.
-# Only the extracted manifests are copied onward, so source edits keep the dependency layer cached.
+# Collect every workspace manifest and Python package so new packages or plugins need no Dockerfile edits.
+# Manifests are copied separately from sources, so source edits keep the dependency layer cached.
+# Frontend packages have no pyproject.toml and are left out of /pkgs.
 FROM ${REGISTRY_PREFIX}${PYTHON_IMAGE} AS manifests
 WORKDIR /src
 COPY apps/backend apps/backend
 COPY packages packages
-RUN mkdir /out && cp --parents \
-    apps/backend/pyproject.toml apps/backend/plugins/*/pyproject.toml packages/*/pyproject.toml /out/
+RUN mkdir /out /pkgs && cp --parents \
+    apps/backend/pyproject.toml apps/backend/plugins/*/pyproject.toml packages/*/pyproject.toml /out/ \
+    && for pkg in packages/*/; do \
+        if [ -f "${pkg}pyproject.toml" ]; then cp -a --parents "${pkg%/}" /pkgs/; fi; \
+    done
 
 FROM ${REGISTRY_PREFIX}${PYTHON_IMAGE} AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8 UV_LINK_MODE=copy
@@ -34,10 +38,7 @@ RUN groupadd -r app && useradd -r -g app -d /app app \
     && chown app:app /app /app/apps/backend /app/apps/backend/logs
 RUN --mount=type=cache,target=/root/.cache/uv \
     UV_COMPILE_BYTECODE=1 uv sync --no-dev --frozen --no-install-workspace --project apps/backend
-COPY --chown=app:app packages/core packages/core
-COPY --chown=app:app packages/common packages/common
-COPY --chown=app:app packages/framework packages/framework
-COPY --chown=app:app packages/security packages/security
+COPY --from=manifests --chown=app:app /pkgs/ ./
 COPY --chown=app:app apps/backend/src apps/backend/src
 COPY --chown=app:app apps/backend/scripts apps/backend/scripts
 COPY --chown=app:app apps/backend/alembic apps/backend/alembic
