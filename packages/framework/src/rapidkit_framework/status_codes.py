@@ -69,6 +69,7 @@ class StatusCode(BaseStatusCode):
     INVALID_FORMAT = (1004, "common.error.invalidFormat")
     BAD_REQUEST = (1005, "common.error.badRequest")
     TOO_MANY_REQUESTS = (1006, "common.error.tooManyRequests")
+    REQUEST_BODY_TOO_LARGE = (1007, "common.error.requestBodyTooLarge")
 
     # ==================== Business errors (002xxx) ====================
     INVALID_OPERATION = (2001, "common.error.invalidOperation")

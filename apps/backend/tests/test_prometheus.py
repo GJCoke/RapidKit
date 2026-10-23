@@ -187,12 +187,17 @@ async def test_business_errors_and_early_rejections_are_counted_without_audit(cl
 
     monkeypatch.setattr(settings, "AUDIT_ENABLED", False)
     monkeypatch.setattr(settings, "RATE_LIMIT_ANONYMOUS", "1/minute")
+    before = (await client.get("https://test/metrics")).text
     assert (await client.get("/auth/user/info")).json()["code"] == 14003
     assert (await client.get("/auth/keys/public")).json()["code"] == 1006
     assert (await client.get("/auth/keys/public", headers={"X-Request-ID": "invalid"})).json()["code"] != 0
     body = (await client.get("https://test/metrics")).text
-    assert value(body, "rapidkit_http_requests_total", route="/api/v1/auth/user/info", outcome="error") == 1
-    assert value(body, "rapidkit_http_requests_total", route="unmatched", outcome="error") == 2
+    for route, expected in (("/api/v1/auth/user/info", 1), ("unmatched", 2)):
+        assert (
+            value(body, "rapidkit_http_requests_total", route=route, outcome="error")
+            - value(before, "rapidkit_http_requests_total", route=route, outcome="error")
+            == expected
+        )
 
 
 @pytest.mark.asyncio

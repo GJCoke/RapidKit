@@ -36,6 +36,7 @@ from src.middlewares.i18n import I18nMiddleware
 from src.middlewares.limiter import RateLimitMiddleware
 from src.middlewares.logger import LoggerMiddleware
 from src.middlewares.metrics import MetricsMiddleware
+from src.middlewares.security import SecurityMiddleware, security_headers
 from src.middlewares.state import StateMiddleware
 from src.observability import init_sentry
 from src.prometheus import HTTPMetrics, PrometheusMiddleware
@@ -108,6 +109,7 @@ def setup_middlewares(app: FastAPI) -> None:
         expose_headers=("X-Request-ID",),
     )
 
+    app.add_middleware(SecurityMiddleware)
     app.add_middleware(PrometheusMiddleware, metrics=app.state.prometheus)
 
 
@@ -193,6 +195,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=AppException(StatusCode.INTERNAL_SERVER_ERROR, data=error_data).dump(),
+            headers=security_headers(request.url.scheme),
         )
 
 

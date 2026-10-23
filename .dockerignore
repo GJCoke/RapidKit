@@ -19,3 +19,8 @@ apps/desktop
 **/.pytest_cache
 **/__pycache__
 .superpowers
+
+# These tracked frontend files contain public VITE settings required by builds.
+!apps/frontend/.env
+!apps/frontend/.env.prod
+!apps/frontend/.env.test

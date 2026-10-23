@@ -53,7 +53,13 @@ RUN rm /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/frontend/dist /usr/share/nginx/html
 
 # Copy our nginx config
-COPY docker/prod/nginx.conf /etc/nginx/nginx.conf
+COPY docker/prod/nginx.conf /etc/nginx/templates/nginx.conf.template
+COPY docker/prod/security-headers.conf /etc/nginx/security-headers.conf
+
+ENV MAX_REQUEST_BODY_BYTES=10485760 \
+    SECURITY_HSTS_ENABLED=false \
+    NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx \
+    NGINX_ENVSUBST_FILTER="^(MAX_REQUEST_BODY_BYTES|SECURITY_HSTS_ENABLED)$"
 
 EXPOSE 80
 

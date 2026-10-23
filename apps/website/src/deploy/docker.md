@@ -142,6 +142,24 @@ FROM nginx:stable-alpine AS serve
 - 构建阶段基于 `node:24-alpine`，通过 Turborepo 先构建内部包，再构建前端 SPA。
 - 运行阶段仅包含 `nginx:stable-alpine` + 编译后的静态文件，最终镜像约 30--40 MB。
 
+### HTTP 安全配置
+
+API 和 nginx 使用同一个 `MAX_REQUEST_BODY_BYTES`，默认 `10485760` 字节（10 MiB）。
+使用底层 Compose 命令时加 `--env-file docker/prod/.env.prod`，使该值同时用于 nginx 模板替换和后端配置；
+nginx 仅接收此限制和 `SECURITY_HSTS_ENABLED`，不加载后端密钥。
+超限请求返回 HTTP 200、业务码 `1007`，包含 `code`、`message`、`data` 三个字段。
+nginx 按 `Accept-Language` 中首个支持的中文/英文语言选择译文，客户端应按优先级排列语言；
+后端使用现有的语言权重解析。MinIO 代理保留独立的 100 MiB 上传限制。
+
+响应统一包含 `nosniff`、`DENY` 和 `strict-origin-when-cross-origin`。
+`SECURITY_HSTS_ENABLED=false` 适用于默认 HTTP 部署；配置 HTTPS 后可设为 `true`，
+仅 HTTPS 响应附加 `Strict-Transport-Security: max-age=31536000`。
+
+静态首页和资源另外使用 CSP：脚本仅允许同源，样式保留 NaiveUI 所需的动态样式，
+图片允许 HTTPS/data/blob，连接允许同源、WebSocket 和 Iconify 的三个图标 API 域名。
+若前端改为连接独立 API 域名，应在 `docker/prod/nginx.conf` 两处静态 location 的 `connect-src` 中加入该域；
+保持 `script-src 'self'`，不因跨域 API 放宽脚本策略。API JSON 响应不附加前端 CSP。
+
 ## 数据持久化
 
 所有有状态服务数据通过 Docker Named Volumes 持久化：

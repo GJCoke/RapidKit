@@ -228,6 +228,8 @@ class Config(
     ENVIRONMENT: Environment = Environment.PRODUCTION
     EXPOSE_API_DOCS: bool = False
     EXPOSE_ERROR_DETAILS: bool = False
+    MAX_REQUEST_BODY_BYTES: int = Field(10485760, gt=0)
+    SECURITY_HSTS_ENABLED: bool = False
 
     @model_validator(mode="after")
     def environment_defaults(self) -> Self:
