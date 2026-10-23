@@ -8,6 +8,7 @@ Date    : 2025-04-10
 import asyncio
 from abc import abstractmethod
 from datetime import datetime, timedelta
+from threading import Event, Thread
 from typing import Any, Coroutine, Sequence
 
 from celery.beat import ScheduleEntry as _ScheduleEntry
@@ -15,9 +16,12 @@ from celery.beat import Scheduler as _Scheduler
 from kombu import Producer
 from plugin_schedule.models import CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
 from plugin_schedule.schedule_types import TaskType
+from rapidkit_core.config import settings
+from rapidkit_core.leader_election import LeaderElection
 from rapidkit_core.log import logger
 from rapidkit_core.timezone import timezone
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from redis.asyncio import Redis
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -85,7 +89,9 @@ class Scheduler(_Scheduler):
 
         if asyncio.iscoroutine(celery_beat):
             loop = getattr(self, "_loop", None)
-            if loop:
+            if loop and loop.is_running():
+                celery_beat = asyncio.run_coroutine_threadsafe(celery_beat, loop).result()
+            elif loop:
                 celery_beat = loop.run_until_complete(celery_beat)
             else:
                 celery_beat = asyncio.run(celery_beat)
@@ -170,14 +176,110 @@ class AsyncDatabaseScheduler(Scheduler):
         if database_url is None:
             raise ValueError("Database URL must be configured.")
         self._loop = asyncio.new_event_loop()
-        async_engine = create_async_engine(database_url)
-        self.AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
-        super().__init__(app, **kwargs)
+        self._thread: Thread | None = None
+        self._leader: LeaderElection | None = None
+        self._engine: AsyncEngine | None = None
+        self._redis: Redis | None = None
+        self._database_url = database_url
+        self._was_leader = False
+        self._closed = False
+        try:
+            if not kwargs.get("lazy", False):
+                self._start_runtime()
+            super().__init__(app, **kwargs)
+        except BaseException:
+            self._close_runtime()
+            raise
+
+    def _start_runtime(self) -> None:
+        if self._thread is not None:
+            return
+        if self._closed:
+            raise RuntimeError("Scheduler is closed")
+        ready = Event()
+
+        def run_loop() -> None:
+            asyncio.set_event_loop(self._loop)
+            self._loop.call_soon(ready.set)
+            self._loop.run_forever()
+
+        self._thread = Thread(target=run_loop, name="rapidkit-beat-loop", daemon=True)
+        self._thread.start()
+        if not ready.wait(5):
+            raise RuntimeError("Scheduler event loop did not start")
+        self._run(self._initialize())
+
+    def _run(self, coroutine: Coroutine[Any, Any, Any]) -> Any:
+        return asyncio.run_coroutine_threadsafe(coroutine, self._loop).result()
+
+    async def _initialize(self) -> None:
+        # All loop-bound resources are created and closed on this continuously running loop.
+        self._engine = create_async_engine(self._database_url)
+        self.AsyncSessionLocal = async_sessionmaker(self._engine, class_=AsyncSession, expire_on_commit=False)
+        self._redis = Redis.from_url(str(settings.REDIS_URL))
+        self._leader = LeaderElection(self._redis, "leader:celery-beat", ttl=15, renew_interval=5.0)
+        await self._leader.start()
+
+    async def _read_leadership(self) -> bool:
+        return self._leader is not None and self._leader.is_leader
+
+    def _has_leadership(self) -> bool:
+        if self._closed:
+            return False
+        self._start_runtime()
+        return self._run(self._read_leadership())
+
+    def setup_schedule(self) -> None:
+        if self._has_leadership():
+            super().setup_schedule()
+
+    def tick(self, *args: Any, **kwargs: Any) -> float:
+        if not self._has_leadership():
+            self._was_leader = False
+            return 5.0
+        if not self._was_leader:
+            self.setup_schedule()
+            self.last_updated = timezone.now()
+            self._was_leader = True
+        return super().tick(*args, **kwargs)
+
+    def apply_entry(self, entry: ScheduleEntry, producer: Producer | None = None) -> None:
+        if self._has_leadership():
+            super().apply_entry(entry, producer=producer)
+        else:
+            self._was_leader = False
+
+    async def _shutdown(self) -> None:
+        try:
+            if self._leader is not None:
+                await self._leader.stop()
+        finally:
+            try:
+                if self._redis is not None:
+                    await self._redis.aclose()
+            finally:
+                if self._engine is not None:
+                    await self._engine.dispose()
+
+    def _close_runtime(self) -> None:
+        try:
+            if self._loop.is_running():
+                self._run(self._shutdown())
+        finally:
+            if self._thread is not None:
+                self._loop.call_soon_threadsafe(self._loop.stop)
+                self._thread.join()
+            if not self._loop.is_closed():
+                self._loop.close()
+            self._closed = True
 
     def close(self) -> None:
-        super().close()
-        if self._loop and not self._loop.is_closed():
-            self._loop.close()
+        if self._closed:
+            return
+        try:
+            super().close()
+        finally:
+            self._close_runtime()
 
     async def get_database_schedule(self) -> dict[str, ScheduleEntry]:
         """

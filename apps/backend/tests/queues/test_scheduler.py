@@ -1,13 +1,19 @@
 """Regression tests for database schedule refreshes, using an in-memory broker."""
 
+import asyncio
+import time
 from datetime import UTC, datetime, timedelta
 from queue import Empty
 from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 from celery import Celery
 from plugin_schedule.solar import Solar
-from src.queues.scheduler import ScheduleEntry, Scheduler
+from rapidkit_core.config import settings
+from rapidkit_core.leader_election import LeaderElection
+from redis import Redis
+from src.queues.scheduler import AsyncDatabaseScheduler, ScheduleEntry, Scheduler
 
 
 @pytest.fixture
@@ -104,3 +110,144 @@ def test_idle_scheduler_wakes_at_database_refresh_deadline(scheduler_factory):
     clock.now += timedelta(seconds=1)
     scheduler.tick()
     assert drain_tasks(queue) == ["new-test"]
+
+
+@pytest.fixture
+def elected_schedulers(monkeypatch):
+    key = f"test:beat-leader:{uuid4()}"
+    redis = Redis.from_url("redis://localhost:6379/15")
+    monkeypatch.setattr(settings, "REDIS_DATABASE", 15)
+    clock = SimpleNamespace(now=datetime(2026, 10, 23, tzinfo=UTC))
+    monkeypatch.setattr("src.queues.scheduler.timezone", SimpleNamespace(now=lambda: clock.now.replace(tzinfo=None)))
+    app = Celery("election-test", broker="memory://", backend="cache+memory://", set_as_current=False)
+    app.conf.update(database_url="postgresql+asyncpg://test:test@localhost:5432/test", refresh_interval=60)
+    app.now = lambda: clock.now
+    instances = []
+    reads = []
+
+    def election(client, name, *, ttl, renew_interval):
+        assert name == "leader:celery-beat" and ttl == 15 and renew_interval == 5.0
+        return LeaderElection(client, key, ttl=1, renew_interval=0.05)
+
+    monkeypatch.setattr("src.queues.scheduler.LeaderElection", election, raising=False)
+
+    def create(*, interval=1, lazy=False):
+        class TestScheduler(AsyncDatabaseScheduler):
+            async def get_database_schedule(self):
+                reads.append(self)
+                return {
+                    "one": ScheduleEntry(
+                        name="one",
+                        app=app,
+                        task="elected-test",
+                        schedule=interval,
+                        last_run_at=clock.now - timedelta(seconds=2),
+                    )
+                }
+
+        scheduler = TestScheduler(app, lazy=lazy)
+        instances.append(scheduler)
+        return scheduler
+
+    with app.connection_for_read() as connection, connection.SimpleQueue("celery") as queue:
+        queue.clear()
+        try:
+            yield SimpleNamespace(create=create, redis=redis, key=key, clock=clock, queue=queue, reads=reads)
+        finally:
+            for scheduler in instances:
+                scheduler.close()
+                scheduler.connection.close()
+            queue.clear()
+            redis.delete(key)
+            redis.close()
+            app.close()
+
+
+def wait_until(predicate, timeout=3):
+    deadline = time.monotonic() + timeout
+    while not predicate():
+        assert time.monotonic() < deadline, "condition did not become true"
+        time.sleep(0.01)
+
+
+def test_two_schedulers_only_leader_publishes(elected_schedulers):
+    env = elected_schedulers
+    first, second = env.create(), env.create()
+    published = []
+
+    def tick():
+        first.tick()
+        second.tick()
+        published.extend(drain_tasks(env.queue))
+        return bool(published)
+
+    wait_until(tick)
+    assert published == ["elected-test"]
+    standby = second if first._leader.is_leader else first
+    assert standby not in env.reads
+
+
+def test_standby_takes_over_after_leader_loss(elected_schedulers):
+    env = elected_schedulers
+    first, second = env.create(), env.create()
+    wait_until(lambda: first._leader.is_leader or second._leader.is_leader)
+    primary, standby = (first, second) if first._leader.is_leader else (second, first)
+    primary.tick()
+    assert drain_tasks(env.queue) == ["elected-test"]
+
+    # Simulate a process disappearing without releasing the lease.
+    async def suspend_election():
+        primary._leader._task.cancel()
+        try:
+            await primary._leader._task
+        except asyncio.CancelledError:
+            pass
+        primary._leader._task = None
+
+    asyncio.run_coroutine_threadsafe(suspend_election(), primary._loop).result()
+    wait_until(lambda: standby._leader.is_leader)
+    env.clock.now += timedelta(seconds=2)
+    standby.tick()
+    assert drain_tasks(env.queue) == ["elected-test"]
+    assert standby in env.reads
+
+
+def test_lock_loss_prevents_next_publish(elected_schedulers):
+    env = elected_schedulers
+    scheduler = env.create()
+    wait_until(lambda: scheduler._leader.is_leader)
+    env.redis.set(env.key, "other-holder", ex=5)
+    wait_until(lambda: not scheduler._leader.is_leader)
+    assert scheduler.tick() <= 5
+    assert drain_tasks(env.queue) == []
+
+
+def test_election_renews_while_beat_sleeps(elected_schedulers):
+    env = elected_schedulers
+    first = env.create(interval=86400)
+    wait_until(lambda: first._leader.is_leader)
+    assert first.tick() > 1
+    time.sleep(2.2)
+    second = env.create(interval=86400)
+    assert second.tick() <= 5
+    assert first._leader.is_leader and not second._leader.is_leader
+    assert env.redis.pttl(env.key) > 0
+    assert drain_tasks(env.queue) == []
+
+
+def test_close_disposes_resources_and_stops_thread(elected_schedulers):
+    scheduler = elected_schedulers.create()
+    wait_until(lambda: scheduler._leader.is_leader)
+    thread = scheduler._thread
+    original_pool = scheduler._engine.pool
+    scheduler.close()
+    assert scheduler._engine.pool is not original_pool
+    assert not thread.is_alive()
+    assert scheduler._loop.is_closed()
+    assert not elected_schedulers.redis.exists(elected_schedulers.key)
+
+
+def test_lazy_inspection_does_not_start_election(elected_schedulers):
+    scheduler = elected_schedulers.create(lazy=True)
+    assert getattr(scheduler, "_thread", None) is None
+    assert not elected_schedulers.redis.exists(elected_schedulers.key)

@@ -160,6 +160,17 @@ nginx 按 `Accept-Language` 中首个支持的中文/英文语言选择译文，
 若前端改为连接独立 API 域名，应在 `docker/prod/nginx.conf` 两处静态 location 的 `connect-src` 中加入该域；
 保持 `script-src 'self'`，不因跨域 API 放宽脚本策略。API JSON 响应不附加前端 CSP。
 
+## Beat 主备与任务互斥
+
+`AsyncDatabaseScheduler` 在共享 `REDIS_URL` 上争用 `leader:celery-beat`：租约 15 秒，
+每 5 秒续期。后台事件循环在 Beat 休眠时仍持续运行；备用实例每 5 秒重试，
+当选后重新加载数据库任务并重建调度堆。只有领导者发布任务，每次发布前重新检查选举状态。
+关闭时释放领导权并关闭 Redis、数据库引擎及后台线程。默认 Compose 仍只启动一个 Beat。
+
+租约不提供任意网络分区或进程长暂停情况下的 exactly-once 保证。
+任务自身仍应使用分布式锁或幂等机制；长时间维护任务已显式开启锁自动续期，
+丢锁会取消任务，短缓存锁保留不续期的原行为。主备实例必须连接同一 Redis 数据库。
+
 ## 数据持久化
 
 所有有状态服务数据通过 Docker Named Volumes 持久化：
