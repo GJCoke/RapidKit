@@ -21,7 +21,6 @@
   const total = ref(0)
   const loading = ref(false)
   let requestId = 0
-  let timer: ReturnType<typeof setTimeout> | undefined
   async function refresh() {
     const id = ++requestId
     loading.value = true
@@ -31,8 +30,7 @@
     if (!error && result) { data.value = result.records; total.value = result.total }
   }
   watch(() => props.query, () => { data.value = []; refresh() }, { deep: true, immediate: true })
-  function handleTaskUpdate() { clearTimeout(timer); timer = setTimeout(refresh, 300) }
-  onBeforeUnmount(() => { requestId++; clearTimeout(timer) })
+  onBeforeUnmount(() => { requestId++ })
   const pagination = computed(() => ({ page: props.query.page, pageSize: props.query.pageSize, itemCount: total.value, showSizePicker: true, pageSizes: [...PAGE_SIZE_OPTIONS], onUpdatePage: (page: number) => emit('page', page), onUpdatePageSize: (size: number) => emit('pageSize', size) }))
   const actions = useTableActions(() => residentActionModel<Api.Worker.TaskGroupItem>({ viewRecords: $t("page.manage.worker.viewRecords") }), () => getActionContext(appStore.locale, appStore.isMobile), (row) => row.taskName)
   const columns = computed<import('naive-ui').DataTableColumns<Api.Worker.TaskGroupItem>>(() => [
@@ -46,11 +44,17 @@
     ...actions.column({ key: 'operate', title: $t('common.operate'), render: row => <NButton size="small" onClick={() => emit('drill', row.taskName, false)}>{$t('page.manage.worker.viewRecords')}</NButton> }),
   ])
   const scrollX = computed(() => tableScrollWidth(columns.value))
-  defineExpose({ refresh, handleTaskUpdate })
+  defineExpose({ refresh })
 </script>
 
 <template>
-  <NCard :title="$t('page.manage.worker.groupsView')" :bordered="false" class="card-wrapper" size="small">
+  <NCard
+    :title="$t('page.manage.worker.groupsView')"
+    :bordered="false"
+    class="card-wrapper sm:flex-1-hidden"
+    content-class="min-h-0 flex-col-stretch"
+    size="small"
+  >
     <template #header-extra>
       <TableHeaderOperation :loading="loading" :show-column-setting="false" @refresh="emit('refresh')" />
     </template>
@@ -61,6 +65,8 @@
       :pagination="pagination"
       :row-key="(row) => row.taskName"
       :scroll-x="scrollX"
+      :flex-height="!appStore.isMobile"
+      class="min-h-0 flex-1"
       remote
       size="small"
     />

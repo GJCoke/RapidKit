@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import Page from "../../src/views/queue/task/index.vue"
 import SchedulePage from "../../src/views/queue/schedule/index.vue"
 const queries = vi.hoisted(() => [] as Record<string, unknown>[])
+const taskSocket = vi.hoisted(() => ({ handlers: new Map<string, () => void>(), refresh: vi.fn() }))
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
 vi.mock("@/hooks/business/auth", () => ({
   useAuth: () => {
@@ -54,7 +55,10 @@ vi.mock("../../src/views/queue/schedule/modules/schedule-operate-drawer.vue", ()
   default: defineComponent({ render: () => null }),
 }))
 vi.mock("@/hooks/common/app-socket", () => ({
-  useAppSocket: () => ({ on: vi.fn(), connect: vi.fn() }),
+  useAppSocket: () => ({
+    on: (event: string, handler: () => void) => taskSocket.handlers.set(event, handler),
+    connect: vi.fn(),
+  }),
 }))
 vi.mock("../../src/views/queue/task/modules/task-drawer.vue", () => ({
   default: defineComponent({ render: () => null }),
@@ -65,26 +69,28 @@ vi.mock("../../src/views/queue/task/modules/trigger-modal.vue", () => ({
 vi.mock("../../src/views/queue/task/modules/task-stream.vue", () => ({
   default: defineComponent({
     props: ["filters"],
-    setup(props) {
+    setup(props, { emit, expose }) {
+      expose({ refresh: taskSocket.refresh })
       watch(
         () => props.filters,
         (filters) => queries.push({ ...filters }),
         { deep: true, immediate: true },
       )
-      return () => null
+      return () => h("button", { onClick: () => emit("refresh") }, "refresh-records")
     },
   }),
 }))
 vi.mock("../../src/views/queue/task/modules/task-groups.vue", () => ({
   default: defineComponent({
     props: ["query"],
-    setup(props) {
+    setup(props, { emit, expose }) {
+      expose({ refresh: taskSocket.refresh })
       watch(
         () => props.query,
         (query) => queries.push({ ...query }),
         { deep: true, immediate: true },
       )
-      return () => h("div")
+      return () => h("button", { onClick: () => emit("refresh") }, "refresh-groups")
     },
   }),
 }))
@@ -103,6 +109,9 @@ afterEach(() => {
   HTMLElement.prototype.scrollTo = originalScrollTo
   document.body.innerHTML = ""
   queries.length = 0
+  taskSocket.handlers.clear()
+  taskSocket.refresh.mockClear()
+  vi.useRealTimers()
 })
 it("clears the exact task drilldown and committed filters when Reset is clicked", async () => {
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: "/", component: Page }] })
@@ -214,4 +223,48 @@ it("queries only on Search while typing and immediately restores the list on Res
   expect(queries.at(-1)?.taskName).toBeUndefined()
   expect(queries.at(-1)?.page).toBe(1)
   await vi.waitFor(() => expect(router.currentRoute.value.query.keyword).toBeUndefined())
+})
+
+it.each(["records", "groups"])("keeps %s stable during background task events until manual refresh", async (view) => {
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date("2026-10-23T01:00:00Z"))
+  const router = createRouter({ history: createMemoryHistory(), routes: [{ path: "/", component: Page }] })
+  await router.push({
+    path: "/",
+    query: {
+      view,
+      groupPage: "3",
+      groupSize: "20",
+      range: "7d",
+      sortBy: "lastExecutedAt",
+      sortOrder: "desc",
+      startTime: "2026-10-16T01:00:00.000Z",
+      endTime: "2026-10-23T01:00:00.000Z",
+    },
+  })
+  await router.isReady()
+  const root = document.createElement("div")
+  document.body.append(root)
+  const app = createApp(Page)
+  app.use(router)
+  app.mount(root)
+  unmount = () => app.unmount()
+  await flush()
+  const initialQuery = { ...router.currentRoute.value.query }
+  const initialRequests = queries.length
+  for (let count = 0; count < 3; count++) {
+    taskSocket.handlers.get("task:update")?.()
+    await vi.advanceTimersByTimeAsync(30000)
+    await flush()
+  }
+  expect(queries).toHaveLength(initialRequests)
+  expect(taskSocket.refresh).not.toHaveBeenCalled()
+  expect(router.currentRoute.value.query).toEqual(initialQuery)
+
+  const refresh = [...root.querySelectorAll("button")].find((button) => button.textContent === `refresh-${view}`)!
+  refresh.click()
+  await flush()
+  expect(queries.length).toBeGreaterThan(initialRequests)
+  expect(queries.at(-1)?.endTime).toBe("2026-10-23T01:01:30.000Z")
+  expect(router.currentRoute.value.query.groupPage).toBe("3")
 })

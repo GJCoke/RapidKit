@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from "vue"
+  import { ref, reactive, computed, watch, onMounted } from "vue"
   import { useRoute, useRouter } from "vue-router"
   import { taskStatusOptions } from "@/constants/business"
   import { translateOptions } from "@/utils/common"
@@ -13,7 +13,6 @@
     validRange,
     refreshTaskRange,
   } from "./composables/task-view-state"
-  import { useAppSocket } from "@/hooks/common/app-socket"
   import { $t } from "@/locales"
   import { useAuth } from "@/hooks/business/auth"
   import TaskStream from "./modules/task-stream.vue"
@@ -165,31 +164,15 @@
       taskGroupsRef.value?.refresh()
     }
   }
-  let refreshTimer: ReturnType<typeof setTimeout> | undefined
-  onBeforeUnmount(() => clearTimeout(refreshTimer))
-
-  // ==================== Socket.IO ====================
-  const { on, connect } = useAppSocket()
-
-  function setupSocket() {
-    connect("/worker")
-
-    on("task:update", () => {
-      clearTimeout(refreshTimer)
-      refreshTimer = setTimeout(handleTaskSubmitted, 300)
-    })
-  }
-
   // ==================== Lifecycle ====================
   onMounted(() => {
     router.replace({ query: { ...route.query, ...writeTaskView(state) } })
-    setupSocket()
   })
 </script>
 
 <template>
   <div class="min-h-500px flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <NCard :bordered="false" size="small" class="card-wrapper">
+    <NCard :bordered="false" size="small" class="card-wrapper shrink-0">
       <NCollapse :default-expanded-names="['task-search']">
         <NCollapseItem :title="$t('common.search')" name="task-search">
           <div class="flex flex-wrap items-center gap-12px">

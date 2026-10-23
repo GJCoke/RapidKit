@@ -30,7 +30,6 @@
   const data = ref<Api.Worker.TaskListItem[]>([])
   const loading = ref(false)
   let requestId = 0
-  let timer: ReturnType<typeof setTimeout> | undefined
   const pagination = reactive({ page: 1, pageSize: DEFAULT_PAGE_SIZE, itemCount: 0, showSizePicker: true, pageSizes: [...PAGE_SIZE_OPTIONS], onUpdatePage: (page: number) => { searchParams.page = page; pagination.page = page; getData() }, onUpdatePageSize: (size: number) => { searchParams.pageSize = size; pagination.pageSize = size; searchParams.page = 1; pagination.page = 1; getData() } })
   async function getData() {
     const id = ++requestId
@@ -47,7 +46,7 @@
     data.value = []
     getData()
   }, { deep: true, immediate: true })
-  onBeforeUnmount(() => { requestId++; clearTimeout(timer) })
+  onBeforeUnmount(() => { requestId++ })
   const actions = useTableActions(() => createTaskActionModel<Api.Worker.TaskListItem>(), () => getActionContext(appStore.locale, appStore.isMobile), (row) => row.taskId)
   const columns = computed<import("naive-ui").DataTableColumns<Api.Worker.TaskListItem>>(() => [
 
@@ -142,16 +141,17 @@
     }
   }
 
-  function handleTaskUpdate(_event: Api.Worker.TaskUpdateEvent) {
-    clearTimeout(timer)
-    timer = setTimeout(getData, 300)
-  }
-
-  defineExpose({ refresh: getData, handleTaskUpdate })
+  defineExpose({ refresh: getData })
 </script>
 
 <template>
-  <NCard :title="$t('page.manage.worker.taskStream')" :bordered="false" size="small" class="card-wrapper">
+  <NCard
+    :title="$t('page.manage.worker.taskStream')"
+    :bordered="false"
+    size="small"
+    class="card-wrapper sm:flex-1-hidden"
+    content-class="min-h-0 flex-col-stretch"
+  >
     <template #header-extra>
       <TableHeaderOperation :loading="loading" :show-column-setting="false" @refresh="emit('refresh')">
         <slot name="header-extra" />
@@ -162,6 +162,8 @@
       :data="data"
       size="small"
       :scroll-x="scrollX"
+      :flex-height="!appStore.isMobile"
+      class="min-h-0 flex-1"
       :loading="loading"
       remote
       :row-key="(row) => row.id"
