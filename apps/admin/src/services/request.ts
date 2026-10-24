@@ -1,5 +1,5 @@
-import type { AxiosResponse } from "@rapidkit/axios"
-import { BACKEND_ERROR_CODE, createFlatRequest } from "@rapidkit/axios"
+import type { AxiosResponse, CustomAxiosRequestConfig, ResponseType } from "@rapidkit/axios"
+import { BACKEND_ERROR_CODE, CanceledError, createFlatRequest } from "@rapidkit/axios"
 import { getAuthSession, recordTokenRotation } from "@/services/auth-session"
 import { resolveAuthErrorCodes } from "@/services/auth-error-codes"
 import { notifyRequestError, notifySessionExpired } from "@/services/request-error-notifier"
@@ -8,6 +8,8 @@ import { useAuthStore } from "@/stores/auth"
 import { fetchRefreshToken } from "@/services/api/auth"
 import { getRequestLocale, SERVICE_BASE_URL, SUCCESS_CODE } from "@/services/request-config"
 import type { BackendResponse } from "@/services/request-config"
+import { getCredentials, hasImpersonationStorage } from "@/features/auth/impersonation-storage"
+import { recoverImpersonation } from "@/services/impersonation-recovery"
 
 export { getRequestLocale } from "@/services/request-config"
 
@@ -20,14 +22,19 @@ const tokenRefreshCoordinator = createTokenRefreshCoordinator(() => runRefreshRe
 const { expiredTokenCodes, logoutCodes } = resolveAuthErrorCodes(import.meta.env)
 
 function getToken() {
-  return localStorage.getItem("accessToken") || ""
+  return getCredentials().accessToken
 }
 
 function getRefreshToken() {
-  return localStorage.getItem("refreshToken") || ""
+  return getCredentials().refreshToken
 }
 
-export const request = createFlatRequest<BackendResponse, unknown, RequestState>(
+const impersonationFailureCodes = new Set(["14002", "14003", "14008", "14017"])
+function isStopRequest(config: { url?: string; method?: string } | undefined) {
+  return config?.method?.toLowerCase() === "delete" && config.url?.split("?")[0] === "/auth/impersonations/current"
+}
+
+const transport = createFlatRequest<BackendResponse, unknown, RequestState>(
   {
     baseURL: SERVICE_BASE_URL,
   },
@@ -64,11 +71,22 @@ export const request = createFlatRequest<BackendResponse, unknown, RequestState>
     isBackendSuccess(response) {
       return String(response.data.code) === SUCCESS_CODE
     },
+    onResponse(response) {
+      const config = response.config as typeof response.config & { authSession?: number }
+      if (config.authSession !== getAuthSession())
+        throw new CanceledError("Identity changed", "ERR_CANCELED", response.config)
+    },
     async onBackendFail(response, instance) {
       const responseCode = String(response.data.code)
       const config = response.config as typeof response.config & { authRetried?: boolean; authSession?: number }
       const session = getAuthSession()
       if (config.authSession !== session) return null
+
+      if (hasImpersonationStorage() && impersonationFailureCodes.has(responseCode)) {
+        // Stop is already restoring this identity; never recursively recover or refresh it.
+        if (!isStopRequest(config)) await recoverImpersonation()
+        return null
+      }
 
       if (expiredTokenCodes.has(responseCode)) {
         if (config.authRetried) {
@@ -129,12 +147,35 @@ export const request = createFlatRequest<BackendResponse, unknown, RequestState>
 
       return null
     },
-    onError(error) {
+    async onError(error) {
+      const config = error.config as (typeof error.config & { authSession?: number }) | undefined
+      if (
+        error.code === "ERR_CANCELED" ||
+        (config?.authSession !== undefined && config.authSession !== getAuthSession())
+      )
+        return
+      const responseCode = String(error.response?.data?.code ?? "")
+      if (
+        hasImpersonationStorage() &&
+        (error.response?.status === 401 || impersonationFailureCodes.has(responseCode))
+      ) {
+        if (!isStopRequest(config)) await recoverImpersonation()
+        return
+      }
       if (error.code === BACKEND_ERROR_CODE) {
-        const responseCode = String(error.response?.data?.code ?? "")
         if (expiredTokenCodes.has(responseCode) || logoutCodes.has(responseCode)) return
       }
       notifyRequestError(error)
     },
   },
 )
+
+function scopedRequest<T = unknown, R extends ResponseType = "json">(config: CustomAxiosRequestConfig<R>) {
+  // Axios request interceptors run asynchronously; capture the calling identity before that queue can yield.
+  const scopedConfig = { ...config, authSession: getAuthSession() }
+  return transport<T, R>(scopedConfig)
+}
+export const request = Object.assign(scopedRequest, {
+  state: transport.state,
+  cancelAllRequest: transport.cancelAllRequest,
+})

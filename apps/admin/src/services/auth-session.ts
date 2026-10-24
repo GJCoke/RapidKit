@@ -1,11 +1,17 @@
-let observedRefreshToken = ""
+import { getCredentials, readImpersonation } from "@/features/auth/impersonation-storage"
+
+let observedIdentity = ""
 let session = 0
 
 /** Token rotation preserves the session; externally replaced credentials start another one. */
 export function getAuthSession() {
-  const refreshToken = localStorage.getItem("refreshToken") || ""
-  if (refreshToken !== observedRefreshToken) {
-    observedRefreshToken = refreshToken
+  const credentials = getCredentials()
+  const impersonation = readImpersonation()
+  const identity = impersonation
+    ? `impersonation:${impersonation.sessionId}`
+    : `auth:${credentials.refreshToken || credentials.accessToken}`
+  if (identity !== observedIdentity) {
+    observedIdentity = identity
     session++
   }
   return session
@@ -13,5 +19,5 @@ export function getAuthSession() {
 
 /** Called synchronously after this client accepts a successful rotation. */
 export function recordTokenRotation(refreshToken: string) {
-  observedRefreshToken = refreshToken
+  if (!readImpersonation()) observedIdentity = `auth:${refreshToken}`
 }

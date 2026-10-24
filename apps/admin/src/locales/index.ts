@@ -1,3 +1,5 @@
+import enUSUsers from "./en-US/users.json"
+import zhCNUsers from "./zh-CN/users.json"
 import enUSSocketInstrument from "./en-US/socket-instrument.json"
 import zhCNSocketInstrument from "./zh-CN/socket-instrument.json"
 import enUSSocketDebug from "./en-US/socket-debug.json"
@@ -79,6 +81,7 @@ i18n.use(initReactI18next).init({
         ...zhCNSocketChat,
         ...zhCNSocketDebug,
         ...zhCNSocketInstrument,
+        ...zhCNUsers,
       },
     },
     "en-US": {
@@ -105,6 +108,7 @@ i18n.use(initReactI18next).init({
         ...enUSSocketChat,
         ...enUSSocketDebug,
         ...enUSSocketInstrument,
+        ...enUSUsers,
       },
     },
   },

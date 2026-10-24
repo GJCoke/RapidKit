@@ -188,6 +188,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/api/v1/users/department-counts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 部门用户人数 */
+    get: operations["get_user_department_counts_api_v1_users_department_counts_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/api/v1/users": {
     parameters: {
       query?: never
@@ -5954,6 +5971,22 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["UnreadCount"] | null
     }
+    /** Response[UserDepartmentCounts] */
+    Response_UserDepartmentCounts_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["UserDepartmentCounts"] | null
+    }
     /** Response[UserInfoResponse] */
     Response_UserInfoResponse_: {
       /**
@@ -7179,6 +7212,20 @@ export interface components {
       newUsers: number
     }
     /**
+     * UserDepartmentCounts
+     * @description 当前用户数据范围内的部门归属人数。
+     */
+    UserDepartmentCounts: {
+      /** Total */
+      total: number
+      /** Unassigned */
+      unassigned: number
+      /** Departments */
+      departments: {
+        [key: string]: number
+      }
+    }
+    /**
      * UserInfoResponse
      * @description 用户信息响应数据结构。
      */
@@ -7833,6 +7880,26 @@ export interface operations {
       }
     }
   }
+  get_user_department_counts_api_v1_users_department_counts_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_UserDepartmentCounts_"]
+        }
+      }
+    }
+  }
   get_users_api_v1_users_get: {
     parameters: {
       query?: {
@@ -7842,6 +7909,9 @@ export interface operations {
         pageSize?: number
         keyword?: string
         status?: components["schemas"]["Status"] | null
+        departmentId?: string | null
+        unassigned?: boolean
+        includeChildren?: boolean
       }
       header?: never
       path?: never

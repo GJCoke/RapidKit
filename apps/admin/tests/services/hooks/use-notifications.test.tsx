@@ -121,7 +121,7 @@ test("an old account's mutation cannot remove the new account's notification wit
   await waitFor(() => expect(result.current.inbox.items).toHaveLength(1))
   await act(async () => {
     release()
-    await pending
+    await expect(pending).rejects.toMatchObject({ code: "ERR_CANCELED" })
   })
   expect(result.current.inbox.items[0]?.title).toBe("Private title")
 })

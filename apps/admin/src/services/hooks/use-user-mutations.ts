@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { protectUserCreateBody } from "@/services/user-field-policy"
 import {
   batchDeleteUsers,
   changeUserPassword,
@@ -10,45 +10,52 @@ import {
   type CreateUserBody,
   type UpdateUserBody,
 } from "@/services/api/user"
-import { userQueryKeys } from "@/services/user-query-keys"
+import { getAuthSession } from "@/services/auth-session"
+import { requireDirectoryPermission } from "@/services/user-access"
 import { useAuthStore } from "@/stores/auth"
+import { omitRestrictedFields, restrictedFieldsFor } from "@/features/auth/field-permissions"
+import { canResetUserPassword } from "@/views/manage/user/modules/user-eligibility"
+import { useDirectoryWrite } from "./use-directory-write"
 
-async function unwrap<T>(request: Promise<{ data: T | null; error: unknown }>) {
-  const result = await request
-  if (result.error) throw result.error
-  if (!result.data) throw new Error("Mutation response is empty")
-  return result.data
-}
 export function useCreateUser() {
-  const token = useAuthStore((s) => s.token)
-  const client = useQueryClient()
-  return useMutation({
-    mutationFn: (data: CreateUserBody) => unwrap(createUser(data)),
-    onSuccess: () => client.invalidateQueries({ queryKey: userQueryKeys.lists(token) }),
+  return useDirectoryWrite("user:create", (data: CreateUserBody) => {
+    const actor = useAuthStore.getState().userInfo
+    return createUser(
+      protectUserCreateBody(data, restrictedFieldsFor(actor?.restrictedFields, "user"), Boolean(actor?.isAdmin)),
+    )
   })
 }
 export function useUpdateUser() {
-  const token = useAuthStore((s) => s.token)
-  const client = useQueryClient()
-  return useMutation({
-    mutationFn: ({ userId, data }: { userId: string; data: UpdateUserBody }) => unwrap(updateUser(userId, data)),
-    onSuccess: () => client.invalidateQueries({ queryKey: userQueryKeys.lists(token) }),
+  return useDirectoryWrite("user:update", ({ userId, data }: { userId: string; data: UpdateUserBody }) => {
+    const actor = useAuthStore.getState().userInfo
+    const restricted = new Set(restrictedFieldsFor(actor?.restrictedFields, "user"))
+    if (!actor?.isAdmin) restricted.add("isAdmin")
+    return updateUser(userId, omitRestrictedFields(data, restricted))
   })
 }
 export function useDeleteUsers() {
-  const token = useAuthStore((s) => s.token)
-  const client = useQueryClient()
-  return useMutation({
-    mutationFn: (ids: string[]) => (ids.length === 1 ? unwrap(deleteUser(ids[0])) : unwrap(batchDeleteUsers({ ids }))),
-    onSuccess: () => client.invalidateQueries({ queryKey: userQueryKeys.lists(token) }),
+  return useDirectoryWrite("user:delete", (ids: string[]) => {
+    if (!ids.length) throw new Error("No directory users selected")
+    return ids.length === 1 ? deleteUser(ids[0]) : batchDeleteUsers({ ids })
   })
 }
 export function useResendUserInvite() {
-  return useMutation({ mutationFn: (userId: string) => unwrap(resendUserInvite(userId)) })
+  return useDirectoryWrite("user:update", (userId: string) => {
+    // The existing entry belongs to editing; the API additionally requires create.
+    requireDirectoryPermission("user:create", getAuthSession())
+    return resendUserInvite(userId)
+  })
 }
 export function useChangeUserPassword() {
-  return useMutation({
-    mutationFn: ({ userId, data }: { userId: string; data: ChangePasswordBody }) =>
-      unwrap(changeUserPassword(userId, data)),
-  })
+  return useDirectoryWrite(
+    "user:reset-password",
+    ({ userId, data }: { userId: string; data: ChangePasswordBody }) => {
+      const actor = useAuthStore.getState().userInfo
+      if (!canResetUserPassword(actor, userId, Boolean(localStorage.getItem("impersonation"))))
+        throw new Error("Invalid password target")
+      if (actor?.id === userId && !data.oldPassword) throw new Error("Missing old password")
+      return changeUserPassword(userId, data)
+    },
+    false,
+  )
 }

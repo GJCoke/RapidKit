@@ -47,3 +47,8 @@ export function resendUserInvite(userId: string) {
 export function fetchAllUsers() {
   return request<UserOption[]>({ url: "/users/all", method: "get" })
 }
+
+export type UserDepartmentCounts = ApiResponse<"/api/v1/users/department-counts">
+export function fetchUserDepartmentCounts() {
+  return request<UserDepartmentCounts>({ url: "/users/department-counts", method: "get" })
+}

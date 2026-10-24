@@ -4,6 +4,8 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest"
 import { http, HttpResponse, delay } from "msw"
 import { server } from "@test/setup/server"
 import { useAuthStore } from "@/stores/auth"
+import { setImpersonationRecovery } from "@/services/impersonation-recovery"
+import { beginImpersonation, getCredentials, restoreImpersonator } from "@/features/auth/impersonation-storage"
 
 const notificationSpies = vi.hoisted(() => ({
   notifyRequestError: vi.fn(),
@@ -163,4 +165,100 @@ test("an expired response cannot replay a mutation under a new login", async () 
   expect(requestCount).toBe(1)
   expect(localStorage.getItem("accessToken")).toBe("other-access")
   expect(notificationSpies.notifySessionExpired).not.toHaveBeenCalled()
+})
+
+function subjectSession() {
+  useAuthStore.getState().setToken("actor-access", "actor-refresh")
+  beginImpersonation(
+    {
+      sessionId: "subject-session",
+      accessToken: "subject-access",
+      expiresAt: "2099-01-01T00:00:00Z",
+      subject: { id: "subject", name: "Subject", username: "subject" },
+    },
+    "/manage/user",
+  )
+  const recovery = vi.fn(async () => {
+    restoreImpersonator()
+    const pair = getCredentials()
+    useAuthStore.setState({ token: pair.accessToken, refreshToken: pair.refreshToken })
+  })
+  const release = setImpersonationRecovery(recovery)
+  return { recovery, release }
+}
+test.each([14002, 14003, 14008, 14017, "http401"])(
+  "impersonated auth failure %s restores the actor without refresh, replay or expiry notification",
+  async (code) => {
+    const { recovery, release } = subjectSession()
+    let calls = 0,
+      refreshes = 0
+    server.use(
+      http.post(`${baseUrl}/subject-failure`, ({ request: incoming }) => {
+        calls++
+        expect(incoming.headers.get("Authorization")).toBe("Bearer subject-access")
+        return code === "http401" ? new HttpResponse(null, { status: 401 }) : HttpResponse.json({ code, data: null })
+      }),
+      http.post(`${baseUrl}/auth/token/refresh`, () => {
+        refreshes++
+        return HttpResponse.json({ code: 14002 })
+      }),
+    )
+    try {
+      expect((await request({ url: "/subject-failure", method: "post" })).error).not.toBeNull()
+      expect(recovery).toHaveBeenCalledTimes(1)
+      expect(calls).toBe(1)
+      expect(refreshes).toBe(0)
+      expect(getCredentials()).toEqual({ accessToken: "actor-access", refreshToken: "actor-refresh" })
+      expect(notificationSpies.notifyRequestError).not.toHaveBeenCalled()
+      expect(notificationSpies.notifySessionExpired).not.toHaveBeenCalled()
+    } finally {
+      release()
+    }
+  },
+)
+test("a rejected stop request cannot recursively invoke recovery or clear the actor backup", async () => {
+  const { recovery, release } = subjectSession()
+  server.use(
+    http.delete(`${baseUrl}/auth/impersonations/current`, () => HttpResponse.json({ code: 14017, data: null })),
+  )
+  try {
+    expect((await request({ url: "/auth/impersonations/current", method: "delete" })).error).not.toBeNull()
+    expect(recovery).not.toHaveBeenCalled()
+    expect(localStorage.getItem("impersonator")).not.toBeNull()
+    expect(notificationSpies.notifyRequestError).not.toHaveBeenCalled()
+    expect(notificationSpies.notifySessionExpired).not.toHaveBeenCalled()
+  } finally {
+    release()
+  }
+})
+test("a late successful private response from another identity is canceled at the transport boundary", async () => {
+  useAuthStore.getState().setToken("first-access", "first-refresh")
+  server.use(
+    http.get(`${baseUrl}/old-private`, () => {
+      useAuthStore.getState().setToken("second-access", "second-refresh")
+      return HttpResponse.json({ code: 0, data: { secret: "old private data" } })
+    }),
+  )
+  const result = await request({ url: "/old-private" })
+  expect(result.data).toBeNull()
+  expect(result.error).toMatchObject({ code: "ERR_CANCELED" })
+  expect(notificationSpies.notifyRequestError).not.toHaveBeenCalled()
+})
+
+test("a request captures its identity before asynchronous Axios interceptors can send an old payload as another user", async () => {
+  let calls = 0
+  server.use(
+    http.post(`${baseUrl}/dispatch-scope`, () => {
+      calls++
+      return HttpResponse.json({ code: 0, data: true })
+    }),
+  )
+  useAuthStore.getState().setToken("first-access", "first-refresh")
+  const pending = request({ url: "/dispatch-scope", method: "post", data: { privateDraft: "first identity draft" } })
+  useAuthStore.getState().setToken("second-access", "second-refresh")
+  const result = await pending
+  expect(result.data).toBeNull()
+  expect(result.error).toMatchObject({ code: "ERR_CANCELED" })
+  expect(calls).toBe(0)
+  expect(notificationSpies.notifyRequestError).not.toHaveBeenCalled()
 })

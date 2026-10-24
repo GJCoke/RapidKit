@@ -9,11 +9,13 @@ function normalizeParams(params: UserSearchParams) {
 }
 
 export const userQueryKeys = {
-  root: (token: string | null) => ["users", token] as const,
-  lists: (token: string | null) => [...userQueryKeys.root(token), "list"] as const,
-  list: (token: string | null, params: UserSearchParams = {}) =>
+  root: (token: string | number | null) => ["users", token] as const,
+  lists: (token: string | number | null) => [...userQueryKeys.root(token), "list"] as const,
+  list: (token: string | number | null, params: UserSearchParams = {}) =>
     [...userQueryKeys.lists(token), normalizeParams(params)] as const,
-  options: (token: string | null) => [...userQueryKeys.root(token), "options"] as const,
-  roles: (token: string | null) => [...userQueryKeys.options(token), "roles"] as const,
-  departments: (token: string | null) => [...userQueryKeys.options(token), "departments"] as const,
+  options: (token: string | number | null) => [...userQueryKeys.root(token), "options"] as const,
+  roles: (token: string | number | null) => [...userQueryKeys.options(token), "roles"] as const,
+  users: (token: string | number | null) => [...userQueryKeys.options(token), "users"] as const,
+  counts: (token: string | number | null) => [...userQueryKeys.root(token), "counts"] as const,
+  departments: (token: string | number | null) => [...userQueryKeys.options(token), "departments"] as const,
 }

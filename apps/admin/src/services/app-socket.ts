@@ -2,6 +2,7 @@ import { Manager, type Socket } from "socket.io-client"
 import { fetchUserInfo } from "@/services/api/auth"
 import { getAuthSession } from "@/services/auth-session"
 import { useAuthStore } from "@/stores/auth"
+import { getCredentials } from "@/features/auth/impersonation-storage"
 
 let manager: Manager | null = null
 let generation = 0
@@ -81,7 +82,7 @@ export function openAppSocket(namespace: string): Socket {
     autoConnect: false,
   })
   const socket = manager.socket(namespace, {
-    auth: (callback) => callback({ access_token: localStorage.getItem("accessToken") || "" }),
+    auth: (callback) => callback({ access_token: getCredentials().accessToken }),
   })
   if (!owners.has(socket)) {
     owners.set(socket, 0)
@@ -109,7 +110,7 @@ export function openPrivateAppSocket(
     },
   )
   const socket = privateManager.socket(namespace, {
-    auth: (callback) => callback({ ...metadata, access_token: localStorage.getItem("accessToken") || "" }),
+    auth: (callback) => callback({ ...metadata, access_token: getCredentials().accessToken }),
   })
   owners.set(socket, 1)
   bindRecovery(socket)

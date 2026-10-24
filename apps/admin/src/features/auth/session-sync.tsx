@@ -14,6 +14,7 @@ import { findRouteForPath, findFirstNavigablePath, normalizeRoutes } from "@/fea
 import { ConfirmActionDialog } from "@/shared/crud"
 import { createPermissionSync } from "./permission-sync"
 import { withNotificationRoutes } from "@/features/notifications/notification-routes"
+import { getCredentials } from "./impersonation-storage"
 
 const changeSchema = z.object({
   scope: z.enum(["roles", "user", "menu"]),
@@ -48,11 +49,10 @@ export function SessionSync() {
     let timer: ReturnType<typeof setTimeout> | undefined
     const identityChanged = (event: StorageEvent) => {
       if (event.storageArea && event.storageArea !== localStorage) return
-      if (event.key !== null && event.key !== "refreshToken" && event.key !== "accessToken") return
+      if (event.key !== null && !["refreshToken", "accessToken", "impersonation"].includes(event.key)) return
       clearTimeout(timer)
       timer = setTimeout(() => {
-        const access = localStorage.getItem("accessToken") || ""
-        const refresh = localStorage.getItem("refreshToken") || ""
+        const { accessToken: access, refreshToken: refresh } = getCredentials()
         const old = useAuthStore.getState()
         if (access === old.token && refresh === old.refreshToken) return
         const identity = tokenIdentity(access)
