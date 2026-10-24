@@ -4,7 +4,7 @@ import { queryClient } from "@/services/query-client"
 import { useRouteStore } from "@/stores/route"
 import { useTabStore } from "@/stores/tab"
 import { useRouteCacheStore } from "@/features/router/route-cache-store"
-import { clearIdentityStorage, getCredentials, hasImpersonationStorage } from "@/features/auth/impersonation-storage"
+import { clearIdentityStorage, getCredentials, writeCredentials } from "@/features/auth/impersonation-storage"
 import { recoverImpersonation } from "@/services/impersonation-recovery"
 
 interface AuthState {
@@ -25,9 +25,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   userInfo: null,
   lastLogoutReason: null,
   setToken: (token, refreshToken) => {
-    if (hasImpersonationStorage()) clearIdentityStorage()
-    localStorage.setItem("accessToken", token)
-    localStorage.setItem("refreshToken", refreshToken)
+    writeCredentials(token, refreshToken)
     set({ token, refreshToken })
   },
   setUserInfo: (userInfo) => set({ userInfo }),

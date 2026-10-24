@@ -7,7 +7,7 @@ export const HOME_PATH = "/"
 
 export const constantRoutes: RouteObject[] = [
   {
-    path: "/login",
+    path: "/login/:module?",
     errorElement: <RouteErrorBoundary />,
     lazy: async () => {
       const mod = await import("@/features/auth/components/login-page")

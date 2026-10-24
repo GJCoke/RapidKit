@@ -6,9 +6,10 @@ import { z } from "zod"
 import { Button, Checkbox, Input, Label } from "@rapidkit/ui"
 
 import type { LoginParams } from "@/services/api/auth"
+import { accountPasswordPattern as passwordPattern, formatCooldown } from "../account-model"
+import { PasswordInput } from "./password-input"
 
 const usernamePattern = /^[\u4E00-\u9FA5a-zA-Z0-9_-]{4,16}$/
-const passwordPattern = /^\w{6,18}$/
 
 interface LoginValidationMessages {
   usernameRequired: string
@@ -42,6 +43,8 @@ interface LoginFormProps {
   isPending: boolean
   isError: boolean
   onSubmit: (credentials: LoginParams) => void
+  onForgot?: () => void
+  cooldownSeconds?: number
 }
 
 export function resolveLoginSuccessPath() {
@@ -52,7 +55,7 @@ export function resolveAuthenticatedLoginRedirect(token: string) {
   return token ? resolveLoginSuccessPath() : null
 }
 
-export function LoginForm({ isPending, isError, onSubmit }: LoginFormProps) {
+export function LoginForm({ isPending, isError, onSubmit, onForgot, cooldownSeconds = 0 }: LoginFormProps) {
   const { t } = useTranslation()
   const schema = createLoginSchema({
     usernameRequired: t("auth.validation.usernameRequired"),
@@ -75,7 +78,7 @@ export function LoginForm({ isPending, isError, onSubmit }: LoginFormProps) {
   })
 
   const handleValidatedSubmit = handleSubmit(({ username, password }) => {
-    if (!isPending) onSubmit({ username, password })
+    if (!isPending && cooldownSeconds === 0) onSubmit({ username, password })
   })
 
   return (
@@ -101,10 +104,10 @@ export function LoginForm({ isPending, isError, onSubmit }: LoginFormProps) {
 
       <div className="space-y-2">
         <Label htmlFor="password">{t("auth.password")}</Label>
-        <Input
+        <PasswordInput
           {...register("password")}
           id="password"
-          type="password"
+          label={t("auth.password")}
           autoComplete="current-password"
           placeholder="••••••••"
           disabled={isPending}
@@ -139,13 +142,23 @@ export function LoginForm({ isPending, isError, onSubmit }: LoginFormProps) {
         </Label>
       </div>
 
-      {isError ? (
+      {onForgot && (
+        <Button type="button" variant="link" className="px-0" onClick={onForgot}>
+          {t("account.forgotPassword")}
+        </Button>
+      )}
+      {cooldownSeconds > 0 && (
+        <p role="status" className="rounded-lg bg-muted p-3 text-sm">
+          {t("account.cooldown", { time: formatCooldown(cooldownSeconds) })}
+        </p>
+      )}
+      {isError && cooldownSeconds === 0 ? (
         <p role="alert" className="text-sm text-destructive">
           {t("auth.loginFailed")}
         </p>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" className="w-full" disabled={isPending || cooldownSeconds > 0}>
         {isPending ? t("auth.loggingIn") : t("auth.login")}
       </Button>
     </form>

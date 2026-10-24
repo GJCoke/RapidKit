@@ -5,6 +5,7 @@ import { useAuthStore } from "@/stores/auth"
 import { fetchLogin, fetchPublicKey, fetchUserInfo } from "@/services/api/auth"
 import { authenticate } from "@/services/authenticate"
 import { getAuthSession } from "@/services/auth-session"
+import { getCredentials, writeCredentials } from "@/features/auth/impersonation-storage"
 
 export function useLogin() {
   const { setToken, setUserInfo, clearAuth } = useAuthStore()
@@ -12,13 +13,18 @@ export function useLogin() {
   return useMutation({
     mutationFn: async (credentials: Parameters<typeof fetchLogin>[0]) => {
       const result = await authenticate(credentials, {
+        getSession: getAuthSession,
         fetchPublicKey,
         encrypt: rsaEncrypt,
         login: fetchLogin,
-        setToken,
+        setToken: writeCredentials,
         clearAuth,
         fetchUserInfo,
-        setUserInfo,
+        setUserInfo: (info) => {
+          const credentials = getCredentials()
+          setToken(credentials.accessToken, credentials.refreshToken)
+          setUserInfo(info)
+        },
       })
       if (!result.ok) throw result.error
     },

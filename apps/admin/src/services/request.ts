@@ -8,7 +8,7 @@ import { useAuthStore } from "@/stores/auth"
 import { fetchRefreshToken } from "@/services/api/auth"
 import { getRequestLocale, SERVICE_BASE_URL, SUCCESS_CODE } from "@/services/request-config"
 import type { BackendResponse } from "@/services/request-config"
-import { getCredentials, hasImpersonationStorage } from "@/features/auth/impersonation-storage"
+import { getCredentials, hasImpersonationStorage, writeCredentials } from "@/features/auth/impersonation-storage"
 import { recoverImpersonation } from "@/services/impersonation-recovery"
 
 export { getRequestLocale } from "@/services/request-config"
@@ -115,7 +115,10 @@ const transport = createFlatRequest<BackendResponse, unknown, RequestState>(
             if (getAuthSession() !== session) return false
             if (!error && tokens?.accessToken && tokens?.refreshToken) {
               recordTokenRotation(tokens.refreshToken)
-              useAuthStore.getState().setToken(tokens.accessToken, tokens.refreshToken)
+              // A login waiting for user info has credentials, but no published application identity yet.
+              if (useAuthStore.getState().token)
+                useAuthStore.getState().setToken(tokens.accessToken, tokens.refreshToken)
+              else writeCredentials(tokens.accessToken, tokens.refreshToken)
               return true
             }
           } catch {

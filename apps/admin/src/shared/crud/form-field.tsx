@@ -7,6 +7,7 @@ export function FormField({
   required,
   description,
   error,
+  errorId,
   children,
 }: {
   label: string
@@ -14,6 +15,7 @@ export function FormField({
   required?: boolean
   description?: string
   error?: string
+  errorId?: string
   children: ReactNode
 }) {
   return (
@@ -28,7 +30,7 @@ export function FormField({
       </FieldLabel>
       {children}
       {description && <FieldDescription>{description}</FieldDescription>}
-      <FieldError>{error}</FieldError>
+      <FieldError id={errorId}>{error}</FieldError>
     </Field>
   )
 }

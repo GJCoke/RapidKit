@@ -19,6 +19,7 @@ test("authentication encrypts the password before storing credentials and user i
   const result = await authenticate(
     { username: "admin", password: "plain-password" },
     {
+      getSession: () => 0,
       fetchPublicKey: async () => {
         calls.push("public-key")
         return { data: "PUBLIC KEY", error: null }
@@ -58,6 +59,7 @@ test("authentication stops when public key retrieval fails", async () => {
   const result = await authenticate(
     { username: "admin", password: "password" },
     {
+      getSession: () => 0,
       fetchPublicKey: async () => ({ data: null, error: failure }),
       encrypt: async () => "encrypted",
       login: async () => {
@@ -79,6 +81,7 @@ test("authentication rejects missing login data and missing user info", async ()
   let storedTokens = 0
   let clearedAuth = 0
   const base = {
+    getSession: () => 0,
     fetchPublicKey: async () => ({ data: "PUBLIC KEY", error: null }),
     encrypt: async () => "encrypted",
     setToken: () => {
@@ -112,4 +115,89 @@ test("authentication rejects missing login data and missing user info", async ()
   assert.equal(missingUser.ok, false)
   assert.equal(storedTokens, 1)
   assert.equal(clearedAuth, 1)
+})
+
+test.each(["public-key", "encryption", "login", "user-info-success", "user-info-error"])(
+  "an old login waiting for %s cannot change or clear a replacement identity",
+  async (stage) => {
+    let session = 0,
+      storedTokens = 0,
+      clearedAuth = 0,
+      storedUsers = 0,
+      loginCalls = 0
+    let release!: () => void, started!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const ready = new Promise<void>((resolve) => {
+      started = resolve
+    })
+    const pause = async (step: string) => {
+      if (step === stage) {
+        started()
+        await gate
+      }
+    }
+    const dependencies = {
+      getSession: () => session,
+      fetchPublicKey: async () => {
+        await pause("public-key")
+        return { data: "PUBLIC KEY", error: null }
+      },
+      encrypt: async () => {
+        await pause("encryption")
+        return "encrypted"
+      },
+      login: async () => {
+        loginCalls++
+        await pause("login")
+        return { data: { accessToken: "old-access", refreshToken: "old-refresh" }, error: null }
+      },
+      setToken: () => {
+        storedTokens++
+        session++
+      },
+      clearAuth: () => {
+        clearedAuth++
+      },
+      fetchUserInfo: async () => {
+        await pause(stage === "user-info-error" ? "user-info-error" : "user-info-success")
+        return stage === "user-info-error"
+          ? { data: null, error: Object.assign(new Error("Identity changed"), { code: "ERR_CANCELED" }) }
+          : { data: userInfo, error: null }
+      },
+      setUserInfo: () => {
+        storedUsers++
+      },
+    }
+    const result = authenticate({ username: "admin", password: "123456" }, dependencies)
+    await ready
+    session++
+    release()
+    assert.equal((await result).ok, false)
+    assert.equal(clearedAuth, 0)
+    assert.equal(storedUsers, 0)
+    assert.equal(storedTokens, stage.startsWith("user-info") ? 1 : 0)
+    assert.equal(loginCalls, stage === "public-key" || stage === "encryption" ? 0 : 1)
+  },
+)
+
+test("a rejected user-info operation clears only the credentials this login owns", async () => {
+  let cleared = 0
+  const dependencies = {
+    getSession: () => 1,
+    fetchPublicKey: async () => ({ data: "KEY", error: null }),
+    encrypt: async () => "encrypted",
+    login: async () => ({ data: { accessToken: "access", refreshToken: "refresh" }, error: null }),
+    setToken: () => undefined,
+    clearAuth: () => {
+      cleared++
+    },
+    fetchUserInfo: async () => {
+      throw new Error("transport rejected")
+    },
+    setUserInfo: () => undefined,
+  }
+  assert.equal((await authenticate({ username: "admin", password: "123456" }, dependencies)).ok, false)
+  assert.equal(cleared, 1)
 })

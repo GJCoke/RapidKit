@@ -1,3 +1,5 @@
+import enUSAccount from "./en-US/account.json"
+import zhCNAccount from "./zh-CN/account.json"
 import enUSUsers from "./en-US/users.json"
 import zhCNUsers from "./zh-CN/users.json"
 import enUSSocketInstrument from "./en-US/socket-instrument.json"
@@ -82,6 +84,7 @@ i18n.use(initReactI18next).init({
         ...zhCNSocketDebug,
         ...zhCNSocketInstrument,
         ...zhCNUsers,
+        ...zhCNAccount,
       },
     },
     "en-US": {
@@ -109,6 +112,7 @@ i18n.use(initReactI18next).init({
         ...enUSSocketDebug,
         ...enUSSocketInstrument,
         ...enUSUsers,
+        ...enUSAccount,
       },
     },
   },

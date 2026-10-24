@@ -32,6 +32,12 @@ export function getCredentials() {
     refreshToken: localStorage.getItem("refreshToken") || "",
   }
 }
+/** Stage a normal login before its user information is ready for the application. */
+export function writeCredentials(accessToken: string, refreshToken: string) {
+  if (hasImpersonationStorage()) clearIdentityStorage()
+  localStorage.setItem("accessToken", accessToken)
+  localStorage.setItem("refreshToken", refreshToken)
+}
 function safeReturnPath(path: string) {
   const unsafe = [...path].some(
     (character) => character === "\\" || character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
