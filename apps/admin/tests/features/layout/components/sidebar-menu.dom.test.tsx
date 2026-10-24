@@ -134,3 +134,43 @@ test("route changes never render children with the previous expanded path", asyn
 
   expect(frames.filter((frame) => frame.startsWith("/sales"))).toEqual(["/sales:false:true"])
 })
+
+test("standard sidebar exposes its actual expanded state without a popup relationship", async () => {
+  const user = userEvent.setup()
+  useThemeWorkbenchStore.getState().updateSidebar({ autoSelectFirstMenu: false })
+  renderAdmin(
+    <>
+      <SidebarMenu menus={[system]} />
+      <LocationProbe />
+    </>,
+  )
+  const trigger = screen.getByRole("button", { name: "System" })
+  expect(trigger).not.toHaveAttribute("aria-haspopup")
+  expect(trigger).toHaveAttribute("aria-expanded", "false")
+  await user.click(trigger)
+  expect(trigger).toHaveAttribute("aria-expanded", "true")
+  await user.click(screen.getByRole("button", { name: "Users" }))
+  expect(screen.getByTestId("location")).toHaveTextContent("/users")
+  expect(trigger).toHaveAttribute("aria-expanded", "true")
+  await user.click(trigger)
+  expect(trigger).toHaveAttribute("aria-expanded", "false")
+})
+
+test("collapsed sidebar retains popup expanded state and navigates its visible leaf", async () => {
+  const user = userEvent.setup()
+  useThemeWorkbenchStore.getState().updateSidebar({ autoSelectFirstMenu: false })
+  renderAdmin(
+    <>
+      <SidebarMenu collapsed menus={[system]} />
+      <LocationProbe />
+    </>,
+  )
+  const trigger = screen.getByRole("button", { name: "System" })
+  expect(trigger).toHaveAttribute("aria-haspopup", "dialog")
+  expect(trigger).toHaveAttribute("aria-expanded", "false")
+  await user.click(trigger)
+  expect(trigger).toHaveAttribute("aria-expanded", "true")
+  await user.click(screen.getByRole("button", { name: "Users" }))
+  expect(screen.getByTestId("location")).toHaveTextContent("/users")
+  expect(trigger).toHaveAttribute("aria-expanded", "false")
+})

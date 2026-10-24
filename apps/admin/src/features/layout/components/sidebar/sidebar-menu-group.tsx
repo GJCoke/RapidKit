@@ -73,7 +73,7 @@ export function SidebarMenuGroup({
         open={!collapsed && expanded}
         onOpenChange={(open) => !collapsed && menu.setGroupExpanded(item.key, open)}
       >
-        <PopoverTrigger render={trigger} />
+        {collapsed ? <PopoverTrigger render={trigger} /> : trigger}
         <CollapsibleContent keepMounted className={getSubmenuPanelClasses()}>
           <div className="min-h-0 space-y-1 overflow-hidden pt-1">
             {childrenItems.map((child) => (

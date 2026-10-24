@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useReducer, useRef, type AnimationEvent, type ReactNode } from "react"
+import { useEffect, useLayoutEffect, useReducer, useRef, type ReactNode } from "react"
 import { useQueryClient, type QueryClient } from "@tanstack/react-query"
 import { useLocation, useOutlet } from "react-router"
 import { cn } from "@rapidkit/ui/lib/utils"
@@ -57,6 +57,7 @@ export function transitionRoute(state: RouteTransitionState, event: RouteTransit
 export function RouteTransition() {
   const theme = useEffectiveThemeConfig()
   const queryClient = useQueryClient()
+  const frame = useRef<HTMLDivElement>(null)
   const outlet = useOutlet()
   const { pathname, search } = useLocation()
   const snapshot = useRouteStore((store) => store.snapshot)
@@ -81,17 +82,27 @@ export function RouteTransition() {
   const displayedInstanceKey = displayedRoute ? getRouteInstanceKey(displayedRoute, state.displayedKey) : null
   const pendingRefreshKey = useRouteCacheStore((store) => store.pendingRefreshKey)
 
-  const handleAnimationEnd = (event: AnimationEvent<HTMLDivElement>) => {
-    if (event.currentTarget !== event.target) return
-    if (state.phase === "exiting") {
-      document.querySelector<HTMLElement>("[data-layout-scroll=content]")?.parentElement?.scrollTo({ left: 0, top: 0 })
-      if (state.refreshing && pendingRefreshKey) applyRouteRefresh(queryClient, pendingRefreshKey)
+  useEffect(() => {
+    if (state.phase === "idle") return
+    let active = true
+    // A completed/reused CSS animation may not emit another native animationend.
+    const animations = frame.current?.getAnimations?.() ?? []
+    void Promise.all(animations.map((animation) => animation.finished.catch(() => undefined))).then(() => {
+      if (!active) return
+      if (state.phase === "exiting") {
+        document
+          .querySelector<HTMLElement>("[data-layout-scroll=content]")
+          ?.parentElement?.scrollTo({ left: 0, top: 0 })
+        if (state.refreshing && pendingRefreshKey) applyRouteRefresh(queryClient, pendingRefreshKey)
+      }
+      dispatch({ type: "animationEnd" })
+      if (state.phase === "exiting" && !state.refreshing) outlets.current.delete(state.displayedKey)
+      if (state.phase === "entering" && state.refreshing) useRouteCacheStore.getState().completeRefresh()
+    })
+    return () => {
+      active = false
     }
-    const previousKey = state.displayedKey
-    dispatch({ type: "animationEnd" })
-    if (state.phase === "exiting" && !state.refreshing) outlets.current.delete(previousKey)
-    if (state.phase === "entering" && state.refreshing) useRouteCacheStore.getState().completeRefresh()
-  }
+  }, [state, pendingRefreshKey, queryClient, theme.experience.motionPreset, theme.experience.pageMotion])
 
   useEffect(() => {
     if (!pendingRefreshKey || pendingRefreshKey !== displayedInstanceKey || state.phase !== "idle") return
@@ -111,7 +122,8 @@ export function RouteTransition() {
         state.phase === "entering" && theme.experience.pageMotion && `route-${theme.experience.motionPreset}-enter`,
       )}
       data-route-transition={state.phase}
-      onAnimationEnd={handleAnimationEnd}
+      data-route-path={state.displayedKey}
+      ref={frame}
     >
       {displayedRoute ? (
         <RouteCacheHost route={displayedRoute} pathSearch={state.displayedKey}>
