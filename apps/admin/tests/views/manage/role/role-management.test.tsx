@@ -207,3 +207,120 @@ test("editing metadata preserves an existing backend status outside the enable/d
     expect(saved).toEqual({ name: "Reader", code: "reader", description: "Updated description", status: "3" }),
   )
 })
+
+test("pending filters never expose the previous role's selection or mutation controls", async () => {
+  const user = userEvent.setup()
+  let started = false
+  let release: () => void = () => {}
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  server.use(
+    http.get(`${base}/roles`, async ({ request }) => {
+      if (new URL(request.url).searchParams.get("keyword") === "pending") {
+        started = true
+        await gate
+        return HttpResponse.json({ code: 0, data: { records: [], page: 1, pageSize: 10, total: 0 } })
+      }
+      return HttpResponse.json({ code: 0, data: { records: [role], page: 1, pageSize: 10, total: 1 } })
+    }),
+  )
+  renderAdmin(<RolePage />)
+  await screen.findByRole("cell", { name: "Reader" })
+  await user.type(screen.getByRole("textbox", { name: "Keyword" }), "pending")
+  await user.click(screen.getByRole("button", { name: "Search" }))
+  try {
+    await waitFor(() => expect(started).toBe(true))
+    await waitFor(() => expect(screen.queryByRole("cell", { name: "Reader" })).not.toBeInTheDocument())
+    expect(screen.queryByRole("checkbox", { name: "Select Reader" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Permissions" })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Batch delete" })).toBeDisabled()
+  } finally {
+    release()
+  }
+  expect(await screen.findByText("No data")).toBeInTheDocument()
+})
+
+test("explicit search refreshes unchanged filters and revisiting cached filters reads fresh roles", async () => {
+  const user = userEvent.setup()
+  let currentName = "Reader"
+  const requests: string[] = []
+  server.use(
+    http.get(`${base}/roles`, ({ request }) => {
+      requests.push(new URL(request.url).searchParams.get("keyword") ?? "")
+      return HttpResponse.json({
+        code: 0,
+        data: { records: [{ ...role, name: currentName }], page: 1, pageSize: 10, total: 1 },
+      })
+    }),
+  )
+  const { queryClient } = renderAdmin(<RolePage />)
+  queryClient.setDefaultOptions({ queries: { retry: false, staleTime: 300000 } })
+  await screen.findByRole("cell", { name: "Reader" })
+  currentName = "RemoteOne"
+  await user.click(screen.getByRole("button", { name: "Search" }))
+  await screen.findByRole("cell", { name: "RemoteOne" })
+  expect(requests).toEqual(["", ""])
+  await user.type(screen.getByRole("textbox", { name: "Keyword" }), "other")
+  await user.click(screen.getByRole("button", { name: "Search" }))
+  await waitFor(() => expect(requests).toEqual(["", "", "other"]))
+  await screen.findByRole("cell", { name: "RemoteOne" })
+  currentName = "RemoteTwo"
+  await user.click(screen.getByRole("button", { name: "Reset" }))
+  await screen.findByRole("cell", { name: "RemoteTwo" })
+  expect(requests).toEqual(["", "", "other", ""])
+})
+
+test.each(["filter", "page"])(
+  "revisiting a cached %s hides old actions until the server confirms its records",
+  async (kind) => {
+    const user = userEvent.setup()
+    let firstReads = 0,
+      started = false
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    server.use(
+      http.get(`${base}/roles`, async ({ request }) => {
+        const query = new URL(request.url).searchParams
+        const page = Number(query.get("page") || 1)
+        const first = kind === "filter" ? !query.get("keyword") : page === 1
+        if (first && ++firstReads === 2) {
+          started = true
+          await gate
+        }
+        return HttpResponse.json({
+          code: 0,
+          data: {
+            records: [{ ...role, name: first ? (firstReads > 1 ? "Fresh Reader" : "Reader") : "Other Reader" }],
+            page,
+            pageSize: 10,
+            total: kind === "page" ? 11 : 1,
+          },
+        })
+      }),
+    )
+    renderAdmin(<RolePage />)
+    await screen.findByRole("cell", { name: "Reader" })
+    if (kind === "filter") {
+      await user.type(screen.getByRole("textbox", { name: "Keyword" }), "other")
+      await user.click(screen.getByRole("button", { name: "Search" }))
+    } else await user.click(screen.getByRole("button", { name: "Next" }))
+    await screen.findByRole("cell", { name: "Other Reader" })
+    if (kind === "filter") await user.click(screen.getByRole("button", { name: "Reset" }))
+    else await user.click(screen.getByRole("button", { name: "Previous" }))
+    try {
+      await waitFor(() => expect(started).toBe(true))
+      await waitFor(() => expect(screen.queryByRole("cell", { name: "Reader" })).not.toBeInTheDocument())
+      expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: "Permissions" })).not.toBeInTheDocument()
+      expect(screen.queryByRole("checkbox", { name: "Select Reader" })).not.toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "Batch delete" })).toBeDisabled()
+    } finally {
+      release()
+    }
+    expect(await screen.findByRole("cell", { name: "Fresh Reader" })).toBeInTheDocument()
+  },
+)

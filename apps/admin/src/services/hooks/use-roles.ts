@@ -29,10 +29,21 @@ export function requireRolePermission(code: PermissionCode, session: number) {
 }
 export function useRoles(params: Omit<RoleSearchParams, "page" | "pageSize">) {
   useAuthStore((s) => s.token)
-  return usePaginatedTable({
+  const table = usePaginatedTable({
+    staleTime: 0,
     queryKey: [...roleQueryKeys.all(getAuthSession()), params],
     queryFn: ({ page, pageSize }) => unwrapRoleRequest(fetchRoles({ ...params, page, pageSize })),
   })
+  return {
+    ...table,
+    tableData: {
+      ...table.tableData,
+      records:
+        table.query.fetchStatus === "idle" && !table.query.isPlaceholderData && !table.query.isError
+          ? table.tableData.records
+          : [],
+    },
+  }
 }
 export function useRoleMutations() {
   const client = useQueryClient()

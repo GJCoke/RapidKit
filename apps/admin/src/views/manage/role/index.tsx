@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { hashKey } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import type { ColumnPinningState, RowSelectionState, VisibilityState } from "@tanstack/react-table"
 import {
@@ -146,9 +147,11 @@ export default function RoleManagementPage() {
   ]
   const selected = Object.keys(selection).filter((id) => selection[id])
   const apply = (next: Filters) => {
+    const refreshCurrent = roles.page === 1 && hashKey([filters]) === hashKey([next])
     setFilters(next)
     setSelection({})
     roles.resetPage()
+    if (refreshCurrent) void roles.refresh()
   }
   const remove = async () => {
     try {
@@ -261,7 +264,7 @@ export default function RoleManagementPage() {
           setSelection({})
           roles.setPageSize(size)
         }}
-        loading={roles.query.isLoading}
+        loading={roles.query.isPending || roles.query.fetchStatus !== "idle" || roles.query.isPlaceholderData}
         error={roles.query.isError}
         onRetry={() => void roles.refresh()}
         rowSelection={selection}
