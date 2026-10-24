@@ -36,6 +36,7 @@ export function useSocketDebug() {
     setLogs((previous) => [log, ...previous])
   }
   return {
+    hasConnection: read && Boolean(owned.current),
     status: read ? status : "offline",
     logs: read ? logs : [],
     clearLogs() {

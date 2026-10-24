@@ -92,7 +92,7 @@ function DebugWorkbench() {
                     {t(debug.status === "connecting" ? "socketDebug.status.connecting" : "socketDebug.connect")}
                   </Button>
                 )}
-                {debug.status !== "offline" && (
+                {debug.hasConnection && (
                   <Button type="button" variant="outline" onClick={debug.disconnect}>
                     {t("socketDebug.disconnect")}
                   </Button>

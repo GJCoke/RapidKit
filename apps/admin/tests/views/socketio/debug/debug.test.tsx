@@ -10,6 +10,7 @@ import DebugPage from "@/views/socketio/debug"
 Object.defineProperty(Element.prototype, "getAnimations", { configurable: true, value: () => [] })
 const debug = vi.hoisted(() => ({
   status: "offline",
+  hasConnection: false,
   logs: [] as {
     id: number
     time: number
@@ -47,6 +48,7 @@ afterEach(() => {
   cleanup()
   useAuthStore.getState().clearAuth()
   debug.status = "offline"
+  debug.hasConnection = false
   debug.logs = []
   vi.clearAllMocks()
 })
@@ -78,6 +80,7 @@ test("invalid authentication cannot connect and valid custom connection values r
 })
 test("send JSON validation retains drafts, renders zero/null logs and translates status/log templates live", async () => {
   debug.status = "online"
+  debug.hasConnection = true
   debug.logs = [
     { id: 1, time: 1700000000000, type: "receive", event: "number", data: 0 },
     { id: 2, time: 1700000000000, type: "receive", event: "empty", data: null },
@@ -107,4 +110,12 @@ test("send JSON validation retains drafts, renders zero/null logs and translates
   act(() => useAuthStore.setState({ userInfo: { ...useAuthStore.getState().userInfo!, buttons: [] } }))
   expect(screen.queryByText("client-id")).not.toBeInTheDocument()
   expect(screen.queryByRole("button", { name: "发送事件" })).not.toBeInTheDocument()
+})
+
+test("offline automatic retries keep a visible disconnect action while the transport is owned", async () => {
+  debug.status = "offline"
+  debug.hasConnection = true
+  const { user } = await setup()
+  await user.click(screen.getByRole("button", { name: "Disconnect" }))
+  expect(debug.disconnect).toHaveBeenCalledTimes(1)
 })

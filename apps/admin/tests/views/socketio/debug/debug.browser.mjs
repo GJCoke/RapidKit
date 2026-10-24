@@ -128,7 +128,7 @@ try {
         await advanced()
         assert.equal(await path().inputValue(), "/socket.io")
         assert.equal(await nsp().inputValue(), "/")
-        await url().fill(admin ? "http://debug.example.test?tenant=alpha" : "http://debug.example.test")
+        await url().fill(admin ? "http://debug.example.test/ignored?tenant=alpha" : "http://debug.example.test")
         await path().fill("/parity-debug")
         await nsp().fill("/custom-room")
         await auth().fill("{")
@@ -225,6 +225,37 @@ try {
         await card.getByRole("button", { name: "断开", exact: true }).waitFor()
         fixture.receive("after-reconnect", "reconnected payload")
         await main.getByText("reconnected payload", { exact: true }).last().waitFor()
+        if (admin) {
+          const active = s.connections.at(-1)
+          let releaseCancel
+          s.gate = new Promise((resolve) => {
+            releaseCancel = resolve
+          })
+          active.socket.close({ code: 1000, reason: "cancel pending retry" })
+          let pending
+          try {
+            await until(() => {
+              pending = s.connections.findLast((c) => c.requested && !c.online && !c.closed)
+              return Boolean(pending)
+            })
+            await card.getByText("离线", { exact: true }).waitFor()
+            await card.getByRole("button", { name: "断开", exact: true }).waitFor()
+            await shot("offline-reconnect-cancellable")
+            await disconnect()
+            await until(() => pending.closed)
+          } finally {
+            releaseCancel()
+            s.gate = null
+          }
+          const countAfterCancel = s.connections.length
+          await page.waitForTimeout(1500)
+          assert.equal(s.connections.length, countAfterCancel, "explicit cancellation must stop automatic retries")
+          assert.equal(pending.online, false)
+          await connect()
+          await until(() => s.connections.at(-1).online)
+          fixture.receive("after-cancel", "manual recovery")
+          await main.getByText("manual recovery", { exact: true }).last().waitFor()
+        }
         await shot("reconnected")
         await main.getByRole("button", { name: "清空", exact: true }).click()
         await main.getByText("暂无消息", { exact: true }).waitFor()

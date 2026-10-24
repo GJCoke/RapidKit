@@ -160,3 +160,21 @@ test("permission and identity loss immediately masks logs, releases private sock
   expect(transport.instances).toHaveLength(1)
   expect(hook.result.current.logs).toEqual([])
 })
+
+test("an offline auto-reconnecting transport stays owned and can be cancelled without accepting late callbacks", () => {
+  const hook = setup()
+  act(() => hook.result.current.connect(config))
+  const socket = transport.instances[0]
+  socket.connected = true
+  act(() => socket.handlers.get("connect")?.())
+  socket.connected = false
+  act(() => socket.handlers.get("disconnect")?.("transport close"))
+  expect(hook.result.current.status).toBe("offline")
+  expect(hook.result.current.hasConnection).toBe(true)
+  act(() => hook.result.current.disconnect())
+  expect(hook.result.current.hasConnection).toBe(false)
+  expect(socket.disconnect).toHaveBeenCalledTimes(1)
+  socket.connected = true
+  act(() => socket.handlers.get("connect")?.())
+  expect(hook.result.current.status).toBe("offline")
+})

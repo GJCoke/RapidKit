@@ -22,7 +22,7 @@ export const debugConnectionInputSchema = z.object({
     .url("socketDebug.invalidUrl")
     .refine((value) => /^(https?|wss?):/.test(value), "socketDebug.invalidUrl"),
   path: z.string().trim().min(1, "socketDebug.requiredPath"),
-  namespace: z.string().trim(),
+  namespace: z.string(),
   auth: z.string().refine((text) => {
     const result = parseDebugPayload(text)
     return result.success && authObjectSchema.safeParse(result.data).success
@@ -30,10 +30,13 @@ export const debugConnectionInputSchema = z.object({
 })
 export const debugConnectionSchema = debugConnectionInputSchema.transform(({ url, namespace, auth, path }) => {
   const endpoint = new URL(url)
-  if (namespace && namespace !== "/")
-    endpoint.pathname = `${endpoint.pathname.replace(/\/$/, "")}/${namespace.replace(/^\//, "")}`
+  const targetNamespace = namespace.startsWith("/") ? namespace : `/${namespace}`
   const payload = parseDebugPayload(auth)
-  return { url: endpoint.toString(), path, auth: authObjectSchema.parse(payload.success ? payload.data : undefined) }
+  return {
+    url: `${endpoint.origin}${targetNamespace}${endpoint.search}`,
+    path,
+    auth: authObjectSchema.parse(payload.success ? payload.data : undefined),
+  }
 })
 export type DebugConnectionInput = z.input<typeof debugConnectionInputSchema>
 export type DebugConnection = z.output<typeof debugConnectionSchema>

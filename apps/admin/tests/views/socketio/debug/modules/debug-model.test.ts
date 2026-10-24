@@ -1,4 +1,5 @@
-import { expect, test } from "vitest"
+import { io, Manager } from "socket.io-client"
+import { expect, test, vi } from "vitest"
 import { debugConnectionSchema, parseDebugPayload, formatDebugData } from "@/views/socketio/debug/modules/debug-model"
 const config = { url: "https://socket.example.test/", path: "/custom", namespace: "room", auth: '{"key":"explicit"}' }
 test("connection form joins namespace once and preserves custom path and explicit authentication", () => {
@@ -45,4 +46,28 @@ test("connection URL queries stay unchanged while a namespace is appended to the
   expect(
     debugConnectionSchema.parse({ ...config, url: "https://debug.example.test?tenant=alpha", namespace: "/room" }).url,
   ).toBe("https://debug.example.test/room?tenant=alpha")
+})
+
+test("an explicit namespace overrides the URL pathname and reaches Socket.IO with literal Unicode and unchanged queries", () => {
+  const factory = vi.spyOn(Manager.prototype, "socket")
+  try {
+    for (const namespace of ["/", "/admin", "/调试"]) {
+      const connection = debugConnectionSchema.parse({
+        ...config,
+        url: "https://debug.example.test/prefix?tenant=alpha",
+        namespace,
+      })
+      const socket = io(connection.url, {
+        autoConnect: false,
+        forceNew: true,
+        path: connection.path,
+        auth: connection.auth,
+      })
+      expect(factory.mock.calls.at(-1)?.[0]).toBe(namespace)
+      expect(socket.io.opts.query).toEqual({ tenant: "alpha" })
+      socket.disconnect()
+    }
+  } finally {
+    factory.mockRestore()
+  }
 })

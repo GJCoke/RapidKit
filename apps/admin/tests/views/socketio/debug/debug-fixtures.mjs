@@ -10,6 +10,7 @@ export function debugFixtures() {
     const connection = {
       socket,
       online: false,
+      requested: false,
       closed: false,
       authKeys: [],
       url: new URL(socket.url()).origin,
@@ -20,10 +21,12 @@ export function debugFixtures() {
     socket.onMessage(async (data) => {
       const text = String(data)
       if (text.startsWith(`40${prefix}`)) {
+        connection.requested = true
         const auth = JSON.parse(text.slice(2 + prefix.length))
         assert.deepEqual(auth, { apiKey: "fixture-only" })
         connection.authKeys = Object.keys(auth)
         if (state.gate) await state.gate
+        if (connection.closed) return
         if (state.failNext) {
           state.failNext = false
           socket.send(`44${prefix}{"message":"fixture refused"}`)
