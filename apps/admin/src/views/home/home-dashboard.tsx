@@ -1,4 +1,5 @@
 import { Suspense } from "react"
+import { useAuthStore } from "@/stores/auth"
 import { useTranslation } from "react-i18next"
 import { RefreshCw } from "lucide-react"
 import { Button } from "@rapidkit/ui/components/button"
@@ -44,6 +45,7 @@ export function HomeDashboard({
   now?: Date
 }) {
   const { i18n, t } = useTranslation()
+  const actor = useAuthStore((state) => state.userInfo?.name || state.userInfo?.username || "")
 
   if (state.kind === "loading") return <LoadingState label={t("state.loading")} />
   if (state.kind === "error") {
@@ -57,7 +59,7 @@ export function HomeDashboard({
   return (
     <div>
       <PageHeader
-        title={t("home.welcome")}
+        title={`${t("home.welcome")}${actor ? `, ${actor}` : ""}`}
         description={
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="inline-flex items-center gap-1.5" aria-live="polite">
@@ -68,7 +70,6 @@ export function HomeDashboard({
               {statusLabel}
             </span>
             <span>{t("home.currentDate", { date: currentDate })}</span>
-            <span className="font-mono text-xs">{t("home.revision", { revision: state.revision.slice(0, 8) })}</span>
           </div>
         }
         actions={

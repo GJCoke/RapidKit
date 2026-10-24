@@ -1,9 +1,16 @@
 import { request } from "@/services/request"
+import type { ApiRequest, ApiResponse } from "@/typings/service"
 
-export interface DashboardCapabilities {
-  allowedModules: string[]
-  revision: string
-}
+export type DashboardCapabilities = ApiResponse<"/api/v1/dashboard/capabilities">
+export type OperationsOverview = ApiResponse<"/api/v1/system/stats/operations-overview">
+export type OperationsQuery = NonNullable<ApiRequest<"/api/v1/system/stats/operations-overview", "get", "query">>
+export type HealthStats = ApiResponse<"/api/v1/system/stats/health">
+export type InfrastructureHealth = ApiResponse<"/api/v1/system/stats/infrastructure">
+export type BusinessSummary = ApiResponse<"/api/v1/system/stats/business">
+export type SystemResources = ApiResponse<"/api/v1/system/stats/resources">
+export type InstanceResource = SystemResources["instances"][number]
+export type AdminContacts = ApiResponse<"/api/v1/users/admin-contacts">
+export type ActivityQuery = NonNullable<ApiRequest<"/api/v1/system/activities", "get", "query">>
 
 export interface UserStatsSummary {
   total: number
@@ -53,31 +60,8 @@ export interface UserActivityTrend {
 export type ActivityCategory = "task" | "user" | "system" | "alert"
 export type ActivityLevel = "info" | "success" | "warning" | "error"
 
-export interface ActivityItem {
-  id: string
-  createTime: string
-  updateTime: string
-  category: ActivityCategory
-  eventCode: string
-  level: ActivityLevel
-  actorId: string | null
-  actorName: string | null
-  subjectType: string
-  subjectId: string | null
-  subjectName: string | null
-  titleKey: string
-  titleParams: Record<string, unknown>
-  descriptionKey: string | null
-  descriptionParams: Record<string, unknown>
-  metadata: Record<string, unknown>
-  occurredAt: string
-}
-
-export interface ActivityPage {
-  items: ActivityItem[]
-  nextCursor: string | null
-  size: number
-}
+export type ActivityItem = ApiResponse<"/api/v1/system/activities">["items"][number]
+export type ActivityPage = ApiResponse<"/api/v1/system/activities">
 
 export interface DashboardOverviewData {
   users: UserStatsSummary
@@ -86,8 +70,8 @@ export interface DashboardOverviewData {
   errors: ErrorStats
 }
 
-export function fetchDashboardCapabilities() {
-  return request<DashboardCapabilities>({ url: "/dashboard/capabilities", method: "get" })
+export function fetchDashboardCapabilities(signal?: AbortSignal) {
+  return request<DashboardCapabilities>({ url: "/dashboard/capabilities", method: "get", signal })
 }
 
 export function fetchUserStatsSummary() {
@@ -110,6 +94,31 @@ export function fetchUserActivityTrend(params: { start: string; end: string; gra
   return request<UserActivityTrend[]>({ url: "/users/stats/trend", method: "get", params })
 }
 
-export function fetchActivities(params: { size: number }) {
-  return request<ActivityPage>({ url: "/system/activities", method: "get", params })
+export function fetchActivities(params: ActivityQuery, signal?: AbortSignal) {
+  return request<ActivityPage>({
+    url: "/system/activities",
+    method: "get",
+    params,
+    paramsSerializer: { indexes: null },
+    signal,
+  })
+}
+
+export function fetchOperationsOverview(params: OperationsQuery = { range: "7d" }, signal?: AbortSignal) {
+  return request<OperationsOverview>({ url: "/system/stats/operations-overview", method: "get", params, signal })
+}
+export function fetchHealthStats(signal?: AbortSignal) {
+  return request<HealthStats>({ url: "/system/stats/health", method: "get", signal })
+}
+export function fetchInfrastructureHealth(signal?: AbortSignal) {
+  return request<InfrastructureHealth>({ url: "/system/stats/infrastructure", method: "get", signal })
+}
+export function fetchBusinessSummary(signal?: AbortSignal) {
+  return request<BusinessSummary>({ url: "/system/stats/business", method: "get", signal })
+}
+export function fetchSystemResources(instance?: string, signal?: AbortSignal) {
+  return request<SystemResources>({ url: "/system/stats/resources", method: "get", params: { instance }, signal })
+}
+export function fetchAdminContacts(signal?: AbortSignal) {
+  return request<AdminContacts>({ url: "/users/admin-contacts", method: "get", signal })
 }

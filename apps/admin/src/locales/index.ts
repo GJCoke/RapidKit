@@ -1,3 +1,5 @@
+import enUSHome from "./en-US/home.json"
+import zhCNHome from "./zh-CN/home.json"
 import enUSAccount from "./en-US/account.json"
 import zhCNAccount from "./zh-CN/account.json"
 import enUSUsers from "./en-US/users.json"
@@ -85,6 +87,7 @@ i18n.use(initReactI18next).init({
         ...zhCNSocketInstrument,
         ...zhCNUsers,
         ...zhCNAccount,
+        ...zhCNHome,
       },
     },
     "en-US": {
@@ -113,6 +116,7 @@ i18n.use(initReactI18next).init({
         ...enUSSocketInstrument,
         ...enUSUsers,
         ...enUSAccount,
+        ...enUSHome,
       },
     },
   },

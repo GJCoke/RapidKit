@@ -1,4 +1,7 @@
+// @vitest-environment jsdom
 import assert from "node:assert/strict"
+import { pathToFileURL } from "node:url"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { readFile } from "node:fs/promises"
 import { test } from "vitest"
 import { createElement } from "react"
@@ -10,7 +13,7 @@ import { StatCards } from "@/views/home/modules/stat-cards"
 import { TrendCharts } from "@/views/home/modules/trend-charts"
 import { HomeDashboard, resolveHomeView } from "@/views/home/home-dashboard"
 
-const localesUrl = new URL("../../../src/locales/", import.meta.url)
+const localesUrl = pathToFileURL(`${process.cwd()}/src/locales/`)
 
 await i18n.use(initReactI18next).init({
   lng: "en-US",
@@ -34,12 +37,16 @@ await i18n.use(initReactI18next).init({
 
 function renderHome(query: Parameters<typeof resolveHomeView>[0]) {
   return renderToStaticMarkup(
-    createElement(HomeDashboard, {
-      state: resolveHomeView(query),
-      isRefreshing: false,
-      now: new Date("2026-09-02T12:00:00Z"),
-      onRefresh: () => undefined,
-    }),
+    createElement(
+      QueryClientProvider,
+      { client: new QueryClient() },
+      createElement(HomeDashboard, {
+        state: resolveHomeView(query),
+        isRefreshing: false,
+        now: new Date("2026-09-02T12:00:00Z"),
+        onRefresh: () => undefined,
+      }),
+    ),
   )
 }
 
@@ -54,16 +61,31 @@ test("dashboard registry uses backend capability keys and filters by allowedModu
   assert.deepEqual(
     dashboardModules.map(({ key, capability, colSpan }) => ({ key, capability, colSpan })),
     [
-      { key: "stat-cards", capability: "dashboard.overview", colSpan: "col-span-24" },
-      { key: "trend-charts", capability: "dashboard.trends", colSpan: "col-span-24 xl:col-span-15" },
-      { key: "activity-feed", capability: "dashboard.activity", colSpan: "col-span-24 xl:col-span-9" },
+      { key: "overview", capability: "dashboard.overview", colSpan: "col-span-24 xl:col-span-15" },
+      { key: "application-health", capability: "dashboard.application-health", colSpan: "col-span-24 xl:col-span-9" },
+      { key: "activity", capability: "dashboard.activity", colSpan: "col-span-24 xl:col-span-15" },
+      { key: "business", capability: "dashboard.business", colSpan: "col-span-24 xl:col-span-9" },
+      { key: "infrastructure", capability: "dashboard.infrastructure", colSpan: "col-span-24 xl:col-span-9" },
+      { key: "api-monitoring", capability: "dashboard.api-monitoring", colSpan: "col-span-24" },
     ],
   )
   assert.deepEqual(
-    selectDashboardModules(["dashboard.activity", "dashboard.trends"]).map((module) => module.key),
-    ["trend-charts", "activity-feed"],
+    selectDashboardModules(["dashboard.activity", "dashboard.api-monitoring"]).map((module) => module.key),
+    ["activity", "api-monitoring"],
   )
-  assert.deepEqual(selectDashboardModules(["dashboard.application-health"]), [])
+  assert.deepEqual(
+    selectDashboardModules(["dashboard.application-health"]).map((module) => module.key),
+    ["application-health"],
+  )
+  assert.deepEqual(
+    selectDashboardModules(["dashboard.application-health", "dashboard.business"]).map((module) => module.key),
+    ["application-health"],
+  )
+  assert.deepEqual(
+    selectDashboardModules(["dashboard.business"]).map((module) => module.key),
+    ["business"],
+  )
+  assert.deepEqual(selectDashboardModules(["unknown"]), [])
 })
 
 test("dashboard presentation modules render the localized empty state for genuinely empty data", async () => {
@@ -119,7 +141,7 @@ test("Home renders restricted access when no registered module is granted", () =
   const markup = renderHome({
     isLoading: false,
     isError: false,
-    data: successfulResponse(["dashboard.application-health"]),
+    data: successfulResponse(["unknown"]),
     refetch: () => undefined,
   })
 
@@ -137,7 +159,7 @@ test("Home full state renders header metadata, refresh action, and Suspense fall
   assert.match(markup, />Welcome to RapidKit</)
   assert.match(markup, /Dashboard access ready/)
   assert.match(markup, /September 2, 2026/)
-  assert.match(markup, /Revision revision/)
+  assert.doesNotMatch(markup, /Revision revision/)
   assert.match(markup, />Refresh</)
   assert.match(markup, />Loading\.\.\.</)
 })

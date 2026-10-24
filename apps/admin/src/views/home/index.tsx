@@ -1,20 +1,22 @@
+import { useAuthStore } from "@/stores/auth"
+import { getAuthSession } from "@/services/auth-session"
 import {
-  useDashboardCapabilities,
-  useDashboardFetchingCount,
-  useDashboardRefresh,
-} from "@/services/hooks/use-dashboard"
+  useHomeCapabilities,
+  useHomeFetchingCount,
+  useHomeRefresh,
+  useHomeLive,
+} from "@/services/hooks/use-home-dashboard"
 import { HomeDashboard, resolveHomeView } from "./home-dashboard"
-
-export default function HomePage() {
-  const query = useDashboardCapabilities()
-  const fetchingCount = useDashboardFetchingCount()
-  const refreshDashboard = useDashboardRefresh()
-
+function HomeSession() {
+  const query = useHomeCapabilities(),
+    fetchingCount = useHomeFetchingCount(),
+    refresh = useHomeRefresh()
+  useHomeLive()
   return (
-    <HomeDashboard
-      state={resolveHomeView(query)}
-      isRefreshing={fetchingCount > 0}
-      onRefresh={() => void refreshDashboard()}
-    />
+    <HomeDashboard state={resolveHomeView(query)} isRefreshing={fetchingCount > 0} onRefresh={() => void refresh()} />
   )
+}
+export default function HomePage() {
+  useAuthStore((state) => state.token)
+  return <HomeSession key={getAuthSession()} />
 }
