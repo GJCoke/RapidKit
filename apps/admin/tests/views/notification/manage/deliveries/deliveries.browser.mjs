@@ -348,7 +348,11 @@ try {
           await row("Sent reader").waitFor()
           fixture.failSummary = true
           await refresh()
-          await (admin?main.getByText("投递汇总加载失败，请刷新重试。",{exact:true}):main.locator(".n-alert").filter({hasText:"投递汇总加载失败，请刷新重试。"})).waitFor()
+          await (
+            admin
+              ? main.getByText("投递汇总加载失败，请刷新重试。", { exact: true })
+              : main.locator(".n-alert").filter({ hasText: "投递汇总加载失败，请刷新重试。" })
+          ).waitFor()
           assert(await main.getByRole("button", { name: "重试失败 0 条", exact: true }).isDisabled())
           await shot(page, target, "summary-failure")
           fixture.failSummary = false
@@ -356,7 +360,11 @@ try {
           await row("Sent reader").waitFor()
           fixture.failList = true
           await refresh()
-          await (admin?main.getByText("投递明细加载失败，请刷新重试。",{exact:true}):main.locator(".n-alert").filter({hasText:"投递明细加载失败，请刷新重试。"})).waitFor()
+          await (
+            admin
+              ? main.getByText("投递明细加载失败，请刷新重试。", { exact: true })
+              : main.locator(".n-alert").filter({ hasText: "投递明细加载失败，请刷新重试。" })
+          ).waitFor()
           await shot(page, target, "list-failure")
           fixture.failList = false
           await refresh()
@@ -380,7 +388,15 @@ try {
           if (admin)
             await page.waitForFunction(() => Math.abs(document.querySelector("main").getBoundingClientRect().left) < 1)
           await shot(page, target, "admin-en-dark-390")
-          if(admin){const bounds=await main.getByRole("combobox",{name:"Select message",exact:true}).evaluate(element=>({button:element.getBoundingClientRect().right,card:element.closest("section").getBoundingClientRect().right}));assert(bounds.button<=bounds.card+1,"message picker fits its card at390px")}
+          if (admin) {
+            const bounds = await main
+              .getByRole("combobox", { name: "Select message", exact: true })
+              .evaluate((element) => ({
+                button: element.getBoundingClientRect().right,
+                card: element.closest("section").getBoundingClientRect().right,
+              }))
+            assert(bounds.button <= bounds.card + 1, "message picker fits its card at390px")
+          }
 
           if (admin) assert(await page.locator("body").evaluate((body) => body.scrollWidth <= innerWidth + 1))
           await row("Sent reader").getByRole("button", { name: "Details", exact: true }).click()
