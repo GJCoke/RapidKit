@@ -8,8 +8,12 @@ export function resolveIframeSource(src?: string): string | null {
 }
 
 export function IframeRoute({ src, title, timeoutMs = 15_000 }: { src?: string; title: string; timeoutMs?: number }) {
-  const { t } = useTranslation()
   const safeSrc = resolveIframeSource(src)
+  return <IframeAttempt key={safeSrc ?? "invalid"} safeSrc={safeSrc} title={title} timeoutMs={timeoutMs} />
+}
+
+function IframeAttempt({ safeSrc, title, timeoutMs }: { safeSrc: string | null; title: string; timeoutMs: number }) {
+  const { t } = useTranslation()
   const [generation, setGeneration] = useState(0)
   const [state, setState] = useState<"loading" | "ready" | "error">(safeSrc ? "loading" : "error")
 
@@ -33,7 +37,7 @@ export function IframeRoute({ src, title, timeoutMs = 15_000 }: { src?: string; 
       {state === "loading" && <LoadingState label={t("state.loading")} />}
       <iframe
         key={generation}
-        className={state === "ready" ? "h-full min-h-96 w-full border-0" : "invisible absolute size-0"}
+        className={state === "ready" ? "h-full min-h-96 w-full border-0 bg-white" : "invisible absolute size-0"}
         sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts"
         src={safeSrc}
         title={title}

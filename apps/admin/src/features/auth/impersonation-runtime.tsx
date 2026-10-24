@@ -20,6 +20,7 @@ import { useRouteCacheStore } from "@/features/router/route-cache-store"
 import { findRouteForPath, normalizeRoutes } from "@/features/router/route-model"
 import { resolveAuthorizedHomePath } from "@/features/router/generate-routes"
 import { withNotificationRoutes } from "@/features/notifications/notification-routes"
+import { withBuiltinRoutes } from "@/features/router/builtin-routes"
 import { createImpersonationSession } from "./impersonation-session"
 import { getCredentials, hasImpersonationStorage, readImpersonation } from "./impersonation-storage"
 
@@ -72,7 +73,7 @@ export const impersonationSession = createImpersonationSession({
     queryClient.setQueryData(["user-routes", session], routes)
     useRouteStore
       .getState()
-      .replaceSnapshot(normalizeRoutes(withNotificationRoutes(routes.data.routes)), routes.data.home)
+      .replaceSnapshot(normalizeRoutes(withNotificationRoutes(withBuiltinRoutes(routes.data.routes))), routes.data.home)
     useAuthStore.getState().setUserInfo(info.data)
     return true
   },

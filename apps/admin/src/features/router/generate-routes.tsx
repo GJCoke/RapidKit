@@ -1,10 +1,15 @@
 import type { RouteObject } from "react-router"
-import { findFirstNavigablePath, type NormalizedRoute, type RouteSnapshot } from "./route-model"
+import {
+  findFirstNavigablePath,
+  isDefaultRouteCandidate,
+  type NormalizedRoute,
+  type RouteSnapshot,
+} from "./route-model"
 import { lazyImport } from "./lazy-import"
 import { RouteErrorBoundary } from "./route-error-boundary"
 import { DefaultSearchRedirect } from "./default-search-redirect"
 import { ExternalRoute } from "./external-route"
-import { IframeRoute } from "./iframe-route"
+import { IframePageRoute } from "./iframe-page-route"
 
 export function generateRoutes(backendRoutes: NormalizedRoute[]): RouteObject[] {
   return backendRoutes.map((route) => {
@@ -18,7 +23,7 @@ export function generateRoutes(backendRoutes: NormalizedRoute[]): RouteObject[] 
     } else if (route.kind === "iframe") {
       routeObject.element = (
         <DefaultSearchRedirect defaultSearch={route.defaultSearch}>
-          <IframeRoute src={route.href} title={route.title} />
+          <IframePageRoute src={route.href} title={route.title} i18nKey={route.i18nKey} pathPattern={route.fullPath} />
         </DefaultSearchRedirect>
       )
     } else if (route.component) {
@@ -46,6 +51,6 @@ export function generateRoutes(backendRoutes: NormalizedRoute[]): RouteObject[] 
 
 export function resolveAuthorizedHomePath(snapshot: RouteSnapshot, homeName: string): string {
   const configured = snapshot.byName[homeName]
-  if (configured && (configured.kind === "view" || configured.kind === "iframe")) return configured.fullPath
+  if (configured && isDefaultRouteCandidate(configured)) return configured.fullPath
   return findFirstNavigablePath(snapshot.tree) ?? "/404"
 }

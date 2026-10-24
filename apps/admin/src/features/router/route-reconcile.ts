@@ -1,5 +1,5 @@
 import type { RouteSnapshot } from "./route-model"
-import { findFirstNavigablePath, findRouteForPath } from "./route-model"
+import { findFirstNavigablePath, findRouteForPath, isDefaultRouteCandidate } from "./route-model"
 import { getRouteInstanceKey } from "./route-instance-key"
 
 interface RuntimeTab {
@@ -42,7 +42,7 @@ export function reconcileRouteRuntime({
   const currentAuthorized = current && current.kind !== "external" && current.kind !== "layout"
   const configuredHome = snapshot.byName[homeName]
   const home =
-    configuredHome && configuredHome.kind !== "external" && configuredHome.kind !== "layout"
+    configuredHome && isDefaultRouteCandidate(configuredHome)
       ? configuredHome.fullPath
       : (findFirstNavigablePath(snapshot.tree) ?? "/404")
 

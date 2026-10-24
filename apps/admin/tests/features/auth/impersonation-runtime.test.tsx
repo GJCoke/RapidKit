@@ -333,3 +333,23 @@ test("an old transition waiting for query cancellation cannot erase a newer logi
   expect(useImpersonationStore.getState().snapshot).toBeNull()
   expect(screen.getByTestId("private-ui")).toHaveTextContent("Replacement")
 })
+
+test("restoring the actor can return to the public builtin iframe without a backend menu grant", async () => {
+  const path = `/iframe-page/${encodeURIComponent("https://example.com/actor-frame?path=%2Fkeep")}`
+  window.history.replaceState({}, "", path)
+  renderAdmin(
+    <ImpersonationBoundary>
+      <Identity />
+    </ImpersonationBoundary>,
+  )
+  await act(async () => {
+    expect(await impersonationSession.enter({ targetUserId: "subject" }, path)).toBe(true)
+  })
+  expect(screen.getByTestId("private-ui")).toHaveTextContent("Subject")
+  await act(async () => {
+    await impersonationSession.stop()
+  })
+  expect(screen.getByTestId("private-ui")).toHaveTextContent("Actor")
+  expect(window.location.pathname).toBe(path)
+  expect(useRouteStore.getState().snapshot.byName["iframe-page"]?.kind).toBe("iframe")
+})

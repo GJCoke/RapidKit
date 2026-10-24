@@ -35,10 +35,14 @@ test("state components expose the planned APIs and semantic styling", async () =
 test("error pages use localized copy, semantic status styling, and HOME_PATH", async () => {
   const pages = await Promise.all(["403.tsx", "404.tsx", "500.tsx"].map((file) => readSource(pagesUrl, file)))
 
-  for (const [index, source] of pages.entries()) {
+  const shared = await readSource(pagesUrl, "exception-page.tsx")
+  for (const [index, page] of pages.entries()) {
     const status = ["403", "404", "500"][index]
+    assert.match(page, new RegExp(`<ExceptionPage code="${status}"`))
+    assert.match(page, /import \{ ExceptionPage \} from "\.\/exception-page"/)
+    const source = shared
     assert.match(source, /useTranslation/)
-    assert.match(source, new RegExp(`t\\("error\\.${status}"\\)`))
+    assert.match(source, /t\(`error\.\$\{code\}`\)/)
     assert.match(source, /t\("state\.backHome"\)/)
     assert.match(source, /text-7xl font-bold text-primary/)
     assert.match(source, /navigate\(HOME_PATH\)/)

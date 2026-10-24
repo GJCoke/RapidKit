@@ -1,21 +1,7 @@
-import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router"
-import { Button } from "@rapidkit/ui/components/button"
-import { HOME_PATH } from "@/features/router"
+import { ExceptionPage } from "./exception-page"
 
 export default function Forbidden() {
-  const { t } = useTranslation()
-  const navigate = useNavigate()
-
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-4">
-      <h1 className="text-7xl font-bold text-primary">403</h1>
-      <p className="text-sm text-muted-foreground">{t("error.403")}</p>
-      <Button type="button" variant="outline" onClick={() => navigate(HOME_PATH)}>
-        {t("state.backHome")}
-      </Button>
-    </div>
-  )
+  return <ExceptionPage code="403" />
 }
 
 export const Component = Forbidden

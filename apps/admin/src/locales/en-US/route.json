@@ -1,5 +1,6 @@
 {
   "route": {
+    "403": "No permission",
     "404": "Not found",
     "500": "Server error",
     "iframe-page": "Embedded page",

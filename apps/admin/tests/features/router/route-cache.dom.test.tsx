@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { act, fireEvent, render, screen } from "@testing-library/react"
+import { MemoryRouter, useLocation, useNavigate } from "react-router"
 import { beforeEach, expect, test } from "vitest"
 
 import { normalizeRoutes } from "@/features/router/route-model"
@@ -92,4 +93,46 @@ test("refresh remounts the selected route without keepAlive", () => {
 
   expect(screen.getByLabelText("plain")).toHaveValue("")
   expect(unmounts.plain).toBe(1)
+})
+
+test("a shared route instance follows active query changes while inactive pages keep their last location", () => {
+  function LocationPage({ name }: { name: string }) {
+    const location = useLocation()
+    return (
+      <>
+        <StatefulPage name={name} />
+        <output aria-label={`${name} location`}>{location.pathname + location.search}</output>
+      </>
+    )
+  }
+  function Shell() {
+    const location = useLocation(),
+      navigate = useNavigate()
+    const route = location.pathname === "/a" ? snapshot.byName.a! : snapshot.byName.b!
+    return (
+      <>
+        <button onClick={() => navigate("/a?q=two")}>Change filter</button>
+        <button onClick={() => navigate("/b?q=other")}>Other page</button>
+        <button onClick={() => navigate("/a?q=three")}>Return</button>
+        <RouteCacheHost route={route} pathSearch={location.pathname + location.search}>
+          <LocationPage name={route.name} />
+        </RouteCacheHost>
+      </>
+    )
+  }
+  render(
+    <MemoryRouter initialEntries={["/a?q=one"]}>
+      <Shell />
+    </MemoryRouter>,
+  )
+  fireEvent.change(screen.getByLabelText("a"), { target: { value: "draft" } })
+  fireEvent.click(screen.getByRole("button", { name: "Change filter" }))
+  expect(screen.getByLabelText("a location")).toHaveTextContent("/a?q=two")
+  expect(screen.getByLabelText("a")).toHaveValue("draft")
+  fireEvent.click(screen.getByRole("button", { name: "Other page" }))
+  expect(screen.getByLabelText("a location")).toHaveTextContent("/a?q=two")
+  expect(screen.getByLabelText("b location")).toHaveTextContent("/b?q=other")
+  fireEvent.click(screen.getByRole("button", { name: "Return" }))
+  expect(screen.getByLabelText("a location")).toHaveTextContent("/a?q=three")
+  expect(screen.getByLabelText("a")).toHaveValue("draft")
 })

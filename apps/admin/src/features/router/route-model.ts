@@ -52,7 +52,7 @@ export function isInternalRoute(route: Pick<NormalizedRoute, "kind">): boolean {
 }
 
 function getRouteKind(route: BackendRoute, safeHref?: string): RouteKind {
-  if (route.component?.includes("_builtin_iframe-page")) return "iframe"
+  if (route.component && /(?:^|\$)view\.(?:_builtin_)?iframe-page$/.test(route.component)) return "iframe"
   if (safeHref) return "external"
   if (!route.component) return route.children?.length ? "layout" : "view"
   if (!route.component.includes("view.")) return "layout"
@@ -117,11 +117,16 @@ export function normalizeRoutes(routes: BackendRoute[]): RouteSnapshot {
   return { tree, byName, byPath, diagnostics }
 }
 
+/** A default destination must be usable without inventing route parameters. */
+export function isDefaultRouteCandidate(route: NormalizedRoute): boolean {
+  return isInternalRoute(route) && !route.fullPath.split("/").some((part) => part.startsWith(":") || part.includes("*"))
+}
+
 export function findFirstNavigablePath(routes: readonly NormalizedRoute[]): string | undefined {
   for (const route of routes) {
     const childPath = findFirstNavigablePath(route.children)
     if (childPath) return childPath
-    if (isInternalRoute(route)) return route.fullPath
+    if (isDefaultRouteCandidate(route)) return route.fullPath
   }
 }
 

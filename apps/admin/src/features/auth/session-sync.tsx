@@ -14,6 +14,7 @@ import { findRouteForPath, findFirstNavigablePath, normalizeRoutes } from "@/fea
 import { ConfirmActionDialog } from "@/shared/crud"
 import { createPermissionSync } from "./permission-sync"
 import { withNotificationRoutes } from "@/features/notifications/notification-routes"
+import { withBuiltinRoutes } from "@/features/router/builtin-routes"
 import { getCredentials } from "./impersonation-storage"
 
 const changeSchema = z.object({
@@ -88,7 +89,9 @@ export function SessionSync() {
         path === "/login" ||
         path.startsWith("/login/") ||
         ["/403", "/404", "/500"].includes(path) ||
-        Boolean(findRouteForPath(normalizeRoutes(withNotificationRoutes(snapshot.routes.routes)), path))
+        Boolean(
+          findRouteForPath(normalizeRoutes(withNotificationRoutes(withBuiltinRoutes(snapshot.routes.routes))), path),
+        )
       )
     }
     const apply = async (snapshot: Snapshot) => {

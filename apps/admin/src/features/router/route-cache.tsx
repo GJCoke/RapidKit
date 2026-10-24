@@ -1,4 +1,6 @@
-import { useLayoutEffect, useRef, type ReactNode } from "react"
+import { useContext, useLayoutEffect, useRef, type ContextType, type ReactNode } from "react"
+import { UNSAFE_LocationContext as LocationContext } from "react-router"
+import { canonicalizePathSearch } from "./route-url"
 import type { NormalizedRoute } from "./route-model"
 import { getRouteInstanceKey } from "./route-instance-key"
 import { useRouteCacheStore } from "./route-cache-store"
@@ -6,6 +8,7 @@ import { useRouteCacheStore } from "./route-cache-store"
 interface CachedNode {
   element: ReactNode
   generation: number
+  locationContext: ContextType<typeof LocationContext>
 }
 
 export function RouteCacheHost({
@@ -17,6 +20,13 @@ export function RouteCacheHost({
   pathSearch: string
   children: ReactNode
 }) {
+  // A cached outlet must retain its location while another route is entering.
+  const locationContext = useContext(LocationContext)
+  const displayedUrl = new URL(pathSearch, "http://rapidkit.local")
+  const locationMatches =
+    locationContext &&
+    canonicalizePathSearch(locationContext.location.pathname, locationContext.location.search) ===
+      canonicalizePathSearch(displayedUrl.pathname, displayedUrl.search)
   const entries = useRouteCacheStore((state) => state.entries)
   const nodes = useRef(new Map<string, CachedNode>())
   const cacheKey = getRouteInstanceKey(route, pathSearch)
@@ -31,7 +41,13 @@ export function RouteCacheHost({
     const generation = currentMeta?.generation ?? 0
     const cached = nodes.current.get(cacheKey)
     if (!cached || cached.generation !== generation) {
-      nodes.current.set(cacheKey, { element: children, generation })
+      nodes.current.set(cacheKey, {
+        element: children,
+        generation,
+        locationContext: locationMatches ? locationContext : (cached?.locationContext ?? locationContext),
+      })
+    } else if (locationMatches) {
+      cached.locationContext = locationContext
     }
   }
 
@@ -63,7 +79,11 @@ export function RouteCacheHost({
             inert={!active}
             className="h-full"
           >
-            {cached.element}
+            {cached.locationContext ? (
+              <LocationContext.Provider value={cached.locationContext}>{cached.element}</LocationContext.Provider>
+            ) : (
+              cached.element
+            )}
           </div>
         )
       })}

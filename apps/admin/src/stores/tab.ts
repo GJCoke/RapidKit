@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import { createStore } from "zustand/vanilla"
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware"
-import type { NormalizedRoute, RouteSnapshot } from "@/features/router/route-model"
+import { isDefaultRouteCandidate, type NormalizedRoute, type RouteSnapshot } from "@/features/router/route-model"
 import { createTabFromLocation, getRouteInstanceKey } from "@/features/router/route-instance-key"
 import { defaultThemeConfig } from "@/features/theme/theme-config"
 
@@ -104,8 +104,8 @@ function controlledStorage(storage: StateStorage, initiallyEnabled: boolean) {
 
 function findHome(snapshot: RouteSnapshot, homeName: string): NormalizedRoute | undefined {
   const configured = snapshot.byName[homeName]
-  if (configured && configured.kind !== "layout" && configured.kind !== "external") return configured
-  return Object.values(snapshot.byName).find((route) => route.kind === "view" || route.kind === "iframe")
+  if (configured && isDefaultRouteCandidate(configured)) return configured
+  return Object.values(snapshot.byName).find(isDefaultRouteCandidate)
 }
 
 function sortTabs(tabs: Tab[]) {

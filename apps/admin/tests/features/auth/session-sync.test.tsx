@@ -304,8 +304,12 @@ test("a first-connect permission snapshot on the public login page does not bloc
   }
 })
 
-test.each(["/notification/center", "/notification/preferences"])(
-  "an authenticated personal page %s without a backend menu entry stays open after permission synchronization",
+test.each([
+  "/notification/center",
+  "/notification/preferences",
+  `/iframe-page/${encodeURIComponent("https://example.com/embed")}`,
+])(
+  "an authenticated client page %s without a backend menu entry stays open after permission synchronization",
   async (path) => {
     window.history.replaceState({}, "", path)
     const client = new QueryClient()

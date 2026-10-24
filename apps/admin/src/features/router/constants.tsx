@@ -39,6 +39,14 @@ export const constantRoutes: RouteObject[] = [
     },
   },
   {
+    path: "/iframe-page/:url",
+    errorElement: <RouteErrorBoundary />,
+    lazy: async () => {
+      const mod = await import("./public-iframe-page")
+      return { Component: mod.default }
+    },
+  },
+  {
     path: "*",
     errorElement: <RouteErrorBoundary />,
     element: <UnknownRoute />,
