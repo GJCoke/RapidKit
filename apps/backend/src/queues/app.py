@@ -71,7 +71,8 @@ def configure_process_logging(**kwargs):
     from rapidkit_core.log import set_custom_logfile, setup_logging
 
     setup_logging()
-    set_custom_logfile()
+    # 每个进程写各自带 pid 的文件，无需 enqueue；enqueue 的信号量在 prefork 子进程 os._exit 时会被报告为泄漏
+    set_custom_logfile(enqueue=False)
     init_sentry()
 
 

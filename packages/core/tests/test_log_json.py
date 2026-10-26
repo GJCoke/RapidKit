@@ -118,3 +118,24 @@ def test_deployed_file_tracebacks_do_not_include_local_secrets(tmp_path, monkeyp
         assert secret not in contents
     finally:
         logger.remove()
+
+
+def test_rotated_logfiles_keep_instance_suffix_and_never_overwrite(tmp_path, monkeypatch):
+    from datetime import datetime
+
+    monkeypatch.setattr(log.timezone, "now", lambda: datetime(2026, 10, 26))
+    workers = [tmp_path / "access.host.101.log", tmp_path / "access.host.102.log"]
+    for active in workers:
+        for content in ("first", "second"):
+            rotated = active.with_name(f"{active.stem}.2026-10-26_00-00-00_000000.log")
+            rotated.write_text(f"{active.name}:{content}")
+            log.rename_rotated_logfile(str(rotated), active)
+
+    assert {path.name: path.read_text() for path in tmp_path.iterdir()} == {
+        "access.host.101.2026-10-26.log": "access.host.101.log:first",
+        "access.host.101.2026-10-26.2.log": "access.host.101.log:second",
+        "access.host.102.2026-10-26.log": "access.host.102.log:first",
+        "access.host.102.2026-10-26.2.log": "access.host.102.log:second",
+    }
+    # Loguru retention only cleans files matching `<root>.*<ext>` of the active file.
+    assert len(list(tmp_path.glob("access.host.101.*.log"))) == 2

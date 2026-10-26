@@ -188,11 +188,12 @@ async def test_sentry_api_worker_beat_initialization(loaded_app, monkeypatch):
     assert events[:2] == ["logging", "sentry"]
     events.clear()
     monkeypatch.setattr("rapidkit_core.log.setup_logging", lambda: events.append("logging"))
-    monkeypatch.setattr("rapidkit_core.log.set_custom_logfile", lambda: None)
+    monkeypatch.setattr("rapidkit_core.log.set_custom_logfile", lambda **kwargs: events.append(kwargs))
     monkeypatch.setattr(queue_module, "init_sentry", lambda: events.append("sentry"))
     queue_module.init_worker_logging()
     queue_module.init_beat_observability()
-    assert events == ["logging", "sentry", "logging", "sentry"]
+    file_sinks = {"enqueue": False}
+    assert events == ["logging", file_sinks, "sentry", "logging", file_sinks, "sentry"]
 
 
 @pytest.mark.asyncio

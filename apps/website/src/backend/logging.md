@@ -111,12 +111,16 @@ def setup_logging() -> None:
 ```python
 log_config = {
     "format": default_formatter,
-    "enqueue": True,         # 异步写入，线程安全
+    "enqueue": enqueue,      # API 进程默认异步写入；Celery 进程传入 False
     "rotation": "00:00",     # 每天午夜轮转
     "retention": "7 days",   # 保留 7 天
-    "compression": lambda filepath: os.rename(filepath, compression(filepath)),
 }
+# 每个 sink 另传 compression=partial(rename_rotated_logfile, active_file=...)
 ```
+
+实际文件名带有 `hostname.pid` 实例后缀（如 `access.<hostname>.<pid>.log`），每个进程只写自己的文件。轮转后的文件被重命名为 `access.<hostname>.<pid>.<日期>.log`，同一天重复轮转时追加序号，避免多进程互相覆盖，并且仍会被 `retention` 清理。
+
+Celery worker 与 beat 调用 `set_custom_logfile(enqueue=False)`：prefork 子进程以 `os._exit` 退出，`enqueue` 创建的信号量来不及注销，停止 worker 时会刷出大量 `leaked semaphore objects` 警告。
 
 :::warning
 `error.log` 启用了 `backtrace=True` 和 `diagnose=True`，会在日志中包含变量值等诊断信息。生产环境中需注意敏感数据泄露风险。

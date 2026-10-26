@@ -8,7 +8,7 @@ import sys
 import traceback
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, TextIO, cast
+from typing import TYPE_CHECKING, Any, TextIO, cast
 
 from loguru import logger as ruLogger
 
@@ -107,8 +107,23 @@ def setup_logging() -> None:
     _owned_handlers.add(handler)
 
 
-def set_custom_logfile() -> None:
-    """设置自定义日志文件。"""
+def rename_rotated_logfile(filepath: str, active_file: Path) -> None:
+    """将轮转出的日志改名为 `<活动文件名>.<日期>.log`，保留实例后缀并命中 retention 的匹配规则。"""
+    date = timezone.now().strftime("%Y-%m-%d")
+    target = active_file.with_name(f"{active_file.stem}.{date}{active_file.suffix}")
+    counter = 1
+    while target.exists():
+        counter += 1
+        target = active_file.with_name(f"{active_file.stem}.{date}.{counter}{active_file.suffix}")
+    os.rename(filepath, target)
+
+
+def set_custom_logfile(*, enqueue: bool = True) -> None:
+    """设置自定义日志文件。
+
+    每个进程写入带 `hostname.pid` 后缀的独立文件；不需要异步写入的进程（如 Celery prefork 子进程）
+    可传 `enqueue=False`，避免 enqueue 创建的信号量在子进程 `os._exit` 时被报告为泄漏。
+    """
     os.makedirs(LOG_PATH, exist_ok=True)
 
     instance_suffix = f".{socket.gethostname()}.{os.getpid()}"
@@ -118,19 +133,11 @@ def set_custom_logfile() -> None:
     log_access_file = LOG_PATH.joinpath(access_name)
     log_error_file = LOG_PATH.joinpath(error_name)
 
-    def compression(filepath: str) -> Path:
-        filename = filepath.split(os.sep)[-1]
-        original_filename = filename.split(".")[0]
-        if "-" in original_filename:
-            return LOG_PATH.joinpath(f"{original_filename}.log")
-        return LOG_PATH.joinpath(f"{original_filename}_{timezone.now().strftime('%Y-%m-%d')}.log")
-
-    log_config = {
+    log_config: dict[str, Any] = {
         "format": default_formatter,
-        "enqueue": True,
+        "enqueue": enqueue,
         "rotation": "00:00",
         "retention": "7 days",
-        "compression": lambda filepath: os.rename(filepath, compression(filepath)),
     }
 
     access_handler = ruLogger.add(
@@ -139,8 +146,9 @@ def set_custom_logfile() -> None:
         filter=lambda record: record["level"].no <= 25,
         backtrace=False,
         diagnose=False,
+        compression=partial(rename_rotated_logfile, active_file=log_access_file),
         **log_config,
-    )  # ty:ignore[no-matching-overload]
+    )
 
     error_handler = ruLogger.add(
         str(log_error_file),
@@ -148,8 +156,9 @@ def set_custom_logfile() -> None:
         filter=lambda record: record["level"].no >= 30,
         backtrace=True,
         diagnose=not settings.ENVIRONMENT.is_deployed,
+        compression=partial(rename_rotated_logfile, active_file=log_error_file),
         **log_config,
-    )  # ty:ignore[no-matching-overload]
+    )
     _owned_handlers.update((access_handler, error_handler))
 
 
