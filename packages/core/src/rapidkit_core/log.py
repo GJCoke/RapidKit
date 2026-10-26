@@ -6,6 +6,7 @@ import re
 import socket
 import sys
 import traceback
+from datetime import datetime
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO, cast
@@ -18,7 +19,6 @@ if TYPE_CHECKING:
 from rapidkit_core.config import settings
 from rapidkit_core.nanoid import get_request_nanoid
 from rapidkit_core.path import LOG_PATH
-from rapidkit_core.timezone import timezone
 
 _owned_handlers: set[int] = {0}  # Loguru's initial default handler.
 
@@ -108,8 +108,12 @@ def setup_logging() -> None:
 
 
 def rename_rotated_logfile(filepath: str, active_file: Path) -> None:
-    """将轮转出的日志改名为 `<活动文件名>.<日期>.log`，保留实例后缀并命中 retention 的匹配规则。"""
-    date = timezone.now().strftime("%Y-%m-%d")
+    """将轮转出的日志改名为 `<活动文件名>.<日期>.log`，保留实例后缀并命中 retention 的匹配规则。
+
+    日期取文件最后写入时间的系统本地日期，即日志内容所属的那一天；loguru 也按系统本地时区判定零点边界，
+    且要等零点后的下一条日志才触发轮转，因此不能用轮转时刻。
+    """
+    date = datetime.fromtimestamp(os.path.getmtime(filepath)).strftime("%Y-%m-%d")
     target = active_file.with_name(f"{active_file.stem}.{date}{active_file.suffix}")
     counter = 1
     while target.exists():

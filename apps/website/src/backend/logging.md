@@ -118,7 +118,7 @@ log_config = {
 # 每个 sink 另传 compression=partial(rename_rotated_logfile, active_file=...)
 ```
 
-实际文件名带有 `hostname.pid` 实例后缀（如 `access.<hostname>.<pid>.log`），每个进程只写自己的文件。轮转后的文件被重命名为 `access.<hostname>.<pid>.<日期>.log`，同一天重复轮转时追加序号，避免多进程互相覆盖，并且仍会被 `retention` 清理。
+实际文件名带有 `hostname.pid` 实例后缀（如 `access.<hostname>.<pid>.log`），每个进程只写自己的文件。轮转后的文件被重命名为 `access.<hostname>.<pid>.<日期>.log`（日期取文件最后写入时间的系统本地日期，即日志内容所属的那一天），同一天重复轮转时追加序号，避免多进程互相覆盖，并且仍会被 `retention` 清理。
 
 Celery worker 与 beat 调用 `set_custom_logfile(enqueue=False)`：prefork 子进程以 `os._exit` 退出，`enqueue` 创建的信号量来不及注销，停止 worker 时会刷出大量 `leaked semaphore objects` 警告。
 

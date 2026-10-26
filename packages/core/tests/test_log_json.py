@@ -120,15 +120,18 @@ def test_deployed_file_tracebacks_do_not_include_local_secrets(tmp_path, monkeyp
         logger.remove()
 
 
-def test_rotated_logfiles_keep_instance_suffix_and_never_overwrite(tmp_path, monkeypatch):
+def test_rotated_logfiles_keep_instance_suffix_and_never_overwrite(tmp_path):
+    import os
     from datetime import datetime
 
-    monkeypatch.setattr(log.timezone, "now", lambda: datetime(2026, 10, 26))
+    # Last write just before local midnight; rotation fires later, on the first message of the next day.
+    last_write = datetime(2026, 10, 26, 23, 59, 59).timestamp()
     workers = [tmp_path / "access.host.101.log", tmp_path / "access.host.102.log"]
     for active in workers:
         for content in ("first", "second"):
             rotated = active.with_name(f"{active.stem}.2026-10-26_00-00-00_000000.log")
             rotated.write_text(f"{active.name}:{content}")
+            os.utime(rotated, (last_write, last_write))
             log.rename_rotated_logfile(str(rotated), active)
 
     assert {path.name: path.read_text() for path in tmp_path.iterdir()} == {
