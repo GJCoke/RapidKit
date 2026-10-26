@@ -6,6 +6,7 @@ import UserPage from "@/views/manage/user/index.vue"
 const api = vi.hoisted(() => ({ users: vi.fn() }))
 vi.mock("@/service/api", () => ({
   fetchGetUserList: api.users,
+  fetchGetAllRoles: async () => ({ error: null, data: [] }),
   fetchGetDepartmentTree: async () => ({ error: null, data: [{ id: "root", name: "Engineering", children: [] }] }),
   fetchGetUserDepartmentCounts: async () => ({
     error: null,

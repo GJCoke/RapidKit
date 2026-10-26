@@ -1,6 +1,7 @@
 import type { RowSelectionState } from "@tanstack/react-table"
 import type { ReactNode } from "react"
 import { Badge, Checkbox } from "@rapidkit/ui"
+import type { RoleOption } from "@/services/api/role"
 import type { User } from "@/services/api/user"
 import type { DataTableColumn } from "@/shared/data-table"
 
@@ -8,8 +9,10 @@ const statusLabel = { "1": "正常", "2": "禁用", "3": "待激活" } as const
 export function createUserColumns(
   page: number,
   pageSize: number,
+  roles: readonly RoleOption[] = [],
   actions?: (user: User) => ReactNode,
 ): DataTableColumn<User>[] {
+  const roleNames = new Map(roles.map((role) => [role.code, role.name]))
   return [
     {
       id: "select",
@@ -50,7 +53,7 @@ export function createUserColumns(
         <div className="flex flex-wrap gap-1">
           {row.original.roles.map((role) => (
             <Badge key={role} variant="secondary">
-              {role}
+              {roleNames.get(role) ?? role}
             </Badge>
           ))}
         </div>

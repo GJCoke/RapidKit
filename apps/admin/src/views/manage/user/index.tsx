@@ -5,6 +5,7 @@ import { Can } from "@/features/auth"
 import { PageHeader } from "@/features/layout/components/page-header"
 import type { User } from "@/services/api/user"
 import { useDeleteUsers, useResendUserInvite } from "@/services/hooks/use-user-mutations"
+import { useRoleOptions } from "@/services/hooks/use-user-options"
 import { useUsers } from "@/services/hooks/use-users"
 import { ConfirmActionDialog } from "@/shared/crud"
 import { DataTable, TableColumnSetting, TableHeaderOperation, useTableOperate } from "@/shared/data-table"
@@ -23,12 +24,13 @@ export default function UserManagementPage() {
   const [passwordUser, setPasswordUser] = useState<User | null>(null)
   const [deleteIds, setDeleteIds] = useState<string[]>([])
   const users = useUsers(filters)
+  const roles = useRoleOptions()
   const operate = useTableOperate<User>((row) => row.id)
   const deletion = useDeleteUsers()
   const resend = useResendUserInvite()
   const columns = useMemo(
     () =>
-      createUserColumns(users.page, users.pageSize, (user) => (
+      createUserColumns(users.page, users.pageSize, roles.data, (user) => (
         <div className="flex flex-wrap gap-1">
           <Can permission="user:update">
             <Button variant="ghost" size="sm" onClick={() => operate.openEdit(user)}>
@@ -57,7 +59,7 @@ export default function UserManagementPage() {
           </Can>
         </div>
       )),
-    [operate.openEdit, resend.isPending, resend.mutate, users.page, users.pageSize],
+    [operate.openEdit, resend.isPending, resend.mutate, users.page, users.pageSize, roles.data],
   )
   const defaultOrder = useMemo(
     () => columns.map((column) => String(column.id ?? ("accessorKey" in column ? column.accessorKey : ""))),

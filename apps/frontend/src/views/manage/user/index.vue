@@ -3,7 +3,7 @@
   import { NButton, NDropdown, NTag } from "naive-ui"
   import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
   import { userStatusRecord } from "@/constants/business"
-  import { fetchBatchDeleteUsers, fetchDeleteUser, fetchGetUserList, fetchResendInvite } from "@/service/api"
+  import { fetchBatchDeleteUsers, fetchDeleteUser, fetchGetAllRoles, fetchGetUserList, fetchResendInvite } from "@/service/api"
   import { useAppStore } from "@/store/modules/app"
   import { defaultTransform, useNaivePaginatedTable, useTableOperate } from "@/hooks/common/table"
   import { $t } from "@/locales"
@@ -29,6 +29,12 @@
   const mobileDepartments = ref(false)
   const departmentNames = ref<Record<string, string>>({})
   const departmentPaths = ref<Record<string, string>>({})
+  const roleNames = ref(new Map<string, string>())
+
+  async function getRoleNames() {
+    const { error, data } = await fetchGetAllRoles()
+    if (!error) roleNames.value = new Map(data.map((role) => [role.code, role.name]))
+  }
   const searchParams: Api.SystemManage.UserSearchParams = reactive({
     page: 1,
     pageSize: DEFAULT_PAGE_SIZE,
@@ -120,7 +126,7 @@
               ) : (
                 row.roles?.map((role) => (
                   <NTag key={role} size="small" bordered={false}>
-                    {role}
+                    {roleNames.value.get(role) ?? role}
                   </NTag>
                 ))
               )}
@@ -289,6 +295,7 @@
     return true
   }
 
+  getRoleNames()
   getData()
 </script>
 
