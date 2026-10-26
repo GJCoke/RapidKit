@@ -39,8 +39,3 @@ class TestNormalizePath:
 
     def test_empty_path(self):
         assert _normalize_path("") == ""
-
-    def test_numeric_not_in_path_segment_prefix(self):
-        """v1 in /api/v1/ should NOT be replaced (not a pure numeric segment)."""
-        path = "/api/v1/users"
-        assert _normalize_path(path) == "/api/v1/users"

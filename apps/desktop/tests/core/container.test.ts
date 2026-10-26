@@ -9,13 +9,6 @@ class StubServiceA implements IService {
   constructor(_container: ServiceContainer) {}
 }
 
-class StubServiceB implements IService {
-  readonly id = "b"
-  onReady = vi.fn(async () => {})
-  onDestroy = vi.fn(async () => {})
-  constructor(_container: ServiceContainer) {}
-}
-
 describe("ServiceContainer", () => {
   it("registers and retrieves a service", () => {
     const container = new ServiceContainer()
