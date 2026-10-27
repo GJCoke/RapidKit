@@ -2,9 +2,9 @@
 
 from typing import Literal, TypeAlias
 
-LANGUAGE_TYPE: TypeAlias = Literal['en-US', 'zh-CN']
+LANGUAGE_TYPE: TypeAlias = Literal["en-US", "zh-CN"]
 
-languages: set[LANGUAGE_TYPE] = {'en-US', 'zh-CN'}
+languages: set[LANGUAGE_TYPE] = {"en-US", "zh-CN"}
 
 I18nKey = Literal[
     "audit.actions.auth.accept-invite",
