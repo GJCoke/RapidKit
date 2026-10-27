@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 from uuid import UUID
 
-from rapidkit_common.protocols.user import UserProtocol
+from rapidkit_common.schemas.auth import AuthUser
 
 if TYPE_CHECKING:
     from rapidkit_core.redis_client import AsyncRedisClient
@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 class AuthContext:
     """Authenticated subject and the actor responsible for the operation."""
 
-    subject: UserProtocol
-    actor: UserProtocol
+    subject: AuthUser
+    actor: AuthUser
     impersonation_session_id: UUID | None = None
 
 
@@ -41,9 +41,9 @@ class Authenticator(Protocol):
 
 
 class CurrentUserProvider(Protocol):
-    """Resolve a full user object from a token. Provided by plugin_auth."""
+    """Resolve a credential-free authentication user. Provided by plugin_auth."""
 
-    async def get_current_user(self, token: str) -> UserProtocol | None: ...
+    async def get_current_user(self, token: str) -> AuthUser | None: ...
 
     async def get_auth_context(self, token: str, *, fresh: bool = False) -> AuthContext | None: ...
 

@@ -7,7 +7,8 @@ Date   : 2026-05-11
 
 from uuid import UUID
 
-from rapidkit_common.protocols.user import UserProtocol, UserResolver
+from rapidkit_common.protocols.user import UserResolver
+from rapidkit_common.schemas.auth import AuthUser
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_framework.exceptions import AppException
@@ -52,7 +53,7 @@ class CurrentUserProviderImpl:
         except AppException:
             return None
 
-    async def get_current_user(self, token: str) -> UserProtocol | None:
+    async def get_current_user(self, token: str) -> AuthUser | None:
         auth = await self.get_auth_context(token)
         return auth.subject if auth else None
 

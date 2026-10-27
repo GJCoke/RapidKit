@@ -5,8 +5,6 @@ Author : Coke
 Date   : 2025-04-17
 """
 
-from typing import cast
-
 from authlib.jose.errors import ExpiredTokenError, JoseError
 from fastapi import Depends, Header, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -15,6 +13,7 @@ from pydantic import ValidationError
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.events import UserActivityObservedEvent
 from rapidkit_common.protocols.auth import AuthContext, AuthContextResolver
+from rapidkit_common.schemas.auth import AuthUser
 from rapidkit_core.config import settings
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
@@ -141,13 +140,13 @@ async def get_auth_context(token: HeaderAccessTokenDep, request: Request) -> Aut
 AuthContextDep = Annotated[AuthContext, Depends(get_auth_context)]
 
 
-async def get_current_user_form_db(auth: AuthContextDep) -> User:
+async def get_current_user_form_db(auth: AuthContextDep) -> AuthUser:
     if auth.impersonation_session_id is None:
         event_bus.fire_and_forget(
             UserActivityObservedEvent(user_id=str(auth.subject.id), occurred_at=timezone.now()),
             source="auth",
         )
-    return cast(User, auth.subject)
+    return auth.subject
 
 
 async def get_current_user_form_redis_and_db(user: UserRefreshJWTDep, db_user: AuthCrudDep, redis: RedisDep) -> User:
@@ -170,7 +169,7 @@ async def get_current_user_form_redis_and_db(user: UserRefreshJWTDep, db_user: A
     return user_info
 
 
-UserDBDep = Annotated[User, Depends(get_current_user_form_db), Doc("Current user from DB.")]
+UserDBDep = Annotated[AuthUser, Depends(get_current_user_form_db), Doc("Current authenticated user.")]
 UserRefreshDep = Annotated[User, Depends(get_current_user_form_redis_and_db), Doc("User via refresh token.")]
 
 

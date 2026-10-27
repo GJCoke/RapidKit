@@ -5,12 +5,21 @@ Author : Coke
 Date   : 2025-05-13
 """
 
+import json
 from typing import Any, Set, TypeVar, overload
 
 from pydantic import BaseModel
 from redis.asyncio import Redis
+from sqlmodel import SQLModel
 
 T = TypeVar("T", bound=BaseModel)
+
+
+def _validate_model_json(model: type[T], data: str | bytes) -> T:
+    # SQLModel tables skip JSON field validation; other schemas retain JSON-mode semantics.
+    if issubclass(model, SQLModel) and model.model_config.get("table"):
+        return model.model_validate(json.loads(data))
+    return model.model_validate_json(data)
 
 
 class AsyncRedisClient(Redis):  # type: ignore[type-arg]
@@ -36,7 +45,7 @@ class AsyncRedisClient(Redis):  # type: ignore[type-arg]
         data = await super().get(name)
         if data is None or response_model is None:
             return data
-        return response_model.model_validate_json(data)
+        return _validate_model_json(response_model, data)
 
     async def hset(
         self,
@@ -60,7 +69,7 @@ class AsyncRedisClient(Redis):  # type: ignore[type-arg]
         data = await super().hget(name, key)  # ty: ignore[invalid-await]
         if data is None or response_model is None:
             return data
-        return response_model.model_validate_json(data)
+        return _validate_model_json(response_model, data)
 
     async def hincrby(self, name: str, key: str, amount: int = 1) -> int:
         return await super().hincrby(name, key, amount)  # ty: ignore[invalid-await]
@@ -97,7 +106,7 @@ class AsyncRedisClient(Redis):  # type: ignore[type-arg]
         data = await super().lrange(name, start, end)  # ty: ignore[invalid-await]
         if not data or response_model is None:
             return data
-        return [response_model.model_validate_json(item) for item in data]
+        return [_validate_model_json(response_model, item) for item in data]
 
     async def sadd(self, name: str, *values: str | BaseModel) -> int:
         serialized = [v.model_dump_json() if isinstance(v, BaseModel) else v for v in values]
@@ -120,4 +129,4 @@ class AsyncRedisClient(Redis):  # type: ignore[type-arg]
         data = await super().smembers(name)  # ty: ignore[invalid-await]
         if not data or response_model is None:
             return data
-        return {response_model.model_validate_json(item) for item in data}
+        return {_validate_model_json(response_model, item) for item in data}

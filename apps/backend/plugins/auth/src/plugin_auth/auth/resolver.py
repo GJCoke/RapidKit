@@ -12,7 +12,7 @@ from plugin_user.models import User
 from pydantic import ValidationError
 from rapidkit_common.enums import Status
 from rapidkit_common.protocols.auth import AuthContext
-from rapidkit_common.protocols.user import UserProtocol
+from rapidkit_common.schemas.auth import AuthUser
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.context import ctx
@@ -29,18 +29,6 @@ from plugin_auth.status_codes import AuthStatusCode
 
 logger = get_plugin_logger("Auth")
 user_structure = "auth:user:<{user_id}>"
-USER_CACHE_FIELDS = {
-    "id",
-    "name",
-    "email",
-    "username",
-    "status",
-    "is_admin",
-    "roles",
-    "department_id",
-    "create_time",
-    "update_time",
-}
 
 
 @dataclass(frozen=True)
@@ -121,23 +109,21 @@ class AuthContextResolverImpl:
             raise AppException(AuthStatusCode.TOKEN_INVALID)
         key = user_structure.format(user_id=ordinary.sub)
         cached = None if fresh else await self.redis.get(key)
-        user: User | None
         if cached:
-            user = User.model_validate_json(cached)
+            user = AuthUser.model_validate_json(cached)
         else:
             async with self.session_factory() as session:
-                user = cast(User | None, await session.get(User, ordinary.sub))
-            if user is None:
+                db_user = cast(User | None, await session.get(User, ordinary.sub))
+            if db_user is None:
                 raise AppException(AuthStatusCode.USER_NOT_FOUND)
+            user = AuthUser.model_validate(db_user)
             if not fresh:
-                await self.redis.set(
-                    key, user.model_dump_json(include=USER_CACHE_FIELDS), ex=auth_settings.ACCESS_TOKEN_EXP
-                )
+                await self.redis.set(key, user.model_dump_json(), ex=auth_settings.ACCESS_TOKEN_EXP)
         if user.status == Status.PENDING:
             raise AppException(AuthStatusCode.ACCOUNT_NOT_ACTIVATED)
         if user.status != Status.ON:
             raise AppException(AuthStatusCode.USER_DISABLED)
-        return AuthContext(subject=cast(UserProtocol, user), actor=cast(UserProtocol, user))
+        return AuthContext(subject=user, actor=user)
 
     async def _load_participants(self, claims):
         async with self.session_factory() as session:
@@ -220,4 +206,8 @@ class AuthContextResolverImpl:
             await self._reject(claims.sid, EndReason.ACTOR_REVOKED, claims.act)
         if issued_before_revocation(claims.iat, subject_cutoff, subject_legacy):
             await self._reject(claims.sid, EndReason.SUBJECT_REVOKED, claims.act)
-        return AuthContext(subject=subject, actor=actor, impersonation_session_id=claims.sid)
+        return AuthContext(
+            subject=AuthUser.model_validate(subject),
+            actor=AuthUser.model_validate(actor),
+            impersonation_session_id=claims.sid,
+        )

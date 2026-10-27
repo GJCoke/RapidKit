@@ -44,7 +44,7 @@ UserDBDep = Annotated[
     Depends(_get_current_user_placeholder),
     Doc(
         """
-        依赖项：获取当前登录用户的数据库模型。
+        依赖项：获取当前登录用户的认证信息。
         实际实现由 auth 插件注入。
         """
     ),
