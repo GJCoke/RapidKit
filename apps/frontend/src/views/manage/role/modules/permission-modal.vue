@@ -575,7 +575,7 @@
 
 <style scoped>
   :global(.permission-modal) {
-    height: min(820px, calc(100dvh - 48px));
+    height: min(960px, calc(100dvh - 48px));
   }
   .permission-workspace {
     display: grid;

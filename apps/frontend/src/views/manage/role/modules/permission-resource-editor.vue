@@ -56,7 +56,7 @@
 </script>
 
 <template>
-  <section class="min-h-0 min-w-0 flex-col gap-16px" :aria-label="row.resource.label">
+  <section class="min-h-0 min-w-0 flex-col gap-12px" :aria-label="row.resource.label">
     <div class="flex shrink-0 flex-wrap items-center justify-between gap-8px">
       <NCheckbox
         v-if="embedded"
@@ -88,10 +88,23 @@
       </div>
       <div
         v-if="packages.length"
-        class="package-shortcuts mb-8px min-w-0 flex flex-wrap items-center gap-12px rd-6px bg-theme-fill px-10px py-8px"
+        class="package-shortcuts min-w-0 flex flex-wrap items-center gap-12px"
         :aria-label="$t('page.manage.role.workbench.packages')"
       >
-        <span class="text-12px text-base-text-3">{{ $t("page.manage.role.workbench.packages") }}</span>
+        <span class="flex items-center gap-4px text-12px text-base-text-3">
+          {{ $t("page.manage.role.workbench.packages") }}
+          <NPopover trigger="click" placement="bottom-start">
+            <template #trigger>
+              <NButton quaternary circle size="tiny" :aria-label="$t('page.manage.role.workbench.packageHint')">
+                <SvgIcon icon="carbon:information" class="text-14px text-base-text-3" />
+              </NButton>
+            </template>
+            <div class="max-w-320px flex-col gap-8px text-12px">
+              <p class="m-0">{{ $t("page.manage.role.workbench.packageHint") }}</p>
+              <p class="m-0">{{ $t("page.manage.role.workbench.matchHint") }}</p>
+            </div>
+          </NPopover>
+        </span>
         <NCheckbox
           v-for="item in packages"
           :key="item.key"
@@ -103,15 +116,15 @@
           >{{ item.label }}</NCheckbox
         >
       </div>
-      <p v-if="packages.length" class="package-hint mb-0 mt-0 text-12px text-base-text-3">
-        {{ $t("page.manage.role.workbench.packageHint") }}
-      </p>
     </div>
     <component
       :is="embedded ? 'div' : NScrollbar"
-      class="permission-operations-scrollbar min-h-0 flex-1 flex-col gap-16px"
-      :content-class="embedded ? undefined : 'flex-col gap-16px pb-2px pr-18px'"
+      class="permission-operations-scrollbar min-h-0 flex-1 flex-col gap-12px"
+      :content-class="embedded ? undefined : 'flex-col gap-12px pb-2px pr-18px'"
     >
+      <h4 v-if="embedded" class="m-0 text-13px font-500 text-base-text-2">
+        {{ $t("page.manage.role.actions") }}
+      </h4>
       <div class="grid grid-cols-1 gap-12px sm:grid-cols-2" :class="{ 'lg:grid-cols-4': embedded }">
         <div v-for="item in visibleCodes" :key="item.code" class="min-h-24px min-w-0 flex items-start gap-6px">
           <NCheckbox
@@ -145,8 +158,8 @@
           }}</NTag>
         </div>
       </div>
-      <div v-if="!embedded || hasScopeControls(row.resource)" class="border-t border-theme-default pt-16px">
-        <h4 class="mb-12px mt-0 text-15px font-600 text-base-text-1">
+      <div v-if="!embedded || hasScopeControls(row.resource)" class="rd-6px bg-theme-fill p-12px">
+        <h4 class="mb-10px mt-0 text-13px font-500 text-base-text-2">
           {{ $t("page.manage.role.workbench.restrictions") }}
         </h4>
         <p v-if="!hasOperations && hasScopeControls(row.resource)" class="mt-0 text-12px text-base-text-3">
@@ -160,17 +173,6 @@
           :disabled="disabled || !hasOperations"
         />
       </div>
-      <p v-if="packages.length" class="m-0 text-12px text-base-text-3">
-        {{ $t("page.manage.role.workbench.matchHint") }}
-      </p>
     </component>
   </section>
 </template>
-
-<style scoped>
-  @media (max-width: 640px) and (max-height: 680px) {
-    .package-hint {
-      display: none;
-    }
-  }
-</style>

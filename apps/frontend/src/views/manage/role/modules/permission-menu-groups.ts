@@ -4,6 +4,8 @@ export interface PermissionModuleEntry {
   row: PermissionMatrixRow
   path: string[]
   ownerKey: string
+  icon?: string | null
+  iconType?: Api.SystemManage.Menu["iconType"]
 }
 
 export interface PermissionModule {
@@ -35,7 +37,13 @@ export function buildPermissionModules(catalog: Api.Permission.Catalog, menus: r
       const row = code && byResource.get(code.resource)
       if (row && !module.entries.some((entry) => entry.row.resource.key === row.resource.key)) {
         if (!owners.has(row.resource.key)) owners.set(row.resource.key, module.key)
-        module.entries.push({ row, path, ownerKey: owners.get(row.resource.key)! })
+        module.entries.push({
+          row,
+          path,
+          ownerKey: owners.get(row.resource.key)!,
+          icon: item.icon,
+          iconType: item.iconType,
+        })
       }
     }
     const nextPath = item.id !== module.key && item.menuType === "1" ? [...path, item.menuName] : path

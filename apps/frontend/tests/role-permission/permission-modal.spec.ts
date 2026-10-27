@@ -686,9 +686,10 @@ it("exposes resource expansion as a keyboard-focusable button without changing g
   await open({ modules: true })
   await navigateModule("通知管理")
   const header = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
-    (b) => b.textContent?.trim() === "模板管理",
+    (b) => b.getAttribute("aria-label") === "模板管理",
   )
   expect(header).toBeTruthy()
+  expect(header!.textContent).toContain("0/4")
   expect(header!.tabIndex).toBe(0)
   expect(header!.getAttribute("aria-expanded")).toBe("true")
   header!.click()

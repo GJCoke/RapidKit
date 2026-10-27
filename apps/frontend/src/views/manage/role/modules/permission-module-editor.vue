@@ -74,11 +74,11 @@
     :data-permission-module="module.key"
   >
     <div class="flex shrink-0 flex-wrap items-center justify-between gap-8px">
-      <h3 class="m-0 text-18px font-600">{{ module.label }}</h3>
-      <NTag size="small" :bordered="false">{{ count }}/{{ codes.length }}</NTag>
-    </div>
-    <div v-if="codes.length" class="shrink-0 flex-col gap-8px">
-      <div class="flex flex-wrap gap-8px">
+      <div class="flex items-center gap-8px">
+        <h3 class="m-0 text-18px font-600">{{ module.label }}</h3>
+        <NTag size="small" :bordered="false">{{ count }}/{{ codes.length }}</NTag>
+      </div>
+      <div v-if="codes.length" class="flex flex-wrap items-center gap-8px">
         <NButton size="small" :disabled="disabled" @click="apply('readonly')">{{
           $t("page.manage.role.workbench.moduleReadonly")
         }}</NButton>
@@ -88,16 +88,32 @@
         <NButton size="small" :disabled="disabled" @click="apply('clear')">{{
           $t("page.manage.role.workbench.moduleClear")
         }}</NButton>
+        <NPopover trigger="click" placement="bottom-end">
+          <template #trigger>
+            <NButton
+              quaternary
+              circle
+              size="small"
+              :aria-label="$t('page.manage.role.workbench.moduleBulkHint', { count: codes.length })"
+            >
+              <SvgIcon icon="carbon:information" class="text-16px text-base-text-3" />
+            </NButton>
+          </template>
+          <div class="max-w-320px text-12px">
+            {{ $t("page.manage.role.workbench.moduleBulkHint", { count: codes.length }) }}
+          </div>
+        </NPopover>
       </div>
-      <p class="m-0 text-12px text-base-text-3">
-        {{ $t("page.manage.role.workbench.moduleBulkHint", { count: codes.length }) }}
-      </p>
-      <NAlert v-if="residual" type="warning" :bordered="false">{{
-        $t("page.manage.role.workbench.dependencyStillEffective")
-      }}</NAlert>
     </div>
+    <NAlert v-if="residual" type="warning" :bordered="false">{{
+      $t("page.manage.role.workbench.dependencyStillEffective")
+    }}</NAlert>
     <NScrollbar class="min-h-0 flex-1" content-class="flex-col gap-16px pr-18px pb-4px">
-      <NCollapse :default-expanded-names="module.entries.map((e) => e.row.resource.key)">
+      <NCollapse
+        class="permission-resources"
+        arrow-placement="right"
+        :default-expanded-names="module.entries.map((e) => e.row.resource.key)"
+      >
         <NCollapseItem
           v-for="entry in visibleEntries"
           :key="entry.row.resource.key"
@@ -107,10 +123,19 @@
           <template #header="{ collapsed }">
             <button
               type="button"
-              class="cursor-pointer border-0 bg-transparent p-0 text-left text-inherit focus-visible:outline-theme-primary"
+              class="min-h-44px min-w-0 flex flex-1 cursor-pointer items-center gap-10px border-0 rd-6px bg-transparent px-12px py-10px text-left text-16px font-600 text-base-text-1 focus-visible:outline-theme-primary"
+              :aria-label="entry.row.resource.label"
               :aria-expanded="!collapsed"
             >
-              {{ entry.row.resource.label }}
+              <SvgIcon
+                :icon="entry.iconType === '2' && entry.icon ? undefined : entry.icon || 'carbon:application'"
+                :local-icon="entry.iconType === '2' ? entry.icon || undefined : undefined"
+                class="shrink-0 text-20px text-primary dark:text-primary-300"
+              />
+              <span class="min-w-0 flex-1 break-words">{{ entry.row.resource.label }}</span>
+              <span class="shrink-0 text-13px font-500 tabular-nums text-primary dark:text-primary-300">
+                {{ entry.row.codes.filter((c) => effective.has(c.code)).length }}/{{ entry.row.codes.length }}
+              </span>
             </button>
           </template>
           <p v-if="entry.path.length" class="mb-12px mt-0 text-12px text-base-text-3">{{ entry.path.join(" / ") }}</p>
@@ -164,3 +189,34 @@
     </NScrollbar>
   </section>
 </template>
+
+<style scoped>
+  .permission-resources :deep(.n-collapse-item) {
+    margin-top: 12px;
+    border-top: 0;
+  }
+  .permission-resources :deep(.n-collapse-item:first-child) {
+    margin-top: 0;
+  }
+  .permission-resources :deep(.n-collapse-item__header) {
+    padding: 0;
+    border-radius: 6px;
+    background: rgb(var(--primary-color) / 0.08);
+  }
+  .permission-resources :deep(.n-collapse-item__header:hover) {
+    background: rgb(var(--primary-color) / 0.12);
+  }
+  .permission-resources :deep(.n-collapse-item-arrow) {
+    margin-right: 12px;
+    color: rgb(var(--primary-color));
+  }
+  .permission-resources :deep(.n-collapse-item__content-inner) {
+    padding: 12px 16px 4px;
+  }
+  @media (max-width: 640px) {
+    .permission-resources :deep(.n-collapse-item__content-inner) {
+      padding-right: 8px;
+      padding-left: 8px;
+    }
+  }
+</style>
