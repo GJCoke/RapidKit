@@ -192,16 +192,20 @@
 
 <style scoped>
   .permission-resources :deep(.n-collapse-item) {
-    margin-top: 12px;
-    border-top: 0;
+    margin-top: 16px;
+    border: 1px solid rgb(var(--primary-color) / 0.22);
+    border-radius: 8px;
   }
   .permission-resources :deep(.n-collapse-item:first-child) {
     margin-top: 0;
   }
   .permission-resources :deep(.n-collapse-item__header) {
     padding: 0;
-    border-radius: 6px;
+    border-radius: 7px;
     background: rgb(var(--primary-color) / 0.08);
+  }
+  .permission-resources :deep(.n-collapse-item__header--active) {
+    border-radius: 7px 7px 0 0;
   }
   .permission-resources :deep(.n-collapse-item__header:hover) {
     background: rgb(var(--primary-color) / 0.12);
@@ -211,7 +215,7 @@
     color: rgb(var(--primary-color));
   }
   .permission-resources :deep(.n-collapse-item__content-inner) {
-    padding: 12px 16px 4px;
+    padding: 12px 16px 16px;
   }
   @media (max-width: 640px) {
     .permission-resources :deep(.n-collapse-item__content-inner) {
