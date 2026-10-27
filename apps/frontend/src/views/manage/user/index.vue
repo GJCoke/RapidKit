@@ -1,6 +1,6 @@
 <script setup lang="tsx">
   import { computed, reactive, ref, watch } from "vue"
-  import { NButton, NDropdown, NTag } from "naive-ui"
+  import { NButton, NDropdown, NTag, type DropdownOption } from "naive-ui"
   import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
   import { userStatusRecord } from "@/constants/business"
   import { fetchBatchDeleteUsers, fetchDeleteUser, fetchGetAllRoles, fetchGetUserList, fetchResendInvite } from "@/service/api"
@@ -172,6 +172,7 @@
               {actions.rowEntries(row).some((entry) => entry.kind === "menu") && (
                 <NDropdown
                   trigger="click"
+                  placement="bottom-end"
                   options={userMenu(row)}
                   onSelect={(key: string) => selectUserAction(row.id, key)}
                 >
@@ -195,11 +196,23 @@
   const impersonationId = ref<string | null>(null)
   const impersonationVisible = ref(false)
   const impersonationUser = computed(() => data.value.find((row) => row.id === impersonationId.value))
-  const menuLabels: Record<string, I18nFullKey> = {
-    password: "page.manage.user.changePassword",
-    resend: "page.manage.user.resendInvite",
-    delete: "common.delete",
-    impersonate: "page.manage.user.impersonation.start",
+  const menuItems: Record<string, { label: I18nFullKey; icon: string; color: string }> = {
+    impersonate: {
+      label: "page.manage.user.impersonation.start",
+      icon: "ic:outline-switch-account",
+      color: "text-warning-700 dark:text-warning-300",
+    },
+    password: {
+      label: "page.manage.user.changePassword",
+      icon: "ic:outline-key",
+      color: "text-info dark:text-info-300",
+    },
+    resend: {
+      label: "page.manage.user.resendInvite",
+      icon: "ic:outline-forward-to-inbox",
+      color: "text-primary dark:text-primary-300",
+    },
+    delete: { label: "common.delete", icon: "ic:outline-delete", color: "text-error-600 dark:text-error-300" },
   }
 
   function userMenu(row: Api.SystemManage.User) {
@@ -207,7 +220,18 @@
       .rowEntries(row)
       .filter((entry) => entry.kind === "menu")
       .flatMap((entry) => entry.actions)
-      .map((key) => ({ key, label: $t(menuLabels[key]), disabled: !actions.enabled(row, key) }))
+      .flatMap<DropdownOption>((key, index) => {
+        const item = menuItems[key]!
+        const disabled = !actions.enabled(row, key)
+        const color = disabled ? "text-base-text-4" : item.color
+        const option: DropdownOption = {
+          key,
+          label: () => <span class={color}>{$t(item.label)}</span>,
+          icon: () => <SvgIcon icon={item.icon} class={`text-18px ${color}`} aria-hidden="true" />,
+          disabled,
+        }
+        return key === "delete" && index > 0 ? [{ key: "delete-divider", type: "divider" }, option] : [option]
+      })
   }
 
   async function selectUserAction(id: string, key: string) {
