@@ -33,6 +33,7 @@ def main():
         supported = asyncio.run(probe())
         print("RELEASE_JSON=" + json.dumps({"ready": True, "inventory_supported": supported}))
     elif action == "worker":
+        from celery.utils.nodenames import host_format
         from rapidkit_core.config import settings
         from src.queues.app import app
 
@@ -43,7 +44,7 @@ def main():
                 (arguments[i + 1] for i, value in enumerate(arguments[:-1]) if value in ("--hostname", "-n")),
                 "celery@" + socket.gethostname(),
             )
-        ping = app.control.ping(destination=[hostname], timeout=3)
+        ping = app.control.ping(destination=[host_format(hostname)], timeout=3)
         print(
             "RELEASE_JSON="
             + json.dumps(

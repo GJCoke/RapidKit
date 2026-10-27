@@ -19,6 +19,11 @@ assert 'UNRELATED_SECRET' not in os.environ
 with open(o['log'],'a') as f: f.write(cap+'.'+action+'\n')
 if o.get('fail') == cap+'.'+action: raise SystemExit(2)
 if o.get('sleep_at') == cap+'.'+action: time.sleep(5)
+if cap=='runtime' and o.get('maintenance_marker'):
+ marker=Path(o['maintenance_marker'])
+ if action=='maintenance-on': marker.touch()
+ elif action=='stop-candidate': assert marker.exists(), 'Services must stop behind maintenance'
+ elif action=='maintenance-off': marker.unlink(missing_ok=True)
 d={}
 if cap=='registry': d={'pulled':True}
 if cap=='runtime':
@@ -35,6 +40,8 @@ if cap=='runtime':
  elif action=='commit': d={'committed':True}
  elif action=='recover': d={'restored':True}
  elif action.startswith('maintenance-'): d={'maintenance':action=='maintenance-on'}
+ if action=='maintenance-on' and o.get('maintenance_failure_file') and Path(o['maintenance_failure_file']).exists():
+  d['maintenance']=False
 if cap=='database':
  if action=='inspect': d={'revisions':['old'],'migration_running':bool(o.get('busy_file') and Path(o['busy_file']).exists())}
  elif action=='backup':
@@ -189,6 +196,40 @@ def test_compatible_recovery_uses_snapshotted_old_hook(environment):
     assert result.returncode == 0, result.stderr
     assert "runtime.recover" in log.read_text()
     assert json.loads((root / "current.json").read_text())["release_id"] == "old"
+
+
+def test_recovery_reestablishes_maintenance_before_stopping_services(environment, tmp_path):
+    bundle, run, _, root, log = environment
+    adopt(environment)
+    marker = tmp_path / "maintenance"
+    candidate = bundle("next", fail="runtime.verify", compatible=True, maintenance_marker=str(marker))
+    assert run("release", candidate).returncode != 0
+    marker.unlink()
+    log.write_text("")
+
+    result = run("recover", candidate)
+
+    assert result.returncode == 0, result.stderr
+    calls = log.read_text().splitlines()
+    assert calls.index("runtime.maintenance-on") < calls.index("runtime.stop-candidate") < calls.index("runtime.recover")
+    assert json.loads((root / "current.json").read_text()) == {"release_id": "old"}
+    assert not (root / "active.json").exists()
+
+
+def test_recovery_does_not_change_services_until_maintenance_is_confirmed(environment, tmp_path):
+    bundle, run, _, root, log = environment
+    adopt(environment)
+    reject = tmp_path / "reject-maintenance"
+    candidate = bundle("next", fail="runtime.verify", compatible=True, maintenance_failure_file=str(reject))
+    assert run("release", candidate).returncode != 0
+    reject.touch()
+    log.write_text("")
+
+    result = run("recover", candidate)
+
+    assert result.returncode != 0
+    assert log.read_text().splitlines() == ["runtime.maintenance-on"]
+    assert json.loads((root / "active.json").read_text()) == {"release_id": "next"}
 
 
 def test_active_target_lock_blocks_release(environment):

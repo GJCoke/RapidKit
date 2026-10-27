@@ -461,6 +461,7 @@ def operation(root, bundle, adopt=False, repair_from=None):
 def restore(root, directory, state, lock_fd):
     profile = load_profile(directory / "bundle/profile.json", TARGET_HOOKS)
     context = context_for(root, directory, state, lock_fd)
+    require(invoke(profile, "runtime", "maintenance-on", context), "maintenance")
     if state["migration_started"]:
         compatible = invoke(profile, "database", "check-compatibility", context)
         require(compatible, "compatible")

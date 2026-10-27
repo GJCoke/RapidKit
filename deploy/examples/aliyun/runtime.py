@@ -359,7 +359,10 @@ def execute(action, context):
             wait_stopped(context, ["celery-beat", "backend-api", *workers(context)])
         capacities = groups(context)
         if managed:
+            pending = application(context, "inventory")["pending"]
             for group, spec in capacities.items():
+                if pending.get(group) == worker_token(context):
+                    inventory(context, "abort", group, spec["replicas"])
                 inventory(context, "prepare", group, spec["replicas"])
         start(context, include_beat=True)
         verify(context)

@@ -192,6 +192,108 @@ def test_beat_probe_checks_the_scheduler_redis_database(load, monkeypatch, capsy
     assert json.loads(capsys.readouterr().out.removeprefix("RELEASE_JSON="))["ready"] is True
 
 
+@pytest.mark.parametrize("arguments,expected", [
+    (["--hostname", "celery@%h"], "celery@worker.example"),
+    (["--hostname=celery@%h"], "celery@worker.example"),
+    (["-n", "celery@%n"], "celery@worker"),
+    (["--hostname", "celery@prod-default-unique"], "celery@prod-default-unique"),
+])
+def test_worker_probe_targets_the_resolved_control_address(load, monkeypatch, capsys, arguments, expected):
+    from types import SimpleNamespace
+    from celery.utils import nodenames
+
+    hook = load("application")
+    settings = SimpleNamespace(CELERY_WORKER_GROUP="prod/default", CELERY_WORKER_DEPLOYMENT="r1")
+
+    def ping(*, destination, timeout):
+        return [{expected: {"ok": "pong"}}] if destination == [expected] else []
+
+    monkeypatch.setitem(sys.modules, "rapidkit_core.config", SimpleNamespace(settings=settings))
+    monkeypatch.setitem(sys.modules, "src.queues.app", SimpleNamespace(app=SimpleNamespace(
+        control=SimpleNamespace(ping=ping))))
+    monkeypatch.setattr(nodenames, "gethostname", lambda: "worker.example")
+    monkeypatch.setattr(Path, "read_bytes", lambda self: "\0".join(["celery", *arguments, ""]).encode())
+    monkeypatch.setattr(sys, "argv", ["application.py", "worker"])
+
+    hook.main()
+
+    assert json.loads(capsys.readouterr().out.removeprefix("RELEASE_JSON=")) == {
+        "ready": True, "group": "prod/default", "deployment": "r1"}
+
+
+@pytest.mark.parametrize("failure", ["prepare", "start", "verify", "finish"])
+def test_recovery_retries_interrupted_worker_deployments(load, tmp_path, monkeypatch, failure):
+    hook = load("runtime")
+    ctx = {**context(tmp_path), "kind": "release"}
+    capacities = {"prod/default": {"replicas": 1}, "prod/reports": {"replicas": 2}}
+    pending = {}
+    state = {"failed": False, "running": False}
+
+    def interrupt(phase):
+        if phase == failure and not state["failed"]:
+            state["failed"] = True
+            raise hook.HookError("Interrupted " + phase)
+
+    def inventory(c, action, group, replicas):
+        assert not state["running"] or action == "finish"
+        if action in ("prepare", "finish") and group == "prod/reports":
+            interrupt(action)
+        if action == "prepare":
+            if group in pending:
+                raise hook.HookError("A deployment is already in progress")
+            pending[group] = hook.worker_token(c)
+        else:
+            assert pending[group] == hook.worker_token(c)
+            del pending[group]
+
+    def start(c, include_beat=False):
+        interrupt("start")
+        state["running"] = True
+
+    def verify(c):
+        interrupt("verify")
+        return {"ready": state["running"]}
+
+    def wait_stopped(c, services):
+        state["running"] = False
+
+    monkeypatch.setattr(hook, "container_ids", lambda *args: ["old-api"] if state["running"] else [])
+    monkeypatch.setattr(hook, "running", lambda identifier: state["running"])
+    monkeypatch.setattr(hook, "wait_stopped", wait_stopped)
+    monkeypatch.setattr(hook, "groups", lambda c: capacities)
+    monkeypatch.setattr(hook, "application", lambda c, action: {"pending": dict(pending)})
+    monkeypatch.setattr(hook, "inventory", inventory)
+    monkeypatch.setattr(hook, "start", start)
+    monkeypatch.setattr(hook, "verify", verify)
+
+    with pytest.raises(hook.HookError, match="Interrupted " + failure):
+        hook.execute("recover", ctx)
+    assert pending
+    assert hook.execute("recover", ctx) == {"restored": True}
+    assert pending == {}
+    assert state["running"] is True
+
+
+def test_recovery_preserves_another_releases_pending_intent(load, tmp_path, monkeypatch):
+    hook = load("runtime")
+    ctx = {**context(tmp_path), "kind": "release"}
+    pending = {"prod/default": "other-release"}
+
+    def inventory(c, action, group, replicas):
+        if action == "prepare" and group in pending:
+            raise hook.HookError("A deployment is already in progress")
+        pytest.fail("Recovery must not modify another release's deployment")
+
+    monkeypatch.setattr(hook, "container_ids", lambda *args: [])
+    monkeypatch.setattr(hook, "groups", lambda c: {"prod/default": {"replicas": 1}})
+    monkeypatch.setattr(hook, "application", lambda c, action: {"pending": dict(pending)})
+    monkeypatch.setattr(hook, "inventory", inventory)
+
+    with pytest.raises(hook.HookError, match="already in progress"):
+        hook.execute("recover", ctx)
+    assert pending == {"prod/default": "other-release"}
+
+
 def test_compose_uses_one_literal_env_and_supports_an_additional_worker_group(load, tmp_path, monkeypatch):
     import shutil
     if not shutil.which("docker"):
