@@ -59,7 +59,7 @@
       {
         type: "value" as const,
         min: 0,
-        max: 20000,
+        max: ({ max }: { max: number }) => Math.max(1, Math.ceil((Number.isFinite(max) ? max : 0) * 1.15)),
         minInterval: 1,
         splitNumber: 2,
         axisLine: { show: false },
@@ -74,8 +74,7 @@
       {
         type: "value" as const,
         min: 0,
-        max: 800,
-        interval: 400,
+        max: ({ max }: { max: number }) => Math.max(1, Math.ceil((Number.isFinite(max) ? max : 0) * 1.15)),
         splitNumber: 2,
         axisLine: { show: false },
         axisTick: { show: false },
