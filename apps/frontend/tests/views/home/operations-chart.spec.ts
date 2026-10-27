@@ -17,7 +17,7 @@ vi.mock("naive-ui", async (importOriginal) => ({
 }))
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
 
-async function chartFor(trend: { date: string; requestCount: number; avgResponseMs: number }[], width = 640) {
+async function chartFor(trend: { date: string; requestCount: number; avgResponseMs: number | null }[], width = 640) {
   await renderToString(
     createSSRApp(OperationsOverview, {
       data: { summary: {}, system: {}, trend } as Api.Dashboard.OperationsOverview,
@@ -61,7 +61,7 @@ it.each([[], [{ date: "2026-10-27", requestCount: 0, avgResponseMs: 0 }]])(
   "keeps empty and all-zero axes finite",
   async (...rows) => {
     const trend = rows.filter((row) => row && typeof row === "object" && "date" in row)
-    const chart = await chartFor(trend as { date: string; requestCount: number; avgResponseMs: number }[])
+    const chart = await chartFor(trend as { date: string; requestCount: number; avgResponseMs: number | null }[])
     try {
       for (const yAxisIndex of [0, 1]) {
         expect(Number.isFinite(chart.convertToPixel({ yAxisIndex }, 0))).toBe(true)
@@ -71,3 +71,36 @@ it.each([[], [{ date: "2026-10-27", requestCount: 0, avgResponseMs: 0 }]])(
     }
   },
 )
+
+it.each([
+  {
+    name: "an idle day between sampled days",
+    trend: [
+      { date: "2026-10-25", requestCount: 5, avgResponseMs: 12 },
+      { date: "2026-10-26", requestCount: 0, avgResponseMs: null },
+      { date: "2026-10-27", requestCount: 8, avgResponseMs: 18 },
+    ],
+    expected: [12, 0, 18],
+  },
+  {
+    name: "a completely idle range",
+    trend: [
+      { date: "2026-10-26", requestCount: 0, avgResponseMs: null },
+      { date: "2026-10-27", requestCount: 0, avgResponseMs: null },
+    ],
+    expected: [0, 0],
+  },
+  {
+    name: "an unavailable measurement with requests",
+    trend: [{ date: "2026-10-27", requestCount: 5, avgResponseMs: null }],
+    expected: [null],
+  },
+])("renders latency values for $name", async ({ trend, expected }) => {
+  const chart = await chartFor(trend)
+  try {
+    const series = chart.getOption().series as echarts.LineSeriesOption[]
+    expect(series[1].data).toEqual(expected)
+  } finally {
+    chart.dispose()
+  }
+})

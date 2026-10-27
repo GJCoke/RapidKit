@@ -105,7 +105,7 @@
         symbolSize: 7,
         lineStyle: { width: 2, color: themeColor("--success-color", "#2ec4b6") },
         itemStyle: { color: themeColor("--success-color", "#2ec4b6"), borderWidth: 1.5, borderColor: "#fff" },
-        data: (props.data?.trend ?? []).map((point) => point.avgResponseMs),
+        data: (props.data?.trend ?? []).map((point) => point.avgResponseMs ?? (point.requestCount === 0 ? 0 : null)),
       },
     ],
   }))
