@@ -1,0 +1,167 @@
+{
+  "version": 1,
+  "hooks": {
+    "build": {
+      "command": [
+        "python3",
+        "{bundle}/deploy/examples/aliyun/build.py"
+      ],
+      "env": [
+        "ACR_BACKEND_REPOSITORY",
+        "ACR_FRONTEND_REPOSITORY",
+        "DOCKER_HOST",
+        "DOCKER_TLS_VERIFY",
+        "DOCKER_TLS_CERTDIR",
+        "DOCKER_CERT_PATH",
+        "DOCKER_CONTEXT"
+      ],
+      "options": {},
+      "timeout": 3600,
+      "actions": [
+        "build"
+      ]
+    },
+    "registry": {
+      "command": [
+        "python3",
+        "{bundle}/deploy/examples/aliyun/registry.py"
+      ],
+      "env": [
+        "ACR_REGISTRY"
+      ],
+      "options": {},
+      "timeout": 1800,
+      "env_by_action": {
+        "publish": [
+          "ACR_PUSH_USERNAME",
+          "ACR_PUSH_PASSWORD",
+          "DOCKER_HOST",
+          "DOCKER_TLS_VERIFY",
+          "DOCKER_TLS_CERTDIR",
+          "DOCKER_CERT_PATH",
+          "DOCKER_CONTEXT"
+        ],
+        "pull": [
+          "ACR_PULL_USERNAME",
+          "ACR_PULL_PASSWORD"
+        ]
+      },
+      "actions": [
+        "publish",
+        "pull"
+      ]
+    },
+    "config": {
+      "command": [
+        "python3",
+        "{bundle}/deploy/examples/aliyun/config.py"
+      ],
+      "env": [],
+      "options": {},
+      "timeout": 600,
+      "actions": [
+        "materialize"
+      ]
+    },
+    "transport": {
+      "command": [
+        "python3",
+        "{bundle}/deploy/examples/aliyun/transport.py"
+      ],
+      "env": [
+        "DEPLOY_HOST",
+        "DEPLOY_PORT",
+        "DEPLOY_USER",
+        "DEPLOY_ROOT",
+        "DEPLOY_PYTHON",
+        "SSH_PRIVATE_KEY",
+        "SSH_KNOWN_HOSTS"
+      ],
+      "options": {
+        "wait_seconds": 3600
+      },
+      "timeout": 3700,
+      "actions": [
+        "dispatch",
+        "status"
+      ]
+    },
+    "runtime": {
+      "command": [
+        "python3",
+        "{bundle}/deploy/examples/aliyun/runtime.py"
+      ],
+      "env": [],
+      "options": {
+        "project_name": "rapidkit-prod",
+        "worker_services": [
+          "celery-worker"
+        ],
+        "drain_timeout": 600,
+        "startup_timeout": 180,
+        "public_url": "http://127.0.0.1:18080/"
+      },
+      "timeout": 900,
+      "actions": [
+        "inspect",
+        "preflight",
+        "adopt",
+        "maintenance-on",
+        "drain",
+        "start",
+        "verify",
+        "commit",
+        "stop-candidate",
+        "recover",
+        "maintenance-off"
+      ]
+    },
+    "database": {
+      "command": [
+        "python3",
+        "{bundle}/deploy/examples/aliyun/database.py"
+      ],
+      "env": [],
+      "options": {
+        "project_name": "rapidkit-prod",
+        "worker_services": [
+          "celery-worker"
+        ],
+        "drain_timeout": 600,
+        "startup_timeout": 180,
+        "public_url": "http://127.0.0.1:18080/"
+      },
+      "timeout": 3600,
+      "actions": [
+        "inspect",
+        "backup",
+        "migrate",
+        "check-compatibility"
+      ]
+    },
+    "storage": {
+      "command": [
+        "python3",
+        "{bundle}/deploy/examples/aliyun/storage.py"
+      ],
+      "env": [
+        "OSS_ENDPOINT",
+        "OSS_REGION",
+        "OSS_BUCKET",
+        "OSS_PREFIX",
+        "OSS_AUTH_MODE",
+        "OSS_ACCESS_KEY_ID",
+        "OSS_ACCESS_KEY_SECRET"
+      ],
+      "options": {},
+      "timeout": 3600,
+      "actions": [
+        "preflight",
+        "put",
+        "verify",
+        "commit",
+        "get"
+      ]
+    }
+  }
+}

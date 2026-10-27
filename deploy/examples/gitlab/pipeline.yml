@@ -1,0 +1,150 @@
+workflow:
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/ && $CI_COMMIT_REF_PROTECTED == "true"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+stages: [check, build, deploy]
+
+default:
+  interruptible: true
+
+variables:
+  GIT_DEPTH: "0"
+  UV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/uv"
+
+.python:
+  image: ghcr.io/astral-sh/uv:python3.14-bookworm-slim
+  before_script:
+    - uv sync --all-packages --all-groups --frozen
+  cache:
+    key:
+      files: [uv.lock]
+    paths: [.cache/uv/]
+
+.backend:
+  extends: .python
+  services:
+    - name: postgres:16-alpine
+      alias: postgres
+    - name: redis:7-alpine
+      alias: redis
+  variables:
+    POSTGRES_USER: test
+    POSTGRES_PASSWORD: test
+    POSTGRES_DB: test
+    ENVIRONMENT: TESTING
+    POSTGRESQL_ASYNC_SCHEME: postgresql+asyncpg
+    POSTGRESQL_SYNC_SCHEME: postgresql+psycopg
+    POSTGRESQL_USERNAME: test
+    POSTGRESQL_PASSWORD: test
+    POSTGRESQL_HOST: postgres
+    POSTGRESQL_PORT: "5432"
+    POSTGRESQL_DATABASE: test
+    SQL_DATABASE_URL: postgresql+asyncpg://test:test@postgres:5432/test
+    REDIS_ROOT_PASSWORD: ""
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+    REDIS_DATABASE_URL: redis://redis:6379/0
+    MINIO_ROOT_USER: test
+    MINIO_ROOT_PASSWORD: test1234
+    CORS_ORIGINS: '["*"]'
+    CORS_HEADERS: '["*"]'
+
+release-contract:
+  extends: .python
+  stage: check
+  script:
+    - uv run ruff check deploy
+    - uv run ruff format --check deploy
+    - uv run pytest deploy/tests docker/tests -q
+
+backend-tests:
+  extends: .backend
+  stage: check
+  script:
+    - uv run pytest packages/core/tests -q
+    - uv run pytest packages/common/tests -q
+    - uv run pytest packages/framework/tests -q
+    - uv run pytest packages/security/tests -q
+    - cd apps/backend
+    - uv run pytest tests -q
+    - for plugin in plugins/*/tests; do uv run pytest -c pyproject.toml "$plugin" -q || exit 1; done
+
+migration-check:
+  extends: .backend
+  stage: check
+  script:
+    - cd apps/backend
+    - uv run alembic upgrade heads
+    - uv run alembic check
+
+frontend-tests:
+  stage: check
+  image: node:24-alpine
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm@10.27.0 --activate
+    - pnpm install --frozen-lockfile --ignore-scripts
+  script:
+    - pnpm turbo build --filter='./packages/*'
+    - pnpm --filter @rapidkit/frontend typecheck
+    - pnpm --filter @rapidkit/frontend test
+    - pnpm --filter @rapidkit/cli test
+
+build-release:
+  stage: build
+  image: docker:29-cli
+  services:
+    - name: docker:29-dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: /certs
+    DOCKER_TLS_VERIFY: "1"
+    DOCKER_CERT_PATH: /certs/client
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/ && $CI_COMMIT_REF_PROTECTED == "true"'
+  before_script:
+    - apk add --no-cache python3 git
+  script:
+    - test -n "$RELEASE_PROFILE_FILE" && test -f "$RELEASE_PROFILE_FILE"
+    - git merge-base --is-ancestor "$CI_COMMIT_SHA" "origin/$CI_DEFAULT_BRANCH"
+    - >-
+      python3 deploy/release.py build --profile "$RELEASE_PROFILE_FILE"
+      --work-dir "$CI_PROJECT_DIR/release-bundle" --source-root "$CI_PROJECT_DIR"
+      --release-id "$CI_COMMIT_SHA-$CI_PIPELINE_ID-$CI_JOB_ID" --commit "$CI_COMMIT_SHA" --tag "$CI_COMMIT_TAG"
+  environment:
+    name: image-build
+    action: prepare
+  artifacts:
+    expire_in: 90 days
+    paths: [release-bundle/]
+
+production:
+  stage: deploy
+  image: python:3.14-alpine
+  needs:
+    - job: build-release
+      artifacts: true
+  environment:
+    name: production
+    url: $PRODUCTION_URL
+  resource_group: production
+  interruptible: false
+  retry: 0
+  timeout: 2h
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/ && $CI_COMMIT_REF_PROTECTED == "true"'
+      when: manual
+      allow_failure: false
+  before_script:
+    - apk add --no-cache openssh-client
+  script:
+    - test -f "$PROD_ENV_FILE"
+    - |
+      if [ -n "${RELEASE_REPAIR_FROM:-}" ]; then
+        python3 deploy/release.py dispatch --bundle "$CI_PROJECT_DIR/release-bundle" --config-file "$PROD_ENV_FILE" --repair-from "$RELEASE_REPAIR_FROM"
+      else
+        python3 deploy/release.py dispatch --bundle "$CI_PROJECT_DIR/release-bundle" --config-file "$PROD_ENV_FILE"
+      fi

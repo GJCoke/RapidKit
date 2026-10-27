@@ -115,12 +115,12 @@ def test_idle_scheduler_wakes_at_database_refresh_deadline(scheduler_factory):
 @pytest.fixture
 def elected_schedulers(monkeypatch):
     key = f"test:beat-leader:{uuid4()}"
-    redis = Redis.from_url("redis://localhost:6379/15")
     monkeypatch.setattr(settings, "REDIS_DATABASE", 15)
+    redis = Redis.from_url(str(settings.REDIS_URL))
     clock = SimpleNamespace(now=datetime(2026, 10, 23, tzinfo=UTC))
     monkeypatch.setattr("src.queues.scheduler.timezone", SimpleNamespace(now=lambda: clock.now.replace(tzinfo=None)))
     app = Celery("election-test", broker="memory://", backend="cache+memory://", set_as_current=False)
-    app.conf.update(database_url="postgresql+asyncpg://test:test@localhost:5432/test", refresh_interval=60)
+    app.conf.update(database_url=str(settings.ASYNC_DATABASE_POSTGRESQL_URL), refresh_interval=60)
     app.now = lambda: clock.now
     instances = []
     reads = []

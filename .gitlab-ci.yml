@@ -1,0 +1,3 @@
+# GitLab is an entry point only. No release hook profile is selected implicitly.
+include:
+  - local: deploy/examples/gitlab/pipeline.yml

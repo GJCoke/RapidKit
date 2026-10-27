@@ -7,6 +7,14 @@ import pytest
 from plugin_system import register
 from plugin_system.audit.impersonation import ImpersonationAuditWriterImpl
 from plugin_system.audit.models import AuditLog
+from rapidkit_common.events import (
+    PluginLoadFailedEvent,
+    TaskFailedEvent,
+    TaskSucceededEvent,
+    UserLoginEvent,
+    WorkerCapacityChangedEvent,
+    WorkerOfflineEvent,
+)
 from rapidkit_common.protocols import ImpersonationAuditWriter
 from rapidkit_framework.services import ServiceRegistry
 from sqlalchemy.exc import SQLAlchemyError
@@ -62,5 +70,13 @@ def test_manifest_registers_writer_and_preserves_existing_services():
     manifest.service_factories[ImpersonationAuditWriter](registry)
     assert isinstance(registry.get(ImpersonationAuditWriter), ImpersonationAuditWriterImpl)
     assert manifest.dependencies == ["auth", "menu"]
-    assert len(manifest.event_listeners) == 5
+    required_events = {
+        UserLoginEvent,
+        TaskSucceededEvent,
+        TaskFailedEvent,
+        WorkerOfflineEvent,
+        WorkerCapacityChangedEvent,
+        PluginLoadFailedEvent,
+    }
+    assert required_events <= {event for event, handler in manifest.event_listeners if callable(handler)}
     assert manifest.on_startup and manifest.on_shutdown

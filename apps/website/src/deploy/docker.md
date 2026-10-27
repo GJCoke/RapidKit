@@ -311,6 +311,16 @@ Uvicorn 只信任 `FORWARDED_ALLOW_IPS` 指定网段；默认与 compose 网络 
 共享客户端地址读取只使用 Uvicorn 解析后的 ASGI client，不直接采信 CF-Connecting-IP/X-Real-IP/XFF。后端端口不对外发布。
 如果前置新的负载均衡、CDN 或 TLS 终止层，必须重新审核该信任链和 HSTS 位置。
 
+### GitLab CD 与可替换钩子
+
+仓库提供 `deploy/release.py` 发布核心和 `deploy/examples/` 下的独立示例。核心只调用钩子协议，必须显式选择配置；ACR、OSS、SSH、Compose 等不会被自动启用。
+
+GitLab 入口执行：受保护版本 tag → 检查与构建 → 手动生产部署。示例发布过程为：预检 → 维护停写 → PostgreSQL 备份上传 OSS 并校验 → 迁移 → 启动验证 → 解除维护。迁移开始后的失败保留维护，不自动降级或覆盖数据库。
+
+首次使用前，按仓库 `deploy/README.md` 与 `deploy/examples/aliyun/README.md` 配置权限、变量和显式 profile，并导入当前生产版本。示例钩子可以直接接入，也可以逐项替换；更换存储方式无需修改发布核心。
+
+接入后，版本、配置及容量更新使用该发布入口。以下旧 Worker 脚本只适用于未接入 CD 的环境；检测到受发布流程管理的容器时会拒绝执行，避免跳过维护及备份。
+
 ### Worker 部署与扩缩容
 
 `.env.prod` 中的配置同时控制 Compose 副本数和监控期望容量：
@@ -327,6 +337,8 @@ python3 docker/prod/deploy-workers.py --build
 ```
 
 脚本先执行迁移并启动 API/Beat，随后登记部署意图、替换所选 Worker 容器，Docker 返回成功后退役旧实例。新实例未就绪时仍显示容量不足；本入口使用停止并重建，不承诺滚动发布或零停机。Worker 停机宽限为 120 秒，超时后 Docker 可终止未完成任务；长任务部署应按实际耗时调整 `stop_grace_period`。
+
+未接入 CD 的环境若只需替换 Worker，不执行迁移或更新 API/Beat，可使用 `--workers-only`。涉及数据库迁移和正式版本更新，推荐使用上面的受维护及备份门禁保护的发布流程。
 
 只启动新容器并不能证明容量已恢复，监控通过注册及心跳确认在线状态。脚本失败会尝试撤销未完成的意图并恢复之前的期望数，保留实际故障状态；退出时会输出部署 token。若意图撤销也失败，可在修复数据库连接后恢复：
 

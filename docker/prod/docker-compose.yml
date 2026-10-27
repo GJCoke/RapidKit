@@ -6,7 +6,7 @@ services:
   postgresql:
     image: ${REGISTRY_PREFIX:-}bitnami/postgresql
     container_name: rapidkit-prod-postgresql
-    env_file: .env.prod
+    env_file: ${RAPIDKIT_ENV_FILE:-.env.prod}
     volumes:
       - prod-pg-data:/bitnami/postgresql
     healthcheck:
@@ -19,7 +19,7 @@ services:
   redis:
     image: ${REGISTRY_PREFIX:-}redis:7-alpine
     container_name: rapidkit-prod-redis
-    env_file: .env.prod
+    env_file: ${RAPIDKIT_ENV_FILE:-.env.prod}
     command: [ "sh", "-c", "redis-server --requirepass $$REDIS_ROOT_PASSWORD --appendonly yes --appendfsync everysec" ]
     volumes:
       - prod-redis-data:/data
@@ -38,7 +38,7 @@ services:
       args:
         REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
     container_name: rapidkit-prod-minio
-    env_file: .env.prod
+    env_file: ${RAPIDKIT_ENV_FILE:-.env.prod}
     command: server /data --console-address ":9001"
     volumes:
       - prod-minio-data:/data
@@ -63,7 +63,7 @@ services:
         REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
         UV_IMAGE: ${UV_IMAGE:-ghcr.io/astral-sh/uv:0.12.5}
     stop_grace_period: 45s
-    env_file: .env.prod
+    env_file: ${RAPIDKIT_ENV_FILE:-.env.prod}
     depends_on:
       backend-migrate:
         condition: service_completed_successfully
@@ -85,7 +85,7 @@ services:
     image: rapidkit-backend:prod
     build: *backend-build
     command: ["sh", "scripts/alembic/migrate.sh"]
-    env_file: .env.prod
+    env_file: ${RAPIDKIT_ENV_FILE:-.env.prod}
     depends_on:
       postgresql:
         condition: service_healthy
@@ -103,7 +103,7 @@ services:
     deploy:
       replicas: ${CELERY_WORKER_REPLICAS:-1}
     stop_grace_period: 120s
-    env_file: .env.prod
+    env_file: ${RAPIDKIT_ENV_FILE:-.env.prod}
     depends_on:
       backend-migrate:
         condition: service_completed_successfully
@@ -118,7 +118,7 @@ services:
     build: *backend-build
     container_name: rapidkit-prod-celery-beat
     command: celery -A src.queues.app beat -S src.queues.scheduler:AsyncDatabaseScheduler -l info
-    env_file: .env.prod
+    env_file: ${RAPIDKIT_ENV_FILE:-.env.prod}
     depends_on:
       backend-migrate:
         condition: service_completed_successfully

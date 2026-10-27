@@ -61,3 +61,21 @@ def test_invalid_config_is_rejected_before_any_mutation():
 
 def test_host_entrypoint_supports_python_310_syntax():
     ast.parse(Path(spec.origin).read_text(), feature_version=(3, 10))
+
+
+def test_workers_only_does_not_migrate_or_recreate_api_and_beat():
+    calls = []
+    deploy.deploy(["docker", "compose"], config(), ["celery-worker"], "release", calls.append, initialize=False)
+    assert not any("backend-migrate" in command for command in calls)
+    assert not any(command[2:4] == ["up", "-d"] and "backend-api" in command for command in calls)
+    assert any("prepare" in command for command in calls)
+    assert any("finish" in command for command in calls)
+
+
+def test_managed_release_cannot_be_updated_through_legacy_full_deployment():
+    import json
+
+    managed = json.dumps([{"Config": {"Labels": {"io.rapidkit.release-managed": "true"}}}])
+    with pytest.raises(ValueError, match="release"):
+        deploy.check_manual_mode(managed)
+    deploy.check_manual_mode("[]")
