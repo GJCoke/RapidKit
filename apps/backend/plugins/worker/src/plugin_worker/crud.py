@@ -32,8 +32,10 @@ class WorkerCRUD(BaseCRUD[CeleryWorker]):
 
     model = CeleryWorker
 
-    async def get_by_hostname(self, hostname: str) -> CeleryWorker | None:
+    async def get_by_hostname(self, hostname: str, *, lock=False) -> CeleryWorker | None:
         statement = select(self.model).filter(col(self.model.hostname) == hostname)
+        if lock:
+            statement = statement.with_for_update()
         result = await self.session.exec(statement)
         return result.first()
 

@@ -7,6 +7,9 @@ from tests.testing.access import declared_access
 
 def test_worker_routes_declare_expected_access():
     assert declared_access(router, task_router) == {
+        "GET:/api/v1/workers/groups": "require:worker:read",
+        "GET:/api/v1/workers/history": "require:worker:read",
+        "POST:/api/v1/workers/{worker_id}/retire": "require:worker:control",
         "GET:/api/v1/workers/all": "require:worker:read",
         "GET:/api/v1/workers/{worker_id}": "require:worker:read",
         "POST:/api/v1/workers/{worker_id}/ping": "require:worker:control",

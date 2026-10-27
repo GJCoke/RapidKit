@@ -97,7 +97,9 @@
         "taskFailedDescription": "失败原因：{error}",
         "workerOffline": "工作节点「{worker}」已离线",
         "pluginLoadFailed": "插件「{plugin}」加载失败",
-        "pluginLoadFailedDescription": "失败原因：{error}"
+        "pluginLoadFailedDescription": "失败原因：{error}",
+        "workerCapacityMissing": "Worker 组 {group} 容量不足：在线 {online} / 期望 {expected}",
+        "workerCapacityRecovered": "Worker 组 {group} 容量已恢复：在线 {online} / 期望 {expected}"
       },
       "activityTable": {
         "time": "时间",
@@ -1009,6 +1011,20 @@
         "subscribe": "订阅队列",
         "commandFailed": "Worker 未确认操作成功，请检查后重试。",
         "commandSent": "操作指令已发送，请刷新确认 Worker 状态。"
+      },
+      "groups": {
+        "current": "当前实例",
+        "history": "历史实例",
+        "capacity": "在线 {online} / 期望 {expected}",
+        "unknown": "未知",
+        "missing": "缺少 {count} 个实例",
+        "starting": "等待 {count} 个实例就绪",
+        "drainingCount": "退出中 {count} 个",
+        "draining": "退出中",
+        "retired": "已退役",
+        "retire": "退役",
+        "retireConfirm": "确认将此失联实例移入历史？期望容量保持不变。",
+        "discovery": "自动发现 · 未声明期望容量"
       }
     }
   },

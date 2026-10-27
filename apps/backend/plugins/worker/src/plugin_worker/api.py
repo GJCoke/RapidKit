@@ -13,13 +13,16 @@ from fastapi import APIRouter, Query, Request
 from rapidkit_common.access import Require
 from rapidkit_common.audit import current_audit
 from rapidkit_common.deps import SessionDep
+from rapidkit_common.enums import WorkerStatus
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
 
 from plugin_worker.dashboard import get_queue_dashboard, resolve_worker_subscriptions
 from plugin_worker.deps import TaskResultCrudDep, WorkerCrudDep
+from plugin_worker.inventory import group_summaries, scoped_worker_filters
 from plugin_worker.models import CeleryWorker
+from plugin_worker.operations import HEARTBEAT_TIMEOUT_SECONDS, is_worker_healthy
 from plugin_worker.runtime import inspect_worker_runtime
 from plugin_worker.schemas import (
     ActiveTaskInfo,
@@ -37,6 +40,8 @@ from plugin_worker.schemas import (
     TriggerTaskRequest,
     TriggerTaskResponse,
     WorkerControlResponse,
+    WorkerGroupResponse,
+    WorkerHistoryQuery,
     WorkerResponse,
 )
 from plugin_worker.services import (
@@ -61,8 +66,10 @@ router = APIRouter(
 )
 
 
-async def _control_worker(worker_id: UUID, crud: WorkerCrudDep) -> CeleryWorker:
+async def _control_worker(worker_id: UUID, crud: WorkerCrudDep, *, allow_retired=False) -> CeleryWorker:
     worker = await crud.get(worker_id, nullable=False)
+    if worker.lifecycle == "retired" and not allow_retired:
+        raise AppException(WorkerStatusCode.WORKER_OFFLINE)
     context = current_audit.get()
     if context is not None:
         context.record.resource_id = str(worker.id)
@@ -77,6 +84,45 @@ async def get_all_workers(crud: WorkerCrudDep) -> Response[list[WorkerResponse]]
     return Response(data=data)
 
 
+@router.get("/groups", dependencies=[Require("worker:read")])
+async def get_worker_groups(session: SessionDep) -> Response[list[WorkerGroupResponse]]:
+    return Response(data=await group_summaries(session, timezone.now()))
+
+
+@router.get("/history", dependencies=[Require("worker:read")])
+async def get_worker_history(
+    query: Annotated[WorkerHistoryQuery, Query(...)],
+    crud: WorkerCrudDep,
+) -> Response[PaginatedResponse[WorkerResponse]]:
+    filters = scoped_worker_filters(history=True)
+    if query.group_name:
+        filters.append(CeleryWorker.group_name == query.group_name)
+    return Response(
+        data=await crud.get_paginate(
+            *filters,
+            page=query.page,
+            size=query.page_size,
+            order_by=CeleryWorker.retired_at.desc(),
+            schema=WorkerResponse,
+        )
+    )
+
+
+@router.post("/{worker_id}/retire", dependencies=[Require("worker:control")])
+async def retire_worker_endpoint(worker_id: UUID, crud: WorkerCrudDep) -> Response[WorkerResponse]:
+    worker = await _control_worker(worker_id, crud, allow_retired=True)
+    if is_worker_healthy(worker.status, worker.last_heartbeat, timezone.now(), HEARTBEAT_TIMEOUT_SECONDS):
+        raise AppException(WorkerStatusCode.WORKER_STILL_ONLINE)
+    if worker.lifecycle == "retired":
+        return Response(data=WorkerResponse.model_validate(worker))
+    worker.lifecycle = "retired"
+    worker.status = WorkerStatus.OFFLINE
+    worker.retired_at = timezone.now()
+    worker.retire_reason = "manual"
+    await crud.session.flush()
+    return Response(data=WorkerResponse.model_validate(worker))
+
+
 @router.get("/{worker_id}", dependencies=[Require("worker:read")])
 async def get_worker(worker_id: UUID, crud: WorkerCrudDep, request: Request) -> Response[WorkerResponse]:
     """获取工作节点详情，并补充队列订阅和实时运行信息。"""
@@ -85,7 +131,7 @@ async def get_worker(worker_id: UUID, crud: WorkerCrudDep, request: Request) -> 
         raise AppException(WorkerStatusCode.WORKER_NOT_FOUND)
     celery_app = getattr(request.app.state, "celery_app", None)
     runtime = {}
-    if celery_app is not None:
+    if celery_app is not None and worker.lifecycle != "retired":
         (enriched, _), runtime = await gather(
             resolve_worker_subscriptions(celery_app, [worker], timezone.now()),
             inspect_worker_runtime(celery_app, worker.hostname),
@@ -121,7 +167,10 @@ async def shutdown_worker_endpoint(
     """向指定工作节点发送关闭命令。"""
     celery_app = request.app.state.celery_app
     worker = await _control_worker(worker_id, crud)
-    shutdown_worker(celery_app, worker.hostname)
+    worker.lifecycle = "draining"
+    worker.retire_reason = "manual-shutdown"
+    await crud.session.flush()
+    await to_thread(shutdown_worker, celery_app, worker.hostname)
     return Response(data=WorkerControlResponse(success=True, message="Shutdown command sent"))
 
 

@@ -97,7 +97,9 @@
         "taskFailedDescription": "Reason: {error}",
         "workerOffline": "Worker “{worker}” went offline",
         "pluginLoadFailed": "Plugin “{plugin}” failed to load",
-        "pluginLoadFailedDescription": "Reason: {error}"
+        "pluginLoadFailedDescription": "Reason: {error}",
+        "workerCapacityMissing": "Worker group {group} is under capacity: {online} / {expected}",
+        "workerCapacityRecovered": "Worker group {group} capacity recovered: {online} / {expected}"
       },
       "activityTable": {
         "time": "Time",
@@ -1009,6 +1011,20 @@
         "subscribe": "Subscribe",
         "commandFailed": "The Worker did not confirm success. Check and retry.",
         "commandSent": "Command sent. Refresh to confirm the Worker state."
+      },
+      "groups": {
+        "current": "Current instances",
+        "history": "Instance history",
+        "capacity": "Online {online} / expected {expected}",
+        "unknown": "Unknown",
+        "missing": "Missing {count} instances",
+        "starting": "Waiting for {count} instances",
+        "drainingCount": "Draining {count}",
+        "draining": "Draining",
+        "retired": "Retired",
+        "retire": "Retire",
+        "retireConfirm": "Move this unreachable instance to history? Desired capacity stays unchanged.",
+        "discovery": "Discovery · desired capacity is unspecified"
       }
     }
   },

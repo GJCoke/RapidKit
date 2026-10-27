@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-uv run celery -A "src.queues.app" worker -l info
+uv run python -m plugin_worker.launcher

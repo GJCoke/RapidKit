@@ -107,7 +107,8 @@
       "grow-pool": "扩容节点进程池",
       "shrink-pool": "缩容节点进程池",
       "add-consumer": "发送添加消费队列指令",
-      "cancel-consumer": "发送取消消费队列指令"
+      "cancel-consumer": "发送取消消费队列指令",
+      "retire": "退役工作实例"
     }
   },
   "taskExecutionFailed": "任务执行失败，可通过任务 ID 排查。"

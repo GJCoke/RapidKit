@@ -214,10 +214,23 @@
             <div class="mt-9px text-28px font-600 leading-34px tabular-nums text-base-text-1">
               {{ formatNumber(data?.summary.servers?.healthy) }}
               <span class="ml-3px text-15px font-500 text-base-text-3"
-                >/ {{ formatNumber(data?.summary.servers?.total) }}</span
+                >/
+                {{
+                  data?.summary.servers?.capacityKnown
+                    ? formatNumber(data.summary.servers.total)
+                    : $t("page.manage.worker.groups.unknown")
+                }}</span
               >
             </div>
-            <div class="mt-5px text-13px text-base-text-3">{{ $t("page.home.dashboard.runningNormally") }}</div>
+            <div class="mt-5px text-13px text-base-text-3">
+              {{
+                data?.summary.servers?.missing
+                  ? $t("page.manage.worker.groups.missing", { count: data.summary.servers.missing })
+                  : data?.summary.servers?.capacityKnown
+                    ? $t("page.home.dashboard.runningNormally")
+                    : $t("page.manage.worker.groups.discovery")
+              }}
+            </div>
           </div>
 
           <div class="metric-cell py-10px sm:pl-22px xl:px-22px">

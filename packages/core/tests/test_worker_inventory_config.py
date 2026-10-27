@@ -30,13 +30,14 @@ def test_invalid_worker_names_are_rejected(names):
         config(CELERY_WORKER_NAMES=names)
 
 
-def test_compose_workers_use_unique_hostnames_and_discovery():
+def test_compose_workers_use_unique_boot_identity_and_declarative_capacity():
     root = Path(__file__).resolve().parents[3]
     compose = (root / "docker/prod/docker-compose.yml").read_text()
     worker = re.search(r"^  celery-worker:\n(.*?)(?=^  [a-z]|\Z)", compose, re.MULTILINE | re.DOTALL).group(1)
     command = json.loads(re.search(r"^    command: (\[.*\])$", worker, re.MULTILINE).group(1))
-    name = command[command.index("--hostname") + 1]
-    assert name == "celery@%h"
+    assert command == ["python", "-m", "plugin_worker.launcher"]
+    assert "replicas: ${CELERY_WORKER_REPLICAS:-1}" in worker
+    assert "CELERY_WORKER_GROUP: ${CELERY_WORKER_GROUP:-prod/default}" in worker
     for service in ("backend-api", "celery-worker", "celery-beat"):
         block = re.search(rf"^  {service}:\n(.*?)(?=^  [a-z]|\Z)", compose, re.MULTILINE | re.DOTALL).group(1)
         assert "CELERY_WORKER_NAMES:" not in block

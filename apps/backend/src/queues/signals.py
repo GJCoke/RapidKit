@@ -69,6 +69,8 @@ def on_worker_ready(sender, **kwargs) -> None:
         "worker.online",
         {
             "hostname": hostname,
+            "group_name": settings.CELERY_WORKER_GROUP,
+            "deployment_id": settings.CELERY_WORKER_DEPLOYMENT,
             "concurrency": worker.concurrency,
             "software_info": {
                 "celery_version": celery.__version__,
@@ -103,7 +105,8 @@ def _heartbeat_loop(hostname: str) -> None:
         try:
             _publish_event(
                 "worker.heartbeat",
-                {"hostname": hostname},
+                {"hostname": hostname, "group_name": settings.CELERY_WORKER_GROUP,
+                 "deployment_id": settings.CELERY_WORKER_DEPLOYMENT},
             )
         except Exception:
             logger.warning("Heartbeat publish failed for {hostname}", hostname=hostname, exc_info=True)

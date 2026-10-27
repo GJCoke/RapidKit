@@ -13,12 +13,29 @@ from rapidkit_core.timezone import timezone
 from sqlmodel import JSON, Column, Field, Text
 
 
+class WorkerGroup(SQLModel, table=True):
+    __tablename__ = "worker_groups"
+
+    name: str = Field(unique=True, index=True, max_length=128)
+    expected_replicas: int | None = Field(default=None, ge=0)
+    deployment_id: str = Field(default="", max_length=64)
+    deployment_started_at: datetime | None = None
+    previous_expected_replicas: int | None = None
+    missing_since: datetime | None = None
+    capacity_missing: bool = False
+
+
 class CeleryWorker(SQLModel, table=True):
     """Celery Worker 状态模型"""
 
     __tablename__ = "worker_workers"
 
     hostname: str = Field(..., unique=True, index=True, max_length=255, description="Worker 主机名标识")
+    group_name: str = Field(default="legacy", index=True, max_length=128)
+    deployment_id: str = Field(default="", max_length=64)
+    lifecycle: str = Field(default="active", index=True, max_length=16)
+    retired_at: datetime | None = None
+    retire_reason: str = Field(default="", max_length=64)
     status: WorkerStatus = Field(WorkerStatus.ONLINE, description="Worker 状态")
     active_queues: list = Field(default=[], sa_column=Column(JSON), description="当前监听的队列列表")
     concurrency: int = Field(0, description="并发数")

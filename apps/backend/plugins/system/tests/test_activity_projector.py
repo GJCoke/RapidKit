@@ -7,6 +7,7 @@ from rapidkit_common.events import (
     TaskFailedEvent,
     TaskSucceededEvent,
     UserLoginEvent,
+    WorkerCapacityChangedEvent,
     WorkerOfflineEvent,
 )
 from rapidkit_core.timezone import timezone
@@ -76,3 +77,24 @@ def test_plugin_load_failure_is_alert():
     )
     assert projection.category is ActivityCategory.ALERT
     assert projection.level is ActivityLevel.ERROR
+
+
+def test_capacity_shortfall_and_recovery_keep_group_context():
+    for missing, key, level in [
+        (1, "workerCapacityMissing", ActivityLevel.WARNING),
+        (0, "workerCapacityRecovered", ActivityLevel.INFO),
+    ]:
+        projection = project_activity(
+            WorkerCapacityChangedEvent(
+                event_id=f"capacity-{missing}",
+                occurred_at=timezone.now(),
+                group_name="prod/report",
+                expected=2,
+                online=2 - missing,
+                missing=missing,
+            )
+        )
+        assert projection.category is ActivityCategory.ALERT
+        assert projection.level is level
+        assert projection.title_key.endswith(key)
+        assert projection.title_params["group"] == "prod/report"

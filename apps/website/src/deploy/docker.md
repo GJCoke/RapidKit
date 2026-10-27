@@ -1,6 +1,6 @@
 # Docker 容器化
 
-项目通过 Docker Compose 提供**开发**和**生产**两套容器编排方案。开发环境仅运行基础设施（数据库、缓存、对象存储），应用代码在宿主机执行；生产环境则将全部
+项目通过 Docker Compose 提供**开发**和**生产**两套容器编排方案。生产部署入口需要宿主机提供 Python 3.10 或以上版本（仅使用标准库）。开发环境仅运行基础设施（数据库、缓存、对象存储），应用代码在宿主机执行；生产环境则将全部
 8 个服务打包为容器，统一交付。
 
 ## 项目结构
@@ -13,6 +13,7 @@ docker/
 │   └── docker-compose.yml       # 开发环境：仅基础设施
 ├── prod/
 │   ├── docker-compose.yml       # 生产环境：全栈 8 服务
+│   ├── deploy-workers.py        # Worker 容量登记与计划退役
 │   ├── nginx.conf               # Nginx 反向代理配置
 │   └── .env.example             # 生产环境变量模板
 ├── backend/
@@ -119,8 +120,8 @@ FROM base AS prod
 关键设计：
 
 - **共用镜像**：`backend-api`、`celery-worker`、`celery-beat` 三个服务使用同一镜像（`target: prod`），仅通过 `command` 区分启动方式。
-- **副本 Worker 标识**：生产 worker 使用 `celery@%h`，每个副本的主机名不同；`CELERY_WORKER_NAMES=[]` 自动发现全部节点，支持 Compose 扩容。
-- **离线监控**：停止或心跳超时的 Worker 显示离线。需要固定管理节点清单的非 Compose 部署，仍可显式配置不同的稳定节点名和 `CELERY_WORKER_NAMES` JSON 数组。
+- **Worker 组与实例**：`CELERY_WORKER_GROUP` 标识稳定的任务组，每次进程启动生成唯一的 Celery 节点名，支持副本及新旧实例并存。任务记录仍关联实际执行实例。
+- **容量与历史**：部署入口将 Compose 的 `deploy.replicas` 登记为该组的期望容量；旧实例计划退出后进入历史，故障实例继续保留在当前列表。容量缺口按组计算，持续 120 秒后生成告警活动，恢复后记录恢复活动；没有声明期望数的组显示“未知”。
 - **非 root 运行**：生产阶段创建 `app` 用户，以最小权限运行。
 - **uv 管理依赖**：利用 `uv sync --frozen` 保证锁文件一致性。
 
@@ -241,7 +242,7 @@ docker compose -f docker/prod/docker-compose.yml ps
 ```
 
 ::: tip
-`pnpm rapidkit prod up` 会依次构建镜像、启动基础设施、按确认结果执行数据库迁移和 seed，最后启动全部服务。已有数据库的常规启动通常应跳过初始化。
+`pnpm rapidkit prod up` 会构建镜像、启动基础设施，按确认结果执行 seed，并通过 Worker 部署入口执行必要迁移、登记期望容量、替换和退役旧实例，最后启动 Nginx。已有数据库可跳过 seed，必要的迁移仍会执行。
 :::
 
 ## 故障排查
@@ -301,14 +302,66 @@ Uvicorn 等待进行中请求最多 30 秒，Compose 停机宽限 45 秒。Compo
 ## 多副本与真实客户端 IP
 
 ```bash
-docker compose --env-file docker/prod/.env.prod -f docker/prod/docker-compose.yml up -d --scale backend-api=2 --scale celery-worker=2
+docker compose --env-file docker/prod/.env.prod -f docker/prod/docker-compose.yml up -d --scale backend-api=2 backend-api
 ```
 
-API 和 worker 不固定 container_name；worker 使用 `celery@%h`，`CELERY_WORKER_NAMES=[]` 自动发现所有节点。beat 保持一个。
+API 和 Worker 不固定 `container_name`，Beat 默认保持一个。Worker 的扩缩容使用下文部署入口，让期望容量与实例退役同步更新。
 nginx 每 10 秒刷新 Docker DNS，API 和 Socket.IO 都保留完整 URI 与 query。连接失败或超时最多换一个上游，已发送到上游的非幂等请求不会重试。
 Uvicorn 只信任 `FORWARDED_ALLOW_IPS` 指定网段；默认与 compose 网络 `172.30.0.0/24` 一致。若网段冲突，同时修改网络 subnet 与 env。
 共享客户端地址读取只使用 Uvicorn 解析后的 ASGI client，不直接采信 CF-Connecting-IP/X-Real-IP/XFF。后端端口不对外发布。
 如果前置新的负载均衡、CDN 或 TLS 终止层，必须重新审核该信任链和 HSTS 位置。
+
+### Worker 部署与扩缩容
+
+`.env.prod` 中的配置同时控制 Compose 副本数和监控期望容量：
+
+```dotenv
+CELERY_WORKER_GROUP=prod/default
+CELERY_WORKER_REPLICAS=3
+```
+
+修改副本数后运行（设为 `0` 即暂停该组）：
+
+```bash
+python3 docker/prod/deploy-workers.py --build
+```
+
+脚本先执行迁移并启动 API/Beat，随后登记部署意图、替换所选 Worker 容器，Docker 返回成功后退役旧实例。新实例未就绪时仍显示容量不足；本入口使用停止并重建，不承诺滚动发布或零停机。Worker 停机宽限为 120 秒，超时后 Docker 可终止未完成任务；长任务部署应按实际耗时调整 `stop_grace_period`。
+
+只启动新容器并不能证明容量已恢复，监控通过注册及心跳确认在线状态。脚本失败会尝试撤销未完成的意图并恢复之前的期望数，保留实际故障状态；退出时会输出部署 token。若意图撤销也失败，可在修复数据库连接后恢复：
+
+```bash
+docker compose --env-file docker/prod/.env.prod -f docker/prod/docker-compose.yml run --rm --no-deps backend-api \
+  python -m plugin_worker.deployment abort --group prod/default --deployment <部署token>
+```
+
+直接 `docker compose up --scale celery-worker=N` 不会登记期望容量或计划退役，应使用部署入口。每次启动的节点名本来就不同，默认页面展示稳定的组名及容量，历史实例保留任务关联。
+
+首次升级时，缺少组和启动身份的旧节点记录统一导入 `legacy` 历史组，任务记录保持原样。升级后需重启所有 Worker，使用 `plugin_worker.launcher` 注册新的实例。旧的 `CELERY_WORKER_NAMES` 仅作为 legacy 节点清单兼容，新组无需维护每个实例的名字。
+
+若以后需要不同队列的独立容量，可新增 Compose 覆盖文件，例如：
+
+```yaml
+# docker/prod/worker-groups.yml
+services:
+  celery-reports:
+    extends:
+      file: docker-compose.yml
+      service: celery-worker
+    command: ["python", "-m", "plugin_worker.launcher", "-Q", "reports"]
+    environment:
+      CELERY_WORKER_GROUP: prod/reports
+    deploy:
+      replicas: 2
+```
+
+```bash
+python3 docker/prod/deploy-workers.py \
+  -f docker/prod/docker-compose.yml -f docker/prod/worker-groups.yml \
+  --service celery-worker --service celery-reports
+```
+
+同一组的全部服务需一起部署，脚本会合计它们的副本数。不同 Compose 项目使用不同组名，避免彼此覆盖期望容量。主机脚本调用容器运行时，应用容器无需挂载 Docker socket。
 
 ### Prometheus 内部抓取
 

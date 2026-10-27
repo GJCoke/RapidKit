@@ -8,6 +8,7 @@ from rapidkit_common.events.activity import (
     TaskRepeatedFailureAlertEvent,
     TaskStartedEvent,
     TaskSucceededEvent,
+    WorkerCapacityChangedEvent,
     WorkerOfflineEvent,
     WorkerOnlineEvent,
 )
@@ -53,5 +54,6 @@ __all__ = [
     "UserPasswordChangedEvent",
     "UserRolesChangedEvent",
     "WorkerOfflineEvent",
+    "WorkerCapacityChangedEvent",
     "WorkerOnlineEvent",
 ]

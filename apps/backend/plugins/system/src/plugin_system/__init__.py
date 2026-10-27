@@ -84,6 +84,7 @@ def register() -> PluginManifest:
         TaskFailedEvent,
         TaskSucceededEvent,
         UserLoginEvent,
+        WorkerCapacityChangedEvent,
         WorkerOfflineEvent,
     )
 
@@ -147,6 +148,7 @@ def register() -> PluginManifest:
             (TaskSucceededEvent, handle_activity_event),
             (TaskFailedEvent, handle_activity_event),
             (WorkerOfflineEvent, handle_activity_event),
+            (WorkerCapacityChangedEvent, handle_activity_event),
             (PluginLoadFailedEvent, handle_activity_event),
         ],
     )

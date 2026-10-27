@@ -96,7 +96,13 @@ services:
   celery-worker:
     image: rapidkit-backend:prod
     build: *backend-build
-    command: ["celery", "-A", "src.queues.app", "worker", "-l", "info", "--hostname", "celery@%h"]
+    command: ["python", "-m", "plugin_worker.launcher"]
+    environment:
+      CELERY_WORKER_GROUP: ${CELERY_WORKER_GROUP:-prod/default}
+      CELERY_WORKER_DEPLOYMENT: ${CELERY_WORKER_DEPLOYMENT:-}
+    deploy:
+      replicas: ${CELERY_WORKER_REPLICAS:-1}
+    stop_grace_period: 120s
     env_file: .env.prod
     depends_on:
       backend-migrate:

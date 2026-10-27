@@ -22,15 +22,13 @@
   const stale = computed(() => dashboard.value && now.value - new Date(dashboard.value.sampledAt).getTime() > 60000)
   const queues = computed(() => sortQueues(dashboard.value?.queues ?? []))
   const blocked = computed(() => queues.value.filter((row) => queueState(row) === "blocked"))
-  const offline = computed(() =>
-    Math.max(0, (dashboard.value?.totalWorkers ?? 0) - (dashboard.value?.onlineWorkers ?? 0)),
-  )
+  const offline = computed(() => dashboard.value?.missingWorkers ?? 0)
   const attention = computed(
     () =>
       failed.value ||
       stale.value ||
       !dashboard.value ||
-      dashboard.value.onlineWorkers === 0 ||
+      (dashboard.value.onlineWorkers === 0 && !(dashboard.value.capacityKnown && dashboard.value.totalWorkers === 0)) ||
       offline.value > 0 ||
       blocked.value.length > 0 ||
       dashboard.value.queueDepth === null ||
@@ -238,7 +236,10 @@
         <NButton text size="small" @click="emit('viewWorkers')"
           >{{ $t("page.manage.worker.overview.workers") }}
           <span class="ml-8px font-700 tabular-nums"
-            >{{ number(dashboard?.onlineWorkers) }} / {{ number(dashboard?.totalWorkers) }}</span
+            >{{ number(dashboard?.onlineWorkers) }} /
+            {{
+              dashboard?.capacityKnown ? number(dashboard.totalWorkers) : $t("page.manage.worker.groups.unknown")
+            }}</span
           ></NButton
         >
         <span

@@ -12,20 +12,22 @@ from datetime import UTC, timedelta
 from fastapi_sio_di import AsyncServer
 from rapidkit_common.audit import AuditMetadata, AuditRecord
 from rapidkit_common.enums import TaskStatus, WorkerStatus
-from rapidkit_common.events import TaskFailedEvent, TaskSucceededEvent, WorkerOfflineEvent
+from rapidkit_common.events import TaskFailedEvent, TaskSucceededEvent, WorkerCapacityChangedEvent, WorkerOfflineEvent
 from rapidkit_common.protocols.audit import AuditWriter
 from rapidkit_core.config import settings
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
+from rapidkit_core.transaction import after_commit
 from rapidkit_core.uuid7 import uuid7
 from rapidkit_framework.audit import AuditActorType, AuditResult, AuditSource
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.services import get_service_optional
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_worker.crud import TaskResultCRUD, WorkerCRUD
-from plugin_worker.inventory import is_current_worker
-from plugin_worker.models import CeleryTaskResult, CeleryWorker
+from plugin_worker.inventory import CAPACITY_GRACE_SECONDS, ensure_group, group_summaries, is_current_worker
+from plugin_worker.models import CeleryTaskResult, CeleryWorker, WorkerGroup
 
 logger = get_plugin_logger("Worker")
 
@@ -72,10 +74,12 @@ class EventService:
     # ==================== Socket.IO Helpers ====================
 
     async def _emit_worker_status(self, worker: CeleryWorker) -> None:
-        if not is_current_worker(worker.hostname):
+        if not is_current_worker(worker.hostname, worker.group_name):
             return
         payload = {
             "hostname": worker.hostname,
+            "groupName": worker.group_name,
+            "lifecycle": worker.lifecycle,
             "status": worker.status,
             "concurrency": worker.concurrency,
             "activeTaskCount": worker.active_task_count or 0,
@@ -113,29 +117,46 @@ class EventService:
 
     async def handle_worker_online(self, data: dict) -> None:
         now = timezone.now()
+        existing = await self.worker_crud.get_by_hostname(data["hostname"])
+        if existing and existing.lifecycle == "retired":
+            return
+        group_name = data.get("group_name", "legacy")
+        group = await ensure_group(self.session, group_name)
         worker = await self.worker_crud.upsert_by_hostname(
             data["hostname"],
             {
                 "status": WorkerStatus.ONLINE,
+                "group_name": group_name,
+                "deployment_id": data.get("deployment_id", ""),
                 "concurrency": data.get("concurrency", 0),
                 "software_info": data.get("software_info", {}),
                 "last_heartbeat": now,
                 "update_time": now,
             },
         )
+        if data.get("deployment_id") and group.deployment_id and data["deployment_id"] != group.deployment_id:
+            worker.lifecycle = "draining" if group.deployment_started_at else "retired"
+            worker.retire_reason = group.deployment_id if group.deployment_started_at else "deployment"
+            if worker.lifecycle == "retired":
+                worker.retired_at = now
+                worker.status = WorkerStatus.OFFLINE
         await self.session.flush()
         await self._emit_worker_status(worker)
 
     async def handle_worker_offline(self, data: dict) -> None:
-        worker = await self.worker_crud.get_by_hostname(data["hostname"])
-        if not worker:
+        worker = await self.worker_crud.get_by_hostname(data["hostname"], lock=True)
+        if not worker or worker.lifecycle == "retired":
             return
+        was_online = worker.status == WorkerStatus.ONLINE
         worker.status = WorkerStatus.OFFLINE
         worker.active_task_count = 0
         worker.update_time = timezone.now()
+        if worker.retire_reason == "manual-shutdown":
+            worker.lifecycle = "retired"
+            worker.retired_at = worker.update_time
         await self.session.flush()
         await self._emit_worker_status(worker)
-        if not is_current_worker(worker.hostname):
+        if not is_current_worker(worker.hostname, worker.group_name) or worker.lifecycle != "active" or not was_online:
             return
         event_bus.fire_and_forget(
             WorkerOfflineEvent(
@@ -148,6 +169,9 @@ class EventService:
     async def handle_worker_heartbeat(self, data: dict) -> None:
         worker = await self.worker_crud.get_by_hostname(data["hostname"])
         if not worker:
+            await self.handle_worker_online(data)
+            return
+        if worker.lifecycle == "retired":
             return
         now = timezone.now()
         worker.last_heartbeat = now
@@ -328,6 +352,42 @@ class EventService:
             worker.update_time = timezone.now()
             logger.info("Worker '{hostname}' marked as OFFLINE (heartbeat timeout)", hostname=worker.hostname)
             await self._emit_worker_status(worker)
+
+        await self.check_worker_capacity()
+
+    async def check_worker_capacity(self) -> None:
+        now = timezone.now()
+        summaries = await group_summaries(self.session, now)
+        for summary in summaries:
+            if summary.expected_replicas is None:
+                continue
+            group = (
+                await self.session.exec(select(WorkerGroup).where(WorkerGroup.name == summary.name).with_for_update())
+            ).first()
+            if group is None:
+                continue
+            if summary.missing:
+                group.missing_since = group.missing_since or now
+                if (now - group.missing_since).total_seconds() < CAPACITY_GRACE_SECONDS:
+                    continue
+            else:
+                group.missing_since = None
+            missing = summary.missing > 0
+            if missing != group.capacity_missing:
+                group.capacity_missing = missing
+                after_commit(
+                    self.session,
+                    event_bus.async_emit,
+                    WorkerCapacityChangedEvent(
+                        event_id=str(uuid7()),
+                        occurred_at=now,
+                        group_name=summary.name,
+                        expected=summary.expected_replicas,
+                        online=summary.online,
+                        missing=summary.missing,
+                    ),
+                )
+        await self.session.flush()
 
     # ==================== Private Helpers ====================
 

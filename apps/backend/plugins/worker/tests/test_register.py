@@ -9,7 +9,7 @@ class TestWorkerRegister:
         assert m.name == "worker"
         assert m.version == "0.1.0"
         assert m.router is not None
-        assert len(m.models) == 3
+        assert len(m.models) == 4
 
     def test_models_are_correct(self):
         from plugin_worker import register

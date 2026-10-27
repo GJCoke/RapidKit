@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 from plugin_worker.event_service import EventService
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
 from rapidkit_core.log import logger
+from rapidkit_core.transaction import run_after_commit_hooks
 from rapidkit_framework.identity import identity_from_headers, identity_scope
 from redis.asyncio import Redis
 from redis.exceptions import ResponseError
@@ -98,6 +99,7 @@ async def consume_events(sio: "AsyncServer") -> None:
                                     service = EventService(session=session, sio=sio)
                                     await getattr(service, handler_name)(data)
                                     await session.commit()
+                                    await run_after_commit_hooks(session)
                         except Exception:
                             logger.exception(
                                 "Error handling event {event_type}: {data}",
@@ -136,6 +138,7 @@ async def check_worker_offline(sio: "AsyncServer", leader: "LeaderElection | Non
                 service = EventService(session=session, sio=sio)
                 await service.check_offline_workers(HEARTBEAT_TIMEOUT)
                 await session.commit()
+                await run_after_commit_hooks(session)
 
         except asyncio.CancelledError:
             logger.info("Worker offline checker stopped.")

@@ -20,6 +20,8 @@ class WorkerStatusCode(BaseStatusCode):
     WORKER_OFFLINE = (52005, "worker.error.workerOffline")
     TASK_RETRY_NOT_ALLOWED = (52006, "worker.error.taskRetryNotAllowed")
 
+    WORKER_STILL_ONLINE = (52007, "worker.error.workerStillOnline")
+
     # Resource not found (055xxx)
     WORKER_NOT_FOUND = (55001, "worker.error.workerNotFound")
     TASK_NOT_FOUND = (55002, "worker.error.taskNotFound")

@@ -29,3 +29,8 @@ def test_operations_overview_route_is_registered() -> None:
     route = next(route for route in router.routes if route.path == "/system/stats/operations-overview")
 
     assert "GET" in route.methods
+
+
+def test_per_group_deficit_cannot_be_hidden_by_excess_workers():
+    assert server_status(3, 3, missing=1) == "degraded"
+    assert server_status(0, 0, missing=0) == "healthy"

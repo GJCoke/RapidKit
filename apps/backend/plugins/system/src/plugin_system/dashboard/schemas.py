@@ -174,6 +174,8 @@ class OperationsOverviewQuery(BaseRequest):
 class OperationsServerSummary(BaseModel):
     healthy: int
     total: int
+    capacity_known: bool = False
+    missing: int = 0
     status: Literal["healthy", "degraded", "down"]
 
 

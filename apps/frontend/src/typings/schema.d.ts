@@ -397,6 +397,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workers/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Worker Groups */
+        get: operations["get_worker_groups_api_v1_workers_groups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workers/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Worker History */
+        get: operations["get_worker_history_api_v1_workers_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workers/{worker_id}/retire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retire Worker Endpoint */
+        post: operations["retire_worker_endpoint_api_v1_workers__worker_id__retire_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workers/{worker_id}": {
         parameters: {
             query?: never;
@@ -4368,6 +4419,16 @@ export interface components {
             /** Total */
             total: number;
             /**
+             * Capacityknown
+             * @default false
+             */
+            capacityKnown: boolean;
+            /**
+             * Missing
+             * @default 0
+             */
+            missing: number;
+            /**
              * Status
              * @enum {string}
              */
@@ -4720,6 +4781,29 @@ export interface components {
              */
             records: components["schemas"]["UserManageResponse"][];
         };
+        /** PaginatedResponse[WorkerResponse] */
+        PaginatedResponse_WorkerResponse_: {
+            /**
+             * Page
+             * @description 页码。
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @description 每页条数。
+             */
+            pageSize: number;
+            /**
+             * Total
+             * @description 总条数。
+             */
+            total: number;
+            /**
+             * Records
+             * @description 记录列表。
+             */
+            records: components["schemas"]["WorkerResponse"][];
+        };
         /**
          * PasswordResetConfirmBody
          * @description Encrypted password and single-use reset token.
@@ -5012,6 +5096,16 @@ export interface components {
             onlineWorkers: number;
             /** Totalworkers */
             totalWorkers: number;
+            /**
+             * Missingworkers
+             * @default 0
+             */
+            missingWorkers: number;
+            /**
+             * Capacityknown
+             * @default false
+             */
+            capacityKnown: boolean;
             /** Activetasks */
             activeTasks: number;
             /** Concurrency */
@@ -5659,6 +5753,22 @@ export interface components {
             message?: string;
             /** @description 响应数据。 */
             data?: components["schemas"]["PaginatedResponse_UserManageResponse_"] | null;
+        };
+        /** Response[PaginatedResponse[WorkerResponse]] */
+        Response_PaginatedResponse_WorkerResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /** @description 响应数据。 */
+            data?: components["schemas"]["PaginatedResponse_WorkerResponse_"] | null;
         };
         /** Response[PasswordResetValidateResponse] */
         Response_PasswordResetValidateResponse_: {
@@ -6459,6 +6569,25 @@ export interface components {
              * @description 响应数据。
              */
             data?: components["schemas"]["UserManageOptionResponse"][] | null;
+        };
+        /** Response[list[WorkerGroupResponse]] */
+        Response_list_WorkerGroupResponse__: {
+            /**
+             * Code
+             * @description 状态码。
+             * @default 0
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息。
+             */
+            message?: string;
+            /**
+             * Data
+             * @description 响应数据。
+             */
+            data?: components["schemas"]["WorkerGroupResponse"][] | null;
         };
         /** Response[list[WorkerResponse]] */
         Response_list_WorkerResponse__: {
@@ -7475,6 +7604,23 @@ export interface components {
              */
             message: string;
         };
+        /** WorkerGroupResponse */
+        WorkerGroupResponse: {
+            /** Name */
+            name: string;
+            /** Expectedreplicas */
+            expectedReplicas: number | null;
+            /** Online */
+            online: number;
+            /** Observed */
+            observed: number;
+            /** Draining */
+            draining: number;
+            /** Missing */
+            missing: number;
+            /** Alerting */
+            alerting: boolean;
+        };
         /**
          * WorkerResponse
          * @description Worker 响应数据结构；运行时字段仅在详情检查成功时存在。
@@ -7497,6 +7643,29 @@ export interface components {
             updateTime: string;
             /** Hostname */
             hostname: string;
+            /**
+             * Groupname
+             * @default legacy
+             */
+            groupName: string;
+            /**
+             * Deploymentid
+             * @default
+             */
+            deploymentId: string;
+            /**
+             * Lifecycle
+             * @default active
+             * @enum {string}
+             */
+            lifecycle: "active" | "draining" | "retired";
+            /** Retiredat */
+            retiredAt?: string | null;
+            /**
+             * Retirereason
+             * @default
+             */
+            retireReason: string;
             /** @default 1 */
             status: components["schemas"]["WorkerStatus"];
             /**
@@ -8271,6 +8440,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Response_list_WorkerResponse__"];
+                };
+            };
+        };
+    };
+    get_worker_groups_api_v1_workers_groups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_list_WorkerGroupResponse__"];
+                };
+            };
+        };
+    };
+    get_worker_history_api_v1_workers_history_get: {
+        parameters: {
+            query?: {
+                /** @description 当前页码。 */
+                page?: number;
+                /** @description 每页条数。 */
+                pageSize?: number;
+                groupName?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PaginatedResponse_WorkerResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retire_worker_endpoint_api_v1_workers__worker_id__retire_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                worker_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_WorkerResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -28,7 +28,7 @@
     detailRequest++
   })
   const health = computed(() => workerHealth(props.worker, now.value))
-  const online = computed(() => health.value === "online")
+  const online = computed(() => health.value === "online" && props.worker?.lifecycle !== "retired")
   const runtime = reactive({
     concurrency: null as number | null,
     active: null as number | null,
@@ -253,7 +253,7 @@
             </div>
           </NTabPane>
           <NTabPane
-            v-if="hasAuth('worker:control')"
+            v-if="hasAuth('worker:control') && worker?.lifecycle !== 'retired'"
             name="operations"
             :tab="$t('page.manage.worker.detail.operations')"
           >

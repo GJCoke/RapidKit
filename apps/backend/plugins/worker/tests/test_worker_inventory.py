@@ -7,7 +7,7 @@ import pytest
 import pytest_asyncio
 from plugin_worker.crud import WorkerCRUD
 from plugin_worker.event_service import EventService
-from plugin_worker.models import CeleryWorker, QueueDepthSnapshot
+from plugin_worker.models import CeleryWorker, QueueDepthSnapshot, WorkerGroup
 from plugin_worker.operations import WorkerOperationsProviderImpl
 from plugin_worker.tasks import capture_queue_depth
 from rapidkit_common.enums import WorkerStatus
@@ -27,7 +27,7 @@ async def inventory(monkeypatch):
     monkeypatch.setattr(settings, "CELERY_WORKER_NAMES", [STABLE])
     engine = create_async_engine("sqlite+aiosqlite://")
     async with engine.begin() as conn:
-        for model in (CeleryWorker, QueueDepthSnapshot):
+        for model in (CeleryWorker, QueueDepthSnapshot, WorkerGroup):
             await conn.run_sync(model.__table__.create)
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with factory() as session:

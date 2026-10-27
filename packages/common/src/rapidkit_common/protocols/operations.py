@@ -9,6 +9,8 @@ from typing import Literal, Protocol
 class ServerSnapshot:
     healthy: int
     total: int
+    missing: int | None = None
+    capacity_known: bool = False
 
 
 @dataclass(frozen=True, slots=True)

@@ -22,6 +22,11 @@ class WorkerSchema(BaseModel):
     """Worker 共享字段。"""
 
     hostname: str
+    group_name: str = "legacy"
+    deployment_id: str = ""
+    lifecycle: Literal["active", "draining", "retired"] = "active"
+    retired_at: LocalDatetime | None = None
+    retire_reason: str = ""
     status: WorkerStatus = WorkerStatus.ONLINE
     active_queues: list = []
     concurrency: int = 0
@@ -38,6 +43,20 @@ class WorkerResponse(WorkerSchema, BaseSchema):
     runtime_concurrency: int | None = None
     runtime_active_tasks: int | None = None
     runtime_sampled_at: LocalDatetime | None = None
+
+
+class WorkerGroupResponse(BaseModel):
+    name: str
+    expected_replicas: int | None
+    online: int
+    observed: int
+    draining: int
+    missing: int
+    alerting: bool
+
+
+class WorkerHistoryQuery(PaginatedRequest):
+    group_name: str | None = None
 
 
 # ==================== Task Schemas ====================
@@ -245,6 +264,8 @@ class QueueDashboardResponse(BaseModel):
     queue_depth: int | None
     online_workers: int
     total_workers: int
+    missing_workers: int = 0
+    capacity_known: bool = False
     active_tasks: int
     concurrency: int
     throughput: float

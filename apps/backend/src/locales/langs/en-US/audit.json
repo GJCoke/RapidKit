@@ -107,7 +107,8 @@
       "grow-pool": "Grow worker pool",
       "shrink-pool": "Shrink worker pool",
       "add-consumer": "Send add-consumer command",
-      "cancel-consumer": "Send cancel-consumer command"
+      "cancel-consumer": "Send cancel-consumer command",
+      "retire": "Retire worker instance"
     }
   },
   "taskExecutionFailed": "Task execution failed. Use the task ID to investigate."

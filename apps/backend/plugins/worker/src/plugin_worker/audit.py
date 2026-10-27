@@ -12,6 +12,7 @@ def configure_audit(router):
     declarations = {"trigger_task_endpoint": submit, "revoke_task_endpoint": revoke, "ping_worker_endpoint": None}
     for endpoint, command in (
         ("shutdown_worker_endpoint", "send-shutdown"),
+        ("retire_worker_endpoint", "retire"),
         ("pool_grow_endpoint", "grow-pool"),
         ("pool_shrink_endpoint", "shrink-pool"),
         ("add_queue_endpoint", "add-consumer"),

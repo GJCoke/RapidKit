@@ -9,6 +9,7 @@ from rapidkit_common.events import (
     TaskFailedEvent,
     TaskSucceededEvent,
     UserLoginEvent,
+    WorkerCapacityChangedEvent,
     WorkerOfflineEvent,
 )
 from rapidkit_core.database import AsyncSessionLocal
@@ -102,6 +103,17 @@ def project_activity(event: Event) -> ActivityProjection:
             description_params={"error": event.error_summary or "-"},
             source_event_id=event.event_id,
             occurred_at=event.occurred_at,
+        )
+    if isinstance(event, WorkerCapacityChangedEvent):
+        return ActivityProjection(
+            category=ActivityCategory.ALERT,
+            event_code=event.event_name,
+            level=ActivityLevel.WARNING if event.missing else ActivityLevel.INFO,
+            subject_type="worker_group", subject_id=event.group_name, subject_name=event.group_name,
+            title_key="page.home.dashboard.activity.workerCapacityMissing" if event.missing
+                else "page.home.dashboard.activity.workerCapacityRecovered",
+            title_params={"group": event.group_name, "online": event.online, "expected": event.expected},
+            source_event_id=event.event_id, occurred_at=event.occurred_at,
         )
     if isinstance(event, WorkerOfflineEvent):
         return ActivityProjection(

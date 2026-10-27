@@ -28,10 +28,19 @@ declare global {
        */
       type TaskStatus = "1" | "2" | "3" | "4" | "5" | "6"
 
+      type WorkerGroup = Service.ApiResponse<"/api/v1/workers/groups">[number]
+      type WorkerHistory = Service.ApiResponse<"/api/v1/workers/history">
+      type WorkerHistoryQuery = Service.ApiRequest<"/api/v1/workers/history", "get", "query">
+
       /** worker info */
       type WorkerInfo = {
         id: string
         hostname: string
+        groupName: string
+        lifecycle: "active" | "draining" | "retired"
+        deploymentId: string
+        retiredAt: string | null
+        retireReason: string
         status: WorkerStatus
         activeQueues: string[]
         concurrency: number
@@ -83,6 +92,8 @@ declare global {
       /** Socket.IO worker:status event data */
       type WorkerStatusEvent = {
         hostname: string
+        groupName: string
+        lifecycle: "active" | "draining" | "retired"
         status: WorkerStatus
         concurrency: number
         activeTaskCount: number

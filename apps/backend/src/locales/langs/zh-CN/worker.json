@@ -7,6 +7,7 @@
     "workerOffline": "Worker 当前离线，无法执行操作",
     "taskRetryNotAllowed": "仅失败或被撤销的任务可以重试",
     "workerNotFound": "Worker 不存在",
-    "taskNotFound": "任务不存在"
+    "taskNotFound": "任务不存在",
+    "workerStillOnline": "在线实例不能退役，请先停止该实例"
   }
 }

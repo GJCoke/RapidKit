@@ -40,10 +40,12 @@ def test_inspector_exception_is_failure(getter, method):
 
 @pytest.mark.asyncio
 async def test_worker_heartbeat_event_keeps_utc_offset(monkeypatch):
-    monkeypatch.setattr(event_service, "is_current_worker", lambda hostname: True)
+    monkeypatch.setattr(event_service, "is_current_worker", lambda hostname, group_name="legacy": True)
     service = event_service.EventService(MagicMock(), AsyncMock())
     worker = SimpleNamespace(
         hostname="celery@current",
+        group_name="legacy",
+        lifecycle="active",
         status="1",
         concurrency=8,
         active_task_count=0,

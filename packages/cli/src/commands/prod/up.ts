@@ -1,3 +1,4 @@
+import { resolve } from "node:path"
 import { confirm, isCancel } from "@clack/prompts"
 import { t } from "../../infra/i18n"
 import { buildComposeCommand } from "../../infra/compose"
@@ -16,9 +17,7 @@ export const up = defineFluxCommand({
 
     // Database initialization (UI in command layer)
     const shouldInit = await confirm({ message: t("db.confirm") })
-    if (isCancel(shouldInit) || !shouldInit) {
-      // Skip DB init, just start all services
-    } else {
+    if (!isCancel(shouldInit) && shouldInit) {
       const confirmAgain = await confirm({ message: t("db.doubleConfirm") })
       if (!isCancel(confirmAgain) && confirmAgain) {
         await databaseService.upgradeInCompose(runner, ctx, PROD_COMPOSE, "backend-api")
@@ -26,7 +25,16 @@ export const up = defineFluxCommand({
       }
     }
 
-    const upCmd = buildComposeCommand(ctx, PROD_COMPOSE, ["up", "-d"])
+    const workerCompose = buildComposeCommand(ctx, PROD_COMPOSE, [
+      "--env-file",
+      resolve(ctx.cwd, "docker/prod/.env.prod"),
+    ])
+    await runner.run({ label: t("prod.up.starting") }, "python3", [
+      resolve(ctx.cwd, "docker/prod/deploy-workers.py"),
+      "--compose-command",
+      JSON.stringify([workerCompose.cmd, ...workerCompose.args]),
+    ])
+    const upCmd = buildComposeCommand(ctx, PROD_COMPOSE, ["up", "-d", "--no-deps", "nginx"])
     await runner.run({ label: t("prod.up.starting") }, upCmd.cmd, upCmd.args)
   },
 })

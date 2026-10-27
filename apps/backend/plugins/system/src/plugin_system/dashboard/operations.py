@@ -41,8 +41,10 @@ def calculate_percent_change(current: int | float, previous: int | float) -> flo
     return round((current - previous) / previous * 100, 2)
 
 
-def server_status(healthy: int, total: int) -> Literal["healthy", "degraded", "down"]:
-    if total > 0 and healthy == total:
+def server_status(healthy: int, total: int, missing: int | None = None) -> Literal["healthy", "degraded", "down"]:
+    if missing and missing > 0:
+        return "degraded" if healthy > 0 else "down"
+    if (total == 0 and missing == 0) or (total > 0 and healthy >= total):
         return "healthy"
     if healthy > 0:
         return "degraded"
@@ -125,7 +127,9 @@ async def build_operations_overview(query: OperationsOverviewQuery, started_at: 
         server_schema = OperationsServerSummary(
             healthy=servers.healthy,
             total=servers.total,
-            status=server_status(servers.healthy, servers.total),
+            status=server_status(servers.healthy, servers.total, servers.missing),
+            capacity_known=servers.capacity_known,
+            missing=servers.missing or 0,
         )
     error_schema = None
     if isinstance(api_errors, ApiErrorComparison):

@@ -67,6 +67,7 @@ async def test_completion_window_and_p95_are_queried_by_finished_time(monkeypatc
     broker = AsyncMock()
     broker.llen.return_value = 0
     monkeypatch.setattr(module.Redis, "from_url", lambda *args, **kwargs: broker)
+    monkeypatch.setattr(module, "group_summaries", AsyncMock(return_value=[]))
     response = await get_queue_dashboard(session, app, 7)
     assert response.success_rate == 90
     assert response.throughput == 2

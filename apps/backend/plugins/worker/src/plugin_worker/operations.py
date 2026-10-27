@@ -11,13 +11,12 @@ from rapidkit_common.protocols.operations import (
     TaskSuccessComparison,
     WorkerOperationsProvider,
 )
-from rapidkit_core.config import settings
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
 from rapidkit_core.redis_client import AsyncRedisClient
 from sqlalchemy import case
 from sqlmodel import col, func, select
 
-from plugin_worker.inventory import scoped_worker_filters
+from plugin_worker.inventory import group_summaries, scoped_worker_filters
 from plugin_worker.models import CeleryTaskResult, CeleryWorker, QueueDepthSnapshot
 
 HEARTBEAT_TIMEOUT_SECONDS = 60
@@ -40,19 +39,14 @@ class WorkerOperationsProviderImpl(WorkerOperationsProvider):
         self._redis_factory = redis_factory
 
     async def get_server_snapshot(self, now: datetime) -> ServerSnapshot:
-        cutoff = now - timedelta(seconds=HEARTBEAT_TIMEOUT_SECONDS)
         async with self._session_factory() as session:
-            statement = select(
-                func.count(col(CeleryWorker.id)),
-                func.count().filter(
-                    col(CeleryWorker.status) == WorkerStatus.ONLINE,
-                    col(CeleryWorker.last_heartbeat) >= cutoff,
-                ),
-            )
-            statement = statement.where(*scoped_worker_filters())
-            total, healthy = (await session.exec(statement)).one()
-        expected_total = len(settings.CELERY_WORKER_NAMES) if settings.CELERY_WORKER_NAMES else int(total or 0)
-        return ServerSnapshot(healthy=int(healthy or 0), total=expected_total)
+            groups = await group_summaries(session, now)
+        return ServerSnapshot(
+            healthy=sum(g.online for g in groups),
+            total=sum(g.expected_replicas if g.expected_replicas is not None else g.observed for g in groups),
+            missing=sum(g.missing for g in groups),
+            capacity_known=bool(groups) and all(g.expected_replicas is not None for g in groups),
+        )
 
     async def get_task_comparison(self, today_start: datetime, tomorrow_start: datetime) -> DayComparison:
         yesterday_start = today_start - timedelta(days=1)

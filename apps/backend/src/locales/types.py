@@ -2,9 +2,9 @@
 
 from typing import Literal, TypeAlias
 
-LANGUAGE_TYPE: TypeAlias = Literal['zh-CN', 'en-US']
+LANGUAGE_TYPE: TypeAlias = Literal['en-US', 'zh-CN']
 
-languages: set[LANGUAGE_TYPE] = {'zh-CN', 'en-US'}
+languages: set[LANGUAGE_TYPE] = {'en-US', 'zh-CN'}
 
 I18nKey = Literal[
     "audit.actions.auth.accept-invite",
@@ -56,6 +56,7 @@ I18nKey = Literal[
     "audit.actions.worker.add-consumer",
     "audit.actions.worker.cancel-consumer",
     "audit.actions.worker.grow-pool",
+    "audit.actions.worker.retire",
     "audit.actions.worker.send-shutdown",
     "audit.actions.worker.shrink-pool",
     "audit.fields.category",
@@ -264,4 +265,5 @@ I18nKey = Literal[
     "worker.error.workerControlFailed",
     "worker.error.workerNotFound",
     "worker.error.workerOffline",
+    "worker.error.workerStillOnline",
 ]

@@ -96,6 +96,9 @@ class CeleryConfigMixin(RedisConfigMixin):
         description="是否启用 Celery 任务队列管理（事件消费、Worker 监控、管理 API）",
     )
     TASK_RESULT_RETENTION_DAYS: int = 30
+    CELERY_WORKER_GROUP: str = Field("local/default", max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9/_.-]*$")
+    CELERY_WORKER_DEPLOYMENT: str = Field("", max_length=64)
+
     CELERY_WORKER_NAMES: list[str] = Field(
         default_factory=list,
         description="当前受管理的 Celery 节点全名；空列表表示自动发现所有节点",

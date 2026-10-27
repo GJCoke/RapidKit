@@ -14,7 +14,7 @@ def register() -> PluginManifest:
     from fastapi import APIRouter
 
     from plugin_worker.api import router, task_router
-    from plugin_worker.models import CeleryTaskResult, CeleryWorker, QueueDepthSnapshot
+    from plugin_worker.models import CeleryTaskResult, CeleryWorker, QueueDepthSnapshot, WorkerGroup
     from plugin_worker.operations import WorkerOperationsProviderImpl
 
     def register_services(registry: ServiceRegistry) -> None:
@@ -33,7 +33,7 @@ def register() -> PluginManifest:
         permission_packages=PERMISSION_PACKAGES,
         router=combined,
         audit_actions=configure_audit(combined),
-        models=[CeleryWorker, CeleryTaskResult, QueueDepthSnapshot],
+        models=[CeleryWorker, CeleryTaskResult, QueueDepthSnapshot, WorkerGroup],
         provides=[WorkerOperationsProvider],
         service_factories={WorkerOperationsProvider: register_services},
         task_modules=["plugin_worker.tasks"],

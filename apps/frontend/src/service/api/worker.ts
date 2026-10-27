@@ -221,3 +221,15 @@ export function fetchReservedTasksOfWorker(workerId: string) {
 export function fetchQueueDashboard(params: Api.Worker.QueueDashboardQuery) {
   return request<Api.Worker.QueueDashboard>({ url: "/tasks/stats/dashboard", method: "get", params })
 }
+
+export function fetchWorkerGroups() {
+  return request<Api.Worker.WorkerGroup[]>({ url: "/workers/groups", method: "get" })
+}
+
+export function fetchWorkerHistory(params: Api.Worker.WorkerHistoryQuery) {
+  return request<Api.Worker.WorkerHistory>({ url: "/workers/history", method: "get", params })
+}
+
+export function fetchRetireWorker(workerId: string) {
+  return request<Api.Worker.WorkerInfo>({ url: `/workers/${workerId}/retire`, method: "post" })
+}

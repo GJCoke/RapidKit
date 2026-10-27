@@ -103,3 +103,14 @@ class TaskRepeatedFailureAlertEvent(Event):
     task_name: str
     failure_count: int
     correlation_id: str | None = None
+
+
+@dataclass
+class WorkerCapacityChangedEvent(Event):
+    event_name: ClassVar[str] = "worker.capacity_changed"
+    event_id: str
+    occurred_at: datetime
+    group_name: str
+    expected: int
+    online: int
+    missing: int
