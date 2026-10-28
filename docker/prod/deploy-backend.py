@@ -67,7 +67,7 @@ def check_manual_mode(container_info):
     if any(
         item.get("Config", {}).get("Labels", {}).get("io.rapidkit.release-managed") == "true" for item in containers
     ):
-        raise ValueError("This environment is release-managed; use its release hooks instead of deploy-workers.py")
+        raise ValueError("This environment is release-managed; use its release hooks instead of deploy-backend.py")
 
 
 def main():

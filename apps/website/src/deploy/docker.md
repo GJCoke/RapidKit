@@ -333,7 +333,7 @@ CELERY_WORKER_REPLICAS=3
 修改副本数后运行（设为 `0` 即暂停该组）：
 
 ```bash
-python3 docker/prod/deploy-workers.py --build
+python3 docker/prod/deploy-backend.py --build
 ```
 
 脚本先执行迁移并启动 API/Beat，随后登记部署意图、替换所选 Worker 容器，Docker 返回成功后退役旧实例。新实例未就绪时仍显示容量不足；本入口使用停止并重建，不承诺滚动发布或零停机。Worker 停机宽限为 120 秒，超时后 Docker 可终止未完成任务；长任务部署应按实际耗时调整 `stop_grace_period`。
@@ -368,7 +368,7 @@ services:
 ```
 
 ```bash
-python3 docker/prod/deploy-workers.py \
+python3 docker/prod/deploy-backend.py \
   -f docker/prod/docker-compose.yml -f docker/prod/worker-groups.yml \
   --service celery-worker --service celery-reports
 ```

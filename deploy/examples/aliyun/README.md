@@ -77,7 +77,7 @@ python3 /path/to/repo/deploy/examples/aliyun/adopt.py \
 
 GitLab 中配置 Prevent outdated deployment jobs；生产任务的 resource_group 和目标锁都覆盖发布全过程。不自动重试或取消生产任务。Runner 中断后目标进程可继续，先查询目标状态，不能重复点击发布来覆盖未完成记录。
 
-接入后旧 `deploy-workers.py` 会识别受管理容器并拒绝绕过发布入口；容量和配置更新也通过显式选择的发布流程处理。未接入 CD 的环境仍可使用旧脚本，`--workers-only` 可跳过迁移及 API/Beat 更新。
+接入后旧 `deploy-backend.py` 会识别受管理容器并拒绝绕过发布入口；容量和配置更新也通过显式选择的发布流程处理。未接入 CD 的环境仍可使用旧脚本，`--workers-only` 可跳过迁移及 API/Beat 更新。
 
 普通发布仅操作 API、Worker、Beat、Nginx，启动统一使用 `--no-deps --no-build --pull never`。PostgreSQL/Redis/MinIO 保持运行。迁移明确执行一次 `alembic upgrade heads`，后续启动不会通过 depends_on 再运行它。不执行 `down -v`、清空任务队列或生产 seed。
 

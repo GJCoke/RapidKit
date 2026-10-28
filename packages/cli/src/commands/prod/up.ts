@@ -30,7 +30,7 @@ export const up = defineFluxCommand({
       resolve(ctx.cwd, "docker/prod/.env.prod"),
     ])
     await runner.run({ label: t("prod.up.starting") }, "python3", [
-      resolve(ctx.cwd, "docker/prod/deploy-workers.py"),
+      resolve(ctx.cwd, "docker/prod/deploy-backend.py"),
       "--compose-command",
       JSON.stringify([workerCompose.cmd, ...workerCompose.args]),
     ])

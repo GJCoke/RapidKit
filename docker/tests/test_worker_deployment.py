@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-spec = importlib.util.spec_from_file_location("worker_deploy", Path(__file__).parents[1] / "prod/deploy-workers.py")
+spec = importlib.util.spec_from_file_location("worker_deploy", Path(__file__).parents[1] / "prod/deploy-backend.py")
 deploy = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(deploy)
 
