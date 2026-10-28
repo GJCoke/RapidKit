@@ -144,6 +144,7 @@ FROM nginx:stable-alpine AS serve
 ```
 
 - 构建阶段基于 `node:24-alpine`，通过 Turborepo 先构建内部包，再构建前端 SPA。
+- 自动收集 `packages/*/package.json`，依赖安装与源码复制分层缓存；构建仅选择前端声明的直接及间接依赖。新增共享包后，声明 `workspace:*` 依赖并更新、提交锁文件即可，无需修改 Dockerfile。包源码必须位于构建上下文的 `packages/` 中；复制包清单使用 `COPY --parents`，需要支持 Dockerfile 1.20+ 的 BuildKit。
 - 运行阶段仅包含 `nginx:stable-alpine` + 编译后的静态文件，最终镜像约 30--40 MB。
 
 ### HTTP 安全配置

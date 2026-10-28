@@ -21,12 +21,8 @@ ENV npm_config_registry=${NPM_REGISTRY}
 # Keep dependency installation independent of source and build configuration changes.
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
-# Include only the frontend workspace and the shared packages needed to build it.
-COPY packages/axios/package.json packages/axios/package.json
-COPY packages/builder/package.json packages/builder/package.json
-COPY packages/color/package.json packages/color/package.json
-COPY packages/hooks/package.json packages/hooks/package.json
-COPY packages/utils/package.json packages/utils/package.json
+# Preserve workspace paths without maintaining a package allowlist (Dockerfile 1.20+).
+COPY --parents packages/*/package.json ./
 COPY apps/frontend/package.json apps/frontend/package.json
 
 RUN --mount=type=cache,id=rapidkit-frontend-pnpm,target=/pnpm/store \
@@ -34,11 +30,7 @@ RUN --mount=type=cache,id=rapidkit-frontend-pnpm,target=/pnpm/store \
 
 # Copy source code for packages and frontend
 COPY turbo.json tsconfig.json ./
-COPY packages/axios/ packages/axios/
-COPY packages/builder/ packages/builder/
-COPY packages/color/ packages/color/
-COPY packages/hooks/ packages/hooks/
-COPY packages/utils/ packages/utils/
+COPY packages/ packages/
 COPY apps/frontend/ apps/frontend/
 
 # Build packages then frontend with prod mode.
