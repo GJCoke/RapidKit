@@ -14,7 +14,7 @@ from sqlmodel.sql.expression import Select
 
 from plugin_worker.inventory import group_summaries, scoped_worker_filters
 from plugin_worker.models import CeleryTaskResult, CeleryWorker, QueueDepthSnapshot
-from plugin_worker.operations import HEARTBEAT_TIMEOUT_SECONDS, is_worker_healthy
+from plugin_worker.operations import HEARTBEAT_TIMEOUT_SECONDS, is_worker_healthy, summarize_worker_capacity
 from plugin_worker.schemas import DashboardDepthPoint, DashboardTimelinePoint, QueueDashboardResponse, QueueMetric
 
 logger = get_plugin_logger("worker")
@@ -108,6 +108,7 @@ async def get_queue_dashboard(session, celery_app, days: int) -> QueueDashboardR
     start = now - timedelta(days=days)
     workers = list((await session.exec(select(CeleryWorker).where(*scoped_worker_filters()))).all())
     groups = await group_summaries(session, now)
+    capacity = summarize_worker_capacity(groups)
     workers, unknown_workers = await resolve_worker_subscriptions(celery_app, workers, now)
     healthy = [w for w in workers if is_worker_healthy(w.status, w.last_heartbeat, now, HEARTBEAT_TIMEOUT_SECONDS)]
     conf = celery_app.conf
@@ -200,10 +201,10 @@ async def get_queue_dashboard(session, celery_app, days: int) -> QueueDashboardR
         queue_depth=sum(q.depth for q in queues if q.depth is not None)
         if all(q.depth is not None for q in queues)
         else None,
-        online_workers=sum(g.online for g in groups),
-        total_workers=sum(g.expected_replicas if g.expected_replicas is not None else g.observed for g in groups),
-        missing_workers=sum(g.missing for g in groups),
-        capacity_known=bool(groups) and all(g.expected_replicas is not None for g in groups),
+        online_workers=capacity.healthy,
+        total_workers=capacity.total,
+        missing_workers=capacity.missing or 0,
+        capacity_known=capacity.capacity_known,
         active_tasks=sum(w.active_task_count for w in healthy),
         concurrency=sum(w.concurrency for w in healthy),
         throughput=round(recent / 15, 2),

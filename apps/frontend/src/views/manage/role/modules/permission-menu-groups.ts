@@ -67,6 +67,8 @@ export function buildPermissionModules(catalog: Api.Permission.Catalog, menus: r
     modules.push({
       key: "other",
       label: "other",
+      icon: "carbon:category",
+      iconType: "1",
       entries: remaining.map((row) => ({
         row,
         ownerKey: "other",

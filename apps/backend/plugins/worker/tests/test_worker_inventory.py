@@ -83,6 +83,37 @@ async def test_discovery_preserves_offline_workers(inventory, monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "expected,managed_online,discovered_online,stale,want",
+    [
+        (1, True, False, False, (1, 1, 0, True)),
+        (1, False, False, False, (0, 1, 1, True)),
+        (0, False, False, False, (0, 0, 0, True)),
+        (1, True, True, False, (2, 2, 0, False)),
+        (1, True, True, True, (1, 1, 0, True)),
+        (None, True, False, False, (1, 2, 0, False)),
+    ],
+)
+async def test_capacity_ignores_inactive_discovery_groups_when_deployment_intent_exists(
+    inventory, monkeypatch, expected, managed_online, discovered_online, stale, want
+):
+    monkeypatch.setattr(settings, "CELERY_WORKER_NAMES", [])
+    async with inventory() as session:
+        legacy = (await session.exec(select(CeleryWorker))).one()
+        legacy.group_name = "local/default"
+        legacy.status = WorkerStatus.ONLINE if discovered_online else WorkerStatus.OFFLINE
+        legacy.last_heartbeat = timezone.now() - timedelta(seconds=120 if stale else 0)
+        session.add(WorkerGroup(name="local/default"))
+        session.add(WorkerGroup(name="prod/default", expected_replicas=expected))
+        if managed_online:
+            session.add(CeleryWorker(hostname=STABLE, group_name="prod/default"))
+        await session.commit()
+        assert len(await WorkerCRUD(session).get_all_workers()) == 1 + int(managed_online)
+    snapshot = await WorkerOperationsProviderImpl(inventory).get_server_snapshot(timezone.now())
+    assert (snapshot.healthy, snapshot.total, snapshot.missing, snapshot.capacity_known) == want
+
+
+@pytest.mark.asyncio
 async def test_queue_discovery_and_sampling_exclude_legacy(inventory):
     await add_current(inventory)
     redis = MagicMock()

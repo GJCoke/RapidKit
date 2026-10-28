@@ -18,6 +18,7 @@ from sqlmodel import col, func, select
 
 from plugin_worker.inventory import group_summaries, scoped_worker_filters
 from plugin_worker.models import CeleryTaskResult, CeleryWorker, QueueDepthSnapshot
+from plugin_worker.schemas import WorkerGroupResponse
 
 HEARTBEAT_TIMEOUT_SECONDS = 60
 QUEUE_SNAPSHOT_TOLERANCE = timedelta(minutes=10)
@@ -33,6 +34,20 @@ def terminal_success_rate(*, success: int, failure: int, revoked: int) -> float 
     return round(success / total * 100, 2) if total else None
 
 
+def summarize_worker_capacity(groups: list[WorkerGroupResponse]) -> ServerSnapshot:
+    # Inactive discovery-only groups must not obscure declared deployment capacity.
+    if any(group.expected_replicas is not None for group in groups):
+        groups = [group for group in groups if group.expected_replicas is not None or group.online > 0]
+    return ServerSnapshot(
+        healthy=sum(group.online for group in groups),
+        total=sum(
+            group.expected_replicas if group.expected_replicas is not None else group.observed for group in groups
+        ),
+        missing=sum(group.missing for group in groups),
+        capacity_known=bool(groups) and all(group.expected_replicas is not None for group in groups),
+    )
+
+
 class WorkerOperationsProviderImpl(WorkerOperationsProvider):
     def __init__(self, session_factory=AsyncSessionLocal, redis_factory=RedisManager.client):
         self._session_factory = session_factory
@@ -41,12 +56,7 @@ class WorkerOperationsProviderImpl(WorkerOperationsProvider):
     async def get_server_snapshot(self, now: datetime) -> ServerSnapshot:
         async with self._session_factory() as session:
             groups = await group_summaries(session, now)
-        return ServerSnapshot(
-            healthy=sum(g.online for g in groups),
-            total=sum(g.expected_replicas if g.expected_replicas is not None else g.observed for g in groups),
-            missing=sum(g.missing for g in groups),
-            capacity_known=bool(groups) and all(g.expected_replicas is not None for g in groups),
-        )
+        return summarize_worker_capacity(groups)
 
     async def get_task_comparison(self, today_start: datetime, tomorrow_start: datetime) -> DayComparison:
         yesterday_start = today_start - timedelta(days=1)

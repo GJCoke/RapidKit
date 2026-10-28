@@ -125,7 +125,7 @@
         <SvgIcon icon="carbon:data-structured" class="text-15px text-primary" />
         {{ $t("page.home.dashboard.businessScale") }}
       </div>
-      <div class="grid grid-cols-5">
+      <div class="grid grid-cols-4">
         <div
           v-for="(metric, index) in businessMetrics"
           :key="metric.label"

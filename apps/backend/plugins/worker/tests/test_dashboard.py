@@ -7,6 +7,7 @@ import plugin_worker.dashboard as module
 import pytest
 from plugin_worker.dashboard import collect_queue_metrics, completion_rate, fill_history_buckets, get_queue_dashboard
 from plugin_worker.models import CeleryWorker
+from plugin_worker.schemas import WorkerGroupResponse
 from plugin_worker.tasks import capture_queue_depth
 from rapidkit_common.enums import WorkerStatus
 from rapidkit_core.timezone import timezone
@@ -67,8 +68,34 @@ async def test_completion_window_and_p95_are_queried_by_finished_time(monkeypatc
     broker = AsyncMock()
     broker.llen.return_value = 0
     monkeypatch.setattr(module.Redis, "from_url", lambda *args, **kwargs: broker)
-    monkeypatch.setattr(module, "group_summaries", AsyncMock(return_value=[]))
+    monkeypatch.setattr(
+        module,
+        "group_summaries",
+        AsyncMock(
+            return_value=[
+                WorkerGroupResponse(
+                    name="prod/default",
+                    expected_replicas=1,
+                    online=1,
+                    observed=1,
+                    draining=0,
+                    missing=0,
+                    alerting=False,
+                ),
+                WorkerGroupResponse(
+                    name="local/default",
+                    expected_replicas=None,
+                    online=0,
+                    observed=1,
+                    draining=0,
+                    missing=0,
+                    alerting=False,
+                ),
+            ]
+        ),
+    )
     response = await get_queue_dashboard(session, app, 7)
+    assert (response.online_workers, response.total_workers, response.capacity_known) == (1, 1, True)
     assert response.success_rate == 90
     assert response.throughput == 2
     assert response.p95_runtime == 4.2
