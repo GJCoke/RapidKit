@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # ============================================================
 # Configurable registry sources (override via --build-arg or env file)
 # ============================================================
@@ -16,29 +18,32 @@ WORKDIR /app
 ARG NPM_REGISTRY
 ENV npm_config_registry=${NPM_REGISTRY}
 
-# Copy dependency manifests and root tsconfig (packages extend it via ../../tsconfig.json)
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json tsconfig.json ./
+# Keep dependency installation independent of source and build configuration changes.
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
-# Copy each package's package.json (needed for pnpm workspace resolution)
-COPY packages/alova/package.json packages/alova/package.json
+# Include only the frontend workspace and the shared packages needed to build it.
 COPY packages/axios/package.json packages/axios/package.json
 COPY packages/builder/package.json packages/builder/package.json
 COPY packages/color/package.json packages/color/package.json
 COPY packages/hooks/package.json packages/hooks/package.json
 COPY packages/utils/package.json packages/utils/package.json
 COPY apps/frontend/package.json apps/frontend/package.json
-# Backend package.json is needed for workspace resolution (pnpm postinstall runs uv sync, skip it)
-COPY apps/backend/package.json apps/backend/package.json
+
+RUN --mount=type=cache,id=rapidkit-frontend-pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile --ignore-scripts --prefer-offline --store-dir=/pnpm/store
 
 # Copy source code for packages and frontend
-COPY packages/ packages/
+COPY turbo.json tsconfig.json ./
+COPY packages/axios/ packages/axios/
+COPY packages/builder/ packages/builder/
+COPY packages/color/ packages/color/
+COPY packages/hooks/ packages/hooks/
+COPY packages/utils/ packages/utils/
 COPY apps/frontend/ apps/frontend/
 
-# Install deps, build packages then frontend with prod mode, then clean up
-RUN pnpm install --frozen-lockfile --ignore-scripts \
-    && pnpm turbo build --filter='./packages/*' \
-    && cd apps/frontend && pnpm vite build --mode prod && cd ../.. \
-    && rm -rf node_modules/.pnpm
+# Build packages then frontend with prod mode.
+RUN pnpm turbo build --filter='@rapidkit/frontend^...' \
+    && cd apps/frontend && pnpm vite build --mode prod
 
 # ============================================================
 # Stage 2: serve — nginx serves the static SPA
