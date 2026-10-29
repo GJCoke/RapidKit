@@ -5,8 +5,11 @@ import { useNotificationStore } from "./index"
 import { useBannerStore } from "../banner"
 
 let socket: Socket | null = null
+let removeVisibilityListener: (() => void) | undefined
 
 function destroySocket() {
+  removeVisibilityListener?.()
+  removeVisibilityListener = undefined
   if (!socket) return
 
   closeAppSocket(socket)
@@ -24,9 +27,39 @@ export function connectNotificationSocket(): Socket | undefined {
   banner.start(getToken())
   socket = openAppSocket("/notifications")
 
+  let connectedOnce = false
+  let latestNeeded = false
+  let freshInboxNeeded = false
+  let unreadFallbackNeeded = false
+  let fallbackAttempted = false
+  function refreshLatestWhenVisible() {
+    if (!latestNeeded || (typeof document !== "undefined" && document.visibilityState === "hidden")) return
+    latestNeeded = false
+    if (unreadFallbackNeeded) {
+      unreadFallbackNeeded = false
+      void store.calibrate()
+    } else void store.refreshLatest(freshInboxNeeded)
+    freshInboxNeeded = false
+  }
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", refreshLatestWhenVisible)
+    removeVisibilityListener = () => document.removeEventListener("visibilitychange", refreshLatestWhenVisible)
+  }
   socket.on("connect", () => {
-    void store.calibrate()
-    void banner.refresh()
+    // The server pushes the authoritative unread count on every connection.
+    latestNeeded = true
+    freshInboxNeeded = connectedOnce || fallbackAttempted
+    unreadFallbackNeeded = false
+    refreshLatestWhenVisible()
+    if (connectedOnce) void banner.refresh()
+    connectedOnce = true
+  })
+  socket.on("connect_error", () => {
+    if (connectedOnce || fallbackAttempted) return
+    fallbackAttempted = true
+    unreadFallbackNeeded = true
+    latestNeeded = true
+    refreshLatestWhenVisible()
   })
   socket.on("announcement:banner_changed", (payload: { revision: number }) => {
     banner.invalidate(payload.revision)

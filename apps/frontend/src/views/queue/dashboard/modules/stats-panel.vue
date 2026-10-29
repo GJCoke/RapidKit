@@ -8,7 +8,7 @@
   import OverviewChart from "./overview-chart.vue"
 
   defineOptions({ name: "StatsPanel" })
-  const props = defineProps<{ connected: boolean }>()
+  const props = withDefaults(defineProps<{ connected: boolean; active?: boolean }>(), { active: true })
   const emit = defineEmits<{ refreshWorkers: []; viewWorkers: [] }>()
   const router = useRouter()
   const days = ref(1)
@@ -94,11 +94,16 @@
   })
   let requestId = 0
   let disposed = false
-  let poll: ReturnType<typeof setInterval> | undefined
   let debounce: ReturnType<typeof setTimeout> | undefined
   let pendingEvent = false
+  let lastStarted = -Infinity
 
-  async function loadStats() {
+  async function loadStats(force = false) {
+    if (disposed || !props.active) return
+    if (!force && (loading.value || Date.now() - lastStarted < 30000)) return
+    clearTimeout(debounce)
+    debounce = undefined
+    lastStarted = Date.now()
     const id = ++requestId
     const selectedDays = days.value
     const end = new Date()
@@ -141,17 +146,21 @@
   }
   function scheduleRefresh() {
     pendingEvent = true
-    if (loading.value || debounce) return
-    debounce = setTimeout(() => {
-      debounce = undefined
-      if (!disposed) void loadStats()
-    }, 1500)
+    if (!props.active || loading.value || debounce) return
+    debounce = setTimeout(
+      () => {
+        debounce = undefined
+        if (!disposed) void loadStats()
+      },
+      Math.max(1500, 30000 - (Date.now() - lastStarted)),
+    )
   }
   function refresh() {
+    if (loading.value) return
     emit("refreshWorkers")
-    void loadStats()
+    void loadStats(true)
   }
-  function handleTaskUpdate(_event: Api.Worker.TaskUpdateEvent) {
+  function handleTaskUpdate(_event?: Api.Worker.TaskUpdateEvent) {
     scheduleRefresh()
   }
   function viewRanking(kind: "tasks" | "workers", name: string) {
@@ -183,28 +192,27 @@
     dashboard.value = null
     tasks.value = []
     workerRanking.value = []
-    void loadStats()
+    void loadStats(true)
   })
   watch(
-    () => props.connected,
-    (connected) => {
-      if (connected) refresh()
+    () => props.active,
+    (active) => {
+      if (active) void loadStats(true)
+      else {
+        clearTimeout(debounce)
+        debounce = undefined
+      }
     },
   )
   onMounted(() => {
     void loadStats()
-    poll = setInterval(() => {
-      now.value = Date.now()
-      if (!loading.value) refresh()
-    }, 30000)
   })
   onUnmounted(() => {
     disposed = true
     requestId++
-    clearInterval(poll)
     clearTimeout(debounce)
   })
-  defineExpose({ handleTaskUpdate, refresh: scheduleRefresh })
+  defineExpose({ handleTaskUpdate, refresh: loadStats })
 </script>
 
 <template>

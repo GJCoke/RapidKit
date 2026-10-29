@@ -1,5 +1,6 @@
 <script setup lang="tsx">
-  import { reactive, ref, onMounted, onUnmounted, watch } from "vue"
+  import { computed, reactive, ref, onActivated, onDeactivated, onMounted, onUnmounted, watch } from "vue"
+  import { useDocumentVisibility } from "@vueuse/core"
   import dayjs from "dayjs"
   import { useBoolean } from "@rapidkit/hooks"
   import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
@@ -35,28 +36,75 @@
   const bannerLoading = ref(false)
   const detailVisible = ref(false)
   const detailId = ref<string | null>(null)
-  let summaryRequest = 0
+  const documentVisibility = useDocumentVisibility()
+  const pageActive = ref(true)
+  const summaryActive = computed(() => pageActive.value && documentVisibility.value !== "hidden" && hasAuth("notification:preview"))
+  let summaryPromise: Promise<void> | null = null
+  let fullRefresh: Promise<void> | null = null
+  let disposed = false
+  let lastSummaryAt = -Infinity
   const bt = (key: string) => $t(`page.notification.banner.${key}` as I18nFullKey)
-  async function loadBanners() {
-    if (!hasAuth("notification:preview")) return
-    const request = ++summaryRequest
+  function loadBanners(): Promise<void> {
+    if (disposed || !summaryActive.value) return Promise.resolve()
+    if (summaryPromise) return summaryPromise
+    const requestedRevision = bannerStore.snapshot?.revision ?? 0
+    lastSummaryAt = performance.now()
     bannerLoading.value = true
-    const { data, error } = await fetchCheckBanner()
-    if (request !== summaryRequest) return
-    bannerFailed.value = Boolean(error || !data)
-    if (!error && data) bannerCheck.value = data
-    bannerLoading.value = false
+    summaryPromise = (async () => {
+      try {
+        const { data, error } = await fetchCheckBanner()
+        if (disposed || !summaryActive.value) return
+        const requiredRevision = bannerStore.snapshot?.revision ?? 0
+        bannerFailed.value = Boolean(error || !data || data.revision < requiredRevision)
+        if (!bannerFailed.value && data) bannerCheck.value = data
+      } catch {
+        if (!disposed) bannerFailed.value = true
+      } finally {
+        if (!disposed) {
+          bannerLoading.value = false
+          summaryPromise = null
+          const requiredRevision = bannerStore.snapshot?.revision ?? 0
+          if (!fullRefresh && requiredRevision > requestedRevision && (bannerCheck.value?.revision ?? -1) < requiredRevision)
+            void loadBanners()
+        }
+      }
+    })()
+    return summaryPromise
   }
-  onMounted(() => { void loadBanners(); window.addEventListener("focus", loadBanners) })
-  onUnmounted(() => { summaryRequest++; window.removeEventListener("focus", loadBanners) })
-  watch(() => bannerStore.snapshot?.revision, () => { void loadBanners() })
+  function onFocus() {
+    if (!fullRefresh && performance.now() - lastSummaryAt >= 30000) void loadBanners()
+  }
+  onMounted(() => { void loadBanners(); window.addEventListener("focus", onFocus) })
+  onActivated(() => { pageActive.value = true })
+  onDeactivated(() => { pageActive.value = false })
+  onUnmounted(() => { disposed = true; window.removeEventListener("focus", onFocus) })
+  watch(summaryActive, (active) => { if (active && !fullRefresh) void loadBanners() })
+  watch(() => bannerStore.snapshot?.revision, (revision) => {
+    if (!fullRefresh && revision !== undefined && revision > (bannerCheck.value?.revision ?? -1)) void loadBanners()
+  })
   function showDetails(id: string) { detailId.value = id; detailVisible.value = true }
   function upcomingHint() {
     const scheduled = bannerCheck.value?.scheduled
     return scheduled ? `${bt("takeDownUpcoming")} ${renderTitle(scheduled)} · ${dayjs(scheduled.publishAt).format("YYYY-MM-DD HH:mm")}` : ""
   }
   function recallHint(row: Api.Notification.AnnouncementItem) { return row.displayMode === "top_banner" ? `${bt("takeDownWarning")} ${upcomingHint()}` : tt("recallWarning") }
-  async function refreshAll() { await Promise.all([table.getData(), loadBanners(), bannerStore.refresh()]) }
+  function refreshAll(): Promise<void> {
+    const rows = table.getData()
+    if (fullRefresh) return Promise.all([rows, fullRefresh]).then(() => {})
+    const pending = summaryPromise
+    fullRefresh = (async () => {
+      try {
+        await Promise.all([rows, bannerStore.refresh()])
+        await pending
+        if (!pending || bannerFailed.value || (bannerCheck.value?.revision ?? -1) < (bannerStore.snapshot?.revision ?? 0))
+          await loadBanners()
+      } finally {
+        fullRefresh = null
+        if (!disposed && (bannerCheck.value?.revision ?? -1) < (bannerStore.snapshot?.revision ?? 0)) void loadBanners()
+      }
+    })()
+    return fullRefresh
+  }
   const actingIds = ref<string[]>([])
   const copyFromId = ref<string | null>(null)
   const selectedMessageId = ref<string | null>(null)

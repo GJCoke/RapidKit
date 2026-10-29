@@ -376,6 +376,7 @@ describe("notification store", () => {
     const store = useNotificationStore()
 
     const firstRequest = store.refreshLatest()
+    store.activeTab = "unread"
     const secondRequest = store.refreshLatest()
     second.resolve(success({ items: [message("second")], nextCursor: null, size: 20 }))
     await secondRequest
@@ -383,6 +384,19 @@ describe("notification store", () => {
 
     first.resolve(success({ items: [message("first")], nextCursor: null, size: 20 }))
     await firstRequest
+    expect(store.loading).toBe(false)
+  })
+
+  it("shares concurrent refreshes of the same inbox filter", async () => {
+    const pending = deferred<ReturnType<typeof success<Api.Notification.InboxPage>>>()
+    api.fetchGetNotifications.mockReturnValueOnce(pending.promise)
+    const store = useNotificationStore()
+    const first = store.refreshLatest()
+    const second = store.refreshLatest()
+    expect(api.fetchGetNotifications).toHaveBeenCalledTimes(1)
+    pending.resolve(success({ items: [message("fresh")], nextCursor: null, size: 20 }))
+    await Promise.all([first, second])
+    expect(store.latest[0].id).toBe("fresh")
     expect(store.loading).toBe(false)
   })
 })

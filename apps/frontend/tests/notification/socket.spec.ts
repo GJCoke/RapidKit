@@ -34,7 +34,7 @@ const mocks = vi.hoisted(() => ({
   bannerInvalidate: vi.fn(),
   io: vi.fn(),
   token: "token",
-  calibrate: vi.fn(),
+  refreshLatest: vi.fn(),
   onRealtimeNew: vi.fn(),
   onRealtimeRecalled: vi.fn(),
   onRealtimeUnreadCount: vi.fn(),
@@ -68,7 +68,7 @@ vi.mock("@/hooks/common/app-socket", () => ({
 vi.mock("@/store/modules/auth/shared", () => ({ getToken: () => mocks.token }))
 vi.mock("@/store/modules/notification", () => ({
   useNotificationStore: () => ({
-    calibrate: mocks.calibrate,
+    refreshLatest: mocks.refreshLatest,
     onRealtimeNew: mocks.onRealtimeNew,
     onRealtimeRecalled: mocks.onRealtimeRecalled,
     onRealtimeUnreadCount: mocks.onRealtimeUnreadCount,
@@ -101,7 +101,7 @@ describe("notification socket", () => {
     expect(sockets[0].disconnect).not.toHaveBeenCalled()
   })
 
-  it("calibrates on connect and forwards all notification events", async () => {
+  it("refreshes the inbox on connect and forwards all notification events", async () => {
     const message = { id: "notification-1" } as Api.Notification.Message
     connectNotificationSocket()
 
@@ -111,9 +111,9 @@ describe("notification socket", () => {
     await sockets[0].emitFromServer("notification:unread-count", { count: 7 })
 
     await sockets[0].emitFromServer("announcement:banner_changed", { revision: 5 })
-    expect(mocks.bannerRefresh).toHaveBeenCalledOnce()
+    expect(mocks.bannerRefresh).not.toHaveBeenCalled()
     expect(mocks.bannerInvalidate).toHaveBeenCalledWith(5)
-    expect(mocks.calibrate).toHaveBeenCalledOnce()
+    expect(mocks.refreshLatest).toHaveBeenCalledOnce()
     expect(mocks.onRealtimeNew).toHaveBeenCalledWith(message)
     expect(mocks.onRealtimeRecalled).toHaveBeenCalledWith("message-1")
     expect(mocks.onRealtimeUnreadCount).toHaveBeenCalledWith(7)
@@ -143,8 +143,9 @@ describe("notification socket", () => {
     const actual = await vi.importActual<typeof import("@/store/modules/notification")>("@/store/modules/notification")
     setActivePinia(createPinia())
     const store = actual.useNotificationStore()
-    mocks.calibrate.mockImplementation(store.calibrate)
+    mocks.refreshLatest.mockImplementation(store.refreshLatest)
     mocks.onRealtimeNew.mockImplementation(store.onRealtimeNew)
+    mocks.onRealtimeUnreadCount.mockImplementation(store.onRealtimeUnreadCount)
     api.fetchGetUnreadCount.mockResolvedValue({ data: { count: 0 }, error: null })
     api.fetchGetNotifications.mockResolvedValue({ data: { items: [], nextCursor: null, size: 20 }, error: null })
     connectNotificationSocket()
@@ -161,12 +162,13 @@ describe("notification socket", () => {
     api.fetchGetNotifications.mockResolvedValue({ data: { items: [missed], nextCursor: null, size: 20 }, error: null })
     await sockets[0].emitFromServer("disconnect", "io server disconnect")
     await sockets[0].emitFromServer("connect")
+    await sockets[0].emitFromServer("notification:unread-count", { count: 1 })
     await vi.waitFor(() => expect(store.latest.map((message) => message.id)).toEqual(["missed"]))
     await sockets[0].emitFromServer("notification:new", missed)
     expect(store.latest.map((message) => message.id)).toEqual(["missed"])
     expect(store.unreadCount).toBe(1)
-    expect(mocks.calibrate).toHaveBeenCalledTimes(2)
-    expect(api.fetchGetUnreadCount).toHaveBeenCalledTimes(2)
+    expect(mocks.refreshLatest).toHaveBeenCalledTimes(2)
+    expect(api.fetchGetUnreadCount).not.toHaveBeenCalled()
     expect(api.fetchGetNotifications).toHaveBeenCalledTimes(2)
   })
 })

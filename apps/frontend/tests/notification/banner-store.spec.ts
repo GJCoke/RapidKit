@@ -27,6 +27,7 @@ function response(id = "active", overrides: Record<string, unknown> = {}) {
 }
 let store: ReturnType<typeof useBannerStore>
 beforeEach(() => {
+  Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" })
   setActivePinia(createPinia())
   vi.useFakeTimers()
   vi.setSystemTime(start - 3_600_000)
@@ -128,8 +129,11 @@ describe("global announcement session and validity", () => {
     api.get.mockResolvedValue(response("new", { revision: 4 }))
     store.invalidate(4)
     await settle()
+    expect(api.get).toHaveBeenCalledTimes(2)
+    expect(store.current).toBeNull()
     resolve(response("old", { revision: 3 }))
     await old
+    await settle()
     expect(store.current?.id).toBe("new")
   })
   it("refetches at an upcoming boundary even when there is no active banner", async () => {
@@ -152,6 +156,53 @@ describe("global announcement session and validity", () => {
     await vi.advanceTimersByTimeAsync(5_100)
     expect(store.current?.id).toBe("scheduled")
   })
+})
+
+it("shares overlapping snapshot requests", async () => {
+  let finish!: (value: unknown) => void
+  api.get.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve
+      }),
+  )
+  store.start("account")
+  const first = store.refresh()
+  const second = store.refresh()
+  expect(api.get).toHaveBeenCalledTimes(1)
+  finish(response())
+  await Promise.all([first, second])
+  expect(store.current?.id).toBe("active")
+})
+
+it("coalesces focus and visibility refreshes and limits repeated window switching", async () => {
+  api.get.mockResolvedValue(response("active", { nextChangeAt: null }))
+  store.start("account")
+  await settle()
+  await vi.advanceTimersByTimeAsync(30000)
+  window.dispatchEvent(new Event("focus"))
+  document.dispatchEvent(new Event("visibilitychange"))
+  await settle()
+  expect(api.get).toHaveBeenCalledTimes(2)
+  window.dispatchEvent(new Event("focus"))
+  await settle()
+  expect(api.get).toHaveBeenCalledTimes(2)
+})
+
+it("defers boundary and realtime fetches while hidden and catches up when visible", async () => {
+  store.start("account")
+  await settle()
+  Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" })
+  document.dispatchEvent(new Event("visibilitychange"))
+  store.invalidate(4)
+  await vi.advanceTimersByTimeAsync(10000)
+  expect(api.get).toHaveBeenCalledTimes(1)
+  expect(store.current).toBeNull()
+  api.get.mockResolvedValue(response("fresh", { revision: 4, nextChangeAt: null, current: null }))
+  Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" })
+  document.dispatchEvent(new Event("visibilitychange"))
+  await settle()
+  expect(api.get).toHaveBeenCalledTimes(2)
 })
 
 it("stops showing an old unlimited banner at a scheduled boundary even when offline", async () => {

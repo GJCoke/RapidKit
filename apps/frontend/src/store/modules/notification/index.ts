@@ -22,6 +22,8 @@ export const useNotificationStore = defineStore(SetupStoreId.Notification, () =>
   let unreadRequestId = 0
   let latestRequestId = 0
   let pendingLatestRequests = 0
+  let latestRequest: { tab: DrawerTab; epoch: number; id: number; promise: Promise<void> } | null = null
+  let calibration: Promise<void> | null = null
 
   const badgeText = computed(() => (unreadCount.value > 99 ? "99+" : String(unreadCount.value)))
   const hasUnread = computed(() => unreadCount.value > 0)
@@ -83,31 +85,44 @@ export const useNotificationStore = defineStore(SetupStoreId.Notification, () =>
     if (epoch === sessionEpoch.value && requestId === unreadRequestId && !error && data) unreadCount.value = data.count
   }
 
-  async function refreshLatest() {
+  function refreshLatest(force = false): Promise<void> {
     const epoch = sessionEpoch.value
-    const requestId = ++latestRequestId
     const tab = activeTab.value
+    if (!force && latestRequest?.epoch === epoch && latestRequest.tab === tab) return latestRequest.promise
+    const requestId = ++latestRequestId
     pendingLatestRequests += 1
     loading.value = true
-    try {
-      const query: Api.Notification.InboxQuery = { size: 20 }
-      if (tab === "unread") query.unreadOnly = true
+    const promise = (async () => {
+      try {
+        const query: Api.Notification.InboxQuery = { size: 20 }
+        if (tab === "unread") query.unreadOnly = true
 
-      const { data, error } = await fetchGetNotifications(query)
-      if (error || !data) return
-      if (epoch !== sessionEpoch.value || requestId !== latestRequestId || tab !== activeTab.value) return
+        const { data, error } = await fetchGetNotifications(query)
+        if (error || !data) return
+        if (epoch !== sessionEpoch.value || requestId !== latestRequestId || tab !== activeTab.value) return
 
-      latest.value = filterLatest(normalizeMessages(data.items))
-    } finally {
-      if (epoch === sessionEpoch.value) {
-        pendingLatestRequests = Math.max(0, pendingLatestRequests - 1)
-        loading.value = pendingLatestRequests > 0
+        latest.value = filterLatest(normalizeMessages(data.items))
+      } finally {
+        if (latestRequest?.id === requestId) latestRequest = null
+        if (epoch === sessionEpoch.value) {
+          pendingLatestRequests = Math.max(0, pendingLatestRequests - 1)
+          loading.value = pendingLatestRequests > 0
+        }
       }
-    }
+    })()
+    latestRequest = { tab, epoch, id: requestId, promise }
+    return promise
   }
 
-  async function calibrate() {
-    await Promise.all([refreshUnreadCount(), refreshLatest()])
+  function calibrate(): Promise<void> {
+    if (calibration) return calibration
+    const epoch = sessionEpoch.value
+    calibration = Promise.all([refreshUnreadCount(), refreshLatest()])
+      .then(() => {})
+      .finally(() => {
+        if (epoch === sessionEpoch.value) calibration = null
+      })
+    return calibration
   }
 
   function setTab(tab: DrawerTab) {
@@ -181,6 +196,8 @@ export const useNotificationStore = defineStore(SetupStoreId.Notification, () =>
 
   function reset() {
     sessionEpoch.value += 1
+    latestRequest = null
+    calibration = null
     recalledMessageIds.value = new Set()
     pendingLatestRequests = 0
     unreadCount.value = 0

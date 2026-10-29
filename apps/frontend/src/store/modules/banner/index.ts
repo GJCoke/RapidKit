@@ -9,7 +9,9 @@ export const useBannerStore = defineStore("global-banner", () => {
   const loading = ref(false)
   let session = ""
   let epoch = 0
-  let requestId = 0
+  let inFlight: Promise<void> | null = null
+  let refreshNeeded = false
+  let lastRequestedAt = -Infinity
   const expectedRevision = ref(0)
   let ticker: ReturnType<typeof setInterval> | undefined
   let boundary: ReturnType<typeof setTimeout> | undefined
@@ -42,32 +44,46 @@ export const useBannerStore = defineStore("global-banner", () => {
       Math.min(2_147_483_647, Math.max(50, delay + 10)),
     )
   }
-  async function refresh() {
-    if (!session) return
-    const currentEpoch = epoch
-    const request = ++requestId
-    const sentAt = performance.now()
-    loading.value = true
-    try {
-      const { data, error } = await fetchGetTopBanner()
-      if (currentEpoch !== epoch || request !== requestId || error || !data || data.revision < expectedRevision.value)
-        return
-      snapshot.value = data
-      const receivedAt = performance.now()
-      const estimate = Date.parse(data.serverNow) + Math.max(0, receivedAt - sentAt) / 2
-      serverAnchor = calibrated ? Math.max(now(), estimate) : estimate
-      monotonicAnchor = receivedAt
-      calibrated = true
-      clock.value = now()
-      expectedRevision.value = data.revision
-      scheduleBoundary()
-    } finally {
-      if (currentEpoch === epoch && request === requestId) loading.value = false
+  function refresh(): Promise<void> {
+    if (!session) return Promise.resolve()
+    if (document.visibilityState === "hidden") {
+      refreshNeeded = true
+      return Promise.resolve()
     }
+    if (inFlight) return inFlight
+    const currentEpoch = epoch
+    const requestedRevision = expectedRevision.value
+    const sentAt = performance.now()
+    lastRequestedAt = sentAt
+    refreshNeeded = false
+    loading.value = true
+    inFlight = (async () => {
+      try {
+        const { data, error } = await fetchGetTopBanner()
+        if (currentEpoch !== epoch || error || !data || data.revision < expectedRevision.value) return
+        snapshot.value = data
+        const receivedAt = performance.now()
+        const estimate = Date.parse(data.serverNow) + Math.max(0, receivedAt - sentAt) / 2
+        serverAnchor = calibrated ? Math.max(now(), estimate) : estimate
+        monotonicAnchor = receivedAt
+        calibrated = true
+        clock.value = now()
+        expectedRevision.value = data.revision
+        scheduleBoundary()
+      } finally {
+        if (currentEpoch === epoch) {
+          loading.value = false
+          inFlight = null
+          if (expectedRevision.value > requestedRevision && (snapshot.value?.revision ?? -1) < expectedRevision.value)
+            void refresh()
+        }
+      }
+    })()
+    return inFlight
   }
   function onFocus() {
     clock.value = now()
-    void refresh()
+    if (refreshNeeded || performance.now() - lastRequestedAt >= 30000) void refresh()
   }
   function onVisibility() {
     if (document.visibilityState === "visible") onFocus()
@@ -75,6 +91,9 @@ export const useBannerStore = defineStore("global-banner", () => {
   function reset() {
     epoch++
     session = ""
+    inFlight = null
+    refreshNeeded = false
+    lastRequestedAt = -Infinity
     snapshot.value = null
     loading.value = false
     expectedRevision.value = 0
@@ -98,6 +117,7 @@ export const useBannerStore = defineStore("global-banner", () => {
     document.addEventListener("visibilitychange", onVisibility)
   }
   function invalidate(revision: number) {
+    if (revision <= (snapshot.value?.revision ?? -1)) return
     expectedRevision.value = Math.max(expectedRevision.value, revision)
     void refresh()
   }

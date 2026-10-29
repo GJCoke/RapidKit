@@ -99,11 +99,24 @@ afterEach(() => {
 })
 
 describe("authoritative overview refresh", () => {
+  it("bounds sustained task events to one statistics refresh per 30 seconds", async () => {
+    const panel = mount()
+    await flush()
+    for (let second = 0; second < 29; second++) {
+      panel.handleTaskUpdate({ taskId: `task-${second}`, status: "3" })
+      await vi.advanceTimersByTimeAsync(1000)
+    }
+    expect(api.overview).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(api.overview).toHaveBeenCalledTimes(2)
+    expect(api.names).toHaveBeenCalledTimes(2)
+    expect(api.workers).toHaveBeenCalledTimes(2)
+  })
   it("coalesces duplicate task events instead of incrementing counts", async () => {
     const panel = mount()
     await flush()
     for (let i = 0; i < 10; i++) panel.handleTaskUpdate({ taskId: "same", status: "3" })
-    await vi.advanceTimersByTimeAsync(1500)
+    await vi.advanceTimersByTimeAsync(30000)
     await flush()
     expect(api.overview).toHaveBeenCalledTimes(2)
     expect(host.textContent).toContain("9")
@@ -122,7 +135,7 @@ describe("authoritative overview refresh", () => {
       error: null,
     })
     panel.handleTaskUpdate({ taskId: "new", status: "3" })
-    await vi.advanceTimersByTimeAsync(1500)
+    await vi.advanceTimersByTimeAsync(30000)
     await flush()
     expect(host.querySelector(".queue-table-scroll")).toBe(scroll)
     expect(host.querySelector("tbody tr")).toBe(row)

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { ref, computed, onMounted, onUnmounted, watch } from "vue"
+  import { ref, computed, onActivated, onDeactivated, onMounted, onUnmounted, watch } from "vue"
+  import { useDocumentVisibility } from "@vueuse/core"
   import { useAppSocket } from "@/hooks/common/app-socket"
   import {
     fetchGetAllWorkers,
@@ -27,8 +28,20 @@
   const historyTotal = ref(0)
   const historyPage = ref(1)
   const view = ref<"current" | "history">("current")
+  const documentVisibility = useDocumentVisibility()
+  const pageActive = ref(true)
+  const active = computed(() => pageActive.value && documentVisibility.value !== "hidden")
   let loadGeneration = 0
-  async function loadWorkers() {
+  let workerRequestKey = ""
+  let pendingWorkers = false
+  async function loadWorkers(force = false) {
+    if (!active.value) return
+    const key = `${view.value}:${historyPage.value}`
+    if (workersLoading.value) {
+      if (force || key !== workerRequestKey) pendingWorkers = true
+      return
+    }
+    workerRequestKey = key
     const generation = ++loadGeneration
     workersLoading.value = true
     try {
@@ -51,6 +64,10 @@
       }
     } finally {
       if (generation === loadGeneration) workersLoading.value = false
+      if (pendingWorkers) {
+        pendingWorkers = false
+        void loadWorkers()
+      }
     }
   }
   watch(view, () => {
@@ -63,7 +80,7 @@
   async function handleRetire(worker: Api.Worker.WorkerInfo) {
     const { error } = await fetchRetireWorker(worker.id)
     if (!error) {
-      await loadWorkers()
+      await loadWorkers(true)
       statsPanelRef.value?.refresh()
     }
   }
@@ -84,7 +101,7 @@
     const { error } = await fetchShutdownWorker(worker.id)
     if (!error) {
       window.$message?.success($t("page.manage.worker.control.shutdownSuccess"))
-      loadWorkers()
+      void loadWorkers(true)
     }
   }
 
@@ -101,23 +118,33 @@
 
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let poll: ReturnType<typeof setInterval> | undefined
+  let connectedOnce = false
   watch(isConnected, (connected) => {
-    if (connected) void loadWorkers()
+    if (!connected) return
+    if (connectedOnce) {
+      void loadWorkers()
+      void statsPanelRef.value?.refresh()
+    }
+    connectedOnce = true
   })
   function setupSocket() {
     connect("/worker")
 
     on("worker:status", (data: Api.Worker.WorkerStatusEvent) => {
-      statsPanelRef.value?.refresh()
       const index = workers.value.findIndex((w) => w.hostname === data.hostname)
+      const previous = workers.value[index]
+      const changed = !previous || previous.status !== data.status || previous.lifecycle !== data.lifecycle
       if (index >= 0) {
         if (data.lifecycle === "retired") workers.value.splice(index, 1)
         else Object.assign(workers.value[index], data)
       }
-      clearTimeout(refreshTimer)
-      refreshTimer = setTimeout(() => {
-        void loadWorkers()
-      }, 250)
+      if (changed && active.value) {
+        statsPanelRef.value?.handleTaskUpdate()
+        clearTimeout(refreshTimer)
+        refreshTimer = setTimeout(() => {
+          void loadWorkers(true)
+        }, 250)
+      }
     })
 
     on("task:update", (data: Api.Worker.TaskUpdateEvent) => {
@@ -126,14 +153,28 @@
   }
 
   // ==================== Lifecycle ====================
+  onActivated(() => {
+    pageActive.value = true
+  })
+  onDeactivated(() => {
+    pageActive.value = false
+  })
+  watch(active, (visible) => {
+    if (visible) void loadWorkers()
+    else clearTimeout(refreshTimer)
+  })
   onMounted(() => {
     loadWorkers()
     setupSocket()
     poll = setInterval(() => {
+      if (!active.value) return
       void loadWorkers()
-    }, 15000)
+      void statsPanelRef.value?.refresh()
+    }, 30000)
   })
   onUnmounted(() => {
+    pageActive.value = false
+    pendingWorkers = false
     loadGeneration++
     clearInterval(poll)
     clearTimeout(refreshTimer)
@@ -145,6 +186,7 @@
     <StatsPanel
       ref="statsPanelRef"
       :connected="isConnected"
+      :active="active"
       @refresh-workers="loadWorkers"
       @view-workers="viewWorkers"
     />

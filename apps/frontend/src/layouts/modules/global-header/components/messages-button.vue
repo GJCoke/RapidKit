@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted } from "vue"
+  import { computed } from "vue"
   import MessagePopover from "@/components/notification/message-popover.vue"
   import { useNotificationStore } from "@/store/modules/notification"
   import { $t } from "@/locales"
@@ -8,10 +8,6 @@
 
   const store = useNotificationStore()
   const title = computed(() => $t("page.notification.title" as I18nFullKey))
-
-  onMounted(() => {
-    void store.refreshUnreadCount()
-  })
 </script>
 
 <template>
