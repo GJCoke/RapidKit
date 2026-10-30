@@ -7,7 +7,7 @@ Author  : Claude
 Date    : 2026-04-02
 """
 
-from datetime import UTC, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi_sio_di import AsyncServer
 from rapidkit_common.audit import AuditMetadata, AuditRecord
@@ -33,6 +33,11 @@ logger = get_plugin_logger("Worker")
 
 # 任务终态
 _TERMINAL_STATES = {TaskStatus.SUCCESS, TaskStatus.FAILURE, TaskStatus.REVOKED}
+
+
+def _event_time(data: dict) -> datetime:
+    timestamp = data.get("timestamp")
+    return timezone.to_utc(datetime.fromisoformat(timestamp)).replace(tzinfo=None) if timestamp else timezone.now()
 
 
 class EventService:
@@ -191,7 +196,7 @@ class EventService:
                 attempt == existing.retries and existing.status in _TERMINAL_STATES | {TaskStatus.STARTED}
             ):
                 return
-        now = timezone.now()
+        now = _event_time(data)
         task = await self.task_crud.upsert_by_task_id(
             data["task_id"],
             {
@@ -216,7 +221,7 @@ class EventService:
 
     async def handle_task_success(self, data: dict) -> None:
         task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
-        now = timezone.now()
+        now = _event_time(data)
         if task:
             attempt = data.get("attempt", task.retries)
             if attempt < task.retries or (attempt == task.retries and task.status in _TERMINAL_STATES):
@@ -228,8 +233,9 @@ class EventService:
             task.finished_at = now
             task.result = data.get("retval")
             task.logs = data.get("logs")
-            if task.started_at:
-                task.runtime = (now - task.started_at).total_seconds()
+            task.runtime = (
+                (now - task.started_at).total_seconds() if task.started_at and now >= task.started_at else None
+            )
             task.update_time = now
         else:
             task = await self.task_crud.upsert_by_task_id(
@@ -263,7 +269,7 @@ class EventService:
 
     async def handle_task_failure(self, data: dict) -> None:
         task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
-        now = timezone.now()
+        now = _event_time(data)
         if task:
             attempt = data.get("attempt", task.retries)
             if attempt < task.retries or (attempt == task.retries and task.status in _TERMINAL_STATES):
@@ -276,8 +282,9 @@ class EventService:
             task.exception = data.get("exception", "")
             task.traceback = data.get("traceback", "")
             task.logs = data.get("logs")
-            if task.started_at:
-                task.runtime = (now - task.started_at).total_seconds()
+            task.runtime = (
+                (now - task.started_at).total_seconds() if task.started_at and now >= task.started_at else None
+            )
             task.update_time = now
         else:
             task = await self.task_crud.upsert_by_task_id(
@@ -317,12 +324,12 @@ class EventService:
         attempt = data.get("attempt", task.retries)
         if attempt < task.retries or task.status in _TERMINAL_STATES:
             return
-        if task.started_at:
-            task.runtime = (timezone.now() - task.started_at).total_seconds()
+        now = _event_time(data)
+        task.runtime = (now - task.started_at).total_seconds() if task.started_at and now >= task.started_at else None
         await self._audit_execution(task, data, "failure")
         task.status = TaskStatus.RETRY
         task.retries = attempt + 1
-        task.update_time = timezone.now()
+        task.update_time = now
         await self.session.flush()
         await self._emit_task_update(task)
 
@@ -333,7 +340,7 @@ class EventService:
         attempt = data.get("attempt", task.retries)
         if attempt < task.retries or (attempt == task.retries and task.status in _TERMINAL_STATES):
             return
-        now = timezone.now()
+        now = _event_time(data)
         task.status = TaskStatus.REVOKED
         task.retries = attempt
         task.finished_at = now

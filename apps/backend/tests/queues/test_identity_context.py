@@ -84,6 +84,7 @@ async def test_signal_stream_consumer_domain_event_roundtrip_and_no_leak(monkeyp
         sender = SimpleNamespace(name="test.identity", request=SimpleNamespace(headers=metadata, hostname=""))
         signals.on_task_postrun(sender, str(index), "done", "SUCCESS")
     redis = AsyncMock()
+    redis.xautoclaim.return_value = ["0-0", [], []]
     redis.xreadgroup.side_effect = [
         [
             (

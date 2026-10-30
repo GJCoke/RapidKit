@@ -30,6 +30,7 @@ STREAM_KEY = "celery:events"
 CONSUMER_GROUP = "fastapi-consumers"
 CONSUMER_NAME = f"consumer-{socket.gethostname()}-{os.getpid()}"
 BLOCK_MS = 5000
+PENDING_IDLE_MS = 60_000
 HEARTBEAT_TIMEOUT = timedelta(seconds=90)
 OFFLINE_CHECK_INTERVAL = 30
 
@@ -59,21 +60,34 @@ async def consume_events(sio: "AsyncServer") -> None:
     """
     主消费循环：从 Redis Stream 读取事件，委托 EventService 处理。
 
-    使用 XREADGROUP 进行消费者组读取，处理完成后 XACK 确认。
+    接管空闲的待确认事件，再读取新事件；仅在事务提交成功后确认。
     """
     redis = RedisManager.client()
     await _ensure_consumer_group(redis)
 
     logger.info("Event stream consumer started.")
+    claim_cursor = "0-0"
 
     while True:
         try:
-            messages = await redis.xreadgroup(
+            claim_cursor, claimed, *_ = await redis.xautoclaim(
+                STREAM_KEY,
                 CONSUMER_GROUP,
                 CONSUMER_NAME,
-                {STREAM_KEY: ">"},
+                min_idle_time=PENDING_IDLE_MS,
+                start_id=claim_cursor,
                 count=10,
-                block=BLOCK_MS,
+            )
+            messages = (
+                [(STREAM_KEY, claimed)]
+                if claimed
+                else await redis.xreadgroup(
+                    CONSUMER_GROUP,
+                    CONSUMER_NAME,
+                    {STREAM_KEY: ">"},
+                    count=10,
+                    block=BLOCK_MS,
+                )
             )
 
             if not messages:
@@ -94,6 +108,7 @@ async def consume_events(sio: "AsyncServer") -> None:
                     handler_name = _EVENT_HANDLERS.get(event_type)
                     if handler_name:
                         try:
+                            data["timestamp"] = fields.get("timestamp")
                             with identity_scope(identity_from_headers(data)):
                                 async with AsyncSessionLocal() as session:
                                     service = EventService(session=session, sio=sio)
@@ -106,6 +121,7 @@ async def consume_events(sio: "AsyncServer") -> None:
                                 event_type=event_type,
                                 data=data,
                             )
+                            continue
                     else:
                         logger.debug("Unknown event type: {event_type}", event_type=event_type)
 
