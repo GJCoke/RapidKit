@@ -53,6 +53,8 @@ class CeleryTaskResult(SQLModel, table=True):
 
     task_id: str = Field(..., unique=True, index=True, max_length=255, description="Celery 原生 task_id")
     task_name: str = Field(..., index=True, max_length=255, description="任务函数全名")
+    request_id: str | None = Field(default=None, index=True, max_length=100)
+    correlation_id: str | None = Field(default=None, index=True, max_length=100)
     status: TaskStatus = Field(TaskStatus.PENDING, description="任务状态")
     worker_hostname: str = Field("", index=True, max_length=255, description="执行该任务的 worker")
     args: list = Field(default=[], sa_column=Column(JSON), description="位置参数")

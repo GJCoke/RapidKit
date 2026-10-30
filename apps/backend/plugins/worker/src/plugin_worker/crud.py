@@ -12,6 +12,7 @@ from rapidkit_common.enums import TaskStatus, WorkerStatus
 from rapidkit_common.schemas.response import PaginatedResponse
 from rapidkit_core.timezone import timezone
 from sqlalchemy import select as sa_select
+from sqlalchemy import text
 from sqlmodel import case, col, func, select
 
 from plugin_worker.inventory import scoped_worker_filters
@@ -35,7 +36,7 @@ class WorkerCRUD(BaseCRUD[CeleryWorker]):
     async def get_by_hostname(self, hostname: str, *, lock=False) -> CeleryWorker | None:
         statement = select(self.model).filter(col(self.model.hostname) == hostname)
         if lock:
-            statement = statement.with_for_update()
+            statement = statement.with_for_update().execution_options(populate_existing=True)
         result = await self.session.exec(statement)
         return result.first()
 
@@ -75,16 +76,20 @@ class TaskResultCRUD(BaseCRUD[CeleryTaskResult]):
     model = CeleryTaskResult
 
     async def get_by_task_id(self, task_id: str, *, for_update: bool = False) -> CeleryTaskResult | None:
+        if for_update and self.session.get_bind().dialect.name == "postgresql":
+            # Row locks cannot serialize two consumers creating the first row.
+            connection = await self.session.connection()
+            await connection.execute(
+                text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"), {"key": f"worker-task:{task_id}"}
+            )
         statement = select(self.model).filter(col(self.model.task_id) == task_id)
         if for_update:
-            statement = statement.with_for_update()
+            statement = statement.with_for_update().execution_options(populate_existing=True)
         result = await self.session.exec(statement)
         return result.first()
 
     async def upsert_by_task_id(self, task_id: str, defaults: dict) -> CeleryTaskResult:
-        statement = select(self.model).filter(col(self.model.task_id) == task_id).with_for_update()
-        result = await self.session.exec(statement)
-        task = result.first()
+        task = await self.get_by_task_id(task_id, for_update=True)
         if task:
             for key, value in defaults.items():
                 setattr(task, key, value)
@@ -117,6 +122,11 @@ class TaskResultCRUD(BaseCRUD[CeleryTaskResult]):
                 filters.append(col(self.model.task_name).contains(query.task_name, autoescape=True))
         if query.worker_hostname:
             filters.append(col(self.model.worker_hostname).contains(query.worker_hostname, autoescape=True))
+        if isinstance(query, TaskQueryRequest):
+            for field in ("request_id", "correlation_id"):
+                value = getattr(query, field)
+                if value:
+                    filters.append(getattr(self.model, field) == value)
         return filters
 
     def _time_filter(self, days: int):

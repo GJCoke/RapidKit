@@ -1,8 +1,10 @@
 from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 from plugin_worker.services import trigger_task
 from rapidkit_common.audit import AuditContext, current_audit
+from rapidkit_core.diagnostics import task_diagnostics
 
 pytestmark = pytest.mark.asyncio
 
@@ -19,10 +21,14 @@ async def test_submitted_task_carries_correlation_without_claiming_completion():
     )
     context = AuditContext()
     context.record.action = "task.submit"
+    context.record.actor_id = actor = uuid4()
+    context.record.subject_user_id = subject = uuid4()
     token = current_audit.set(context)
     try:
         await trigger_task(app, "work", [], {})
         assert headers[0]["audit_correlation_id"]
+        safe = task_diagnostics({"audit_initiated_by": headers[0]["audit_initiated_by"]})
+        assert safe["audit_initiated_by"] == {"user_id": str(subject), "actor_id": str(actor)}
         assert context.record.resource_id == "task-1"
         assert context.record.action == "task.submit"
     finally:

@@ -37,9 +37,13 @@ async def trigger_task(celery_app: Celery, task_name: str, args: list, kwargs: d
             context.record.correlation_id = str(uuid7())
             headers["audit_correlation_id"] = context.record.correlation_id
             headers["audit_initiated_by"] = {
-                "id": str(context.record.actor_id) if context.record.actor_id else None,
-                "name": context.record.actor_name,
-                "username": context.record.actor_username,
+                "user_id": str(context.record.subject_user_id or context.record.actor_id)
+                if context.record.subject_user_id or context.record.actor_id
+                else headers.get("user_id"),
+                "actor_id": str(context.record.actor_id) if context.record.actor_id else headers.get("actor_id"),
+                "impersonation_session_id": str(context.record.impersonation_session_id)
+                if context.record.impersonation_session_id
+                else headers.get("impersonation_session_id"),
             }
         task = celery_app.send_task(task_name, args=args, kwargs=kwargs, headers=headers)
         if context is not None:

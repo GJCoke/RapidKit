@@ -292,6 +292,9 @@ class Task(_Task):
             **identity_headers(),
             "request_id": publication_request_id(options.get("headers") or {}),
         }
+        options["headers"].setdefault(
+            "correlation_id", options["headers"].get("audit_correlation_id") or options["headers"]["request_id"]
+        )
         options["argsrepr"] = "[Filtered]"
         options["kwargsrepr"] = "[Filtered]"
         has_di = bool(self._resolve_deps_hints())

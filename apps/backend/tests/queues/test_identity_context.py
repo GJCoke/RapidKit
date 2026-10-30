@@ -2,7 +2,7 @@ import asyncio
 import json
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from celery import Celery
@@ -14,7 +14,7 @@ from rapidkit_common.protocols.audit import AuditWriter
 from rapidkit_core.nanoid import get_request_nanoid, request_id_scope
 from rapidkit_framework.events import EventBus
 from rapidkit_framework.identity import IdentityMetadata, current_identity, identity_scope
-from src.queues import consumer, signals
+from src.queues import consumer, event_stream, signals
 from src.queues.task import Task
 
 
@@ -85,6 +85,7 @@ async def test_signal_stream_consumer_domain_event_roundtrip_and_no_leak(monkeyp
         signals.on_task_postrun(sender, str(index), "done", "SUCCESS")
     redis = AsyncMock()
     redis.xautoclaim.return_value = ["0-0", [], []]
+    redis.execute_command.return_value = [0, "safe", "0-0"]
     redis.xreadgroup.side_effect = [
         [
             (
@@ -101,7 +102,9 @@ async def test_signal_stream_consumer_domain_event_roundtrip_and_no_leak(monkeyp
 
     @asynccontextmanager
     async def session_factory():
-        yield AsyncMock()
+        from sqlmodel.ext.asyncio.session import AsyncSession
+
+        yield MagicMock(spec=AsyncSession)
 
     monkeypatch.setattr(consumer, "AsyncSessionLocal", session_factory)
     previous = EventBus._instance
@@ -123,7 +126,7 @@ async def test_signal_stream_consumer_domain_event_roundtrip_and_no_leak(monkeyp
         )
         return service
 
-    monkeypatch.setattr(consumer, "EventService", service_factory)
+    monkeypatch.setattr(event_stream, "EventService", service_factory)
     try:
         await consumer.consume_events(AsyncMock())
         await bus.shutdown()

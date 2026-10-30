@@ -59,13 +59,14 @@ class EventService:
         record = AuditRecord(
             action="task.execute",
             actor_type=AuditActorType.SYSTEM,
-            actor_name=task.task_name,
+            actor_name=task.task_name[:100],
             source=AuditSource.SYSTEM,
             resource_type="task",
             resource_id=task.task_id,
-            resource_name=task.task_name,
+            resource_name=task.task_name[:200],
             result=AuditResult(result),
-            correlation_id=data.get("audit_correlation_id") or task.task_id,
+            request_id=task.request_id,
+            correlation_id=task.correlation_id or task.request_id or task.task_id,
             duration_ms=task.runtime * 1000 if task.runtime is not None else None,
             metadata=AuditMetadata(
                 task_id=task.task_id,
@@ -189,24 +190,38 @@ class EventService:
 
     # ==================== Task Events ====================
 
+    @staticmethod
+    def _lineage(task: CeleryTaskResult, data: dict) -> None:
+        task.request_id = task.request_id or data.get("request_id")
+        task.correlation_id = (
+            task.correlation_id or data.get("audit_correlation_id") or data.get("correlation_id") or task.request_id
+        )
+
     async def handle_task_started(self, data: dict) -> None:
         data = task_diagnostics(data)
         existing = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
         attempt = data.get("attempt", existing.retries if existing else 0)
-        if existing is not None:
-            if attempt < existing.retries or (
-                attempt == existing.retries and existing.status in _TERMINAL_STATES | {TaskStatus.STARTED}
-            ):
-                return
+        if existing is not None and (
+            attempt < existing.retries
+            or attempt == existing.retries
+            and existing.status in _TERMINAL_STATES | {TaskStatus.STARTED}
+        ):
+            return
         now = _event_time(data)
+        was_active = existing is not None and existing.status == TaskStatus.STARTED
+        previous_host = existing.worker_hostname if existing is not None and was_active else ""
         task = await self.task_crud.upsert_by_task_id(
             data["task_id"],
             {
-                "task_name": data.get("task_name", ""),
+                "task_name": data.get("task_name", "") or (existing.task_name if existing else ""),
                 "status": TaskStatus.STARTED,
-                "worker_hostname": data.get("hostname", ""),
-                "args": data.get("args", []),
-                "kwargs": data.get("kwargs", {}),
+                "worker_hostname": data.get("hostname") or (existing.worker_hostname if existing else ""),
+                "args": [],
+                "kwargs": {},
+                "result": None,
+                "exception": None,
+                "traceback": None,
+                "logs": None,
                 "started_at": now,
                 "retries": attempt,
                 "finished_at": None,
@@ -214,144 +229,96 @@ class EventService:
                 "update_time": now,
             },
         )
-        hostname = data.get("hostname", "")
+        self._lineage(task, data)
+        if previous_host:
+            await self._increment_active_tasks(previous_host, delta=-1)
+        hostname = task.worker_hostname
         worker = await self._increment_active_tasks(hostname, delta=1) if hostname else None
         await self.session.flush()
-        await self._emit_task_update(task)
+        after_commit(self.session, self._emit_task_update, task)
         if worker:
-            await self._emit_worker_status(worker)
+            after_commit(self.session, self._emit_worker_status, worker)
 
     async def handle_task_success(self, data: dict) -> None:
+        await self._handle_terminal(data, TaskStatus.SUCCESS)
+
+    async def handle_task_failure(self, data: dict) -> None:
+        await self._handle_terminal(data, TaskStatus.FAILURE)
+
+    async def handle_task_revoked(self, data: dict) -> None:
+        await self._handle_terminal(data, TaskStatus.REVOKED)
+
+    async def _handle_terminal(self, data: dict, status: TaskStatus) -> None:
         data = task_diagnostics(data)
         task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
+        attempt = data.get("attempt", task.retries if task else 0)
+        if task is not None and (attempt < task.retries or attempt == task.retries and task.status in _TERMINAL_STATES):
+            return
         now = _event_time(data)
-        if task:
-            attempt = data.get("attempt", task.retries)
-            if attempt < task.retries or (attempt == task.retries and task.status in _TERMINAL_STATES):
-                return
-            if attempt > task.retries:
-                task.started_at = None
-            task.retries = attempt
-            task.status = TaskStatus.SUCCESS
-            task.finished_at = now
-            task.result = data.get("retval")
-            task.logs = data.get("logs")
-            task.runtime = (
-                (now - task.started_at).total_seconds() if task.started_at and now >= task.started_at else None
-            )
-            task.update_time = now
-        else:
-            task = await self.task_crud.upsert_by_task_id(
-                data["task_id"],
-                {
-                    "task_name": data.get("task_name", ""),
-                    "status": TaskStatus.SUCCESS,
-                    "worker_hostname": data.get("hostname", ""),
-                    "finished_at": now,
-                    "result": data.get("retval"),
-                    "logs": data.get("logs"),
-                    "retries": data.get("attempt", 0),
-                },
-            )
-        hostname = data.get("hostname", "")
+        was_active = task is not None and task.status == TaskStatus.STARTED
+        active_host = task.worker_hostname if task is not None and was_active else ""
+        if task is None:
+            task = CeleryTaskResult(task_id=data["task_id"], task_name=data.get("task_name", ""))
+            self.session.add(task)
+        if attempt > task.retries:
+            task.started_at = None
+        self._lineage(task, data)
+        task.worker_hostname = data.get("hostname") or task.worker_hostname
+        task.retries, task.status, task.finished_at, task.update_time = attempt, status, now, now
+        task.runtime = (now - task.started_at).total_seconds() if task.started_at and now >= task.started_at else None
+        task.result, task.logs = None, None
+        task.exception = data.get("exception") if status == TaskStatus.FAILURE else None
+        task.traceback = data.get("traceback") if status == TaskStatus.FAILURE else None
+        hostname = task.worker_hostname
+        if active_host:
+            await self._increment_active_tasks(active_host, delta=-1)
         worker = await self._finish_task_on_worker(hostname) if hostname else None
         await self.session.flush()
-        await self._emit_task_update(task, runtime=task.runtime)
+        await self._audit_execution(task, data, "success" if status == TaskStatus.SUCCESS else "failure")
+        after_commit(self.session, self._emit_task_update, task)
         if worker:
-            await self._emit_worker_status(worker)
-        await self._audit_execution(task, data, "success")
-        event_bus.fire_and_forget(
-            TaskSucceededEvent(
+            after_commit(self.session, self._emit_worker_status, worker)
+        if status == TaskStatus.SUCCESS:
+            event = TaskSucceededEvent(
                 event_id=str(uuid7()),
                 occurred_at=now,
-                task_id=str(task.task_id),
+                task_id=task.task_id,
                 task_name=task.task_name,
                 runtime=task.runtime,
             )
-        )
-
-    async def handle_task_failure(self, data: dict) -> None:
-        data = task_diagnostics(data)
-        task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
-        now = _event_time(data)
-        if task:
-            attempt = data.get("attempt", task.retries)
-            if attempt < task.retries or (attempt == task.retries and task.status in _TERMINAL_STATES):
-                return
-            if attempt > task.retries:
-                task.started_at = None
-            task.retries = attempt
-            task.status = TaskStatus.FAILURE
-            task.finished_at = now
-            task.exception = data.get("exception", "")
-            task.traceback = data.get("traceback", "")
-            task.logs = data.get("logs")
-            task.runtime = (
-                (now - task.started_at).total_seconds() if task.started_at and now >= task.started_at else None
-            )
-            task.update_time = now
-        else:
-            task = await self.task_crud.upsert_by_task_id(
-                data["task_id"],
-                {
-                    "task_name": data.get("task_name", ""),
-                    "status": TaskStatus.FAILURE,
-                    "worker_hostname": data.get("hostname", ""),
-                    "finished_at": now,
-                    "exception": data.get("exception", ""),
-                    "traceback": data.get("traceback", ""),
-                    "logs": data.get("logs"),
-                    "retries": data.get("attempt", 0),
-                },
-            )
-        hostname = data.get("hostname", "")
-        worker = await self._finish_task_on_worker(hostname) if hostname else None
-        await self.session.flush()
-        await self._emit_task_update(task, exception=data.get("exception", ""))
-        if worker:
-            await self._emit_worker_status(worker)
-        await self._audit_execution(task, data, "failure")
-        event_bus.fire_and_forget(
-            TaskFailedEvent(
+        elif status == TaskStatus.FAILURE:
+            event = TaskFailedEvent(
                 event_id=str(uuid7()),
                 occurred_at=now,
-                task_id=str(task.task_id),
+                task_id=task.task_id,
                 task_name=task.task_name,
-                error_summary=data.get("exception", "")[:500],
+                error_summary=task.exception or "",
             )
-        )
+        else:
+            return
+        after_commit(self.session, event_bus.async_emit, event)
 
     async def handle_task_retry(self, data: dict) -> None:
+        data = task_diagnostics(data)
         task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
-        if not task:
-            return
-        attempt = data.get("attempt", task.retries)
-        if attempt < task.retries or task.status in _TERMINAL_STATES:
+        attempt = data.get("attempt", task.retries if task else 0)
+        if task is not None and (attempt < task.retries or attempt == task.retries and task.status in _TERMINAL_STATES):
             return
         now = _event_time(data)
+        if task is None:
+            task = CeleryTaskResult(task_id=data["task_id"], task_name=data.get("task_name", ""))
+            self.session.add(task)
+        elif task.status == TaskStatus.STARTED and task.worker_hostname:
+            await self._increment_active_tasks(task.worker_hostname, delta=-1)
+        task.worker_hostname = data.get("hostname") or task.worker_hostname
+        self._lineage(task, data)
+        if attempt > task.retries:
+            task.started_at = None
         task.runtime = (now - task.started_at).total_seconds() if task.started_at and now >= task.started_at else None
-        await self._audit_execution(task, data, "failure")
-        task.status = TaskStatus.RETRY
-        task.retries = attempt + 1
-        task.update_time = now
+        await self._audit_execution(task, {**data, "attempt": attempt}, "failure")
+        task.status, task.retries, task.update_time = TaskStatus.RETRY, attempt + 1, now
         await self.session.flush()
-        await self._emit_task_update(task)
-
-    async def handle_task_revoked(self, data: dict) -> None:
-        task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
-        if not task:
-            return
-        attempt = data.get("attempt", task.retries)
-        if attempt < task.retries or (attempt == task.retries and task.status in _TERMINAL_STATES):
-            return
-        now = _event_time(data)
-        task.status = TaskStatus.REVOKED
-        task.retries = attempt
-        task.finished_at = now
-        task.update_time = now
-        await self.session.flush()
-        await self._audit_execution(task, data, "failure")
-        await self._emit_task_update(task)
+        after_commit(self.session, self._emit_task_update, task)
 
     # ==================== Offline Check ====================
 
@@ -403,14 +370,13 @@ class EventService:
     # ==================== Private Helpers ====================
 
     async def _increment_active_tasks(self, hostname: str, *, delta: int) -> CeleryWorker | None:
-        worker = await self.worker_crud.get_by_hostname(hostname)
+        worker = await self.worker_crud.get_by_hostname(hostname, lock=True)
         if worker:
             worker.active_task_count = max(0, (worker.active_task_count or 0) + delta)
         return worker
 
     async def _finish_task_on_worker(self, hostname: str) -> CeleryWorker | None:
-        worker = await self.worker_crud.get_by_hostname(hostname)
+        worker = await self.worker_crud.get_by_hostname(hostname, lock=True)
         if worker:
-            worker.active_task_count = max(0, (worker.active_task_count or 0) - 1)
             worker.processed_count = (worker.processed_count or 0) + 1
         return worker

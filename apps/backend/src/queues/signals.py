@@ -7,7 +7,7 @@ Author  : Claude
 Date    : 2026-03-30
 """
 
-import json
+import os
 import platform
 import threading
 import traceback as tb_module
@@ -26,37 +26,97 @@ from celery.signals import (
     worker_shutdown,
 )
 from rapidkit_core.config import settings
-from rapidkit_core.diagnostics import task_diagnostics
 from rapidkit_core.log import logger
-from rapidkit_core.nanoid import publication_request_id
+from rapidkit_core.nanoid import publication_request_id, request_id_scope
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.identity import identity_from_headers, identity_headers
+from redis.backoff import NoBackoff
+from redis.retry import Retry
 
-STREAM_KEY = "celery:events"
-STREAM_MAXLEN = 10000
+from src.queues.event_stream import STREAM_KEY, InvalidEvent, encode_event
+
 HEARTBEAT_INTERVAL = 30
 
 _redis_client: redis.Redis | None = None
 _heartbeat_stop = threading.Event()
+_publication_counts = {"successes": 0, "failures": 0}
+_publication_lock = threading.Lock()
+_missed_since_success = 0
+
+
+def _reset_publication_process() -> None:
+    global _publication_lock, _publication_counts, _missed_since_success, _redis_client
+    _publication_lock = threading.Lock()
+    _publication_counts = {"successes": 0, "failures": 0}
+    _missed_since_success = 0
+    _redis_client = None
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_reset_publication_process)
+
+
+def publication_status() -> dict[str, int]:
+    """Process-local evidence, available even while Redis is disconnected."""
+    with _publication_lock:
+        return dict(_publication_counts)
 
 
 def _get_redis() -> redis.Redis:
     """获取同步 Redis 客户端（Worker 进程中使用）。"""
     global _redis_client
     if _redis_client is None:
-        _redis_client = redis.from_url(str(settings.REDIS_URL), decode_responses=True)
+        _redis_client = redis.from_url(
+            str(settings.REDIS_URL),
+            decode_responses=True,
+            socket_connect_timeout=2,
+            socket_timeout=2,
+            retry=Retry(NoBackoff(), 0),
+        )
     return _redis_client
 
 
-def _publish_event(event_type: str, data: dict) -> None:
+def _publish_event(event_type: str, data: dict) -> bool:
     """发布事件到 Redis Stream。"""
-    r = _get_redis()
-    message = {
-        "event_type": event_type,
-        "timestamp": timezone.now().isoformat(),
-        "data": json.dumps(task_diagnostics(data)),
-    }
-    r.xadd(STREAM_KEY, message, maxlen=STREAM_MAXLEN, approximate=True)  # ty: ignore[invalid-argument-type]
+    global _missed_since_success
+    published = True
+    with request_id_scope(str(data.get("request_id") or "-")):
+        bound = logger.bind(
+            task_id=data.get("task_id"),
+            task_name=data.get("task_name"),
+            attempt=data.get("attempt"),
+            correlation_id=data.get("audit_correlation_id") or data.get("correlation_id"),
+        )
+        try:
+            message = encode_event(event_type, data, timezone.now().isoformat())
+            _get_redis().xadd(STREAM_KEY, message)  # ty: ignore[invalid-argument-type]
+        except Exception as exc:
+            published = False
+            with _publication_lock:
+                _publication_counts["failures"] += 1
+                _missed_since_success += 1
+                failures = _missed_since_success
+            bound.bind(
+                event="task.event.publish_failed",
+                component="task_event_publisher",
+                consecutive_failures=failures,
+                reason_code="invalid_event" if isinstance(exc, InvalidEvent) else "publish_failed",
+            ).opt(exception=exc).error("Observation publication failed; execution result unchanged")
+        else:
+            with _publication_lock:
+                _publication_counts["successes"] += 1
+                missed, _missed_since_success = _missed_since_success, 0
+            if missed:
+                bound.bind(
+                    event="task.event.publisher_resumed",
+                    consecutive_failures=missed,
+                    reason_code="unrecovered_publication_gap",
+                ).warning("Observation publication resumed; missed events are not recovered")
+        if event_type != "worker.heartbeat":
+            bound.bind(event="task.lifecycle", reason_code=event_type).info(
+                "Task observation publication {}", "succeeded" if published else "failed"
+            )
+    return published
 
 
 # ==================== Worker Signals ====================
@@ -67,6 +127,7 @@ def on_worker_ready(sender, **kwargs) -> None:
     """Worker 上线事件。sender 是 Consumer 实例。"""
     worker = sender.controller  # Consumer.controller -> Worker
     hostname = worker.hostname
+    _heartbeat_stop.clear()
     _publish_event(
         "worker.online",
         {
@@ -131,7 +192,7 @@ def _request_identity(request) -> dict[str, object]:
         request_id = publication_request_id({})
         headers["request_id"] = request_id
     values["request_id"] = request_id
-    for key in ("audit_correlation_id", "audit_initiated_by"):
+    for key in ("audit_correlation_id", "audit_initiated_by", "correlation_id"):
         if headers.get(key) is not None:
             values[key] = headers[key]
     values["attempt"] = getattr(request, "retries", 0) or 0
@@ -255,6 +316,7 @@ def on_task_revoked(
         {
             **_request_identity(request),
             "task_id": task_id,
+            "task_name": sender.name,
             "terminated": terminated,
             "expired": expired,
         },

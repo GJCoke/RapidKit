@@ -8,17 +8,16 @@ Date    : 2026-04-02
 """
 
 import asyncio
-import json
 import os
 import socket
+import time
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from plugin_worker.event_service import EventService
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
-from rapidkit_core.log import logger
+from rapidkit_core.log import component_failed, component_recovered, logger
 from rapidkit_core.transaction import run_after_commit_hooks
-from rapidkit_framework.identity import identity_from_headers, identity_scope
 from redis.asyncio import Redis
 from redis.exceptions import ResponseError
 
@@ -26,25 +25,13 @@ if TYPE_CHECKING:
     from fastapi_sio_di import AsyncServer
     from rapidkit_core.leader_election import LeaderElection
 
-STREAM_KEY = "celery:events"
-CONSUMER_GROUP = "fastapi-consumers"
+from src.queues.event_stream import CONSUMER_GROUP, STREAM_KEY, process_message, safe_trim
+
 CONSUMER_NAME = f"consumer-{socket.gethostname()}-{os.getpid()}"
 BLOCK_MS = 5000
 PENDING_IDLE_MS = 60_000
 HEARTBEAT_TIMEOUT = timedelta(seconds=90)
 OFFLINE_CHECK_INTERVAL = 30
-
-# 事件 → EventService 方法名映射
-_EVENT_HANDLERS = {
-    "worker.online": "handle_worker_online",
-    "worker.offline": "handle_worker_offline",
-    "worker.heartbeat": "handle_worker_heartbeat",
-    "task.started": "handle_task_started",
-    "task.success": "handle_task_success",
-    "task.failure": "handle_task_failure",
-    "task.retry": "handle_task_retry",
-    "task.revoked": "handle_task_revoked",
-}
 
 
 async def _ensure_consumer_group(redis: Redis) -> None:
@@ -52,8 +39,9 @@ async def _ensure_consumer_group(redis: Redis) -> None:
     try:
         await redis.xgroup_create(STREAM_KEY, CONSUMER_GROUP, id="0", mkstream=True)
         logger.info("Created consumer group '{group}' for stream '{stream}'", group=CONSUMER_GROUP, stream=STREAM_KEY)
-    except ResponseError:
-        pass  # BUSYGROUP: 消费者组已存在
+    except ResponseError as exc:
+        if not str(exc).startswith("BUSYGROUP"):
+            raise
 
 
 async def consume_events(sio: "AsyncServer") -> None:
@@ -63,14 +51,14 @@ async def consume_events(sio: "AsyncServer") -> None:
     接管空闲的待确认事件，再读取新事件；仅在事务提交成功后确认。
     """
     redis = RedisManager.client()
-    await _ensure_consumer_group(redis)
-
+    initialized, claim_cursor, last_maintenance = False, "0-0", float("-inf")
     logger.info("Event stream consumer started.")
-    claim_cursor = "0-0"
-
     while True:
         try:
-            claim_cursor, claimed, *_ = await redis.xautoclaim(
+            if not initialized:
+                await _ensure_consumer_group(redis)
+                initialized = True
+            claim_cursor, claimed, *deleted = await redis.xautoclaim(
                 STREAM_KEY,
                 CONSUMER_GROUP,
                 CONSUMER_NAME,
@@ -78,56 +66,39 @@ async def consume_events(sio: "AsyncServer") -> None:
                 start_id=claim_cursor,
                 count=10,
             )
-            messages = (
-                [(STREAM_KEY, claimed)]
-                if claimed
-                else await redis.xreadgroup(
-                    CONSUMER_GROUP,
-                    CONSUMER_NAME,
-                    {STREAM_KEY: ">"},
-                    count=10,
-                    block=BLOCK_MS,
-                )
+            if deleted and deleted[0]:
+                logger.bind(
+                    event="task.event.gap", reason_code="pending_source_missing", consecutive_failures=len(deleted[0])
+                ).error("Pending observation payloads missing")
+            # Reserve a fresh-message budget even under permanent pending backlog.
+            fresh = await redis.xreadgroup(
+                CONSUMER_GROUP, CONSUMER_NAME, {STREAM_KEY: ">"}, count=10, block=1 if claimed else BLOCK_MS
             )
-
-            if not messages:
-                continue
-
-            for stream, entries in messages:
+            batches = [*(fresh or []), (STREAM_KEY, claimed)]
+            for _, entries in batches:
                 for message_id, fields in entries:
-                    event_type = fields.get("event_type", "")
-                    raw_data = fields.get("data", "{}")
-
                     try:
-                        data = json.loads(raw_data)
-                    except json.JSONDecodeError:
-                        logger.warning("Invalid JSON in event stream message_id={}", message_id)
-                        await redis.xack(STREAM_KEY, CONSUMER_GROUP, message_id)
-                        continue
-
-                    handler_name = _EVENT_HANDLERS.get(event_type)
-                    if handler_name:
-                        try:
-                            data["timestamp"] = fields.get("timestamp")
-                            with identity_scope(identity_from_headers(data)):
-                                async with AsyncSessionLocal() as session:
-                                    service = EventService(session=session, sio=sio)
-                                    await getattr(service, handler_name)(data)
-                                    await session.commit()
-                                    await run_after_commit_hooks(session)
-                        except Exception:
-                            logger.exception("Error handling event message_id={}", message_id)
-                            continue
-                    else:
-                        logger.debug("Unknown event type: {event_type}", event_type=event_type)
-
-                    await redis.xack(STREAM_KEY, CONSUMER_GROUP, message_id)
-
+                        await process_message(redis, message_id, fields, sio, session_factory=AsyncSessionLocal)
+                        component_recovered("task_event_persistence")
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception as exc:
+                        component_failed("task_event_persistence", exc)
+            if time.monotonic() - last_maintenance >= 60:
+                last_maintenance = time.monotonic()
+                result = await safe_trim(redis)
+                if result["reason"] == "group_mismatch":
+                    logger.bind(event="task.event.trim_skipped", reason_code="group_mismatch").warning(
+                        "Observation trim refused; reconcile registered consumer groups"
+                    )
+            component_recovered("task_event_consumer")
         except asyncio.CancelledError:
             logger.info("Event stream consumer stopped.")
             break
-        except Exception:
-            logger.exception("Error in event stream consumer, retrying in 5s...")
+        except Exception as exc:
+            if isinstance(exc, ResponseError) and "NOGROUP" in str(exc):
+                initialized = False
+            component_failed("task_event_consumer", exc)
             await asyncio.sleep(5)
 
 

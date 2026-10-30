@@ -54,9 +54,23 @@ def task_diagnostics(data: Mapping[str, Any]) -> dict[str, Any]:
         for key, value in data.items()
         if key in fields and isinstance(value, (str, int, float, bool, type(None)))
     }
+    identity_limits = {
+        "task_id": 100,
+        "request_id": 100,
+        "correlation_id": 100,
+        "audit_correlation_id": 100,
+        "hostname": 255,
+        "task_name": 255,
+        "group_name": 128,
+        "deployment_id": 64,
+    }
     for key, value in safe.items():
         if isinstance(value, str):
-            safe[key] = value.encode()[:256].decode("utf-8", errors="ignore")
+            safe[key] = (
+                value[: identity_limits[key]]
+                if key in identity_limits
+                else value.encode()[:256].decode("utf-8", errors="ignore")
+            )
     safe.update(args=[], kwargs={}, retval=None, logs=None, diagnostic_truncated=True)
     if "exception" in data or "exception_type" in data:
         kind = data.get("exception_type")

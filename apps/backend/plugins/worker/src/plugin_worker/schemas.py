@@ -70,6 +70,8 @@ class TaskResultSchema(BaseModel):
 
     task_id: str
     task_name: str
+    request_id: str | None = None
+    correlation_id: str | None = None
     status: TaskStatus = TaskStatus.PENDING
     worker_hostname: str = ""
     args: list = []
@@ -106,6 +108,8 @@ class TaskListResponse(BaseSchema):
 
     task_id: str
     task_name: str
+    request_id: str | None = None
+    correlation_id: str | None = None
     status: TaskStatus
     worker_hostname: str = ""
     started_at: EditableInstant | None = None
@@ -202,6 +206,8 @@ class TaskQueriesSchema(TaskTimeRange):
     status: TaskStatus | None = Field(None, description="任务状态筛选")
     task_name: str | None = Field(None, description="任务名筛选")
     worker_hostname: str | None = Field(None, description="Worker 主机名筛选")
+    request_id: str | None = Field(None, max_length=100, description="精确请求关联；历史记录可能为空")
+    correlation_id: str | None = Field(None, max_length=100, description="精确流程关联；历史记录可能为空")
 
 
 class TaskQueryRequest(TaskQueriesSchema, PaginatedRequest):

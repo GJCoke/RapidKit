@@ -77,11 +77,7 @@ async def test_real_exception_handler_preserves_failure_identity(monkeypatch, er
     async def put(record):
         records.append(record)
 
-    async def increment():
-        pass
-
     monkeypatch.setattr("src.middlewares.audit.audit_queue", SimpleNamespace(put=put))
-    monkeypatch.setattr("src.main._increment_biz_error", increment)
     app = FastAPI()
     import_module("src.main").setup_exception_handlers(app)
     app.add_middleware(AuditMiddleware)

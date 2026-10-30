@@ -84,3 +84,5 @@ Sentry 上报同样去除认证头、请求体、URL query/fragment、局部变�
 HTTP 完成日志、`rapidkit_http_requests_total` 和 Redis 端点统计从同一结果状态生成；HTTP 200 的业务失败计入错误。HTTP 5xx 与非零业务码保留各自统计，不重复写业务错误计数。`rapidkit_http_failures_total` 按固定 error_kind 区分预期拒绝与服务故障，ID 和任意异常文本不作为标签。
 
 Redis 指标写入失败记录首次退化、每 60 秒摘要和一次恢复，摘要包含失败次数，避免刷屏。监控路径失败不能中断普通业务响应。Prometheus 抓取、Sentry 错误聚合和告警渠道仍需单独部署与演练。
+
+任务关联索引、事务幂等、隔离与安全裁剪的操作步骤见[任务队列](./celery#观测事件恢复与运维)。它们恢复执行记录，不重新触发业务任务；生产端断连仍有丢失窗口。

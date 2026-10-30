@@ -7000,6 +7000,10 @@ export interface components {
             taskId: string;
             /** Taskname */
             taskName: string;
+            /** Requestid */
+            requestId?: string | null;
+            /** Correlationid */
+            correlationId?: string | null;
             status: components["schemas"]["TaskStatus"];
             /**
              * Workerhostname
@@ -7042,6 +7046,10 @@ export interface components {
             taskId: string;
             /** Taskname */
             taskName: string;
+            /** Requestid */
+            requestId?: string | null;
+            /** Correlationid */
+            correlationId?: string | null;
             /** @default 1 */
             status: components["schemas"]["TaskStatus"];
             /**
@@ -8912,6 +8920,10 @@ export interface operations {
                 taskName?: string | null;
                 /** @description Worker 主机名筛选 */
                 workerHostname?: string | null;
+                /** @description 精确请求关联；历史记录可能为空 */
+                requestId?: string | null;
+                /** @description 精确流程关联；历史记录可能为空 */
+                correlationId?: string | null;
                 taskNameMatch?: "contains" | "exact";
             };
             header?: never;
