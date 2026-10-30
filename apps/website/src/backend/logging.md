@@ -103,28 +103,44 @@ def setup_logging() -> None:
 
 | 文件         | 级别范围                       | 说明                       |
 | ------------ | ------------------------------ | -------------------------- |
-| `access.log` | `<= INFO`（level.no <= 25）    | 常规访问日志，不含堆栈追踪 |
+| `access.log` | 默认 INFO 至 SUCCESS（level.no <= 25） | 常规业务与访问日志，不含堆栈追踪 |
 | `error.log`  | `>= WARNING`（level.no >= 30） | 错误日志，包含完整堆栈追踪 |
 
-两个文件共享相同的轮转策略：
+两个文件使用独立的轮转状态，同时满足下面两条规则，任意一条触发即轮转：
 
-```python
-log_config = {
-    "format": default_formatter,
-    "enqueue": enqueue,      # API 进程默认异步写入；Celery 进程传入 False
-    "rotation": "00:00",     # 每天午夜轮转
-    "retention": "7 days",   # 保留 7 天
-}
-# 每个 sink 另传 compression=partial(rename_rotated_logfile, active_file=...)
-```
+- **按天**：系统本地日期跨天后的下一条日志触发轮转。
+- **按大小**：写入下一条日志将使文件超过 `LOG_FILE_MAX_BYTES` 时，先轮转再写入，默认 **100 MiB**（104857600 字节）。按 UTF-8 编码后的实际字节数计算。单条日志自身超过上限时会完整写入，不截断，所以该文件可以超过上限。
 
-实际文件名带有 `hostname.pid` 实例后缀（如 `access.<hostname>.<pid>.log`），每个进程只写自己的文件。轮转后的文件被重命名为 `access.<hostname>.<pid>.<日期>.log`（日期取文件最后写入时间的系统本地日期，即日志内容所属的那一天），同一天重复轮转时追加序号，避免多进程互相覆盖，并且仍会被 `retention` 清理。
+实际文件名带有 `hostname.pid` 实例后缀（如 `access.<hostname>.<pid>.log`），每个进程只写自己的文件，避免多进程轮转时互相覆盖。轮转后的文件名为 `access.<hostname>.<pid>.<日期>.log`，日期取文件最后写入时间的系统本地日期。同一天多次轮转会追加 `.2`、`.3` 等序号，已有文件不会被覆盖。
 
 Celery worker 与 beat 调用 `set_custom_logfile(enqueue=False)`：prefork 子进程以 `os._exit` 退出，`enqueue` 创建的信号量来不及注销，停止 worker 时会刷出大量 `leaked semaphore objects` 警告。
 
 :::warning
-`error.log` 启用了 `backtrace=True` 和 `diagnose=True`，会在日志中包含变量值等诊断信息。生产环境中需注意敏感数据泄露风险。
+`error.log` 启用了 `backtrace=True`；`diagnose` 仅在非部署环境启用。开发环境的异常日志可能包含局部变量，分享日志前应检查敏感信息。
 :::
+
+### 跨进程过期清理
+
+保留时间由 `LOG_FILE_RETENTION_DAYS` 控制，默认 **7 天**，以文件最后修改时间计算。每次初始化文件日志时清理一次；运行期间在写日志时检查，每个进程最多每小时扫描一次，没有日志写入时不会唤醒后台任务。
+
+清理只扫描配置的 access/error 文件所在目录中的已知运行日志名：
+
+- 所有实例的过期日期归档，包括旧版 `access_YYYY-MM-DD.log`、`error_YYYY-MM-DD.log`。
+- 本机已退出进程留下的过期 `access.<hostname>.<pid>.log`、`error.<hostname>.<pid>.log`，包括空文件。
+
+本机仍存活的进程文件、无权限确认存活状态的进程文件、远程主机未归档的进程文件都会保留。远程进程的存活状态无法通过本机 PID 判断，因此共享日志目录中的这类文件应在对应主机上清理。清理跳过符号链接、子目录和其他命名的文件；并发删除不会报错，其他文件操作失败会向 stderr 输出提示并继续运行。
+
+### 开发验证日志
+
+测试、构建、lint、类型检查和浏览器验证等临时输出统一放在 `logs/verification/`，与后端运行日志分开：
+
+```bash
+mkdir -p logs/verification
+pnpm --filter @rapidkit/admin test > logs/verification/admin-test.log 2>&1
+uv run pytest packages/core/tests > logs/verification/core-test.log 2>&1
+```
+
+该目录受 Git 忽略，不参与运行日志的自动过期清理。历史 `admin-migration-*.log` 也归入此目录，需要时可单独归档或手动清理。
 
 ## 配置环境变量
 
@@ -135,6 +151,8 @@ Celery worker 与 beat 调用 `set_custom_logfile(enqueue=False)`：prefork 子�
 | `LOG_FILE_ERROR_LEVEL`  | `string` | `WARNING`    | 错误日志文件最低级别 |
 | `LOG_ACCESS_FILENAME`   | `string` | `access.log` | 访问日志文件名       |
 | `LOG_ERROR_FILENAME`    | `string` | `error.log`  | 错误日志文件名       |
+| `LOG_FILE_MAX_BYTES` | `int` | `104857600` | 单文件轮转字节上限，必须大于 0 |
+| `LOG_FILE_RETENTION_DAYS` | `int` | `7` | 运行日志保留天数，必须大于 0 |
 | `LOG_FORMAT`            | `string` | 见上文       | Loguru 格式字符串    |
 
 ## SQLAlchemy 日志处理

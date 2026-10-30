@@ -1,5 +1,10 @@
 # Repository Instructions
 
+## Development verification logs
+
+- Write captured test, build, lint, typecheck and browser verification output under `logs/verification/`, creating the directory when needed. Do not place these files directly in `logs/`, which is reserved for runtime logs.
+- Verification logs are Git-ignored local artifacts and are excluded from runtime log retention. Never stage or commit them.
+
 ## Git workflow
 
 - Work in the current checkout by default. Do not create a worktree unless the user explicitly asks for one (typically because several agents run in parallel).

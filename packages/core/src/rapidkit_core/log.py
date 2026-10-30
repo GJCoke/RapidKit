@@ -4,9 +4,11 @@ import logging
 import os
 import re
 import socket
+import stat
 import sys
+import time
 import traceback
-from datetime import datetime
+from datetime import date, datetime
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO, cast
@@ -21,6 +23,7 @@ from rapidkit_core.nanoid import get_request_nanoid
 from rapidkit_core.path import LOG_PATH
 
 _owned_handlers: set[int] = {0}  # Loguru's initial default handler.
+_last_log_cleanup = float("-inf")
 
 
 class InterceptHandler(logging.Handler):
@@ -122,6 +125,77 @@ def rename_rotated_logfile(filepath: str, active_file: Path) -> None:
     os.rename(filepath, target)
 
 
+def cleanup_logfiles(*, force: bool = False) -> None:
+    """清理所有实例的过期归档和本机已退出进程的文件，每小时最多扫描一次。"""
+    global _last_log_cleanup
+    now = time.monotonic()
+    if not force and now - _last_log_cleanup < 3600:
+        return
+    _last_log_cleanup = now
+    cutoff = time.time() - settings.LOG_FILE_RETENTION_DAYS * 86400
+    hostname = socket.gethostname()
+    for filename in (settings.LOG_ACCESS_FILENAME, settings.LOG_ERROR_FILENAME):
+        configured = LOG_PATH / filename
+        stem, suffix = re.escape(configured.stem), re.escape(configured.suffix)
+        instance_pattern = re.compile(
+            rf"{stem}\.(?P<host>{re.escape(hostname)}|.+?)\.(?P<pid>[1-9]\d*)"
+            rf"(?P<archive>\.\d{{4}}-\d{{2}}-\d{{2}}(?:\.\d+)?)?{suffix}"
+        )
+        legacy_pattern = re.compile(rf"{stem}_\d{{4}}-\d{{2}}-\d{{2}}{suffix}")
+        try:
+            for path in configured.parent.iterdir():
+                match = instance_pattern.fullmatch(path.name)
+                if match is None and legacy_pattern.fullmatch(path.name) is None:
+                    continue
+                try:
+                    metadata = path.stat(follow_symlinks=False)
+                    if not stat.S_ISREG(metadata.st_mode) or metadata.st_mtime >= cutoff:
+                        continue
+                    if match is not None and match["archive"] is None:
+                        # 无法确认远程进程是否存活；本机活跃或无法检查的 PID 也必须保留。
+                        if match["host"] != hostname:
+                            continue
+                        try:
+                            os.kill(int(match["pid"]), 0)
+                        except ProcessLookupError:
+                            pass
+                        except OSError, OverflowError:
+                            continue
+                        else:
+                            continue
+                    path.unlink(missing_ok=True)
+                except FileNotFoundError:
+                    pass
+                except OSError as exc:
+                    # 此函数也在 Loguru sink 的锁内执行，不能再次调用 logger。
+                    sys.stderr.write(f"Log cleanup failed for {path}: {exc}\n")
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            sys.stderr.write(f"Log cleanup failed for {configured.parent}: {exc}\n")
+
+
+class _FileRotation:
+    def __init__(self) -> None:
+        self._day: date | None = None
+        self._max_bytes = settings.LOG_FILE_MAX_BYTES
+
+    def __call__(self, message: "Message", file: TextIO) -> bool:
+        cleanup_logfiles()
+        day = message.record["time"].astimezone().date()
+        if self._day is None:
+            self._day = datetime.fromtimestamp(os.fstat(file.fileno()).st_mtime).date()
+        file.seek(0, os.SEEK_END)
+        size = file.tell()
+        if size == 0:
+            self._day = day
+            return False
+        if day > self._day or size + len(message.encode("utf-8")) > self._max_bytes:
+            self._day = day
+            return True
+        return False
+
+
 def set_custom_logfile(*, enqueue: bool = True) -> None:
     """设置自定义日志文件。
 
@@ -129,6 +203,7 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
     可传 `enqueue=False`，避免 enqueue 创建的信号量在子进程 `os._exit` 时被报告为泄漏。
     """
     os.makedirs(LOG_PATH, exist_ok=True)
+    cleanup_logfiles(force=True)
 
     instance_suffix = f".{socket.gethostname()}.{os.getpid()}"
     access_name = settings.LOG_ACCESS_FILENAME.replace(".log", f"{instance_suffix}.log")
@@ -140,8 +215,7 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
     log_config: dict[str, Any] = {
         "format": default_formatter,
         "enqueue": enqueue,
-        "rotation": "00:00",
-        "retention": "7 days",
+        "encoding": "utf-8",
     }
 
     access_handler = ruLogger.add(
@@ -150,6 +224,7 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
         filter=lambda record: record["level"].no <= 25,
         backtrace=False,
         diagnose=False,
+        rotation=_FileRotation(),
         compression=partial(rename_rotated_logfile, active_file=log_access_file),
         **log_config,
     )
@@ -160,6 +235,7 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
         filter=lambda record: record["level"].no >= 30,
         backtrace=True,
         diagnose=not settings.ENVIRONMENT.is_deployed,
+        rotation=_FileRotation(),
         compression=partial(rename_rotated_logfile, active_file=log_error_file),
         **log_config,
     )

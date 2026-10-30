@@ -130,6 +130,8 @@ class LogConfigMixin(BaseSettings):
     LOG_JSON: bool = False
     LOG_FILE_ACCESS_LEVEL: LOG_LEVELS = "INFO"
     LOG_FILE_ERROR_LEVEL: LOG_LEVELS = "WARNING"
+    LOG_FILE_MAX_BYTES: int = Field(100 * 1024 * 1024, ge=1)
+    LOG_FILE_RETENTION_DAYS: int = Field(7, ge=1)
 
     LOG_ACCESS_FILENAME: str = "access.log"
     LOG_ERROR_FILENAME: str = "error.log"
