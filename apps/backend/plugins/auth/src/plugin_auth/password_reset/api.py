@@ -32,13 +32,21 @@ async def request_reset(
     return Response(data=True)
 
 
-@router.get("/validate", dependencies=[Depends(DenyImpersonation), Public])
+@router.get("/validate", dependencies=[Depends(DenyImpersonation), Public], deprecated=True)
 async def validate_reset(
     query: Annotated[PasswordResetValidateQuery, Query(...)],
     store: PasswordResetTokenStoreDep,
 ) -> Response[PasswordResetValidateResponse]:
     """校验密码重置令牌是否有效。"""
     return Response(data=PasswordResetValidateResponse(valid=await store.exists(query.token)))
+
+
+@router.post("/validate", dependencies=[Depends(DenyImpersonation), Public])
+async def validate_reset_body(
+    body: PasswordResetValidateQuery,
+    store: PasswordResetTokenStoreDep,
+) -> Response[PasswordResetValidateResponse]:
+    return Response(data=PasswordResetValidateResponse(valid=await store.exists(body.token)))
 
 
 @router.post("/confirm", dependencies=[Depends(DenyImpersonation), Public])

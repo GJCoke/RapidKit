@@ -921,6 +921,7 @@ declare namespace I18nKeys {
     | "manage.worker.detail.taskScene"
     | "manage.worker.detail.utilizationHint"
     | "manage.worker.detail.workerUnavailable"
+    | "manage.worker.diagnosticsPrivate"
     | "manage.worker.exception"
     | "manage.worker.exceptionCopied"
     | "manage.worker.exceptionCopyFailed"

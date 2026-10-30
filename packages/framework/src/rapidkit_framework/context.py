@@ -1,7 +1,54 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any, Protocol
 from uuid import UUID
 
 from starlette_context.ctx import _Context, context
+
+_request_state: ContextVar[dict | None] = ContextVar("request_outcome_state", default=None)
+
+
+@contextmanager
+def request_state_scope(state: dict) -> Iterator[None]:
+    token = _request_state.set(state)
+    try:
+        yield
+    finally:
+        _request_state.reset(token)
+
+
+def record_business_code(code: int | None, error_kind: str | None = None) -> None:
+    state = _request_state.get()
+    if state is not None:
+        state["business_code"] = code
+        if error_kind is not None or code in (None, 0):
+            state["error_kind"] = error_kind
+
+
+def classify_request(state: dict, status: int | None, failed: bool) -> tuple[str, str | None]:
+    kind = state.get("error_kind")
+    if kind not in {
+        "business",
+        "validation",
+        "authentication",
+        "authorization",
+        "rate_limited",
+        "security_reject",
+        "server",
+        "transport",
+        "cancelled",
+    }:
+        kind = None
+    if failed:
+        kind = kind or "server"
+    elif status is not None and status >= 400:
+        kind = kind or ("server" if status >= 500 else "business")
+    elif state.get("business_code") not in (None, 0):
+        kind = kind or "business"
+    else:
+        return "success", None
+    return "error", kind
 
 
 class TypedContextProtocol(Protocol):

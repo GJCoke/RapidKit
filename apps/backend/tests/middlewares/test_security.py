@@ -111,7 +111,8 @@ async def test_chunked_and_understated_bodies_are_bounded(declared, monkeypatch)
     if declared is not None:
         headers["Content-Length"] = declared
     async with AsyncClient(
-        transport=ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test"
+        transport=ASGITransport(app=app, raise_app_exceptions=False),
+        base_url="http://test",
     ) as client:
         response = await client.post("/echo", content=body(), headers=headers)
     assert response.status_code == 200
@@ -136,6 +137,7 @@ async def test_stream_at_limit_is_accepted_without_content_length(monkeypatch):
 
 async def test_chunked_limit_precedes_audit_and_records_business_error(monkeypatch):
     from src.main import setup_middlewares
+    from src.middlewares.logger import LoggerMiddleware
     from src.prometheus import HTTPMetrics, router
 
     monkeypatch.setattr(settings, "MAX_REQUEST_BODY_BYTES", 8)
@@ -151,7 +153,8 @@ async def test_chunked_limit_precedes_audit_and_records_business_error(monkeypat
         yield b"efghi"
 
     async with AsyncClient(
-        transport=ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test"
+        transport=ASGITransport(app=LoggerMiddleware(app, metrics=app.state.prometheus), raise_app_exceptions=False),
+        base_url="http://test",
     ) as client:
         response = await client.post("/echo", content=body(), headers={"Content-Type": "application/octet-stream"})
         metrics = (await client.get("/metrics")).text

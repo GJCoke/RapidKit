@@ -12,6 +12,7 @@
 
 <template>
   <div class="flex-col-stretch gap-16px min-w-0">
+    <NAlert type="info" :show-icon="false">{{ $t("page.manage.worker.diagnosticsPrivate") }}</NAlert>
     <JsonViewer
       v-if="task.result != null"
       :key="`${task.taskId}-result`"

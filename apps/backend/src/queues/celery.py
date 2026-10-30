@@ -35,6 +35,8 @@ class Celery(_Celery):
             **identity_headers(),
             "request_id": publication_request_id(options.get("headers") or {}),
         }
+        options["argsrepr"] = "[Filtered]"
+        options["kwargsrepr"] = "[Filtered]"
         return super().send_task(name, *args, **options)
 
     def task(

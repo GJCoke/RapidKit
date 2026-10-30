@@ -19,5 +19,5 @@ def send_invite_email(self, email: str, platform_name: str, user_name: str, user
     try:
         _deliver(email, platform_name, user_name, username, invite_link)
     except Exception as exc:
-        logger.warning("Invite email delivery failed for {email}: {err}", email=email, err=str(exc))
+        logger.opt(exception=exc).warning("Invite email delivery failed")
         raise self.retry(exc=exc, countdown=60)

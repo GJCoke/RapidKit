@@ -767,6 +767,7 @@
       "result": "Result",
       "exception": "Exception",
       "traceback": "Traceback",
+      "diagnosticsPrivate": "Task arguments, return values and standard output are hidden to protect sensitive information. Use the task ID to find related runtime logs.",
       "logs": "Execution Logs",
       "triggerTask": "Trigger Task",
       "selectTask": "Select Task",

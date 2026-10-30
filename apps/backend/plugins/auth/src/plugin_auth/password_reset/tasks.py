@@ -19,5 +19,5 @@ def send_password_reset_email(self, email: str, platform_name: str, user_name: s
     try:
         _deliver(email, platform_name, user_name, reset_link)
     except Exception as exc:
-        logger.warning("Password reset email delivery failed: {err}", err=str(exc))
+        logger.opt(exception=exc).warning("Password reset email delivery failed")
         raise self.retry(exc=exc, countdown=60)

@@ -66,11 +66,11 @@ if settings.ENABLE_CELERY_MONITOR:
 
 
 @setup_logging_signal.connect
-def configure_process_logging(**kwargs):
+def configure_process_logging(*, service: str = "worker", **kwargs):
     """Own the pipeline in worker/beat parents, before Celery redirects stdout."""
     from rapidkit_core.log import set_custom_logfile, setup_logging
 
-    setup_logging()
+    setup_logging(service=service)
     # 每个进程写各自带 pid 的文件，无需 enqueue；enqueue 的信号量在 prefork 子进程 os._exit 时会被报告为泄漏
     set_custom_logfile(enqueue=False)
     init_sentry()
@@ -84,4 +84,4 @@ def init_worker_logging(**kwargs):
 
 @beat_init.connect
 def init_beat_observability(**kwargs):
-    configure_process_logging()
+    configure_process_logging(service="beat")

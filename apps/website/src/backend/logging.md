@@ -1,172 +1,86 @@
 # 日志系统
 
-本项目使用 Loguru 作为统一的日志后端，通过 `InterceptHandler` 桥接标准库 `logging`，实现控制台格式化输出和文件自动轮转。
+项目使用 Loguru 和标准库日志桥接，生产默认输出单行 JSON，同时保留按级别分离、按日期和大小轮转的文件日志。排障依靠 INFO 及以上记录，不要求开启 DEBUG。
 
-## 架构概览
+## 生产入口与请求记录
 
-日志系统由以下组件构成：
+运行入口为 `uvicorn src.main:asgi_app`。`src.main.app` 保留 FastAPI 的路由、state 和依赖覆盖接口；`asgi_app` 在整个 FastAPI 应用外观察 ASGI 生命周期，能看到安全拒绝、非法请求 ID、业务失败以及最终异常响应。Docker dev/prod 和本地启动脚本都使用该入口。
 
-- **Loguru**：替代标准库 `logging`，作为唯一的日志后端
-- **InterceptHandler**：拦截标准库日志（如 uvicorn、sqlalchemy），统一转发到 Loguru
-- **ContextMiddleware + NanoIdPlugin**：为每个请求生成唯一的 Nano ID，用于日志追踪
-- **文件日志**：按级别分离的双文件输出，自动轮转和清理
+每个可正常结束或捕获退出的请求写一条 `event=http.request.completed`。它包含实际发送的 HTTP 状态、业务码、结果分类、请求 ID、身份标量、路由模板和耗时。不会读取、缓存或打印请求/响应正文，也不记录 URL 查询参数。健康检查和指标抓取成功时不逐条刷 INFO。
 
-## InterceptHandler
+- `http_status`：实际发出的状态；没有成功发送响应头时为 null。
+- `business_code`：响应业务码。HTTP 200 下也可能表示业务失败。
+- `outcome`：success/error，与 Prometheus 和 Redis 端点错误统计使用同一分类。
+- `error_kind`：固定的 business、validation、authentication、authorization、rate_limited、security_reject、server、transport、cancelled 分类。
+- `header_duration_ms`：到响应头成功发送的耗时；`duration_ms`：ASGI 调用总耗时，包含流式处理和响应后处理。
+- `response_complete`：观察到最后一个响应 body frame 已成功发送。它不保证业务内容在语义上完整。
+- `processing_failed`：处理发生异常或取消。响应发送完成后的后台异常不会被误称为响应未送达。
 
-`InterceptHandler` 继承自 `logging.Handler`，将所有标准库的日志记录重定向到 Loguru：
+发生取消或发送失败时保留原异常传播，不发送第二份错误响应。进程被强杀、宿主机断电等无法执行收尾逻辑的场景不能保证有完成记录。
 
-```python
-class InterceptHandler(logging.Handler):
-    def emit(self, record: logging.LogRecord) -> None:
-        try:
-            level = ruLogger.level(record.levelname).name
-        except ValueError:
-            level = record.levelno
+## 请求 ID 和身份
 
-        frame, depth = inspect.currentframe(), 0
-        while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
-            frame = frame.f_back
-            depth += 1
+入口生成 21 位 NanoID，或沿用格式合法的 `X-Request-ID`；非法/重复 ID 被拒绝时，响应仍有服务端生成的安全 ID。公共日志字段在记录生成时注入，文件 sink 不依赖控制台 sink 先执行，独立日志级别也能正常记录。
 
-        ruLogger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
-```
+Nginx 使用独立的 32 位 `X-Edge-Request-ID`，不能将该格式冒充为 NanoID。网关访问日志同时保存 edge ID 与应用响应的 request ID；入口直接拒绝的响应也返回 edge ID。
 
-:::info
-通过栈帧遍历计算正确的调用深度，确保 Loguru 输出的文件名和行号指向实际产生日志的代码位置，而非 `InterceptHandler` 本身。
-:::
+用户、实际操作人和模拟会话取自已认证请求状态的标量快照，不信任客户端自报用户 ID，也不为打日志触发 ORM 延迟加载。请求与任务作用域退出后恢复原上下文，避免并发请求串线。
 
-## 控制台输出格式
+## JSON 字段
 
-控制台日志格式通过 `LOG_FORMAT` 环境变量配置，默认格式为：
+保留既有 `time`、`level`、`message`、`plugin`、`request_id`、`logger`、`exception` 字段；新增 schema_version、environment、release、hostname、pid、service，以及允许列表中的请求、任务和故障字段。任意 `extra` 不会自动进入 JSON。
 
-```
-<timestamp> | <level> | <nanoid> | <message>
-```
-
-对应的配置值：
+时间使用带偏移的 ISO 格式；耗时使用单调时钟。JSON 会转义消息中的换行。生产异常只保留异常类型、根因链和代码位置，不保留任意异常值、源码行或局部变量；本地文本诊断可能包含更多信息，分享前需检查。
 
 ```python
-LOG_FORMAT: str = (
-    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</> "
-    "| <lvl>{level: <8}</> "
-    "| <cyan>{request_id}</> "
-    "| <lvl>{message}</>"
-)
+from rapidkit_core.log import get_plugin_logger
+
+logger = get_plugin_logger("Example")
+logger.bind(event="example.completed", user_id=user_id).info("Operation completed")
+# 需要异常栈时使用 Loguru 原生接口，不用 logging 的 exc_info=True。
+logger.opt(exception=True).warning("Operation failed")
 ```
 
-其中 `{request_id}` 由 `request_id_filter` 过滤器注入，从 `ContextMiddleware` 设置的 Nano ID 中获取：
+标准库日志经 `InterceptHandler` 桥接。Celery trace 消息使用安全生命周期元数据重建，不转发任意任务参数、返回值或错误字符串。已报告的同一 Uvicorn 异常避免重复展开，未报告错误仍保留。
 
-```python
-def request_id_filter(record: dict) -> dict:
-    rid = get_request_nanoid()
-    record["request_id"] = rid
-    return record
-```
+## 任务诊断与凭证保护
 
-:::tip
-请求 ID 使得在高并发场景下可以将同一请求的所有日志关联在一起，极大简化了问题排查流程。
-:::
+任务的真实参数、返回值和 broker 消息保持业务语义；观测副本默认不保留任意 args、kwargs、返回值和 stdout。任务打印输出被丢弃而不是无限缓存在内存中；安全业务事件请使用项目 logger。事件生产和消费落库都经过白名单，兼容旧事件时也不重新保存凭证。
 
-## 日志初始化
+任务详情及 Worker inspect 不展示原始参数、返回值、stdout 或旧异常文本。详情页面会说明诊断内容被隐藏，管理员可用任务 ID 查运行日志和错误平台。此保护不会删除历史数据库或历史日志中的原值；历史清除、令牌撤销需独立处理。
 
-`setup_logging` 函数在应用启动时执行，完成以下配置：
-
-1. 将标准库根 logger 的 handler 替换为 `InterceptHandler`
-2. 清空所有已注册 logger 的默认 handler
-3. 禁止 `uvicorn.access` 和 `watchfiles.main` 的日志传播（避免重复输出）
-4. 移除 Loguru 默认 handler，配置自定义的控制台输出
-
-```python
-def setup_logging() -> None:
-    logging.root.handlers = [InterceptHandler()]
-    logging.root.setLevel(settings.LOG_LEVEL)
-
-    for name in logging.root.manager.loggerDict.keys():
-        logging.getLogger(name).handlers = []
-        if "uvicorn.access" in name or "watchfiles.main" in name:
-            logging.getLogger(name).propagate = False
-        else:
-            logging.getLogger(name).propagate = True
-
-    ruLogger.remove()
-    ruLogger.configure(handlers=[{
-        "sink": sys.stdout,
-        "level": settings.LOG_LEVEL,
-        "format": default_formatter,
-        "filter": lambda record: request_id_filter(record),
-    }])
-```
-
-## 文件日志
-
-`set_custom_logfile` 函数配置双文件日志输出，按级别分离：
-
-| 文件         | 级别范围                       | 说明                       |
-| ------------ | ------------------------------ | -------------------------- |
-| `access.log` | 默认 INFO 至 SUCCESS（level.no <= 25） | 常规业务与访问日志，不含堆栈追踪 |
-| `error.log`  | `>= WARNING`（level.no >= 30） | 错误日志，包含完整堆栈追踪 |
-
-两个文件使用独立的轮转状态，同时满足下面两条规则，任意一条触发即轮转：
-
-- **按天**：系统本地日期跨天后的下一条日志触发轮转。
-- **按大小**：写入下一条日志将使文件超过 `LOG_FILE_MAX_BYTES` 时，先轮转再写入，默认 **100 MiB**（104857600 字节）。按 UTF-8 编码后的实际字节数计算。单条日志自身超过上限时会完整写入，不截断，所以该文件可以超过上限。
-
-实际文件名带有 `hostname.pid` 实例后缀（如 `access.<hostname>.<pid>.log`），每个进程只写自己的文件，避免多进程轮转时互相覆盖。轮转后的文件名为 `access.<hostname>.<pid>.<日期>.log`，日期取文件最后写入时间的系统本地日期。同一天多次轮转会在日期后追加 `-2`、`-3` 等序号，已有文件不会被覆盖。
-
-自定义文件名按 `Path` 的主干和扩展名插入实例标识：`requests.txt` 写入 `requests.<hostname>.<pid>.txt`；无扩展名时也会添加实例标识。目录路径保持原样，例如 `sub.log/requests.txt` 仍写入 `sub.log/`，归档和清理使用同样的文件名规则。
-
-Celery worker 与 beat 调用 `set_custom_logfile(enqueue=False)`：prefork 子进程以 `os._exit` 退出，`enqueue` 创建的信号量来不及注销，停止 worker 时会刷出大量 `leaked semaphore objects` 警告。
+邀请和密码重置的新链接将 token 放在 URL fragment。前端在路由初始化前提取到内存并清除 URL，校验请求使用 POST JSON；旧 GET 校验与旧 query 链接暂时兼容。清除后刷新页面需重新打开邮件链接。
 
 :::warning
-`error.log` 启用了 `backtrace=True`；`diagnose` 仅在非部署环境启用。开发环境的异常日志可能包含局部变量，分享日志前应检查敏感信息。
+Nginx 的 access_log 和 error_log 是两条不同通道。安全 JSON access_log 不记录 query/Referer，但旧 query 凭证仍可能出现在代理错误日志中。需完成旧邮件有效期与 GET 客户端迁移，不能把 access_log 脱敏误认为所有历史和入口日志都已清理。
 :::
 
-### 跨进程过期清理
+Sentry 上报同样去除认证头、请求体、URL query/fragment、局部变量、任意 extra、breadcrumbs 和不可信自由文本，保留异常类型、帧位置及可信 request/user ID。未配置 DSN 时不启用。它不替代全量运行日志和业务审计。
 
-保留时间由 `LOG_FILE_RETENTION_DAYS` 控制，默认 **7 天**，以文件最后修改时间计算。每次初始化文件日志时清理一次；运行期间在写日志时检查，每个进程最多每小时扫描一次，没有日志写入时不会唤醒后台任务。
+## 文件日志和配置
 
-清理只扫描配置的 access/error 文件所在目录中的已知运行日志名：
+`setup_logging(service="api")` 配置控制台与标准库桥接，`set_custom_logfile()` 配置文件。Worker 和 Beat 分别标记服务角色，并在 prefork 子进程重新绑定 sink。
 
-- 所有实例可明确识别的过期日期归档，包括旧版 `access_YYYY-MM-DD.log`、`error_YYYY-MM-DD.log`。
-- 本机已退出进程留下的过期 `access.<hostname>.<pid>.log`、`error.<hostname>.<pid>.log`，包括空文件。
+| 配置 | 默认值 | 含义 |
+| --- | --- | --- |
+| LOG_LEVEL | INFO | 控制台级别 |
+| LOG_JSON | 部署环境 true，本地/测试 false | 控制台及文件使用同一 JSON 格式；false 保留文本 |
+| LOG_FILE_ACCESS_LEVEL | INFO | 低级别文件阈值，接收 INFO/SUCCESS 等，不是纯 HTTP 访问日志 |
+| LOG_FILE_ERROR_LEVEL | WARNING | WARNING 及以上文件阈值 |
+| LOG_ACCESS_FILENAME | access.log | 活动文件基础名 |
+| LOG_ERROR_FILENAME | error.log | 活动文件基础名 |
+| LOG_FILE_MAX_BYTES | 104857600 | 单个文件轮转阈值，默认 100 MiB |
+| LOG_FILE_RETENTION_DAYS | 7 | 归档和可确认退出的本机进程文件保存期 |
+| SLOW_REQUEST_THRESHOLD_MS | 3000 | 慢请求 WARNING 阈值 |
 
-本机仍存活的进程文件、无权限确认存活状态的进程文件、远程主机未归档的进程文件都会保留。远程进程的存活状态无法通过本机 PID 判断，因此共享日志目录中的这类文件应在对应主机上清理。清理跳过符号链接、子目录和其他命名的文件；并发删除不会报错，其他文件操作失败会向 stderr 输出提示并继续运行。
+实际活动文件带 hostname.pid 后缀，例如 `access.host.123.log`；归档保留实例标识，例如 `access.host.123.2026-10-30.log`，同日冲突追加序号，不覆盖旧文件。轮转按进程本地日期和 UTF-8 大小判断，单条超大记录保留完整，不为满足轮转阈值静默截断。
 
-清理优先按活动文件名判断。例如 `access.worker.123.2026-01-01.456.log` 可能属于主机 `worker.123.2026-01-01` 的进程 `456`，不能仅凭日期认定它已归档。旧式 `日期.序号` 归档因此会保守保留，需要人工确认后清理；新式 `日期-序号` 避免了这一歧义。
+支持自定义相对路径与扩展名，按各基础文件所在目录清理。清理每小时最多扫描一次，启动强制执行；只处理匹配规则的普通文件，跳过符号链接、存活或无法确认存活的进程，以及远程 hostname 的未归档文件。`logs/verification/` 存放开发验证结果，排除在运行日志保留策略之外，不能提交。
 
-### 开发验证日志
+文件轮转不约束 Docker stdout 大小，容器内文件也不能抵抗容器删除。宿主机挂载、总容量预算、退出实例回收、集中采集和真实告警部署属于后续运维批次；单机目录也不能替代跨机备份。
 
-测试、构建、lint、类型检查和浏览器验证等临时输出统一放在 `logs/verification/`，与后端运行日志分开：
+## 指标与退化状态
 
-```bash
-mkdir -p logs/verification
-pnpm --filter @rapidkit/admin test > logs/verification/admin-test.log 2>&1
-uv run pytest packages/core/tests > logs/verification/core-test.log 2>&1
-```
+HTTP 完成日志、`rapidkit_http_requests_total` 和 Redis 端点统计从同一结果状态生成；HTTP 200 的业务失败计入错误。HTTP 5xx 与非零业务码保留各自统计，不重复写业务错误计数。`rapidkit_http_failures_total` 按固定 error_kind 区分预期拒绝与服务故障，ID 和任意异常文本不作为标签。
 
-该目录受 Git 忽略，不参与运行日志的自动过期清理。历史 `admin-migration-*.log` 也归入此目录，需要时可单独归档或手动清理。
-
-## 配置环境变量
-
-| 环境变量                | 类型     | 默认值       | 说明                 |
-| ----------------------- | -------- | ------------ | -------------------- |
-| `LOG_LEVEL`             | `string` | `INFO`       | 全局日志级别         |
-| `LOG_FILE_ACCESS_LEVEL` | `string` | `INFO`       | 访问日志文件最低级别 |
-| `LOG_FILE_ERROR_LEVEL`  | `string` | `WARNING`    | 错误日志文件最低级别 |
-| `LOG_ACCESS_FILENAME`   | `string` | `access.log` | 访问日志文件名       |
-| `LOG_ERROR_FILENAME`    | `string` | `error.log`  | 错误日志文件名       |
-| `LOG_FILE_MAX_BYTES` | `int` | `104857600` | 单文件轮转字节上限，必须大于 0 |
-| `LOG_FILE_RETENTION_DAYS` | `int` | `7` | 运行日志保留天数，必须大于 0 |
-| `LOG_FORMAT`            | `string` | 见上文       | Loguru 格式字符串    |
-
-## SQLAlchemy 日志处理
-
-`default_formatter` 对 SQLAlchemy 的日志做了特殊处理，将多行 SQL 语句压缩为单行，提升日志可读性：
-
-```python
-def default_formatter(record: dict) -> str:
-    record_name = record["name"] or ""
-    if record_name.startswith("sqlalchemy"):
-        record["message"] = re.sub(r"\s+", " ", record["message"]).strip()
-    # ...
-```
+Redis 指标写入失败记录首次退化、每 60 秒摘要和一次恢复，摘要包含失败次数，避免刷屏。监控路径失败不能中断普通业务响应。Prometheus 抓取、Sentry 错误聚合和告警渠道仍需单独部署与演练。

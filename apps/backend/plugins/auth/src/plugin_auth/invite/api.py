@@ -6,19 +6,26 @@ from rapidkit_common.schemas.response import Response
 
 from plugin_auth.auth.deps import AuthCrudDep
 from plugin_auth.invite.deps import InviteTokenStoreDep
-from plugin_auth.invite.schemas import InviteValidateResponse, SetPasswordBody
+from plugin_auth.invite.schemas import InviteValidateBody, InviteValidateResponse, SetPasswordBody
 from plugin_auth.invite.service import set_password_with_token
 
 router = APIRouter(prefix="/auth/invite", tags=["Auth Invite"])
 
 
-@router.get("/validate", dependencies=[Public])
+@router.get("/validate", dependencies=[Public], deprecated=True)
 async def validate_invite(
     invite_store: InviteTokenStoreDep,
     token: str = Query(..., description="邀请令牌"),
 ) -> Response[InviteValidateResponse]:
     """校验邀请令牌是否有效。"""
     return Response(data=InviteValidateResponse(valid=await invite_store.exists(token)))
+
+
+@router.post("/validate", dependencies=[Public])
+async def validate_invite_body(
+    body: InviteValidateBody, invite_store: InviteTokenStoreDep
+) -> Response[InviteValidateResponse]:
+    return Response(data=InviteValidateResponse(valid=await invite_store.exists(body.token)))
 
 
 @router.post("/set-password", dependencies=[Public])

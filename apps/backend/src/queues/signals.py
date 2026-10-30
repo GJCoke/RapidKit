@@ -11,6 +11,7 @@ import json
 import platform
 import threading
 import traceback as tb_module
+from types import TracebackType
 
 import celery
 import celery.app.task
@@ -25,6 +26,7 @@ from celery.signals import (
     worker_shutdown,
 )
 from rapidkit_core.config import settings
+from rapidkit_core.diagnostics import task_diagnostics
 from rapidkit_core.log import logger
 from rapidkit_core.nanoid import publication_request_id
 from rapidkit_core.timezone import timezone
@@ -52,7 +54,7 @@ def _publish_event(event_type: str, data: dict) -> None:
     message = {
         "event_type": event_type,
         "timestamp": timezone.now().isoformat(),
-        "data": json.dumps(data, default=str),
+        "data": json.dumps(task_diagnostics(data)),
     }
     r.xadd(STREAM_KEY, message, maxlen=STREAM_MAXLEN, approximate=True)  # ty: ignore[invalid-argument-type]
 
@@ -105,11 +107,14 @@ def _heartbeat_loop(hostname: str) -> None:
         try:
             _publish_event(
                 "worker.heartbeat",
-                {"hostname": hostname, "group_name": settings.CELERY_WORKER_GROUP,
-                 "deployment_id": settings.CELERY_WORKER_DEPLOYMENT},
+                {
+                    "hostname": hostname,
+                    "group_name": settings.CELERY_WORKER_GROUP,
+                    "deployment_id": settings.CELERY_WORKER_DEPLOYMENT,
+                },
             )
         except Exception:
-            logger.warning("Heartbeat publish failed for {hostname}", hostname=hostname, exc_info=True)
+            logger.opt(exception=True).warning("Heartbeat publish failed for {hostname}", hostname=hostname)
         _heartbeat_stop.wait(HEARTBEAT_INTERVAL)
 
 
@@ -188,12 +193,15 @@ def on_task_failure(
     **kw,
 ) -> None:
     """任务失败事件（补充详细的异常和堆栈信息）。"""
-    tb_str = ""
-    if traceback is not None:
+    frames = []
+    if isinstance(traceback, TracebackType):
         try:
-            tb_str = "".join(tb_module.format_tb(traceback))  # type: ignore
+            frames = [
+                {"filename": frame.filename, "name": frame.name, "lineno": frame.lineno}
+                for frame in tb_module.extract_tb(traceback)
+            ]
         except Exception:
-            tb_str = str(traceback)
+            pass
 
     logs = getattr(sender, "_logs", None)
     _publish_event(
@@ -202,8 +210,8 @@ def on_task_failure(
             **_request_identity(sender.request),
             "task_id": task_id,
             "task_name": sender.name,
-            "exception": str(exception),
-            "traceback": tb_str,
+            "exception_type": type(exception).__name__,
+            "traceback_frames": frames,
             "hostname": sender.request.hostname or "",
             "logs": logs,
         },

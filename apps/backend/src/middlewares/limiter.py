@@ -23,6 +23,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         retry_after = await request.app.state.limiter.check(rules)
         if retry_after is not None:
             request.state.business_code = int(StatusCode.TOO_MANY_REQUESTS)
+            request.state.error_kind = "rate_limited"
             return JSONResponse(
                 AppException(StatusCode.TOO_MANY_REQUESTS).dump(),
                 headers={"Retry-After": str(retry_after)},

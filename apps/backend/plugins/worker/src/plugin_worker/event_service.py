@@ -15,6 +15,7 @@ from rapidkit_common.enums import TaskStatus, WorkerStatus
 from rapidkit_common.events import TaskFailedEvent, TaskSucceededEvent, WorkerCapacityChangedEvent, WorkerOfflineEvent
 from rapidkit_common.protocols.audit import AuditWriter
 from rapidkit_core.config import settings
+from rapidkit_core.diagnostics import task_diagnostics
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from rapidkit_core.transaction import after_commit
@@ -189,6 +190,7 @@ class EventService:
     # ==================== Task Events ====================
 
     async def handle_task_started(self, data: dict) -> None:
+        data = task_diagnostics(data)
         existing = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
         attempt = data.get("attempt", existing.retries if existing else 0)
         if existing is not None:
@@ -220,6 +222,7 @@ class EventService:
             await self._emit_worker_status(worker)
 
     async def handle_task_success(self, data: dict) -> None:
+        data = task_diagnostics(data)
         task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
         now = _event_time(data)
         if task:
@@ -268,6 +271,7 @@ class EventService:
         )
 
     async def handle_task_failure(self, data: dict) -> None:
+        data = task_diagnostics(data)
         task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
         now = _event_time(data)
         if task:

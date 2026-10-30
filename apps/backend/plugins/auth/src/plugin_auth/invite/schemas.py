@@ -3,6 +3,10 @@
 from rapidkit_common.schemas import BaseModel, BaseRequest
 
 
+class InviteValidateBody(BaseRequest):
+    token: str
+
+
 class SetPasswordBody(BaseRequest):
     """Set a password using an encrypted password and invite token."""
 

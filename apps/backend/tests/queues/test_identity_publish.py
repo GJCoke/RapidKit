@@ -31,5 +31,7 @@ def test_send_task_carries_identity_and_strips_reserved_overrides(metadata):
     assert parent.call_args.kwargs == {
         "headers": {"correlation_id": "trace", "request_id": "req-publish", **identity_headers(metadata)},
         "countdown": 3,
+        "argsrepr": "[Filtered]",
+        "kwargsrepr": "[Filtered]",
     }
     assert supplied["actor_id"] == "forged"

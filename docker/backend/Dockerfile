@@ -29,7 +29,7 @@ FROM base AS dev
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --dev --frozen --no-install-workspace --project apps/backend
-CMD ["uv", "run", "--project", "apps/backend", "uvicorn", "src.main:app", "--reload", "--host", "0.0.0.0", "--port", "8006"]
+CMD ["uv", "run", "--project", "apps/backend", "uvicorn", "src.main:asgi_app", "--reload", "--host", "0.0.0.0", "--port", "8006"]
 
 FROM base AS prod
 # Only the app-owned paths are chowned; the venv stays root-owned so it is not duplicated in a chown layer.
@@ -53,4 +53,4 @@ USER app
 WORKDIR /app/apps/backend
 EXPOSE 8006
 ENTRYPOINT ["rapidkit-entrypoint"]
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8006", "--workers", "4", "--timeout-graceful-shutdown", "30", "--proxy-headers"]
+CMD ["uvicorn", "src.main:asgi_app", "--host", "0.0.0.0", "--port", "8006", "--workers", "4", "--timeout-graceful-shutdown", "30", "--proxy-headers"]

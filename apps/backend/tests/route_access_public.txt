@@ -9,8 +9,10 @@ GET:/health/live
 GET:/health/ready
 GET:/metrics
 POST:/api/v1/auth/invite/set-password
+POST:/api/v1/auth/invite/validate
 POST:/api/v1/auth/login
 POST:/api/v1/auth/login/swagger
 POST:/api/v1/auth/password-reset/confirm
 POST:/api/v1/auth/password-reset/request
+POST:/api/v1/auth/password-reset/validate
 POST:/api/v1/auth/token/refresh

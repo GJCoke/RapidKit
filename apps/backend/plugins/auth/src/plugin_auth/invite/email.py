@@ -65,7 +65,7 @@ class EmailSender:
 
     def send(self, to: str, subject: str, html_body: str, timeout: int = 15) -> None:
         if not self._host:
-            logger.warning("SMTP host not configured; skipping invite email to {to}", to=to)
+            logger.warning("SMTP host not configured; skipping invite email")
             return
         message = EmailMessage()
         message["Subject"] = subject

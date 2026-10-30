@@ -1,5 +1,6 @@
 import json
 
+from rapidkit_core.nanoid import WrongNanoIdError
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.identity import IdentityMetadata, identity_scope
 from rapidkit_framework.status_codes import StatusCode
@@ -21,10 +22,13 @@ class ContextMiddleware(StarletteContextMiddleware):
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         try:
+            if getattr(request.state, "invalid_request_id", False):
+                raise WrongNanoIdError("Invalid request ID")
             context = await self.set_context(request)
         except MiddleWareValidationError:
             error = AppException(StatusCode.BAD_REQUEST)
             request.state.business_code = error.code
+            request.state.error_kind = "validation"
             language = resolve_language(request.headers.get("accept-language"), languages)
 
             return Response(

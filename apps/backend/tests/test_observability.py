@@ -187,7 +187,7 @@ async def test_sentry_api_worker_beat_initialization(loaded_app, monkeypatch):
     main.create_app()
     assert events[:2] == ["logging", "sentry"]
     events.clear()
-    monkeypatch.setattr("rapidkit_core.log.setup_logging", lambda: events.append("logging"))
+    monkeypatch.setattr("rapidkit_core.log.setup_logging", lambda **kwargs: events.append("logging"))
     monkeypatch.setattr("rapidkit_core.log.set_custom_logfile", lambda **kwargs: events.append(kwargs))
     monkeypatch.setattr(queue_module, "init_sentry", lambda: events.append("sentry"))
     queue_module.init_worker_logging()

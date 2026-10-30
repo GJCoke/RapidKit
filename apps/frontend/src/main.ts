@@ -1,3 +1,4 @@
+import "./views/_builtin/login/modules/credential-token"
 import { createApp } from "vue"
 import "./plugins/assets"
 import { setupAppVersionNotification, setupDayjs, setupIconifyOffline, setupLoading, setupNProgress } from "./plugins"

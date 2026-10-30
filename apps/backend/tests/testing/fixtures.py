@@ -225,7 +225,9 @@ async def client(
 
     try:
         await database.RedisManager.clear()
-        async with LifespanManager(app) as manager:
+        from src.middlewares.logger import LoggerMiddleware
+
+        async with LifespanManager(LoggerMiddleware(app, metrics=app.state.prometheus, record_redis=True)) as manager:
             transport = ASGITransport(app=manager.app)
             async with AsyncClient(transport=transport, base_url=f"https://{settings.API_PREFIX_V1}") as c:
                 yield c

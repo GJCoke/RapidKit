@@ -47,6 +47,7 @@ def get_async_engine() -> AsyncEngine:
         _async_engine_instance = create_async_engine(
             str(s.ASYNC_DATABASE_POSTGRESQL_URL),
             echo=s.ENVIRONMENT.is_debug,
+            hide_parameters=True,
             pool_recycle=300,
             json_serializer=_json_serializer,
         )
@@ -63,6 +64,7 @@ def get_sync_engine() -> Engine:
         _sync_engine_instance = create_engine(
             str(s.SYNC_DATABASE_POSTGRESQL_URL),
             echo=s.ENVIRONMENT.is_debug,
+            hide_parameters=True,
             pool_recycle=300,
             json_serializer=_json_serializer,
         )

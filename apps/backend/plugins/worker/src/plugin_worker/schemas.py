@@ -5,10 +5,11 @@ Author  : Claude
 Date    : 2026-03-30
 """
 
+import builtins
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Literal, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, FieldSerializationInfo, field_serializer, model_validator
 from rapidkit_common.enums import TaskStatus, WorkerStatus
 from rapidkit_common.schemas import BaseModel, BaseRequest
 from rapidkit_common.schemas.request import PaginatedRequest
@@ -81,6 +82,19 @@ class TaskResultSchema(BaseModel):
     finished_at: EditableInstant | None = None
     runtime: float | None = None
     retries: int = 0
+
+    @field_serializer("args", "kwargs", "result", "logs", "traceback")
+    def _hide_execution_values(self, value: Any, info: FieldSerializationInfo):
+        if info.field_name == "args":
+            return []
+        if info.field_name == "kwargs":
+            return {}
+        return None
+
+    @field_serializer("exception")
+    def _safe_exception_type(self, value: str | None):
+        kind = vars(builtins).get(value) if value else None
+        return value if isinstance(kind, type) and issubclass(kind, BaseException) else None
 
 
 class TaskResponse(TaskResultSchema, BaseSchema):

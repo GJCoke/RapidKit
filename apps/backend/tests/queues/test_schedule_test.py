@@ -1,6 +1,5 @@
 """Schedule diagnostic task execution tests."""
 
-import json
 from datetime import datetime
 
 import pytest
@@ -23,6 +22,6 @@ def test_schedule_test_reports_execution_and_captured_logs(monkeypatch, kwargs, 
     assert result.result["task_id"] == result.id
     assert result.result["worker"]
     assert datetime.fromisoformat(result.result["executed_at"]).tzinfo is not None
-    assert json.loads(task._logs) == result.result
+    assert task._logs is None
     assert task.ignore_result is False
     assert not any(entry["task"] == task.name for entry in app.conf.beat_schedule.values())

@@ -13,7 +13,7 @@ from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.services import get_service
 
 from plugin_auth.auth.crud import UserCRUD
-from plugin_auth.invite.config import invite_settings
+from plugin_auth.invite.service import credential_link
 from plugin_auth.password_reset.token_store import PasswordResetTokenStore
 from plugin_auth.status_codes import AuthStatusCode
 
@@ -40,7 +40,7 @@ async def request_password_reset(
     if not user or user.status != Status.ON:
         return
     token = await store.issue(user.id)
-    reset_link = f"{invite_settings.FRONTEND_BASE_URL.rstrip('/')}/login/reset-password?token={token}"
+    reset_link = credential_link("reset-password", token)
     _enqueue_password_reset_email(
         email=user.email, platform_name=settings.APP_NAME, user_name=user.name, reset_link=reset_link
     )

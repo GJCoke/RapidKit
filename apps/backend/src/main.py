@@ -7,7 +7,6 @@ Author : Coke
 Date   : 2025-03-10
 """
 
-import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -20,10 +19,9 @@ from rapidkit_common.utils import format_validation_errors
 from rapidkit_core.config import settings
 from rapidkit_core.log import logger, set_custom_logfile, setup_logging
 from rapidkit_core.nanoid import NanoIdPlugin
-from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.limiter import RateLimiterService
-from rapidkit_framework.status_codes import StatusCode
+from rapidkit_framework.status_codes import StatusCode, StatusCodeType
 from starlette.exceptions import HTTPException
 from starlette_context import context
 
@@ -35,29 +33,12 @@ from src.middlewares.context import ContextMiddleware
 from src.middlewares.i18n import I18nMiddleware
 from src.middlewares.limiter import RateLimitMiddleware
 from src.middlewares.logger import LoggerMiddleware
-from src.middlewares.metrics import MetricsMiddleware
 from src.middlewares.security import SecurityMiddleware, security_headers
 from src.middlewares.state import StateMiddleware
 from src.observability import init_sentry
-from src.prometheus import HTTPMetrics, PrometheusMiddleware
+from src.prometheus import HTTPMetrics
 from src.prometheus import router as prometheus_router
 from src.sio.app import socket_app
-
-_background_tasks: set[asyncio.Task] = set()
-
-
-async def _increment_biz_error() -> None:
-    """将业务异常计数写入 Redis（fire-and-forget）。"""
-    try:
-        from rapidkit_core.database import RedisManager
-
-        redis = RedisManager.client()
-        hour_bucket = timezone.now().strftime("%Y%m%d_%H")
-        key = f"metrics:errors:biz:{hour_bucket}"
-        await redis.hincrby(key, "count", 1)
-        await redis.expire(key, 7200)
-    except Exception:
-        logger.debug("Failed to increment biz error count", exc_info=True)
 
 
 def _get_request_user(_: Request) -> str:
@@ -91,10 +72,8 @@ def setup_middlewares(app: FastAPI) -> None:
     # 全局中间件（基础设施层，最靠近请求入口）
     app.add_middleware(StateMiddleware)
     app.add_middleware(AuditMiddleware)
-    app.add_middleware(MetricsMiddleware)
     app.add_middleware(RateLimitMiddleware)
     app.add_middleware(I18nMiddleware)
-    app.add_middleware(LoggerMiddleware)
     app.add_middleware(
         ContextMiddleware,
         plugins=(NanoIdPlugin(),),
@@ -110,7 +89,6 @@ def setup_middlewares(app: FastAPI) -> None:
     )
 
     app.add_middleware(SecurityMiddleware)
-    app.add_middleware(PrometheusMiddleware, metrics=app.state.prometheus)
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
@@ -122,13 +100,14 @@ def setup_exception_handlers(app: FastAPI) -> None:
         record_audit_outcome(
             request, business_code=int(StatusCode.VALIDATION_ERROR), error_key=StatusCode.VALIDATION_ERROR.description
         )
+        request.state.error_kind = "validation"
         details = format_validation_errors(exc)
         logger.warning(
-            '{user} "{method} {path}" RequestValidationError: {details}',
+            '{user} "{method} {path}" RequestValidationError: {count} errors',
             user=_get_request_user(request),
             method=request.method,
-            path=request.url.path,
-            details=details,
+            path=getattr(request.scope.get("route"), "path", "unmatched"),
+            count=len(exc.errors()),
         )
         return JSONResponse(
             status_code=status.HTTP_200_OK,
@@ -139,17 +118,23 @@ def setup_exception_handlers(app: FastAPI) -> None:
     async def handle_app_exception(request: Request, exc: AppException) -> JSONResponse:
         """应用业务异常处理，使用业务状态码。"""
         record_audit_outcome(request, business_code=exc.code, error_key=exc.status_code_enum.description)
-        logger.warning(
-            '{user} "{method} {path}" AppException[{code}]: {message}',
+        description = exc.status_code_enum.description.lower()
+        if exc.status_code_enum.type in (StatusCodeType.THIRD_PARTY_ERROR.value, StatusCodeType.SYSTEM_ERROR.value):
+            request.state.error_kind = "server"
+        elif "permission" in description:
+            request.state.error_kind = "authorization"
+        elif description.startswith("auth.error."):
+            request.state.error_kind = "authentication"
+        else:
+            request.state.error_kind = "business"
+        logger.opt(exception=exc if request.state.error_kind == "server" else None).log(
+            "ERROR" if request.state.error_kind == "server" else "WARNING",
+            '{user} "{method} {path}" AppException[{code}]',
             user=_get_request_user(request),
             method=request.method,
-            path=request.url.path,
+            path=getattr(request.scope.get("route"), "path", "unmatched"),
             code=exc.code,
-            message=exc.message,
         )
-        task = asyncio.create_task(_increment_biz_error())
-        _background_tasks.add(task)
-        task.add_done_callback(_background_tasks.discard)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=exc.dump(),
@@ -158,13 +143,22 @@ def setup_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(HTTPException)
     async def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
         """HTTP 异常自定义处理。"""
-        logger.error(
-            '{user} "{method} {path}" {status_code} HTTPException: {detail}',
+        request.state.error_kind = (
+            "server"
+            if exc.status_code >= 500
+            else "authentication"
+            if exc.status_code == 401
+            else "authorization"
+            if exc.status_code == 403
+            else "business"
+        )
+        logger.opt(exception=exc if exc.status_code >= 500 else None).log(
+            "ERROR" if exc.status_code >= 500 else "INFO",
+            '{user} "{method} {path}" {status_code} HTTPException',
             user=_get_request_user(request),
             method=request.method,
-            path=request.url.path,
+            path=getattr(request.scope.get("route"), "path", "unmatched"),
             status_code=exc.status_code,
-            detail=exc.detail,
         )
         record_audit_outcome(request, business_code=exc.status_code, error_key="common.error.invalidOperation")
         detail = str(exc.detail)
@@ -178,14 +172,16 @@ def setup_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(Exception)
     async def handle_server_errors(request: Request, exc: Exception) -> JSONResponse:
         """捕获所有非预期异常并返回 500 状态码。"""
+        request.state.error_kind = "server"
         logger.exception(
             '{user} "{method} {path}" {status_code} ServerException: {detail}',
             user=_get_request_user(request),
             method=request.method,
-            path=request.url.path,
+            path=getattr(request.scope.get("route"), "path", "unmatched"),
             status_code=int(StatusCode.INTERNAL_SERVER_ERROR),
-            detail=str(exc),
+            detail=type(exc).__name__,
         )
+        setattr(exc, "_rapidkit_reported", True)
         record_audit_outcome(
             request,
             business_code=int(StatusCode.INTERNAL_SERVER_ERROR),
@@ -298,3 +294,4 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+asgi_app = LoggerMiddleware(app, metrics=app.state.prometheus, record_redis=True)

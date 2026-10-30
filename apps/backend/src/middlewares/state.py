@@ -30,7 +30,7 @@ class StateMiddleware(BaseHTTPMiddleware):
         if ip_info:
             ctx.ip = ip_info
         else:
-            logger.info("No client IP could be determined from the request.")
+            logger.debug("No client IP could be determined from the request.")
 
         ua_info = parse_user_agent(request)
         if ua_info:
@@ -39,7 +39,7 @@ class StateMiddleware(BaseHTTPMiddleware):
             ctx.browser = ua_info.browser
             ctx.device = ua_info.device
         else:
-            logger.info("No User-Agent header found in the request.")
+            logger.debug("No User-Agent header found in the request.")
 
         response = await callback(request)
         return response

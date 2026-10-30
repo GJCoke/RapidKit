@@ -5,8 +5,6 @@ Author : Coke
 Date   : 2026-10-08
 """
 
-import json
-
 from rapidkit_core.log import logger
 from rapidkit_core.timezone import timezone
 
@@ -24,9 +22,9 @@ def schedule_test(self: Task, label: str = "schedule-test") -> dict[str, str | N
         "executed_at": timezone.now_local().isoformat(),
     }
     logger.info(
-        "Schedule test executed: label={label}, task_id={task_id}, worker={worker}, executed_at={executed_at}",
-        **result,
+        "Schedule test executed: task_id={task_id}, worker={worker}, executed_at={executed_at}",
+        task_id=result["task_id"],
+        worker=result["worker"],
+        executed_at=result["executed_at"],
     )
-    # stdout 会被 Task 基类捕获，随执行结果展示在任务日志中。
-    print(json.dumps(result, ensure_ascii=False))
     return result

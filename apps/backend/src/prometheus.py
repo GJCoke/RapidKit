@@ -1,7 +1,6 @@
 """Internal HTTP metrics with bounded labels and per-container process aggregation."""
 
 import os
-import time
 from pathlib import Path
 
 from fastapi import APIRouter, Request
@@ -16,9 +15,9 @@ from prometheus_client import (
 )
 from rapidkit_common.access import Public
 from starlette.responses import Response
-from starlette.types import ASGIApp, Message, Receive, Scope, Send
+from starlette.types import ASGIApp
 
-from src.health import is_internal_path
+from src.middlewares.logger import LoggerMiddleware
 
 _METHODS = frozenset({"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE", "CONNECT"})
 
@@ -45,6 +44,12 @@ class HTTPMetrics:
             ("method", "route", "outcome"),
             registry=self.registry,
         )
+        self.failures = Counter(
+            "rapidkit_http_failures_total",
+            "Failed HTTP requests by bounded category",
+            ("method", "route", "error_kind"),
+            registry=self.registry,
+        )
         self.duration = Histogram(
             "rapidkit_http_request_duration_seconds",
             "HTTP request duration",
@@ -57,6 +62,13 @@ class HTTPMetrics:
             multiprocess_mode="livesum",
             registry=self.registry,
         )
+
+    def observe_request(self, method: str, route: str, outcome: str, kind: str | None, duration: float) -> None:
+        method = method if method in _METHODS else "OTHER"
+        self.requests.labels(method, route, outcome).inc()
+        self.duration.labels(method, route).observe(duration)
+        if kind is not None:
+            self.failures.labels(method, route, kind).inc()
 
     def render(self) -> bytes:
         if self.multiproc_dir is None:
@@ -71,37 +83,11 @@ class HTTPMetrics:
             multiprocess.mark_process_dead(os.getpid(), path=str(self.multiproc_dir))
 
 
-class PrometheusMiddleware:
+class PrometheusMiddleware(LoggerMiddleware):
+    """Compatibility entry for applications embedding the existing metrics middleware."""
+
     def __init__(self, app: ASGIApp, metrics: HTTPMetrics):
-        self.app, self.metrics = app, metrics
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http" or is_internal_path(scope["path"]):
-            await self.app(scope, receive, send)
-            return
-        method = scope["method"] if scope["method"] in _METHODS else "OTHER"
-        status, failed = 500, False
-        started = time.perf_counter()
-        self.metrics.in_progress.inc()
-
-        async def observe(message: Message) -> None:
-            nonlocal status
-            if message["type"] == "http.response.start":
-                status = message["status"]
-            await send(message)
-
-        try:
-            await self.app(scope, receive, observe)
-        except BaseException:
-            failed = True
-            raise
-        finally:
-            route = getattr(scope.get("route"), "path", "unmatched")
-            code = scope.get("state", {}).get("business_code")
-            outcome = "error" if failed or status >= 400 or code not in (None, 0) else "success"
-            self.metrics.in_progress.dec()
-            self.metrics.requests.labels(method, route, outcome).inc()
-            self.metrics.duration.labels(method, route).observe(time.perf_counter() - started)
+        super().__init__(app, metrics=metrics)
 
 
 router = APIRouter()

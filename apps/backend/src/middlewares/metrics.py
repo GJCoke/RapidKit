@@ -10,17 +10,10 @@ Date   : 2026-04-10
 
 import asyncio
 import re
-import time
-from typing import Awaitable, Callable
 
-from fastapi import Request, Response
-from fastapi.routing import APIRoute
 from rapidkit_core.database import RedisManager
-from rapidkit_core.log import logger
+from rapidkit_core.log import component_failed, component_recovered
 from rapidkit_core.timezone import timezone
-from starlette.middleware.base import BaseHTTPMiddleware
-
-from src.health import is_internal_path
 
 _background_tasks: set[asyncio.Task] = set()
 
@@ -48,6 +41,8 @@ async def _record_metrics(
     path: str,
     route_path: str | None = None,
     method: str = "GET",
+    business_code: int | None = None,
+    outcome: str | None = None,
 ) -> None:
     """将请求指标写入 Redis（fire-and-forget）。"""
     try:
@@ -57,6 +52,7 @@ async def _record_metrics(
         hour_bucket = now.strftime("%Y%m%d_%H")
 
         pipe = redis.pipeline(transaction=True)
+        failed = outcome == "error" or status_code >= 400 or business_code not in (None, 0)
 
         # ── 全局指标（保持不变） ──
 
@@ -76,6 +72,10 @@ async def _record_metrics(
             err_key = f"metrics:errors:5xx:{hour_bucket}"
             pipe.hincrby(err_key, "count", 1)
             pipe.expire(err_key, _KEY_TTL)
+        if business_code not in (None, 0):
+            biz_key = f"metrics:errors:biz:{hour_bucket}"
+            pipe.hincrby(biz_key, "count", 1)
+            pipe.expire(biz_key, _KEY_TTL)
 
         # ── 按 API 端点维度指标 ──
 
@@ -84,7 +84,7 @@ async def _record_metrics(
 
         pipe.hincrby(ep_key, "count", 1)
         pipe.hincrbyfloat(ep_key, "total_ms", duration_ms)
-        if status_code >= 400:
+        if failed:
             pipe.hincrby(ep_key, "errors", 1)
         pipe.expire(ep_key, _EP_KEY_TTL)
 
@@ -92,7 +92,7 @@ async def _record_metrics(
         archive_key = f"metrics:api_hour:{hour_bucket}:{method}:{ep_path}"
         pipe.hincrby(archive_key, "count", 1)
         pipe.hincrbyfloat(archive_key, "total_ms", duration_ms)
-        if status_code >= 400:
+        if failed:
             pipe.hincrby(archive_key, "errors", 1)
         pipe.expire(archive_key, _HOUR_KEY_TTL)
 
@@ -102,35 +102,6 @@ async def _record_metrics(
         pipe.expire(ep_rt_key, _EP_KEY_TTL)
 
         await pipe.execute()
-    except Exception:
-        logger.debug("Failed to record metrics to Redis", exc_info=True)
-
-
-class MetricsMiddleware(BaseHTTPMiddleware):
-    """请求指标采集中间件，记录全局和按 API 维度的 QPS、响应时间和错误到 Redis。"""
-
-    async def dispatch(self, request: Request, callback: Callable[[Request], Awaitable[Response]]) -> Response:
-        if is_internal_path(request.url.path):
-            return await callback(request)
-        before = time.time()
-        response = await callback(request)
-        duration_ms = round((time.time() - before) * 1000, 2)
-
-        # 提取 FastAPI 路由模板路径
-        route = request.scope.get("route")
-        route_path = route.path if isinstance(route, APIRoute) else None
-
-        # Fire-and-forget 写入 Redis
-        task = asyncio.create_task(
-            _record_metrics(
-                status_code=response.status_code,
-                duration_ms=duration_ms,
-                path=request.url.path,
-                route_path=route_path,
-                method=request.method,
-            )
-        )
-        _background_tasks.add(task)
-        task.add_done_callback(_background_tasks.discard)
-
-        return response
+        component_recovered("request_metrics")
+    except Exception as exc:
+        component_failed("request_metrics", exc)

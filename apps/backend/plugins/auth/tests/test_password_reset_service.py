@@ -99,7 +99,7 @@ async def test_request_normalizes_email_and_queues_active_user(monkeypatch) -> N
         "email": user.email,
         "user_name": user.name,
         "platform_name": settings.APP_NAME,
-        "reset_link": "http://localhost:9527/login/reset-password?token=issued",
+        "reset_link": "http://localhost:9527/login/reset-password#token=issued",
     }
 
 

@@ -72,7 +72,7 @@ uv 会根据 `pyproject.toml` 中的 `requires-python` 自动选择合适的 Pyt
 | 命令                     | 说明                                                           |
 | ------------------------ | -------------------------------------------------------------- |
 | `uv sync`                | 根据 `uv.lock` 安装所有依赖（含开发依赖），并自动创建 `.venv/` |
-| `uv run <command>`       | 在虚拟环境中执行命令，例如 `uv run uvicorn src.main:app`       |
+| `uv run <command>`       | 在虚拟环境中执行命令，例如 `uv run uvicorn src.main:asgi_app`       |
 | `uv add <package>`       | 添加生产依赖并更新 `pyproject.toml` 和 `uv.lock`               |
 | `uv add --dev <package>` | 添加开发依赖到 `[dependency-groups] dev`                       |
 | `uv lock`                | 仅更新 `uv.lock` 锁文件，不安装依赖                            |

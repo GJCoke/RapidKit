@@ -49,6 +49,7 @@ class SecurityMiddleware:
 
         async def reject(code: StatusCode) -> None:
             scope.setdefault("state", {})["business_code"] = int(code)
+            scope["state"]["error_kind"] = "security_reject"
             language = resolve_language(headers.get("accept-language"), languages) or settings.DEFAULT_LANGUAGE
             response = JSONResponse(
                 {

@@ -44,4 +44,4 @@ async def run_after_commit_hooks(session: Any) -> None:
         try:
             await fn(*args, **kwargs)
         except Exception:
-            logger.warning("after-commit hook {} failed", fn.__qualname__, exc_info=True)
+            logger.opt(exception=True).warning("after-commit hook {} failed", fn.__qualname__)

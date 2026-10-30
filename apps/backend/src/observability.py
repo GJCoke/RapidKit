@@ -39,6 +39,11 @@ _PRIVATE_KEYS = frozenset(
         "url.query",
         "args",
         "kwargs",
+        "value",
+        "context_line",
+        "pre_context",
+        "post_context",
+        "params",
     }
 )
 
@@ -59,7 +64,9 @@ def _clean_url(value: str) -> str:
 def _scrub(value):
     if isinstance(value, dict):
         return {
-            key: _clean_url(item)
+            key: "[Filtered]"
+            if key.lower() in {"message", "formatted"}
+            else _clean_url(item)
             if key.lower() in {"url", "http.url", "url.full", "http.target"} and isinstance(item, str)
             else _scrub(item)
             for key, item in value.items()
@@ -72,10 +79,15 @@ def _scrub(value):
 
 def before_send(event, hint):
     event = _scrub(event)
+    event.pop("extra", None)
+    event.pop("breadcrumbs", None)
+    if "logentry" in event:
+        event["logentry"] = {"message": "Diagnostic event"}
     request = event.get("request")
     if isinstance(request, dict):
         request.pop("data", None)
         request.pop("env", None)
+        request.pop("headers", None)
     trusted = hint.get(_CONTEXT_HINT, {})
     user_id = trusted.get("user_id") or current_identity().user_id
     request_id = trusted.get("request_id") or get_request_nanoid()

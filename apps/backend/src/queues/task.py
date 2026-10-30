@@ -31,6 +31,11 @@ from typing_extensions import Annotated, Doc
 from src.observability import sentry_scope
 
 
+class _DiscardOutput(io.TextIOBase):
+    def write(self, value: str) -> int:
+        return len(value)
+
+
 class Task(_Task):
     """
     支持异步（async def）任务的自定义 Celery 任务。
@@ -258,7 +263,7 @@ class Task(_Task):
             ),
         ] = False,
         **options: Annotated[
-            dict[str, Any],
+            Any,
             Doc(
                 """
                 Celery 选项参数。
@@ -287,6 +292,8 @@ class Task(_Task):
             **identity_headers(),
             "request_id": publication_request_id(options.get("headers") or {}),
         }
+        options["argsrepr"] = "[Filtered]"
+        options["kwargsrepr"] = "[Filtered]"
         has_di = bool(self._resolve_deps_hints())
         if has_di:
             orig_typing = self.typing
@@ -363,7 +370,7 @@ class Task(_Task):
                 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
                 from sqlmodel.ext.asyncio.session import AsyncSession
 
-                engine = create_async_engine(str(settings.ASYNC_DATABASE_POSTGRESQL_URL))
+                engine = create_async_engine(str(settings.ASYNC_DATABASE_POSTGRESQL_URL), hide_parameters=True)
                 deps[name] = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
         return deps
@@ -391,7 +398,7 @@ class Task(_Task):
                 if engine:
                     await engine.dispose()
 
-    def __call__(self, *args: tuple[Any], **kwargs: dict[str, Any]) -> Any:
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         headers = dict(getattr(self.request, "headers", None) or {})
         request_id = headers.get("request_id")
         if not isinstance(request_id, str) or not request_id:
@@ -421,8 +428,8 @@ class Task(_Task):
         _task_stack.push(self)
         self.push_request(args=args, kwargs=kwargs, headers=saved_headers)
 
-        # 捕获任务执行期间的 stdout 输出作为日志。
-        captured = io.StringIO()
+        # 丢弃任意 stdout，避免将执行凭证复制到诊断日志。
+        captured = _DiscardOutput()
         old_stdout = sys.stdout
         sys.stdout = captured
 
@@ -459,6 +466,6 @@ class Task(_Task):
 
         finally:
             sys.stdout = old_stdout
-            self._logs = captured.getvalue() or None
+            self._logs = None
             self.pop_request()
             _task_stack.pop()

@@ -1,5 +1,6 @@
 """Invite issuance, delivery scheduling, and account activation."""
 
+from urllib.parse import quote
 from uuid import UUID
 
 from rapidkit_common.enums import Status
@@ -16,6 +17,12 @@ from plugin_auth.invite.token_store import InviteTokenStore
 from plugin_auth.status_codes import AuthStatusCode
 
 logger = get_plugin_logger("Auth")
+
+
+def credential_link(module: str, token: str) -> str:
+    base = invite_settings.FRONTEND_BASE_URL.rstrip("/")
+    separator = "?" if base.endswith("#") else "#"
+    return f"{base}/login/{module}{separator}token={quote(token, safe='')}"
 
 
 def _enqueue_invite_email(*, email: str, platform_name: str, user_name: str, username: str, invite_link: str) -> None:
@@ -63,7 +70,7 @@ async def issue_and_send_invite(user_id: UUID) -> None:
             logger.info("Skipping invite for non-pending user {user_id}", user_id=user_id)
             return
         token = await InviteTokenStore(redis).issue(user_id)
-        link = f"{invite_settings.FRONTEND_BASE_URL.rstrip('/')}/login/set-password?token={token}"
+        link = credential_link("set-password", token)
         _enqueue_invite_email(
             email=user.email,
             platform_name=settings.APP_NAME,

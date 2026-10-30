@@ -1,18 +1,18 @@
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from "vue"
-  import { useRoute } from "vue-router"
   import { rsaEncrypt } from "@rapidkit/utils"
   import { fetchConfirmPasswordReset, fetchGetPublicKey, fetchValidatePasswordReset } from "@/service/api"
   import { useRouterPush } from "@/hooks/common/router"
   import { useFormRules, useNaiveForm } from "@/hooks/common/form"
   import { $t } from "@/locales"
 
+  import { getCredentialToken } from "./credential-token"
+
   defineOptions({ name: "ResetPassword" })
 
-  const route = useRoute()
   const { toggleLoginModule } = useRouterPush()
   const { formRef, validate } = useNaiveForm()
-  const token = computed(() => (typeof route.query.token === "string" ? route.query.token : ""))
+  const token = ref(getCredentialToken())
   const tokenValid = ref<boolean | null>(null)
   const submitting = ref(false)
   const model = reactive({ password: "", confirmPassword: "" })

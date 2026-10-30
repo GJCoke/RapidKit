@@ -86,8 +86,10 @@ async def rate_limit_rules(request: Request) -> list[RateLimitRule]:
         rules.append(("refresh", f"user:{refresh_user}" if refresh_user else ip_key, settings.RATE_LIMIT_REFRESH))
     elif (request.method, path) in {
         ("GET", "/auth/invite/validate"),
+        ("POST", "/auth/invite/validate"),
         ("POST", "/auth/invite/set-password"),
         ("GET", "/auth/password-reset/validate"),
+        ("POST", "/auth/password-reset/validate"),
         ("POST", "/auth/password-reset/confirm"),
     }:
         rules.append(("credential-setup", ip_key, settings.RATE_LIMIT_CREDENTIAL_SETUP))

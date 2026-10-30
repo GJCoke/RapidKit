@@ -9,9 +9,11 @@ import sys
 import time
 import traceback
 from datetime import date, datetime
+from enum import Enum
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO, cast
+from uuid import UUID
 
 from loguru import logger as ruLogger
 
@@ -19,17 +21,55 @@ if TYPE_CHECKING:
     from loguru import Logger, Message, Record
 
 from rapidkit_core.config import settings
+from rapidkit_core.diagnostics import exception_summary
 from rapidkit_core.nanoid import get_request_nanoid
 from rapidkit_core.path import LOG_PATH
 
 _owned_handlers: set[int] = {0}  # Loguru's initial default handler.
 _last_log_cleanup = float("-inf")
+_component_failures: dict[str, tuple[int, float]] = {}
+_FIELDS = frozenset(
+    {
+        "event",
+        "service",
+        "user_id",
+        "actor_id",
+        "impersonation_session_id",
+        "edge_request_id",
+        "method",
+        "route",
+        "http_status",
+        "business_code",
+        "outcome",
+        "error_kind",
+        "duration_ms",
+        "header_duration_ms",
+        "response_complete",
+        "processing_failed",
+        "task_id",
+        "task_name",
+        "attempt",
+        "queue",
+        "correlation_id",
+        "component",
+        "reason_code",
+        "exception_type",
+        "consecutive_failures",
+        "diagnostic_truncated",
+    }
+)
 
 
 class InterceptHandler(logging.Handler):
     """日志拦截处理器，将标准库日志重定向到 loguru。"""
 
     def emit(self, record: logging.LogRecord) -> None:
+        if (
+            record.name.startswith("uvicorn")
+            and record.exc_info
+            and getattr(record.exc_info[1], "_rapidkit_reported", False)
+        ):
+            return
         try:
             level = ruLogger.level(record.levelname).name
         except ValueError:
@@ -40,7 +80,61 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
+        if record.name.startswith(("celery.app.trace", "celery.worker.request")):
+            data = record.args if isinstance(record.args, dict) else getattr(record, "data", {})
+            ruLogger.bind(task_id=data.get("id"), task_name=data.get("name"), event="task.lifecycle").opt(
+                depth=depth, exception=record.exc_info
+            ).log(level, "Task lifecycle")
+            return
         ruLogger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
+
+def _payload(record: "Record") -> dict[str, Any]:
+    exception = record["exception"]
+    safe_exception = None
+    if exception is not None:
+        safe_exception = (
+            exception_summary(exception.value)
+            if settings.ENVIRONMENT.is_deployed
+            else "".join(traceback.format_exception(exception.type, exception.value, exception.traceback))
+        )
+    payload = {
+        "time": record["time"].isoformat(),
+        "level": record["level"].name,
+        "message": record["message"],
+        "plugin": record["extra"].get("plugin", "Core"),
+        "request_id": record.get("request_id", get_request_nanoid()),
+        "logger": record["name"],
+        "exception": safe_exception,
+        "schema_version": 1,
+        "environment": settings.ENVIRONMENT.value,
+        "release": settings.SENTRY_RELEASE or settings.APP_VERSION,
+        "hostname": socket.gethostname(),
+        "pid": record["process"].id,
+    }
+    for key in _FIELDS:
+        value = record["extra"].get(key)
+        if isinstance(value, UUID):
+            value = str(value)
+        elif isinstance(value, Enum):
+            value = value.value
+        if value is None or isinstance(value, (str, int, float, bool)):
+            if key in record["extra"]:
+                payload[key] = value
+    payload.setdefault("service", "api")
+    return payload
+
+
+def _prepare_record(record: "Record") -> None:
+    cast(dict, record)["request_id"] = get_request_nanoid()
+    record["extra"].setdefault("plugin", "Core")
+    exception = record["exception"]
+    if exception is not None and settings.ENVIRONMENT.is_deployed:
+        value = str(exception.value)
+        if value:
+            record["message"] = record["message"].replace(value, "[Filtered]")
+        record["extra"]["safe_exception"] = exception_summary(exception.value)
+    record["extra"]["_json"] = json.dumps(_payload(record), ensure_ascii=False)
 
 
 def default_formatter(record: "Record") -> str:
@@ -53,7 +147,7 @@ def default_formatter(record: "Record") -> str:
     format_str = settings.LOG_FORMAT.rstrip("\n") + "\n"
 
     if record["exception"] is not None:
-        format_str += "{exception}\n"
+        format_str += "{extra[safe_exception]}\n" if settings.ENVIRONMENT.is_deployed else "{exception}\n"
     return format_str
 
 
@@ -65,24 +159,14 @@ def request_id_filter(record: "Record") -> bool:
 
 
 def json_sink(message: "Message", *, stream: TextIO | None = None) -> None:
-    record = message.record
-    exception = record["exception"]
-    payload = {
-        "time": record["time"].isoformat(),
-        "level": record["level"].name,
-        "message": record["message"],
-        "plugin": record["extra"].get("plugin", "Core"),
-        "request_id": record.get("request_id", get_request_nanoid()),
-        "logger": record["name"],
-        "exception": "".join(traceback.format_exception(exception.type, exception.value, exception.traceback))
-        if exception is not None
-        else None,
-    }
-    (stream if stream is not None else sys.stdout).write(json.dumps(payload, ensure_ascii=False) + "\n")
+    (stream if stream is not None else sys.stdout).write(
+        json.dumps(_payload(message.record), ensure_ascii=False) + "\n"
+    )
 
 
-def setup_logging() -> None:
+def setup_logging(service: str = "api") -> None:
     """设置日志处理器。"""
+    ruLogger.configure(patcher=_prepare_record, extra={"service": service})
     logging.root.handlers = [InterceptHandler()]
     logging.root.setLevel(settings.LOG_LEVEL)
 
@@ -220,7 +304,7 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
     )
 
     log_config: dict[str, Any] = {
-        "format": default_formatter,
+        "format": (lambda record: "{extra[_json]}\n") if settings.LOG_JSON else default_formatter,
         "enqueue": enqueue,
         "encoding": "utf-8",
     }
@@ -250,6 +334,24 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
 
 
 logger = ruLogger
+
+
+def component_failed(component: str, error: BaseException) -> None:
+    count, last = _component_failures.get(component, (0, float("-inf")))
+    now = time.monotonic()
+    _component_failures[component] = (count + 1, now if now - last >= 60 else last)
+    if now - last >= 60:
+        logger.bind(event="component.degraded", component=component, consecutive_failures=count + 1).opt(
+            exception=error
+        ).warning("Background component degraded")
+
+
+def component_recovered(component: str) -> None:
+    previous = _component_failures.pop(component, None)
+    if previous is not None:
+        logger.bind(event="component.recovered", component=component, consecutive_failures=previous[0]).info(
+            "Background component recovered"
+        )
 
 
 def get_plugin_logger(plugin_name: str) -> "Logger":

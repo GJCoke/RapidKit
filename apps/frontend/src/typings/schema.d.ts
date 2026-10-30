@@ -1053,11 +1053,13 @@ export interface paths {
         };
         /**
          * Validate Invite
+         * @deprecated
          * @description 校验邀请令牌是否有效。
          */
         get: operations["validate_invite_api_v1_auth_invite_validate_get"];
         put?: never;
-        post?: never;
+        /** Validate Invite Body */
+        post: operations["validate_invite_body_api_v1_auth_invite_validate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1113,11 +1115,13 @@ export interface paths {
         };
         /**
          * Validate Reset
+         * @deprecated
          * @description 校验密码重置令牌是否有效。
          */
         get: operations["validate_reset_api_v1_auth_password_reset_validate_get"];
         put?: never;
-        post?: never;
+        /** Validate Reset Body */
+        post: operations["validate_reset_body_api_v1_auth_password_reset_validate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3626,6 +3630,11 @@ export interface components {
             /** Effective */
             effective: string;
         };
+        /** InviteValidateBody */
+        InviteValidateBody: {
+            /** Token */
+            token: string;
+        };
         /**
          * InviteValidateResponse
          * @description Invite validity without consuming it.
@@ -4856,6 +4865,14 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /**
+         * PasswordResetValidateQuery
+         * @description Reset token validation query.
+         */
+        PasswordResetValidateQuery: {
+            /** Token */
+            token: string;
         };
         /**
          * PasswordResetValidateResponse
@@ -9632,6 +9649,39 @@ export interface operations {
             };
         };
     };
+    validate_invite_body_api_v1_auth_invite_validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteValidateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_InviteValidateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     set_password_api_v1_auth_invite_set_password_post: {
         parameters: {
             query?: never;
@@ -9708,6 +9758,39 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Response_PasswordResetValidateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_reset_body_api_v1_auth_password_reset_validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetValidateQuery"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

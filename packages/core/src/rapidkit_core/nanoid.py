@@ -88,7 +88,7 @@ class NanoIdPlugin(Plugin):
     async def extract_value_from_header_by_key(self, request: Request | HTTPConnection) -> str:
         value = await super().extract_value_from_header_by_key(request)
         if self.force_new_nanoid or not value:
-            value = self.get_new_nanoid()
+            value = self.get_new_nanoid() if self.force_new_nanoid else get_request_nanoid("") or self.get_new_nanoid()
         if self.validate:
             self.validate_nanoid(value)
         return value

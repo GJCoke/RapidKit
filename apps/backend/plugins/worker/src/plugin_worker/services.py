@@ -145,8 +145,8 @@ def parse_task_info_list(tasks: list[dict]) -> list[ActiveTaskInfo]:
         ActiveTaskInfo(
             id=t.get("id", ""),
             name=t.get("name", ""),
-            args=str(t.get("args", "")),
-            kwargs=str(t.get("kwargs", "")),
+            args="[Filtered]",
+            kwargs="[Filtered]",
             worker_pid=t.get("worker_pid"),
             time_start=t.get("time_start"),
         )

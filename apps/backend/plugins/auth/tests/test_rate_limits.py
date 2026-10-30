@@ -166,8 +166,10 @@ async def test_bad_body_still_has_ip_quota(body):
         ("/auth/password-reset/request", "POST", {"email": "test@example.com"}, "reset-account", 5),
         ("/auth/token/refresh", "POST", None, "refresh", 30),
         ("/auth/invite/validate", "GET", None, "credential-setup", 30),
+        ("/auth/invite/validate", "POST", {"token": "private"}, "credential-setup", 30),
         ("/auth/invite/set-password", "POST", None, "credential-setup", 30),
         ("/auth/password-reset/validate", "GET", None, "credential-setup", 30),
+        ("/auth/password-reset/validate", "POST", {"token": "private"}, "credential-setup", 30),
         ("/auth/password-reset/confirm", "POST", None, "credential-setup", 30),
     ],
 )

@@ -33,8 +33,8 @@ export function fetchGetUserInfo() {
 export function fetchValidateInvite(token: string) {
   return request<Api.Auth.InviteValidate>({
     url: "/auth/invite/validate",
-    method: "get",
-    params: { token },
+    method: "post",
+    data: { token } satisfies Api.Auth.InviteValidateBody,
   })
 }
 
@@ -56,8 +56,8 @@ export function fetchRequestPasswordReset(data: Api.Auth.PasswordResetRequestBod
 export function fetchValidatePasswordReset(token: string) {
   return request<Api.Auth.PasswordResetValidate>({
     url: "/auth/password-reset/validate",
-    method: "get",
-    params: { token },
+    method: "post",
+    data: { token } satisfies Api.Auth.PasswordResetValidateBody,
   })
 }
 

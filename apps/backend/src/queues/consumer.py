@@ -101,7 +101,7 @@ async def consume_events(sio: "AsyncServer") -> None:
                     try:
                         data = json.loads(raw_data)
                     except json.JSONDecodeError:
-                        logger.warning("Invalid JSON in event data: {data}", data=raw_data)
+                        logger.warning("Invalid JSON in event stream message_id={}", message_id)
                         await redis.xack(STREAM_KEY, CONSUMER_GROUP, message_id)
                         continue
 
@@ -116,11 +116,7 @@ async def consume_events(sio: "AsyncServer") -> None:
                                     await session.commit()
                                     await run_after_commit_hooks(session)
                         except Exception:
-                            logger.exception(
-                                "Error handling event {event_type}: {data}",
-                                event_type=event_type,
-                                data=data,
-                            )
+                            logger.exception("Error handling event message_id={}", message_id)
                             continue
                     else:
                         logger.debug("Unknown event type: {event_type}", event_type=event_type)

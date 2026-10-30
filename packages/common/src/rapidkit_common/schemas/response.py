@@ -19,6 +19,7 @@ from pydantic import (
     model_serializer,
     model_validator,
 )
+from rapidkit_framework.context import record_business_code
 from rapidkit_framework.i18n import is_i18n_key, t
 from rapidkit_framework.status_codes import StatusCode
 from sqlmodel import SQLModel as _SQLModel
@@ -91,6 +92,12 @@ class Response(BaseResponse, Generic[T]):
     code: int = Field(int(StatusCode.SUCCESS), description="状态码。")
     message: str = Field("common.response.success", description="响应消息。")
     data: T | None = Field(None, description="响应数据。")
+
+    @model_serializer(mode="wrap")
+    def _record_request_outcome(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo):
+        data = super()._apply_field_rules(handler, info)
+        record_business_code(self.code)
+        return data
 
     def __init__(
         self,

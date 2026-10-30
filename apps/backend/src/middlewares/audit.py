@@ -200,7 +200,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
                 try:
                     await audit_queue.put(record)
                 except Exception:
-                    logger.error("Audit event could not be queued id={}", record.id, exc_info=True)
+                    logger.opt(exception=True).error("Audit event could not be queued id={}", record.id)
                     raise
 
         context.publish = publish

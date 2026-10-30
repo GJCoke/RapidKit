@@ -104,9 +104,7 @@ async def user_login(
 
     if not check_password(decrypted_password, user_info.password):
         await _increment_login_attempts(redis, attempts_key)
-        logger.warning(
-            "Login failed for {username}: invalid password, user_id={user_id}", username=username, user_id=user_info.id
-        )
+        logger.warning("Login failed: invalid password, user_id={user_id}", user_id=user_info.id)
         raise AppException(AuthStatusCode.AUTHENTICATION_FAILED)
 
     # Fix 3: Clear login attempts on success

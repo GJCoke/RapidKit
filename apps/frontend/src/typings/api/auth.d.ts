@@ -19,11 +19,15 @@ declare global {
 
       type SetPasswordBody = Service.ApiRequest<"/api/v1/auth/invite/set-password", "post", "body">
 
-      type InviteValidate = Service.ApiResponse<"/api/v1/auth/invite/validate", "get">
+      type InviteValidateBody = Service.ApiRequest<"/api/v1/auth/invite/validate", "post", "body">
+
+      type InviteValidate = Service.ApiResponse<"/api/v1/auth/invite/validate", "post">
 
       type PasswordResetRequestBody = Service.ApiRequest<"/api/v1/auth/password-reset/request", "post", "body">
 
-      type PasswordResetValidate = Service.ApiResponse<"/api/v1/auth/password-reset/validate", "get">
+      type PasswordResetValidateBody = Service.ApiRequest<"/api/v1/auth/password-reset/validate", "post", "body">
+
+      type PasswordResetValidate = Service.ApiResponse<"/api/v1/auth/password-reset/validate", "post">
 
       type PasswordResetConfirmBody = Service.ApiRequest<"/api/v1/auth/password-reset/confirm", "post", "body">
     }

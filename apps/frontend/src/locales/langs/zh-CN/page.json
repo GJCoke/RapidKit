@@ -767,6 +767,7 @@
       "result": "返回值",
       "exception": "异常信息",
       "traceback": "堆栈信息",
+      "diagnosticsPrivate": "为保护敏感信息，任务参数、返回值和标准输出不展示。可通过任务 ID 关联运行日志。",
       "logs": "执行日志",
       "triggerTask": "触发任务",
       "selectTask": "选择任务",
