@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { $t } from "@/locales"
+  import { formatApiTime } from "@/utils/datetime"
   defineOptions({ name: "WorkerTaskList" })
   defineProps<{
     kind: "active" | "reserved"
@@ -8,6 +9,7 @@
     failed: boolean
     sampledAt: number | null
     online: boolean
+    timezone?: string
   }>()
   const emit = defineEmits<{ refresh: [] }>()
 </script>
@@ -62,7 +64,8 @@
             >
               <span v-if="task.workerPid">PID {{ task.workerPid }}</span>
               <span v-if="task.timeStart"
-                >{{ $t("page.manage.worker.startedAt") }} {{ new Date(task.timeStart * 1000).toLocaleString() }}</span
+                >{{ $t("page.manage.worker.startedAt") }}
+                {{ formatApiTime(new Date(task.timeStart * 1000).toISOString(), timezone) }}</span
               >
             </div>
             <NCollapse v-if="task.args || task.kwargs" class="mt-8px">
@@ -86,7 +89,7 @@
     <div class="mt-12px text-12px text-base-text-3">{{ $t("page.manage.worker.detail.instantSnapshot") }}</div>
     <div class="mt-12px min-h-20px text-12px text-base-text-3">
       {{ $t("page.manage.worker.detail.inspectedAt") }}
-      {{ sampledAt === null ? "—" : new Date(sampledAt).toLocaleTimeString() }}
+      {{ sampledAt === null ? "—" : formatApiTime(new Date(sampledAt).toISOString(), timezone, "HH:mm:ss") }}
     </div>
   </NCard>
 </template>

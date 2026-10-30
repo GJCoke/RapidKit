@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatApiTime } from "@/utils/datetime"
   import { computed } from "vue"
   import { workerHealth } from "../composables/worker-detail"
   import { NPopconfirm } from "naive-ui"
@@ -45,9 +46,9 @@
     emit("select", worker)
   }
 
-  function formatTime(time: string) {
+  function formatTime(time: string, zone?: string) {
     if (!time) return "-"
-    return new Date(time).toLocaleString()
+    return formatApiTime(time, zone)
   }
 </script>
 
@@ -165,7 +166,7 @@
                   </div>
                   <div class="flex justify-between">
                     <span>{{ $t("page.manage.worker.lastHeartbeat") }}</span>
-                    <span class="text-11px">{{ formatTime(worker.lastHeartbeat) }}</span>
+                    <span class="text-11px">{{ formatTime(worker.lastHeartbeat, worker.timezone) }}</span>
                   </div>
                 </div>
               </NCard>

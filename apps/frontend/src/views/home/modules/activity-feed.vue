@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref } from "vue"
-  import dayjs from "dayjs"
+  import { formatApiTime } from "@/utils/datetime"
   import { $t } from "@/locales"
 
   defineOptions({ name: "DashboardActivityFeed" })
@@ -67,11 +67,11 @@
   }
 
   function formatTime(time: string) {
-    return dayjs(time).format("HH:mm:ss")
+    return formatApiTime(time, undefined, "HH:mm:ss")
   }
 
   function formatDateTime(time: string) {
-    return dayjs(time).format("YYYY-MM-DD HH:mm:ss")
+    return formatApiTime(time)
   }
 
   function openActivityDetail(item: Api.Dashboard.ActivityItem) {

@@ -5,9 +5,16 @@ import {
   mapActivityItems,
   mapTrendPoints,
   resolveDashboardQueries,
+  platformWallDate,
 } from "@/views/home/modules/dashboard-data"
 
 const translate = (key: string, params?: Record<string, unknown>) => (params ? `${key}:${JSON.stringify(params)}` : key)
+
+test("platform calendar labels and event wall times do not shift with the browser zone", () => {
+  assert.equal(platformWallDate("2026-10-29").toISOString(), "2026-10-29T00:00:00.000Z")
+  assert.equal(platformWallDate("2026-10-29T16:00:00+08:00").toISOString(), "2026-10-29T16:00:00.000Z")
+  assert.equal(platformWallDate("2026-10-29 16:00:00").toISOString(), "2026-10-29T16:00:00.000Z")
+})
 
 test("overview payloads map to five real stat card values", () => {
   const stats = createOverviewStats(

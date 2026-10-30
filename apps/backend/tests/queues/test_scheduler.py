@@ -69,6 +69,7 @@ def test_real_threaded_cron_loader_binds_application_and_refresh_preserves_state
     thread.start()
     thread.join()
     assert not errors
+    assert loaded["daily"].app is app
     scheduler = Scheduler(app, lazy=True)
     scheduler.merge_inplace(loaded)
     entry = scheduler.schedule["daily"]

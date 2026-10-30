@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatApiTime } from "@/utils/datetime"
   import { ref, watch } from "vue"
   import { taskStatusRecord } from "@/constants/business"
   import { fetchGetTaskDetail } from "@/service/api"
@@ -35,7 +36,7 @@
 
   function formatTime(time: string | null | undefined) {
     if (!time) return "-"
-    return new Date(time).toLocaleString()
+    return formatApiTime(time)
   }
 
   const tagTypeMap: Record<Api.Worker.TaskStatus, NaiveUI.ThemeColor> = {

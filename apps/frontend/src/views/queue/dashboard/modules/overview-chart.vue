@@ -3,6 +3,7 @@
   import { useThemeVars } from "naive-ui"
   import { useEcharts, type ECOption } from "@/hooks/common/echarts"
   import { $t } from "@/locales"
+  import { formatApiTime, parseApiTime } from "@/utils/datetime"
 
   defineOptions({ name: "OverviewChart" })
   const props = defineProps<{
@@ -65,9 +66,33 @@
     }
     const timeline = props.dashboard?.timeline ?? []
     const depths = props.dashboard?.depthTimeline ?? []
+    const daily = [...timeline, ...depths].some((row) => /^\d{4}-\d{2}-\d{2}$/.test(row.timeBucket))
+    const zone = props.dashboard?.timezone
+    const pointTime = (value: string) => (daily ? value : parseApiTime(value, zone).valueOf())
     return {
       ...base,
-      xAxis: { type: "time", axisLabel: { hideOverlap: true }, axisLine: { lineStyle: { color: colors.borderColor } } },
+      useUTC: true,
+      xAxis: daily
+        ? {
+            type: "category",
+            data: [...new Set([...timeline, ...depths].map((row) => row.timeBucket))].sort(),
+            axisLabel: { hideOverlap: true },
+            axisLine: { lineStyle: { color: colors.borderColor } },
+          }
+        : {
+            type: "time",
+            axisLabel: {
+              hideOverlap: true,
+              formatter: (value: number) => formatApiTime(new Date(value).toISOString(), zone, "MM-DD HH:mm"),
+            },
+            axisLine: { lineStyle: { color: colors.borderColor } },
+            axisPointer: {
+              label: {
+                formatter: ({ value }: { value: string | number | Date }) =>
+                  formatApiTime((value instanceof Date ? value : new Date(value)).toISOString(), zone),
+              },
+            },
+          },
       yAxis: { type: "value", minInterval: 1, splitLine: { lineStyle: { color: colors.borderColor, type: "dashed" } } },
       series:
         props.kind === "completion"
@@ -79,7 +104,7 @@
                 showSymbol: false,
                 smooth: false,
                 areaStyle: { opacity: 0.08 },
-                data: timeline.map((row) => [row.timeBucket, row.success]),
+                data: timeline.map((row) => [pointTime(row.timeBucket), row.success]),
               },
               {
                 id: "failure",
@@ -87,7 +112,7 @@
                 type: "line",
                 showSymbol: false,
                 smooth: false,
-                data: timeline.map((row) => [row.timeBucket, row.failure]),
+                data: timeline.map((row) => [pointTime(row.timeBucket), row.failure]),
               },
             ]
           : [
@@ -100,7 +125,7 @@
                 smooth: false,
                 connectNulls: false,
                 areaStyle: { opacity: 0.1 },
-                data: depths.map((row) => [row.timeBucket, row.depth]),
+                data: depths.map((row) => [pointTime(row.timeBucket), row.depth]),
               },
             ],
     }
@@ -141,6 +166,7 @@
     () => [
       chartData.value,
       props.kind,
+      props.dashboard?.timezone,
       theme.value,
       $t("page.manage.worker.overview.success"),
       $t("page.manage.worker.overview.failure"),

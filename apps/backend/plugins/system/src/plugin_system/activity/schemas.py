@@ -3,7 +3,7 @@ from uuid import UUID
 from pydantic import Field
 from rapidkit_common.schemas.request import BaseRequest
 from rapidkit_common.schemas.response import BaseSchema
-from rapidkit_common.schemas.types import LocalDatetime
+from rapidkit_common.schemas.types import EditableInstant
 
 from plugin_system.activity.models import ActivityCategory, ActivityEvent, ActivityLevel
 
@@ -24,7 +24,7 @@ class ActivityResponse(BaseSchema):
     description_key: str | None = None
     description_params: dict = Field(default_factory=dict)
     metadata: dict = Field(default_factory=dict)
-    occurred_at: LocalDatetime
+    occurred_at: EditableInstant
 
     @classmethod
     def from_record(cls, record: ActivityEvent) -> "ActivityResponse":

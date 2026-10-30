@@ -12,7 +12,8 @@ from pydantic import Field, model_validator
 from rapidkit_common.enums import TaskStatus, WorkerStatus
 from rapidkit_common.schemas import BaseModel, BaseRequest
 from rapidkit_common.schemas.request import PaginatedRequest
-from rapidkit_common.schemas.response import BaseSchema, LocalDatetime
+from rapidkit_common.schemas.response import BaseSchema
+from rapidkit_common.schemas.types import EditableInstant
 from rapidkit_core.timezone import timezone
 
 # ==================== Worker Schemas ====================
@@ -22,10 +23,11 @@ class WorkerSchema(BaseModel):
     """Worker 共享字段。"""
 
     hostname: str
+    timezone: str = Field(default_factory=lambda: str(timezone.tz_info))
     group_name: str = "legacy"
     deployment_id: str = ""
     lifecycle: Literal["active", "draining", "retired"] = "active"
-    retired_at: LocalDatetime | None = None
+    retired_at: EditableInstant | None = None
     retire_reason: str = ""
     status: WorkerStatus = WorkerStatus.ONLINE
     active_queues: list = []
@@ -34,7 +36,7 @@ class WorkerSchema(BaseModel):
     active_task_count: int = 0
     load_average: dict = {}
     software_info: dict = {}
-    last_heartbeat: LocalDatetime | None = None
+    last_heartbeat: EditableInstant | None = None
 
 
 class WorkerResponse(WorkerSchema, BaseSchema):
@@ -42,7 +44,7 @@ class WorkerResponse(WorkerSchema, BaseSchema):
 
     runtime_concurrency: int | None = None
     runtime_active_tasks: int | None = None
-    runtime_sampled_at: LocalDatetime | None = None
+    runtime_sampled_at: EditableInstant | None = None
 
 
 class WorkerGroupResponse(BaseModel):
@@ -75,8 +77,8 @@ class TaskResultSchema(BaseModel):
     exception: str | None = None
     traceback: str | None = None
     logs: str | None = None
-    started_at: LocalDatetime | None = None
-    finished_at: LocalDatetime | None = None
+    started_at: EditableInstant | None = None
+    finished_at: EditableInstant | None = None
     runtime: float | None = None
     retries: int = 0
 
@@ -92,8 +94,8 @@ class TaskListResponse(BaseSchema):
     task_name: str
     status: TaskStatus
     worker_hostname: str = ""
-    started_at: LocalDatetime | None = None
-    finished_at: LocalDatetime | None = None
+    started_at: EditableInstant | None = None
+    finished_at: EditableInstant | None = None
     runtime: float | None = None
     retries: int = 0
 
@@ -227,7 +229,7 @@ class TaskStatsByName(BaseModel):
     failure: int
     in_progress: int
     success_rate: float | None
-    last_executed_at: LocalDatetime
+    last_executed_at: EditableInstant
     avg_runtime: float | None
 
 
@@ -248,18 +250,19 @@ class QueueMetric(BaseModel):
 
 
 class DashboardTimelinePoint(BaseModel):
-    time_bucket: date | datetime
+    time_bucket: date | EditableInstant
     success: int
     failure: int
 
 
 class DashboardDepthPoint(BaseModel):
-    time_bucket: date | datetime
+    time_bucket: date | EditableInstant
     depth: float | None
 
 
 class QueueDashboardResponse(BaseModel):
-    sampled_at: LocalDatetime
+    sampled_at: EditableInstant
+    timezone: str = Field(default_factory=lambda: str(timezone.tz_info))
     queues: list[QueueMetric]
     queue_depth: int | None
     online_workers: int

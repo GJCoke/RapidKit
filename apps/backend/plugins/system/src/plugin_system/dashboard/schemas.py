@@ -1,9 +1,10 @@
-from datetime import date, datetime
+from datetime import date
 from typing import Literal
 
 from pydantic import Field, model_validator
 from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.request import BaseRequest
+from rapidkit_common.schemas.types import UTCInstant
 
 
 class ResourceStats(BaseModel):
@@ -204,12 +205,12 @@ class OperationsTrendPoint(BaseModel):
 
 
 class OperationsSystemSummary(BaseModel):
-    started_at: datetime
+    started_at: UTCInstant
     uptime_seconds: int
     queue_depth: int | None
     queue_depth_yesterday: int | None
     queue_depth_change_percent: float | None
-    last_sync_at: datetime | None
+    last_sync_at: UTCInstant | None
     sync_status: Literal["healthy", "delayed", "failed", "unavailable"]
     task_success_rate_7d: float | None
     previous_task_success_rate_7d: float | None
@@ -217,7 +218,7 @@ class OperationsSystemSummary(BaseModel):
 
 
 class OperationsOverviewResponse(BaseModel):
-    generated_at: datetime
+    generated_at: UTCInstant
     timezone: str
     summary: OperationsSummary
     trend: list[OperationsTrendPoint]

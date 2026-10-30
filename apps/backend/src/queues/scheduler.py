@@ -41,7 +41,7 @@ class ScheduleEntry(_ScheduleEntry):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        if isinstance(self.schedule, crontab):
+        if isinstance(self.schedule, crontab) and self.last_run_at is not None:
             # Celery reads calendar fields without converting an aware UTC baseline.
             self.last_run_at = self.schedule.maybe_make_aware(self.last_run_at).astimezone(self.schedule.tz)
 

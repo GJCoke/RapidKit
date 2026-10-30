@@ -3,7 +3,7 @@ import { createApp, h, nextTick, reactive, ref } from "vue"
 import { expect, it, vi } from "vitest"
 import OverviewChart from "../../src/views/queue/dashboard/modules/overview-chart.vue"
 
-const chart = vi.hoisted(() => ({ update: vi.fn(), render: null as any }))
+const chart = vi.hoisted(() => ({ update: vi.fn(), render: null as any, options: null as any }))
 const theme = ref({
   successColor: "green",
   errorColor: "red",
@@ -14,11 +14,32 @@ const theme = ref({
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
 vi.mock("naive-ui", () => ({ useThemeVars: () => theme }))
 vi.mock("@/hooks/common/echarts", () => ({
-  useEcharts: (_: any, hooks: any) => {
+  useEcharts: (factory: any, hooks: any) => {
+    chart.options = factory
     chart.render = hooks?.onRender
     return { domRef: ref(null), updateOptions: chart.update }
   },
 }))
+
+it("keeps daily buckets as platform calendar labels", () => {
+  const host = document.createElement("div")
+  const app = createApp({
+    render: () =>
+      h(OverviewChart, {
+        kind: "completion",
+        dashboard: {
+          timezone: "Asia/Shanghai",
+          timeline: [{ timeBucket: "2026-10-29", success: 2, failure: 0 }],
+          depthTimeline: [],
+        } as any,
+      }),
+  })
+  app.mount(host)
+  const options = chart.options()
+  expect(options.xAxis.type).toBe("category")
+  expect(options.xAxis.data).toEqual(["2026-10-29"])
+  app.unmount()
+})
 
 it("ignores unrelated snapshot changes and merges only when displayed values change", async () => {
   const data = reactive({

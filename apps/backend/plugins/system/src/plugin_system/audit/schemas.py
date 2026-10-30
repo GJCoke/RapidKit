@@ -7,7 +7,7 @@ from rapidkit_common.audit import AuditChange
 from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.request import PaginatedRequest
 from rapidkit_common.schemas.response import BaseSchema
-from rapidkit_common.schemas.types import LocalDatetime
+from rapidkit_common.schemas.types import UTCInstant
 from rapidkit_framework.audit import AuditActorType, AuditResult, AuditRiskLevel, AuditSource
 from rapidkit_framework.i18n import t
 
@@ -87,7 +87,7 @@ class AuditLogListItem(BaseSchema):
     risk_level: AuditRiskLevel
     source: AuditSource
     ip: str | None = None
-    occurred_at: LocalDatetime
+    occurred_at: UTCInstant
 
 
 class AuditLogDetail(AuditLogListItem):

@@ -85,6 +85,18 @@ RapidKit 后端 Python 包采用三层架构，每层职责明确、依赖单向
 
 ## 依赖规则
 
+### 时间数据约定
+
+- 数据库存储无时区 UTC，写入仍使用 `timezone.now()`；无需调整历史数据或数据库字段类型。
+- Cron 使用 `DATETIME_TIMEZONE` 的业务日历，数据库条目显式绑定 Celery 应用；保持 `enable_utc=True`，刷新不重置执行状态。
+- 统计自然日先用 `timezone.start_of_day(date)` 分别计算相邻日期的 UTC 边界。夏令时地区的一天可能是 23 或 25 小时，不能固定减 24 小时。
+- UTC 时间列先投影到业务时区再按日聚合。日桶返回 `YYYY-MM-DD`，小时桶返回带偏移的时刻。
+- `rapidkit_common.schemas.types.UTCInstant` 返回带 `+00:00` 的 ISO 时刻；`EditableInstant` 返回平台时区偏移，适用于编辑和平台时间展示。
+- `LocalDatetime` 保留为兼容的纯展示字符串，不能再次按浏览器本地时区解释。时间差、过期判断和跨时区转换使用明确时刻。
+- Vue 使用 `@/utils/datetime`，旧首页 UTC 字段显式按 UTC 解析，旧审计墙上时间按 catalog 时区解析。
+- HTTP 与 Socket.IO 的时刻采用相同约定。日志中的偏移与业务时区独立，日志轮转跟随进程时区；阅读 UTC 日志时应按偏移换算。
+- 发布时将后端序列化和对应前端解析一同更新，并重新生成 OpenAPI 类型；外部消费者需同步适配新的 ISO 时间格式。
+
 ### 层级原则
 
 1. **依赖只能向下流动** — 上层可以依赖下层，反之不行

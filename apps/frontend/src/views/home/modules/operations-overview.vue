@@ -2,6 +2,7 @@
   import { computed, watch } from "vue"
   import { useEcharts } from "@/hooks/common/echarts"
   import { $t } from "@/locales"
+  import { formatApiTime, parseApiTime } from "@/utils/datetime"
 
   defineOptions({ name: "OperationsOverview" })
 
@@ -150,9 +151,11 @@
 
   function formatSyncTime(value: string | null | undefined) {
     if (!value) return "—"
-    const diffSeconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000))
+    const instant = parseApiTime(value, "UTC")
+    if (!instant.isValid()) return "—"
+    const diffSeconds = Math.max(0, Math.floor((Date.now() - instant.valueOf()) / 1000))
     if (diffSeconds < 3600) return `${Math.max(1, Math.floor(diffSeconds / 60))} ${$t("page.home.dashboard.minutes")}`
-    return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(new Date(value))
+    return formatApiTime(instant.toISOString(), props.data?.timezone, "HH:mm")
   }
 
   function serverLabel() {

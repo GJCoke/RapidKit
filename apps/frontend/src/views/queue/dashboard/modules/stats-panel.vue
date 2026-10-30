@@ -3,6 +3,7 @@
   import { useRouter } from "vue-router"
   import { fetchQueueDashboard, fetchTaskStatsByName, fetchTaskStatsByWorker } from "@/service/api"
   import { $t } from "@/locales"
+  import { formatApiTime, parseApiTime } from "@/utils/datetime"
   import { queueState, sortQueues, utilization } from "../composables/metrics"
   import { reconcileDashboard, reconcileRows } from "../composables/reconcile"
   import OverviewChart from "./overview-chart.vue"
@@ -19,7 +20,11 @@
   const failed = ref(false)
   const rankingFailed = ref(false)
   const now = ref(Date.now())
-  const stale = computed(() => dashboard.value && now.value - new Date(dashboard.value.sampledAt).getTime() > 60000)
+  const stale = computed(
+    () =>
+      dashboard.value &&
+      now.value - parseApiTime(dashboard.value.sampledAt, dashboard.value.timezone).valueOf() > 60000,
+  )
   const queues = computed(() => sortQueues(dashboard.value?.queues ?? []))
   const blocked = computed(() => queues.value.filter((row) => queueState(row) === "blocked"))
   const offline = computed(() => dashboard.value?.missingWorkers ?? 0)
@@ -258,7 +263,7 @@
         >
         <span class="ml-auto"
           >{{ $t("page.manage.worker.overview.updated") }}
-          {{ dashboard ? new Date(dashboard.sampledAt).toLocaleTimeString() : "—" }}</span
+          {{ dashboard ? formatApiTime(dashboard.sampledAt, dashboard.timezone, "HH:mm:ss") : "—" }}</span
         >
       </div>
     </NCard>

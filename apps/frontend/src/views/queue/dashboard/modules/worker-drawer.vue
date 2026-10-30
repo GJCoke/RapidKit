@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatApiTime } from "@/utils/datetime"
   import { computed, onUnmounted, reactive, ref, watch } from "vue"
   import { useWindowSize } from "@vueuse/core"
   import { useRouter } from "vue-router"
@@ -95,8 +96,7 @@
     },
   ])
   function formatTime(time?: string | null) {
-    if (!time || !Number.isFinite(Date.parse(time))) return "—"
-    return new Date(time).toLocaleString()
+    return formatApiTime(time, props.worker?.timezone)
   }
   function refresh() {
     emit("updated")
@@ -248,6 +248,7 @@
                 :failed="inspection[kind].failed"
                 :sampled-at="inspection[kind].sampledAt"
                 :online="online"
+                :timezone="worker.timezone"
                 @refresh="inspection.refresh"
               />
             </div>

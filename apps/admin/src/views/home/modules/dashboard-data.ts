@@ -64,6 +64,12 @@ export function mapTrendPoints(points: readonly UserActivityTrend[], formatDate:
   return points.map((point) => ({ name: formatDate(point.timeBucket), value: point.newUsers }))
 }
 
+/** Presentation only: format with UTC to retain the server's calendar fields. */
+export function platformWallDate(value: string): Date {
+  const wall = value.replace(" ", "T").slice(0, 19)
+  return new Date(`${wall.length === 10 ? `${wall}T00:00:00` : wall}Z`)
+}
+
 const ACTIVITY_KEY_PREFIX = "page.home.dashboard.activity."
 
 export function mapActivityItems(

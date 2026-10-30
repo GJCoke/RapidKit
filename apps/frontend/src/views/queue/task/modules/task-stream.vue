@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+  import { formatApiTime } from "@/utils/datetime"
   import { computed, reactive, ref, watch, onBeforeUnmount } from "vue"
   import { NButton, NPopconfirm, NTag } from "naive-ui"
   import { useAppStore } from "@/store/modules/app"
@@ -98,7 +99,7 @@
         key: "startedAt",
         title: $t("page.manage.worker.startedAt"),
         width: 170,
-        render: (row) => (row.startedAt ? new Date(row.startedAt).toLocaleString() : "-"),
+        render: (row) => (row.startedAt ? formatApiTime(row.startedAt) : "-"),
       },
       {
         key: "retries",

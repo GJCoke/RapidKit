@@ -188,6 +188,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/api/v1/users/department-counts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 部门用户人数 */
+    get: operations["get_user_department_counts_api_v1_users_department_counts_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/api/v1/users": {
     parameters: {
       query?: never
@@ -374,6 +391,57 @@ export interface paths {
     get: operations["get_all_workers_api_v1_workers_all_get"]
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/workers/groups": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Worker Groups */
+    get: operations["get_worker_groups_api_v1_workers_groups_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/workers/history": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Worker History */
+    get: operations["get_worker_history_api_v1_workers_history_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/workers/{worker_id}/retire": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Retire Worker Endpoint */
+    post: operations["retire_worker_endpoint_api_v1_workers__worker_id__retire_post"]
     delete?: never
     options?: never
     head?: never
@@ -1501,6 +1569,66 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/api/v1/system/plugins": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 插件状态列表
+     * @description 返回所有插件的加载状态、版本、耗时和健康信息。
+     */
+    get: operations["get_plugin_status_api_v1_system_plugins_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/system/plugins/dependencies": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 插件依赖关系图
+     * @description 返回插件依赖关系图的节点和边，用于前端可视化。
+     */
+    get: operations["get_plugin_dependencies_api_v1_system_plugins_dependencies_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/api/v1/system/events": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * EventBus 统计
+     * @description 返回 EventBus 的死信记录和 handler 错误统计。
+     */
+    get: operations["get_event_bus_stats_api_v1_system_events_get"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/api/v1/system/activities": {
     parameters: {
       query?: never
@@ -1604,66 +1732,6 @@ export interface paths {
      * @description 获取单条审计日志及其关联对象信息，不存在时返回空。
      */
     get: operations["get_audit_log_detail_api_v1_system_audit_logs__item_id__get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/system/plugins": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * 插件状态列表
-     * @description 返回所有插件的加载状态、版本、耗时和健康信息。
-     */
-    get: operations["get_plugin_status_api_v1_system_plugins_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/system/plugins/dependencies": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * 插件依赖关系图
-     * @description 返回插件依赖关系图的节点和边，用于前端可视化。
-     */
-    get: operations["get_plugin_dependencies_api_v1_system_plugins_dependencies_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/v1/system/events": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * EventBus 统计
-     * @description 返回 EventBus 的死信记录和 handler 错误统计。
-     */
-    get: operations["get_event_bus_stats_api_v1_system_events_get"]
     put?: never
     post?: never
     delete?: never
@@ -2335,7 +2403,11 @@ export interface components {
       metadata?: {
         [key: string]: unknown
       }
-      /** Occurredat */
+      /**
+       * Occurredat
+       * Format: date-time
+       * @example 2026-10-29T16:00:00+08:00
+       */
       occurredAt: string
     }
     /**
@@ -2739,7 +2811,11 @@ export interface components {
       source: components["schemas"]["AuditSource"]
       /** Ip */
       ip?: string | null
-      /** Occurredat */
+      /**
+       * Occurredat
+       * Format: date-time
+       * @example 2026-10-29T08:00:00+00:00
+       */
       occurredAt: string
       /** Changes */
       changes?: components["schemas"]["AuditChange"][]
@@ -2822,7 +2898,11 @@ export interface components {
       source: components["schemas"]["AuditSource"]
       /** Ip */
       ip?: string | null
-      /** Occurredat */
+      /**
+       * Occurredat
+       * Format: date-time
+       * @example 2026-10-29T08:00:00+00:00
+       */
       occurredAt: string
     }
     /**
@@ -2880,7 +2960,11 @@ export interface components {
     BannerCheckResponse: {
       /** Revision */
       revision: number
-      /** Servernow */
+      /**
+       * Servernow
+       * Format: date-time
+       * @example 2026-10-29T08:00:00+00:00
+       */
       serverNow: string
       current?: components["schemas"]["BannerSummary"] | null
       scheduled?: components["schemas"]["BannerSummary"] | null
@@ -4343,6 +4427,7 @@ export interface components {
       /**
        * Generatedat
        * Format: date-time
+       * @example 2026-10-29T08:00:00+00:00
        */
       generatedAt: string
       /** Timezone */
@@ -4358,6 +4443,16 @@ export interface components {
       healthy: number
       /** Total */
       total: number
+      /**
+       * Capacityknown
+       * @default false
+       */
+      capacityKnown: boolean
+      /**
+       * Missing
+       * @default 0
+       */
+      missing: number
       /**
        * Status
        * @enum {string}
@@ -4376,6 +4471,7 @@ export interface components {
       /**
        * Startedat
        * Format: date-time
+       * @example 2026-10-29T08:00:00+00:00
        */
       startedAt: string
       /** Uptimeseconds */
@@ -4711,6 +4807,29 @@ export interface components {
        */
       records: components["schemas"]["UserManageResponse"][]
     }
+    /** PaginatedResponse[WorkerResponse] */
+    PaginatedResponse_WorkerResponse_: {
+      /**
+       * Page
+       * @description 页码。
+       */
+      page: number
+      /**
+       * Pagesize
+       * @description 每页条数。
+       */
+      pageSize: number
+      /**
+       * Total
+       * @description 总条数。
+       */
+      total: number
+      /**
+       * Records
+       * @description 记录列表。
+       */
+      records: components["schemas"]["WorkerResponse"][]
+    }
     /**
      * PasswordResetConfirmBody
      * @description Encrypted password and single-use reset token.
@@ -5008,8 +5127,14 @@ export interface components {
     }
     /** QueueDashboardResponse */
     QueueDashboardResponse: {
-      /** Sampledat */
+      /**
+       * Sampledat
+       * Format: date-time
+       * @example 2026-10-29T16:00:00+08:00
+       */
       sampledAt: string
+      /** Timezone */
+      timezone?: string
       /** Queues */
       queues: components["schemas"]["QueueMetric"][]
       /** Queuedepth */
@@ -5018,6 +5143,16 @@ export interface components {
       onlineWorkers: number
       /** Totalworkers */
       totalWorkers: number
+      /**
+       * Missingworkers
+       * @default 0
+       */
+      missingWorkers: number
+      /**
+       * Capacityknown
+       * @default false
+       */
+      capacityKnown: boolean
       /** Activetasks */
       activeTasks: number
       /** Concurrency */
@@ -5666,6 +5801,22 @@ export interface components {
       /** @description 响应数据。 */
       data?: components["schemas"]["PaginatedResponse_UserManageResponse_"] | null
     }
+    /** Response[PaginatedResponse[WorkerResponse]] */
+    Response_PaginatedResponse_WorkerResponse__: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["PaginatedResponse_WorkerResponse_"] | null
+    }
     /** Response[PasswordResetValidateResponse] */
     Response_PasswordResetValidateResponse_: {
       /**
@@ -5953,6 +6104,22 @@ export interface components {
       message?: string
       /** @description 响应数据。 */
       data?: components["schemas"]["UnreadCount"] | null
+    }
+    /** Response[UserDepartmentCounts] */
+    Response_UserDepartmentCounts_: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /** @description 响应数据。 */
+      data?: components["schemas"]["UserDepartmentCounts"] | null
     }
     /** Response[UserInfoResponse] */
     Response_UserInfoResponse_: {
@@ -6450,6 +6617,25 @@ export interface components {
        */
       data?: components["schemas"]["UserManageOptionResponse"][] | null
     }
+    /** Response[list[WorkerGroupResponse]] */
+    Response_list_WorkerGroupResponse__: {
+      /**
+       * Code
+       * @description 状态码。
+       * @default 0
+       */
+      code: number
+      /**
+       * Message
+       * @description 响应消息。
+       */
+      message?: string
+      /**
+       * Data
+       * @description 响应数据。
+       */
+      data?: components["schemas"]["WorkerGroupResponse"][] | null
+    }
     /** Response[list[WorkerResponse]] */
     Response_list_WorkerResponse__: {
       /**
@@ -6924,7 +7110,11 @@ export interface components {
       inProgress: number
       /** Successrate */
       successRate: number | null
-      /** Lastexecutedat */
+      /**
+       * Lastexecutedat
+       * Format: date-time
+       * @example 2026-10-29T16:00:00+08:00
+       */
       lastExecutedAt: string
       /** Avgruntime */
       avgRuntime: number | null
@@ -7122,7 +7312,11 @@ export interface components {
       current?: components["schemas"]["BannerSummary"] | null
       /** Revision */
       revision: number
-      /** Servernow */
+      /**
+       * Servernow
+       * Format: date-time
+       * @example 2026-10-29T08:00:00+00:00
+       */
       serverNow: string
       /** Nextchangeat */
       nextChangeAt?: string | null
@@ -7173,10 +7367,27 @@ export interface components {
      * @description 用户活跃趋势。
      */
     UserActivityTrend: {
-      /** Timebucket */
+      /**
+       * Timebucket
+       * @description 平台自然日 YYYY-MM-DD；小时粒度为带 UTC 偏移的 ISO 时刻
+       */
       timeBucket: string
       /** Newusers */
       newUsers: number
+    }
+    /**
+     * UserDepartmentCounts
+     * @description 当前用户数据范围内的部门归属人数。
+     */
+    UserDepartmentCounts: {
+      /** Total */
+      total: number
+      /** Unassigned */
+      unassigned: number
+      /** Departments */
+      departments: {
+        [key: string]: number
+      }
     }
     /**
      * UserInfoResponse
@@ -7469,6 +7680,23 @@ export interface components {
        */
       message: string
     }
+    /** WorkerGroupResponse */
+    WorkerGroupResponse: {
+      /** Name */
+      name: string
+      /** Expectedreplicas */
+      expectedReplicas: number | null
+      /** Online */
+      online: number
+      /** Observed */
+      observed: number
+      /** Draining */
+      draining: number
+      /** Missing */
+      missing: number
+      /** Alerting */
+      alerting: boolean
+    }
     /**
      * WorkerResponse
      * @description Worker 响应数据结构；运行时字段仅在详情检查成功时存在。
@@ -7491,6 +7719,31 @@ export interface components {
       updateTime: string
       /** Hostname */
       hostname: string
+      /** Timezone */
+      timezone?: string
+      /**
+       * Groupname
+       * @default legacy
+       */
+      groupName: string
+      /**
+       * Deploymentid
+       * @default
+       */
+      deploymentId: string
+      /**
+       * Lifecycle
+       * @default active
+       * @enum {string}
+       */
+      lifecycle: "active" | "draining" | "retired"
+      /** Retiredat */
+      retiredAt?: string | null
+      /**
+       * Retirereason
+       * @default
+       */
+      retireReason: string
       /** @default 1 */
       status: components["schemas"]["WorkerStatus"]
       /**
@@ -7833,6 +8086,26 @@ export interface operations {
       }
     }
   }
+  get_user_department_counts_api_v1_users_department_counts_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_UserDepartmentCounts_"]
+        }
+      }
+    }
+  }
   get_users_api_v1_users_get: {
     parameters: {
       query?: {
@@ -7842,6 +8115,9 @@ export interface operations {
         pageSize?: number
         keyword?: string
         status?: components["schemas"]["Status"] | null
+        departmentId?: string | null
+        unassigned?: boolean
+        includeChildren?: boolean
       }
       header?: never
       path?: never
@@ -8242,6 +8518,92 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Response_list_WorkerResponse__"]
+        }
+      }
+    }
+  }
+  get_worker_groups_api_v1_workers_groups_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_list_WorkerGroupResponse__"]
+        }
+      }
+    }
+  }
+  get_worker_history_api_v1_workers_history_get: {
+    parameters: {
+      query?: {
+        /** @description 当前页码。 */
+        page?: number
+        /** @description 每页条数。 */
+        pageSize?: number
+        groupName?: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_PaginatedResponse_WorkerResponse__"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  retire_worker_endpoint_api_v1_workers__worker_id__retire_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        worker_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_WorkerResponse_"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
         }
       }
     }
@@ -10187,6 +10549,66 @@ export interface operations {
       }
     }
   }
+  get_plugin_status_api_v1_system_plugins_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_list_PluginStatusItem__"]
+        }
+      }
+    }
+  }
+  get_plugin_dependencies_api_v1_system_plugins_dependencies_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_PluginDependencyGraph_"]
+        }
+      }
+    }
+  }
+  get_event_bus_stats_api_v1_system_events_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Response_EventBusStats_"]
+        }
+      }
+    }
+  }
   get_activities_api_v1_system_activities_get: {
     parameters: {
       query?: {
@@ -10387,66 +10809,6 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  get_plugin_status_api_v1_system_plugins_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_list_PluginStatusItem__"]
-        }
-      }
-    }
-  }
-  get_plugin_dependencies_api_v1_system_plugins_dependencies_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_PluginDependencyGraph_"]
-        }
-      }
-    }
-  }
-  get_event_bus_stats_api_v1_system_events_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Response_EventBusStats_"]
         }
       }
     }

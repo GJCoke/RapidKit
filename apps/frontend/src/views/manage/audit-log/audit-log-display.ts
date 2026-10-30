@@ -1,16 +1,7 @@
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-import timezone from "dayjs/plugin/timezone"
-
-dayjs.extend(utc)
-dayjs.extend(timezone)
+import { formatApiTime } from "@/utils/datetime"
 
 export function formatAuditTime(value?: string | null, zone?: string) {
-  return value
-    ? dayjs(value)
-        .tz(zone || Intl.DateTimeFormat().resolvedOptions().timeZone)
-        .format("YYYY-MM-DD HH:mm:ss")
-    : "—"
+  return formatApiTime(value, zone || Intl.DateTimeFormat().resolvedOptions().timeZone)
 }
 
 export function auditChangeValue(

@@ -392,6 +392,9 @@ declare global {
 
 ### Frontend Rules
 
+- Parse API timestamps through `@/utils/datetime`: the caller supplies the legacy timezone (`UTC` for old homepage timestamps, the catalog/platform zone for wall times). Explicit ISO offsets define the instant.
+- Format platform timestamps with `formatApiTime`; preserve `YYYY-MM-DD` as calendar labels. Do not pass offset-free wall times to `new Date()` or `dayjs(value)` for arithmetic or zone conversion.
+
 - Rely on automatic imports for NaiveUI template components; explicitly import components used as JavaScript/TSX values and type-only symbols as needed.
 - NEVER use raw CSS for styling that UnoCSS utilities can handle
 - NEVER use `[var(--...)]` inside UnoCSS classes — use semantic theme classes

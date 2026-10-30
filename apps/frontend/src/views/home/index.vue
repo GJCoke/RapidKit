@@ -27,10 +27,17 @@
   const dashboard = useDashboard()
   const authStore = useAuthStore()
   const displayName = computed(() => authStore.userInfo.name || authStore.userInfo.username || $t("route.home"))
+  const displayTimezone = computed(
+    () => dashboard.operationsOverview.value?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+  )
   const formattedDate = computed(() =>
-    new Intl.DateTimeFormat(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" }).format(
-      new Date(),
-    ),
+    new Intl.DateTimeFormat(undefined, {
+      timeZone: displayTimezone.value,
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "long",
+    }).format(new Date()),
   )
   const registry = computed<PresentationModule[]>(() => [
     {
@@ -151,7 +158,7 @@
             {{ $t("page.home.dashboard.healthy") }}
           </span>
         </div>
-        <p class="m-0 mt-5px text-12px text-base-text-3">{{ formattedDate }} · Asia / Shanghai</p>
+        <p class="m-0 mt-5px text-12px text-base-text-3">{{ formattedDate }} · {{ displayTimezone }}</p>
       </div>
     </header>
 

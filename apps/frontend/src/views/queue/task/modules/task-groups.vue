@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+  import { formatApiTime } from "@/utils/datetime"
   import { computed, ref, watch, onBeforeUnmount } from "vue"
   import { NButton } from "naive-ui"
   import { useAppStore } from "@/store/modules/app"
@@ -40,7 +41,7 @@
     { key: 'failure', title: $t('page.manage.worker.groupFailure'), width: 100, render: row => <NButton text type="error" onClick={() => emit('drill', row.taskName, true)}>{row.failure}</NButton> },
     { key: 'inProgress', title: $t('page.manage.worker.groupInProgress'), width: 100 },
     { key: 'successRate', title: $t('page.manage.worker.groupSuccessRate'), width: 110, render: row => row.successRate === null ? '—' : `${row.successRate.toFixed(1)}%` },
-    { key: 'lastExecutedAt', title: $t('page.manage.worker.groupLastExecuted'), width: 190, render: row => row.lastExecutedAt ? new Date(row.lastExecutedAt).toLocaleString() : '—' },
+    { key: 'lastExecutedAt', title: $t('page.manage.worker.groupLastExecuted'), width: 190, render: row => row.lastExecutedAt ? formatApiTime(row.lastExecutedAt) : '—' },
     ...actions.column({ key: 'operate', title: $t('common.operate'), render: row => <NButton size="small" onClick={() => emit('drill', row.taskName, false)}>{$t('page.manage.worker.viewRecords')}</NButton> }),
   ])
   const scrollX = computed(() => tableScrollWidth(columns.value))

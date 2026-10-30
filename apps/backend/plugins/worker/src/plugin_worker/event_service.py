@@ -107,7 +107,7 @@ class EventService:
                 dashboard_payload = {
                     **payload,
                     "runtime": task.runtime,
-                    "finishedAt": task.finished_at.isoformat() if task.finished_at else "",
+                    "finishedAt": timezone.to_utc(task.finished_at).isoformat() if task.finished_at else "",
                 }
                 await self.sio.emit("dashboard:task_completed", dashboard_payload, namespace="/dashboard")
         except Exception:

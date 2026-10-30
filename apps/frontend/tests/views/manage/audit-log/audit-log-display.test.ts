@@ -37,3 +37,7 @@ it("explains missing changes according to the outcome and event type", () => {
 it("renders an instant in the catalog timezone instead of the browser timezone", () => {
   expect(formatAuditTime("2026-10-21T10:00:00Z", "Asia/Shanghai")).toBe("2026-10-21 18:00:00")
 })
+
+it("interprets a legacy wall time in the catalog timezone", () => {
+  expect(formatAuditTime("2026-10-29 16:00:00", "Asia/Shanghai")).toBe("2026-10-29 16:00:00")
+})

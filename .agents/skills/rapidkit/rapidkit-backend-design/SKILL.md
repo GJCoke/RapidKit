@@ -426,13 +426,15 @@ See `rapidkit-celery-task` and `apps/backend/plugins/monitoring/src/plugin_monit
 
 ## Timezone Rules
 
-The project uses a **naive UTC storage + automatic local-timezone response** pattern.
+The project stores **naive UTC** and chooses response types by their meaning. Follow the timezone rules in `rapidkit-conventions`.
 
 | Scenario                            | Approach                                                                         |
 | ----------------------------------- | -------------------------------------------------------------------------------- |
 | Writing time to DB                  | `timezone.now()` — returns naive UTC datetime                                    |
-| Datetime fields in response schemas | Use `LocalDatetime` type — auto-converts to configured timezone on serialization |
-| Socket.IO push timestamps           | Use `timezone.f_time()` or `timezone.f_datetime()`                               |
+| Parsed/compared response timestamps | `UTCInstant` or `EditableInstant` — ISO with an explicit offset                   |
+| Display-only legacy wall time       | `LocalDatetime` — formatted configured-zone text, never an instant input          |
+| Daily aggregation labels            | `date` / `YYYY-MM-DD`; construct local day boundaries before querying UTC        |
+| Socket.IO timestamps                | Same explicit instant convention as HTTP; formatted strings only for pure text |
 
 ```python
 # Model / CRUD layer — getting current time
@@ -440,11 +442,11 @@ from rapidkit_core.timezone import timezone
 now = timezone.now()  # naive UTC datetime
 
 # Schema layer — response datetime fields
-from rapidkit_common.schemas.types import LocalDatetime
+from rapidkit_common.schemas.types import LocalDatetime, UTCInstant
 
 class MyResponse(BaseSchema):
     create_time: LocalDatetime    # auto-serialized to "2026-04-13 18:00:00"
-    time_bucket: LocalDatetime    # aggregation buckets too
+    last_sync_at: UTCInstant      # parsed/compared in the browser
 ```
 
 **Configuration (`.env`):**
@@ -476,7 +478,7 @@ DATETIME_FORMAT=%Y-%m-%d %H:%M:%S
 - NEVER put business logic in `apps/backend/src` — it belongs in a plugin
 - NEVER use `datetime.now()` or `datetime.utcnow()` — always use `timezone.now()`
 - NEVER manually call `timezone.to_local().strftime()` in CRUD/Service layers for response data
-- NEVER use bare `datetime` as a field type in response schemas — always use `LocalDatetime`
+- Use `UTCInstant` / `EditableInstant` for response instants, `LocalDatetime` for pure display, and `date` for calendar labels; avoid unmarked `datetime` responses.
 - Follow the shared import policy in `rapidkit-conventions`: prefer module-level imports and allow narrow, justified initialization-cycle or test-bootstrap exceptions.
 - ALWAYS use `Response[T]` envelope for API responses
 - Use a flat plugin layout for one domain; introduce domain subdirectories only for multiple subdomains, as described in `rapidkit-plugin`.

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 import { ErrorState, LoadingState } from "@/features/layout/components/states"
 import { useDashboardTrends } from "@/services/hooks/use-dashboard"
-import { mapTrendPoints, resolveDashboardQueries } from "./dashboard-data"
+import { mapTrendPoints, platformWallDate, resolveDashboardQueries } from "./dashboard-data"
 import { TrendCharts } from "./trend-charts"
 
 function formatDateOnly(date: Date) {
@@ -30,11 +30,11 @@ export function TrendChartsModule() {
   const points = query.data?.data
   if (!points) return <ErrorState message={t("state.error")} />
 
-  const dateFormatter = new Intl.DateTimeFormat(i18n.language, { month: "short", day: "numeric" })
+  const dateFormatter = new Intl.DateTimeFormat(i18n.language, { timeZone: "UTC", month: "short", day: "numeric" })
   return (
     <TrendCharts
       title={t("home.userTrend")}
-      data={mapTrendPoints(points, (value) => dateFormatter.format(new Date(value)))}
+      data={mapTrendPoints(points, (value) => dateFormatter.format(platformWallDate(value)))}
     />
   )
 }

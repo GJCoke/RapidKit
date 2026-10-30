@@ -96,10 +96,18 @@ from rapidkit_core.timezone import timezone
 - `timezone.now_local()` — returns aware datetime in configured timezone
 - `timezone.f_datetime(dt)` — format datetime to configured timezone string
 - `timezone.f_time(dt)` — format datetime to HH:MM:SS in configured timezone
-- Use `LocalDatetime` type annotation in response schemas for auto-conversion:
+- `timezone.to_utc(dt)` — returns aware UTC; naive input means UTC, independent of the OS timezone.
+- `timezone.start_of_day(day)` — converts a configured-zone calendar midnight to naive UTC. Compute adjacent local dates separately, including across DST.
+- Choose response fields by meaning; all types below live in `rapidkit_common.schemas.types`:
   ```python
-  from rapidkit_common.schemas.types import LocalDatetime
+  from rapidkit_common.schemas.types import EditableInstant, LocalDatetime, UTCInstant
   ```
+- `UTCInstant`: a parsed/compared instant, serialized as ISO with `+00:00`.
+- `EditableInstant`: an instant carrying the configured zone's event-time offset, for editors and platform-time display.
+- `LocalDatetime`: legacy, display-only wall time without offset. Never feed it into browser instant parsing or time arithmetic.
+- Daily aggregation labels are `date` / `YYYY-MM-DD`; hourly buckets are explicit instants. Convert UTC columns to the configured calendar before daily SQL grouping.
+- Cron entries must explicitly bind their Celery app and use that schedule's calendar zone. Refreshes preserve execution state; keep `enable_utc=True`.
+- JSON log timestamps carry offsets; log rotation follows the process timezone independently of `DATETIME_TIMEZONE`.
 - NEVER use `datetime.now()` or `datetime.utcnow()`
 
 ## Exception Rules
@@ -209,7 +217,7 @@ Solve the whole task with the least new code. Take the first option that fully w
 - Use Loguru `{}` placeholders in log messages
 - Include `user_id` in security logs
 - Use `timezone.now()` for storing timestamps
-- Use `LocalDatetime` for datetime fields in response schemas
+- Use `UTCInstant` / `EditableInstant` for parsed response timestamps; reserve `LocalDatetime` for display-only text
 - Use `AppException(code_enum)` with a framework or plugin status-code enum; messages auto-translate via i18n.
 - Add new StatusCode + i18n translations when no existing code fits
 - Return `Response[T]` from all endpoints

@@ -57,6 +57,23 @@ it.each([
   }
 })
 
+it.each(["2026-10-29T08:00:00", "2026-10-29T08:00:00Z"])("uses the instant for sync age: %s", async (value) => {
+  vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-29T08:01:00Z"))
+  try {
+    const html = await renderToString(
+      createSSRApp(OperationsOverview, {
+        data: { timezone: "Asia/Shanghai", summary: {}, system: { lastSyncAt: value }, trend: [] } as any,
+        range: "7d",
+        loading: false,
+        error: false,
+      }),
+    )
+    expect(html).toContain("1 page.home.dashboard.minutes")
+  } finally {
+    vi.restoreAllMocks()
+  }
+})
+
 it.each([[], [{ date: "2026-10-27", requestCount: 0, avgResponseMs: 0 }]])(
   "keeps empty and all-zero axes finite",
   async (...rows) => {

@@ -1,7 +1,14 @@
 /** Current snapshot health, not a CPU utilization metric. */
-export function workerHealth(worker: { status: string; lastHeartbeat?: string | null } | null, now = Date.now()) {
+import { parseApiTime } from "@/utils/datetime"
+
+export function workerHealth(
+  worker: { status: string; lastHeartbeat?: string | null; timezone?: string } | null,
+  now = Date.now(),
+) {
   if (!worker || worker.status !== "1") return "offline"
-  const heartbeat = worker.lastHeartbeat ? Date.parse(worker.lastHeartbeat) : NaN
+  const heartbeat = worker.lastHeartbeat
+    ? parseApiTime(worker.lastHeartbeat, worker.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone).valueOf()
+    : NaN
   if (!Number.isFinite(heartbeat)) return "unknown"
   return now - heartbeat > 60000 ? "stale" : "online"
 }

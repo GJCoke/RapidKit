@@ -2403,7 +2403,11 @@ export interface components {
             metadata?: {
                 [key: string]: unknown;
             };
-            /** Occurredat */
+            /**
+             * Occurredat
+             * Format: date-time
+             * @example 2026-10-29T16:00:00+08:00
+             */
             occurredAt: string;
         };
         /**
@@ -2807,7 +2811,11 @@ export interface components {
             source: components["schemas"]["AuditSource"];
             /** Ip */
             ip?: string | null;
-            /** Occurredat */
+            /**
+             * Occurredat
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
+             */
             occurredAt: string;
             /** Changes */
             changes?: components["schemas"]["AuditChange"][];
@@ -2890,7 +2898,11 @@ export interface components {
             source: components["schemas"]["AuditSource"];
             /** Ip */
             ip?: string | null;
-            /** Occurredat */
+            /**
+             * Occurredat
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
+             */
             occurredAt: string;
         };
         /**
@@ -2948,7 +2960,11 @@ export interface components {
         BannerCheckResponse: {
             /** Revision */
             revision: number;
-            /** Servernow */
+            /**
+             * Servernow
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
+             */
             serverNow: string;
             current?: components["schemas"]["BannerSummary"] | null;
             scheduled?: components["schemas"]["BannerSummary"] | null;
@@ -4403,6 +4419,7 @@ export interface components {
             /**
              * Generatedat
              * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
              */
             generatedAt: string;
             /** Timezone */
@@ -4446,6 +4463,7 @@ export interface components {
             /**
              * Startedat
              * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
              */
             startedAt: string;
             /** Uptimeseconds */
@@ -5086,8 +5104,14 @@ export interface components {
         };
         /** QueueDashboardResponse */
         QueueDashboardResponse: {
-            /** Sampledat */
+            /**
+             * Sampledat
+             * Format: date-time
+             * @example 2026-10-29T16:00:00+08:00
+             */
             sampledAt: string;
+            /** Timezone */
+            timezone?: string;
             /** Queues */
             queues: components["schemas"]["QueueMetric"][];
             /** Queuedepth */
@@ -7045,7 +7069,11 @@ export interface components {
             inProgress: number;
             /** Successrate */
             successRate: number | null;
-            /** Lastexecutedat */
+            /**
+             * Lastexecutedat
+             * Format: date-time
+             * @example 2026-10-29T16:00:00+08:00
+             */
             lastExecutedAt: string;
             /** Avgruntime */
             avgRuntime: number | null;
@@ -7243,7 +7271,11 @@ export interface components {
             current?: components["schemas"]["BannerSummary"] | null;
             /** Revision */
             revision: number;
-            /** Servernow */
+            /**
+             * Servernow
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
+             */
             serverNow: string;
             /** Nextchangeat */
             nextChangeAt?: string | null;
@@ -7294,7 +7326,10 @@ export interface components {
          * @description 用户活跃趋势。
          */
         UserActivityTrend: {
-            /** Timebucket */
+            /**
+             * Timebucket
+             * @description 平台自然日 YYYY-MM-DD；小时粒度为带 UTC 偏移的 ISO 时刻
+             */
             timeBucket: string;
             /** Newusers */
             newUsers: number;
@@ -7643,6 +7678,8 @@ export interface components {
             updateTime: string;
             /** Hostname */
             hostname: string;
+            /** Timezone */
+            timezone?: string;
             /**
              * Groupname
              * @default legacy

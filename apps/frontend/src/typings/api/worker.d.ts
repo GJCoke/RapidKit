@@ -34,6 +34,7 @@ declare global {
 
       /** worker info */
       type WorkerInfo = {
+        timezone?: string
         id: string
         hostname: string
         groupName: string
