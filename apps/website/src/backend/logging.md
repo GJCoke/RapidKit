@@ -111,7 +111,9 @@ def setup_logging() -> None:
 - **按天**：系统本地日期跨天后的下一条日志触发轮转。
 - **按大小**：写入下一条日志将使文件超过 `LOG_FILE_MAX_BYTES` 时，先轮转再写入，默认 **100 MiB**（104857600 字节）。按 UTF-8 编码后的实际字节数计算。单条日志自身超过上限时会完整写入，不截断，所以该文件可以超过上限。
 
-实际文件名带有 `hostname.pid` 实例后缀（如 `access.<hostname>.<pid>.log`），每个进程只写自己的文件，避免多进程轮转时互相覆盖。轮转后的文件名为 `access.<hostname>.<pid>.<日期>.log`，日期取文件最后写入时间的系统本地日期。同一天多次轮转会追加 `.2`、`.3` 等序号，已有文件不会被覆盖。
+实际文件名带有 `hostname.pid` 实例后缀（如 `access.<hostname>.<pid>.log`），每个进程只写自己的文件，避免多进程轮转时互相覆盖。轮转后的文件名为 `access.<hostname>.<pid>.<日期>.log`，日期取文件最后写入时间的系统本地日期。同一天多次轮转会在日期后追加 `-2`、`-3` 等序号，已有文件不会被覆盖。
+
+自定义文件名按 `Path` 的主干和扩展名插入实例标识：`requests.txt` 写入 `requests.<hostname>.<pid>.txt`；无扩展名时也会添加实例标识。目录路径保持原样，例如 `sub.log/requests.txt` 仍写入 `sub.log/`，归档和清理使用同样的文件名规则。
 
 Celery worker 与 beat 调用 `set_custom_logfile(enqueue=False)`：prefork 子进程以 `os._exit` 退出，`enqueue` 创建的信号量来不及注销，停止 worker 时会刷出大量 `leaked semaphore objects` 警告。
 
@@ -125,10 +127,12 @@ Celery worker 与 beat 调用 `set_custom_logfile(enqueue=False)`：prefork 子�
 
 清理只扫描配置的 access/error 文件所在目录中的已知运行日志名：
 
-- 所有实例的过期日期归档，包括旧版 `access_YYYY-MM-DD.log`、`error_YYYY-MM-DD.log`。
+- 所有实例可明确识别的过期日期归档，包括旧版 `access_YYYY-MM-DD.log`、`error_YYYY-MM-DD.log`。
 - 本机已退出进程留下的过期 `access.<hostname>.<pid>.log`、`error.<hostname>.<pid>.log`，包括空文件。
 
 本机仍存活的进程文件、无权限确认存活状态的进程文件、远程主机未归档的进程文件都会保留。远程进程的存活状态无法通过本机 PID 判断，因此共享日志目录中的这类文件应在对应主机上清理。清理跳过符号链接、子目录和其他命名的文件；并发删除不会报错，其他文件操作失败会向 stderr 输出提示并继续运行。
+
+清理优先按活动文件名判断。例如 `access.worker.123.2026-01-01.456.log` 可能属于主机 `worker.123.2026-01-01` 的进程 `456`，不能仅凭日期认定它已归档。旧式 `日期.序号` 归档因此会保守保留，需要人工确认后清理；新式 `日期-序号` 避免了这一歧义。
 
 ### 开发验证日志
 

@@ -136,9 +136,8 @@ def test_rotated_logfiles_keep_instance_suffix_and_never_overwrite(tmp_path):
 
     assert {path.name: path.read_text() for path in tmp_path.iterdir()} == {
         "access.host.101.2026-10-26.log": "access.host.101.log:first",
-        "access.host.101.2026-10-26.2.log": "access.host.101.log:second",
+        "access.host.101.2026-10-26-2.log": "access.host.101.log:second",
         "access.host.102.2026-10-26.log": "access.host.102.log:first",
-        "access.host.102.2026-10-26.2.log": "access.host.102.log:second",
+        "access.host.102.2026-10-26-2.log": "access.host.102.log:second",
     }
-    # Loguru retention only cleans files matching `<root>.*<ext>` of the active file.
     assert len(list(tmp_path.glob("access.host.101.*.log"))) == 2

@@ -37,13 +37,14 @@ def test_cleanup_expires_dead_process_and_archived_logs_only(log_directory, monk
         f"access.{host}.{dead_pid}.log",
         f"error.{host}.{dead_pid}.log",
         "access.remote.123.2026-01-01.log",
-        "error.remote.123.2026-01-01.2.log",
+        "error.remote.123.2026-01-01-2.log",
         "access_2026-01-01.log",
         "error_2026-01-01.log",
     ]
     preserved = [
         f"access.{host}.{os.getpid()}.log",
         "error.remote.123.log",
+        "error.remote.123.2026-01-01.2.log",
         "admin-migration-check.log",
         "access.log",
         "access.notes.log",
@@ -198,3 +199,61 @@ def test_cleanup_reaps_another_process_log_only_after_it_exits(log_directory):
         process.wait(timeout=5)
     log.cleanup_logfiles(force=True)
     assert not path.exists()
+
+
+@pytest.mark.parametrize("remote_hostname", ["worker.123.2026-01-01", "local.123.2026-01-01"])
+def test_cleanup_preserves_ambiguous_remote_active_names(log_directory, monkeypatch, remote_hostname):
+    monkeypatch.setattr(log.socket, "gethostname", lambda: "local")
+    path = aged_file(log_directory, f"access.{remote_hostname}.456.log")
+    log.cleanup_logfiles(force=True)
+    assert path.exists()
+
+
+def test_cleanup_expires_unambiguous_numbered_archives(log_directory):
+    path = aged_file(log_directory, "error.remote.123.2026-01-01-2.log")
+    log.cleanup_logfiles(force=True)
+    assert not path.exists()
+
+
+@pytest.mark.parametrize(
+    "access_name,error_name",
+    [
+        ("requests.txt", "warnings.txt"),
+        ("sub.log/requests.log", "sub.log/warnings.log"),
+        ("requests", "warnings"),
+        ("sub.log/requests.audit.txt", "sub.log/warnings.audit.txt"),
+    ],
+)
+def test_custom_log_paths_keep_directories_and_support_rotation_and_cleanup(
+    log_directory, monkeypatch, access_name, error_name
+):
+    monkeypatch.setattr(settings, "LOG_ACCESS_FILENAME", access_name)
+    monkeypatch.setattr(settings, "LOG_ERROR_FILENAME", error_name)
+    monkeypatch.setattr(settings, "LOG_FILE_MAX_BYTES", 6)
+    monkeypatch.setattr(settings, "LOG_FORMAT", "{message}")
+    log.setup_logging()
+    try:
+        log.set_custom_logfile(enqueue=False)
+        for write in (log.logger.info, log.logger.warning):
+            for message in ("first", "two", "three"):
+                write(message)
+    finally:
+        log.logger.remove()
+
+    today = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d")
+    archives = []
+    for name in (access_name, error_name):
+        configured = log_directory / name
+        root = f"{configured.stem}.{socket.gethostname()}.{os.getpid()}"
+        active = configured.with_name(f"{root}{configured.suffix}")
+        assert active.read_text(encoding="utf-8") == "three\n"
+        for counter, expected in (("", "first\n"), ("-2", "two\n")):
+            archive = configured.with_name(f"{root}.{today}{counter}{configured.suffix}")
+            assert archive.read_text(encoding="utf-8") == expected
+            aged_file(archive.parent, archive.name)
+            archives.append(archive)
+        dead = configured.with_name(f"{configured.stem}.{socket.gethostname()}.999999999{configured.suffix}")
+        aged_file(dead.parent, dead.name)
+        archives.append(dead)
+    log.cleanup_logfiles(force=True)
+    assert all(not path.exists() for path in archives)

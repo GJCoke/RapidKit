@@ -110,18 +110,20 @@ def setup_logging() -> None:
     _owned_handlers.add(handler)
 
 
-def rename_rotated_logfile(filepath: str, active_file: Path) -> None:
-    """将轮转出的日志改名为 `<活动文件名>.<日期>.log`，保留实例后缀并命中 retention 的匹配规则。
+def rename_rotated_logfile(filepath: str, active_file: Path, *, suffix: str | None = None) -> None:
+    """将轮转出的日志改名为 `<活动文件主干>.<日期>[-序号]<扩展名>`，保留实例标识。
 
     日期取文件最后写入时间的系统本地日期，即日志内容所属的那一天；loguru 也按系统本地时区判定零点边界，
     且要等零点后的下一条日志才触发轮转，因此不能用轮转时刻。
     """
+    suffix = active_file.suffix if suffix is None else suffix
+    stem = active_file.name.removesuffix(suffix)
     date = datetime.fromtimestamp(os.path.getmtime(filepath)).strftime("%Y-%m-%d")
-    target = active_file.with_name(f"{active_file.stem}.{date}{active_file.suffix}")
+    target = active_file.with_name(f"{stem}.{date}{suffix}")
     counter = 1
     while target.exists():
         counter += 1
-        target = active_file.with_name(f"{active_file.stem}.{date}.{counter}{active_file.suffix}")
+        target = active_file.with_name(f"{stem}.{date}-{counter}{suffix}")
     os.rename(filepath, target)
 
 
@@ -137,21 +139,26 @@ def cleanup_logfiles(*, force: bool = False) -> None:
     for filename in (settings.LOG_ACCESS_FILENAME, settings.LOG_ERROR_FILENAME):
         configured = LOG_PATH / filename
         stem, suffix = re.escape(configured.stem), re.escape(configured.suffix)
-        instance_pattern = re.compile(
-            rf"{stem}\.(?P<host>{re.escape(hostname)}|.+?)\.(?P<pid>[1-9]\d*)"
-            rf"(?P<archive>\.\d{{4}}-\d{{2}}-\d{{2}}(?:\.\d+)?)?{suffix}"
+        instance_pattern = re.compile(rf"{stem}\.(?P<host>.+)\.(?P<pid>[1-9][0-9]*){suffix}")
+        archive_pattern = re.compile(
+            rf"{stem}\..+\.[1-9][0-9]*\.[0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}}(?:-[1-9][0-9]*)?{suffix}"
         )
         legacy_pattern = re.compile(rf"{stem}_\d{{4}}-\d{{2}}-\d{{2}}{suffix}")
         try:
             for path in configured.parent.iterdir():
                 match = instance_pattern.fullmatch(path.name)
-                if match is None and legacy_pattern.fullmatch(path.name) is None:
+                if (
+                    match is None
+                    and archive_pattern.fullmatch(path.name) is None
+                    and legacy_pattern.fullmatch(path.name) is None
+                ):
                     continue
                 try:
                     metadata = path.stat(follow_symlinks=False)
                     if not stat.S_ISREG(metadata.st_mode) or metadata.st_mtime >= cutoff:
                         continue
-                    if match is not None and match["archive"] is None:
+                    if match is not None:
+                        # 旧式日期.序号也可能是远程 hostname.pid，优先按活动文件处理。
                         # 无法确认远程进程是否存活；本机活跃或无法检查的 PID 也必须保留。
                         if match["host"] != hostname:
                             continue
@@ -206,11 +213,11 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
     cleanup_logfiles(force=True)
 
     instance_suffix = f".{socket.gethostname()}.{os.getpid()}"
-    access_name = settings.LOG_ACCESS_FILENAME.replace(".log", f"{instance_suffix}.log")
-    error_name = settings.LOG_ERROR_FILENAME.replace(".log", f"{instance_suffix}.log")
-
-    log_access_file = LOG_PATH.joinpath(access_name)
-    log_error_file = LOG_PATH.joinpath(error_name)
+    configured_access = LOG_PATH / settings.LOG_ACCESS_FILENAME
+    configured_error = LOG_PATH / settings.LOG_ERROR_FILENAME
+    log_access_file, log_error_file = (
+        path.with_name(f"{path.stem}{instance_suffix}{path.suffix}") for path in (configured_access, configured_error)
+    )
 
     log_config: dict[str, Any] = {
         "format": default_formatter,
@@ -225,7 +232,7 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
         backtrace=False,
         diagnose=False,
         rotation=_FileRotation(),
-        compression=partial(rename_rotated_logfile, active_file=log_access_file),
+        compression=partial(rename_rotated_logfile, active_file=log_access_file, suffix=configured_access.suffix),
         **log_config,
     )
 
@@ -236,7 +243,7 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
         backtrace=True,
         diagnose=not settings.ENVIRONMENT.is_deployed,
         rotation=_FileRotation(),
-        compression=partial(rename_rotated_logfile, active_file=log_error_file),
+        compression=partial(rename_rotated_logfile, active_file=log_error_file, suffix=configured_error.suffix),
         **log_config,
     )
     _owned_handlers.update((access_handler, error_handler))
