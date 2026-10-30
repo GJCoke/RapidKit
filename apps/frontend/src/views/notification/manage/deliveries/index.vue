@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+  import { useNow } from "@vueuse/core"
   import { parseApiTime } from "@/utils/datetime"
   import { computed, onMounted, onScopeDispose, ref } from "vue"
   import type { DataTableColumns } from "naive-ui"
@@ -52,10 +53,14 @@
   })))
   const queried = computed(() => Boolean(messageId.value))
   const busy = computed(() => loading.value || summaryLoading.value)
-  const retryAllowed = computed(() => canRetry.value && (!currentMessage.value || (
-    currentMessage.value.status === "published" &&
-    (!currentMessage.value.expireAt || parseApiTime(currentMessage.value.expireAt).valueOf() > Date.now())
-  )))
+  const now = useNow({ interval: 1000 })
+  function isRetryAllowed(at = Date.now()) {
+    return canRetry.value && (!currentMessage.value || (
+      currentMessage.value.status === "published" &&
+      (!currentMessage.value.expireAt || parseApiTime(currentMessage.value.expireAt).valueOf() > at)
+    ))
+  }
+  const retryAllowed = computed(() => isRetryAllowed(now.value.getTime()))
   const pagination = computed(() => ({
     page: page.value, pageSize: pageSize.value, itemCount: total.value,
     showSizePicker: true, pageSizes: [...PAGE_SIZE_OPTIONS],
@@ -132,14 +137,14 @@
   }
 
   function confirmRetry() {
-    if (!retryAllowed.value) return
+    if (!isRetryAllowed()) return
     const id = messageId.value
     window.$dialog?.warning({
       title: t("retryTitle"),
       content: $t("page.notification.manage.deliveries.retryConfirm", { count: failedCount.value }),
       positiveText: t("confirmRetry"), negativeText: $t("common.cancel"),
       onPositiveClick: async () => {
-        if (messageId.value !== id || !retryAllowed.value) return false
+        if (messageId.value !== id || !isRetryAllowed()) return false
         const count = await state.retry()
         if (count === null) return false
         if (messageId.value === id) window.$message?.success($t("page.notification.manage.deliveries.retried", { count }))

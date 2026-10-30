@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
-import { test } from "vitest"
+import { test, vi } from "vitest"
 import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import i18n from "i18next"
@@ -9,6 +9,10 @@ import { ActivityFeed } from "@/views/home/modules/activity-feed"
 import { StatCards } from "@/views/home/modules/stat-cards"
 import { TrendCharts } from "@/views/home/modules/trend-charts"
 import { HomeDashboard, resolveHomeView } from "@/views/home/home-dashboard"
+
+vi.mock("@/stores/auth", () => ({
+  useAuthStore: (selector: (state: unknown) => unknown) => selector({ userInfo: { timezone: "Asia/Shanghai" } }),
+}))
 
 const localesUrl = new URL("../../../src/locales/", import.meta.url)
 
@@ -169,4 +173,16 @@ test("both locales define matching required Home dashboard copy", async () => {
     for (const key of requiredKeys) assert.ok(locale.home[key], `missing home.${key}`)
   }
   assert.deepEqual(Object.keys(en.home).sort(), Object.keys(zh.home).sort())
+})
+
+test("home calendar date uses the authenticated platform zone at midnight", () => {
+  const html = renderToStaticMarkup(
+    createElement(HomeDashboard, {
+      state: { kind: "full", modules: [], revision: "timezone" },
+      isRefreshing: false,
+      now: new Date("2026-10-30T16:30:00Z"),
+      onRefresh: () => undefined,
+    }),
+  )
+  assert.match(html, /October 31, 2026/)
 })

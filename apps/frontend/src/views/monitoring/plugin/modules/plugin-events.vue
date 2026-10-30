@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatApiTime, parseApiTime } from "@/utils/datetime"
   import { computed } from "vue"
   import type { DataTableColumns } from "naive-ui"
   import { $t } from "@/locales"
@@ -35,7 +36,8 @@
       width: 160,
       render: (row) => {
         try {
-          return new Date(row.timestamp).toLocaleString()
+          const instant = parseApiTime(row.timestamp, "UTC")
+          return instant.isValid() ? formatApiTime(instant.toISOString()) : "—"
         } catch {
           return row.timestamp
         }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatApiTime } from "@/utils/datetime"
   import { reactive, ref } from "vue"
   import { useMessage } from "naive-ui"
   import { localStg } from "@/utils/storage"
@@ -38,7 +39,7 @@
   const addLog = (type: LogItem["type"], content: any, event?: string) => {
     logs.value.unshift({
       type,
-      time: new Date().toLocaleTimeString(),
+      time: new Date().toISOString(),
       event,
       content: typeof content === "object" ? JSON.stringify(content, null, 2) : String(content),
     })
@@ -175,7 +176,7 @@
                   <socket-log-card
                     sid=""
                     namespace=""
-                    :time="log.time"
+                    :time="formatApiTime(log.time, undefined, 'HH:mm:ss')"
                     :event="log.event"
                     :tag-type="mapLogTypeToTagType(log.type)"
                     :type="log.type"

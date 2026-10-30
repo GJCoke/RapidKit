@@ -1025,6 +1025,8 @@ declare namespace I18nKeys {
     | "manage.worker.range24h"
     | "manage.worker.range30d"
     | "manage.worker.range7d"
+    | "manage.worker.rangeEnd"
+    | "manage.worker.rangeStart"
     | "manage.worker.rangecustom"
     | "manage.worker.recordsView"
     | "manage.worker.result"

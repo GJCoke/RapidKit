@@ -1,5 +1,5 @@
 import { computed, ref } from "vue"
-import dayjs from "dayjs"
+import { formatApiTime } from "@/utils/datetime"
 import { useAppSocket } from "@/hooks/common/app-socket"
 import { useAuthStore } from "@/store/modules/auth"
 import {
@@ -117,8 +117,8 @@ export function useDashboard() {
     operationsError.value = false
     const params: Api.Dashboard.OperationsOverviewQuery = { range: operationsRange.value }
     if (operationsRange.value === "custom" && custom) {
-      params.start = dayjs(custom[0]).format("YYYY-MM-DD")
-      params.end = dayjs(custom[1]).format("YYYY-MM-DD")
+      params.start = formatApiTime(new Date(custom[0]).toISOString(), undefined, "YYYY-MM-DD")
+      params.end = formatApiTime(new Date(custom[1]).toISOString(), undefined, "YYYY-MM-DD")
     }
     const { data, error } = await fetchGetOperationsOverview(params)
     if (requestId !== operationsRequestId) return

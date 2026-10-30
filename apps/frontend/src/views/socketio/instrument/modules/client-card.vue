@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatApiTime } from "@/utils/datetime"
   import type { ClientDetail } from "./types"
   import { ref } from "vue"
   import { $t } from "@/locales"
@@ -83,7 +84,7 @@
           </div>
           <div class="flex items-center gap-1.5 text-[10px] text-zinc-400">
             <icon-mdi-clock-outline class="text-xs" />
-            <span class="tabular-nums">{{ client.handshake.time }}</span>
+            <span class="tabular-nums">{{ formatApiTime(client.handshake.time) }}</span>
           </div>
         </div>
       </div>

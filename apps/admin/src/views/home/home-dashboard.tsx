@@ -1,3 +1,4 @@
+import { useAuthStore } from "@/stores/auth"
 import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 import { RefreshCw } from "lucide-react"
@@ -44,6 +45,7 @@ export function HomeDashboard({
   now?: Date
 }) {
   const { i18n, t } = useTranslation()
+  const timezone = useAuthStore((state) => state.userInfo?.timezone || "UTC")
 
   if (state.kind === "loading") return <LoadingState label={t("state.loading")} />
   if (state.kind === "error") {
@@ -51,7 +53,7 @@ export function HomeDashboard({
   }
   if (state.kind === "restricted") return <RestrictedHome />
 
-  const currentDate = new Intl.DateTimeFormat(i18n.language, { dateStyle: "long" }).format(now)
+  const currentDate = new Intl.DateTimeFormat(i18n.language, { dateStyle: "long", timeZone: timezone }).format(now)
   const statusLabel = isRefreshing ? t("home.statusRefreshing") : t("home.statusReady")
 
   return (

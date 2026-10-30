@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed } from "vue"
+  import { getPlatformTimezone } from "@/utils/datetime"
   import { $t } from "@/locales"
   import { useAppStore } from "@/store/modules/app"
 
@@ -14,6 +15,7 @@
     const date = new Date(props.snapshot.expiresAt)
     return Number.isFinite(date.getTime())
       ? date.toLocaleString(app.locale, {
+          timeZone: getPlatformTimezone(),
           year: "numeric",
           month: "2-digit",
           day: "2-digit",

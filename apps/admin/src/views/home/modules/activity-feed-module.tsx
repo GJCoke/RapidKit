@@ -1,11 +1,14 @@
+import { useAuthStore } from "@/stores/auth"
+import { formatPlatformTime } from "@/utils/datetime"
 import { useTranslation } from "react-i18next"
 import { ErrorState, LoadingState } from "@/features/layout/components/states"
 import { useDashboardActivities } from "@/services/hooks/use-dashboard"
 import { ActivityFeed } from "./activity-feed"
-import { mapActivityItems, platformWallDate, resolveDashboardQueries } from "./dashboard-data"
+import { mapActivityItems, resolveDashboardQueries } from "./dashboard-data"
 
 export function ActivityFeedModule() {
   const { i18n, t } = useTranslation()
+  const timezone = useAuthStore((state) => state.userInfo?.timezone || "UTC")
   const query = useDashboardActivities()
   const state = resolveDashboardQueries([query])
 
@@ -17,17 +20,12 @@ export function ActivityFeedModule() {
   const page = query.data?.data
   if (!page) return <ErrorState message={t("state.error")} />
 
-  const timeFormatter = new Intl.DateTimeFormat(i18n.language, {
-    timeZone: "UTC",
-    dateStyle: "medium",
-    timeStyle: "short",
-  })
   return (
     <ActivityFeed
       items={mapActivityItems(
         page.items,
         (key, params) => t(key, params),
-        (value) => timeFormatter.format(platformWallDate(value)),
+        (value) => formatPlatformTime(value, timezone, i18n.language),
       )}
     />
   )

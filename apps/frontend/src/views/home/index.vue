@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed, onMounted, type Component } from "vue"
+  import { getPlatformTimezone } from "@/utils/datetime"
   import { $t } from "@/locales"
   import { useAuthStore } from "@/store/modules/auth"
   import { selectDashboardModules } from "./dashboard-registry"
@@ -27,9 +28,7 @@
   const dashboard = useDashboard()
   const authStore = useAuthStore()
   const displayName = computed(() => authStore.userInfo.name || authStore.userInfo.username || $t("route.home"))
-  const displayTimezone = computed(
-    () => dashboard.operationsOverview.value?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-  )
+  const displayTimezone = computed(getPlatformTimezone)
   const formattedDate = computed(() =>
     new Intl.DateTimeFormat(undefined, {
       timeZone: displayTimezone.value,

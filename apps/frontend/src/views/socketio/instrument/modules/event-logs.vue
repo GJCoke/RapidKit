@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatApiTime } from "@/utils/datetime"
   import { computed } from "vue"
   import type { EventLog } from "./types"
   import { sentOrReceivedRecord } from "@/constants/common"
@@ -34,7 +35,7 @@
           <socket-log-card
             :sid="ev.sid"
             :namespace="ev.nsp"
-            :time="ev.time"
+            :time="formatApiTime(ev.time, undefined, 'HH:mm:ss')"
             :event="ev.event"
             :tag-type="ev.type === 'R' ? 'success' : 'warning'"
             :type="$t(label[ev.type])"

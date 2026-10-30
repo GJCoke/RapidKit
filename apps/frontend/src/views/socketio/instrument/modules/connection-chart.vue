@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { watch } from "vue"
   import { useEcharts } from "@/hooks/common/echarts"
-  import dayjs from "dayjs"
+  import { formatApiTime, parseApiTime } from "@/utils/datetime"
   import type { EventLog } from "./types"
   import { $t } from "@/locales"
   import { useI18n } from "vue-i18n"
@@ -62,7 +62,7 @@
       newEvents.forEach((ev) => {
         if (ev.type !== "CONN" && ev.type !== "DISC") return
 
-        const timestamp = dayjs(ev.time).valueOf()
+        const timestamp = parseApiTime(ev.time).valueOf()
         if (timestamp < tenMinutesAgo) return
 
         const rounded = Math.floor(timestamp / 10000) * 10000
@@ -77,7 +77,7 @@
       const sortedTs = Array.from(groups.keys()).sort((a, b) => a - b)
 
       updateOptions((opts) => {
-        opts.xAxis.data = sortedTs.map((t) => dayjs(t).format("HH:mm:ss"))
+        opts.xAxis.data = sortedTs.map((t) => formatApiTime(new Date(t).toISOString(), undefined, "HH:mm:ss"))
         opts.series[0].data = sortedTs.map((t) => groups.get(t)!.conn)
         opts.series[1].data = sortedTs.map((t) => groups.get(t)!.disc)
         return opts

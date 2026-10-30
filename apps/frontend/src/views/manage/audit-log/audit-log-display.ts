@@ -1,7 +1,7 @@
 import { formatApiTime } from "@/utils/datetime"
 
 export function formatAuditTime(value?: string | null, zone?: string) {
-  return formatApiTime(value, zone || Intl.DateTimeFormat().resolvedOptions().timeZone)
+  return formatApiTime(value, zone || undefined)
 }
 
 export function auditChangeValue(

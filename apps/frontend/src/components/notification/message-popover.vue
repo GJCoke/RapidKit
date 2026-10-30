@@ -23,7 +23,7 @@
   const panelWidth = computed(() =>
     Math.min(400, viewportWidth.value - 24, triggerRight.value > 0 ? triggerRight.value - 12 : 400),
   )
-  const now = useNow({ interval: 60_000 })
+  const now = useNow({ interval: 1000 })
   const visible = computed({
     get: () => store.drawerVisible,
     set: (value: boolean) => (value ? store.openDrawer() : store.closeDrawer()),

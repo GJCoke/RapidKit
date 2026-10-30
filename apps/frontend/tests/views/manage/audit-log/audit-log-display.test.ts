@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest"
+import { setPlatformTimezone } from "@/utils/datetime"
+import { afterEach, describe, expect, it } from "vitest"
 import {
   auditChangeValue,
   auditNoChangesKey,
@@ -40,4 +41,10 @@ it("renders an instant in the catalog timezone instead of the browser timezone",
 
 it("interprets a legacy wall time in the catalog timezone", () => {
   expect(formatAuditTime("2026-10-29 16:00:00", "Asia/Shanghai")).toBe("2026-10-29 16:00:00")
+})
+
+afterEach(() => setPlatformTimezone("UTC"))
+it("uses the authenticated platform zone before the audit catalog is available", () => {
+  setPlatformTimezone("Asia/Shanghai")
+  expect(formatAuditTime("2026-10-30T08:00:00Z")).toBe("2026-10-30 16:00:00")
 })

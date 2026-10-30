@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatApiTime } from "@/utils/datetime"
   import { $t } from "@/locales"
   import type { ClientDetail } from "./types"
 
@@ -48,7 +49,7 @@
           </n-tag>
         </n-descriptions-item>
         <n-descriptions-item :label="$t('page.socketio.common.connectTime')">
-          <span class="text-zinc-500 font-mono">{{ client.handshake.time }}</span>
+          <span class="text-zinc-500 font-mono">{{ formatApiTime(client.handshake.time) }}</span>
         </n-descriptions-item>
         <n-descriptions-item :label="$t('page.socketio.common.rooms')" :span="2">
           <div class="flex flex-wrap gap-1">

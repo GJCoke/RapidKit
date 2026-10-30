@@ -895,6 +895,8 @@
       "groupInProgress": "进行中",
       "groupSuccessRate": "成功率",
       "groupLastExecuted": "最近执行",
+      "rangeStart": "平台时间起点",
+      "rangeEnd": "平台时间终点",
       "invalidTimeRange": "请选择大于零且不超过 90 天的时间范围",
       "groupCountingHint": "按所选时间范围内的任务创建时间统计；同一任务 ID 的重试仅计一次。成功率 = 成功 /（成功 + 失败）。",
       "overview": {

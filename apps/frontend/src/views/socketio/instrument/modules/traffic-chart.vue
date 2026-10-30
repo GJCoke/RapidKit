@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, watch } from "vue"
   import { useEcharts } from "@/hooks/common/echarts"
-  import dayjs from "dayjs"
+  import { formatApiTime } from "@/utils/datetime"
   import type { AggregatedEvent } from "./types"
   import { $t } from "@/locales"
   import { useI18n } from "vue-i18n"
@@ -89,7 +89,7 @@
       const sortedTimestamps = Array.from(groups.keys()).sort((a, b) => a - b)
 
       chartData.value = {
-        time: sortedTimestamps.map((t) => dayjs(t).format("HH:mm:ss")),
+        time: sortedTimestamps.map((t) => formatApiTime(new Date(t).toISOString(), undefined, "HH:mm:ss")),
         received: sortedTimestamps.map((t) => groups.get(t)!.in),
         sent: sortedTimestamps.map((t) => groups.get(t)!.out),
       }

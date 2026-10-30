@@ -7,7 +7,7 @@ export function workerHealth(
 ) {
   if (!worker || worker.status !== "1") return "offline"
   const heartbeat = worker.lastHeartbeat
-    ? parseApiTime(worker.lastHeartbeat, worker.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone).valueOf()
+    ? parseApiTime(worker.lastHeartbeat, worker.timezone || undefined).valueOf()
     : NaN
   if (!Number.isFinite(heartbeat)) return "unknown"
   return now - heartbeat > 60000 ? "stale" : "online"

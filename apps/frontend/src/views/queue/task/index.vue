@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatApiTime, getPlatformTimezone, parsePlatformTimeInput } from "@/utils/datetime"
   import { ref, reactive, computed, watch, onMounted } from "vue"
   import { useRoute, useRouter } from "vue-router"
   import { taskStatusOptions } from "@/constants/business"
@@ -29,18 +30,15 @@
   const draft = reactive({ ...state })
   const searchRevision = ref(0)
   const taskGroupsRef = ref<InstanceType<typeof TaskGroups> | null>(null)
-  const customRange = computed<[number, number] | null>({
-    get: (): [number, number] => [Date.parse(draft.start), Date.parse(draft.end)],
-    set: (value: [number, number] | null) => {
-      if (!value) return
-      const start = new Date(value[0]).toISOString(),
-        end = new Date(value[1]).toISOString()
-      if (validRange(start, end)) {
-        draft.start = start
-        draft.end = end
-      } else window.$message?.warning($t("page.manage.worker.invalidTimeRange"))
+  const customRange = reactive({ start: "", end: "" })
+  watch(
+    () => [draft.start, draft.end, getPlatformTimezone()],
+    () => {
+      customRange.start = formatApiTime(draft.start, undefined, "YYYY-MM-DDTHH:mm:ss")
+      customRange.end = formatApiTime(draft.end, undefined, "YYYY-MM-DDTHH:mm:ss")
     },
-  })
+    { immediate: true },
+  )
   const recordFilters = computed(() => ({
     taskName: state.task || state.keyword || undefined,
     taskNameMatch: state.task ? ("exact" as const) : ("contains" as const),
@@ -128,6 +126,16 @@
   )
 
   function search() {
+    if (draft.preset === "custom") {
+      const start = parsePlatformTimeInput(customRange.start, draft.start)
+      const end = parsePlatformTimeInput(customRange.end, draft.end)
+      if (!start.isValid() || !end.isValid() || !validRange(start.toISOString(), end.toISOString())) {
+        window.$message?.warning($t("page.manage.worker.invalidTimeRange"))
+        return
+      }
+      draft.start = start.toISOString()
+      draft.end = end.toISOString()
+    }
     const next = applyTaskSearch(state, draft)
     const unchanged = JSON.stringify(writeTaskView(next)) === JSON.stringify(writeTaskView(state))
     Object.assign(state, next)
@@ -185,12 +193,18 @@
               }}</NButton>
             </NButtonGroup>
             <NSelect :value="draft.preset" :options="rangeOptions" class="w-150px" @update:value="changeRange" />
-            <NDatePicker
-              v-if="draft.preset === 'custom'"
-              v-model:value="customRange"
-              type="datetimerange"
-              class="max-w-full w-380px"
-            />
+            <template v-if="draft.preset === 'custom'">
+              <NInput
+                v-model:value="customRange.start"
+                :input-props="{ type: 'datetime-local', step: 1, 'aria-label': $t('page.manage.worker.rangeStart') }"
+                class="w-220px"
+              />
+              <NInput
+                v-model:value="customRange.end"
+                :input-props="{ type: 'datetime-local', step: 1, 'aria-label': $t('page.manage.worker.rangeEnd') }"
+                class="w-220px"
+              />
+            </template>
             <NInput
               :value="draft.keyword"
               @update:value="setKeyword"
@@ -238,7 +252,7 @@
             {{ $t("page.manage.worker.groupCountingHint") }}
           </p>
           <div class="mt-8px text-12px text-base-text-3">
-            {{ new Date(state.start).toLocaleString() }} – {{ new Date(state.end).toLocaleString() }}
+            {{ formatApiTime(state.start) }} – {{ formatApiTime(state.end) }}
           </div>
         </NCollapseItem>
       </NCollapse>

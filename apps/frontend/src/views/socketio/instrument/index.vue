@@ -8,7 +8,6 @@
   import ServerCard from "./modules/server-card.vue"
   import { useMessage } from "naive-ui"
   import type { AggregatedEvent, ClientDetail, EventLog, ServerStats } from "./modules/types"
-  import dayjs from "dayjs"
   import { useSocket } from "@/hooks/common/socket"
   import { $t } from "@/locales"
 
@@ -59,15 +58,6 @@
     }
   })
 
-  // 工具方法
-  const formatClient = (client: ClientDetail): ClientDetail => ({
-    ...client,
-    handshake: {
-      ...client.handshake,
-      time: dayjs(client.handshake.time).format("YYYY-MM-DD HH:mm:ss"),
-    },
-  })
-
   const { socket, isConnected, isConnecting, connect, disconnect: rawDisconnect } = useSocket()
 
   const handleConnect = () => {
@@ -92,9 +82,9 @@
 
     // 绑定业务监听
     sio.on("all_sockets", (data: ClientDetail[]) => {
-      clients.value = data.map(formatClient)
+      clients.value = data
       const historyMap = new Map()
-      ;[...connectedHistory.value, ...data.map(formatClient)].forEach((item) => historyMap.set(item.id, item))
+      ;[...connectedHistory.value, ...data].forEach((item) => historyMap.set(item.id, item))
       connectedHistory.value = Array.from(historyMap.values()).reverse()
     })
 
@@ -106,13 +96,12 @@
     })
 
     sio.on("socket_connected", (client: ClientDetail, time: string) => {
-      const formattedClient = formatClient(client)
       const clientIndex = clients.value.findIndex((c) => c.id === client.id)
-      if (clientIndex > -1) clients.value.splice(clientIndex, 1, formattedClient)
-      else clients.value.push(formattedClient)
+      if (clientIndex > -1) clients.value.splice(clientIndex, 1, client)
+      else clients.value.push(client)
 
       if (!connectedHistory.value.some((c) => c.id === client.id)) {
-        connectedHistory.value.unshift(formattedClient)
+        connectedHistory.value.unshift(client)
         if (connectedHistory.value.length > 50) connectedHistory.value.pop()
       }
 
@@ -131,7 +120,7 @@
         type: "R",
         event: packet[0],
         args: packet.slice(1),
-        time: dayjs(time).format("HH:mm:ss"),
+        time,
         nsp,
         sid,
       })
@@ -144,7 +133,7 @@
         type: "S",
         event: packet[0],
         args: packet.slice(1),
-        time: dayjs(time).format("HH:mm:ss"),
+        time,
         nsp,
         sid,
       })

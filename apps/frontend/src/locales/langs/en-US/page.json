@@ -895,6 +895,8 @@
       "groupInProgress": "In progress",
       "groupSuccessRate": "Success rate",
       "groupLastExecuted": "Last execution",
+      "rangeStart": "Platform range start",
+      "rangeEnd": "Platform range end",
       "invalidTimeRange": "Choose an interval greater than zero and no longer than 90 days",
       "groupCountingHint": "Counts use task creation time in the selected interval. Retries of the same task ID count once. Success rate = success / (success + failure).",
       "overview": {

@@ -93,6 +93,9 @@ RapidKit 后端 Python 包采用三层架构，每层职责明确、依赖单向
 - UTC 时间列先投影到业务时区再按日聚合。日桶返回 `YYYY-MM-DD`，小时桶返回带偏移的时刻。
 - `rapidkit_common.schemas.types.UTCInstant` 返回带 `+00:00` 的 ISO 时刻；`EditableInstant` 返回平台时区偏移，适用于编辑和平台时间展示。
 - `LocalDatetime` 保留为兼容的纯展示字符串，不能再次按浏览器本地时区解释。时间差、过期判断和跨时区转换使用明确时刻。
+- 登录信息 `/auth/user/info` 下发 `timezone`（来自 `DATETIME_TIMEZONE`），Vue 登录初始化完成后配置共享时区，退出时清空；React 从当前身份读取。前端展示与预约输入使用平台时区，不依赖浏览器或操作系统时区。
+- 公告预约使用 `datetime-local` 日历字符串，通过 `parsePlatformTimeInput` 按平台 IANA 时区转换成带 `Z` 的 ISO 时刻；后端在请求边界转换为无时区 UTC 再入库。历史无偏移预约请求仍按 UTC 兼容。编辑未改动的时间保留原始时刻及毫秒；新建重复时段选择首次出现，不存在的夏令时时间拒绝提交。
+- 通知 HTTP 和 Socket.IO 的创建、过期、已读等时间都携带偏移；前端过期判断采用时刻比较（到期即失效），今天／昨天按平台自然日分组。
 - Vue 使用 `@/utils/datetime`，旧首页 UTC 字段显式按 UTC 解析，旧审计墙上时间按 catalog 时区解析。
 - HTTP 与 Socket.IO 的时刻采用相同约定。日志中的偏移与业务时区独立，日志轮转跟随进程时区；阅读 UTC 日志时应按偏移换算。
 - 发布时将后端序列化和对应前端解析一同更新，并重新生成 OpenAPI 类型；外部消费者需同步适配新的 ISO 时间格式。
@@ -140,3 +143,7 @@ from plugin_auth.events import RolePermissionsChangedEvent
 | 是无状态的加密/签名/哈希工具       | `security`  |
 | 是多插件共用的业务脚手架           | `common`    |
 | 是某个业务域的逻辑                 | 对应的插件  |
+
+### 时区回归
+
+运行 `pnpm test:timezones`，在独立进程中分别设置 `TZ=UTC`、`Asia/Shanghai`、`America/New_York`，执行 Vue/React 回归（含 jsdom 组件）。覆盖平台配置初始化和退出、过期边界、平台零点分组、上海预约遇到纽约浏览器夏令时跳跃、柏林夏冬偏移、无效／重复时段及编辑往返。该命令验证浏览器本地时区差异，不替代不同浏览器引擎的端到端验证。

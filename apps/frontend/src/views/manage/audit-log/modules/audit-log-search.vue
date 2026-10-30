@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatApiTime, getPlatformTimezone } from "@/utils/datetime"
   import { computed, ref, watch } from "vue"
   import dayjs from "dayjs"
   import utc from "dayjs/plugin/utc"
@@ -57,13 +58,13 @@
       label: $t(`page.manage.auditLog.result.${value}` as any),
     })),
   )
-  const displayZone = computed(() => props.catalog?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone)
+  const displayZone = computed(() => props.catalog?.timezone || getPlatformTimezone())
   const timeRange = computed<[string, string] | null>({
     get: (): [string, string] | null =>
       model.value.startTime && model.value.endTime
         ? [
-            dayjs(model.value.startTime).tz(displayZone.value).format("YYYY-MM-DD HH:mm:ss"),
-            dayjs(model.value.endTime).tz(displayZone.value).format("YYYY-MM-DD HH:mm:ss"),
+            formatApiTime(model.value.startTime, displayZone.value),
+            formatApiTime(model.value.endTime, displayZone.value),
           ]
         : null,
     set: (value: [string, string] | null) => {

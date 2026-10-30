@@ -3,6 +3,7 @@ import { createApp, defineComponent, h, nextTick, watch } from "vue"
 import { createMemoryHistory, createRouter, RouterView } from "vue-router"
 import { NConfigProvider } from "naive-ui"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
+import { setPlatformTimezone } from "@/utils/datetime"
 import Page from "../../src/views/queue/task/index.vue"
 import SchedulePage from "../../src/views/queue/schedule/index.vue"
 const queries = vi.hoisted(() => [] as Record<string, unknown>[])
@@ -104,6 +105,7 @@ beforeEach(() => {
   )
 })
 afterEach(() => {
+  setPlatformTimezone("UTC")
   unmount()
   vi.unstubAllGlobals()
   HTMLElement.prototype.scrollTo = originalScrollTo
@@ -267,4 +269,35 @@ it.each(["records", "groups"])("keeps %s stable during background task events un
   expect(queries.length).toBeGreaterThan(initialRequests)
   expect(queries.at(-1)?.endTime).toBe("2026-10-23T01:01:30.000Z")
   expect(router.currentRoute.value.query.groupPage).toBe("3")
+})
+
+it("shows canonical task range instants in platform time", async () => {
+  setPlatformTimezone("Asia/Shanghai")
+  const router = createRouter({ history: createMemoryHistory(), routes: [{ path: "/", component: Page }] })
+  await router.push("/?range=custom&startTime=2026-10-30T08:00:00Z&endTime=2026-10-30T09:00:00Z")
+  await router.isReady()
+  const root = document.createElement("div")
+  document.body.append(root)
+  const app = createApp(Page)
+  app.use(router)
+  app.mount(root)
+  unmount = () => app.unmount()
+  await flush()
+  expect(root.textContent).toContain("2026-10-30 16:00:00 – 2026-10-30 17:00:00")
+  const start = root.querySelector<HTMLInputElement>('input[aria-label="page.manage.worker.rangeStart"]')!
+  const end = root.querySelector<HTMLInputElement>('input[aria-label="page.manage.worker.rangeEnd"]')!
+  expect(start.type).toBe("datetime-local")
+  for (const [input, value] of [
+    [start, "2026-03-08T02:30:00"],
+    [end, "2026-03-08T03:30:00"],
+  ] as const) {
+    input.value = value
+    input.dispatchEvent(new Event("input", { bubbles: true }))
+  }
+  await flush()
+  Array.from(root.querySelectorAll("button"))
+    .find((button) => button.textContent?.trim() === "common.search")!
+    .click()
+  await flush()
+  expect(queries.at(-1)).toMatchObject({ startTime: "2026-03-07T18:30:00.000Z", endTime: "2026-03-07T19:30:00.000Z" })
 })

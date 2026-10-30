@@ -12,6 +12,7 @@
     "check:lint": "turbo lint",
     "check:deps": "depcheck",
     "check:commit": "commitlint --edit $1",
+    "test:timezones": "node scripts/test-timezones.mjs",
     "check:types": "turbo typecheck",
     "prepare": "husky",
     "check:python": "uv run ruff format . && uv run ruff check --fix . && uv run ty check",
