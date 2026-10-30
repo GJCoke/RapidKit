@@ -3,8 +3,12 @@ import { afterEach, expect, it, vi } from "vitest"
 const state = vi.hoisted(() => ({ handlers: new Map<string, (...args: unknown[]) => void>(), reconnect: vi.fn() }))
 vi.mock("@/utils/storage", () => ({ localStg: { get: () => "token" } }))
 vi.mock("@/hooks/common/app-socket", () => ({
+  wasSocketAuthRenewal: () => false,
   openAppSocket: () => ({
     on: (event: string, callback: (...args: unknown[]) => void) => state.handlers.set(event, callback),
+    off: (event: string, callback: (...args: unknown[]) => void) => {
+      if (state.handlers.get(event) === callback) state.handlers.delete(event)
+    },
     io: { on: state.reconnect, off: vi.fn() },
   }),
   closeAppSocket: () => state.handlers.clear(),

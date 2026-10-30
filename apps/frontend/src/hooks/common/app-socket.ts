@@ -8,7 +8,18 @@ let manager: Manager | null = null
 let generation = 0
 let refreshPromise: Promise<boolean> | null = null
 const sockets = new Map<Socket, number>()
-const recoveryBindings = new WeakMap<Socket, object>()
+interface RecoveryBinding {
+  interrupted: boolean
+  renewing: boolean
+  lastConnectWasRenewal: boolean
+  dispose: () => void
+}
+const recoveryBindings = new WeakMap<Socket, RecoveryBinding>()
+
+/** Read during connect, after the recovery listener has classified the connection. */
+export function wasSocketAuthRenewal(socket: Socket) {
+  return recoveryBindings.get(socket)?.lastConnectWasRenewal ?? false
+}
 
 function hasFreshToken() {
   try {
@@ -22,13 +33,26 @@ function hasFreshToken() {
 
 export function bindAuthRecovery(socket: Socket): void {
   if (recoveryBindings.has(socket)) return
-  const binding = {}
+  const interruptRenewal = (reason: string) => {
+    // Socket.IO deliberately closes an idle Manager when all namespaces renew.
+    if (reason !== "forced close") {
+      binding.renewing = false
+      binding.interrupted = true
+    }
+  }
+  const binding: RecoveryBinding = {
+    interrupted: false,
+    renewing: false,
+    lastConnectWasRenewal: false,
+    dispose: () => socket.io.off("close", interruptRenewal),
+  }
+  socket.io.on("close", interruptRenewal)
   recoveryBindings.set(socket, binding)
   const openedGeneration = generation
   let attempted = false
   let revoked: string | undefined
 
-  async function recover(code: string | undefined) {
+  async function recover(code: string | undefined, normalRenewal = false) {
     if (openedGeneration !== generation || recoveryBindings.get(socket) !== binding) return
     if (code === "unauthorized") {
       const authStore = useAuthStore()
@@ -38,6 +62,7 @@ export function bindAuthRecovery(socket: Socket): void {
     }
     if (code !== "token_expired" || attempted) return
     attempted = true
+    binding.renewing = normalRenewal && !binding.interrupted
     try {
       let success = hasFreshToken()
       if (!success) {
@@ -50,16 +75,23 @@ export function bindAuthRecovery(socket: Socket): void {
         success = await refreshPromise
       }
       if (success && openedGeneration === generation && recoveryBindings.get(socket) === binding) socket.connect()
+      else binding.renewing = false
     } catch {
+      binding.renewing = false
       // Failed refresh leaves the refused socket disconnected.
     }
   }
 
   socket.on("connect", () => {
+    binding.lastConnectWasRenewal = binding.renewing
+    binding.renewing = false
+    binding.interrupted = false
     attempted = false
     revoked = undefined
   })
   socket.on("connect_error", (error: Error) => {
+    binding.renewing = false
+    binding.interrupted = true
     void recover(error.message)
   })
   socket.on("auth:revoked", (payload: { code: string }) => {
@@ -68,7 +100,8 @@ export function bindAuthRecovery(socket: Socket): void {
   socket.on("disconnect", (reason) => {
     const code = revoked
     revoked = undefined
-    if (reason === "io server disconnect") void recover(code)
+    if (reason === "io server disconnect") void recover(code, code === "token_expired")
+    else interruptRenewal(reason)
   })
 }
 
@@ -91,6 +124,7 @@ export function closeAppSocket(socket: Socket): void {
     sockets.set(socket, owners - 1)
     return
   }
+  recoveryBindings.get(socket)?.dispose()
   recoveryBindings.delete(socket)
   socket.disconnect()
   socket.removeAllListeners()

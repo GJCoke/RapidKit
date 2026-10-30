@@ -60,7 +60,7 @@ vi.mock("@/hooks/common/app-socket", () => ({
   resetAppSockets: state.resetSockets,
   openAppSocket: (...args: unknown[]) => {
     state.globalConnect(...args)
-    return { on: vi.fn(), disconnect: vi.fn(), io: { on: vi.fn(), off: vi.fn() } }
+    return { connected: false, on: vi.fn(), off: vi.fn(), disconnect: vi.fn(), io: { on: vi.fn(), off: vi.fn() } }
   },
 }))
 vi.mock("@/service/api", () => ({

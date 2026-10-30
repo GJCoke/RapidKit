@@ -23,6 +23,7 @@ vi.mock("@/utils/storage", () => ({
 vi.mock("@/service/request", () => ({ refreshAccessToken: state.refresh }))
 vi.mock("socket.io-client", () => {
   class Socket {
+    io = { on: vi.fn(), off: vi.fn() }
     connected = false
     handlers = new Map<string, ((...args: unknown[]) => unknown)[]>()
     connect = vi.fn(() => this)

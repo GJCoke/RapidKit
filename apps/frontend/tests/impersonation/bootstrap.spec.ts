@@ -57,7 +57,13 @@ vi.mock("@/store/modules/notification/shared", () => ({
 vi.mock("@/hooks/common/app-socket", () => ({
   closeAppSocket: (socket: { disconnect(): void }) => socket.disconnect(),
   resetAppSockets: vi.fn(),
-  openAppSocket: () => ({ on: vi.fn(), disconnect: vi.fn(), io: { on: vi.fn(), off: vi.fn() } }),
+  openAppSocket: () => ({
+    connected: false,
+    on: vi.fn(),
+    off: vi.fn(),
+    disconnect: vi.fn(),
+    io: { on: vi.fn(), off: vi.fn() },
+  }),
 }))
 vi.mock("@/service/api", () => ({
   fetchGetUserInfo: state.info,

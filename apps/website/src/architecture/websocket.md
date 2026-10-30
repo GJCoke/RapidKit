@@ -161,8 +161,8 @@ export function useSocket(): Result {
     const instance = io(socketUrl, {
       path: "/socket.io",
       auth,
-      transports: ["websocket", "polling"],
       ...ioOptions,
+      transports: ["websocket"],
     })
 
     instance.on("connect", () => {
@@ -262,17 +262,19 @@ socket.value?.on("task:update", (data: Api.Worker.TaskUpdateEvent) => {
 
 ### 传输与重连
 
-Socket.IO 客户端配置了双传输模式：
+Socket.IO 客户端固定使用 WebSocket：
 
 ```typescript
-transports: ["websocket", "polling"]
+transports: ["websocket"]
 ```
 
-优先使用 WebSocket 协议，连接失败时自动降级为 HTTP 长轮询。Socket.IO 内置了自动重连机制，默认行为：
+连接失败后不降级为 HTTP 长轮询。Socket.IO 内置了自动重连机制，默认行为：
 
 - 连接断开后立即尝试重连
 - 采用指数退避策略，重连间隔逐步增大
 - `connect_error` 事件在每次重连失败时触发，可用于错误提示
+
+全局权限补同步以命名空间 `connect` 成功为准，避免 Manager 和命名空间重连重复触发。服务端明确因 `token_expired` 断开、前端成功续签且期间未发生传输中断或握手失败时，重连不再全量请求用户信息和路由。真实断网、续签期间断网、握手拒绝后的连接仍会补同步；显式 `permission:changed` 信号继续生效。Socket.IO 因命名空间暂时全部断开而发出的 `forced close` 属于正常关闭，不按断网处理。
 
 ### 组件中的事件监听
 
