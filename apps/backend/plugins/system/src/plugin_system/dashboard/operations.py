@@ -1,7 +1,7 @@
 """Operations overview orchestration across optional plugin providers."""
 
 import asyncio
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import datetime, timedelta
 from typing import Awaitable, Literal, TypeVar
 
 from rapidkit_common.protocols.operations import (
@@ -51,21 +51,16 @@ def server_status(healthy: int, total: int, missing: int | None = None) -> Liter
     return "down"
 
 
-def _utc_naive(local_date: date) -> datetime:
-    local = datetime.combine(local_date, time.min, tzinfo=timezone.tz_info)
-    return local.astimezone(UTC).replace(tzinfo=None)
-
-
 def _boundaries(query: OperationsOverviewQuery) -> tuple[datetime, datetime, datetime, datetime]:
     today = timezone.now_local().date()
-    today_start = _utc_naive(today)
-    tomorrow_start = _utc_naive(today + timedelta(days=1))
+    today_start = timezone.start_of_day(today)
+    tomorrow_start = timezone.start_of_day(today + timedelta(days=1))
     if query.range == "custom" and query.start and query.end:
-        trend_start = _utc_naive(query.start)
-        trend_end = _utc_naive(query.end + timedelta(days=1))
+        trend_start = timezone.start_of_day(query.start)
+        trend_end = timezone.start_of_day(query.end + timedelta(days=1))
     else:
         days = 30 if query.range == "30d" else 7
-        trend_start = _utc_naive(today - timedelta(days=days - 1))
+        trend_start = timezone.start_of_day(today - timedelta(days=days - 1))
         trend_end = tomorrow_start
     return today_start, tomorrow_start, trend_start, trend_end
 
@@ -88,8 +83,9 @@ async def build_operations_overview(query: OperationsOverviewQuery, started_at: 
     user_provider = get_service_optional(UserOperationsProvider)
     worker_provider = get_service_optional(WorkerOperationsProvider)
     monitoring_provider = get_service_optional(MonitoringOperationsProvider)
-    current_week_start = today_start - timedelta(days=6)
-    previous_week_start = current_week_start - timedelta(days=7)
+    today = timezone.to_local(today_start).date()
+    current_week_start = timezone.start_of_day(today - timedelta(days=6))
+    previous_week_start = timezone.start_of_day(today - timedelta(days=13))
 
     active_users, servers, tasks, queue, task_success, api_errors, trend, sync = await asyncio.gather(
         _safe("active_users", user_provider.get_active_users(today_start, tomorrow_start))

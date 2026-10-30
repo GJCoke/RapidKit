@@ -13,6 +13,7 @@ from rapidkit_common.protocols.operations import (
 )
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
 from rapidkit_core.redis_client import AsyncRedisClient
+from rapidkit_core.timezone import timezone
 from sqlalchemy import case
 from sqlmodel import col, func, select
 
@@ -59,7 +60,7 @@ class WorkerOperationsProviderImpl(WorkerOperationsProvider):
         return summarize_worker_capacity(groups)
 
     async def get_task_comparison(self, today_start: datetime, tomorrow_start: datetime) -> DayComparison:
-        yesterday_start = today_start - timedelta(days=1)
+        yesterday_start = timezone.start_of_day(timezone.to_local(today_start).date() - timedelta(days=1))
         async with self._session_factory() as session:
             statement = select(
                 func.count().filter(

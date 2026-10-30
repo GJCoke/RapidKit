@@ -23,9 +23,12 @@ logger = get_plugin_logger("worker")
 def fill_history_buckets(rows, start, end, *, days, missing):
     if not rows:
         return []
-    values = {row[0]: tuple(row[1:]) for row in rows}
     daily = days > 7
-    current = start.replace(hour=0 if daily else start.hour, minute=0, second=0, microsecond=0)
+    values = {(row[0].date() if daily else row[0]): tuple(row[1:]) for row in rows}
+    if daily:
+        current, end = timezone.to_local(start).date(), timezone.to_local(end).date()
+    else:
+        current = start.replace(minute=0, second=0, microsecond=0)
     step = timedelta(days=1) if daily else timedelta(hours=1)
     filled = []
     while current <= end:
@@ -168,7 +171,10 @@ async def get_queue_dashboard(session, celery_app, days: int) -> QueueDashboardR
             )
         )
     ).one()
-    bucket = func.date_trunc("hour" if days <= 7 else "day", col(task.finished_at)).label("time_bucket")
+    finished_at = col(task.finished_at)
+    if days > 7:
+        finished_at = func.timezone(str(timezone.tz_info), func.timezone("UTC", finished_at))
+    bucket = func.date_trunc("hour" if days <= 7 else "day", finished_at).label("time_bucket")
     timeline_rows = (
         await session.exec(
             select(
@@ -181,9 +187,10 @@ async def get_queue_dashboard(session, celery_app, days: int) -> QueueDashboardR
             .order_by(bucket)
         )
     ).all()
-    depth_bucket = func.date_trunc("hour" if days <= 7 else "day", col(QueueDepthSnapshot.sampled_at)).label(
-        "time_bucket"
-    )
+    sampled_at = col(QueueDepthSnapshot.sampled_at)
+    if days > 7:
+        sampled_at = func.timezone(str(timezone.tz_info), func.timezone("UTC", sampled_at))
+    depth_bucket = func.date_trunc("hour" if days <= 7 else "day", sampled_at).label("time_bucket")
     depths = (
         await session.exec(
             select(depth_bucket, func.avg(col(QueueDepthSnapshot.depth)))

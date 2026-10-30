@@ -140,5 +140,5 @@ class UserStatsSummary(BaseModel):
 class UserActivityTrend(BaseModel):
     """用户活跃趋势。"""
 
-    time_bucket: LocalDatetime
+    time_bucket: str = Field(description="平台自然日 YYYY-MM-DD；小时粒度为带 UTC 偏移的 ISO 时刻")
     new_users: int

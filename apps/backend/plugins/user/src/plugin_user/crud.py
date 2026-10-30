@@ -5,7 +5,7 @@ Author : Coke
 Date   : 2026-04-02
 """
 
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, timedelta
 
 from rapidkit_common.crud import BaseCRUD
 from rapidkit_core.timezone import timezone
@@ -33,12 +33,15 @@ class UserManageCRUD(BaseCRUD[User]):
 
     async def get_user_count_summary(self, *filters: ColumnElement[bool]) -> dict:
         """获取用户统计摘要：总数、今日新增、昨日新增。"""
-        now = timezone.now()
-        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        yesterday_start = today_start - timedelta(days=1)
+        today = timezone.now_local().date()
+        today_start = timezone.start_of_day(today)
+        tomorrow_start = timezone.start_of_day(today + timedelta(days=1))
+        yesterday_start = timezone.start_of_day(today - timedelta(days=1))
 
         total = await self.get_count(*filters)
-        today_new = await self.get_count(*filters, col(self.model.create_time) >= today_start)
+        today_new = await self.get_count(
+            *filters, col(self.model.create_time) >= today_start, col(self.model.create_time) < tomorrow_start
+        )
         yesterday_new = await self.get_count(
             *filters,
             col(self.model.create_time) >= yesterday_start,
@@ -55,11 +58,13 @@ class UserManageCRUD(BaseCRUD[User]):
         *filters: ColumnElement[bool],
     ) -> list[dict]:
         """获取用户注册趋势。"""
-        trunc_unit = "hour" if granularity == "hour" else "day"
-        end_dt = datetime.combine(end + timedelta(days=1), datetime.min.time())
-        start_dt = datetime.combine(start, datetime.min.time())
+        hourly = granularity == "hour"
+        end_dt = timezone.start_of_day(end + timedelta(days=1))
+        start_dt = timezone.start_of_day(start)
 
-        bucket = func.date_trunc(trunc_unit, col(self.model.create_time))
+        created = col(self.model.create_time)
+        local_created = func.timezone(str(timezone.tz_info), func.timezone("UTC", created))
+        bucket = func.date_trunc("hour", created) if hourly else func.date_trunc("day", local_created)
         statement = (
             select(bucket.label("time_bucket"), func.count().label("new_users"))
             .where(col(self.model.create_time) >= start_dt, col(self.model.create_time) < end_dt, *filters)
@@ -68,4 +73,10 @@ class UserManageCRUD(BaseCRUD[User]):
         )
 
         result = await self.session.exec(statement)
-        return [{"time_bucket": row[0], "new_users": row[1]} for row in result.all()]
+        return [
+            {
+                "time_bucket": row[0].replace(tzinfo=UTC).isoformat() if hourly else row[0].date().isoformat(),
+                "new_users": row[1],
+            }
+            for row in result.all()
+        ]

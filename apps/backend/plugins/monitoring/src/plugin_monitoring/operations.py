@@ -63,7 +63,7 @@ class MonitoringOperationsProviderImpl(MonitoringOperationsProvider):
         today_start: datetime,
         tomorrow_start: datetime,
     ) -> ApiErrorComparison:
-        yesterday_start = today_start - timedelta(days=1)
+        yesterday_start = timezone.start_of_day(timezone.to_local(today_start).date() - timedelta(days=1))
         rows = await self._rows(yesterday_start, tomorrow_start)
 
         def rate(start: datetime, end: datetime) -> float | None:

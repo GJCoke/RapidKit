@@ -4,7 +4,6 @@ from typing import Literal
 from pydantic import Field, model_validator
 from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.request import BaseRequest
-from rapidkit_common.schemas.types import LocalDatetime
 
 
 class ResourceStats(BaseModel):
@@ -93,7 +92,7 @@ class UserStatsSummary(BaseModel):
 class UserActivityTrend(BaseModel):
     """用户活跃趋势。"""
 
-    time_bucket: LocalDatetime
+    time_bucket: str
     new_users: int
 
 

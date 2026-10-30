@@ -11,6 +11,8 @@ from plugin_worker.schemas import WorkerGroupResponse
 from plugin_worker.tasks import capture_queue_depth
 from rapidkit_common.enums import WorkerStatus
 from rapidkit_core.timezone import timezone
+from rapidkit_core.timezone import TimeZone
+from datetime import date
 from sqlalchemy.dialects import postgresql
 
 
@@ -108,6 +110,44 @@ async def test_completion_window_and_p95_are_queried_by_finished_time(monkeypatc
 
 
 @pytest.mark.asyncio
+async def test_daily_dashboard_groups_in_platform_zone_and_emits_dates(monkeypatch):
+    monkeypatch.setattr(module, "timezone", TimeZone("Asia/Shanghai"))
+    bucket_day = datetime(2026, 10, 29)
+
+    def result(value):
+        return MagicMock(one=lambda: value, all=lambda: value)
+
+    session = MagicMock()
+    session.exec = AsyncMock(
+        side_effect=[
+            result([]),
+            result((2, 0, 0, 1.0, 1.0)),
+            result(0),
+            result(0),
+            result([(bucket_day, 2, 0)]),
+            result([(bucket_day, 4.0)]),
+        ]
+    )
+    monkeypatch.setattr(module, "group_summaries", AsyncMock(return_value=[]))
+    broker = AsyncMock()
+    broker.llen.return_value = 0
+    monkeypatch.setattr(module.Redis, "from_url", lambda *a, **kw: broker)
+    app = MagicMock()
+    app.conf.task_default_queue = "celery"
+    app.conf.task_routes = {}
+    app.conf.broker_url = "redis://localhost/1"
+    app.conf.broker_transport_options = {}
+    app.amqp.queues = {"celery": None}
+    response = await get_queue_dashboard(session, app, 30)
+    for call in session.exec.await_args_list[4:6]:
+        sql = str(call.args[0].compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}))
+        assert "timezone('Asia/Shanghai', timezone('UTC'," in sql
+    payload = response.model_dump(mode="json", by_alias=True)
+    point = next(p for p in payload["timeline"] if p["timeBucket"] == "2026-10-29")
+    assert point["success"] == 2
+
+
+@pytest.mark.asyncio
 async def test_priority_sampling_does_not_persist_partial_depth():
 
     session = MagicMock()
@@ -135,6 +175,17 @@ def test_missing_depth_buckets_remain_unknown():
         (end, 2),
     ]
     assert fill_history_buckets([], start, end, days=1, missing=(0, 0)) == []
+
+
+def test_daily_bucket_fill_uses_local_dates_across_dst(monkeypatch):
+    monkeypatch.setattr(module, "timezone", TimeZone("Europe/Berlin"))
+    start, end = datetime(2026, 3, 28, 23), datetime(2026, 3, 30, 22)
+    rows = [(datetime(2026, 3, 29), 4), (datetime(2026, 3, 31), 2)]
+    assert fill_history_buckets(rows, start, end, days=30, missing=(None,)) == [
+        (date(2026, 3, 29), 4),
+        (date(2026, 3, 30), None),
+        (date(2026, 3, 31), 2),
+    ]
 
 
 @pytest.mark.asyncio

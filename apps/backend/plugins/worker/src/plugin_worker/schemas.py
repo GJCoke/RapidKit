@@ -5,7 +5,7 @@ Author  : Claude
 Date    : 2026-03-30
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any, Literal, Self
 
 from pydantic import Field, model_validator
@@ -248,13 +248,13 @@ class QueueMetric(BaseModel):
 
 
 class DashboardTimelinePoint(BaseModel):
-    time_bucket: LocalDatetime
+    time_bucket: date | datetime
     success: int
     failure: int
 
 
 class DashboardDepthPoint(BaseModel):
-    time_bucket: LocalDatetime
+    time_bucket: date | datetime
     depth: float | None
 
 
