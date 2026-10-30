@@ -13,6 +13,7 @@ from typing import Any, Coroutine, Sequence
 
 from celery.beat import ScheduleEntry as _ScheduleEntry
 from celery.beat import Scheduler as _Scheduler
+from celery.schedules import crontab
 from kombu import Producer
 from plugin_schedule.models import CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
 from plugin_schedule.schedule_types import TaskType
@@ -37,6 +38,12 @@ _SCHEDULE_MODEL_MAP: dict[TaskType, type[IntervalSchedule] | type[CrontabSchedul
 
 class ScheduleEntry(_ScheduleEntry):
     """自定义调度条目。"""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        if isinstance(self.schedule, crontab):
+            # Celery reads calendar fields without converting an aware UTC baseline.
+            self.last_run_at = self.schedule.maybe_make_aware(self.last_run_at).astimezone(self.schedule.tz)
 
 
 class Scheduler(_Scheduler):
@@ -235,9 +242,12 @@ class AsyncDatabaseScheduler(Scheduler):
 
     def tick(self, *args: Any, **kwargs: Any) -> float:
         if not self._has_leadership():
+            if self._was_leader:
+                logger.info("Database beat leadership lost.")
             self._was_leader = False
             return 5.0
         if not self._was_leader:
+            logger.info("Database beat leadership acquired; timezone={timezone}.", timezone=self.app.conf.timezone)
             self.setup_schedule()
             self.last_updated = timezone.now()
             self._was_leader = True
@@ -307,12 +317,19 @@ class AsyncDatabaseScheduler(Scheduler):
                 schedule_info = _schedule_info.first()
                 if schedule_info:
                     celery_beat[task.name] = ScheduleEntry(
+                        app=self.app,
                         name=task.name,
                         task=task.task,
                         schedule=schedule_info.schedule,
                         args=task.args,
                         kwargs=task.kwargs,
                         options=task.options,
+                    )
+                    logger.debug(
+                        "Loaded schedule {name}: timezone={timezone}, last_run_at={last_run_at}",
+                        name=task.name,
+                        timezone=self.app.conf.timezone,
+                        last_run_at=celery_beat[task.name].last_run_at.isoformat(),
                     )
 
             logger.info(

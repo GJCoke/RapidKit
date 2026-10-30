@@ -4,8 +4,10 @@ import asyncio
 import time
 from datetime import UTC, datetime, timedelta
 from queue import Empty
+from threading import Thread
 from types import SimpleNamespace
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 import pytest
 from celery import Celery
@@ -14,6 +16,93 @@ from rapidkit_core.config import settings
 from rapidkit_core.leader_election import LeaderElection
 from redis import Redis
 from src.queues.scheduler import AsyncDatabaseScheduler, ScheduleEntry, Scheduler
+
+
+def test_real_threaded_cron_loader_binds_application_and_refresh_preserves_state():
+    from celery import current_app
+    from plugin_schedule.models import CrontabSchedule
+    from plugin_schedule.schedule_types import TaskType
+
+    zone = ZoneInfo("Asia/Shanghai")
+    clock = SimpleNamespace(now=datetime(2026, 10, 28, 18, tzinfo=zone))
+    app = Celery("threaded-cron-test", broker="memory://", set_as_current=False)
+    app.conf.update(timezone="Asia/Shanghai", enable_utc=True, refresh_interval=60)
+    app.now = lambda: clock.now
+    cron = CrontabSchedule(minute="0", hour="8")
+    task = SimpleNamespace(
+        name="daily",
+        task="noop",
+        task_type=TaskType.CRONTAB,
+        schedule_id=cron.id,
+        args=[],
+        kwargs={},
+        options={},
+    )
+
+    class FakeSession:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        async def exec(self, query):
+            return SimpleNamespace(all=lambda: [task], first=lambda: cron)
+
+    loader = AsyncDatabaseScheduler.__new__(AsyncDatabaseScheduler)
+    loader.app = app
+    loader.AsyncSessionLocal = FakeSession
+    loaded, errors = {}, []
+
+    def load():
+        default = current_app._get_current_object()
+        original_now = default.now
+        try:
+            default.now = lambda: clock.now.astimezone(UTC)
+            loaded.update(asyncio.run(loader.get_database_schedule()))
+        except BaseException as exc:
+            errors.append(exc)
+        finally:
+            default.now = original_now
+
+    thread = Thread(target=load)
+    thread.start()
+    thread.join()
+    assert not errors
+    scheduler = Scheduler(app, lazy=True)
+    scheduler.merge_inplace(loaded)
+    entry = scheduler.schedule["daily"]
+    assert entry.last_run_at == clock.now
+    assert str(entry.last_run_at.tzinfo) == "Asia/Shanghai"
+    clock.now = datetime(2026, 10, 29, 8, tzinfo=zone)
+    assert entry.is_due().is_due
+    scheduler.schedule["daily"] = next(entry)
+    scheduler.merge_inplace(loaded)
+    refreshed = scheduler.schedule["daily"]
+    assert refreshed.last_run_at == clock.now
+    assert refreshed.total_run_count == 1
+    assert not refreshed.is_due().is_due
+    clock.now = datetime(2026, 10, 30, 8, tzinfo=zone)
+    assert refreshed.is_due().is_due
+    app.close()
+
+
+def test_cron_entry_normalizes_existing_utc_baseline():
+    from celery.schedules import crontab
+
+    app = Celery("restored-cron-test", broker="memory://", set_as_current=False)
+    app.conf.update(timezone="Asia/Shanghai", enable_utc=True)
+    entry = ScheduleEntry(
+        name="daily",
+        task="noop",
+        app=app,
+        schedule=crontab(hour=8, minute=0),
+        last_run_at=datetime(2026, 10, 28, 10, tzinfo=UTC),
+        total_run_count=7,
+    )
+    assert entry.last_run_at.isoformat() == "2026-10-28T18:00:00+08:00"
+    assert entry.total_run_count == 7
+    app.close()
 
 
 @pytest.fixture

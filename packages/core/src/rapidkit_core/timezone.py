@@ -8,7 +8,7 @@ Date   : 2025-04-12
 """
 
 import zoneinfo
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time
 from datetime import timezone as datetime_timezone
 
 
@@ -39,10 +39,17 @@ class TimeZone:
 
     @staticmethod
     def to_utc(dt: datetime | int) -> datetime:
-        """将 datetime 或时间戳转换为 UTC。"""
+        """转换为 aware UTC；naive datetime 遵循数据库 UTC 约定。"""
         if isinstance(dt, datetime):
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=UTC)
             return dt.astimezone(datetime_timezone.utc)
         return datetime.fromtimestamp(dt, tz=datetime_timezone.utc)
+
+    def start_of_day(self, day: date) -> datetime:
+        """配置时区的日期起点，返回供数据库查询使用的 naive UTC。"""
+        local = datetime.combine(day, time.min, tzinfo=self.tz_info)
+        return local.astimezone(UTC).replace(tzinfo=None)
 
     def f_datetime(self, dt: datetime) -> str:
         """将 datetime 转为配置时区后，按配置格式输出字符串。"""
