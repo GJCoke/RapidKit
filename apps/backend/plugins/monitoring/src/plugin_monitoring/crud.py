@@ -11,7 +11,7 @@ from rapidkit_common.crud import BaseCRUD
 from rapidkit_core.timezone import timezone
 from sqlalchemy import select as sa_select
 from sqlalchemy.dialects.postgresql import insert
-from sqlmodel import case, col, delete, func, select, text
+from sqlmodel import case, col, delete, func, select
 
 from plugin_monitoring.models import ApiMetricsHourly
 
@@ -35,7 +35,7 @@ class ApiMetricsCRUD(BaseCRUD[ApiMetricsHourly]):
         """
         按 (time_bucket, method, path) 执行 UPSERT。
 
-        冲突时累加 request_count / error_count，加权更新 avg_ms，取较大 p95_ms。
+        写入累计快照；重复写入幂等，较旧快照不能覆盖更新的计数。
         """
         stmt = insert(ApiMetricsHourly).values(
             time_bucket=time_bucket,
@@ -49,19 +49,22 @@ class ApiMetricsCRUD(BaseCRUD[ApiMetricsHourly]):
         stmt = stmt.on_conflict_do_update(
             index_elements=["time_bucket", "method", "path"],
             set_={
-                "request_count": text("monitoring_api_metrics_hourly.request_count + EXCLUDED.request_count"),
-                "error_count": text("monitoring_api_metrics_hourly.error_count + EXCLUDED.error_count"),
-                "avg_ms": text(
-                    "CASE WHEN (monitoring_api_metrics_hourly.request_count + EXCLUDED.request_count) > 0 "
-                    "THEN (monitoring_api_metrics_hourly.avg_ms * monitoring_api_metrics_hourly.request_count "
-                    "+ EXCLUDED.avg_ms * EXCLUDED.request_count) "
-                    "/ (monitoring_api_metrics_hourly.request_count + EXCLUDED.request_count) "
-                    "ELSE 0 END"
-                ),
-                "p95_ms": text("GREATEST(monitoring_api_metrics_hourly.p95_ms, EXCLUDED.p95_ms)"),
+                "request_count": stmt.excluded.request_count,
+                "error_count": stmt.excluded.error_count,
+                "avg_ms": stmt.excluded.avg_ms,
+                "p95_ms": func.greatest(col(ApiMetricsHourly.p95_ms), stmt.excluded.p95_ms),
             },
+            where=stmt.excluded.request_count >= col(ApiMetricsHourly.request_count),
         )
         await self.session.exec(stmt)  # type: ignore[arg-type]
+
+    async def get_hourly(self, time_bucket: datetime, method: str, path: str) -> ApiMetricsHourly | None:
+        statement = select(ApiMetricsHourly).where(
+            col(ApiMetricsHourly.time_bucket) == time_bucket,
+            col(ApiMetricsHourly.method) == method,
+            col(ApiMetricsHourly.path) == path,
+        )
+        return (await self.session.exec(statement)).first()
 
     async def get_aggregated(
         self,

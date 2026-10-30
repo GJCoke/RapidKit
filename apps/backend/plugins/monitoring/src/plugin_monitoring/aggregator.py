@@ -1,14 +1,17 @@
 """
 API 指标归档任务。
 
-将 Redis 中的分钟级 API 指标聚合写入 Postgres 小时归档表。
+将 Redis 小时累计快照幂等写入 Postgres 小时归档表。
 
 Author : Coke
 Date   : 2026-04-13
 """
 
+import json
 import re
-from collections import defaultdict
+from collections.abc import Awaitable
+from datetime import datetime, timedelta
+from typing import cast
 
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient as AsyncRedis
@@ -20,46 +23,21 @@ from plugin_monitoring.operations import LAST_SYNC_ERROR_KEY, LAST_SYNC_KEY
 
 logger = get_plugin_logger("Monitoring")
 
-# Redis key 模式
-_QPS_PATTERN = re.compile(r"^metrics:api:(\d{8}_\d{4}):(\w+):(.+)$")
-_RT_PREFIX = "metrics:api_rt"
+_HOUR_PATTERN = re.compile(r"^metrics:api_hour:(\d{8}_\d{2}):(\w+):(.+)$")
 
-
-async def _collect_minute_keys(redis: AsyncRedis) -> dict[tuple[str, str], dict]:
-    """
-    扫描 Redis 中的分钟级 API 指标 key，按 (method, path) 分组聚合。
-
-    Returns:
-        {(method, path): {count, errors, total_ms, rt_keys}}
-    """
-    grouped: dict[tuple[str, str], dict] = defaultdict(
-        lambda: {"count": 0, "errors": 0, "total_ms": 0.0, "rt_keys": []}
-    )
-
-    cursor: int = 0
-    while True:
-        cursor, keys = await redis.scan(cursor=cursor, match="metrics:api:*", count=200)
-        for key in keys:
-            if key.startswith(_RT_PREFIX):
-                continue
-            m = _QPS_PATTERN.match(key)
-            if not m:
-                continue
-            minute_bucket, method, path = m.group(1), m.group(2), m.group(3)
-            data = await redis.hgetall(key)
-            if not data:
-                continue
-
-            ep = grouped[(method, path)]
-            ep["count"] += int(data.get("count", 0))
-            ep["errors"] += int(data.get("errors", 0))
-            ep["total_ms"] += float(data.get("total_ms", 0))
-            ep["rt_keys"].append(f"{_RT_PREFIX}:{minute_bucket}:{method}:{path}")
-
-        if cursor == "0" or cursor == 0:
-            break
-
-    return dict(grouped)
+# Capture the legacy database baseline once, before any snapshot is committed.
+# An expired source must not be recreated as an immortal baseline-only hash.
+_BASELINE_SCRIPT = """
+if redis.call('EXISTS', KEYS[1]) == 0 then return {} end
+redis.call('HSETNX', KEYS[1], 'baseline', ARGV[1])
+return redis.call('HGETALL', KEYS[1])
+"""
+_ACK_SCRIPT = """
+if redis.call('EXISTS', KEYS[1]) == 1 then
+    redis.call('HSET', KEYS[1], 'archived_count', ARGV[1])
+end
+return 1
+"""
 
 
 async def _compute_p95(redis: AsyncRedis, rt_keys: list[str]) -> float:
@@ -82,38 +60,70 @@ async def aggregate_once(redis: AsyncRedis, session_factory: async_sessionmaker)
     """
     单次执行 API 指标聚合。
 
-    将 Redis 分钟级数据聚合写入 Postgres 小时归档表。由 Celery Beat 定时调用。
+    归档小时累计快照。分钟指标不被消费，继续供实时 API 使用。
 
     Args:
         redis: 异步 Redis 客户端（由 Task 基类注入）。
         session_factory: 异步数据库 session 工厂（由 Task 基类注入）。
     """
-    grouped = await _collect_minute_keys(redis)
-
     now = timezone.now()
-    time_bucket = now.replace(minute=0, second=0, microsecond=0)
-
-    if grouped:
-        async with session_factory() as session:
-            crud = ApiMetricsCRUD(session)
-
-            for (method, path), data in grouped.items():
-                count = data["count"]
-                avg_ms = round(data["total_ms"] / count, 2) if count > 0 else 0.0
-                p95_ms = await _compute_p95(redis, data["rt_keys"])
-
-                await crud.upsert_hourly(
-                    time_bucket=time_bucket,
-                    method=method,
-                    path=path,
-                    request_count=count,
-                    error_count=data["errors"],
-                    avg_ms=avg_ms,
-                    p95_ms=p95_ms,
-                )
-
-            await session.commit()
-    await redis.set(LAST_SYNC_KEY, now.isoformat())
+    committed: list[tuple[str, int]] = []
+    seen: set[str] = set()
+    async with session_factory() as session:
+        crud = ApiMetricsCRUD(session)
+        async for key in redis.scan_iter(match="metrics:api_hour:*", count=200):
+            match = _HOUR_PATTERN.match(key)
+            if not match or key in seen:
+                continue
+            seen.add(key)
+            bucket, method, path = match.groups()
+            data = await redis.hgetall(key)
+            if not data or "count" not in data:
+                continue
+            count = int(data["count"])
+            if count == int(data.get("archived_count", -1)):
+                continue
+            time_bucket = datetime.strptime(bucket, "%Y%m%d_%H")
+            if "baseline" not in data:
+                previous = await crud.get_hourly(time_bucket, method, path)
+                baseline = {
+                    "count": previous.request_count if previous else 0,
+                    "errors": previous.error_count if previous else 0,
+                    "total_ms": previous.avg_ms * previous.request_count if previous else 0,
+                    "p95_ms": previous.p95_ms if previous else 0,
+                }
+                raw = await cast(Awaitable[list[str]], redis.eval(_BASELINE_SCRIPT, 1, key, json.dumps(baseline)))
+                data = dict(zip(raw[::2], raw[1::2]))
+                if "count" not in data:
+                    continue
+                count = int(data["count"])
+            baseline = json.loads(data["baseline"])
+            total_count = baseline["count"] + count
+            total_ms = baseline["total_ms"] + float(data.get("total_ms", 0))
+            # Read minute keys after the counter snapshot so newly created samples
+            # are discoverable even while requests are arriving.
+            recent_keys = [
+                f"metrics:api_rt:{(now - timedelta(minutes=offset)):%Y%m%d_%H%M}:{method}:{path}"
+                for offset in range(3)
+                if (now - timedelta(minutes=offset)).strftime("%Y%m%d_%H") == bucket
+            ]
+            p95_ms = max(baseline["p95_ms"], await _compute_p95(redis, recent_keys))
+            await crud.upsert_hourly(
+                time_bucket=time_bucket,
+                method=method,
+                path=path,
+                request_count=total_count,
+                error_count=baseline["errors"] + int(data.get("errors", 0)),
+                avg_ms=round(total_ms / total_count, 2) if total_count else 0,
+                p95_ms=p95_ms,
+            )
+            committed.append((key, count))
+        await session.commit()
+    # Never acknowledge before the database commit. A crash in this interval
+    # simply replays the same absolute snapshot, rather than adding it twice.
+    for key, count in committed:
+        await cast(Awaitable[int], redis.eval(_ACK_SCRIPT, 1, key, count))
+    await redis.set(LAST_SYNC_KEY, timezone.now().isoformat())
     await redis.delete(LAST_SYNC_ERROR_KEY)
 
 

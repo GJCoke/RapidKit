@@ -26,6 +26,7 @@ _background_tasks: set[asyncio.Task] = set()
 
 # Redis key TTL
 _KEY_TTL = 7200  # 全局指标 2 小时
+_HOUR_KEY_TTL = 7200  # 小时累计快照，为归档失败保留重试窗口
 _EP_KEY_TTL = 120  # 按端点指标 120 秒（仅需撑到归档任务完成）
 
 # 路径归一化：将 UUID 和纯数字替换为 {id}
@@ -55,7 +56,7 @@ async def _record_metrics(
         minute_bucket = now.strftime("%Y%m%d_%H%M")
         hour_bucket = now.strftime("%Y%m%d_%H")
 
-        pipe = redis.pipeline(transaction=False)
+        pipe = redis.pipeline(transaction=True)
 
         # ── 全局指标（保持不变） ──
 
@@ -86,6 +87,14 @@ async def _record_metrics(
         if status_code >= 400:
             pipe.hincrby(ep_key, "errors", 1)
         pipe.expire(ep_key, _EP_KEY_TTL)
+
+        # 小时累计值供幂等归档；分钟数据继续服务实时统计。
+        archive_key = f"metrics:api_hour:{hour_bucket}:{method}:{ep_path}"
+        pipe.hincrby(archive_key, "count", 1)
+        pipe.hincrbyfloat(archive_key, "total_ms", duration_ms)
+        if status_code >= 400:
+            pipe.hincrby(archive_key, "errors", 1)
+        pipe.expire(archive_key, _HOUR_KEY_TTL)
 
         # 按端点响应时间 Sorted Set
         ep_rt_key = f"metrics:api_rt:{minute_bucket}:{method}:{ep_path}"
