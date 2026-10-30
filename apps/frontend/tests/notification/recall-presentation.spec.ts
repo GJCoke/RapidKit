@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { createApp, h, nextTick, reactive } from "vue"
 import { afterEach, describe, expect, it, vi } from "vitest"
+import { setPlatformTimezone } from "@/utils/datetime"
 import MessageItem from "@/components/notification/message-item.vue"
 import GlobalAnnouncement from "@/layouts/modules/global-announcement/index.vue"
 
@@ -48,6 +49,7 @@ afterEach(() => {
     app.unmount()
     host.remove()
   }
+  setPlatformTimezone("UTC")
   banner.current = null
 })
 
@@ -107,10 +109,32 @@ describe("recalled notification presentation", () => {
     await nextTick()
     await nextTick()
     expect(document.querySelector(".n-modal")?.textContent).toContain("PRIVATE_TITLE")
+    setPlatformTimezone("UTC")
     banner.current = null
     await nextTick()
     await nextTick()
     expect(host.querySelector("section")).toBeNull()
     expect(document.querySelector(".n-modal")?.textContent ?? "").not.toContain("PRIVATE_")
   })
+})
+
+it("removes an expired action at the boundary while keeping platform display", async () => {
+  setPlatformTimezone("Asia/Shanghai")
+  const props = reactive({
+    message: {
+      ...message("raw"),
+      status: "published",
+      expireAt: "2026-10-30T08:00:00Z",
+      createTime: "2026-10-30T07:00:00Z",
+    },
+    compact: true,
+    now: Date.parse("2026-10-30T07:59:59Z"),
+  })
+  const host = mount(MessageItem, props)
+  await nextTick()
+  expect(host.querySelector(".notification-preview-action")).not.toBeNull()
+  expect(host.querySelector("time")?.getAttribute("title")).toBe("2026-10-30 15:00:00")
+  props.now = Date.parse("2026-10-30T08:00:00Z")
+  await nextTick()
+  expect(host.querySelector(".notification-preview-action")).toBeNull()
 })

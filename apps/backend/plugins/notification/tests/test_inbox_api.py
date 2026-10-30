@@ -1,10 +1,11 @@
 """收件箱 API 行为测试（端点函数级）。"""
 
 from collections.abc import Awaitable, Callable
-from uuid import UUID, uuid4
 from datetime import UTC, datetime
+from uuid import UUID, uuid4
 
 import pytest
+from plugin_notification.channels import ChannelRegistry
 from plugin_notification.crud import MessageCRUD, UserNotificationCRUD
 from plugin_notification.inbox.api import (
     archive_notification,
@@ -16,6 +17,7 @@ from plugin_notification.inbox.api import (
 )
 from plugin_notification.inbox.schemas import InboxListQuery
 from plugin_notification.status_codes import NotificationStatusCode
+from plugin_notification.worker import DeliveryWorker
 from rapidkit_framework.exceptions import AppException
 
 
@@ -99,6 +101,8 @@ async def test_inbox_expiry_and_creation_are_explicit_instants(db_session):
     item = response.model_dump(mode="json", by_alias=True)["data"]["items"][0]
     assert datetime.fromisoformat(item["expireAt"]) == datetime(2099, 10, 30, 8, tzinfo=UTC)
     assert datetime.fromisoformat(item["createTime"]) == datetime(2026, 10, 30, 8, tzinfo=UTC)
+    worker = DeliveryWorker(db_session, redis=None, registry=ChannelRegistry(), worker_id="test")
+    assert await worker._build_payload(message.id, user_id) == item
 
 
 @pytest.mark.asyncio
@@ -185,3 +189,9 @@ async def test_notification_id_endpoints_hide_foreign_notifications(
     assert row.read_at is None
     assert row.archived_at is None
     assert row.deleted_at is None
+
+
+def test_inbox_range_normalizes_aware_and_legacy_utc_before_comparing():
+    query = InboxListQuery(created_from="2026-10-30T16:00:00+08:00", created_to="2026-10-30T09:00:00")
+    assert query.created_from == datetime(2026, 10, 30, 8)
+    assert query.created_to == datetime(2026, 10, 30, 9)

@@ -1,7 +1,7 @@
 import { computed, ref, watch } from "vue"
 import type { Ref } from "vue"
 import { useDebounceFn } from "@vueuse/core"
-import dayjs from "dayjs"
+import { formatApiTime } from "@/utils/datetime"
 import { useAuth } from "@/hooks/business/auth"
 import {
   fetchCheckBanner,
@@ -98,7 +98,7 @@ export function useAnnouncementEditor(
         ? $t("page.notification.banner.now" as I18nFullKey)
         : t("now")
       : state.value.model.publishAt
-        ? dayjs(state.value.model.publishAt).format("YYYY-MM-DD HH:mm")
+        ? formatApiTime(state.value.model.publishAt, undefined, "YYYY-MM-DD HH:mm")
         : t("scheduleUnset"),
   )
 
@@ -357,6 +357,9 @@ export function useAnnouncementEditor(
       next.audiences = next.audienceMode === "selected" ? data.audiences : next.audiences
       next.delivery = data.publishAt ? "scheduled" : "now"
       next.expires = Boolean(data.expireAt)
+      next.originalTimes = copying
+        ? { publishAt: null, expireAt: null }
+        : { publishAt: data.publishAt ?? null, expireAt: data.expireAt ?? null }
       next.actionEnabled = Boolean(data.action)
       next.actionParams = JSON.stringify(data.action?.params ?? {}, null, 2)
       next.i18nParams = JSON.stringify(data.contentParams ?? {}, null, 2)
@@ -369,8 +372,8 @@ export function useAnnouncementEditor(
         templateCode: data.templateCode ?? null,
         i18NKey: next.contentMode === "i18n" ? data.title : "",
         mandatory: data.mandatory,
-        publishAt: data.publishAt ? dayjs(data.publishAt).format("YYYY-MM-DDTHH:mm:ss") : null,
-        expireAt: data.expireAt ? dayjs(data.expireAt).format("YYYY-MM-DDTHH:mm:ss") : null,
+        publishAt: data.publishAt ? formatApiTime(data.publishAt, undefined, "YYYY-MM-DDTHH:mm:ss") : null,
+        expireAt: data.expireAt ? formatApiTime(data.expireAt, undefined, "YYYY-MM-DDTHH:mm:ss") : null,
         actionRoute: typeof data.action?.route === "string" ? data.action.route : "notification_center",
         actionLabel: typeof data.action?.label === "string" ? data.action.label : "",
       }

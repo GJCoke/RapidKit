@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { useNow } from "@vueuse/core"
   import { onMounted } from "vue"
   import MessageItem from "@/components/notification/message-item.vue"
   import { useNotificationStore } from "@/store/modules/notification"
@@ -10,6 +11,7 @@
 
   defineOptions({ name: "NotificationCenter" })
 
+  const now = useNow({ interval: 1000 })
   const store = useNotificationStore()
   const { visibleItems, nextCursor, loading, load, applyFilters, readOne, archiveOne, deleteOne } = useInbox()
 
@@ -66,6 +68,7 @@
           v-for="message in visibleItems"
           :key="message.id"
           :message="message"
+          :now="now.getTime()"
           @click="onClick"
           @archive="archiveOne"
           @delete="deleteOne"

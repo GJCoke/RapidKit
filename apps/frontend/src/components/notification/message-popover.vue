@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, nextTick, ref, watch } from "vue"
   import { onKeyStroke, useElementBounding, useNow, useWindowSize } from "@vueuse/core"
-  import dayjs from "dayjs"
+  import { formatApiTime } from "@/utils/datetime"
   import type { RouteKey } from "@elegant-router/types"
   import { useRouterPush } from "@/hooks/common/router"
   import { useNotificationStore } from "@/store/modules/notification"
@@ -61,13 +61,17 @@
   )
 
   function formatGroupDate(date: string) {
-    const value = dayjs(date)
-    if (!value.isValid()) return $t("page.notification.popover.other" as I18nFullKey)
+    const value = new Date(`${date}T00:00:00Z`)
+    if (Number.isNaN(value.getTime())) return $t("page.notification.popover.other" as I18nFullKey)
     return new Intl.DateTimeFormat(getLocale(), {
-      year: value.year() === dayjs(now.value).year() ? undefined : "numeric",
+      timeZone: "UTC",
+      year:
+        date.slice(0, 4) === formatApiTime(new Date(now.value).toISOString(), undefined, "YYYY")
+          ? undefined
+          : "numeric",
       month: "short",
       day: "numeric",
-    }).format(value.toDate())
+    }).format(value)
   }
 
   watch(visible, async (show) => {

@@ -1,7 +1,7 @@
 <script setup lang="tsx">
   import { computed, reactive, ref, onActivated, onDeactivated, onMounted, onUnmounted, watch } from "vue"
   import { useDocumentVisibility } from "@vueuse/core"
-  import dayjs from "dayjs"
+  import { formatApiTime } from "@/utils/datetime"
   import { useBoolean } from "@rapidkit/hooks"
   import { DEFAULT_PAGE_SIZE } from "@/constants/pagination"
   import { useBannerStore } from "@/store/modules/banner"
@@ -85,7 +85,7 @@
   function showDetails(id: string) { detailId.value = id; detailVisible.value = true }
   function upcomingHint() {
     const scheduled = bannerCheck.value?.scheduled
-    return scheduled ? `${bt("takeDownUpcoming")} ${renderTitle(scheduled)} · ${dayjs(scheduled.publishAt).format("YYYY-MM-DD HH:mm")}` : ""
+    return scheduled ? `${bt("takeDownUpcoming")} ${renderTitle(scheduled)} · ${formatApiTime(scheduled.publishAt, undefined, "YYYY-MM-DD HH:mm")}` : ""
   }
   function recallHint(row: Api.Notification.AnnouncementItem) { return row.displayMode === "top_banner" ? `${bt("takeDownWarning")} ${upcomingHint()}` : tt("recallWarning") }
   function refreshAll(): Promise<void> {

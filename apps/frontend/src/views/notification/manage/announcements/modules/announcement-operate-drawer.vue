@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { getPlatformTimezone } from "@/utils/datetime"
   import { computed, ref, toRef } from "vue"
   import { useThemeVars } from "naive-ui"
   import { $t } from "@/locales"
@@ -108,7 +109,7 @@
   const reservedCategory = computed(() =>
     ["admin.announcement", "system.security"].includes(state.value.model.category),
   )
-  const timezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const timezoneLabel = computed(getPlatformTimezone)
   function example(row: { rule: Record<string, unknown> }) {
     const value = row.rule.example ?? (Array.isArray(row.rule.examples) ? row.rule.examples[0] : undefined)
     return value === undefined || value === null || value === "" ? "" : String(value)
@@ -484,15 +485,13 @@
               ></NRadioGroup
             >
             <div v-if="state.delivery === 'scheduled'" class="mt-12px">
-              <NDatePicker
-                v-model:formatted-value="state.model.publishAt"
-                type="datetime"
-                value-format="yyyy-MM-dd'T'HH:mm:ss"
+              <NInput
+                v-model:value="state.model.publishAt"
                 clearable
                 class="w-full"
                 :disabled="disabled"
                 :placeholder="t('publishAtPlaceholder')"
-                :input-props="{ 'aria-label': t('publishAt') }"
+                :input-props="{ type: 'datetime-local', step: 1, 'aria-label': t('publishAt') }"
               />
               <p class="field-hint">
                 {{
@@ -507,16 +506,14 @@
               ><NCheckbox :checked="!state.expires" :disabled="disabled" @update:checked="state.expires = !$event">{{
                 t("forever")
               }}</NCheckbox
-              ><NDatePicker
+              ><NInput
                 v-if="state.expires"
-                v-model:formatted-value="state.model.expireAt"
-                type="datetime"
-                value-format="yyyy-MM-dd'T'HH:mm:ss"
+                v-model:value="state.model.expireAt"
                 clearable
                 class="min-w-200px flex-1"
                 :disabled="disabled"
                 :placeholder="t('expireAtPlaceholder')"
-                :input-props="{ 'aria-label': t('expires') }"
+                :input-props="{ type: 'datetime-local', step: 1, 'aria-label': t('expires') }"
               />
             </div>
             <p class="field-hint">

@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue"
   import { useResizeObserver } from "@vueuse/core"
-  import dayjs from "dayjs"
+  import { formatApiTime, parseApiTime } from "@/utils/datetime"
   import { $t, getLocale } from "@/locales"
   import { formatNotificationTime } from "@/utils/notification/presentation"
   import { renderContent, renderTitle } from "@/utils/notification/content-render"
@@ -49,7 +49,7 @@
     return body.value
   })
   const isUnread = computed(() => !isRecalled.value && !props.message.readAt)
-  const isActionable = computed(() => isNotificationActionable(props.message))
+  const isActionable = computed(() => isNotificationActionable(props.message, props.now))
   const actionLabel = computed(
     () =>
       resolveActionLabel(props.message.action, getLocale()).text ||
@@ -78,12 +78,12 @@
     } as const
     return classes[props.message.level]
   })
-  const createdAt = computed(() => dayjs(props.message.createTime).format("YYYY-MM-DD HH:mm:ss"))
+  const createdAt = computed(() => formatApiTime(props.message.createTime))
   const compactTime = computed(() => {
-    const created = dayjs(props.message.createTime)
+    const created = parseApiTime(props.message.createTime)
     const now = props.now ?? Date.now()
     return created.isValid() && now - created.valueOf() >= 86_400_000
-      ? created.format("HH:mm")
+      ? formatApiTime(props.message.createTime, undefined, "HH:mm")
       : formatNotificationTime(props.message.createTime, getLocale(), now)
   })
   const categoryLabel = computed(() => {

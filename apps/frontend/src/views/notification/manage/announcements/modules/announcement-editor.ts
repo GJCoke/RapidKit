@@ -4,6 +4,7 @@ import type { LocalizedEditorState } from "./localized-editor"
 import { exampleValue, schemaToRows, variableTypes } from "../../templates/modules/template-editor"
 import type { VariableRow, VariableSchema } from "../../templates/modules/template-editor"
 import { buildAnnouncementAction } from "./announcement-action"
+import { parsePlatformTimeInput } from "@/utils/datetime"
 
 export const recipientFields = ["name", "email", "roles", "department"] as const
 export type VariableSource = "manual" | (typeof recipientFields)[number]
@@ -26,6 +27,7 @@ export interface AnnouncementModel {
 }
 
 export interface AnnouncementState {
+  originalTimes: { publishAt: string | null; expireAt: string | null }
   model: AnnouncementModel
   displayMode: "inbox" | "top_banner"
   contentMode: "raw" | "template" | "i18n" | "local"
@@ -58,6 +60,7 @@ export class AnnouncementValidationError extends Error {
 
 export function createAnnouncementState(): AnnouncementState {
   return {
+    originalTimes: { publishAt: null, expireAt: null },
     model: {
       category: "admin.announcement",
       level: "info",
@@ -179,17 +182,17 @@ export function buildAnnouncementPayload(
   let publishAt: string | null = null
   if (state.delivery === "scheduled") {
     if (!model.publishAt) fail("publishAtRequired")
-    const value = new Date(model.publishAt!).getTime()
-    if (!Number.isFinite(value) || (intent === "publish" && value <= now)) fail("publishAtFuture")
-    // DB uses naive UTC; the picker uses browser-local wall time; detail timestamps include their UTC offset.
-    publishAt = new Date(value).toISOString().slice(0, 19)
+    const value = parsePlatformTimeInput(model.publishAt!, state.originalTimes.publishAt)
+    if (!value.isValid()) fail("publishAtInvalid")
+    if (intent === "publish" && value.valueOf() <= now) fail("publishAtFuture")
+    publishAt = value.toISOString()
   }
   let expireAt: string | null = null
   if (state.expires) {
-    const value = model.expireAt ? new Date(model.expireAt).getTime() : Number.NaN
-    const planned = state.delivery === "scheduled" && model.publishAt ? new Date(model.publishAt).getTime() : now
-    if (!Number.isFinite(value) || value <= Math.max(now, planned)) fail("expireAtInvalid")
-    expireAt = new Date(value).toISOString().slice(0, 19)
+    const value = parsePlatformTimeInput(model.expireAt || "", state.originalTimes.expireAt)
+    const planned = publishAt ? Date.parse(publishAt) : now
+    if (!value.isValid() || value.valueOf() <= Math.max(now, planned)) fail("expireAtInvalid")
+    expireAt = value.toISOString()
   }
   const action = buildAnnouncementAction(state)
   const common = {

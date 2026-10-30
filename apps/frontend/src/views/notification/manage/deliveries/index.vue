@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+  import { parseApiTime } from "@/utils/datetime"
   import { computed, onMounted, onScopeDispose, ref } from "vue"
   import type { DataTableColumns } from "naive-ui"
   import { NButton } from "naive-ui"
@@ -53,7 +54,7 @@
   const busy = computed(() => loading.value || summaryLoading.value)
   const retryAllowed = computed(() => canRetry.value && (!currentMessage.value || (
     currentMessage.value.status === "published" &&
-    (!currentMessage.value.expireAt || new Date(currentMessage.value.expireAt).getTime() > Date.now())
+    (!currentMessage.value.expireAt || parseApiTime(currentMessage.value.expireAt).valueOf() > Date.now())
   )))
   const pagination = computed(() => ({
     page: page.value, pageSize: pageSize.value, itemCount: total.value,

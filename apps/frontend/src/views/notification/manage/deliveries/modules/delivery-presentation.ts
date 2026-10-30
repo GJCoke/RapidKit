@@ -1,4 +1,4 @@
-import dayjs from "dayjs"
+import { formatApiTime } from "@/utils/datetime"
 import { $t, getLocale } from "@/locales"
 
 export const deliveryText = (key: string) => $t(`page.notification.manage.deliveries.${key}` as I18nFullKey)
@@ -13,7 +13,7 @@ export const deliveryStateStyle = {
 } as const
 
 export function deliveryTime(value?: string | Date | null) {
-  return value ? dayjs(value).format("YYYY-MM-DD HH:mm:ss") : "—"
+  return value ? formatApiTime(value instanceof Date ? value.toISOString() : value) : "—"
 }
 
 export function deliveryOutcomeTime(row: Api.Notification.Delivery) {

@@ -1,8 +1,7 @@
-import dayjs from "dayjs"
 import { describe, expect, it } from "vitest"
 import { formatNotificationTime, groupNotifications } from "@/utils/notification/presentation"
 
-const now = dayjs("2026-01-01T12:00:00")
+const now = Date.parse("2026-01-01T12:00:00Z")
 const message = (id: string, createTime: string) => ({ id, createTime })
 
 describe("notification popover dates", () => {

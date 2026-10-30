@@ -4,11 +4,12 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.request import BaseRequest
 from rapidkit_common.schemas.response import CursorPaginatedResponse
 from rapidkit_common.schemas.types import UTCInstant
+from rapidkit_core.timezone import timezone
 
 
 class InboxListQuery(BaseRequest):
@@ -22,6 +23,11 @@ class InboxListQuery(BaseRequest):
     level: Literal["info", "success", "warning", "error"] | None = None
     created_from: datetime | None = None
     created_to: datetime | None = None
+
+    @field_validator("created_from", "created_to")
+    @classmethod
+    def _utc_for_storage(cls, value: datetime | None) -> datetime | None:
+        return timezone.to_utc(value).replace(tzinfo=None) if value is not None else None
 
     @model_validator(mode="after")
     def _validate_time_range(self) -> "InboxListQuery":

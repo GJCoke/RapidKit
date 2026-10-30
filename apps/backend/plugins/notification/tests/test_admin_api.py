@@ -766,3 +766,15 @@ async def test_retry_zero_registers_no_after_commit_side_effects(db_session, mon
     assert response.data == {"retried": 0}
     assert service.enqueue_count == 0
     assert audits == []
+
+
+@pytest.mark.parametrize("field", ["publish_at", "expire_at"])
+@pytest.mark.parametrize("value", ["2099-10-30T16:00:00+08:00", "2099-10-30T08:00:00Z", "2099-10-30T08:00:00"])
+def test_announcement_input_normalizes_instants_to_database_utc(field, value):
+    request = AnnouncementCreateRequest(
+        audience=[AudienceRuleIn(type="all")],
+        raw_title="Title",
+        raw_content="Body",
+        **{field: value},
+    )
+    assert getattr(request, field) == datetime(2099, 10, 30, 8)

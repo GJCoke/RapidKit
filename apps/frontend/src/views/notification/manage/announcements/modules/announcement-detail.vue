@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, watch } from "vue"
-  import dayjs from "dayjs"
+  import { formatApiTime } from "@/utils/datetime"
   import { fetchGetAnnouncement } from "@/service/api"
   import NotificationLevel from "@/components/notification/notification-level.vue"
   import { renderTitle, renderContent } from "@/utils/notification/content-render"
@@ -60,15 +60,17 @@
             <p class="m-0">
               {{ t("startsAt") }}：{{
                 data.publishAt || data.publishedAt
-                  ? dayjs(data.publishAt ?? data.publishedAt).format("YYYY-MM-DD HH:mm")
+                  ? formatApiTime(data.publishAt ?? data.publishedAt, undefined, "YYYY-MM-DD HH:mm")
                   : tt("unpublished")
               }}
             </p>
             <p class="m-0">
-              {{ t("endsAt") }}：{{ data.expireAt ? dayjs(data.expireAt).format("YYYY-MM-DD HH:mm") : t("unlimited") }}
+              {{ t("endsAt") }}：{{
+                data.expireAt ? formatApiTime(data.expireAt, undefined, "YYYY-MM-DD HH:mm") : t("unlimited")
+              }}
             </p>
             <p v-if="data.supersededAt" class="m-0">
-              {{ t("superseded") }}：{{ dayjs(data.supersededAt).format("YYYY-MM-DD HH:mm") }}
+              {{ t("superseded") }}：{{ formatApiTime(data.supersededAt, undefined, "YYYY-MM-DD HH:mm") }}
             </p>
           </div>
         </template>

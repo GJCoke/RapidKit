@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from rapidkit_common.protocols.notification import (
     AudienceType,
     ContentFormat,
@@ -19,6 +19,7 @@ from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.request import BaseRequest, PaginatedRequest
 from rapidkit_common.schemas.response import BaseSchema
 from rapidkit_common.schemas.types import UTCInstant
+from rapidkit_core.timezone import timezone
 
 from plugin_notification.enums import MessageStatus, OutboxStatus
 from plugin_notification.schemas import EditableInstant
@@ -134,6 +135,11 @@ class AnnouncementCreateRequest(BaseRequest):
     publish_at: datetime | None = None
     expire_at: datetime | None = None
     save_as_draft: bool = False
+
+    @field_validator("publish_at", "expire_at")
+    @classmethod
+    def _utc_for_storage(cls, value: datetime | None) -> datetime | None:
+        return timezone.to_utc(value).replace(tzinfo=None) if value is not None else None
 
     @model_validator(mode="after")
     def _validate_content_source(self) -> "AnnouncementCreateRequest":

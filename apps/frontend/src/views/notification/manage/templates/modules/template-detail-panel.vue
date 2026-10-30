@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed } from "vue"
-  import dayjs from "dayjs"
+  import { formatApiTime } from "@/utils/datetime"
   import { useThemeVars } from "naive-ui"
   import { $t } from "@/locales"
   import TemplateStatus from "./template-status.vue"
@@ -21,7 +21,7 @@
   const preview = computed(() => (props.template ? renderTemplatePreview(props.template, parameters.value) : null))
   const updatedAt = computed(() => {
     const value = props.template?.updateTime
-    return value && dayjs(value).isValid() ? dayjs(value).format("YYYY-MM-DD HH:mm") : t("notSet")
+    return value ? formatApiTime(value, undefined, "YYYY-MM-DD HH:mm") : t("notSet")
   })
   const preference = computed(() => {
     if (props.template?.mandatory) return t("mandatoryPreference")

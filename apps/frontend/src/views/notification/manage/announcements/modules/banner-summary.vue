@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed } from "vue"
-  import dayjs from "dayjs"
+  import { formatApiTime } from "@/utils/datetime"
   import { useThemeVars } from "naive-ui"
   import NotificationLevel from "@/components/notification/notification-level.vue"
   import { renderContent, renderTitle } from "@/utils/notification/content-render"
@@ -33,7 +33,7 @@
       item: props.check.scheduled,
     },
   ])
-  const time = (value?: string | null) => (value ? dayjs(value).format("YYYY-MM-DD HH:mm") : t("unlimited"))
+  const time = (value?: string | null) => (value ? formatApiTime(value, undefined, "YYYY-MM-DD HH:mm") : t("unlimited"))
 </script>
 <template>
   <div

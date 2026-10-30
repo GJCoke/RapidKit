@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { parsePlatformTimeInput } from "@/utils/datetime"
   import { reactive } from "vue"
   import type { InboxFilters } from "../composables/use-inbox"
   import { $t } from "@/locales"
@@ -26,13 +27,19 @@
   }))
 
   function apply() {
+    const start = model.createdFrom ? parsePlatformTimeInput(model.createdFrom) : null
+    const end = model.createdTo ? parsePlatformTimeInput(model.createdTo) : null
+    if ((start && !start.isValid()) || (end && !end.isValid()) || (start && end && start.isAfter(end))) {
+      window.$message?.warning($t("page.notification.filters.invalidTimeRange" as I18nFullKey))
+      return
+    }
     emit("change", {
       unreadOnly: model.unreadOnly || undefined,
       archived: model.archived,
       category: model.category || undefined,
       level: model.level,
-      createdFrom: model.createdFrom || undefined,
-      createdTo: model.createdTo || undefined,
+      createdFrom: start?.toISOString(),
+      createdTo: end?.toISOString(),
     })
   }
 </script>
@@ -78,6 +85,7 @@
     <NGi span="24 m:8">
       <NInput
         v-model:value="model.createdFrom"
+        :input-props="{ type: 'datetime-local', step: 1 }"
         clearable
         :placeholder="$t('page.notification.filters.createdFrom' as I18nFullKey)"
         @change="apply"
@@ -86,6 +94,7 @@
     <NGi span="24 m:8">
       <NInput
         v-model:value="model.createdTo"
+        :input-props="{ type: 'datetime-local', step: 1 }"
         clearable
         :placeholder="$t('page.notification.filters.createdTo' as I18nFullKey)"
         @change="apply"

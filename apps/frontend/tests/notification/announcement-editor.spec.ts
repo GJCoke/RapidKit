@@ -106,7 +106,7 @@ describe("announcement editor payload", () => {
     form.model.publishAt = "2026-10-10T01:30:00"
     const draft = buildAnnouncementPayload(form, "draft", now)
     expect(draft.saveAsDraft).toBe(true)
-    expect(draft.publishAt).toBe(new Date(form.model.publishAt).toISOString().slice(0, 19))
+    expect(draft.publishAt).toBe("2026-10-10T01:30:00.000Z")
     expect(buildAnnouncementPayload(form, "publish", now).saveAsDraft).toBe(false)
     form.delivery = "now"
     expect(buildAnnouncementPayload(form, "publish", now)).toMatchObject({ publishAt: null, saveAsDraft: true })

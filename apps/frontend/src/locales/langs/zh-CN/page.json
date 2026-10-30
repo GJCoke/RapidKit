@@ -1066,6 +1066,7 @@
       "error": "错误"
     },
     "filters": {
+      "invalidTimeRange": "请选择平台时区中有效的起止时间，结束时间不能早于开始时间。",
       "unreadOnly": "只看未读",
       "active": "未归档",
       "archived": "已归档",
@@ -1460,6 +1461,7 @@
           "templateRequired": "请选择可用的通知模板。",
           "categoryRequired": "请在高级设置中选择通知分类。",
           "publishAtRequired": "请选择定时发布时间。",
+          "publishAtInvalid": "发布时间在平台时区中不存在，请重新选择。",
           "publishAtFuture": "定时发布时间必须晚于当前时间。",
           "expireAtInvalid": "过期时间必须晚于当前时间及发布时间。",
           "i18nKeyInvalid": "请填写有效的翻译键，例如 notification.maintenance。",

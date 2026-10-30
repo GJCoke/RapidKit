@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed } from "vue"
-  import dayjs from "dayjs"
+  import { formatApiTime } from "@/utils/datetime"
   import { renderTitle, renderContent } from "@/utils/notification/content-render"
   import { $t } from "@/locales"
   import { announcementCategory, announcementStatus, announcementTableText as t } from "./announcement-table"
@@ -17,7 +17,7 @@
     const content = renderContent(props.row).replace(/\s+/g, " ").trim()
     return content.length > 200 ? `${content.slice(0, 200)}…` : content || t("emptyContent")
   })
-  const date = (value: string) => dayjs(value).format("YYYY-MM-DD HH:mm")
+  const date = (value: string) => formatApiTime(value, undefined, "YYYY-MM-DD HH:mm")
 </script>
 
 <template>

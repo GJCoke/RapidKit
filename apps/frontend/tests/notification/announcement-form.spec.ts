@@ -9,6 +9,7 @@ import {
   createAnnouncementState,
   templateValueRows,
 } from "../../src/views/notification/manage/announcements/modules/announcement-editor"
+import { setPlatformTimezone } from "@/utils/datetime"
 
 const api = vi.hoisted(() => ({
   checkBanner: vi.fn(),
@@ -78,6 +79,7 @@ afterAll(() => {
   else Reflect.deleteProperty(window, "matchMedia")
 })
 beforeEach(() => {
+  setPlatformTimezone("UTC")
   api.checkBanner.mockResolvedValue({
     data: { revision: 2, serverNow: new Date().toISOString(), current: null, scheduled: null },
     error: null,
@@ -102,6 +104,36 @@ beforeEach(() => {
   api.departments.mockResolvedValue({ data: [], error: null })
   api.actionTargets.mockResolvedValue({ data: [], error: null })
   api.actionPreview.mockResolvedValue({ data: null, error: { message: "invalid target" } })
+})
+
+it("loads an announcement into platform time and saves its original instant", async () => {
+  setPlatformTimezone("Asia/Shanghai")
+  api.detail.mockResolvedValue({
+    data: {
+      id: "planned",
+      status: "draft",
+      displayMode: "inbox",
+      contentMode: "raw",
+      title: "Title",
+      content: "Body",
+      category: "admin.announcement",
+      level: "info",
+      audiences: [{ type: "all" }],
+      mandatory: false,
+      publishAt: "2099-10-30T08:00:00Z",
+      expireAt: "2099-10-31T08:00:00Z",
+    },
+    error: null,
+  })
+  const { editor } = await controller("planned")
+  await vi.waitFor(() => expect(editor.loading.value).toBe(false))
+  expect(editor.state.value.model.publishAt).toBe("2099-10-30T16:00:00")
+  expect(editor.state.value.model.expireAt).toBe("2099-10-31T16:00:00")
+  await editor.saveDraft()
+  expect(api.update).toHaveBeenCalledWith(
+    "planned",
+    expect.objectContaining({ publishAt: "2099-10-30T08:00:00.000Z", expireAt: "2099-10-31T08:00:00.000Z" }),
+  )
 })
 afterEach(() => {
   app?.unmount()
@@ -499,6 +531,39 @@ describe("announcement workflow", () => {
     )
   })
 
+  it("keeps native calendar input unchanged through a browser DST gap", async () => {
+    setPlatformTimezone("Asia/Shanghai")
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-03-07T00:00:00Z"))
+    api.detail.mockResolvedValue({
+      error: null,
+      data: {
+        id: "existing",
+        category: "admin.announcement",
+        level: "info",
+        contentMode: "raw",
+        title: "维护",
+        content: "请保存工作",
+        contentFormat: "plain_text",
+        audiences: [{ type: "all" }],
+        status: "draft",
+        mandatory: false,
+        publishAt: "2099-10-10T08:00:00Z",
+      },
+    })
+    await mountDrawer("existing")
+    const label = "定时发布时间"
+    const input = document.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`)!
+    expect(input.type).toBe("datetime-local")
+    expect(input.value).toBe("2099-10-10T16:00")
+    await fill(label, "2026-03-08T02:30:00")
+    button("存为草稿").click()
+    await vi.waitFor(() => expect(api.update).toHaveBeenCalled())
+    expect(api.update).toHaveBeenCalledWith(
+      "existing",
+      expect.objectContaining({ publishAt: "2026-03-07T18:30:00.000Z" }),
+    )
+  })
+
   it("preserves offset-aware schedule and expiry instants when reopening and saving", async () => {
     api.detail.mockResolvedValue({
       error: null,
@@ -524,8 +589,8 @@ describe("announcement workflow", () => {
     expect(api.update).toHaveBeenCalledWith(
       "existing",
       expect.objectContaining({
-        publishAt: "2099-10-10T01:30:00",
-        expireAt: "2099-10-11T01:30:00",
+        publishAt: "2099-10-10T01:30:00.000Z",
+        expireAt: "2099-10-11T01:30:00.000Z",
         saveAsDraft: true,
       }),
     )

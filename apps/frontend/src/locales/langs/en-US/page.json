@@ -1066,6 +1066,7 @@
       "error": "Error"
     },
     "filters": {
+      "invalidTimeRange": "Choose valid platform times, with the end at or after the start.",
       "unreadOnly": "Unread only",
       "active": "Active",
       "archived": "Archived",
@@ -1460,6 +1461,7 @@
           "templateRequired": "Choose an available notification template.",
           "categoryRequired": "Choose a category in advanced settings.",
           "publishAtRequired": "Choose a scheduled publication time.",
+          "publishAtInvalid": "This publish time does not exist in the platform timezone. Choose another time.",
           "publishAtFuture": "Scheduled publication must be in the future.",
           "expireAtInvalid": "Expiration must be later than now and the publication time.",
           "i18nKeyInvalid": "Enter a valid translation key, such as notification.maintenance.",
