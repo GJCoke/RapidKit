@@ -577,14 +577,14 @@ async def test_announcement_detail_dates_keep_the_same_instant_through_edit_upda
         data = detail.json()["data"]
         assert data["publishAt"] == "2030-01-01T09:30:00+08:00"
         assert data["expireAt"] == "2030-01-02T11:45:00+08:00"
-        assert data["createTime"] == "2030-01-01 08:15:00"
+        assert data["createTime"] == "2030-01-01T00:15:00+00:00"
 
         listing = await client.get("/admin/notifications")
         assert listing.status_code == 200
         list_data = listing.json()["data"]["records"][0]
-        assert list_data["publishAt"] == "2030-01-01 09:30:00"
-        assert list_data["expireAt"] == "2030-01-02 11:45:00"
-        assert list_data["createTime"] == "2030-01-01 08:15:00"
+        assert list_data["publishAt"] == "2030-01-01T01:30:00+00:00"
+        assert list_data["expireAt"] == "2030-01-02T03:45:00+00:00"
+        assert list_data["createTime"] == "2030-01-01T00:15:00+00:00"
 
         # The picker shows browser-local wall time and submits its naive UTC instant.
         browser_zone = ZoneInfo(browser_timezone)

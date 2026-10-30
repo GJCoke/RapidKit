@@ -2,6 +2,7 @@
 
 from collections.abc import Awaitable, Callable
 from uuid import UUID, uuid4
+from datetime import UTC, datetime
 
 import pytest
 from plugin_notification.crud import MessageCRUD, UserNotificationCRUD
@@ -83,6 +84,21 @@ async def test_list_returns_only_current_users_notifications(db_session):
     assert response.data is not None
     assert len(response.data.items) == 2
     assert {item.title for item in response.data.items} == {"Test title"}
+
+
+@pytest.mark.asyncio
+async def test_inbox_expiry_and_creation_are_explicit_instants(db_session):
+    user_id = uuid4()
+    message, rows = await _seed(db_session, user_id, count=1)
+    message.expire_at = datetime(2099, 10, 30, 8)
+    rows[0].create_time = datetime(2026, 10, 30, 8)
+    await db_session.commit()
+    response = await list_notifications(
+        query=InboxListQuery(), user=_CurrentUser(user_id), crud=UserNotificationCRUD(db_session)
+    )
+    item = response.model_dump(mode="json", by_alias=True)["data"]["items"][0]
+    assert datetime.fromisoformat(item["expireAt"]) == datetime(2099, 10, 30, 8, tzinfo=UTC)
+    assert datetime.fromisoformat(item["createTime"]) == datetime(2026, 10, 30, 8, tzinfo=UTC)
 
 
 @pytest.mark.asyncio

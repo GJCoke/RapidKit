@@ -13,6 +13,7 @@ export interface LoginResponse {
 }
 
 export interface AuthUserInfo {
+  timezone?: string
   id: string
   createTime: string
   updateTime: string

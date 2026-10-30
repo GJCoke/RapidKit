@@ -18,7 +18,7 @@ from rapidkit_common.protocols.notification import (
 from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.request import BaseRequest, PaginatedRequest
 from rapidkit_common.schemas.response import BaseSchema
-from rapidkit_common.schemas.types import LocalDatetime
+from rapidkit_common.schemas.types import UTCInstant
 
 from plugin_notification.enums import MessageStatus, OutboxStatus
 from plugin_notification.schemas import EditableInstant
@@ -67,6 +67,8 @@ class TemplateUpdateRequest(BaseRequest):
 
 
 class TemplateResponse(BaseSchema):
+    create_time: UTCInstant
+    update_time: UTCInstant
     code: str
     name: str
     category: str
@@ -192,8 +194,10 @@ AnnouncementUpdateRequest = AnnouncementCreateRequest
 
 
 class MessageAdminResponse(BaseSchema):
+    create_time: UTCInstant
+    update_time: UTCInstant
     display_mode: Literal["inbox", "top_banner"] = "inbox"
-    superseded_at: LocalDatetime | None = None
+    superseded_at: UTCInstant | None = None
     superseded_by_id: UUID | None = None
     source: str
     category: str
@@ -203,11 +207,11 @@ class MessageAdminResponse(BaseSchema):
     content: str
     status: MessageStatus
     mandatory: bool
-    publish_at: LocalDatetime | None = None
-    published_at: LocalDatetime | None = None
-    expire_at: LocalDatetime | None = None
-    recalled_at: LocalDatetime | None = None
-    cancelled_at: LocalDatetime | None = None
+    publish_at: UTCInstant | None = None
+    published_at: UTCInstant | None = None
+    expire_at: UTCInstant | None = None
+    recalled_at: UTCInstant | None = None
+    cancelled_at: UTCInstant | None = None
 
 
 class MessageAdminDetailResponse(MessageAdminResponse):
@@ -248,21 +252,23 @@ class DeliveryMessageResponse(BaseModel):
     titles: dict[str, str] = Field(default_factory=dict)
     default_locale: str | None = None
     status: MessageStatus
-    published_at: LocalDatetime | None = None
-    expire_at: LocalDatetime | None = None
-    create_time: LocalDatetime
+    published_at: UTCInstant | None = None
+    expire_at: UTCInstant | None = None
+    create_time: UTCInstant
 
 
 class DeliveryResponse(BaseSchema):
+    create_time: UTCInstant
+    update_time: UTCInstant
     message_id: UUID
     user_id: UUID
     channel: NotificationChannel
     status: OutboxStatus
     attempt_count: int
     last_error_code: str | None = None
-    next_attempt_at: LocalDatetime | None = None
-    locked_until: LocalDatetime | None = None
-    sent_at: LocalDatetime | None = None
+    next_attempt_at: UTCInstant | None = None
+    locked_until: UTCInstant | None = None
+    sent_at: UTCInstant | None = None
     recipient: DeliveryRecipientResponse = Field(default_factory=DeliveryRecipientResponse)
     message: DeliveryMessageResponse | None = None
 

@@ -74,6 +74,7 @@ vi.mock("@/service/api", () => ({
   fetchGetPublicKey: vi.fn(),
 }))
 import { useAuthStore } from "@/store/modules/auth/index"
+import { getPlatformTimezone } from "@/utils/datetime"
 
 const created = {
   accessToken: "simulated",
@@ -82,6 +83,7 @@ const created = {
   expiresAt: "2099-01-01T00:00:00Z",
 }
 const admin = {
+  timezone: "Europe/Berlin",
   id: "admin",
   createTime: "",
   updateTime: "",
@@ -273,4 +275,12 @@ it("syncAccessToken updates state without rebuilding sockets", () => {
   expect(store.token).toBe("new-token")
   expect(state.connect).not.toHaveBeenCalled()
   expect(state.globalConnect).not.toHaveBeenCalled()
+})
+
+it("loads the platform timezone with identity and clears it on logout", async () => {
+  const store = useAuthStore()
+  await store.initUserInfo()
+  expect(getPlatformTimezone()).toBe("Europe/Berlin")
+  await store.logout()
+  expect(getPlatformTimezone()).toBe("UTC")
 })

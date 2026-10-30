@@ -39,6 +39,7 @@ import { getLoginCooldown } from "./login-result"
 import type { LoginResult } from "./login-result"
 import { createImpersonationSession } from "./impersonation-session"
 import { installIdentitySync } from "./identity-sync"
+import { setPlatformTimezone } from "@/utils/datetime"
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const route = useRoute()
@@ -61,6 +62,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       roles: [],
       buttons: [],
       restrictedFields: {},
+      timezone: "UTC",
     }
   }
   const userInfo = reactive(createEmptyUserInfo())
@@ -111,6 +113,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   /** Apply the snapshot to user info, routes, menus and tabs */
   async function applyPermissionSnapshot(snapshot: PermissionSnapshot, leave: boolean) {
     Object.assign(userInfo, snapshot.info)
+    setPlatformTimezone(snapshot.info.timezone || "UTC")
     routeStore.applyAuthRoutes(snapshot.authRoutes, snapshot.home)
 
     if (leave) await toHome()
@@ -174,6 +177,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     useBannerStore().reset()
     token.value = ""
     Object.assign(userInfo, createEmptyUserInfo())
+    setPlatformTimezone("UTC")
     localStg.remove("globalTabs")
     tabStore.$reset()
     clearing = routeStore.resetStore().finally(() => {
@@ -408,6 +412,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     if (!error) {
       // update store
       Object.assign(userInfo, info)
+      setPlatformTimezone(info.timezone || "UTC")
 
       return true
     }

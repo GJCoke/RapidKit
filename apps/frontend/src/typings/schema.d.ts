@@ -3253,7 +3253,11 @@ export interface components {
             publishedAt?: string | null;
             /** Expireat */
             expireAt?: string | null;
-            /** Createtime */
+            /**
+             * Createtime
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
+             */
             createTime: string;
         };
         /** DeliveryRecipientResponse */
@@ -3291,12 +3295,14 @@ export interface components {
             id: string;
             /**
              * Createtime
-             * @example 2024-07-31 16:07:34
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
              */
             createTime: string;
             /**
              * Updatetime
-             * @example 2024-07-31 16:07:34
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
              */
             updateTime: string;
             /**
@@ -4203,12 +4209,14 @@ export interface components {
             id: string;
             /**
              * Createtime
-             * @example 2024-07-31 16:07:34
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
              */
             createTime: string;
             /**
              * Updatetime
-             * @example 2024-07-31 16:07:34
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
              */
             updateTime: string;
             /**
@@ -4285,12 +4293,14 @@ export interface components {
             id: string;
             /**
              * Createtime
-             * @example 2024-07-31 16:07:34
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
              */
             createTime: string;
             /**
              * Updatetime
-             * @example 2024-07-31 16:07:34
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
              */
             updateTime: string;
             /**
@@ -4393,7 +4403,11 @@ export interface components {
             readAt?: string | null;
             /** Archivedat */
             archivedAt?: string | null;
-            /** Createtime */
+            /**
+             * Createtime
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
+             */
             createTime: string;
         };
         /** OperationsDayComparison */
@@ -7176,12 +7190,14 @@ export interface components {
             id: string;
             /**
              * Createtime
-             * @example 2024-07-31 16:07:34
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
              */
             createTime: string;
             /**
              * Updatetime
-             * @example 2024-07-31 16:07:34
+             * Format: date-time
+             * @example 2026-10-29T08:00:00+00:00
              */
             updateTime: string;
             /** Code */
@@ -7401,6 +7417,8 @@ export interface components {
                     [key: string]: "masked" | "hidden";
                 };
             };
+            /** Timezone */
+            timezone?: string;
         };
         /**
          * UserManageBatchBody

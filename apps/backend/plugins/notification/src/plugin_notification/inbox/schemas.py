@@ -8,7 +8,7 @@ from pydantic import Field, model_validator
 from rapidkit_common.schemas.base import BaseModel
 from rapidkit_common.schemas.request import BaseRequest
 from rapidkit_common.schemas.response import CursorPaginatedResponse
-from rapidkit_common.schemas.types import LocalDatetime
+from rapidkit_common.schemas.types import UTCInstant
 
 
 class InboxListQuery(BaseRequest):
@@ -45,11 +45,11 @@ class NotificationItem(BaseModel):
     mandatory: bool
     action: dict | None = None
     status: str
-    expire_at: LocalDatetime | None = None
-    recalled_at: LocalDatetime | None = None
-    read_at: LocalDatetime | None = None
-    archived_at: LocalDatetime | None = None
-    create_time: LocalDatetime
+    expire_at: UTCInstant | None = None
+    recalled_at: UTCInstant | None = None
+    read_at: UTCInstant | None = None
+    archived_at: UTCInstant | None = None
+    create_time: UTCInstant
 
 
 class InboxPage(CursorPaginatedResponse[NotificationItem]):

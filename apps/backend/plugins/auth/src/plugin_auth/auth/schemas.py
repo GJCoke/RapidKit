@@ -8,8 +8,9 @@ Date   : 2025-03-13
 from typing import Literal
 
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import EmailStr
+from pydantic import EmailStr, Field
 from rapidkit_common.schemas import BaseModel, BaseRequest, BaseResponse, ResponseSchema
+from rapidkit_core.config import settings
 
 
 class LoginRequest(BaseRequest):
@@ -33,6 +34,8 @@ class UserSchema(BaseModel):
 
 class UserInfoResponse(UserSchema, ResponseSchema):
     """用户信息响应数据结构。"""
+
+    timezone: str = Field(default_factory=lambda: settings.DATETIME_TIMEZONE)
 
 
 class OAuth2TokenResponse(PydanticBaseModel):
