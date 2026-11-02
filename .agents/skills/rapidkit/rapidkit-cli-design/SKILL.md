@@ -394,4 +394,4 @@ The `label` parameter is the terminal display text. `stamp()` always runs `alemb
 
 ### Git Rules
 
-Follow `rapidkit-conventions` and the root `AGENTS.md`: each new task starts on a fresh branch; validated implementation changes may be committed automatically, while design documents and plans must never be staged or committed. Preserve unrelated pre-existing work and do not push or merge without explicit authorization.
+Follow `rapidkit-conventions` and the root `AGENTS.md`: choose the branch by the `AGENTS.md` branch rules (stay on the current non-main branch; on `main`/`master`, only a simple task works in place); validated implementation changes may be committed automatically, while design documents and plans must never be staged or committed. Preserve unrelated pre-existing work and do not push or merge without explicit authorization.
