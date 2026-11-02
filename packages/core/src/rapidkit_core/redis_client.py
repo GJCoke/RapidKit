@@ -6,12 +6,14 @@ Date   : 2025-05-13
 """
 
 import json
+from contextlib import contextmanager
 from typing import Any, Set, TypeVar, overload
 
 from pydantic import BaseModel
 from redis import Redis as SyncRedis
 from redis.asyncio import Redis
 from redis.asyncio.client import Pipeline
+from redis.exceptions import ResponseError
 from sqlmodel import SQLModel
 
 from rapidkit_core.dependency_observation import observe_dependency
@@ -22,7 +24,7 @@ T = TypeVar("T", bound=BaseModel)
 def _operation(command: object) -> str:
     # Only the fixed command verb is inspected, never a key or value.
     name = command.decode("ascii", errors="ignore") if isinstance(command, bytes) else str(command)
-    name = name.upper()
+    name = name.upper().partition(" ")[0]
     if name in {"XREAD", "XREADGROUP", "BLPOP", "BRPOP", "BLMOVE", "BRPOPLPUSH", "BZPOPMIN", "BZPOPMAX"}:
         return "wait"
     if name in {"GET", "MGET", "EXISTS", "TTL", "PTTL"}:
@@ -44,9 +46,25 @@ def _operation(command: object) -> str:
     return "other"
 
 
+@contextmanager
+def _observe_command(command: object):
+    name = command.decode("ascii", errors="ignore") if isinstance(command, bytes) else str(command)
+    expected_reply = None
+    with observe_dependency("redis", _operation(name)):
+        try:
+            yield
+        except ResponseError as error:
+            if name.upper() != "XGROUP CREATE" or str(error).partition(" ")[0] != "BUSYGROUP":
+                raise
+            expected_reply = error
+    # Preserve the SDK response after measuring the idempotent initialization as successful.
+    if expected_reply is not None:
+        raise expected_reply
+
+
 class RedisClient(SyncRedis):
     def execute_command(self, *args, **kwargs):
-        with observe_dependency("redis", _operation(args[0] if args else "")):
+        with _observe_command(args[0] if args else ""):
             return super().execute_command(*args, **kwargs)
 
 
@@ -72,7 +90,7 @@ class AsyncRedisClient(Redis):  # type: ignore[type-arg]
     """
 
     async def execute_command(self, *args, **kwargs):
-        with observe_dependency("redis", _operation(args[0] if args else "")):
+        with _observe_command(args[0] if args else ""):
             return await super().execute_command(*args, **kwargs)
 
     def pipeline(self, transaction: bool = True, shard_hint: str | None = None):
