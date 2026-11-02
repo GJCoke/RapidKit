@@ -246,6 +246,18 @@ These rules apply to every document a workflow produces for the user: design doc
 - Put steps and parallel items in lists. Keep a paragraph to at most six sentences.
 - Keep code names, paths, commands and fixed technical terms in their original form.
 
+## Visual Check
+
+Use this when a task has a visual target image. It checks the built page against the image. It does not fix anything.
+
+1. Start the page: `pnpm dev:backend`, then `pnpm dev:frontend` (`apps/frontend`) or `pnpm dev:admin` (`apps/admin`), from the repo root. Log in with a local account. If the page cannot open (database, Redis or login missing), report the check as blocked; do not install or start other services without asking.
+2. Open the page in the state the image shows, at the same viewport, with the browser tool the harness provides (under Codex, `@Browser`). Save the screenshot under `logs/verification/`.
+3. Put the screenshot and the image side by side in one comparison.
+4. Treat colour, font and icon differences that come from the project's theme tokens and components as expected. List the differences in layout, hierarchy, spacing, content and missing states, each with its location.
+5. Stop the dev servers you started.
+
+Do not use the Product Design plugin's `design-qa`: it fixes code by itself, writes `design-qa.md` at the project root and grades pixel fidelity, which conflicts with building from the project's tokens.
+
 ## Rules
 
 ### ALWAYS

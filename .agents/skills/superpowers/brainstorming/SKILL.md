@@ -79,10 +79,11 @@ These rules override the generic workflow below wherever they conflict.
   anything else.
 - **Product Design plugin.** OpenAI's Product Design plugin exists only in
   Codex and is installed per user, never vendored into this repo. Its
-  skills run as they are designed; you spawn no extra subagents. Keep
-  only the picked image, saved under `docs/superpowers/specs/`, and
-  delete every other image or screenshot the plugin left inside the
-  repo. Nothing it produces is committed.
+  skills run as they are designed; you spawn no extra subagents. Start
+  it with `@Product Design` and let it route the request; do not call its
+  focused skills directly. Keep only the picked image, saved under
+  `docs/superpowers/specs/`, and delete every other image or screenshot
+  the plugin left inside the repo. Nothing it produces is committed.
 
 ## First: What Do You Actually Know?
 
@@ -163,21 +164,23 @@ decide.
 
 - **A screen, page or layout they will look at.** First let them describe
   it in their own words. Then, under Codex with the Product Design plugin
-  installed, ask once whether to generate image directions; if yes, hand
-  the brief to its `ideate` skill, which generates three directions with
-  different hierarchy, layout or interaction model and waits for their
-  pick. For a change to a screen that is already running at a URL, its
-  `audit` skill can capture and critique it first; do not start or
-  install anything to make it run. Without Codex or the plugin, or if
-  they decline, describe two or three directions in words. They may also
-  run `ideate` in Codex themselves, or bring any image, and hand you the
-  picked one.
+  installed, ask once whether to generate image directions; if yes, send
+  `@Product Design` the brief and ask for image directions. The plugin
+  confirms the brief (it may ask one question), generates three
+  directions and waits for their pick. For a change to a screen that is
+  already running at a URL, ask `@Product Design` to audit it first; do
+  not start or install anything to make it run. Without Codex or the
+  plugin, or if they decline, describe two or three directions in words.
+  They may also ask `@Product Design` in Codex themselves, or bring any
+  image, and hand you the picked one.
 - **A flow, structure or sequence** (steps, states, a timeline, a map):
   in chat, a short ASCII sketch; in the design document, a Mermaid
   diagram.
 
-Do not use the plugin's `image-to-code` or `url-to-code`: their React
-prototype template does not match this repo's components or structure.
+Ask the plugin for directions or an audit only. Do not let it build the
+screen (`image-to-code`, `url-to-code`): its prototype template does not
+match this repo's components or structure. Do not run its `design-qa`
+either; use the Visual Check in `rapidkit-conventions`.
 Copy the picked image into `docs/superpowers/specs/` (see The Written
 Design) and delete any other output the plugin left inside the repo.
 
@@ -203,7 +206,7 @@ as theirs. End each chunk by asking what's wrong or missing.
 Before you send a chunk, check it: does it describe something they'll
 look at, like a page, a screen, a schedule, or a printout? If so, and
 no direction has been picked yet, do the screen step from "Show, don't
-tell" first (`ideate`, or directions in words without it) and hold the
+tell" first (`@Product Design` directions, or directions in words without it) and hold the
 chunk until they pick. Then describe the picked direction.
 
 ## Size the Work
@@ -219,11 +222,8 @@ words. They can override it.
 
 For a small change with a picked image, save it as in The Written Design
 and name its absolute path in the chat description. When the build is
-done, check it against the image before you report: start the page with
-`pnpm dev:frontend` or `pnpm dev:admin` from the repo root, then under
-Codex with the Product Design plugin run its `design-qa` skill on that
-page; otherwise compare a screenshot with the image by hand. List the
-differences in your report, and stop the dev server afterwards.
+done, run the Visual Check in `rapidkit-conventions` before you report,
+and list its differences (or why it was blocked) in the report.
 
 If it grows mid-task, stop, say so, and step up a size.
 
@@ -243,7 +243,7 @@ partner must approve. Cover:
 - constraints
 - the parts of the how they decided, as they decided them
 - what's left to the builder
-- the visual target: for UI work with a picked image (from `ideate` or
+- the visual target: for UI work with a picked image (from `@Product Design` or
   supplied by your human partner), save it as
   `docs/superpowers/specs/YYYY-MM-DD-<topic>-visual.<ext>` and state that
   the build follows it with the existing components and tokens of the
