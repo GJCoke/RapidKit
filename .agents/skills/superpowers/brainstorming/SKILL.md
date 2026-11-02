@@ -79,9 +79,10 @@ These rules override the generic workflow below wherever they conflict.
   anything else.
 - **Product Design plugin.** OpenAI's Product Design plugin exists only in
   Codex and is installed per user, never vendored into this repo. Its
-  skills run as they are designed; you spawn no extra subagents. Start
-  it with `@Product Design` and let it route the request; do not call its
-  focused skills directly. Keep only the picked image, saved under
+  skills run as they are designed; you spawn no extra subagents. Use it
+  only to generate image directions, started with `@Product Design`.
+  Everything else (research, audits, building, visual checks) uses this
+  repo's skills. Keep only the picked image, saved under
   `docs/superpowers/specs/`, and delete every other image or screenshot
   the plugin left inside the repo. Nothing it produces is committed.
 
@@ -167,9 +168,7 @@ decide.
   installed, ask once whether to generate image directions; if yes, send
   `@Product Design` the brief and ask for image directions. The plugin
   confirms the brief (it may ask one question), generates three
-  directions and waits for their pick. For a change to a screen that is
-  already running at a URL, ask `@Product Design` to audit it first; do
-  not start or install anything to make it run. Without Codex or the
+  directions and waits for their pick. Without Codex or the
   plugin, or if they decline, describe two or three directions in words.
   They may also ask `@Product Design` in Codex themselves, or bring any
   image, and hand you the picked one.
@@ -177,10 +176,10 @@ decide.
   in chat, a short ASCII sketch; in the design document, a Mermaid
   diagram.
 
-Ask the plugin for directions or an audit only. Do not let it build the
-screen (`image-to-code`, `url-to-code`): its prototype template does not
-match this repo's components or structure. Do not run its `design-qa`
-either; use the Visual Check in `rapidkit-conventions`.
+Ask the plugin for image directions only. Do not let it build the
+screen, audit it or check it (`image-to-code`, `url-to-code`, `audit`,
+`design-qa`): build with this repo's skills and check with the Visual
+Check in `rapidkit-conventions`.
 Copy the picked image into `docs/superpowers/specs/` (see The Written
 Design) and delete any other output the plugin left inside the repo.
 
