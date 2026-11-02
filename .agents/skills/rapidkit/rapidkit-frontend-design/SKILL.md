@@ -228,7 +228,7 @@ reusable UnoCSS rule in `apps/frontend/uno.config.ts` if the pattern occurs more
 
 ## Design Thinking
 
-Before coding, understand the context and commit to an aesthetic direction that fits the **admin dashboard** context:
+Before coding, understand the context and commit to an aesthetic direction that fits the **admin dashboard** context. When the task, plan or design document names a visual target image, that image is the direction: rebuild it with the existing components, shortcuts and theme tokens, not with the image's raw colour or font values.
 
 - **Purpose**: What problem does this interface solve? Who uses it (admins, operators, developers)?
 - **Tone**: RapidKit is a modern admin panel — favor clean, professional, data-dense aesthetics. Prioritize readability and usability over decoration.

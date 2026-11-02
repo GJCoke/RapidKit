@@ -40,6 +40,7 @@ These rules override the generic workflow below wherever they conflict.
   When a task applies a domain skill, name that skill in the task so the executor reads it before editing.
 - **Never commit anything under `docs/superpowers/`.** This covers the whole directory, not just specs and plans. Commit steps stage explicit task-owned implementation paths only; never `git add .`, `git add -A`, `git commit -a`, or a force-add of an ignored path.
 - **No subagents under Codex.** When running in Codex, write and self-review the plan in this session, and execute it with superpowers:executing-plans in this session. Never offer or choose Subagent-driven execution there.
+- **Visual target.** When the spec (or the approved chat description of a small change) names a visual target image, every UI task names that image path so the executor builds toward it, and the last task that touches the UI ends with a visual check against it: under Codex with the Product Design plugin, run its `design-qa` skill on the running page; otherwise compare a screenshot with the image by hand and list the differences. Specs without a visual target get no such step.
 
 ## Scope Check
 

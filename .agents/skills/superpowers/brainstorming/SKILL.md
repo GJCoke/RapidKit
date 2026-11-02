@@ -77,6 +77,11 @@ These rules override the generic workflow below wherever they conflict.
 - **No subagents under Codex.** When running in Codex, do all work in the
   current session: do not spawn subagents for recon, the builder check, or
   anything else.
+- **Product Design plugin.** OpenAI's Product Design plugin exists only in
+  Codex and is installed per user, never vendored into this repo. Its
+  skills run as they are designed; you spawn no extra subagents. Its
+  images and screenshots stay under `docs/superpowers/` and are never
+  committed.
 
 ## First: What Do You Actually Know?
 
@@ -153,17 +158,27 @@ several ideas and drop the weak ones, including any that fight what
 they've told you about why. Show the comparison only when it helps them
 decide.
 
-**Show, don't tell.** Offer the visual companion (below) whenever seeing
-would help more than reading:
+**Show, don't tell.** When seeing would help more than reading:
 
-- something they'll look at: a screen, a page, a printout, a sign
-- a layout or arrangement: of a screen, a room, a schedule
-- a flow or a sequence of steps
-- options that would look different from each other
-- a structure that's easier to see than read: a diagram, a timeline, a map
+- **A screen, page or layout they will look at.** First let them describe
+  it in their own words. Then, under Codex with the Product Design plugin
+  installed, ask once whether to generate image directions; if yes, hand
+  the brief to its `ideate` skill, which generates three directions with
+  different hierarchy, layout or interaction model and waits for their
+  pick. For a change to a screen that is already running at a URL, its
+  `audit` skill can capture and critique it first; do not start or
+  install anything to make it run. Without Codex or the plugin, or if
+  they decline, describe two or three directions in words. They may also
+  run `ideate` in Codex themselves, or bring any image, and hand you the
+  picked one.
+- **A flow, structure or sequence** (steps, states, a timeline, a map):
+  in chat, a short ASCII sketch; in the design document, a Mermaid
+  diagram.
 
-Once they've accepted, use it for mockups to react to, side-by-side
-options, and throwaway prototypes they can click.
+Do not use the plugin's `image-to-code` or `url-to-code`: their React
+prototype template does not match this repo's components or structure.
+Copy the picked image into `docs/superpowers/specs/` (see The Written
+Design) and delete any other output the plugin left inside the repo.
 
 **Spike to feel things out.** Agentic work is waterfall, but very, very
 fast. A quick throwaway build is often the cheapest way to learn what
@@ -186,9 +201,9 @@ as theirs. End each chunk by asking what's wrong or missing.
 
 Before you send a chunk, check it: does it describe something they'll
 look at, like a page, a screen, a schedule, or a printout? If so, and
-they haven't seen the visual companion offer yet, send the offer instead
-(its own message, below) and hold the chunk for the next message. Once
-they've accepted, put a mockup next to the description.
+no direction has been picked yet, do the screen step from "Show, don't
+tell" first (`ideate`, or directions in words without it) and hold the
+chunk until they pick. Then describe the picked direction.
 
 ## Size the Work
 
@@ -200,6 +215,9 @@ words. They can override it.
 | A quick, clear task | the request itself | do it |
 | A small change | in chat | build it through the normal workflow |
 | A project with a written design | a written design document | a full plan (for software: superpowers:writing-plans) |
+
+For a small change with a picked image, save it as in The Written Design
+and name its path in the chat description.
 
 If it grows mid-task, stop, say so, and step up a size.
 
@@ -219,6 +237,13 @@ partner must approve. Cover:
 - constraints
 - the parts of the how they decided, as they decided them
 - what's left to the builder
+- the visual target: for UI work with a picked image (from `ideate` or
+  supplied by your human partner), save it as
+  `docs/superpowers/specs/YYYY-MM-DD-<topic>-visual.<ext>` and state that
+  the build follows it with the existing components and tokens of the
+  matching frontend (`rapidkit-frontend-design` for `apps/frontend`,
+  existing React/`shadcn` patterns for `apps/admin`), not the image's raw
+  colour or font values. Otherwise write "none".
 
 **Where it goes:** in a software repo,
 `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`, saved locally
@@ -274,25 +299,3 @@ software, invoke superpowers:writing-plans and no other skill.
 | "I should explain the process first" | Ask your question. The process shows itself. |
 | "They said 'sounds good' to the idea" | Approval covers what you showed them. A description you haven't written isn't approved. |
 | "The spike works, I'll keep building on it" | Keeping it is a new request. Back through the gate. |
-
-## Visual Companion
-
-A browser tab for showing mockups, diagrams, and prototypes. It's a
-tool, not a mode: accepting it doesn't send every question to the
-browser.
-
-**Offer it just-in-time.** Offer it the first time one of the moments
-above comes up, never upfront. The offer is its own message with nothing
-else in it:
-
-> "This might be easier if I show you. Want me to open a browser tab with some mockups?"
-
-If they decline, stay in text and don't offer again unless they raise it.
-
-**Per question, ask: would they understand this better by seeing it?**
-Mockups, layouts, diagrams, and side-by-side designs go in the browser.
-Requirements, scope, tradeoffs, and conceptual choices stay in text. A
-question about a UI topic isn't automatically a visual question.
-
-If they accept, read `visual-companion.md` in this directory before
-starting the server.
