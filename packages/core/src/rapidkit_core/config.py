@@ -246,6 +246,14 @@ class Config(
     def environment_defaults(self) -> Self:
         if "LOG_JSON" not in self.model_fields_set:
             self.LOG_JSON = self.ENVIRONMENT.is_deployed
+        if self.ENVIRONMENT is Environment.LOCAL:
+            for name, default in (
+                ("LOG_FILE_MAX_BYTES", 20 * 1024 * 1024),
+                ("LOG_FILE_RETENTION_DAYS", 3),
+                ("LOG_FILE_BUDGET_BYTES", 200 * 1024 * 1024),
+            ):
+                if name not in self.model_fields_set:
+                    setattr(self, name, default)
         for name in ("EXPOSE_API_DOCS", "EXPOSE_ERROR_DETAILS"):
             if name not in self.model_fields_set:
                 setattr(self, name, self.ENVIRONMENT in (Environment.LOCAL, Environment.TESTING))

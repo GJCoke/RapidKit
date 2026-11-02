@@ -24,12 +24,16 @@ if TYPE_CHECKING:
 from rapidkit_core import runtime_state
 from rapidkit_core.config import settings
 from rapidkit_core.diagnostics import exception_summary
+from rapidkit_core.environment import Environment
 from rapidkit_core.log_queue import FileLogSink
+from rapidkit_core.log_session import DevLogSession
 from rapidkit_core.nanoid import get_request_nanoid
 from rapidkit_core.path import LOG_PATH
 
 _owned_handlers: set[int] = {0}  # Loguru's initial default handler.
 _file_sink: FileLogSink | None = None
+_service = "api"
+_dev_session: DevLogSession | None = None
 _last_log_cleanup = float("-inf")
 _component_failures: dict[str, tuple[int, float]] = {}
 _FIELDS = frozenset(
@@ -190,7 +194,9 @@ def json_sink(message: "Message", *, stream: TextIO | None = None) -> None:
 
 def setup_logging(service: str = "api") -> None:
     """设置日志处理器。"""
-    global _file_sink
+    global _file_sink, _service, _dev_session
+    _service = service
+    _dev_session = None
     ruLogger.configure(patcher=_prepare_record, extra={"service": service})
     runtime_state.start(service, settings.RUNTIME_STATE_DIR)
     logging.root.handlers = [InterceptHandler()]
@@ -240,6 +246,10 @@ def rename_rotated_logfile(filepath: str, active_file: Path, *, suffix: str | No
 
 def cleanup_logfiles(*, force: bool = False) -> None:
     """清理所有实例的过期归档和本机已退出进程的文件，每小时最多扫描一次。"""
+    if settings.ENVIRONMENT is Environment.LOCAL:
+        if _dev_session is not None:
+            _dev_session.cleanup(force=force)
+        return
     global _last_log_cleanup
     now = time.monotonic()
     if not force and now - _last_log_cleanup < 3600:
@@ -319,13 +329,16 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
 
     在线进程使用有界线程队列；enqueue=False 仅用于离线命令或同步测试。
     """
-    global _file_sink
+    global _file_sink, _dev_session
     os.makedirs(LOG_PATH, exist_ok=True)
+    if settings.ENVIRONMENT is Environment.LOCAL:
+        _dev_session = DevLogSession(LOG_PATH, _service)
     cleanup_logfiles(force=True)
 
+    directory = _dev_session.path if _dev_session is not None else LOG_PATH
     instance_suffix = f".{socket.gethostname()}.{os.getpid()}"
-    configured_access = LOG_PATH / settings.LOG_ACCESS_FILENAME
-    configured_error = LOG_PATH / settings.LOG_ERROR_FILENAME
+    configured_access = directory / settings.LOG_ACCESS_FILENAME
+    configured_error = directory / settings.LOG_ERROR_FILENAME
     log_access_file, log_error_file = (
         path.with_name(f"{path.stem}{instance_suffix}{path.suffix}") for path in (configured_access, configured_error)
     )
@@ -350,11 +363,12 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
 
             sink = BudgetedFile(
                 path,
-                root=LOG_PATH,
+                root=_dev_session.root if _dev_session is not None else LOG_PATH,
                 limit=settings.LOG_FILE_BUDGET_BYTES,
                 min_free=settings.LOG_FILE_MIN_FREE_BYTES,
                 rotation=rotation,
                 compression=compression,
+                reclaim=_dev_session.reclaim if _dev_session is not None else None,
             )
         else:
             sink = FileSink(str(path), encoding="utf-8", rotation=rotation, compression=compression, delay=True)

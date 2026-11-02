@@ -200,6 +200,25 @@ async def test_sentry_api_worker_beat_initialization(loaded_app, monkeypatch):
     assert events == ["logging", file_sinks, "sentry", "logging", file_sinks, "sentry"]
 
 
+@pytest.mark.parametrize(
+    "argv, expected",
+    [
+        (["celery", "-A", "src.queues.app", "beat"], "beat"),
+        (["celery", "-A", "src.queues.app", "worker", "--hostname", "beat"], "worker"),
+    ],
+)
+def test_celery_initial_logging_uses_launch_role(loaded_app, monkeypatch, argv, expected):
+    from src.queues import app as queue_module
+
+    services = []
+    monkeypatch.setattr(queue_module.sys, "argv", argv)
+    monkeypatch.setattr("rapidkit_core.log.setup_logging", lambda *, service: services.append(service))
+    monkeypatch.setattr("rapidkit_core.log.set_custom_logfile", lambda: None)
+    monkeypatch.setattr(queue_module, "init_sentry", lambda: None)
+    queue_module.configure_process_logging()
+    assert services == [expected]
+
+
 @pytest.mark.asyncio
 async def test_actual_asgi_error_preserves_scoped_identity_and_removes_credentials(sentry_events):
     from types import SimpleNamespace

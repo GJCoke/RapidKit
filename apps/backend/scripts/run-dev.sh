@@ -21,6 +21,9 @@ export APP_MODULE=${APP_MODULE:-"$MODULE_NAME:$VARIABLE_NAME"}
 HOST=${HOST:-0.0.0.0}
 PORT=${PORT:-8006}
 
+# The reload supervisor keeps this identity across replacement API children.
+export RAPIDKIT_LOG_SESSION_API="$$-$(date +%Y%m%dT%H%M%S)-$RANDOM"
+
 # Build --reload-dir arguments dynamically.
 # Always watch the backend src and plugins.
 RELOAD_ARGS=(

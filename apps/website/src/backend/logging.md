@@ -77,14 +77,38 @@ Sentry 上报同样去除认证头、请求体、URL query/fragment、局部变�
 | LOG_FILE_ERROR_LEVEL      | WARNING                                    | WARNING 及以上文件阈值                                     |
 | LOG_ACCESS_FILENAME       | access.log                                 | 活动文件基础名                                             |
 | LOG_ERROR_FILENAME        | error.log                                  | 活动文件基础名                                             |
-| LOG_FILE_MAX_BYTES        | 104857600                                  | 单个文件轮转阈值，默认 100 MiB                             |
-| LOG_FILE_RETENTION_DAYS   | 7                                          | 归档和可确认退出的本机进程文件保存期                       |
-| LOG_FILE_BUDGET_BYTES     | 普通环境不设，生产 Compose 5 GiB/角色      | 同角色共享目录的普通文件日志总预算                         |
+| LOG_FILE_MAX_BYTES        | LOCAL 20 MiB，其他环境 100 MiB             | 单个文件轮转阈值                                           |
+| LOG_FILE_RETENTION_DAYS   | LOCAL 3，其他环境 7                        | 历史文件保存天数                                           |
+| LOG_FILE_BUDGET_BYTES     | LOCAL 200 MiB，生产 Compose 5 GiB/角色     | LOCAL 对整个 `logs/dev/` 生效；其他环境按共享目录计量      |
 | LOG_FILE_MIN_FREE_BYTES   | 67108864                                   | 写入后要求保留的文件系统空闲空间                           |
 | RUNTIME_STATE_DIR         | 普通环境不设，生产 `/tmp/rapidkit-runtime` | 与 Redis、运行日志目录独立的数值快照                       |
 | SLOW_REQUEST_THRESHOLD_MS | 3000                                       | 慢请求 WARNING 阈值                                        |
 
-实际活动文件带 hostname.pid 后缀，例如 `access.host.123.log`；归档保留实例标识，例如 `access.host.123.2026-10-30.log`，同日冲突追加序号，不覆盖旧文件。轮转按记录生成时的进程本地日期和 UTF-8 大小判断；超过剩余目录预算的整条普通文件记录会被丢弃，并独立计数和报告。
+### 开发环境的固定入口
+
+`ENVIRONMENT=LOCAL` 按服务和启动会话组织文件，排查时打开固定目录：
+
+```text
+logs/dev/
+  api/current/       # 本次 API 启动，包括后续热重载
+  worker/current/    # 本次 Worker 启动，包括父进程和 prefork 子进程
+  beat/current/      # 本次 Beat 启动
+  archive/<service>/ # 已退出的历史会话
+```
+
+`current` 是指向会话目录的相对符号链接。内部仍用 `access.<hostname>.<pid>.log` 和 `error.<hostname>.<pid>.log` 隔离写入进程，不让多个进程竞争同一个轮转文件。查本次启动的全部错误可在仓库根目录执行 `rg '关键词' logs/dev/api/current/ --glob 'error.*.log'`。查看后续输出时使用 `tail -F logs/dev/api/current/*.log`；热重载新增文件后需要重新执行该命令，目录入口保持不变。
+
+`pnpm --filter @rapidkit/backend dev` 在重载父进程生成会话标识。直接启动 Uvicorn 的 spawn 子进程也会复用父进程已有的会话。Worker 父进程通过环境变量把会话传给子进程。新的独立启动更新 `current`；旧启动的子进程不会覆盖它。`migrate`、`exporter` 等角色使用同一目录规则。
+
+启动和写线程每小时检查历史会话：整个会话的父进程和参与进程均确认退出后，才移入 `archive`。每个服务最多保留最近 3 个历史会话，默认最长 3 天。活跃、远程主机、权限不足、元数据不明的会话不自动删除。清理可能在下次启动或写入时才发生。
+
+LOCAL 默认每文件 20 MiB，整个 `logs/dev/` 的普通文件总预算 200 MiB；已有显式设置优先。预算不足时先回收已退出的历史会话，再回收已轮转或确认退出进程的旧文件。仍无法腾出空间时丢弃本条文件副本并计数，stdout 继续输出。活跃进程正在写入的文件不删除。默认预算复用 POSIX 文件锁，适用于当前 Linux/Docker 开发环境。
+
+旧 `logs/` 根目录文件不会自动搬入新会话，也不计入 LOCAL 的新预算。切换时先盘点，再单独清理确认退出的本机开发进程文件；不要批量删除远程、未知来源或仍在写入的文件。`logs/verification/` 始终独立保留。
+
+### 部署环境的进程隔离
+
+其他环境继续直接使用配置目录。实际活动文件带 hostname.pid 后缀，例如 `access.host.123.log`；归档保留实例标识，例如 `access.host.123.2026-10-30.log`，同日冲突追加序号，不覆盖旧文件。轮转按记录生成时的进程本地日期和 UTF-8 大小判断；超过剩余目录预算的整条普通文件记录会被丢弃，并独立计数和报告。
 
 支持自定义相对路径与扩展名，按各基础文件所在目录清理。清理每小时最多扫描一次，启动强制执行；只处理匹配规则的普通文件，跳过符号链接、存活或无法确认存活的进程，以及远程 hostname 的未归档文件。`logs/verification/` 存放开发验证结果，排除在运行日志保留策略之外，不能提交。
 

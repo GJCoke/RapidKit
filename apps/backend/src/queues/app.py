@@ -5,6 +5,8 @@ Author  : Coke
 Date    : 2025-04-10
 """
 
+import sys
+
 from celery.signals import beat_init, worker_process_init, worker_process_shutdown, worker_shutdown
 from celery.signals import setup_logging as setup_logging_signal
 from rapidkit_core.config import settings
@@ -67,10 +69,12 @@ if settings.ENABLE_CELERY_MONITOR:
 
 
 @setup_logging_signal.connect
-def configure_process_logging(*, service: str = "worker", **kwargs):
+def configure_process_logging(*, service: str | None = None, **kwargs):
     """Own the pipeline in worker/beat parents, before Celery redirects stdout."""
     from rapidkit_core.log import set_custom_logfile, setup_logging
 
+    if service is None:
+        service = "beat" if "beat" in sys.argv[1:] and "worker" not in sys.argv[1:] else "worker"
     setup_logging(service=service)
     set_custom_logfile()
     init_sentry()

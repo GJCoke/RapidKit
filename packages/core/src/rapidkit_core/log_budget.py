@@ -13,10 +13,13 @@ from rapidkit_core import runtime_state
 
 
 class BudgetedFile:
-    def __init__(self, path: Path, *, root: Path, limit: int, min_free: int, rotation=None, compression=None):
+    def __init__(
+        self, path: Path, *, root: Path, limit: int, min_free: int, rotation=None, compression=None, reclaim=None
+    ):
         self.path, self.root = path, root
         self.limit, self.min_free = limit, min_free
         self.rotation, self.compression = rotation, compression
+        self.reclaim = reclaim
         self.file = None
         self._degraded = False
         self._last_warning = float("-inf")
@@ -58,6 +61,9 @@ class BudgetedFile:
                         metadata = item.stat(follow_symlinks=False)
                         if stat.S_ISREG(metadata.st_mode) and name != ".budget.lock":
                             used += metadata.st_size
+                required = used + len(message.encode("utf-8")) - self.limit
+                if required > 0 and self.reclaim is not None:
+                    used -= self.reclaim(required)
                 if used + len(message.encode("utf-8")) > self.limit:
                     self._failure("budget_exceeded")
                     return
