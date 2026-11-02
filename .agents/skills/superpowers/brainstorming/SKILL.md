@@ -79,9 +79,10 @@ These rules override the generic workflow below wherever they conflict.
   anything else.
 - **Product Design plugin.** OpenAI's Product Design plugin exists only in
   Codex and is installed per user, never vendored into this repo. Its
-  skills run as they are designed; you spawn no extra subagents. Its
-  images and screenshots stay under `docs/superpowers/` and are never
-  committed.
+  skills run as they are designed; you spawn no extra subagents. Keep
+  only the picked image, saved under `docs/superpowers/specs/`, and
+  delete every other image or screenshot the plugin left inside the
+  repo. Nothing it produces is committed.
 
 ## First: What Do You Actually Know?
 
@@ -217,7 +218,12 @@ words. They can override it.
 | A project with a written design | a written design document | a full plan (for software: superpowers:writing-plans) |
 
 For a small change with a picked image, save it as in The Written Design
-and name its path in the chat description.
+and name its absolute path in the chat description. When the build is
+done, check it against the image before you report: start the page with
+`pnpm dev:frontend` or `pnpm dev:admin` from the repo root, then under
+Codex with the Product Design plugin run its `design-qa` skill on that
+page; otherwise compare a screenshot with the image by hand. List the
+differences in your report, and stop the dev server afterwards.
 
 If it grows mid-task, stop, say so, and step up a size.
 
