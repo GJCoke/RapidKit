@@ -104,11 +104,6 @@ export function fetchGetTaskList(params?: Api.Worker.TaskSearchParams) {
   return request<Api.Worker.TaskList>({ url: "/tasks", method: "get", params })
 }
 
-/** Fetch worker detail */
-export function fetchGetWorkerDetail(workerId: string) {
-  return request<Api.Worker.WorkerDetail>({ url: `/workers/${workerId}`, method: "get" })
-}
-
 /** Ping a worker */
 export function fetchPingWorker(workerId: string) {
   return request<Api.Worker.WorkerControlResponse>({ url: `/workers/${workerId}/ping`, method: "post" })
@@ -167,7 +162,7 @@ No try/catch needed. Check `error` for failure, use `data` for success.
    }
    ```
 
-3. **Create API function file** at `apps/frontend/src/service/api/<module>.ts`:
+3. **Create API function file** at `apps/frontend/src/service/api/<module>.ts` (CRUD template; add only the functions the backend exposes):
 
    ```typescript
    import { request } from "../request"

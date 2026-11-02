@@ -14,39 +14,7 @@ Read `rapidkit-conventions` first for shared project rules and the repository-wi
 
 ## Project Architecture
 
-RapidKit backend uses a **uv workspace** monorepo with a **plugin-based** modular architecture.
-**Python >= 3.14** is required.
-
-```
-rapidkit/
-├── pyproject.toml                    # Root workspace definition (uv)
-├── packages/
-│   ├── core/                         # rapidkit-core: infrastructure layer
-│   ├── common/                       # rapidkit-common: shared business layer
-│   ├── framework/                    # rapidkit-framework: plugin/HTTP runtime
-│   └── security/                     # rapidkit-security: JWT/password/RSA
-├── apps/
-│   └── backend/
-│       ├── pyproject.toml            # rapidkit-backend application
-│       ├── src/                      # Application shell (entry, middlewares, queues, sio)
-│       ├── plugins/                  # Business domain plugins
-│       ├── alembic/                  # Database migrations
-│       └── tests/
-```
-
-### Package Architecture
-
-```text
-plugins -> rapidkit-common -> rapidkit-framework -> rapidkit-core
-                          \-> rapidkit-core
-
-rapidkit-security: standalone JWT, password hashing and RSA utilities
-```
-
-- `rapidkit-core`: configuration, database, Redis, timezone and logging.
-- `rapidkit-framework`: plugin discovery/manifests, service registry, event bus, HTTP exceptions/status codes, i18n, request identity and scopes; depends on core.
-- `rapidkit-common`: shared SQLModel/CRUD/schemas, protocols, access and scope runtime; depends on framework and core.
-- Plugins declare their direct package dependencies and communicate through shared protocols/services or events where appropriate. Stateful core/framework code must not depend on business plugins.
+Python >= 3.14, uv workspace, plugin-based. The package layout and dependency flow are in `rapidkit-conventions` (Project Architecture).
 
 ### Application Shell
 
@@ -131,31 +99,7 @@ def register() -> PluginManifest:
     )
 ```
 
-**PluginManifest fields:**
-
-| Field                  | Type                                        | Description                                                                          |
-| ---------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `name`                 | `str`                                       | Unique plugin name                                                                   |
-| `version`              | `str`                                       | Semver version                                                                       |
-| `router`               | `APIRouter \| None`                         | FastAPI router to mount                                                              |
-| `models`               | `list[type]`                                | SQLModel table classes                                                               |
-| `dependencies`         | `list[str \| PluginDependency]`             | Required plugins; supports version constraints via `PluginDependency`                |
-| `resources`            | `list[ResourceDef]`                         | Controlled resources (see `rapidkit-permission`)                                     |
-| `permission_codes`     | `list[PermissionCodeDef]`                   | Permission codes `资源:动作` (see `rapidkit-permission`)                              |
-| `permission_packages`  | `list[PermissionPackageDef]`                | Built-in permission packages (see `rapidkit-permission`)                             |
-| `required`             | `bool`                                      | Whether plugin failure is fatal (default `True`)                                     |
-| `on_startup`           | `list[Callable]`                            | Async startup callbacks `(app: FastAPI) -> None`                                     |
-| `on_shutdown`          | `list[Callable]`                            | Async shutdown callbacks `(app: FastAPI) -> None`                                    |
-| `event_listeners`      | `list[tuple[type[Event], Callable[, int]]]` | Typed event listeners; optional third element is priority (lower = first, default 0) |
-| `dependency_overrides` | `dict[Callable, Callable]`                  | FastAPI dependency overrides (same as `app.dependency_overrides`)                    |
-| `middlewares`          | `list[MiddlewareDef]`                       | Plugin middlewares; `order` controls position (lower = closer to request entry)      |
-| `provides` / `requires` | `list[type]` | Service protocols provided/required by the plugin |
-| `service_factories` | `dict[type, Callable]` | Protocol-to-registration-factory mapping |
-| `task_modules` | `list[str]` | Import paths of Celery task modules |
-| `beat_schedule` | `dict[str, dict]` | Plugin-owned periodic schedules |
-| `sio_modules` | `list[str]` | Socket.IO event modules |
-| `dashboard_modules` | `list[DashboardModuleDef]` | Dashboard permission and realtime topic metadata |
-| `audit_actions` | `list[AuditActionDef]` | Audit action definitions the plugin records |
+**PluginManifest fields:** the full list is in `packages/framework/src/rapidkit_framework/plugin.py` (`PluginManifest`). The most used are `name`, `version`, `router`, `models`, `dependencies` (names or `PluginDependency` with a version constraint) and `resources` / `permission_codes` (see `rapidkit-permission`). Celery fields are in `rapidkit-celery-task`.
 
 ### Plugin Discovery & Loading
 
@@ -194,53 +138,13 @@ Loading process: `importlib.metadata.entry_points(group="rapidkit.plugins")` →
 
 ### Existing Plugins
 
-| Plugin | Package | Responsibility |
-| ------ | ------- | -------------- |
-| `auth` | `rapidkit-plugin-auth` | Authentication, invite/reset flows, impersonation |
-| `user` | `rapidkit-plugin-user` | User administration and profiles |
-| `department` | `rapidkit-plugin-department` | Department hierarchy |
-| `permission` | `rapidkit-plugin-permission` | Roles, route access, permission catalog and server-declared packages |
-| `menu` | `rapidkit-plugin-menu` | Menus and navigation |
-| `monitoring` | `rapidkit-plugin-monitoring` | API monitoring |
-| `system` | `rapidkit-plugin-system` | System information, health and audit |
-| `worker` | `rapidkit-plugin-worker` | Workers, task execution and statistics |
-| `schedule` | `rapidkit-plugin-schedule` | Periodic task management |
-| `notification` | `rapidkit-plugin-notification` | Notifications and templates |
-
-Use the actual plugin `pyproject.toml` files and manifests as the source of truth when adding dependencies.
+The plugins are the directories under `apps/backend/plugins/`. Each plugin's `pyproject.toml` and `register()` manifest are the source of truth for its package name and dependencies.
 
 ## Core Patterns
 
 ### Import Paths
 
-```python
-# Core infrastructure
-from rapidkit_core.config import settings
-from rapidkit_core.database import AsyncSessionLocal, RedisManager
-from rapidkit_core.log import logger
-from rapidkit_core.timezone import timezone
-from rapidkit_framework.exceptions import AppException
-from rapidkit_framework.status_codes import StatusCode
-from rapidkit_core.uuid7 import uuid7
-from rapidkit_security import AccessJWT, decode_token, hash_password
-from rapidkit_framework.events import Event, event_bus
-from rapidkit_framework.context import ctx
-from rapidkit_framework.plugin import MiddlewareDef, PluginDependency, PluginManifest
-
-# Common business layer
-from rapidkit_common.models import SQLModel
-from rapidkit_common.crud import BaseCRUD
-from rapidkit_common.deps import SessionDep, RedisDep
-from rapidkit_common.schemas.base import BaseModel
-from rapidkit_common.schemas.request import BaseRequest, PaginatedRequest, BatchRequest, DeleteRequest, DetailsRequest, SearchRequest
-from rapidkit_common.access import Require
-from rapidkit_common.schemas.response import Response, PaginatedResponse, BaseResponse, BaseSchema, ResponseSchema
-from rapidkit_common.schemas.types import LocalDatetime
-from rapidkit_common.enums import Status, TaskStatus, WorkerStatus
-
-# Cross-plugin imports (use sparingly, declare in dependencies)
-from plugin_auth.auth.deps import AuthContextDep, UserDBDep
-```
+Use the Common Import Paths table in `rapidkit-conventions`. Cross-plugin imports (e.g. `from plugin_auth.auth.deps import AuthContextDep`) need the plugin in `PluginManifest.dependencies`.
 
 ### ORM Model Pattern
 
@@ -267,7 +171,7 @@ class MyCRUD(BaseCRUD[MyModel]):
     model = MyModel
 ```
 
-`BaseCRUD` provides: `get`, `get_by_ids`, `get_all`, `get_count`, `get_paginate`, `get_paginate_by_cursor`, `create`, `create_all`, `update_by_id`, `update_all`, `delete`, `delete_all`, `exists`.
+Read `packages/common/src/rapidkit_common/crud.py` for the `BaseCRUD` methods before writing a query.
 
 Subclass must declare `model` ClassVar. Constructor takes only `session: AsyncSession`. CRUD methods only `flush()` — the request dependency commits on success and rolls back on failure. For manually opened sessions, explicitly commit/rollback or use a transaction context such as `async with session.begin()`; `async with session()` alone does not commit. Query methods support an optional `schema` parameter for Pydantic conversion.
 
@@ -332,22 +236,7 @@ async def get_items(
 
 ### Response Pattern
 
-All API endpoints return `Response[T]`:
-
-```python
-from rapidkit_common.access import Require
-from rapidkit_common.schemas.response import Response, PaginatedResponse
-
-@router.get("/items", dependencies=[Require("item:read")])
-async def get_items() -> Response[list[ItemSchema]]:
-    return Response(data=items)
-
-@router.get("/items/paged", dependencies=[Require("item:read")])
-async def get_items_paged() -> Response[PaginatedResponse[ItemSchema]]:
-    return Response(data=PaginatedResponse(records=items, total=100, page=1, page_size=20))
-```
-
-`Response.message` has a field serializer that auto-translates via i18n.
+All endpoints return `Response[T]`; see Response Envelope in `rapidkit-conventions`. `Response.message` is translated through i18n.
 
 ### Dependency Injection Pattern
 
@@ -393,90 +282,29 @@ async def create_item(
     return Response(data=await service.create(body))
 ```
 
-## Celery Task System
+## Celery Tasks
 
-### Task Dependencies
-
-Tasks declare resource needs via type annotations. The `Task` base class auto-injects them:
-
-```python
-from src.queues.app import app
-from src.queues.deps import TaskRedis, TaskSession
-
-@app.task(name="my_task")
-async def my_task(redis: TaskRedis, session: TaskSession) -> None:
-    """Task with auto-injected Redis and DB session."""
-    # redis: AsyncRedis instance
-    # session: async_sessionmaker (use as `async with session() as s:`)
-    async with session() as s:
-        # ... database operations
-        pass
-```
-
-**Available dependency types:**
-
-- `TaskRedis` — `rapidkit_core.redis_client.AsyncRedisClient` instance (auto-created from settings)
-- `TaskSession` — `async_sessionmaker` with SQLModel `AsyncSession` (auto-created from settings)
-
-### Celery Modules and Beat Schedule
-
-Declare business task modules in `PluginManifest.task_modules` and periodic entries in `PluginManifest.beat_schedule`, inside the owning plugin's `register()` function. `apps/backend/src/queues/app.py:configure_from_plugins()` merges these with core modules/schedules and sets `app.conf.imports` / `app.conf.beat_schedule`.
-
-See `rapidkit-celery-task` and `apps/backend/plugins/monitoring/src/plugin_monitoring/__init__.py`. New files in `src/queues/tasks/` are not scanned automatically.
+Follow `rapidkit-celery-task`.
 
 ## Timezone Rules
 
-The project stores **naive UTC** and chooses response types by their meaning. Follow the timezone rules in `rapidkit-conventions`.
-
-| Scenario                            | Approach                                                                         |
-| ----------------------------------- | -------------------------------------------------------------------------------- |
-| Writing time to DB                  | `timezone.now()` — returns naive UTC datetime                                    |
-| Parsed/compared response timestamps | `UTCInstant` or `EditableInstant` — ISO with an explicit offset                   |
-| Display-only legacy wall time       | `LocalDatetime` — formatted configured-zone text, never an instant input          |
-| Daily aggregation labels            | `date` / `YYYY-MM-DD`; construct local day boundaries before querying UTC        |
-| Socket.IO timestamps                | Same explicit instant convention as HTTP; formatted strings only for pure text |
-
-```python
-# Model / CRUD layer — getting current time
-from rapidkit_core.timezone import timezone
-now = timezone.now()  # naive UTC datetime
-
-# Schema layer — response datetime fields
-from rapidkit_common.schemas.types import LocalDatetime, UTCInstant
-
-class MyResponse(BaseSchema):
-    create_time: LocalDatetime    # auto-serialized to "2026-04-13 18:00:00"
-    last_sync_at: UTCInstant      # parsed/compared in the browser
-```
-
-**Configuration (`.env`):**
-
-```
-DATETIME_TIMEZONE=Asia/Shanghai
-DATETIME_FORMAT=%Y-%m-%d %H:%M:%S
-```
+Follow the Timezone Rules in `rapidkit-conventions`. Store naive UTC with `timezone.now()`; Socket.IO timestamps use the same instant convention as HTTP. The configured zone is `DATETIME_TIMEZONE` in `.env`.
 
 ## Rules
 
 ### Logging Rules
 
-- In plugins, use `from rapidkit_core.log import get_plugin_logger` and `logger = get_plugin_logger("PluginName")`; infrastructure may use the global `logger`. Never use `logging.getLogger()`.
-- ALWAYS use Loguru `{}` named params — NEVER use f-string or printf `%s` in log messages
-- Do not manually prefix messages with `[PluginName]`; `get_plugin_logger()` binds the plugin field for the formatter.
-- ALWAYS include `user_id` in security-sensitive log messages (login, permission changes, user deletion)
+Follow the Logging Rules in `rapidkit-conventions`, plus:
+
 - ALWAYS log state changes (create/update/delete) at INFO or WARNING level
 - NEVER log query/read operations (too noisy, handled by LoggerMiddleware at API level)
-- NEVER log sensitive data (passwords, tokens, PII) in plain text
-- PREFER WARNING for security events (login failure, permission changes, user disable/delete)
-- PREFER INFO for normal business events (login success, task created, notification sent)
-- PREFER DEBUG for internal diagnostics (cache miss, retry, fallback path taken)
+- Security-sensitive logs (login, permission changes, user deletion) include `user_id`
 
 ### Backend Rules
 
 - NEVER define query parameters as raw `Query()` in API endpoints — always use schema classes with `Annotated[Schema, Query(...)]`
 - NEVER bypass the BaseModel alias convention — all request/response schemas must inherit from the appropriate base class
 - NEVER put business logic in `apps/backend/src` — it belongs in a plugin
-- NEVER use `datetime.now()` or `datetime.utcnow()` — always use `timezone.now()`
 - NEVER manually call `timezone.to_local().strftime()` in CRUD/Service layers for response data
 - Use `UTCInstant` / `EditableInstant` for response instants, `LocalDatetime` for pure display, and `date` for calendar labels; avoid unmarked `datetime` responses.
 - Follow the shared import policy in `rapidkit-conventions`: prefer module-level imports and allow narrow, justified initialization-cycle or test-bootstrap exceptions.
@@ -490,7 +318,3 @@ DATETIME_FORMAT=%Y-%m-%d %H:%M:%S
 - PREFER `BaseCRUD` over writing raw queries
 - Request and query schemas are the entry validation. Services and CRUD trust the validated types; do not re-check a field the schema already guarantees.
 - Raise `AppException` and let it propagate to the framework handler. Use `try/except` only to roll back, release a resource or translate a third-party error at the boundary; never to log and re-raise.
-
-### Git Rules
-
-Follow `rapidkit-conventions` and the root `AGENTS.md`: choose the branch by the `AGENTS.md` branch rules (stay on the current non-main branch; on `main`/`master`, only a simple task works in place); validated implementation changes may be committed automatically, while design documents and plans must never be staged or committed. Preserve unrelated pre-existing work and do not push or merge without explicit authorization.

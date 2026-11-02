@@ -90,22 +90,7 @@ Key points:
 
 ### 2. PluginManifest Optional Fields
 
-```python
-PluginManifest(
-    name="<name>",
-    version="0.1.0",
-    router=router,
-    models=[Model1, Model2],
-    # Optional:
-    dependencies=["auth", "menu"],          # Plugins that must load before this one
-    event_listeners=[(MyEvent, on_my_event)], # (EventType, handler), optional third priority
-    on_startup=[startup_callback],          # Async callbacks run at app startup
-    on_shutdown=[shutdown_callback],        # Async callbacks run at app shutdown
-    dependency_overrides={                  # Override FastAPI dependencies
-        get_current_user: real_get_current_user,
-    },
-)
-```
+See `PluginManifest` in `packages/framework/src/rapidkit_framework/plugin.py` and the PluginManifest section of `rapidkit-backend-design`. Add only the fields the plugin uses.
 
 ### 3. pyproject.toml Template
 

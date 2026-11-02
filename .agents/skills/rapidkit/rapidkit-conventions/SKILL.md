@@ -177,6 +177,12 @@ async def get_user() -> Response[UserSchema]:
 | PaginatedRequest          | `from rapidkit_common.schemas.request import PaginatedRequest`          |
 | LocalDatetime             | `from rapidkit_common.schemas.types import LocalDatetime`               |
 | BaseCRUD                  | `from rapidkit_common.crud import BaseCRUD`                             |
+| Route access              | `from rapidkit_common.access import Require`                            |
+| Instant response types    | `from rapidkit_common.schemas.types import UTCInstant, EditableInstant` |
+| Plugin manifest           | `from rapidkit_framework.plugin import PluginManifest, PluginDependency, MiddlewareDef` |
+| Events                    | `from rapidkit_framework.events import Event, event_bus`                |
+| Request context           | `from rapidkit_framework.context import ctx`                            |
+| UUID7                     | `from rapidkit_core.uuid7 import uuid7`                                 |
 
 ## Git Rules
 
