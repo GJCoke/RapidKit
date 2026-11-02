@@ -5,28 +5,8 @@ description: Use when implementation is complete, all tests pass, and you need t
 
 # Finishing a Development Branch
 
-## RapidKit Override: Report First, Integrate Only on Request
-
-In the RapidKit repository, the root `AGENTS.md` Git workflow takes
-precedence over this skill:
-
-- Report the task branch, its commits, the validation run and any
-  remaining limitations, then present the options. Follow the Document
-  Writing Rules in `rapidkit-conventions`: open with the conclusion, then
-  what your human partner must choose or approve. Never pick one
-  yourself: merging, pushing, opening a PR, rebasing, amending history,
-  discarding work and deleting branches or worktrees each need your human
-  partner's explicit choice.
-- Keep the task branch (and its worktree, if one was requested) by default.
-- `docs/superpowers/` is git-ignored, so `git worktree remove` deletes it
-  silently. A request to remove or clean up a worktree already authorizes
-  discarding those files (`AGENTS.md`): list them in your report, then
-  remove the worktree without a separate copy-or-discard question.
-- Before any commit, merge or PR, confirm nothing under
-  `docs/superpowers/` is staged or included; specs, plans and every other
-  file there stay local. Stage only explicit task-owned paths, never
-  `git add .`, `git add -A` or `git commit -a`.
-- Under Codex, do not dispatch subagents for any step here.
+The root `AGENTS.md` Git workflow takes precedence over anything below.
+Under Codex, do not dispatch subagents for any step here.
 
 ## Overview
 
@@ -36,7 +16,7 @@ precedence over this skill:
 
 ## Step 1: Verify Tests
 
-Run the project's full test suite (`npm test` / `cargo test` / `pytest` / `go test ./...`).
+Run the project's full test suite. Save the output under `logs/verification/` and read its tail.
 
 **If tests fail**, report the failures and stop — the menu comes after a green suite:
 
@@ -75,6 +55,13 @@ Confirm before merging: merging into the wrong base is expensive to undo.
 
 ## Step 4: Present Options
 
+Report the task branch, its commits, the validation run and any remaining
+limitations, then present the options. Never pick one yourself: merging,
+pushing, opening a PR, rebasing, amending history, discarding work and
+deleting branches or worktrees each need your human partner's explicit
+choice. The default is Option 3: keep the branch (and its worktree, if one
+was requested).
+
 **Normal repo and named-branch worktree — present exactly these 3 options:**
 
 ```
@@ -106,6 +93,11 @@ discard the work" below). Wait for their answer; the integration decision
 is theirs.
 
 ## Step 5: Execute Choice
+
+Before any commit, merge or PR, confirm nothing under `docs/superpowers/`
+is staged or included; specs, plans and every other file there stay local.
+Stage only explicit task-owned paths, never `git add .`, `git add -A` or
+`git commit -a`.
 
 ### Option 1: Merge Locally
 
