@@ -10,7 +10,7 @@ Unless explicitly described as relative to a package or source file, project pat
 
 ## Prerequisites
 
-Read `rapidkit-conventions` first for shared project rules and the repository-wide Git policy. Follow the task branch already initialized for this task; do not create a new branch merely because another skill is loaded.
+Read `rapidkit-conventions` first for shared project rules and the repository-wide Git policy. Follow the task branch already initialized for this task; do not create a new branch merely because another skill is loaded. The Lean Code Rules in `rapidkit-conventions` (no over-defense without approval, validate once at the entry, no early abstraction, minimal `try/catch`) bind all code written here, and its Document Writing Rules bind every document and report you write for the user.
 
 ## Project Architecture
 
@@ -488,6 +488,8 @@ DATETIME_FORMAT=%Y-%m-%d %H:%M:%S
 - Import from `rapidkit_core`, `rapidkit_framework`, `rapidkit_common` and `rapidkit_security` according to package ownership; never use old `src.common` or `src.core` paths.
 - PREFER `PaginatedRequest` as base for any paginated query schema
 - PREFER `BaseCRUD` over writing raw queries
+- Request and query schemas are the entry validation. Services and CRUD trust the validated types; do not re-check a field the schema already guarantees.
+- Raise `AppException` and let it propagate to the framework handler. Use `try/except` only to roll back, release a resource or translate a third-party error at the boundary; never to log and re-raise.
 
 ### Git Rules
 

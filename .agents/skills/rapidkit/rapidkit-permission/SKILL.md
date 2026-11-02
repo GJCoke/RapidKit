@@ -7,7 +7,7 @@ description: Declare and wire permissions for the RapidKit project — resources
 
 ## Prerequisites
 
-Read `rapidkit-conventions` skill first for universal project rules (file headers, import style, naming).
+Read `rapidkit-conventions` skill first for universal project rules (file headers, import style, naming). The Lean Code Rules in `rapidkit-conventions` (no over-defense without approval, validate once at the entry, no early abstraction, minimal `try/catch`) bind all code written here, and its Document Writing Rules bind every document and report you write for the user.
 
 ## Scope
 

@@ -8,7 +8,7 @@ All generated code MUST follow the project's tech stack, conventions, and stylin
 
 ## Prerequisites
 
-Read `rapidkit-conventions` first for shared project rules and the repository-wide Git policy. Follow the task branch already initialized for this task; do not create a new branch merely because another skill is loaded.
+Read `rapidkit-conventions` first for shared project rules and the repository-wide Git policy. Follow the task branch already initialized for this task; do not create a new branch merely because another skill is loaded. The Lean Code Rules in `rapidkit-conventions` (no over-defense without approval, validate once at the entry, no early abstraction, minimal `try/catch`) bind all code written here, and its Document Writing Rules bind every document and report you write for the user.
 
 ## Project Architecture
 
@@ -397,6 +397,8 @@ declare global {
 
 - Rely on automatic imports for NaiveUI template components; explicitly import components used as JavaScript/TSX values and type-only symbols as needed.
 - NEVER use raw CSS for styling that UnoCSS utilities can handle
+- Trust the API and prop types. Do not add `?.`, `??` fallbacks or runtime checks for fields the types mark as required.
+- Keep logic used by one component inside that component. Move it to a composable or `@/utils` only when a second real caller exists.
 - NEVER use `[var(--...)]` inside UnoCSS classes — use semantic theme classes
 - NEVER hardcode colors — use CSS variables or UnoCSS theme colors
 - ALWAYS use `$t()` for user-facing text (i18n)

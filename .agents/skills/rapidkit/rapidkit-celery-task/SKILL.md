@@ -9,7 +9,7 @@ Project paths below are relative to the repository root. Python module names are
 
 ## Prerequisites
 
-Read `rapidkit-conventions` first. Business tasks belong to their owning plugin; use `rapidkit-plugin` for plugin registration and `rapidkit-migration` for schema changes.
+Read `rapidkit-conventions` first. Business tasks belong to their owning plugin; use `rapidkit-plugin` for plugin registration and `rapidkit-migration` for schema changes. The Lean Code Rules in `rapidkit-conventions` (no over-defense without approval, validate once at the entry, no early abstraction, minimal `try/catch`) bind all code written here, and its Document Writing Rules bind every document and report you write for the user.
 
 ## Directory Layout
 
@@ -137,4 +137,6 @@ process_user_report.apply_async(kwargs={"user_id": str(user_id)})
 - Keep plugin-owned tasks and static schedules in the owning plugin manifest; preserve existing entries when adding a task.
 - Use `async def` for DI or asynchronous I/O, and explicitly manage database transactions in tasks.
 - Request row/field rules are not automatically bound to task sessions. Pass already-authorized targets into tasks; identity propagation does not grant request data scopes.
+- Task arguments come from your own validated backend code. Do not re-validate them inside the task.
+- Do not add retry, lock, deduplication or idempotency logic for a rare failure the task does not name. State the failure and its likelihood, and add the logic only after the user approves.
 - Prefer module-level imports. Defer plugin imports only when needed to break an actual initialization cycle, following the current owning plugin's task module.

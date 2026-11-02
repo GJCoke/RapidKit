@@ -8,7 +8,7 @@ All generated code MUST follow the four-layer architecture, conventions, and pat
 
 ## Prerequisites
 
-Read `rapidkit-conventions` first for shared project rules and the repository-wide Git policy. Follow the task branch already initialized for this task; do not create a new branch merely because another skill is loaded.
+Read `rapidkit-conventions` first for shared project rules and the repository-wide Git policy. Follow the task branch already initialized for this task; do not create a new branch merely because another skill is loaded. The Lean Code Rules in `rapidkit-conventions` (no over-defense without approval, validate once at the entry, no early abstraction, minimal `try/catch`) bind all code written here, and its Document Writing Rules bind every document and report you write for the user.
 
 ## Project Architecture
 
@@ -382,6 +382,7 @@ The `label` parameter is the terminal display text. `stamp()` always runs `alemb
 - NEVER copy-paste symmetric dev/prod commands — use `createComposeCommand` or `createComposeLogsCommand` factory
 - ALWAYS keep services as pure functions that accept dependencies as parameters
 - ALWAYS validate external input (config files, env files, CLI args) with Zod schemas at boundaries
+- NEVER wrap command or service calls in `try/catch` only to log or re-throw. `defineFluxCommand` closes the runner, and the entry in `src/index.ts` (citty `runMain` plus the interactive menu handler) reports uncaught errors; catch only to recover or clean up.
 - ALWAYS add i18n keys to both `zh-CN.ts` and `en-US.ts` when adding user-facing strings
 
 ### Testing Rules

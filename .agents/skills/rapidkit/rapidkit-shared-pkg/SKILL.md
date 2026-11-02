@@ -9,7 +9,7 @@ Unless explicitly described as relative to a package or source file, project pat
 
 ## Prerequisites
 
-Read `rapidkit-conventions` skill first for universal project rules.
+Read `rapidkit-conventions` skill first for universal project rules. The Lean Code Rules in `rapidkit-conventions` (no over-defense without approval, validate once at the entry, no early abstraction, minimal `try/catch`) bind all code written here, and its Document Writing Rules bind every document and report you write for the user.
 
 ## Scope
 
@@ -177,6 +177,10 @@ packages = ["src/rapidkit_<name>"]
   }
 }
 ```
+
+## When to Add Shared Code
+
+Add code to a shared package only when at least two real consumers in different apps or packages use it now. Logic with one consumer stays in that consumer. Do not create a package or export "for later".
 
 ## Step-by-Step Operations
 

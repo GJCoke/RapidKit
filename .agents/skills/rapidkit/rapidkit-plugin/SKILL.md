@@ -9,7 +9,7 @@ Unless explicitly described as relative to a package or source file, project pat
 
 ## Prerequisites
 
-Read `rapidkit-conventions` for universal rules and `rapidkit-permission` for resource/code declarations and route access. A new API plugin must satisfy both.
+Read `rapidkit-conventions` for universal rules and `rapidkit-permission` for resource/code declarations and route access. A new API plugin must satisfy both. The Lean Code Rules in `rapidkit-conventions` (no over-defense without approval, validate once at the entry, no early abstraction, minimal `try/catch`) bind all code written here, and its Document Writing Rules bind every document and report you write for the user.
 
 ## Scope
 
