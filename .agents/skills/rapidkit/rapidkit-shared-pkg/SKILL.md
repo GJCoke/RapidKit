@@ -247,7 +247,7 @@ Add code to a shared package only when at least two real consumers in different 
 - ALWAYS use `@rapidkit/<name>` naming for TypeScript packages
 - ALWAYS use `rapidkit-<name>` (hyphen) for Python PyPI names and `rapidkit_<name>` (underscore) for Python package directories
 - ALWAYS use `"workspace:*"` for TS package references and `{ workspace = true }` for Python package references
-- ALWAYS use the shared builder (`tsx ../builder/cli.ts`) for TS package builds -- never configure Rollup/Vite directly
+- ALWAYS use the shared builder (`tsx ../builder/cli.ts`) for TS package builds -- never configure Rollup/Vite directly. Source-only packages (`@rapidkit/ui`, `@rapidkit/react-hooks`) are not built.
 - ALWAYS export through a barrel `src/index.ts` for TS packages
 - NEVER add Python packages to `pnpm-workspace.yaml` `members` -- they are registered in root `pyproject.toml`'s `[tool.uv.workspace]`
 - PREFER keeping packages focused on a single responsibility -- create separate packages rather than expanding existing ones with unrelated functionality

@@ -208,27 +208,7 @@ ledger, and say so in your final message: a self-review by the author is
 weaker than a fresh reviewer, and your human partner decides whether that
 is enough before merge.
 
-Sort the findings before you act on any of them. The reviewer's severity
-labels are advice; the gate is yours. Its "Declined to judge" list is
-yours too: every line there except a `Rare case:` line is a ruling you
-make and ledger, exactly like a plan conflict — `Final: Ruling: <behavior the reviewer set aside> —
-<what a reasonable person using this software gets, and why that stands
-or why it is now a finding> — <cost if wrong>`. Re-grade first, by effect: the
-spec is a vision document, and a finding's grade is what a reasonable
-person using this software gets if it ships, not whether the spec names
-the input that triggers it — a reviewer who set a finding at Minor
-because the spec was silent has graded the spec, not the effect. Then:
-
-- **Rare cases wait for approval.** A `Rare case:` line, or a finding that
-  asks to *add* handling for a rare boundary, race or concurrency case,
-  goes to the ledger as `Final: Needs approval: <case> — <how likely>`,
-  not into the fix pass. A Lean finding that asks to *remove* unapproved
-  rare-case handling is a normal finding.
-- **Critical and Important** enter the fix pass.
-- **Minor** goes to the ledger as `Final: minor (deferred): <one-liner>`
-  and to your final message under "Deferred minors". Minors never enter
-  the fix pass, and never become rulings — a ruling is a decision about a
-  conflict, not a note that you declined a polish suggestion.
+Sort the findings by Final Review Triage in `execution-ledger.md`.
 
 Fix the Critical and Important findings yourself — you are the
 implementer here — in ONE pass. Each fix is verified by TDD, not by a

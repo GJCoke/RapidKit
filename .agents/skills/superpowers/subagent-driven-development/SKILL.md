@@ -246,7 +246,7 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 
 **DONE:** Generate the review package (`bash scripts/review-package PLAN_FILE BASE HEAD` — it prints the unique file path it wrote; BASE is the commit you recorded before dispatching the implementer — never `HEAD~1`, which silently drops all but the last commit of a multi-commit task), then dispatch the task reviewer with the printed path.
 
-**DONE_WITH_CONCERNS:** The implementer completed the work but flagged doubts. Read the concerns before proceeding. If the concerns are about correctness or scope, address them before review. If they're observations (e.g., "this file is getting large"), note them and proceed to review.
+**DONE_WITH_CONCERNS:** The implementer completed the work but flagged doubts. Read the concerns before proceeding. If the concerns are about correctness or scope, address them before review. A concern about a rare boundary, race or concurrency case the task does not name goes to the ledger as `Task <N>: Needs approval: <case> — <how likely>`, not into the code. If they're observations (e.g., "this file is getting large"), note them and proceed to review.
 
 **NEEDS_CONTEXT:** The implementer needs information that wasn't provided. Provide the missing context and re-dispatch.
 
@@ -326,6 +326,9 @@ Before the loop starts, two routes leave it immediately:
   ledger the ruling before you act on it. Do not dismiss the finding because
   the plan mandates it, and do not dispatch a fix that contradicts the plan
   without a recorded ruling.
+- A finding that asks to *add* handling for a rare boundary, race or
+  concurrency case the task does not name goes to the ledger as
+  `Task <N>: Needs approval: <case> — <how likely>`.
 Everything else enters the loop. A fix round is one fix dispatch plus one
 scoped re-review. Five rounds maximum per task:
 
@@ -410,16 +413,15 @@ on the most capable available model (see Model Selection), using
 superpowers:requesting-code-review's
 [code-reviewer.md](../requesting-code-review/code-reviewer.md). Fill
 `[LEDGER_RULINGS]` with the ledger's `Ruling:`, parked, deferred-minor and
-`Needs approval:` lines so it can triage which must be fixed before merge.
+`Needs approval:` lines so it can triage which must be fixed before merge,
+and `[REVIEW_FOCUS]` with the plan's Review Focus section verbatim (or
+"none").
 
-Before any fix, sort the findings: a `Rare case:` line, or a finding that
-asks to *add* handling for a rare boundary, race or concurrency case, goes
-to the ledger as `Final: Needs approval: <case> — <how likely>` and stays
-out of the fix wave. A Lean finding that asks to *remove* unapproved
-rare-case handling is a normal finding.
+Before any fix, sort the findings by Final Review Triage in
+`execution-ledger.md`.
 
-If the final whole-branch review returns findings, dispatch ONE fix subagent
-with the complete list of the remaining findings and the report path
+If Critical or Important findings remain, dispatch ONE fix subagent
+with the complete list of them and the report path
 `<workspace>/final-fix-report.md` — not one fixer per finding.
 Per-finding fixers each rebuild context and re-run suites; a real
 session's final-review fix wave cost more than all its tasks combined.

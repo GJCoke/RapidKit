@@ -29,7 +29,7 @@ verdict, the second names the fixes or decisions they must approve.
 ## When to Request Review
 
 **Mandatory:**
-- After each task in subagent-driven development
+- After each task in subagent-driven development (it uses its own `task-reviewer-prompt.md`)
 - After completing major feature
 - Before merge to main
 

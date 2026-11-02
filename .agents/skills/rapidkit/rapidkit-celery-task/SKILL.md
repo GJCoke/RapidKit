@@ -83,7 +83,7 @@ def register() -> PluginManifest:
 
 Only cross-cutting core tasks go into `_CORE_TASK_MODULES`. Current core entries are `src.sio.tasks` and `src.queues.tasks.schedule_test`. Task loading uses explicit module paths, not a directory scan. Avoid manually importing task modules inside `app.py` or a plugin registration module; use the registration lists instead.
 
-The reference implementation is `apps/backend/plugins/monitoring/src/plugin_monitoring/__init__.py`, with tasks in `apps/backend/plugins/monitoring/src/plugin_monitoring/tasks.py`.
+The reference implementation is `apps/backend/plugins/monitoring/src/plugin_monitoring/__init__.py`, with tasks in `apps/backend/plugins/monitoring/src/plugin_monitoring/tasks.py`. That file imports the global `logger`; in new task modules use `get_plugin_logger` as `rapidkit-conventions` requires.
 
 ## Periodic Schedules
 

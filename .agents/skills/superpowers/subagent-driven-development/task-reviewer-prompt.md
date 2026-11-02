@@ -93,6 +93,9 @@ Subagent (general-purpose):
 
     ## Part 1: Spec Compliance
 
+    A Visual Check step in the task belongs to the controller, which runs
+    it after review; do not report it as missing.
+
     Compare the diff against What Was Requested:
 
     - **Missing:** requirements they skipped, missed, or claimed without

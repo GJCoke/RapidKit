@@ -135,12 +135,7 @@ Commonly used components:
 </NGrid>
 ```
 
-**Theme CSS variables** available from NaiveUI (use them through semantic theme classes or in scoped CSS, never in bracket syntax):
-
-- `var(--primary-color)`, `var(--success-color)`, `var(--warning-color)`, `var(--error-color)`
-- `var(--text-color-1)`, `var(--text-color-2)`, `var(--text-color-3)`
-- `var(--border-color)`, `var(--divider-color)`
-- `var(--n-color-modal)`, `var(--n-color-target)` (NaiveUI internal)
+**Theme colours in CSS:** prefer the semantic theme classes. In scoped CSS, the palette variables hold an `r g b` triplet, so write `rgb(var(--primary-color))` (also `--success-color`, `--warning-color`, `--error-color`, `--info-color`). NaiveUI tokens such as text or border colours exist only where a component binds them from `useThemeVars()` through `:style`. Never use a variable in UnoCSS bracket syntax.
 
 ## UnoCSS Styling System
 
@@ -247,7 +242,7 @@ Implement working code that is:
 Focus on:
 
 - **Typography**: Use the project's font stack. Differentiate hierarchy with `font-600`/`font-700` weights, `text-13px`/`text-15px`/`text-20px` sizes, and `text-base-text-1` through `text-base-text-4` color variants.
-- **Color & Theme**: Always use CSS variables (`var(--primary-color)`, theme palette colors). Never hardcode colors that should change with theme. Accent colors for status: green=success, orange=warning, red=error.
+- **Color & Theme**: Always use semantic theme classes or palette variables (`rgb(var(--primary-color))`). Never hardcode colors that should change with theme. Accent colors for status: green=success, orange=warning, red=error.
 - **Motion**: Subtle transitions on interactive elements (`transition-colors duration-200`). Pulse animations for live status indicators. Chart value animations via ECharts `valueAnimation`.
 - **Spatial Composition**: Card-based layouts with consistent `gap-16px`. NGrid for responsive multi-column layouts. Generous padding inside cards (`px-12px py-8px`).
 - **Data Density**: Admin dashboards should be information-rich. Use `tabular-nums` for numeric data. Compact but readable list items. Smart use of tags, badges, and status indicators.

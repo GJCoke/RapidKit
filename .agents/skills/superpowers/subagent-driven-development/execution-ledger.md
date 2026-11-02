@@ -43,7 +43,9 @@ Run every script from the repo root by its full path:
   `task-start` and `task-done`
 
 In the skills, `scripts/<name>` is short for the full path. Pass PLAN_FILE
-as the repo-relative plan path.
+as the repo-relative plan path. In a worktree, which has no git-ignored
+`docs/superpowers/`, pass the absolute path of the plan (and spec) in the
+original checkout.
 
 ## Workspace and Ledger
 
@@ -109,6 +111,10 @@ that norms say you ask about first (a merge, a push to a shared branch, a
 publish); and a plan so broken that every path forward is a guess. For
 those, stop and ask.
 
+**Three failed fixes is a stop.** When superpowers:systematic-debugging
+reaches three failed fixes for one problem, that is the fourth stop above
+(every path forward is a guess): stop and ask.
+
 **Rare cases wait for approval.** Handling for a rare boundary, race or
 concurrency case that the plan does not name is not built on a ruling
 (Lean Code Rules in `rapidkit-conventions`). Do not stop for it either:
@@ -119,6 +125,30 @@ ledger it as `Needs approval: <case> — <how likely>` and keep going.
 an implementer subagent may lack a browser. Do not fix the differences
 during execution. Ledger each one as `Visual: <location> — <difference>`,
 or the check as `Visual: blocked — <reason>`, and keep going.
+
+## Final Review Triage
+
+Sort the final review's findings before you act on any of them. The reviewer's severity
+labels are advice; the gate is yours. Its "Declined to judge" list is
+yours too: every line there except a `Rare case:` line is a ruling you
+make and ledger, exactly like a plan conflict — `Final: Ruling: <behavior the reviewer set aside> —
+<what a reasonable person using this software gets, and why that stands
+or why it is now a finding> — <cost if wrong>`. Re-grade first, by effect: the
+spec is a vision document, and a finding's grade is what a reasonable
+person using this software gets if it ships, not whether the spec names
+the input that triggers it — a reviewer who set a finding at Minor
+because the spec was silent has graded the spec, not the effect. Then:
+
+- **Rare cases wait for approval.** A `Rare case:` line, or a finding that
+  asks to *add* handling for a rare boundary, race or concurrency case,
+  goes to the ledger as `Final: Needs approval: <case> — <how likely>`,
+  not into the fix pass. A Lean finding that asks to *remove* unapproved
+  rare-case handling is a normal finding.
+- **Critical and Important** enter the fix pass.
+- **Minor** goes to the ledger as `Final: minor (deferred): <one-liner>`
+  and to your final message under "Deferred minors". Minors never enter
+  the fix pass, and never become rulings — a ruling is a decision about a
+  conflict, not a note that you declined a polish suggestion.
 
 ## Finish
 

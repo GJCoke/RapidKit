@@ -68,7 +68,8 @@ These rules override the generic workflow below wherever they conflict.
   in the current checkout; never create a worktree unless your human
   partner asks for one. Before writing any repository file (the design
   document included): on `main`/`master`, create a `<type>/<slug>` branch
-  in place with `git switch -c`; on any other branch, stay on it. Branch
+  in place with `git switch -c`, unless it is a simple task as `AGENTS.md`
+  defines it; on any other branch, stay on it. Branch
   setup is preparation, not building.
 - **Never commit anything under `docs/superpowers/`.** Not only specs and
   plans: every file in that directory (specs, plans, mockups, notes,

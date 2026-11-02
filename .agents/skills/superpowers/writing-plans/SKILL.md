@@ -122,6 +122,8 @@ its likelihood stated and your human partner's approval.]
 
 ## Task Structure
 
+The plan may be in any language, but keep the `### Task N:` headings and the `Run:` / `Expected:` step keywords in English: `task-brief` and the executors parse them.
+
 ````markdown
 ### Task N: [Component Name]
 

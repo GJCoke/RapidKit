@@ -45,6 +45,7 @@ plugins/<name>/
 ├── src/plugin_<name>/
 │   ├── __init__.py       # register() -> PluginManifest
 │   ├── permissions.py    # Resource and permission declarations
+│   ├── audit.py          # AUDIT_ROUTES for write routes (see Business Audit)
 │   ├── api.py
 │   ├── crud.py
 │   ├── models.py
@@ -144,7 +145,7 @@ The plugins are the directories under `apps/backend/plugins/`. Each plugin's `py
 
 ### Import Paths
 
-Use the Common Import Paths table in `rapidkit-conventions`. Cross-plugin imports (e.g. `from plugin_auth.auth.deps import AuthContextDep`) need the plugin in `PluginManifest.dependencies`.
+Use the Common Import Paths table in `rapidkit-conventions`. Get the current user and auth context through `rapidkit_common.auth` (e.g. `from rapidkit_common.auth import UserDBDep`), not from another plugin. Importing a `plugin_*` package directly is the exception and needs that plugin in `PluginManifest.dependencies`.
 
 ### ORM Model Pattern
 
@@ -284,7 +285,7 @@ async def create_item(
 
 ### Business Audit
 
-Every new POST/PUT/PATCH/DELETE route needs an entry in the plugin's `AUDIT_ROUTES` (`audit.py`), keyed by the endpoint function name: an `AuditActionDef` to audit it, or `None` to exclude it explicitly. `bind_audit_routes` skips undeclared routes silently, so a missing entry means a missing audit. Return the definitions through `audit_actions` in the manifest. Follow `apps/backend/plugins/user/src/plugin_user/audit.py`; add the `audit.*` i18n keys it references to `apps/backend/src/locales/langs/{zh-CN,en-US}/audit.json`.
+Every new POST/PUT/PATCH/DELETE route needs an entry in the plugin's `AUDIT_ROUTES` (`audit.py`), keyed by the endpoint function name: an `AuditActionDef` to audit it, or `None` to exclude it explicitly. An undeclared route still gets a generic audit record (action `http.request`, result UNKNOWN) but no action name, resource or field summary, and nothing reports the gap. Return the definitions through `audit_actions` in the manifest. Follow `apps/backend/plugins/user/src/plugin_user/audit.py`; add the `audit.*` i18n keys it references to `apps/backend/src/locales/langs/{zh-CN,en-US}/audit.json`.
 
 ## Celery Tasks
 
@@ -292,7 +293,7 @@ Follow `rapidkit-celery-task`.
 
 ## Timezone Rules
 
-Follow the Timezone Rules in `rapidkit-conventions`. Store naive UTC with `timezone.now()`; Socket.IO timestamps use the same instant convention as HTTP; formatted strings only for pure text. The configured zone is `DATETIME_TIMEZONE` and the `LocalDatetime` text format is `DATETIME_FORMAT` (e.g. `%Y-%m-%d %H:%M:%S` → `2026-04-13 18:00:00`), both in `.env`.
+Follow the Timezone Rules in `rapidkit-conventions`. Store naive UTC with `timezone.now()`; Socket.IO timestamps use the same instant convention as HTTP; formatted strings only for pure text. The configured zone is `DATETIME_TIMEZONE` and the `LocalDatetime` text format is `DATETIME_FORMAT` (e.g. `%Y-%m-%d %H:%M:%S` → `2026-04-13 18:00:00`), with defaults in `packages/core/src/rapidkit_core/config.py` that `.env` can override.
 
 ## Rules
 

@@ -7,7 +7,7 @@ description: Declare and wire permissions for the RapidKit project — resources
 
 ## Prerequisites
 
-Read `rapidkit-conventions` skill first for universal project rules (file headers, import style, naming). The Lean Code Rules in `rapidkit-conventions` (no over-defense without approval, validate once at the entry, no early abstraction, minimal `try/catch`) bind all code written here, and its Document Writing Rules bind every document and report you write for the user.
+Read `rapidkit-conventions` skill first for universal project rules (import style, naming). The Lean Code Rules in `rapidkit-conventions` (no over-defense without approval, validate once at the entry, no early abstraction, minimal `try/catch`) bind all code written here, and its Document Writing Rules bind every document and report you write for the user.
 
 ## Scope
 
@@ -319,7 +319,8 @@ Both treat `isAdmin` as all-allowed and an array as any-of. Frontend checks are 
 3. Declare access on every route in the plugin's router (Pattern 3).
 4. If roles should restrict rows or fields, add `data_scopes` / `field_groups` and follow the rules in Pattern 6 in CRUD/services.
 5. Add a menu seed with `permission=` for new pages (Pattern 7).
-6. Write tests (Operation 4), run `pnpm gen:permission-codes`, then add `hasAuth` / `<Can>` on frontend buttons.
+6. For write routes, add `audit.py` with `AUDIT_ROUTES` and return it through `audit_actions` (Business Audit in `rapidkit-backend-design`).
+7. Write tests (Operation 4), run `pnpm gen:permission-codes`, then add `hasAuth` / `<Can>` on frontend buttons.
 
 ### Operation 2: Add an Endpoint to an Existing Plugin
 
@@ -327,6 +328,7 @@ Both treat `isAdmin` as all-allowed and an array as any-of. Frontend checks are 
 2. Add exactly one access declaration. Use the `Scope` parameter form if the body needs `scope.user`.
 3. Update the plugin's `test_access_declarations.py` expected map.
 4. If a new code was added: `pnpm gen:permission-codes`.
+5. For a POST/PUT/PATCH/DELETE route, add its `AUDIT_ROUTES` entry and `audit.json` keys (Business Audit in `rapidkit-backend-design`).
 
 ### Operation 3: Add a Public Endpoint
 

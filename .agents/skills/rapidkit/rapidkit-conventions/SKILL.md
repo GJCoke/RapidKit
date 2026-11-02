@@ -114,7 +114,7 @@ from rapidkit_core.timezone import timezone
 - `EditableInstant`: an instant carrying the configured zone's event-time offset, for editors and platform-time display.
 - `LocalDatetime`: legacy, display-only wall time without offset. Never feed it into browser instant parsing or time arithmetic.
 - Daily aggregation labels are `date` / `YYYY-MM-DD`; hourly buckets are explicit instants. Convert UTC columns to the configured calendar before daily SQL grouping.
-- Cron entries must explicitly bind their Celery app and use that schedule's calendar zone. Refreshes preserve execution state; keep `enable_utc=True`.
+- Schedules built in code outside Beat entries (e.g. the database scheduler) pass `app=` to `crontab` and use that schedule's calendar zone; manifest `beat_schedule` entries use a bare `crontab(...)`. Refreshes preserve execution state; keep `enable_utc=True`.
 - JSON log timestamps carry offsets; log rotation follows the process timezone independently of `DATETIME_TIMEZONE`.
 - NEVER use `datetime.now()` or `datetime.utcnow()`
 
@@ -199,7 +199,7 @@ async def get_user() -> Response[UserSchema]:
 
 The canonical repository-wide policy is `AGENTS.md` at the repository root. Read and follow it before any repository edit:
 
-- Work in the current checkout; create a worktree only when the user asks for one. On a non-`main`/`master` branch, keep working on it. On `main`/`master`, a simple task (no design/plan, 1–2 files, no migration, no API or permission change) may be done in place; any other task first creates a `<type>/<slug>` branch in place with `git switch -c` (`feature`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`; e.g. `feature/login`), preserving existing work.
+- Work in the current checkout; create a worktree only when the user asks for one. On a non-`main`/`master` branch, keep working on it. On `main`/`master`, a simple task (no design/plan, 1–2 files and a few dozen lines, no migration, no API contract or permission change) may be done in place; any other task first creates a `<type>/<slug>` branch in place with `git switch -c` (`feature`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`; e.g. `feature/login`), preserving existing work. Name the branch you are on in your report.
 - After validation, implementation changes may be committed automatically using explicit task-owned paths or hunks; exclude unrelated pre-existing changes.
 - Never stage or commit design documents, specifications or implementation plans, nor anything else under `docs/superpowers/`.
 - Do not push, merge or rewrite history without explicit user authorization. If branch setup is blocked, do not fall back to `main`/`master` or a detached HEAD.

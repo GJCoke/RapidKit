@@ -37,6 +37,7 @@ plugins/<name>/
 ├── src/plugin_<name>/
 │   ├── __init__.py                       # register() -> PluginManifest
 │   ├── permissions.py                    # Resource and permission-code declarations
+│   ├── audit.py                          # AUDIT_ROUTES for write routes (see rapidkit-backend-design Business Audit)
 │   ├── models.py                         # SQLModel ORM table classes
 │   ├── schemas.py                        # Pydantic request/response schemas
 │   ├── crud.py                           # BaseCRUD subclass
@@ -117,7 +118,7 @@ build-backend = "hatchling.build"
 packages = ["src/plugin_<name>"]
 
 [tool.pytest.ini_options]
-asyncio_mode = "strict"
+asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 ```
 
@@ -143,7 +144,7 @@ from tests.testing.fixtures import *  # noqa: E402, F401, F403
 Create all directories and files listed in the Directory Layout section above. Populate with minimal content:
 
 - `__init__.py` files in `migrations/` and `tests/` are empty
-- `models.py`, `schemas.py`, `crud.py`, `services.py`, `api.py`, `deps.py` start with file header and minimal imports
+- `models.py`, `schemas.py`, `crud.py`, `services.py`, `api.py`, `deps.py` start with minimal imports
 
 ### Step 2: Write pyproject.toml
 
@@ -225,5 +226,5 @@ Plugins NOT listed here are enabled by default.
 - Register the package dependency in both root and backend pyproject.toml; declare the plugin entry point in its own pyproject.toml.
 - Declare resources/codes in `permissions.py`, wire them into the manifest, and give every API route one access declaration (`rapidkit-permission`).
 - ALWAYS create `migrations/versions/__init__.py` even if no migrations exist yet
-- ALWAYS prefix table names with the plugin name (e.g., `auth_users`, `worker_task_results`)
+- ALWAYS prefix table names with the plugin name (e.g., `user_users`, `worker_task_results`)
 - NEVER add cross-plugin imports in model files -- use event_listeners for cross-plugin communication

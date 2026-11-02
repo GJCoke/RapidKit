@@ -106,6 +106,8 @@ IF reviewer suggests handling a rare boundary/race/concurrency case,
   Do not implement it yet.
   State the case and how likely it is, and ask your human partner.
   Implement only after they approve (Lean Code Rules in rapidkit-conventions).
+  During plan execution, do not stop: ledger it as `Needs approval:`
+  (execution-ledger.md) and continue.
 ```
 
 ## Implementation Order

@@ -180,6 +180,11 @@ Subagent (general-purpose):
     [Code or tests to delete or simplify. No new features or options
     nobody asked for.]
 
+    ### Declined to judge
+    [One line per behavior you set aside, with the reason; prefix rare
+    boundary/race/concurrency cases with `Rare case:` and how likely.
+    "None" if empty.]
+
     ## Critical Rules
 
     **DO:**
@@ -206,7 +211,7 @@ Subagent (general-purpose):
 - `[REVIEW_FOCUS]` — the plan's Review Focus section verbatim, or "none"
 - `[LEDGER_RULINGS]` — the ledger's `Ruling:`, parked, `minor (deferred)` and `Needs approval:` lines, or "none"
 
-**Reviewer returns:** Assessment, Strengths, Issues (Critical / Important / Minor), Recommendations
+**Reviewer returns:** Assessment, Strengths, Issues (Critical / Important / Minor), Recommendations, Declined to judge
 
 ## Example Output
 
