@@ -97,6 +97,8 @@ Subagent (general-purpose):
       cleans up a resource. Logic used once stays inline.
     - If the plan asks for something that looks unnecessary, build it anyway and
       report it as DONE_WITH_CONCERNS. Do not drop plan items on your own.
+    - If your task ends with a Visual Check step, skip that step and say so in
+      your report; the controller runs it after review.
 
     ## When You're in Over Your Head
 

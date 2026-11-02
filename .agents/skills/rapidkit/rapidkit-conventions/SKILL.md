@@ -251,7 +251,7 @@ These rules apply to every document a workflow produces for the user: design doc
 Use this when a task has a visual target image. It checks the built page against the image. It does not fix anything.
 
 1. Use the local services that are already running. Open the page first; only if the backend or the frontend dev server does not respond, start the missing one from the repo root (`pnpm dev:backend`, `pnpm dev:frontend` for `apps/frontend`, `pnpm dev:admin` for `apps/admin`). Log in with a local account your human partner gave you or one the local setup already documents; never create an account or guess a password. If the page still cannot open (database, Redis or account missing), report the check as blocked; do not install or start anything else without asking.
-2. Open the page in the state the image shows, at the same viewport, with the browser tool the harness provides (under Codex, `@Browser`). Save the screenshot under `logs/verification/`.
+2. Open the page in the state the image shows, at the same viewport, with the browser tool the harness provides (under Codex, `@Browser`). Save the screenshot under `logs/verification/`. If the harness has no browser tool, give your human partner the URL, page state and viewport, and ask them to save a screenshot there; if they cannot, report the check as blocked.
 3. Put the screenshot and the image side by side in one comparison.
 4. Treat colour, font and icon differences that come from the project's theme tokens and components as expected. List the differences in layout, hierarchy, spacing, content and missing states, each with its location.
 5. Stop only the dev servers you started; leave the ones that were already running.

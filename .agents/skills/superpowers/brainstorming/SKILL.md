@@ -171,12 +171,14 @@ decide.
 **Generating Image Directions** (Codex Image Gen only):
 
 1. If the page or a similar existing page already opens locally, take a
-   screenshot of it and attach it as a reference. Do not start services
-   for this; without a screenshot, generate from the brief.
+   screenshot of it, save it under `docs/superpowers/specs/`, and attach
+   it as a reference. Do not start services for this; without a
+   screenshot, generate from the brief.
 2. Write the brief into each prompt: the screen's purpose, its primary
    action, the target frontend's style (for `apps/frontend`, the theme
-   colours, layout and data-dense admin tone in
-   `rapidkit-frontend-design`; for `apps/admin`, its shadcn components),
+   colours from `apps/frontend/src/theme/settings.ts` and the layout and
+   data-dense admin tone in `rapidkit-frontend-design`; for `apps/admin`,
+   its shadcn components),
    and the size: `1440 x 1024` for an admin page, or the reference
    image's size and aspect ratio. Ask for real product UI, not a
    presentation board, and no features the brief does not name.
