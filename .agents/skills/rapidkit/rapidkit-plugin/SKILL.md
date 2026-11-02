@@ -140,13 +140,12 @@ The `[project.entry-points."rapidkit.plugins"]` section is critical -- this is h
 
 ### 4. Test Boilerplate
 
-`tests/conftest.py`:
+`tests/conftest.py`: copy `apps/backend/plugins/department/tests/conftest.py`. It puts the backend root on `sys.path`, drops a cached `tests` module, and sets test defaults for the database, Redis and MinIO settings before it imports the shared fixtures:
 
 ```python
-import os
-
-os.environ.setdefault("RAPIDKIT_ENV", "test")
-
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+sys.modules.pop("tests", None)
+# ... _ENV_DEFAULTS applied with os.environ.setdefault(...)
 from tests.testing.fixtures import *  # noqa: E402, F401, F403
 ```
 

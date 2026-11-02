@@ -37,7 +37,8 @@ Out of scope (use other skills):
 | `@rapidkit/alova`   | Alova HTTP client wrapper                    | ts (esm/cjs/iife) |
 | `@rapidkit/color`   | Color palette generation                     | ts (esm/cjs/iife) |
 | `@rapidkit/hooks`   | Vue composables (useTable, useBoolean, etc.) | vue (esm)         |
-| `@rapidkit/editor`  | Monaco Editor Vue component                  | vue (esm)         |
+| `@rapidkit/ui`      | shadcn/ui React components for `apps/admin`  | source (not built) |
+| `@rapidkit/react-hooks` | React hooks (useBoolean, useLoading, etc.) | source (not built) |
 | `@rapidkit/cli`     | Dev workflow CLI (private)                   | not published     |
 | `@rapidkit/builder` | Internal Rollup build tooling                | not built         |
 
@@ -57,7 +58,8 @@ Out of scope (use other skills):
   <- @rapidkit/axios
   <- @rapidkit/color
   <- @rapidkit/alova
-  <- @rapidkit/hooks (also depends on @rapidkit/axios)
+
+@rapidkit/hooks, @rapidkit/ui, @rapidkit/react-hooks  (leaves, no @rapidkit/* deps)
 
 rapidkit-core
   <- rapidkit-framework
@@ -97,7 +99,7 @@ packages/<name>/
   "buildOptions": {
     "type": "ts",
     "formats": ["esm", "cjs", "iife"],
-    "name": "RapidKit<Name>"
+    "name": "MonorepoExample<Name>"
   },
   "dependencies": {},
   "devDependencies": {}
@@ -139,7 +141,7 @@ Other packages/apps reference via `"workspace:*"`:
 ```
 packages/<name>/
   pyproject.toml        # hatchling build, rapidkit-<name>
-  package.json          # thin wrapper for pnpm/turbo orchestration
+  package.json          # optional thin wrapper for pnpm/turbo orchestration
   src/
     rapidkit_<name>/    # Python package (underscores)
       __init__.py
@@ -164,16 +166,20 @@ build-backend = "hatchling.build"
 packages = ["src/rapidkit_<name>"]
 ```
 
-### package.json (for turbo integration)
+### package.json (optional, for turbo integration)
+
+Add it only when turbo must run the package's scripts; `framework` and
+`security` have none.
 
 ```json
 {
-  "name": "rapidkit-<name>",
+  "name": "@rapidkit/<name>",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "postinstall": "uv sync",
-    "format": "uv run ruff format src/",
-    "typecheck": "uv run ty check src/"
+    "format": "uv run ruff check --fix src && uv run ruff format src",
+    "typecheck": "uv run ty check src"
   }
 }
 ```
@@ -208,7 +214,7 @@ Add code to a shared package only when at least two real consumers in different 
 
 1. Create `packages/<name>/` with:
    - `packages/<name>/pyproject.toml` from the template above
-   - `packages/<name>/package.json` for turbo integration
+   - `packages/<name>/package.json` only if turbo must run its scripts
    - `src/rapidkit_<name>/__init__.py`
 
 2. Register in root `pyproject.toml` under `[tool.uv.workspace].members`:

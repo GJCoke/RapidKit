@@ -28,7 +28,8 @@ rapidkit/
 │   ├── hooks/             # Shared Vue composables (@rapidkit/hooks)
 │   ├── utils/             # Shared utilities (@rapidkit/utils)
 │   ├── color/             # Color palette utilities (@rapidkit/color)
-│   ├── editor/            # Editor component (@rapidkit/editor)
+│   ├── ui/                # React UI components (@rapidkit/ui, admin only)
+│   ├── react-hooks/       # React hooks (@rapidkit/react-hooks, admin only)
 │   ├── builder/           # Build tooling (@rapidkit/builder)
 │   ├── cli/               # CLI tool (@rapidkit/cli)
 │   ├── common/            # Python shared package (rapidkit-common)
@@ -158,7 +159,7 @@ Commonly used components:
 </NGrid>
 ```
 
-**Theme CSS variables** available from NaiveUI (use via bracket syntax):
+**Theme CSS variables** available from NaiveUI (use them through semantic theme classes or in scoped CSS, never in bracket syntax):
 
 - `var(--primary-color)`, `var(--success-color)`, `var(--warning-color)`, `var(--error-color)`
 - `var(--text-color-1)`, `var(--text-color-2)`, `var(--text-color-3)`

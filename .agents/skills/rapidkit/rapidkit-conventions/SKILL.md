@@ -27,7 +27,8 @@ packages/
   axios/         — TS HTTP client (axios)
   alova/         — TS HTTP client (alova)
   color/         — TS color utilities
-  editor/        — TS editor
+  ui/            — React UI components (shadcn/ui)
+  react-hooks/   — React hooks
   builder/       — TS builder
 ```
 

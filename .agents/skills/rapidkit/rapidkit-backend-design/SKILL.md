@@ -58,7 +58,7 @@ apps/backend/src/
 ├── lifecycle.py         # Application lifespan (startup/shutdown)
 ├── initdb.py            # Database initialization script
 ├── locales/             # i18n translations
-├── middlewares/          # ASGI middlewares (context, i18n, limiter, logger, metrics, state)
+├── middlewares/          # ASGI middlewares (audit, context, i18n, limiter, logger, metrics, security, state)
 ├── queues/              # Celery task queue (app, task base, consumer, scheduler, signals)
 │   └── tasks/           # Celery task definitions
 └── sio/                 # Socket.IO server + event handlers
@@ -155,6 +155,7 @@ def register() -> PluginManifest:
 | `beat_schedule` | `dict[str, dict]` | Plugin-owned periodic schedules |
 | `sio_modules` | `list[str]` | Socket.IO event modules |
 | `dashboard_modules` | `list[DashboardModuleDef]` | Dashboard permission and realtime topic metadata |
+| `audit_actions` | `list[AuditActionDef]` | Audit action definitions the plugin records |
 
 ### Plugin Discovery & Loading
 
@@ -171,7 +172,7 @@ my_plugin = "plugin_my:register"
 
 ```toml
 [plugins.worker]
-enabled = "${ENABLE_CELERY_MONITOR:false}"   # Environment variable with default
+enabled = "${ENABLE_CELERY_MONITOR:true}"    # Environment variable with default
 
 [plugins.debug]
 enabled = false                               # Statically disabled
@@ -254,7 +255,7 @@ class MyModel(SQLModel, table=True):
     status: str = Field(default="active", max_length=20)
 ```
 
-`SQLModel` base class provides: `id` (UUID7 primary key), `create_time`, `update_time` (auto-managed).
+`SQLModel` base class provides: `id` (UUID7 primary key), `create_time`, `update_time` (auto-managed) and `created_by` (creator ID, nullable).
 
 ### CRUD Pattern
 
