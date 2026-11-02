@@ -184,7 +184,7 @@ mark the todo complete and take the next task.
 
 ## Final Review
 
-Run `../subagent-driven-development/scripts/review-package PLAN_FILE MERGE_BASE HEAD`
+Run `scripts/review-package PLAN_FILE MERGE_BASE HEAD` (the shared script; full path in `execution-ledger.md`)
 (MERGE_BASE = the commit the branch started from, e.g.
 `git merge-base main HEAD`) and review from the file it prints.
 

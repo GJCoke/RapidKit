@@ -288,7 +288,7 @@ Follow `rapidkit-celery-task`.
 
 ## Timezone Rules
 
-Follow the Timezone Rules in `rapidkit-conventions`. Store naive UTC with `timezone.now()`; Socket.IO timestamps use the same instant convention as HTTP. The configured zone is `DATETIME_TIMEZONE` in `.env`.
+Follow the Timezone Rules in `rapidkit-conventions`. Store naive UTC with `timezone.now()`; Socket.IO timestamps use the same instant convention as HTTP; formatted strings only for pure text. The configured zone is `DATETIME_TIMEZONE` and the `LocalDatetime` text format is `DATETIME_FORMAT` (e.g. `%Y-%m-%d %H:%M:%S` → `2026-04-13 18:00:00`), both in `.env`.
 
 ## Rules
 

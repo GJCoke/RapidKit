@@ -6,7 +6,7 @@ description: Universal project conventions for the RapidKit monorepo. Referenced
 ## Project Architecture
 
 - **Workspace:** uv workspace (Python) + pnpm/turborepo (TypeScript) monorepo
-- **Dependency flow:** plugins -> common -> framework -> core; common also depends directly on core. `rapidkit-security` is a separate, stateless security package. Declare the packages each plugin imports directly.
+- **Dependency flow:** plugins -> common -> framework -> core; common also depends directly on core. `rapidkit-security` is a separate, stateless security package. Declare the packages each plugin imports directly. Core and framework code never depends on business plugins; plugins talk to each other through shared protocols/services or events.
 
 ```
 apps/
@@ -19,8 +19,8 @@ apps/
 packages/
   cli/           — TypeScript CLI (citty + clack)
   core/          — Python infrastructure (rapidkit-core)
-  common/        — Python shared business layer (rapidkit-common)
-  framework/     — Plugin runtime, HTTP, events, scopes (rapidkit-framework)
+  common/        — SQLModel/CRUD/schemas, protocols, access and scope runtime (rapidkit-common)
+  framework/     — Plugin discovery/manifests, service registry, events, HTTP exceptions/status codes, i18n, request identity, scope definitions (rapidkit-framework)
   security/      — JWT, password hashing, RSA (rapidkit-security)
   hooks/         — TS composables
   utils/         — TS utilities
@@ -183,6 +183,10 @@ async def get_user() -> Response[UserSchema]:
 | Events                    | `from rapidkit_framework.events import Event, event_bus`                |
 | Request context           | `from rapidkit_framework.context import ctx`                            |
 | UUID7                     | `from rapidkit_core.uuid7 import uuid7`                                 |
+| Session factory / Redis   | `from rapidkit_core.database import AsyncSessionLocal, RedisManager`    |
+| JWT / passwords           | `from rapidkit_security import AccessJWT, decode_token, hash_password`  |
+| ResponseSchema            | `from rapidkit_common.schemas.response import ResponseSchema`           |
+| Shared enums              | `from rapidkit_common.enums import Status, TaskStatus, WorkerStatus`    |
 
 ## Git Rules
 

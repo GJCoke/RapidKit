@@ -154,7 +154,7 @@ UnoCSS is configured with:
 
 ### Project Shortcuts and Theme Tokens
 
-The full lists are in `apps/frontend/uno.config.ts` (shortcuts, theme colors), `src/theme/settings.ts` (default colors, layout sizes) and `src/theme/vars.ts` (shadow and other theme variables). Read them before adding a class or token. The most used:
+The full lists are in `apps/frontend/uno.config.ts` (shortcuts, `text-icon-*` sizes), `src/theme/vars.ts` (theme colors and shades, shadows) and `src/theme/settings.ts` (default color values, layout sizes). Read them before adding a class or token. The most used:
 
 - `card-wrapper` = `rd-8px shadow-sm`
 - `flex-center`, `flex-col-stretch`, `flex-y-center`, `flex-1-hidden`

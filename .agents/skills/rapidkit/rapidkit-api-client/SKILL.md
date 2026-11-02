@@ -90,7 +90,10 @@ declare global {
 Rules:
 
 - ALWAYS derive types from OpenAPI schema using `Service.ApiRequest` / `Service.ApiResponse` for REST endpoints
-- ONLY define types manually for non-REST concepts (Socket.IO events, frontend-only enums, composite UI types)
+- ONLY define types manually for non-REST concepts (Socket.IO events, frontend-only enums, composite UI types); reuse `Api.Common` base types (`Common.CommonRecord`, `Common.PaginatingQueryRecord`, etc.) in them
+- Name the file in kebab-case after the backend module (e.g. `system-manage.d.ts`, `worker.d.ts`)
+- `import type { Service }` at the top makes the file a module; no `export {}` is needed
+- Exceptions: `common.d.ts` (base types, plain `declare namespace`) and `route.d.ts` (routing, depends on `@elegant-router`)
 
 ### 3. API Functions
 
