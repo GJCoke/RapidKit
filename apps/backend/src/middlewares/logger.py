@@ -119,16 +119,19 @@ class LoggerMiddleware:
                     self.metrics.in_progress.dec()
                     self.metrics.observe_request(scope["method"], route, outcome, kind, duration / 1000)
                 if self.record_redis and not internal:
-                    task = asyncio.create_task(
-                        redis_metrics._record_metrics(
-                            status_code=status or 0,
-                            duration_ms=duration,
-                            path=route,
-                            route_path=route,
-                            method=scope["method"],
-                            business_code=sent_business_code,
-                            outcome=outcome,
+                    if len(redis_metrics._background_tasks) >= redis_metrics.MAX_IN_FLIGHT:
+                        redis_metrics.record_dropped(RuntimeError("Request metrics capacity exhausted"))
+                    else:
+                        task = asyncio.create_task(
+                            redis_metrics._record_metrics(
+                                status_code=status or 0,
+                                duration_ms=duration,
+                                path=route,
+                                route_path=route,
+                                method=scope["method"],
+                                business_code=sent_business_code,
+                                outcome=outcome,
+                            )
                         )
-                    )
-                    redis_metrics._background_tasks.add(task)
-                    task.add_done_callback(redis_metrics._background_tasks.discard)
+                        redis_metrics._background_tasks.add(task)
+                        task.add_done_callback(redis_metrics._background_tasks.discard)

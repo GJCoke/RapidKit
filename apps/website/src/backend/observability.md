@@ -67,7 +67,9 @@ docker compose --env-file docker/prod/.env.prod \
 | API 全部不可达、Redis/PostgreSQL 探测失败               | 持续 1 分钟 critical                                   |
 | server/transport 错误率 >1%                             | 5 分钟窗口至少 100 请求，再持续 5 分钟；业务拒绝不计入 |
 | 路由 P95 >3 秒                                          | 同窗口至少 100 请求，持续 10 分钟 warning              |
-| pending 最老 >120 秒且增长                              | 持续 1 分钟；失去采样时保留已知失败                    |
+| pending 最老 >120 秒，不要求数量增长                    | 持续 1 分钟；失去采样时保留已知失败                    |
+| 未读事件 lag >1000                                      | 持续 1 分钟 warning；阈值需按真实吞吐调优              |
+| Redis 请求指标丢弃                                      | warning；计数增加或首次快照已非零时可见                |
 | 隔离记录、发布失败、事件缺口、审计 fallback             | warning 或 critical；调查确认后处置证据                |
 | Worker 期望容量不足、后台任务停止                       | 容量持续 2 分钟，组件持续 1 分钟                       |
 | 日志预算 >90%、文件丢弃、磁盘余量 <20%/<10%、inode <10% | 预算 warning；丢弃与低空间 critical                    |
@@ -95,7 +97,7 @@ Alertmanager 按 alertname/service/component/instance 分组，10 秒等待、1 
 
 ### 事件积压 {#event-backlog}
 
-检查 sample_success/时间、pending 最老年龄、lag、消费组件与 DB；用 B 批次 status 操作核对 group watermark。恢复依赖后观察 XACK 推进，避免通过任意 XTRIM、删除 group 或在线重发任务解决积压。
+检查 sample_success/时间、pending 最老年龄、lag、消费组件与 DB。pending 数量固定也可能持续老化；旧告警名 `RapidKitPendingGrowing` 保留以兼容路由，已不要求数量增长。未读 lag 超过1000持续1分钟单独告警，pending为0也适用。1000是初值，低吞吐关键队列应按实际延迟要求降低阈值；用 B 批次 status 操作核对 group watermark。恢复依赖后观察 XACK 推进，避免通过任意 XTRIM、删除 group 或在线重发任务解决积压。
 
 ### 事件隔离 {#event-isolation}
 
@@ -129,7 +131,13 @@ Alertmanager 按 alertname/service/component/instance 分组，10 秒等待、1 
 
 ### 采样器或快照失效 {#sampler-stale}
 
-先检查相应 `up`、ops 心跳、每组件成功时间和 runtime 快照年龄。区分依赖失败、角色目录读取失败与采样器退出；保留最后数值，未知不按健康处理。修复采样进程后确认心跳与所有必要组件恢复，不能只看 `/metrics` 返回 200。
+先检查相应 `up`、ops 心跳、每组件成功时间和 runtime 快照年龄。
+
+Redis 请求看板指标使用每 API 进程独立的 `request_metrics` 池，最多10连接、10个在途任务。pipeline 总时限为2秒，包含建连、执行和SDK重试等待。达到上限不再创建后台任务；失败、超时和入场丢弃均累计 `rapidkit_request_metrics_dropped_total`，并复用 `request_metrics` 退化/恢复事件。正常关闭先等待这批有时限任务，再清理连接。
+
+这些 Redis 看板指标采用 best-effort 策略。丢弃计数包含入场拒绝、写入失败和超时未确认，不等于精确缺失条数；超时时 Redis 可能已提交。拥塞时 HTTP 响应与 Prometheus 请求计数继续执行，Redis看板会缺记录。`RapidKitRequestMetricsDropped` 会报告丢弃，包括发现目标时首个快照已非零的情况；恢复不代表历史补齐。按峰值负载观察丢弃和业务池容量，再决定是否调整在途上限。
+
+区分依赖失败、角色目录读取失败与采样器退出；保留最后数值，未知不按健康处理。修复采样进程后确认心跳与所有必要组件恢复，不能只看 `/metrics` 返回 200。
 
 ### 发现失效 {#discovery-stale}
 
@@ -149,7 +157,7 @@ Alertmanager 按 alertname/service/component/instance 分组，10 秒等待、1 
 
 ## 任务详情清理与回滚
 
-默认 `TASK_RESULT_RETENTION_DAYS` 未设置，不进行自动清理。需要启用时先备份，确认迁移及所有消费者都支持 `TaskReceipt`，先运行 dry-run：
+默认不设置 `TASK_RESULT_RETENTION_DAYS`，最终配置值为 `None`，不进行自动清理。只接受正整数启用；0、负数或空字符串不是关闭方式。启用后要关闭，应移除环境变量并重建采样器。首次接入时确认 `rapidkit_task_retention_enabled` 为 0。需要启用时先备份，确认迁移及所有消费者都支持 `TaskReceipt`，先运行 dry-run：
 
 ```bash
 docker compose --env-file docker/prod/.env.prod -f docker/prod/docker-compose.yml \
@@ -174,7 +182,7 @@ D 批次不需要数据库迁移，默认 INFO 即可记录下列事件。成功
 | ---------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | postgresql | pool.acquire；query.select/insert/update/delete/other                      | 主异步/同步 Session、TaskSession 和 Beat 引擎均覆盖。pool.acquire 包括池排队及获取/新建连接，不能当作纯排队时间；query 仅测实际游标执行，不含整个事务、结果遍历和应用代码 |
 | redis      | get/set/hash/list/set_members/sorted_set/stream/script/pipeline/wait/other | 项目 AsyncRedisClient、其 pipeline 和 Worker 发布用同步客户端。wait 为 BLPOP/XREADGROUP 等主动阻塞等待，成功时不告慢，只计直方图；失败仍告警                              |
-| minio      | http.get/head/put/post/delete/other；upload                                | 项目 MinioClient 的 SDK 实际请求及整个 put_object 上传；惰性迭代在发出请求时记录。分片工作线程继承对应上传上下文，并发上传不会混用请求 ID                                                     |
+| minio      | http.get/head/put/post/delete/other；upload                                | 项目 MinioClient 的 SDK 实际请求及整个 put_object 上传；惰性迭代在发出请求时记录。分片工作线程继承对应上传上下文，并发上传不会混用请求 ID                                 |
 | smtp       | send                                                                       | 已配置邮件发送时的连接、TLS、登录和发送整体；未配置邮件服务的跳过行为保持不变                                                                                             |
 
 SDK 内部重试包含在对应边界耗时中；嵌套边界不能直接相加，例如 upload 包含多个 http.put。MinIO 流式下载只测到 SDK 返回响应，不包含调用者后续读完整个对象；只有连接池/SQL/网络边界，不能据此认定业务整体耗时。Celery broker/result、Socket.IO manager 等第三方自行创建的 Redis 客户端没有逐命令覆盖，仍由已有依赖探测与组件退化信号补充。

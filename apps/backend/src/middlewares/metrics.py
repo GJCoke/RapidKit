@@ -11,11 +11,20 @@ Date   : 2026-04-10
 import asyncio
 import re
 
+from rapidkit_core import runtime_state
 from rapidkit_core.database import RedisManager
 from rapidkit_core.log import component_failed, component_recovered
 from rapidkit_core.timezone import timezone
 
 _background_tasks: set[asyncio.Task] = set()
+MAX_IN_FLIGHT = 10
+WRITE_TIMEOUT_SECONDS = 2
+
+
+def record_dropped(error: Exception) -> None:
+    runtime_state.increment("request_metrics_dropped")
+    component_failed("request_metrics", error)
+
 
 # Redis key TTL
 _KEY_TTL = 7200  # 全局指标 2 小时
@@ -46,7 +55,7 @@ async def _record_metrics(
 ) -> None:
     """将请求指标写入 Redis（fire-and-forget）。"""
     try:
-        redis = RedisManager.client()
+        redis = RedisManager.client(pool_name="request_metrics")
         now = timezone.now()
         minute_bucket = now.strftime("%Y%m%d_%H%M")
         hour_bucket = now.strftime("%Y%m%d_%H")
@@ -101,7 +110,8 @@ async def _record_metrics(
         pipe.zadd(ep_rt_key, {f"{now.timestamp():.6f}": duration_ms})
         pipe.expire(ep_rt_key, _EP_KEY_TTL)
 
-        await pipe.execute()
+        async with asyncio.timeout(WRITE_TIMEOUT_SECONDS):
+            await pipe.execute()
         component_recovered("request_metrics")
     except Exception as exc:
-        component_failed("request_metrics", exc)
+        record_dropped(exc)

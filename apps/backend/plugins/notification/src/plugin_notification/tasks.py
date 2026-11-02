@@ -69,11 +69,7 @@ async def _publish_due(
             async with session.begin_nested():
                 await orchestrator.publish_message(message_id, scheduled_run=True)
         except Exception as exc:  # noqa: BLE001 - one failed message must not stop the batch
-            logger.warning(
-                "Scheduled publish failed for message_id={}: {}",
-                message_id,
-                exc,
-            )
+            logger.opt(exception=exc).warning("Scheduled publish failed for message_id={}", message_id)
         else:
             published += 1
     return published
@@ -146,7 +142,7 @@ async def publish_scheduled_notifications(
             if changed:
                 await banner.broadcast(revision)
         except Exception as exc:  # noqa: BLE001 - banner failures cannot starve inbox publishing
-            logger.warning("Banner transition failed; next beat will retry: {}", exc)
+            logger.opt(exception=exc).warning("Banner transition failed; next beat will retry")
         async with session() as database_session:
             orchestrator = _build_orchestrator(database_session)
             count = await _publish_due(database_session, orchestrator)

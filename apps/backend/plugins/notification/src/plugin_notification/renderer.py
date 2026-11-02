@@ -87,7 +87,7 @@ class TemplateRenderer:
                 title = template.title_template.format(**cleaned)
                 content = template.content_template.format(**cleaned)
             except (AttributeError, IndexError, KeyError, TypeError, ValueError) as exc:
-                logger.warning("Template raw render failed: {}", exc)
+                logger.opt(exception=exc).warning("Template raw render failed")
                 raise AppException(NotificationStatusCode.TEMPLATE_VARIABLE_INVALID) from exc
 
             if len(title) > 256:

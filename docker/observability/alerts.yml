@@ -11,7 +11,7 @@ groups:
           summary: Host inode space low; inspect stopped-instance cleanup and storage policy
           runbook: apps/website/src/backend/observability.md#log-capacity
       - alert: RapidKitAllAPIDown
-        expr: "(sum(up{job=\"rapidkit-process\",service=\"api\"}) or vector(0)) == 0"
+        expr: '(sum(up{job="rapidkit-process",service="api"}) or vector(0)) == 0'
         for: 1m
         labels:
           severity: critical
@@ -29,7 +29,7 @@ groups:
           summary: "RapidKitDependencyDown; inspect validity and recent release before acting"
           runbook: apps/website/src/backend/observability.md#dependency-down
       - alert: RapidKitServerErrorRate
-        expr: "sum(rate(rapidkit_http_failures_total{error_kind=~\"server|transport\"}[5m])) / sum(rate(rapidkit_http_requests_total[5m])) > 0.01 and sum(increase(rapidkit_http_requests_total[5m])) >= 100"
+        expr: 'sum(rate(rapidkit_http_failures_total{error_kind=~"server|transport"}[5m])) / sum(rate(rapidkit_http_requests_total[5m])) > 0.01 and sum(increase(rapidkit_http_requests_total[5m])) >= 100'
         for: 5m
         labels:
           severity: critical
@@ -47,7 +47,7 @@ groups:
           summary: "RapidKitSlowRoute; inspect validity and recent release before acting"
           runbook: apps/website/src/backend/observability.md#slow-route
       - alert: RapidKitPendingGrowing
-        expr: "rapidkit_events_oldest_pending_seconds > 120 and on() (delta(rapidkit_events_pending[2m]) > 0 or on() rapidkit_ops_sample_success{component=\"events\"} == 0)"
+        expr: "rapidkit_events_oldest_pending_seconds > 120"
         for: 1m
         labels:
           severity: warning
@@ -55,6 +55,24 @@ groups:
         annotations:
           summary: "RapidKitPendingGrowing; inspect validity and recent release before acting"
           runbook: apps/website/src/backend/observability.md#event-backlog
+      - alert: RapidKitUnreadBacklog
+        expr: "rapidkit_events_lag > 1000"
+        for: 1m
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: Unread task observations exceed 1000; inspect consumer progress
+          runbook: apps/website/src/backend/observability.md#event-backlog
+      - alert: RapidKitRequestMetricsDropped
+        expr: "increase(rapidkit_request_metrics_dropped_total[5m]) > 0 or (rapidkit_request_metrics_dropped_total > 0 unless rapidkit_request_metrics_dropped_total offset 5m)"
+        for: 0s
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: Request metrics dropped; inspect isolated writer capacity or Redis availability
+          runbook: apps/website/src/backend/observability.md#sampler-stale
       - alert: RapidKitIsolatedEvents
         expr: "rapidkit_events_dead > 0"
         for: 0s
@@ -164,7 +182,7 @@ groups:
           summary: "RapidKitLogSpaceLow; inspect validity and recent release before acting"
           runbook: apps/website/src/backend/observability.md#log-capacity
       - alert: RapidKitSamplerStale
-        expr: "time() - rapidkit_ops_heartbeat_timestamp_seconds > 30 or absent(rapidkit_ops_heartbeat_timestamp_seconds) or up{job=\"rapidkit-ops\"} == 0"
+        expr: 'time() - rapidkit_ops_heartbeat_timestamp_seconds > 30 or absent(rapidkit_ops_heartbeat_timestamp_seconds) or up{job="rapidkit-ops"} == 0'
         for: 1m
         labels:
           severity: critical
@@ -191,7 +209,7 @@ groups:
           summary: "RapidKitDiscoveryStale; inspect validity and recent release before acting"
           runbook: apps/website/src/backend/observability.md#discovery-stale
       - alert: RapidKitTargetDown
-        expr: "up{job=~\"rapidkit-process|rapidkit-host\"} == 0"
+        expr: 'up{job=~"rapidkit-process|rapidkit-host"} == 0'
         for: 1m
         labels:
           severity: critical
@@ -200,7 +218,7 @@ groups:
           summary: "RapidKitTargetDown; inspect validity and recent release before acting"
           runbook: apps/website/src/backend/observability.md#target-down
       - alert: RapidKitNotificationUnavailable
-        expr: "up{job=\"alertmanager\"} == 0 or absent(up{job=\"alertmanager\"}) or increase(alertmanager_notifications_failed_total[5m]) > 0"
+        expr: 'up{job="alertmanager"} == 0 or absent(up{job="alertmanager"}) or increase(alertmanager_notifications_failed_total[5m]) > 0'
         for: 1m
         labels:
           severity: critical

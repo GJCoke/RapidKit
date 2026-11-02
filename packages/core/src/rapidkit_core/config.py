@@ -95,7 +95,7 @@ class CeleryConfigMixin(RedisConfigMixin):
         True,
         description="是否启用 Celery 任务队列管理（事件消费、Worker 监控、管理 API）",
     )
-    TASK_RESULT_RETENTION_DAYS: int = 30
+    TASK_RESULT_RETENTION_DAYS: int | None = Field(None, ge=1)
     CELERY_WORKER_GROUP: str = Field("local/default", max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9/_.-]*$")
     CELERY_WORKER_DEPLOYMENT: str = Field("", max_length=64)
 
@@ -135,7 +135,6 @@ class LogConfigMixin(BaseSettings):
     LOG_FILE_BUDGET_BYTES: int | None = Field(None, ge=1)
     LOG_FILE_MIN_FREE_BYTES: int = Field(64 * 1024 * 1024, ge=0)
     RUNTIME_STATE_DIR: Path | None = None
-    TASK_RESULT_RETENTION_DAYS: int | None = Field(None, ge=1)
 
     LOG_ACCESS_FILENAME: str = "access.log"
     LOG_ERROR_FILENAME: str = "error.log"

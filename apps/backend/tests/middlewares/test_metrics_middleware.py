@@ -10,7 +10,7 @@ from src.middlewares.metrics import _normalize_path
 
 @pytest.mark.asyncio
 async def test_redis_outcomes_distinguish_business_transport_and_http_errors(redis, monkeypatch):
-    monkeypatch.setattr(metrics.RedisManager, "client", lambda: redis)
+    monkeypatch.setattr(metrics.RedisManager, "client", lambda **kwargs: redis)
     monkeypatch.setattr(metrics, "timezone", SimpleNamespace(now=lambda: datetime(2026, 10, 30, 12, 0, 0)))
     for status, code, outcome in ((200, 0, "success"), (200, 14003, "error"), (200, 0, "error"), (500, None, "error")):
         await metrics._record_metrics(

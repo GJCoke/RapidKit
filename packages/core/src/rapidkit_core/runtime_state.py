@@ -43,6 +43,7 @@ COUNTERS = frozenset(
         "task_event_published",
         "task_event_publish_failed",
         "task_event_gaps",
+        "request_metrics_dropped",
         "file_log_dropped",
         "audit_fallback_enqueued",
         *("component_failures:" + key for key in COMPONENTS),

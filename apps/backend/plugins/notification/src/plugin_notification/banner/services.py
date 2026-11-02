@@ -80,7 +80,7 @@ class BannerAnnouncementService:
         try:
             await self.broadcaster(revision)
         except Exception as exc:  # noqa: BLE001 - durable state and polling remain authoritative
-            logger.warning("Banner broadcast failed revision={}: {}", revision, exc)
+            logger.opt(exception=exc).warning("Banner broadcast failed revision={}", revision)
 
     async def _load(self, session: AsyncSession, *, lock: bool = False) -> BannerSlots:
         statement = select(NotificationBannerState).where(col(NotificationBannerState.id) == BANNER_STATE_ID)

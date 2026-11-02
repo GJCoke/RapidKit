@@ -1,0 +1,277 @@
+{
+  "rule_files": ["alerts.yml"],
+  "evaluation_interval": "1m",
+  "tests":
+    [
+      {
+        "name": "fixed pending still ages",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_pending", "values": "10+0x30" },
+            { "series": "rapidkit_events_oldest_pending_seconds", "values": "1200+60x30" },
+            { "series": "rapidkit_events_lag", "values": "0+0x30" },
+            { "series": 'rapidkit_ops_sample_success{component="events"}', "values": "1+0x30" },
+          ],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "15m",
+              "alertname": "RapidKitPendingGrowing",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "RapidKitPendingGrowing; inspect validity and recent release before acting",
+                        "runbook": "apps/website/src/backend/observability.md#event-backlog",
+                      },
+                  },
+                ],
+            },
+            { "eval_time": "15m", "alertname": "RapidKitUnreadBacklog", "exp_alerts": [] },
+          ],
+      },
+      {
+        "name": "unread backlog without pending",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_pending", "values": "0+0x30" },
+            { "series": "rapidkit_events_oldest_pending_seconds", "values": "0+0x30" },
+            { "series": "rapidkit_events_lag", "values": "0+100x30" },
+            { "series": 'rapidkit_ops_sample_success{component="events"}', "values": "1+0x30" },
+          ],
+        "alert_rule_test":
+          [
+            { "eval_time": "15m", "alertname": "RapidKitPendingGrowing", "exp_alerts": [] },
+            {
+              "eval_time": "15m",
+              "alertname": "RapidKitUnreadBacklog",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Unread task observations exceed 1000; inspect consumer progress",
+                        "runbook": "apps/website/src/backend/observability.md#event-backlog",
+                      },
+                  },
+                ],
+            },
+          ],
+      },
+      {
+        "name": "healthy small queue",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_pending", "values": "10+0x30" },
+            { "series": "rapidkit_events_oldest_pending_seconds", "values": "30+0x30" },
+            { "series": "rapidkit_events_lag", "values": "100+0x30" },
+            { "series": 'rapidkit_ops_sample_success{component="events"}', "values": "1+0x30" },
+          ],
+        "alert_rule_test":
+          [
+            { "eval_time": "15m", "alertname": "RapidKitPendingGrowing", "exp_alerts": [] },
+            { "eval_time": "15m", "alertname": "RapidKitUnreadBacklog", "exp_alerts": [] },
+          ],
+      },
+      {
+        "name": "brief unread spike",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_pending", "values": "0+0x30" },
+            { "series": "rapidkit_events_oldest_pending_seconds", "values": "0+0x30" },
+            { "series": "rapidkit_events_lag", "values": "0x3 2000 0x25" },
+            { "series": 'rapidkit_ops_sample_success{component="events"}', "values": "1+0x30" },
+          ],
+        "alert_rule_test":
+          [
+            { "eval_time": "6m", "alertname": "RapidKitPendingGrowing", "exp_alerts": [] },
+            { "eval_time": "6m", "alertname": "RapidKitUnreadBacklog", "exp_alerts": [] },
+          ],
+      },
+      {
+        "name": "sampling failure does not clear old fault",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_pending", "values": "10+0x30" },
+            { "series": "rapidkit_events_oldest_pending_seconds", "values": "180+0x30" },
+            { "series": "rapidkit_events_lag", "values": "1500+0x30" },
+            { "series": 'rapidkit_ops_sample_success{component="events"}', "values": "1x2 0x10 1x20" },
+          ],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "5m",
+              "alertname": "RapidKitPendingGrowing",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "RapidKitPendingGrowing; inspect validity and recent release before acting",
+                        "runbook": "apps/website/src/backend/observability.md#event-backlog",
+                      },
+                  },
+                ],
+            },
+            {
+              "eval_time": "5m",
+              "alertname": "RapidKitUnreadBacklog",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Unread task observations exceed 1000; inspect consumer progress",
+                        "runbook": "apps/website/src/backend/observability.md#event-backlog",
+                      },
+                  },
+                ],
+            },
+            {
+              "eval_time": "15m",
+              "alertname": "RapidKitPendingGrowing",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "RapidKitPendingGrowing; inspect validity and recent release before acting",
+                        "runbook": "apps/website/src/backend/observability.md#event-backlog",
+                      },
+                  },
+                ],
+            },
+            {
+              "eval_time": "15m",
+              "alertname": "RapidKitUnreadBacklog",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Unread task observations exceed 1000; inspect consumer progress",
+                        "runbook": "apps/website/src/backend/observability.md#event-backlog",
+                      },
+                  },
+                ],
+            },
+          ],
+      },
+      {
+        "name": "actual progress resolves the fault",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_pending", "values": "10x4 0x25" },
+            { "series": "rapidkit_events_oldest_pending_seconds", "values": "180x4 0x25" },
+            { "series": "rapidkit_events_lag", "values": "1500x4 0x25" },
+            { "series": 'rapidkit_ops_sample_success{component="events"}', "values": "1x2 0x3 1x25" },
+          ],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "3m",
+              "alertname": "RapidKitPendingGrowing",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "RapidKitPendingGrowing; inspect validity and recent release before acting",
+                        "runbook": "apps/website/src/backend/observability.md#event-backlog",
+                      },
+                  },
+                ],
+            },
+            {
+              "eval_time": "3m",
+              "alertname": "RapidKitUnreadBacklog",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Unread task observations exceed 1000; inspect consumer progress",
+                        "runbook": "apps/website/src/backend/observability.md#event-backlog",
+                      },
+                  },
+                ],
+            },
+            { "eval_time": "7m", "alertname": "RapidKitPendingGrowing", "exp_alerts": [] },
+            { "eval_time": "7m", "alertname": "RapidKitUnreadBacklog", "exp_alerts": [] },
+          ],
+      },
+      {
+        "name": "first snapshot already has drops",
+        "interval": "1m",
+        "input_series": [{ "series": 'rapidkit_request_metrics_dropped_total{service="api"}', "values": "3+0x15" }],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "2m",
+              "alertname": "RapidKitRequestMetricsDropped",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "service": "api", "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Request metrics dropped; inspect isolated writer capacity or Redis availability",
+                        "runbook": "apps/website/src/backend/observability.md#sampler-stale",
+                      },
+                  },
+                ],
+            },
+          ],
+      },
+      {
+        "name": "ongoing drops",
+        "interval": "1m",
+        "input_series": [{ "series": 'rapidkit_request_metrics_dropped_total{service="api"}', "values": "0+1x20" }],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "10m",
+              "alertname": "RapidKitRequestMetricsDropped",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "service": "api", "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Request metrics dropped; inspect isolated writer capacity or Redis availability",
+                        "runbook": "apps/website/src/backend/observability.md#sampler-stale",
+                      },
+                  },
+                ],
+            },
+          ],
+      },
+      {
+        "name": "no drops",
+        "interval": "1m",
+        "input_series": [{ "series": 'rapidkit_request_metrics_dropped_total{service="api"}', "values": "0+0x20" }],
+        "alert_rule_test": [{ "eval_time": "10m", "alertname": "RapidKitRequestMetricsDropped", "exp_alerts": [] }],
+      },
+      {
+        "name": "quiet after prior drops",
+        "interval": "1m",
+        "input_series": [{ "series": 'rapidkit_request_metrics_dropped_total{service="api"}', "values": "3+0x20" }],
+        "alert_rule_test": [{ "eval_time": "10m", "alertname": "RapidKitRequestMetricsDropped", "exp_alerts": [] }],
+      },
+    ],
+}

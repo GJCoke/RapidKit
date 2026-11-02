@@ -62,6 +62,9 @@ class _RecordingLogger:
     def __init__(self) -> None:
         self.warnings: list[tuple[str, tuple[Any, ...]]] = []
 
+    def opt(self, **kwargs):
+        return self
+
     def warning(self, message: str, *args: Any) -> None:
         self.warnings.append((message, args))
 

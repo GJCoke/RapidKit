@@ -56,7 +56,7 @@ class NotificationService:
             try:
                 self._enqueue_delivery()
             except Exception as exc:  # noqa: BLE001
-                logger.warning("Failed to enqueue delivery, beat will retry: {}", exc)
+                logger.opt(exception=exc).warning("Failed to enqueue delivery, beat will retry")
 
         logger.info(
             "Notification sent: message_id={} recipients={} dedup={}",

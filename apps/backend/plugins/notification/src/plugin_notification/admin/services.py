@@ -95,7 +95,7 @@ class AdminNotificationService:
         try:
             self._enqueue_delivery()
         except Exception as exc:  # noqa: BLE001 - periodic delivery remains available
-            logger.warning("Failed to enqueue delivery, beat will retry: {}", exc)
+            logger.opt(exception=exc).warning("Failed to enqueue delivery, beat will retry")
 
     async def create_message(
         self,
@@ -301,11 +301,7 @@ class AdminNotificationService:
             try:
                 await self._recall_broadcaster(message_id)
             except Exception as exc:  # noqa: BLE001 - database remains the source of truth
-                logger.warning(
-                    "Recall broadcast failed for message_id={}: {}",
-                    message_id,
-                    exc,
-                )
+                logger.opt(exception=exc).warning("Recall broadcast failed for message_id={}", message_id)
 
     async def preview_content(
         self,

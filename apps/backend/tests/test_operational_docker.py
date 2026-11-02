@@ -505,6 +505,68 @@ runtime_state.write_snapshot()
         wait(lambda: database_notification("resolved"))
         wait(lambda: fetch(url("backend-api", 8006) + "/health/ready")[0] == 200)
         summary["postgresql_outage_real_rule_and_recovery"] = True
+        assert query("rapidkit_task_retention_enabled == 0")
+        pending_script = """
+redis.call('DEL', KEYS[1])
+redis.call('XGROUP', 'CREATE', KEYS[1], 'fastapi-consumers', '0', 'MKSTREAM')
+local id = redis.call('XADD', KEYS[1], ARGV[1], 'event_type', 'worker.heartbeat', 'data', ARGV[2], 'timestamp', ARGV[3])
+redis.call('XREADGROUP', 'GROUP', 'fastapi-consumers', 'paused-fixture', 'COUNT', 1, 'STREAMS', KEYS[1], '>')
+return id
+"""
+        unread_script = """
+for i = 1, 1100 do
+    redis.call('XADD', KEYS[1], '*', 'event_type', 'worker.heartbeat', 'data', ARGV[2], 'timestamp', ARGV[3])
+end
+return 1100
+"""
+        worker_hostname = run(
+            "docker", "inspect", "--format", "{{.Config.Hostname}}", container("celery-worker")
+        ).strip()
+        for alert_name, seed in (
+            ("RapidKitPendingGrowing", pending_script),
+            ("RapidKitUnreadBacklog", unread_script),
+        ):
+            wait(lambda: query("rapidkit_events_pending == 0") and query("rapidkit_events_lag == 0"))
+            before = len(notifications(alert_name))
+            # Stop consumers to close server-side blocking reads before seeding unread events.
+            run(*compose, "stop", "backend-api", timeout=60)
+            # Only this disposable project's stream is reset to create an old source ID.
+            run(
+                "docker",
+                "exec",
+                container("redis"),
+                "redis-cli",
+                "--no-auth-warning",
+                "-a",
+                environment["REDIS_ROOT_PASSWORD"],
+                "-n",
+                environment["REDIS_DATABASE"],
+                "EVAL",
+                seed,
+                "1",
+                "celery:events",
+                str(int(time.time() * 1000) - 180000) + "-0",
+                json.dumps({"hostname": worker_hostname}),
+                datetime.now(UTC).isoformat(),
+            )
+            if alert_name == "RapidKitPendingGrowing":
+                wait(
+                    lambda: (
+                        query("rapidkit_events_pending == 1") and query("rapidkit_events_oldest_pending_seconds > 120")
+                    )
+                )
+            else:
+                wait(lambda: query("rapidkit_events_pending == 0") and query("rapidkit_events_lag > 1000"))
+            wait(
+                lambda: any(message["status"] == "firing" for message in notifications(alert_name)[before:]),
+                seconds=130,
+            )
+            run(*compose, "start", "backend-api", timeout=60)
+            refresh()
+            wait(lambda: query("rapidkit_events_pending == 0") and query("rapidkit_events_lag == 0"))
+            wait(lambda: any(message["status"] == "resolved" for message in notifications(alert_name)[before:]))
+        summary["default_retention_disabled"] = True
+        summary["fixed_pending_and_unread_backlog_notifications_and_recovery"] = True
         run(*compose, "stop", "observability", timeout=30)
         wait(lambda: query('up{job="rapidkit-ops"} == 0'))
         status, body = fetch(url("backend-api", 8006) + "/api/v1/auth/keys/public")

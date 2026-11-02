@@ -38,7 +38,7 @@ async def broadcast_recall(
                 namespace=_NOTIFICATION_NAMESPACE,
             )
         except Exception as exc:  # noqa: BLE001
-            logger.warning("Recall emit failed for user_id={}: {}", user_id, exc)
+            logger.opt(exception=exc).warning("Recall emit failed for user_id={}", user_id)
             continue
         sent += 1
 

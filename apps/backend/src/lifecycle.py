@@ -22,6 +22,7 @@ from rapidkit_framework.events import event_bus
 from src.audit_queue import RedisAuditQueue
 from src.health import shutdown_readiness
 from src.locales.watch import watch_locale_files
+from src.middlewares import metrics as redis_metrics
 from src.queues.consumer import check_worker_offline, consume_events
 from src.sio.events.connection import renew_session_keys_loop
 from src.sio.sessions import register_socket_closer, shutdown_socket_timers
@@ -53,6 +54,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     register_socket_closer()
     RedisManager.connect()
+    RedisManager.connect(pool_name="request_metrics", max_connections=redis_metrics.MAX_IN_FLIGHT)
     await event_bus.start_subscriber()
 
     from src.middlewares import audit as audit_module
@@ -135,6 +137,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await event_bus.shutdown()
     app.state.prometheus.shutdown()
     await app.state.limiter.close()
+    await asyncio.gather(*redis_metrics._background_tasks, return_exceptions=True)
     await RedisManager.clear()
     await async_engine.dispose()
     sync_engine.dispose()
