@@ -196,7 +196,7 @@ async def test_sentry_api_worker_beat_initialization(loaded_app, monkeypatch):
     monkeypatch.setattr(queue_module, "init_sentry", lambda: events.append("sentry"))
     queue_module.init_worker_logging()
     queue_module.init_beat_observability()
-    file_sinks = {"enqueue": False}
+    file_sinks = {}
     assert events == ["logging", file_sinks, "sentry", "logging", file_sinks, "sentry"]
 
 

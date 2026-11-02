@@ -113,6 +113,8 @@ def __call__(self, *args, **kwargs):
 
 真实任务参数和返回值保持执行语义，观测副本不保存任意 args、kwargs、返回值和 stdout；任务详情明确隐藏这些字段，历史数据也不能经读取接口重新暴露。需要进度时使用已审阅的结构化 logger 事件，不要 print 凭证或业务载荷。详见[日志系统](./logging)。
 
+接收阶段的未知任务、未知消息、非法任务及解码错误通过 `SafeConsumer` 与 Core 标准日志拦截器输出固定事件和安全编号，原 ACK/拒绝和失败记录继续由 Celery 执行。升级 Celery 后须回归这四类真实回调，确认 SDK 错误模板仍被拦截。Worker 父进程、prefork 子进程和 Beat 默认使用有界文件投递，子进程重新绑定文件及写线程；正常 Worker 停机最多等待 1 秒排空，不保证强杀时保留尾部。队列和写入耗时指标、超大记录及文件拥塞策略见日志系统。
+
 任务发布与执行传递 request_id、correlation_id、可信身份和 attempt。手动触发的审计流程优先使用 audit_correlation_id；没有 HTTP 来源时生成独立请求关联。Worker 结果表新增 nullable 索引列 request_id/correlation_id，列表和详情返回这些字段，GET /tasks 支持 requestId/correlationId 精确筛选，仍需 task:read 权限并保留原时间范围筛选。旧行关联为空，不做推测性回填。
 
 任务内普通日志也绑定真实投递的 task_id、task_name、attempt、correlation_id 和 user_id/actor_id/impersonation_session_id。绑定覆盖依赖创建、执行及关闭；同步和异步任务都适用，`asyncio.to_thread` 继承上下文，结束或异常后恢复外层字段。同一 request_id 下的多个任务应按 task_id 和 attempt 区分，流程编号优先 audit_correlation_id，其次 correlation_id，最后 request_id。只绑定安全编号，不记录参数、返回值或任意 header。没有投递元数据的直接调用不编造 task_id。

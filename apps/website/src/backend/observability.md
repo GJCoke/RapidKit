@@ -150,6 +150,12 @@ dead没有自动到期。由运维/后端负责人对每次积压建处置记录
 
 区分角色预算、只读/权限、文件系统空间或 inode。核对挂载与 999:999 权限，观察 `rapidkit_file_log_dropped_total`、`rapidkit_log_blocked` 及独立 stderr 标记。预算达到上限时停止普通文件写入，stdout 仍受 Docker 轮转管理；不要关闭告警来消除丢失证据。
 
+文件通道还可能因 `lock_busy`、`queue_full`、`record_too_large` 或 `shutdown_timeout` 退化。API、Worker、Beat 每进程采用 256 条/1 MiB 有界投递，包含正在写的记录；多进程的总量随进程数增加。查看 `rapidkit_file_log_queue_records`、`rapidkit_file_log_queue_bytes`（仅存活进程求和）以及 `rapidkit_dependency_duration_seconds{component="log_file",operation="write"}` 判断队列和真实文件写入耗时；被锁拒绝的写入记 error。正在卡住的写入尚未形成耗时样本，应同时看队列、dropped、角色新鲜度及外部磁盘指标。
+
+`rapidkit_file_log_dropped_total` 包含文件投递拒绝、写入失败及停机期限内未确认记录，不能等同于精确丢失的业务请求数；未确认的记录之后可能写入。独立 stderr 的 degraded/recovered 与现有日志退化告警继续适用，恢复不补齐历史缺口。超大记录只拒绝文件副本，stdout 保持原有内容。该策略优先保持在线服务可响应；集中采集和真实通知是否有效仍须真实环境验收。
+
+运行指标按快照采样，进程退出前的尾部增量不保证被抓取；停机超时应同时保留独立 stderr 证据。
+
 先 `cleanup` dry-run，只清理确认已移除实例且超过保存期的文件；未知/仍存在实例人工检查。不要删除活跃文件、审计表、数据库卷或 Docker daemon 私有日志。确认空间需求后扩容/调整配额，恢复写入并确认 recovered 与不再新增 dropped。磁盘填满或整个宿主机故障可能同时使本机监控失效，需要外部监控与异机采集；本机栈不能自证宿主机断电可告警。
 
 ### 采样器或快照失效 {#sampler-stale}

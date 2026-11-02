@@ -5,7 +5,7 @@ Author  : Coke
 Date    : 2025-04-10
 """
 
-from celery.signals import beat_init, worker_process_init
+from celery.signals import beat_init, worker_process_init, worker_process_shutdown, worker_shutdown
 from celery.signals import setup_logging as setup_logging_signal
 from rapidkit_core.config import settings
 
@@ -21,6 +21,7 @@ app.conf.update(
         "enable_utc": True,
         "database_url": DATABASE_URL,
         "refresh_interval": 60,
+        "worker_consumer": "src.queues.worker_consumer:SafeConsumer",
     }
 )
 
@@ -71,8 +72,7 @@ def configure_process_logging(*, service: str = "worker", **kwargs):
     from rapidkit_core.log import set_custom_logfile, setup_logging
 
     setup_logging(service=service)
-    # 每个进程写各自带 pid 的文件，无需 enqueue；enqueue 的信号量在 prefork 子进程 os._exit 时会被报告为泄漏
-    set_custom_logfile(enqueue=False)
+    set_custom_logfile()
     init_sentry()
 
 
@@ -80,6 +80,14 @@ def configure_process_logging(*, service: str = "worker", **kwargs):
 def init_worker_logging(**kwargs):
     """Rebind each prefork child's file sinks and stdout pipeline."""
     configure_process_logging()
+
+
+@worker_process_shutdown.connect
+@worker_shutdown.connect
+def flush_worker_logging(**kwargs):
+    from rapidkit_core.log import complete_logging
+
+    complete_logging()
 
 
 @beat_init.connect

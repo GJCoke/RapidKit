@@ -43,6 +43,8 @@ logger.opt(exception=True).warning("Operation failed")
 
 标准库日志经 `InterceptHandler` 桥接。Celery trace 消息使用安全生命周期元数据重建，不转发任意任务参数、返回值或错误字符串。已报告的同一 Uvicorn 异常避免重复展开，未报告错误仍保留。
 
+Celery Consumer 的未知任务、未知消息、非法任务和解码错误只输出 `task.message.rejected`，`reason_code` 分别为 unknown_task、unknown_message、invalid_task、decode_error。不插值原 SDK 模板中的 body、headers、delivery_info 或异常值；仅提取长度受限的 task_id/task_name。没有合法编号时记录 null。应用注册的 `SafeConsumer` 保留 Celery 原有拒绝、ACK、失败状态和信号行为。
+
 ## 任务诊断与凭证保护
 
 任务的真实参数、返回值和 broker 消息保持业务语义；观测副本默认不保留任意 args、kwargs、返回值和 stdout。任务打印输出被丢弃而不是无限缓存在内存中；安全业务事件请使用项目 logger。事件生产和消费落库都经过白名单，兼容旧事件时也不重新保存凭证。
@@ -61,22 +63,28 @@ Sentry 上报同样去除认证头、请求体、URL query/fragment、局部变�
 
 `setup_logging(service="api")` 配置控制台与标准库桥接，`set_custom_logfile()` 配置文件。Worker 和 Beat 分别标记服务角色，并在 prefork 子进程重新绑定 sink。
 
-| 配置 | 默认值 | 含义 |
-| --- | --- | --- |
-| LOG_LEVEL | INFO | 控制台级别 |
-| LOG_JSON | 部署环境 true，本地/测试 false | 控制台及文件使用同一 JSON 格式；false 保留文本 |
-| LOG_FILE_ACCESS_LEVEL | INFO | 低级别文件阈值，接收 INFO/SUCCESS 等，不是纯 HTTP 访问日志 |
-| LOG_FILE_ERROR_LEVEL | WARNING | WARNING 及以上文件阈值 |
-| LOG_ACCESS_FILENAME | access.log | 活动文件基础名 |
-| LOG_ERROR_FILENAME | error.log | 活动文件基础名 |
-| LOG_FILE_MAX_BYTES | 104857600 | 单个文件轮转阈值，默认 100 MiB |
-| LOG_FILE_RETENTION_DAYS | 7 | 归档和可确认退出的本机进程文件保存期 |
-| LOG_FILE_BUDGET_BYTES | 普通环境不设，生产 Compose 5 GiB/角色 | 同角色共享目录的普通文件日志总预算 |
-| LOG_FILE_MIN_FREE_BYTES | 67108864 | 写入后要求保留的文件系统空闲空间 |
-| RUNTIME_STATE_DIR | 普通环境不设，生产 `/tmp/rapidkit-runtime` | 与 Redis、运行日志目录独立的数值快照 |
-| SLOW_REQUEST_THRESHOLD_MS | 3000 | 慢请求 WARNING 阈值 |
+在线 API、Worker 和 Beat 的两个文件通道共用每进程一个写线程，投递队列最多 256 条、1 MiB，包含正在写入的记录。队列只保留已格式化文本和轮转时间，不保留原始参数、异常对象或上下文对象。它替代 Loguru 原生 multiprocessing enqueue，避免其管道填满后阻塞业务线程。预算锁采用非阻塞获取；锁竞争、队列满、单条超过 1 MiB 或文件写失败时，普通文件副本会被拒绝并计数，stdout 仍输出原有记录。文件记录不截断；审计持久化不经过此队列。
 
-实际活动文件带 hostname.pid 后缀，例如 `access.host.123.log`；归档保留实例标识，例如 `access.host.123.2026-10-30.log`，同日冲突追加序号，不覆盖旧文件。轮转按进程本地日期和 UTF-8 大小判断，不截断单条记录；启用目录预算后，超过剩余预算的整条普通文件记录会被丢弃，并独立计数和报告。
+需要等文件投递结束时调用 `rapidkit_core.log.complete_logging(timeout=1.0)`；返回 false 表示期限内未排空，不能声称落盘完整。`logger.complete()` 不等待应用文件队列。API 正常停机和 Celery 父/子进程关闭已接入该 helper；移除文件处理器最多等待 1 秒，卡住的文件由写线程关闭。强杀、停机超时仍可能丢失尾部。prefork 子进程重新建立自己的队列、线程及带自身 PID 的文件，避免等待父进程写线程。
+
+`set_custom_logfile(enqueue=False)` 为显式同步模式，仅用于离线命令或同步测试；其文件 I/O 仍可能阻塞调用方。stdout 本身的阻塞、宿主机调度、磁盘故障与真实峰值容量需另行验收，有界文件队列不提供普通日志零丢失保证。
+
+| 配置                      | 默认值                                     | 含义                                                       |
+| ------------------------- | ------------------------------------------ | ---------------------------------------------------------- |
+| LOG_LEVEL                 | INFO                                       | 控制台级别                                                 |
+| LOG_JSON                  | 部署环境 true，本地/测试 false             | 控制台及文件使用同一 JSON 格式；false 保留文本             |
+| LOG_FILE_ACCESS_LEVEL     | INFO                                       | 低级别文件阈值，接收 INFO/SUCCESS 等，不是纯 HTTP 访问日志 |
+| LOG_FILE_ERROR_LEVEL      | WARNING                                    | WARNING 及以上文件阈值                                     |
+| LOG_ACCESS_FILENAME       | access.log                                 | 活动文件基础名                                             |
+| LOG_ERROR_FILENAME        | error.log                                  | 活动文件基础名                                             |
+| LOG_FILE_MAX_BYTES        | 104857600                                  | 单个文件轮转阈值，默认 100 MiB                             |
+| LOG_FILE_RETENTION_DAYS   | 7                                          | 归档和可确认退出的本机进程文件保存期                       |
+| LOG_FILE_BUDGET_BYTES     | 普通环境不设，生产 Compose 5 GiB/角色      | 同角色共享目录的普通文件日志总预算                         |
+| LOG_FILE_MIN_FREE_BYTES   | 67108864                                   | 写入后要求保留的文件系统空闲空间                           |
+| RUNTIME_STATE_DIR         | 普通环境不设，生产 `/tmp/rapidkit-runtime` | 与 Redis、运行日志目录独立的数值快照                       |
+| SLOW_REQUEST_THRESHOLD_MS | 3000                                       | 慢请求 WARNING 阈值                                        |
+
+实际活动文件带 hostname.pid 后缀，例如 `access.host.123.log`；归档保留实例标识，例如 `access.host.123.2026-10-30.log`，同日冲突追加序号，不覆盖旧文件。轮转按记录生成时的进程本地日期和 UTF-8 大小判断；超过剩余目录预算的整条普通文件记录会被丢弃，并独立计数和报告。
 
 支持自定义相对路径与扩展名，按各基础文件所在目录清理。清理每小时最多扫描一次，启动强制执行；只处理匹配规则的普通文件，跳过符号链接、存活或无法确认存活的进程，以及远程 hostname 的未归档文件。`logs/verification/` 存放开发验证结果，排除在运行日志保留策略之外，不能提交。
 

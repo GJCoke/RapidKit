@@ -19,7 +19,12 @@ def test_runtime_collector_sums_counters_but_excludes_dead_process_gauges(tmp_pa
                     "hostname": socket.gethostname(),
                     "updated_at": time.time(),
                     "counters": {"task_event_publish_failed": count, "private-task": 1000},
-                    "gauges": {"audit_fallback": fallback, "background_running:audit_delivery": 1},
+                    "gauges": {
+                        "audit_fallback": fallback,
+                        "background_running:audit_delivery": 1,
+                        "file_log_queue_records": fallback,
+                        "file_log_queue_bytes": fallback * 1024,
+                    },
                 }
             )
         )
@@ -28,6 +33,8 @@ def test_runtime_collector_sums_counters_but_excludes_dead_process_gauges(tmp_pa
     body = generate_latest(registry).decode()
     assert 'rapidkit_task_event_publish_failed_total{service="api"} 9.0' in body
     assert 'rapidkit_audit_fallback{service="api"} 3.0' in body
+    assert 'rapidkit_file_log_queue_records{service="api"} 3.0' in body
+    assert 'rapidkit_file_log_queue_bytes{service="api"} 3072.0' in body
     assert 'rapidkit_background_running{component="audit_delivery",service="api"} 1.0' in body
     assert "private-task" not in body and "pid=" not in body and "hostname=" not in body
     assert body.count("# TYPE rapidkit_component_failures_total counter") == 1
@@ -78,7 +85,13 @@ def test_dependency_histograms_aggregate_dead_children_and_bound_labels(tmp_path
                             "operation": "get",
                             "outcome": "success",
                             "values": [count] * len(DEPENDENCY_BUCKETS) + [count * 0.001],
-                        }
+                        },
+                        {
+                            "component": "log_file",
+                            "operation": "write",
+                            "outcome": "error",
+                            "values": [count] * len(DEPENDENCY_BUCKETS) + [count * 0.01],
+                        },
                     ],
                 }
             )
@@ -91,3 +104,7 @@ def test_dependency_histograms_aggregate_dead_children_and_bound_labels(tmp_path
         'outcome="success",service="worker"} 5.0' in metrics
     )
     assert "pid=" not in metrics and "hostname=" not in metrics
+    assert (
+        'rapidkit_dependency_duration_seconds_count{component="log_file",operation="write",'
+        'outcome="error",service="worker"} 5.0' in metrics
+    )

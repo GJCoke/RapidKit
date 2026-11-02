@@ -16,7 +16,7 @@ from rapidkit_core import runtime_state
 from rapidkit_core.config import settings
 from rapidkit_core.database import RedisManager, async_engine, sync_engine
 from rapidkit_core.leader_election import LeaderElection
-from rapidkit_core.log import logger
+from rapidkit_core.log import complete_logging, logger
 from rapidkit_framework.events import event_bus
 
 from src.audit_queue import RedisAuditQueue
@@ -143,3 +143,4 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     sync_engine.dispose()
 
     logger.info("Application shutdown complete.")
+    await asyncio.to_thread(complete_logging)

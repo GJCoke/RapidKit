@@ -64,8 +64,9 @@ def production_log(monkeypatch, tmp_path):
     log.setup_logging()
     log.set_custom_logfile(enqueue=False)
     yield output, tmp_path
-    log.logger.complete()
-    log.logger.remove()
+    log.complete_logging()
+    for handler in log._owned_handlers:
+        log.logger.remove(handler)
     log._owned_handlers.clear()
 
 
@@ -99,7 +100,7 @@ def test_actual_tasks_bind_real_delivery_context_and_restore_after_failure(task_
         dependency()
     dependency()
 
-    log.logger.complete()
+    log.complete_logging()
     output, directory = production_log
     stdout = output.getvalue()
     files = "".join(path.read_text() for path in directory.glob("*.log"))

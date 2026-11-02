@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, TextIO, cast
 from uuid import UUID
 
 from loguru import logger as ruLogger
+from loguru._file_sink import FileSink
 
 if TYPE_CHECKING:
     from loguru import Logger, Message, Record
@@ -23,10 +24,12 @@ if TYPE_CHECKING:
 from rapidkit_core import runtime_state
 from rapidkit_core.config import settings
 from rapidkit_core.diagnostics import exception_summary
+from rapidkit_core.log_queue import FileLogSink
 from rapidkit_core.nanoid import get_request_nanoid
 from rapidkit_core.path import LOG_PATH
 
 _owned_handlers: set[int] = {0}  # Loguru's initial default handler.
+_file_sink: FileLogSink | None = None
 _last_log_cleanup = float("-inf")
 _component_failures: dict[str, tuple[int, float]] = {}
 _FIELDS = frozenset(
@@ -93,6 +96,19 @@ class InterceptHandler(logging.Handler):
                 depth=depth, exception=record.exc_info
             ).log(level, "Task lifecycle")
             return
+        if record.name == "celery.worker.consumer.consumer" and isinstance(record.msg, str):
+            # Match SDK templates before getMessage(): args contain raw broker payloads.
+            for prefix, reason in (
+                ("Received unregistered task of type %s.", "unknown_task"),
+                ("Received and deleted unknown message.", "unknown_message"),
+                ("Received invalid task message: %s", "invalid_task"),
+                ("Can't decode message body: %r", "decode_error"),
+            ):
+                if record.msg.startswith(prefix):
+                    ruLogger.bind(event="task.message.rejected", reason_code=reason).opt(
+                        depth=depth, exception=record.exc_info
+                    ).log(level, "Task message rejected")
+                    return
         ruLogger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
@@ -173,6 +189,7 @@ def json_sink(message: "Message", *, stream: TextIO | None = None) -> None:
 
 def setup_logging(service: str = "api") -> None:
     """设置日志处理器。"""
+    global _file_sink
     ruLogger.configure(patcher=_prepare_record, extra={"service": service})
     runtime_state.start(service, settings.RUNTIME_STATE_DIR)
     logging.root.handlers = [InterceptHandler()]
@@ -192,6 +209,7 @@ def setup_logging(service: str = "api") -> None:
         except ValueError:
             pass
     _owned_handlers.clear()
+    _file_sink = None
     handler = ruLogger.add(
         partial(json_sink, stream=sys.stdout) if settings.LOG_JSON else sys.stdout,
         level=settings.LOG_LEVEL,
@@ -298,9 +316,9 @@ class _FileRotation:
 def set_custom_logfile(*, enqueue: bool = True) -> None:
     """设置自定义日志文件。
 
-    每个进程写入带 `hostname.pid` 后缀的独立文件；不需要异步写入的进程（如 Celery prefork 子进程）
-    可传 `enqueue=False`，避免 enqueue 创建的信号量在子进程 `os._exit` 时被报告为泄漏。
+    在线进程使用有界线程队列；enqueue=False 仅用于离线命令或同步测试。
     """
+    global _file_sink
     os.makedirs(LOG_PATH, exist_ok=True)
     cleanup_logfiles(force=True)
 
@@ -313,18 +331,18 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
 
     log_config: dict[str, Any] = {
         "format": (lambda record: "{extra[_json]}\n") if settings.LOG_JSON else default_formatter,
-        "enqueue": enqueue,
-        "encoding": "utf-8",
+        "enqueue": False,
     }
 
+    targets = []
+    channels = []
     for path, suffix, level, low in (
         (log_access_file, configured_access.suffix, settings.LOG_FILE_ACCESS_LEVEL, True),
         (log_error_file, configured_error.suffix, settings.LOG_FILE_ERROR_LEVEL, False),
     ):
         rotation = _FileRotation()
         compression = partial(rename_rotated_logfile, active_file=path, suffix=suffix)
-        sink: Any = str(path)
-        file_options: dict[str, Any] = {"rotation": rotation, "compression": compression}
+        sink: Any
         if settings.LOG_FILE_BUDGET_BYTES is not None:
             # POSIX quota support must not prevent default logging on other platforms.
             from rapidkit_core.log_budget import BudgetedFile
@@ -337,19 +355,26 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
                 rotation=rotation,
                 compression=compression,
             )
-            file_options = {}
+        else:
+            sink = FileSink(str(path), encoding="utf-8", rotation=rotation, compression=compression, delay=True)
+        targets.append(sink)
+        channels.append((level, low))
+    _file_sink = FileLogSink(tuple(targets), users=2) if enqueue else None
+    for sink, (level, low) in zip(targets, channels, strict=True):
         handler = ruLogger.add(
-            sink,
+            _file_sink if _file_sink is not None else sink,
             level=level,
             filter=(lambda record: record["level"].no <= 25) if low else (lambda record: record["level"].no >= 30),
             backtrace=not low,
             diagnose=not low and not settings.ENVIRONMENT.is_deployed,
-            **{
-                **{key: value for key, value in log_config.items() if key != "encoding" or isinstance(sink, str)},
-                **file_options,
-            },
+            **log_config,
         )
         _owned_handlers.add(handler)
+
+
+def complete_logging(timeout: float = 1.0) -> bool:
+    """Wait at most timeout seconds for this process's bounded runtime file queue."""
+    return _file_sink.complete(timeout) if _file_sink is not None else True
 
 
 logger = ruLogger

@@ -311,8 +311,8 @@ asyncio.run(go())
         assert run("docker", "exec", api, "id", "-u").strip() == "999"
         sentinel = "synthetic-persist-" + uuid4().hex
         log_event = (
-            "from rapidkit_core.log import setup_logging,set_custom_logfile,logger; "
-            "setup_logging(); set_custom_logfile(enqueue=False); logger.info(" + repr(sentinel) + "); logger.complete()"
+            "from rapidkit_core.log import setup_logging,set_custom_logfile,logger,complete_logging; "
+            "setup_logging(); set_custom_logfile(); logger.info(" + repr(sentinel) + "); assert complete_logging()"
         )
         run("docker", "exec", api, "python", "-c", log_event)
         before = {
@@ -402,13 +402,13 @@ for hostname,instance in state['instances'].items():
         )
         summary["removed_instance_cleanup_preserves_live_files"] = True
         # Exceed the real role budget, then show the API and independent drop counter still work.
-        pressure = """from rapidkit_core.log import setup_logging,set_custom_logfile,logger
+        pressure = """from rapidkit_core.log import setup_logging,set_custom_logfile,logger,complete_logging
 from rapidkit_core import runtime_state
 setup_logging()
 set_custom_logfile(enqueue=False)
 for _ in range(350):
     logger.info('x'*4000)
-logger.complete()
+assert complete_logging()
 runtime_state.write_snapshot()
 """
         run("docker", "exec", api, "python", "-c", pressure)

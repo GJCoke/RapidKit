@@ -102,7 +102,14 @@ class RuntimeCollector:
                 sum_value=values[-1],
             )
         yield family
-        for name in ("audit_fallback", "log_blocked", "component_degraded", "background_running"):
+        for name in (
+            "audit_fallback",
+            "log_blocked",
+            "component_degraded",
+            "background_running",
+            "file_log_queue_records",
+            "file_log_queue_bytes",
+        ):
             component_metric = name in ("component_degraded", "background_running")
             family = GaugeMetricFamily(
                 "rapidkit_" + name,

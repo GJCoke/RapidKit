@@ -1,11 +1,14 @@
 """Exercise the deployed ASGI boundary through a real Nginx process."""
 
 import asyncio
+import fcntl
 import json
 import os
 import socket
 import subprocess
 import sys
+import threading
+import time
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
@@ -52,6 +55,8 @@ async def test_real_uvicorn_nginx_privacy_ids_and_outcomes(init, tmp_path):
         "LOG_JSON": "true",
         "EXPOSE_API_DOCS": "false",
         "SENTRY_DSN": "",
+        "LOG_FILE_BUDGET_BYTES": str(10 * 1024**2),
+        "LOG_FILE_MIN_FREE_BYTES": "0",
         "POSTGRESQL_HOST": pg.host or "localhost",
         "POSTGRESQL_PORT": str(pg.port or 5432),
         "POSTGRESQL_USERNAME": pg.username or "",
@@ -154,8 +159,34 @@ async def test_real_uvicorn_nginx_privacy_ids_and_outcomes(init, tmp_path):
             assert fetch(gateway_port, "/metrics")[0] == 404
             metrics = fetch(api_port, "/metrics")[2].decode()
             assert 'error_kind="authentication"' in metrics
+            # A real network request after logging must still run when a shared
+            # budget lock is held by another process/thread.
+            acquired, release = threading.Event(), threading.Event()
+
+            def hold_budget():
+                with (Path(env["RAPIDKIT_BASE_PATH"]) / "logs/.budget.lock").open("a") as lock:
+                    fcntl.flock(lock, fcntl.LOCK_EX)
+                    acquired.set()
+                    release.wait(2)
+
+            holder = threading.Thread(target=hold_budget)
+            holder.start()
+            latencies = []
+            try:
+                assert acquired.wait(1)
+                for _ in range(100):
+                    began = time.monotonic()
+                    assert fetch(gateway_port, "/api/v1/auth/keys/public")[0] == 200
+                    latencies.append(time.monotonic() - began)
+                assert max(latencies) < 0.5
+            finally:
+                release.set()
+                holder.join(3)
+            fetch(gateway_port, "/api/v1/auth/keys/public")
             await asyncio.sleep(0.2)
             assert sentinel not in api_log.read_text()
+            assert '"reason_code":"lock_busy"' in api_log.read_text()
+            assert '"event":"log.file.recovered"' in api_log.read_text()
             # Legacy query URIs remain a migration risk in Nginx error_log, separate from access_log.
             fetch(gateway_port, "/minio/nope?token=" + sentinel)
             logs = subprocess.check_output(["docker", "logs", name], stderr=subprocess.STDOUT, text=True)
@@ -173,6 +204,8 @@ async def test_real_uvicorn_nginx_privacy_ids_and_outcomes(init, tmp_path):
                         "gateway_rejection": "passed",
                         "safe_access_logs": "passed",
                         "legacy_query_error_log_exposure": sentinel in logs,
+                        "file_lock_pressure_requests": len(latencies),
+                        "file_lock_pressure_max_http_seconds": max(latencies),
                     },
                     indent=2,
                 )

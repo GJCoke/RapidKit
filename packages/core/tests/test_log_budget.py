@@ -95,7 +95,7 @@ def test_loguru_budget_sink_keeps_json_and_rotation_without_business_exceptions(
     try:
         for _ in range(30):
             log.logger.info("safe event {}", "x" * 300)
-        log.logger.complete()
+        log.complete_logging()
         paths = list(tmp_path.glob("*.log"))
         assert paths and sum(path.stat().st_size for path in paths) <= 4096
         for path in paths:

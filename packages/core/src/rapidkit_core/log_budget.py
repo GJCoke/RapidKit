@@ -43,7 +43,11 @@ class BudgetedFile:
                 return
             self.root.mkdir(parents=True, exist_ok=True)
             with (self.root / ".budget.lock").open("a") as lock:
-                fcntl.flock(lock, fcntl.LOCK_EX)
+                try:
+                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    self._failure("lock_busy")
+                    return
                 used = 0
                 for directory, subdirs, files in os.walk(self.root, followlinks=False):
                     subdirs[:] = [

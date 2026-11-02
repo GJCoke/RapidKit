@@ -111,7 +111,7 @@ def test_deployed_file_tracebacks_do_not_include_local_secrets(tmp_path, monkeyp
             failure(secret)
         except RuntimeError:
             logger.exception("file privacy verification")
-        logger.complete()
+        assert log.complete_logging()
         contents = "\n".join(path.read_text() for path in tmp_path.rglob("*.log"))
         assert "RuntimeError: [Filtered]" in contents
         assert secret not in capsys.readouterr().out

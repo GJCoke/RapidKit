@@ -28,6 +28,7 @@ DEPENDENCY_OPERATIONS = {
     ),
     "minio": ("http.get", "http.head", "http.put", "http.post", "http.delete", "http.other", "upload"),
     "smtp": ("send",),
+    "log_file": ("write",),
 }
 DEPENDENCY_BUCKETS = (0.005, 0.025, 0.1, 0.25, 0.5, 1, 3, 10, float("inf"))
 COMPONENTS = (
@@ -53,6 +54,8 @@ GAUGES = frozenset(
     (
         "audit_fallback",
         "log_blocked",
+        "file_log_queue_records",
+        "file_log_queue_bytes",
         *("component_degraded:" + key for key in COMPONENTS),
         *("background_running:" + key for key in COMPONENTS),
     )

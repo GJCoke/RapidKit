@@ -141,7 +141,7 @@ def test_file_sinks_rotate_on_utf8_size_and_midnight_and_cleanup_on_writes(log_d
         # 13 UTF-8 bytes each; two records must not fit into a 20-byte file.
         writer.info("你好你好")
         writer.info("你好你好")
-        log.logger.complete()
+        log.complete_logging()
         access = log_directory / f"access.{socket.gethostname()}.{os.getpid()}.log"
         archive = access.with_name(f"{access.stem}.{today:%Y-%m-%d}.log")
         assert archive.read_text(encoding="utf-8") == "你好你好\n"
@@ -152,14 +152,14 @@ def test_file_sinks_rotate_on_utf8_size_and_midnight_and_cleanup_on_writes(log_d
         writer.warning("warning")
         writer.warning("warning")
         writer.warning("warning")
-        log.logger.complete()
+        log.complete_logging()
         assert access.read_text(encoding="utf-8") == "day\n"
         assert len(list(log_directory.glob(f"{access.stem}.*.log"))) == 2
         assert len(list(log_directory.glob(f"error.{socket.gethostname()}.{os.getpid()}.*.log"))) >= 1
         expired = aged_file(log_directory, expired.name)
         clock[0] += 3600
         writer.info("sweep")
-        log.logger.complete()
+        log.complete_logging()
         assert not expired.exists(), "long-running processes sweep without a restart"
         for path in log_directory.glob("*.log"):
             assert path.stat().st_size <= 20
