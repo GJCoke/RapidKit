@@ -40,6 +40,7 @@ class PostgreSQLConfigMixin(BaseSettings):
     POSTGRESQL_HOST: str
     POSTGRESQL_PORT: int = Field(5432, ge=0, le=65535)
     POSTGRESQL_DATABASE: str
+    SQL_ECHO: bool = False
 
     @property
     def ASYNC_DATABASE_POSTGRESQL_URL(self) -> PostgresDsn:

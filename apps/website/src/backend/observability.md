@@ -207,6 +207,8 @@ D 批次不需要数据库迁移，默认 INFO 即可记录下列事件。成功
 
 `dependency.slow` 与 `dependency.failed` 使用 WARNING，字段为 component、有限 operation、duration_ms、outcome、retryable、exception_type，继承当前 request_id/任务和身份上下文。不记录异常文本、SQL 或 bind、Redis key/value、对象路径/内容、预签名 URL、邮件地址/正文或连接凭证。`retryable` 是诊断建议，不会自动重试业务；应结合幂等性与原始异常处理决定是否重试。
 
+同类故障或慢操作每进程首次即报，之后每 60 秒最多汇总一条，带累计 `observation_count`；直方图仍逐次记录。摘要的 request/task 编号是当前样本，不能用日志条数估算故障总量。同类操作 60 秒无失败后，下一次成功记录 `dependency.recovered`。持续缺列等错误保持失败状态，不因穿插一条成功 SELECT 就宣布恢复。开发环境默认也不回显 SQL，需要时显式开启 `SQL_ECHO`，生产保持关闭。
+
 | component  | operation 与边界                                                           | 解释                                                                                                                                                                      |
 | ---------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | postgresql | pool.acquire；query.select/insert/update/delete/other                      | 主异步/同步 Session、TaskSession 和 Beat 引擎均覆盖。pool.acquire 包括池排队及获取/新建连接，不能当作纯排队时间；query 仅测实际游标执行，不含整个事务、结果遍历和应用代码 |

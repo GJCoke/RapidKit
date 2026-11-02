@@ -11,6 +11,7 @@ import asyncio
 import os
 import socket
 from datetime import timedelta
+from time import monotonic
 from typing import TYPE_CHECKING
 
 from plugin_worker.event_service import EventService
@@ -32,6 +33,7 @@ BLOCK_MS = 5000
 PENDING_IDLE_MS = 60_000
 HEARTBEAT_TIMEOUT = timedelta(seconds=90)
 OFFLINE_CHECK_INTERVAL = 30
+PERSISTENCE_RECOVERY_SECONDS = 60
 
 
 async def _ensure_consumer_group(redis: Redis) -> None:
@@ -52,6 +54,7 @@ async def consume_events(sio: "AsyncServer") -> None:
     """
     redis = RedisManager.client()
     initialized, claim_cursor = False, "0-0"
+    last_persistence_failure = float("-inf")
     logger.info("Event stream consumer started.")
     while True:
         try:
@@ -80,10 +83,12 @@ async def consume_events(sio: "AsyncServer") -> None:
                 for message_id, fields in entries:
                     try:
                         await process_message(redis, message_id, fields, sio, session_factory=AsyncSessionLocal)
-                        component_recovered("task_event_persistence")
+                        if monotonic() - last_persistence_failure >= PERSISTENCE_RECOVERY_SECONDS:
+                            component_recovered("task_event_persistence")
                     except asyncio.CancelledError:
                         raise
                     except Exception as exc:
+                        last_persistence_failure = monotonic()
                         component_failed("task_event_persistence", exc)
             component_recovered("task_event_consumer")
         except asyncio.CancelledError:

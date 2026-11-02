@@ -47,7 +47,7 @@ def get_async_engine() -> AsyncEngine:
         s = get_settings()
         _async_engine_instance = create_async_engine(
             str(s.ASYNC_DATABASE_POSTGRESQL_URL),
-            echo=s.ENVIRONMENT.is_debug,
+            echo=s.SQL_ECHO and s.ENVIRONMENT.is_debug,
             hide_parameters=True,
             pool_recycle=300,
             poolclass=ObservedAsyncPool,
@@ -66,7 +66,7 @@ def get_sync_engine() -> Engine:
         s = get_settings()
         _sync_engine_instance = create_engine(
             str(s.SYNC_DATABASE_POSTGRESQL_URL),
-            echo=s.ENVIRONMENT.is_debug,
+            echo=s.SQL_ECHO and s.ENVIRONMENT.is_debug,
             hide_parameters=True,
             pool_recycle=300,
             poolclass=ObservedSyncPool,

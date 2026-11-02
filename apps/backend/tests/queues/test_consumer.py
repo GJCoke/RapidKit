@@ -14,6 +14,39 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.queues import consumer
 
 
+async def test_successful_heartbeat_does_not_immediately_recover_failed_persistence(monkeypatch):
+    recovered, failures, clock = [], [], [0.0]
+    deliveries = iter([(0.0, True), (1.0, False), (61.0, False)])
+
+    async def claim(*args, **kwargs):
+        return "0-0", [], []
+
+    async def read(*args, **kwargs):
+        try:
+            now, failed = next(deliveries)
+        except StopIteration:
+            raise asyncio.CancelledError from None
+        clock[0] = now
+        return [(consumer.STREAM_KEY, [("synthetic-id", {"failed": failed})])]
+
+    async def process(redis, message_id, fields, sio, **kwargs):
+        if fields["failed"]:
+            raise ValueError("synthetic schema mismatch")
+
+    async def ensure(redis):
+        pass
+
+    monkeypatch.setattr(consumer, "monotonic", lambda: clock[0], raising=False)
+    monkeypatch.setattr(consumer, "process_message", process)
+    monkeypatch.setattr(consumer, "_ensure_consumer_group", ensure)
+    monkeypatch.setattr(consumer.RedisManager, "client", lambda: SimpleNamespace(xautoclaim=claim, xreadgroup=read))
+    monkeypatch.setattr(consumer, "component_failed", lambda component, error: failures.append(component))
+    monkeypatch.setattr(consumer, "component_recovered", lambda component: recovered.append((component, clock[0])))
+    await consumer.consume_events(None)
+    assert failures == ["task_event_persistence"]
+    assert [item for item in recovered if item[0] == "task_event_persistence"] == [("task_event_persistence", 61.0)]
+
+
 @pytest_asyncio.fixture
 async def event_consumer(monkeypatch, redis, tmp_path):
     engine = create_async_engine(

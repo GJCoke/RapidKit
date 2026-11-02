@@ -77,6 +77,24 @@ def test_component_failure_is_rate_limited_and_recovery_is_visible(monkeypatch):
         log.logger.remove(handler)
 
 
+def test_persistent_component_failures_keep_the_first_trace_and_later_summaries(monkeypatch):
+    rows, clock = [], [10.0]
+    monkeypatch.setattr(log, "_component_failures", {})
+    monkeypatch.setattr(log.time, "monotonic", lambda: clock[0])
+    handler = log.logger.add(lambda message: rows.append(message.record.copy()))
+    try:
+        log.component_failed("task_event_persistence", ValueError("synthetic-private-value"))
+        log.component_failed("task_event_persistence", ValueError("synthetic-private-value"))
+        clock[0] = 70
+        log.component_failed("task_event_persistence", ValueError("synthetic-private-value"))
+        assert len(rows) == 2
+        assert rows[0]["exception"] is not None and rows[1]["exception"] is None
+        assert rows[1]["extra"]["consecutive_failures"] == 3
+        assert "task_event_persistence" in rows[1]["message"] and "failures=3" in rows[1]["message"]
+    finally:
+        log.logger.remove(handler)
+
+
 def test_safe_exception_keeps_root_cause_types_without_values():
     from rapidkit_core.diagnostics import exception_summary
 

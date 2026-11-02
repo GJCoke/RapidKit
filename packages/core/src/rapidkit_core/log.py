@@ -65,6 +65,7 @@ _FIELDS = frozenset(
         "reason_code",
         "exception_type",
         "consecutive_failures",
+        "observation_count",
         "diagnostic_truncated",
     }
 )
@@ -387,9 +388,14 @@ def component_failed(component: str, error: BaseException) -> None:
     now = time.monotonic()
     _component_failures[component] = (count + 1, now if now - last >= 60 else last)
     if now - last >= 60:
-        logger.bind(event="component.degraded", component=component, consecutive_failures=count + 1).opt(
-            exception=error
-        ).warning("Background component degraded")
+        logger.bind(
+            event="component.degraded",
+            component=component,
+            consecutive_failures=count + 1,
+            exception_type=type(error).__name__,
+        ).opt(exception=error if count == 0 else None).warning(
+            "Background component degraded: {} failures={}", component, count + 1
+        )
 
 
 def component_recovered(component: str) -> None:

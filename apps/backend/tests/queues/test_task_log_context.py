@@ -7,7 +7,7 @@ from threading import Barrier
 
 import pytest
 from celery import Celery
-from rapidkit_core import log
+from rapidkit_core import dependency_observation, log
 from rapidkit_core.config import settings
 from rapidkit_core.dependency_observation import record_dependency
 from rapidkit_core.environment import Environment
@@ -56,6 +56,8 @@ AsyncObservedTask.bind(app)
 
 @pytest.fixture
 def production_log(monkeypatch, tmp_path):
+    # Exercise every propagation boundary independently of production sampling.
+    monkeypatch.setattr(dependency_observation, "NOTICE_INTERVAL_SECONDS", 0)
     output = io.StringIO()
     monkeypatch.setattr(sys, "stdout", output)
     monkeypatch.setattr(settings, "ENVIRONMENT", Environment.PRODUCTION)

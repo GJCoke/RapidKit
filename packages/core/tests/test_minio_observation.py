@@ -11,6 +11,8 @@ import pytest
 
 
 def test_real_minio_lazy_iteration_and_upload_observe_http_without_object_data(monkeypatch):
+    # Observe every parallel upload boundary independently of log sampling.
+    monkeypatch.setattr("rapidkit_core.dependency_observation.NOTICE_INTERVAL_SECONDS", 0)
     from minio.error import S3Error
     from rapidkit_core import log
     from rapidkit_core.config import settings
