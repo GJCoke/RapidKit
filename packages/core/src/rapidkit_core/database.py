@@ -17,6 +17,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session, create_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from rapidkit_core.database_observation import ObservedAsyncPool, ObservedSyncPool, instrument_sql
 from rapidkit_core.log import logger
 from rapidkit_core.proxy import LazyProxy
 from rapidkit_core.redis_client import AsyncRedisClient
@@ -49,8 +50,10 @@ def get_async_engine() -> AsyncEngine:
             echo=s.ENVIRONMENT.is_debug,
             hide_parameters=True,
             pool_recycle=300,
+            poolclass=ObservedAsyncPool,
             json_serializer=_json_serializer,
         )
+        instrument_sql(_async_engine_instance.sync_engine)
     return _async_engine_instance
 
 
@@ -66,8 +69,10 @@ def get_sync_engine() -> Engine:
             echo=s.ENVIRONMENT.is_debug,
             hide_parameters=True,
             pool_recycle=300,
+            poolclass=ObservedSyncPool,
             json_serializer=_json_serializer,
         )
+        instrument_sql(_sync_engine_instance)
     return _sync_engine_instance
 
 

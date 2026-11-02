@@ -1,7 +1,6 @@
 """Opt-in isolated Docker checks: no existing containers, ports or volumes are modified."""
 
 import importlib.util
-import json
 import os
 import subprocess
 import sys
@@ -22,6 +21,7 @@ def docker(*args):
 def load(name):
     sys.path.insert(0, str(EXAMPLES))
     spec = importlib.util.spec_from_file_location("integration_" + name, EXAMPLES / f"{name}.py")
+    assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -70,7 +70,8 @@ s,t=path(source),path(target);t.parent.mkdir(parents=True,exist_ok=True);shutil.
         oss.chmod(0o755)
         previous = dict(os.environ)
         os.environ.update(PATH=str(bin_dir) + ":" + os.environ["PATH"], TEST_OSS_ROOT=str(tmp_path / "oss"),
-                          OSS_ENDPOINT="https://oss-test-internal.aliyuncs.com", OSS_REGION="cn-test", OSS_BUCKET="test-bucket")
+                          OSS_ENDPOINT="https://oss-test-internal.aliyuncs.com", OSS_REGION="cn-test",
+                          OSS_BUCKET="test-bucket")
         try:
             storage = load("storage")
             ctx["results"]["database.backup"] = backup
@@ -109,11 +110,12 @@ def test_real_nginx_maintenance_blocks_all_entry_paths(tmp_path):
     finally:
         os.umask(previous_umask)
     template = (work / "nginx.conf").read_text().replace("${MAX_REQUEST_BODY_BYTES}", "10485760").replace(
-        "${SECURITY_HSTS_ENABLED}", "false").replace("http://minio:9000/", "http://127.0.0.1:9000/")
+        "${SECURITY_HSTS_ENABLED}", "false").replace("${SENTRY_CONNECT_SRC}", "").replace("http://minio:9000/", "http://127.0.0.1:9000/")
     (work / "nginx.conf").write_text(template)
     headers = Path(__file__).resolve().parents[2] / "docker/prod/security-headers.conf"
     name = "rapidkit-release-nginx-test-" + uuid4().hex[:10]
-    docker("run", "-d", "--name", name, "--network", "none", "-v", str(work / "nginx.conf") + ":/etc/nginx/nginx.conf:ro",
+    docker("run", "-d", "--name", name, "--network", "none", "-v",
+           str(work / "nginx.conf") + ":/etc/nginx/nginx.conf:ro",
            "-v", str(headers) + ":/etc/nginx/security-headers.conf:ro", "-v",
            str(root / "maintenance") + ":/run/rapidkit-release:ro", "nginx:stable-alpine")
     try:
@@ -146,7 +148,8 @@ def test_checked_in_migrations_upgrade_clean_postgres_to_all_heads(tmp_path):
         env = dict(os.environ, ENVIRONMENT="TESTING", POSTGRESQL_ASYNC_SCHEME="postgresql+asyncpg",
                    POSTGRESQL_SYNC_SCHEME="postgresql+psycopg", POSTGRESQL_USERNAME="test", POSTGRESQL_PASSWORD="test",
                    POSTGRESQL_HOST="127.0.0.1", POSTGRESQL_PORT=port, POSTGRESQL_DATABASE="test",
-                   REDIS_HOST="127.0.0.1", REDIS_ROOT_PASSWORD="", MINIO_ROOT_USER="test", MINIO_ROOT_PASSWORD="test1234",
+                   REDIS_HOST="127.0.0.1", REDIS_ROOT_PASSWORD="",
+                   MINIO_ROOT_USER="test", MINIO_ROOT_PASSWORD="test1234",
                    CORS_ORIGINS='["*"]', CORS_HEADERS='["*"]')
         cwd = Path(__file__).resolve().parents[2] / "apps/backend"
         for command in (("upgrade", "heads"), ("check",)):

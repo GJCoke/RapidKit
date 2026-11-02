@@ -4,15 +4,15 @@
 
 ## 部署边界
 
-| 数据 | 所在位置与所有者 | 生命周期 |
-| --- | --- | --- |
-| API/Worker/Beat/迁移运行文件 | 宿主机 `RAPIDKIT_LOG_ROOT` 下 api/worker/beat/migrate，每个角色共享目录 | 7 天，单角色默认 5 GiB 普通日志预算 |
-| stdout/stderr，包括 Nginx | Docker json-file | 每容器 20m × 5，非阻塞缓冲 1m |
-| 进程数值快照 | 各容器 `/tmp/rapidkit-runtime` | 容器启动清空，5 秒心跳；不依赖 Redis 或文件日志目录 |
-| HTTP/进程指标 | 每个 API `:8006/metrics`、Worker/Beat `:9008/metrics` | Prometheus 逐实例抓取 |
-| 全局依赖、队列、容量、日志目录指标 | 单例 observability `:9009/metrics` | 每 10 秒采样，不随 API 副本重复计算 |
-| 任务执行详情 | PostgreSQL Worker 表 | 默认不清理；显式启用后按保留天数清理，每小时最多 1000 条 |
-| 幂等凭据、审计记录、隔离流 | PostgreSQL/Redis | 本批次不自动删除 |
+| 数据                               | 所在位置与所有者                                                        | 生命周期                                                 |
+| ---------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------- |
+| API/Worker/Beat/迁移运行文件       | 宿主机 `RAPIDKIT_LOG_ROOT` 下 api/worker/beat/migrate，每个角色共享目录 | 7 天，单角色默认 5 GiB 普通日志预算                      |
+| stdout/stderr，包括 Nginx          | Docker json-file                                                        | 每容器 20m × 5，非阻塞缓冲 1m                            |
+| 进程数值快照                       | 各容器 `/tmp/rapidkit-runtime`                                          | 容器启动清空，5 秒心跳；不依赖 Redis 或文件日志目录      |
+| HTTP/进程指标                      | 每个 API `:8006/metrics`、Worker/Beat `:9008/metrics`                   | Prometheus 逐实例抓取                                    |
+| 全局依赖、队列、容量、日志目录指标 | 单例 observability `:9009/metrics`                                      | 每 10 秒采样，不随 API 副本重复计算                      |
+| 任务执行详情                       | PostgreSQL Worker 表                                                    | 默认不清理；显式启用后按保留天数清理，每小时最多 1000 条 |
+| 幂等凭据、审计记录、隔离流         | PostgreSQL/Redis                                                        | 本批次不自动删除                                         |
 
 四个角色的应用预算合计初始为 20 GiB，不包含 Docker stdout、数据库、指标库及备份。预算在 Linux/POSIX 上以目录锁协调同角色多进程写入，超限、剩余空间不足或不可写时丢弃普通文件记录并独立报告，业务调用继续执行。其它平台保留未启用预算的原默认日志方式。它不是文件系统配额，不能约束其它程序或 Docker 卷。上线应另行分配独立磁盘或项目配额，预留数据库、Prometheus 和 Docker 空间。Prometheus 示例按时间保留 15 天，也需要评估容量。
 
@@ -32,6 +32,7 @@ sudo python3 deploy/observability.py prepare \
 3. 在 `docker/prod/.env.prod` 设置匹配的 `RAPIDKIT_LOG_ROOT`、`RAPIDKIT_OBSERVABILITY_ROOT`。Compose 明确使用 `/app/logs`，缺少挂载源即失败。先审查并升级 Worker 增量迁移 `508976be24b7`，再启动本批次镜像；生产迁移由项目部署流程执行。不要为回滚删除 receipt 表。
 
    仓库当前只有 Worker 的公开基线及增量，缺少其它插件历史迁移；全新空库不能仅靠 `alembic upgrade heads` 得到完整应用表。已有部署必须先核对真实 revision/schema 与私有迁移链，衔接正确 predecessor；禁止盲目 stamp 或对已有表直接执行建表基线。此项是既有部署门槛，本批次不重建未知历史迁移。
+
 4. 安装 `docker/observability/rapidkit-observability.service` 的宿主机服务示例；将 `/opt/rapidkit`、日志路径、项目名与网络名改成实际值。服务运行 `deploy/observability.py watch --apply`，每 10 秒更新 inventory 与 Prometheus file_sd，并维护已移除实例日志。该服务需要宿主机 Docker 权限，应用、Prometheus、Alertmanager 均不挂载 Docker socket。
 
 ```bash
@@ -61,16 +62,16 @@ docker compose --env-file docker/prod/.env.prod \
 
 全局采样器只部署一个，固定 singleton 容器名称阻止误扩容。每个组件分别输出 `rapidkit_ops_sample_success` 与上次成功时间。队列采样失败保留上次观测值，同时标记未知；旧失败值不会因 Redis 断连变成零并发出虚假恢复。首次无法采样时没有队列值，依赖与采样失败告警负责覆盖。健康零值必须同时满足采样成功和新鲜。网络/SQL 探测超时、内部任务退出、Worker 发布失败不只依赖业务日志判断。
 
-| 触发条件 | 初始规则 |
-| --- | --- |
-| API 全部不可达、Redis/PostgreSQL 探测失败 | 持续 1 分钟 critical |
-| server/transport 错误率 >1% | 5 分钟窗口至少 100 请求，再持续 5 分钟；业务拒绝不计入 |
-| 路由 P95 >3 秒 | 同窗口至少 100 请求，持续 10 分钟 warning |
-| pending 最老 >120 秒且增长 | 持续 1 分钟；失去采样时保留已知失败 |
-| 隔离记录、发布失败、事件缺口、审计 fallback | warning 或 critical；调查确认后处置证据 |
-| Worker 期望容量不足、后台任务停止 | 容量持续 2 分钟，组件持续 1 分钟 |
-| 日志预算 >90%、文件丢弃、磁盘余量 <20%/<10%、inode <10% | 预算 warning；丢弃与低空间 critical |
-| 采样器、发现、抓取、通知失败 | 独立 critical，避免监控自身失效被当健康 |
+| 触发条件                                                | 初始规则                                               |
+| ------------------------------------------------------- | ------------------------------------------------------ |
+| API 全部不可达、Redis/PostgreSQL 探测失败               | 持续 1 分钟 critical                                   |
+| server/transport 错误率 >1%                             | 5 分钟窗口至少 100 请求，再持续 5 分钟；业务拒绝不计入 |
+| 路由 P95 >3 秒                                          | 同窗口至少 100 请求，持续 10 分钟 warning              |
+| pending 最老 >120 秒且增长                              | 持续 1 分钟；失去采样时保留已知失败                    |
+| 隔离记录、发布失败、事件缺口、审计 fallback             | warning 或 critical；调查确认后处置证据                |
+| Worker 期望容量不足、后台任务停止                       | 容量持续 2 分钟，组件持续 1 分钟                       |
+| 日志预算 >90%、文件丢弃、磁盘余量 <20%/<10%、inode <10% | 预算 warning；丢弃与低空间 critical                    |
+| 采样器、发现、抓取、通知失败                            | 独立 critical，避免监控自身失效被当健康                |
 
 Alertmanager 按 alertname/service/component/instance 分组，10 秒等待、1 分钟分组间隔、12 小时重复。severity 不在分组键中，升级会更新同组；发送 resolved。告警标签的 owner 为 `rapidkit-operations`，部署时必须映射实际值班人与通知渠道。低流量错误率/延迟规则不会触发，应结合个例日志与 Sentry 判断。
 
@@ -90,7 +91,7 @@ Alertmanager 按 alertname/service/component/instance 分组，10 秒等待、1 
 
 ### 慢路由 {#slow-route}
 
-查看慢请求 WARNING 的 duration/header_duration 与路由，排查 SQL、队列、依赖资源及部署变化。当前没有全链路依赖 tracing，不能仅凭 HTTP P95 定位具体 SQL；必要时单独制定受控诊断方案。
+查看慢请求 WARNING 的 duration/header_duration 与路由，排查 SQL、队列、依赖资源及部署变化。结合下文依赖操作直方图与同 request_id 的慢/失败事件，先区分连接池获取、SQL 和外部调用。当前没有全链路 tracing，也不记录 SQL 原文；不能仅凭 HTTP P95 定位具体 SQL。
 
 ### 事件积压 {#event-backlog}
 
@@ -160,3 +161,79 @@ docker compose --env-file docker/prod/.env.prod -f docker/prod/docker-compose.ym
 每条清理与最小幂等凭据写入使用同一数据库事务、同一任务锁。旧 attempt 的迟到事件不会重建结果、重复计数或审计；更高 attempt 可以形成新执行。凭据只保存任务标识、attempt 与基础元数据，无 args、返回值或诊断载荷，当前不自动过期。它们不替代业务幂等。
 
 停用自动清理可撤销配置，但已删除详情不会自动恢复。**一旦发生清理，不可回滚到不识别凭据的 B 或更早消费者**；应保留支持凭据的回滚镜像和 receipt 表，恢复详情须制定备份恢复方案。仅在尚未清理且验证 receipt 为空时，才可评估迁移回退。其它应用回滚保留宿主机挂载及 999:999 身份；不要用删除日志目录、队列、表或卷来回滚。
+
+## 深度定位：依赖、Socket 与浏览器
+
+D 批次不需要数据库迁移，默认 INFO 即可记录下列事件。成功依赖调用只计数，不逐条写 INFO。新增依赖和 Socket 阈值分别为 `DEPENDENCY_SLOW_THRESHOLD_MS=500`、`SLOW_SOCKET_EVENT_THRESHOLD_MS=1000`，单位毫秒，均是待实测调优的初始值。
+
+### 依赖操作
+
+`dependency.slow` 与 `dependency.failed` 使用 WARNING，字段为 component、有限 operation、duration_ms、outcome、retryable、exception_type，继承当前 request_id/任务和身份上下文。不记录异常文本、SQL 或 bind、Redis key/value、对象路径/内容、预签名 URL、邮件地址/正文或连接凭证。`retryable` 是诊断建议，不会自动重试业务；应结合幂等性与原始异常处理决定是否重试。
+
+| component  | operation 与边界                                                           | 解释                                                                                                                                                                      |
+| ---------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| postgresql | pool.acquire；query.select/insert/update/delete/other                      | 主异步/同步 Session、TaskSession 和 Beat 引擎均覆盖。pool.acquire 包括池排队及获取/新建连接，不能当作纯排队时间；query 仅测实际游标执行，不含整个事务、结果遍历和应用代码 |
+| redis      | get/set/hash/list/set_members/sorted_set/stream/script/pipeline/wait/other | 项目 AsyncRedisClient、其 pipeline 和 Worker 发布用同步客户端。wait 为 BLPOP/XREADGROUP 等主动阻塞等待，成功时不告慢，只计直方图；失败仍告警                              |
+| minio      | http.get/head/put/post/delete/other；upload                                | 项目 MinioClient 的 SDK 实际请求及整个 put_object 上传；惰性迭代在发出请求时记录。分片工作线程继承对应上传上下文，并发上传不会混用请求 ID                                                     |
+| smtp       | send                                                                       | 已配置邮件发送时的连接、TLS、登录和发送整体；未配置邮件服务的跳过行为保持不变                                                                                             |
+
+SDK 内部重试包含在对应边界耗时中；嵌套边界不能直接相加，例如 upload 包含多个 http.put。MinIO 流式下载只测到 SDK 返回响应，不包含调用者后续读完整个对象；只有连接池/SQL/网络边界，不能据此认定业务整体耗时。Celery broker/result、Socket.IO manager 等第三方自行创建的 Redis 客户端没有逐命令覆盖，仍由已有依赖探测与组件退化信号补充。
+
+每个角色的现有 runtime exporter 新增 `rapidkit_dependency_duration_seconds` 直方图，标签只含 service/component/operation/outcome，outcome 为 success/error/cancelled。不含 request_id、用户名或对象等高基数维度；无调用时没有相应序列。快照、fork 重置、容器重建归零与新鲜度判断沿用 C 批次。桶边界为 5/25/100/250/500ms、1/3/10 秒及 +Inf。
+
+例如查看同类操作 5 分钟 P95：
+
+```text
+histogram_quantile(0.95,
+  sum by (le, service, component, operation) (
+    rate(rapidkit_dependency_duration_seconds_bucket{outcome="success",operation!="wait"}[5m])
+  )
+)
+```
+
+先按角色和 component 找出异常，再以 request_id 搜索单次慢/失败事件。pool.acquire 慢而 query 正常时检查连接容量、事务占用和建连；query 慢则检查 DB 负载/锁与发布变化，不能临时把绑定值写进生产日志。失败与取消分开统计；单纯取消不能被视为成功。低流量和采样失效时不要将缺少序列当作健康。
+
+### Socket 关联与恢复
+
+`socket.auth.rejected` 为 WARNING，`socket.connected`/`socket.disconnected` 为 INFO，认证失败和断开原因仅使用固定代码。每个业务事件生成独立 request_id/socket_event_id；`socket_connection_id` 是连接标识，重用同一连接不重用单事件 ID。namespace/event_name 只使用已注册值或 other，不记录握手、token、消息内容和心跳 INFO。
+
+非预期处理器错误写 `socket.event.failed` 并通过已有脱敏 Sentry 边界上报；预期业务异常不送作服务错误，取消继续向外传播。慢成功事件写 `socket.event.slow`。原 ACK、鉴权、撤权和错误传播保持原行为；异常时额外向当前连接发 `diagnostic:error`，仅包含固定 code 和 requestId，Vue 展示通用提示与编号复制。续期循环使用 `socket_renewal` 的退化/恢复事件和已有组件指标，依赖恢复后下一次续期成功才恢复。
+
+排查时从用户提供的单事件 ID 搜索日志，必要时通过连接 ID 检查认证和断开前后事件，再检查同 ID 的依赖耗时。连接断开本身不代表任务失败；Redis 恢复也不能证明续期已成功。
+
+### 浏览器接入与隐私
+
+Vue 和 React 均在应用 bootstrap 前初始化 SDK，只有生产构建同时提供 `VITE_SENTRY_DSN` 与不可变 `VITE_SENTRY_RELEASE` 才启用；Docker 将同一 `SENTRY_RELEASE` 注入浏览器构建。`--mode prod` 上报环境为 PRODUCTION，与 API/Worker/Beat 一致。DSN 是公开配置，上传 token 必须使用服务端密钥入口。修改这些值需要重新构建静态资源。
+
+覆盖全局错误、未处理 Promise、应用 bootstrap、Vue 渲染/路由/chunk、React 根及路由错误边界、意外请求失败。请求只报告网络故障、HTTP 5xx 与框架错误码 7001，预期业务拒绝/取消不按服务错误上报；保持现有刷新登录态、去重与 React chunk 单次恢复行为。页面仅显示通用错误文案和安全编号，不显示堆栈或服务端意外错误原文。请求编号优先取响应 `X-Request-ID`，其次 `X-Edge-Request-ID`，仅接受 21 位 NanoID 或 32 位十六进制值，无有效响应 ID 不伪造一个。渲染错误可使用安全 Sentry event ID。
+
+上报使用最终事件白名单，仅保留 release/environment、固定错误摘要/类别、错误类型、静态 assets 栈位置及 debug ID、application 与合法关联编号。删除页面 URL、query/fragment、请求/响应头和正文、用户信息、表单/存储/DOM、任意错误文本、extras 与 breadcrumbs；关闭 SDK 日志、IP 推断、会话回放及性能采样。传输 fetch 显式不带 Cookie 和 Referer。接收服务仍然会看到连接源 IP、User-Agent 等网络元数据，须在实际 Sentry/入口配置中核对保存策略，客户端关闭 IP 推断不等于网络层匿名化。
+
+严格脱敏会减少错误上下文，定位依赖对应 release 的私有 source map、栈位置和服务端 ID；不能以临时上传表单、Cookie 或 API 正文换取上下文。
+
+### 私有 source map 与 Docker/CI
+
+构建辅助脚本为两个应用注入 debug ID，隐藏 map 在写入公共 bundle 前迁至应用内 `.sentry-artifacts/<vue|react>/<release哈希>/`，目录 700、文件 600，包含 JS/map 与校验清单。该目录 Git/Docker 忽略；公共 dist、最终镜像不包含 map，Nginx 也拒绝 `/assets/*.map`。缺少凭证时本地允许私有归档验证；上传失败仍必须保持公共 map 清除，不能把隐藏 map 直接作为公开 CI 附件。
+
+`.github/workflows/browser-observability-release.yml` 为手工触发的双应用私有上传工作流。配置 secrets `SENTRY_BROWSER_DSN`、`SENTRY_AUTH_TOKEN` 和 vars `SENTRY_ORG`、`SENTRY_BROWSER_PROJECT`，自建实例可配置 `SENTRY_URL`。release 输入必须与实际发布的前后端一致。构建要求上传配置完整，失败阻断工作流，结束清理 runner 私有副本；权限与保存期限由 Sentry 项目管理员核对。工作流只负责构建/上传，实际部署必须使用同次构建的 JS，或重新构建并上传该部署产物对应 debug ID，不能拿别的构建的 map 替代。
+
+Compose 默认关闭浏览器上报；启用时在 `.env.prod` 设置公开 `VITE_SENTRY_DSN`、统一 `SENTRY_RELEASE`、`SENTRY_ORG`、`SENTRY_PROJECT`，以及可选自建 `SENTRY_URL`。`SENTRY_CONNECT_SRC` 只填一个实际 HTTPS 上报 origin，不含 path/账号/分号/空白。启动校验拒绝非法值；CSP 保留同源 WebSocket，跨域 Socket 部署需另行显式配置可信 origin，不能恢复全域 ws:/wss: 放行。loopback HTTP 只供本地演练。
+
+上传 token 保存在 checkout 外的受限文件，设置 `SENTRY_AUTH_TOKEN_FILE` 为绝对路径，使用可选 overlay：
+
+```bash
+docker compose --env-file docker/prod/.env.prod \
+  -f docker/prod/docker-compose.yml -f docker/prod/docker-compose.sentry.yml config --quiet
+docker compose --env-file docker/prod/.env.prod \
+  -f docker/prod/docker-compose.yml -f docker/prod/docker-compose.sentry.yml build nginx
+```
+
+overlay 通过 BuildKit secret `sentry_auth_token` 注入构建步骤，不使用 token ARG/VITE\_ 变量，不传入运行容器。启用 DSN 的 Docker 构建强制要求完整上传配置；因此仅有 DSN 却无上传权限时构建失败，不能把无法还原的压缩栈算作上线验收。上报 origin 与上传 SENTRY_URL 的用途不同，需要分别验证。生产密钥文件不要放在仓库、镜像、普通 `.env` 或聊天记录中。
+
+### D 批次演练与上线条件
+
+`pnpm test:observability:browser` 使用真实生产构建、Nginx、Chromium 与本机合成 API/上报接收端，需 Docker、已安装 Chromium 及 `rapidkit-backend:observability-d` 测试镜像（可通过 `docker build -f docker/backend/Dockerfile -t rapidkit-backend:observability-d .` 构建；也可用 `OBSERVABILITY_BROWSER_TEST_IMAGE` 指定已有 Python 镜像。仅用其 Python 标准库运行合成 HTTP 服务，不访问生产 DB）。脚本清空远程上传配置，用本地 DSN 验证实际 SDK envelope/请求头脱敏、请求编号复制、全局异常/Promise、bootstrap 失败传播、React chunk 恢复、私有 map 原始栈还原、map 不公开与配置/未配置的 CSP。验证数据与截图写入 `logs/verification/`，测试只清理自己创建的容器/网络；本地私有 map 可按验证保留策略删除。
+
+依赖测试另用隔离 PostgreSQL/Redis 和本地 MinIO/SMTP 协议响应器，覆盖慢 SQL、池耗尽、SQL 取消、阻塞 Redis、并发分片上下文与 SMTP 超时；Socket 使用真实 WebSocket ASGI 连接验证身份隔离、故障与恢复。
+
+当前没有真实 Sentry 项目/上传凭证/通知渠道，已完成的是本地能力验证。上线前仍必须核对实际平台收到安全事件、同次构建 map 上传成功并能还原、CSP/CORS 正反例、release 对齐、接收人和隐私保留策略，以及 C 批次遗留历史迁移链/宿主机容量/告警验收；这些条件不能用本机接收器通过来代替。禁用浏览器上报可清空构建 DSN 并重新构建；降低诊断量可调整慢阈值，日志和指标不能改变业务重试语义。

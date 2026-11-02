@@ -1,0 +1,10 @@
+# Opt-in build-time secret; keep the token file outside the checkout.
+services:
+  nginx:
+    build:
+      secrets:
+        - sentry_auth_token
+
+secrets:
+  sentry_auth_token:
+    file: ${SENTRY_AUTH_TOKEN_FILE:?Set a private Sentry build-token file}

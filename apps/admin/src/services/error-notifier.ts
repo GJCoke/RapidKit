@@ -1,7 +1,7 @@
 import type { NormalizedRequestError } from "./request-error"
 
 interface ErrorNotifierOptions {
-  notify: (message: string) => void
+  notify: (message: string, requestId?: string) => void
   now?: () => number
   cooldownMs?: number
 }
@@ -18,7 +18,7 @@ export function createErrorNotifier({ notify, now = Date.now, cooldownMs = 5_000
       if (previousTime !== undefined && currentTime - previousTime <= cooldownMs) return false
 
       shownAt.set(key, currentTime)
-      notify(error.message)
+      notify(error.message, error.requestId)
       return true
     },
   }

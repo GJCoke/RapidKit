@@ -29,6 +29,7 @@ from rapidkit_core import runtime_state
 from rapidkit_core.config import settings
 from rapidkit_core.log import logger
 from rapidkit_core.nanoid import publication_request_id, request_id_scope
+from rapidkit_core.redis_client import RedisClient
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.identity import identity_from_headers, identity_headers
 from redis.backoff import NoBackoff
@@ -67,7 +68,7 @@ def _get_redis() -> redis.Redis:
     """获取同步 Redis 客户端（Worker 进程中使用）。"""
     global _redis_client
     if _redis_client is None:
-        _redis_client = redis.from_url(
+        _redis_client = RedisClient.from_url(
             str(settings.REDIS_URL),
             decode_responses=True,
             socket_connect_timeout=2,

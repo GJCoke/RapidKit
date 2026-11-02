@@ -9,10 +9,51 @@ import json
 from typing import Any, Set, TypeVar, overload
 
 from pydantic import BaseModel
+from redis import Redis as SyncRedis
 from redis.asyncio import Redis
+from redis.asyncio.client import Pipeline
 from sqlmodel import SQLModel
 
+from rapidkit_core.dependency_observation import observe_dependency
+
 T = TypeVar("T", bound=BaseModel)
+
+
+def _operation(command: object) -> str:
+    # Only the fixed command verb is inspected, never a key or value.
+    name = command.decode("ascii", errors="ignore") if isinstance(command, bytes) else str(command)
+    name = name.upper()
+    if name in {"XREAD", "XREADGROUP", "BLPOP", "BRPOP", "BLMOVE", "BRPOPLPUSH", "BZPOPMIN", "BZPOPMAX"}:
+        return "wait"
+    if name in {"GET", "MGET", "EXISTS", "TTL", "PTTL"}:
+        return "get"
+    if name in {"SET", "MSET", "SETEX", "PSETEX", "DEL", "UNLINK", "EXPIRE", "PEXPIRE", "INCR", "INCRBY"}:
+        return "set"
+    if name.startswith("H") and name in {"HGET", "HGETALL", "HSET", "HDEL", "HINCRBY", "HMGET", "HEXISTS"}:
+        return "hash"
+    if name in {"LPUSH", "RPUSH", "LPOP", "RPOP", "LLEN", "LRANGE", "LMOVE", "LREM", "BLPOP", "BRPOP"}:
+        return "list"
+    if name in {"SADD", "SREM", "SMEMBERS", "SCARD", "SISMEMBER"}:
+        return "set_members"
+    if name in {"ZADD", "ZREM", "ZRANGE", "ZCARD", "ZREMRANGEBYSCORE"}:
+        return "sorted_set"
+    if name in {"XADD", "XREAD", "XREADGROUP", "XACK", "XINFO", "XPENDING", "XRANGE", "XAUTOCLAIM", "XGROUP", "XLEN"}:
+        return "stream"
+    if name in {"EVAL", "EVALSHA", "SCRIPT"}:
+        return "script"
+    return "other"
+
+
+class RedisClient(SyncRedis):
+    def execute_command(self, *args, **kwargs):
+        with observe_dependency("redis", _operation(args[0] if args else "")):
+            return super().execute_command(*args, **kwargs)
+
+
+class ObservedPipeline(Pipeline):
+    async def execute(self, raise_on_error: bool = True):
+        with observe_dependency("redis", "pipeline"):
+            return await super().execute(raise_on_error=raise_on_error)
 
 
 def _validate_model_json(model: type[T], data: str | bytes) -> T:
@@ -29,6 +70,13 @@ class AsyncRedisClient(Redis):  # type: ignore[type-arg]
     继承 redis.asyncio.Redis，拥有所有原生 Redis 方法，
     并扩展 Pydantic 模型的自动序列化与反序列化能力。
     """
+
+    async def execute_command(self, *args, **kwargs):
+        with observe_dependency("redis", _operation(args[0] if args else "")):
+            return await super().execute_command(*args, **kwargs)
+
+    def pipeline(self, transaction: bool = True, shard_hint: str | None = None):
+        return ObservedPipeline(self.connection_pool, self.response_callbacks, transaction, shard_hint)
 
     async def set(self, name: str, value: str | int | float | BaseModel, *args: Any, **kwargs: Any) -> bool | None:
         if isinstance(value, BaseModel):

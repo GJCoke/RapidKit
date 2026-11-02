@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import math
 import os
 import socket
 import sys
@@ -10,6 +11,25 @@ import time
 from pathlib import Path
 
 ROLES = ("api", "worker", "beat", "migrate")
+DEPENDENCY_OPERATIONS = {
+    "postgresql": ("pool.acquire", "query.select", "query.insert", "query.update", "query.delete", "query.other"),
+    "redis": (
+        "get",
+        "set",
+        "hash",
+        "list",
+        "set_members",
+        "sorted_set",
+        "stream",
+        "script",
+        "pipeline",
+        "wait",
+        "other",
+    ),
+    "minio": ("http.get", "http.head", "http.put", "http.post", "http.delete", "http.other", "upload"),
+    "smtp": ("send",),
+}
+DEPENDENCY_BUCKETS = (0.005, 0.025, 0.1, 0.25, 0.5, 1, 3, 10, float("inf"))
 COMPONENTS = (
     "request_metrics",
     "task_event_consumer",
@@ -40,16 +60,31 @@ _directory: Path | None = None
 _role = "api"
 _counters: dict[str, float] = dict.fromkeys(COUNTERS, 0)
 _gauges: dict[str, float] = {}
+_dependencies: dict[tuple[str, str, str], list[float]] = {}
 _lock = threading.Lock()
 _stop = threading.Event()
 _thread: threading.Thread | None = None
 
 
 def _after_fork() -> None:
-    global _lock, _counters, _gauges, _stop, _thread
+    global _lock, _counters, _gauges, _dependencies, _stop, _thread
     _lock, _stop, _thread = threading.Lock(), threading.Event(), None
     _counters = dict.fromkeys(COUNTERS, 0.0)
     _gauges = {}
+    _dependencies = {}
+
+
+def observe_dependency(component: str, operation: str, seconds: float, outcome: str) -> None:
+    if operation not in DEPENDENCY_OPERATIONS.get(component, ()) or outcome not in ("success", "error", "cancelled"):
+        raise ValueError("Unknown dependency observation")
+    if not math.isfinite(seconds) or seconds < 0:
+        return
+    with _lock:
+        values = _dependencies.setdefault((component, operation, outcome), [0.0] * (len(DEPENDENCY_BUCKETS) + 1))
+        for index, bound in enumerate(DEPENDENCY_BUCKETS):
+            if seconds <= bound:
+                values[index] += 1
+        values[-1] += seconds
 
 
 if hasattr(os, "register_at_fork"):
@@ -80,6 +115,10 @@ def write_snapshot() -> None:
             "updated_at": time.time(),
             "counters": dict(_counters),
             "gauges": dict(_gauges),
+            "dependencies": [
+                {"component": component, "operation": operation, "outcome": outcome, "values": values}
+                for (component, operation, outcome), values in _dependencies.items()
+            ],
         }
         path = _directory / f"{os.getpid()}.json"
         temporary = path.with_suffix(f".{threading.get_ident()}.tmp")

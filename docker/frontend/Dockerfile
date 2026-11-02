@@ -17,6 +17,12 @@ WORKDIR /app
 
 ARG NPM_REGISTRY
 ENV npm_config_registry=${NPM_REGISTRY}
+ARG VITE_SENTRY_DSN=""
+ARG SENTRY_RELEASE=""
+ARG SENTRY_ORG=""
+ARG SENTRY_PROJECT=""
+ARG SENTRY_URL=""
+ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN} VITE_SENTRY_RELEASE=${SENTRY_RELEASE}
 
 # Keep dependency installation independent of source and build configuration changes.
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
@@ -30,11 +36,16 @@ RUN --mount=type=cache,id=rapidkit-frontend-pnpm,target=/pnpm/store \
 
 # Copy source code for packages and frontend
 COPY turbo.json tsconfig.json ./
+COPY scripts/sentry-build.ts scripts/sentry-build.ts
 COPY packages/ packages/
 COPY apps/frontend/ apps/frontend/
 
 # Build packages then frontend with prod mode.
-RUN pnpm turbo build --filter='@rapidkit/frontend^...' \
+RUN --mount=type=secret,id=sentry_auth_token \
+    if [ -f /run/secrets/sentry_auth_token ]; then export SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token)"; fi; \
+    if [ -n "$VITE_SENTRY_DSN" ]; then export REQUIRE_SENTRY_UPLOAD=true; fi; \
+    export SENTRY_ORG="$SENTRY_ORG" SENTRY_PROJECT="$SENTRY_PROJECT" SENTRY_URL="$SENTRY_URL"; \
+    pnpm turbo build --filter='@rapidkit/frontend^...' \
     && cd apps/frontend && pnpm vite build --mode prod
 
 # ============================================================
@@ -52,11 +63,13 @@ COPY --from=build /app/apps/frontend/dist /usr/share/nginx/html
 # Copy our nginx config
 COPY docker/prod/nginx.conf /etc/nginx/templates/nginx.conf.template
 COPY docker/prod/security-headers.conf /etc/nginx/security-headers.conf
+COPY --chmod=755 docker/frontend/15-observability-origin.sh /docker-entrypoint.d/15-observability-origin.sh
 
 ENV MAX_REQUEST_BODY_BYTES=10485760 \
     SECURITY_HSTS_ENABLED=false \
+    SENTRY_CONNECT_SRC="" \
     NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx \
-    NGINX_ENVSUBST_FILTER="^(MAX_REQUEST_BODY_BYTES|SECURITY_HSTS_ENABLED)$"
+    NGINX_ENVSUBST_FILTER="^(MAX_REQUEST_BODY_BYTES|SECURITY_HSTS_ENABLED|SENTRY_CONNECT_SRC)$"
 
 EXPOSE 80
 

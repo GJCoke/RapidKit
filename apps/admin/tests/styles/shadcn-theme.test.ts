@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises"
 import { test } from "vitest"
 
 const css = await readFile(new URL("../../src/styles/globals.css", import.meta.url), "utf8")
-const main = await readFile(new URL("../../src/main.tsx", import.meta.url), "utf8")
+const main = await readFile(new URL("../../src/bootstrap.tsx", import.meta.url), "utf8")
 
 function block(selector: string) {
   const start = css.indexOf(`${selector} {`)

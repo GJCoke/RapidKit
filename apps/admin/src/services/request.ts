@@ -1,5 +1,7 @@
 import type { AxiosResponse } from "@rapidkit/axios"
 import { BACKEND_ERROR_CODE, createFlatRequest } from "@rapidkit/axios"
+import { requestIdFromHeaders, shouldReportRequestFailure } from "@rapidkit/utils"
+import { captureBrowserError } from "@/observability"
 import { getAuthSession, recordTokenRotation } from "@/services/auth-session"
 import { resolveAuthErrorCodes } from "@/services/auth-error-codes"
 import { notifyRequestError, notifySessionExpired } from "@/services/request-error-notifier"
@@ -130,10 +132,15 @@ export const request = createFlatRequest<BackendResponse, unknown, RequestState>
       return null
     },
     onError(error) {
+      const config = error.config as (typeof error.config & { authSession?: number }) | undefined
+      if (error.code === "ERR_CANCELED") return
+      if (config?.authSession !== undefined && config.authSession !== getAuthSession()) return
       if (error.code === BACKEND_ERROR_CODE) {
         const responseCode = String(error.response?.data?.code ?? "")
         if (expiredTokenCodes.has(responseCode) || logoutCodes.has(responseCode)) return
       }
+      if (shouldReportRequestFailure(error))
+        captureBrowserError(error, "request", requestIdFromHeaders(error.response?.headers))
       notifyRequestError(error)
     },
   },

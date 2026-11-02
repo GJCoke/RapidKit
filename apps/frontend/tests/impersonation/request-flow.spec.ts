@@ -9,7 +9,10 @@ const mocks = vi.hoisted(() => ({
   stopImpersonation: vi.fn(),
   message: vi.fn(),
 }))
-vi.mock("@rapidkit/utils", () => ({ nanoid: () => String(Math.random()) }))
+vi.mock("@rapidkit/utils", async (original) => ({
+  ...(await original<typeof import("@rapidkit/utils")>()),
+  nanoid: () => String(Math.random()),
+}))
 vi.mock("@rapidkit/axios", async () => {
   const actual = await import("../../../../packages/axios/src/index")
   return {
@@ -162,4 +165,31 @@ it("does not let a pending normal refresh overwrite a simulation", async () => {
   expect(mocks.storage.has("refreshToken")).toBe(false)
   expect(mocks.resetStore).not.toHaveBeenCalled()
   expect(mocks.stopImpersonation).not.toHaveBeenCalled()
+})
+
+it("a failure before the message provider mounts does not suppress later feedback", async () => {
+  mocks.adapter.mockImplementation(async (config) => ({
+    status: 200,
+    statusText: "OK",
+    headers: { "x-request-id": "abcdefghijklmnopqrstu" },
+    config,
+    data: { code: 7001, message: "private-server-error" },
+  }))
+  vi.stubGlobal("window", {})
+  await request({ url: "/startup" })
+  vi.stubGlobal("window", { $message: { error: mocks.message } })
+  await request({ url: "/later" })
+  expect(mocks.message).toHaveBeenCalledOnce()
+})
+
+it("does not display an HTTP 5xx body even when it resembles a business error", async () => {
+  mocks.adapter.mockImplementation(async (config) => ({
+    status: 503,
+    statusText: "Unavailable",
+    headers: {},
+    config,
+    data: { code: 15001, message: "private-server-body" },
+  }))
+  await request({ url: "/unavailable" })
+  expect(request.state.errMsgStack).toEqual(["request.serverError"])
 })

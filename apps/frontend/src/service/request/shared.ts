@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/store/modules/auth"
+import { diagnosticMessage } from "@/utils/diagnostic-message"
 import { localStg } from "@/utils/storage"
 import { fetchRefreshToken } from "../api"
 import { getAuthSession, isLoggingOut, recordTokenRotation } from "./auth-session"
@@ -69,7 +70,8 @@ export function handleExpiredRequest(state: RequestInstanceState, forLogout = fa
   return state.refreshTokenPromise
 }
 
-export function showErrorMsg(state: RequestInstanceState, message: string) {
+export function showErrorMsg(state: RequestInstanceState, message: string, requestId?: string) {
+  if (!window.$message) return
   if (!state.errMsgStack?.length) {
     state.errMsgStack = []
   }
@@ -79,7 +81,7 @@ export function showErrorMsg(state: RequestInstanceState, message: string) {
   if (!isExist) {
     state.errMsgStack.push(message)
 
-    window.$message?.error(message, {
+    window.$message?.error(diagnosticMessage(message, requestId), {
       onLeave: () => {
         state.errMsgStack = state.errMsgStack.filter((msg) => msg !== message)
 

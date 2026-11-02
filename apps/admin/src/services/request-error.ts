@@ -1,9 +1,12 @@
+import { requestIdFromHeaders } from "@rapidkit/utils"
+
 export type RequestErrorKind = "business" | "network" | "server" | "unknown"
 
 export interface NormalizedRequestError {
   kind: RequestErrorKind
   code: string
   message: string
+  requestId?: string
 }
 
 interface RequestErrorMessages {
@@ -15,6 +18,7 @@ interface RequestErrorMessages {
 interface ErrorLike {
   code?: string
   response?: {
+    headers?: unknown
     status?: number
     data?: {
       code?: string | number
@@ -27,12 +31,19 @@ export function normalizeRequestError(error: unknown, messages: RequestErrorMess
   const candidate = error as ErrorLike
   const response = candidate?.response
   const backendCode = response?.data?.code
+  const requestId = requestIdFromHeaders(response?.headers)
+  const diagnostic = requestId ? { requestId } : {}
+
+  if ((response?.status ?? 0) >= 500 || Number(backendCode) === 7001) {
+    return { kind: "server", code: String(backendCode ?? response?.status), message: messages.server, ...diagnostic }
+  }
 
   if (candidate?.code === "BACKEND_ERROR") {
     return {
       kind: "business",
       code: String(backendCode ?? "BACKEND_ERROR"),
       message: response?.data?.message || messages.unknown,
+      ...diagnostic,
     }
   }
 
@@ -41,12 +52,9 @@ export function normalizeRequestError(error: unknown, messages: RequestErrorMess
       kind: candidate?.code === "ERR_NETWORK" ? "network" : "unknown",
       code: candidate?.code || "UNKNOWN",
       message: candidate?.code === "ERR_NETWORK" ? messages.network : messages.unknown,
+      ...diagnostic,
     }
   }
 
-  if ((response.status ?? 0) >= 500) {
-    return { kind: "server", code: String(response.status), message: messages.server }
-  }
-
-  return { kind: "unknown", code: String(response.status ?? "UNKNOWN"), message: messages.unknown }
+  return { kind: "unknown", code: String(response.status ?? "UNKNOWN"), message: messages.unknown, ...diagnostic }
 }

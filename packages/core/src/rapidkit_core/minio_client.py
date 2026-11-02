@@ -5,7 +5,9 @@ Author  : Coke
 Date    : 2025-04-03
 """
 
+from contextvars import Context, ContextVar, copy_context
 from datetime import timedelta
+from threading import Lock
 from typing import BinaryIO, Iterator
 
 from minio import Minio
@@ -15,6 +17,55 @@ from minio.helpers import ObjectWriteResult
 from pydantic import BaseModel
 
 from rapidkit_core.constants import MB
+from rapidkit_core.dependency_observation import observe_dependency
+
+_upload_scope: ContextVar[tuple[Context, list[tuple[str, str, str]]] | None] = ContextVar(
+    "minio_upload_scope", default=None
+)
+
+
+class ObservedMinio(Minio):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._upload_contexts: dict[tuple[str, str, str], Context] = {}
+        self._upload_context_lock = Lock()
+
+    def _execute(self, method, *args, **kwargs):
+        operation = "http." + (method.lower() if method in {"GET", "HEAD", "PUT", "POST", "DELETE"} else "other")
+        with observe_dependency("minio", operation):
+            return super()._execute(method, *args, **kwargs)
+
+    def put_object(self, *args, **kwargs):
+        # The SDK creates its own threads; each concurrent upload owns a separate context.
+        scope = (copy_context(), [])
+        token = _upload_scope.set(scope)
+        try:
+            with observe_dependency("minio", "upload"):
+                return super().put_object(*args, **kwargs)
+        finally:
+            with self._upload_context_lock:
+                for key in scope[1]:
+                    self._upload_contexts.pop(key, None)
+            _upload_scope.reset(token)
+
+    def _create_multipart_upload(self, bucket_name, object_name, headers):
+        upload_id = super()._create_multipart_upload(bucket_name, object_name, headers)
+        if (scope := _upload_scope.get()) is not None:
+            key = (bucket_name, object_name, upload_id)
+            with self._upload_context_lock:
+                self._upload_contexts[key] = scope[0]
+                scope[1].append(key)
+        return upload_id
+
+    def _upload_part(self, bucket_name, object_name, data, headers, upload_id, part_number):
+        with self._upload_context_lock:
+            context = self._upload_contexts.get((bucket_name, object_name, upload_id))
+        arguments = (bucket_name, object_name, data, headers, upload_id, part_number)
+        if context is not None:
+            return context.copy().run(
+                super()._upload_part, bucket_name, object_name, data, headers, upload_id, part_number
+            )
+        return super()._upload_part(*arguments)
 
 
 class UploadPart(BaseModel):
@@ -53,7 +104,7 @@ class MinioClient:
         self._access_key = access_key
         self._secret_key = secret_key
         self._bucket_name = bucket_name
-        self._client = Minio(
+        self._client = ObservedMinio(
             self._endpoint,
             access_key=self._access_key,
             secret_key=self._secret_key,

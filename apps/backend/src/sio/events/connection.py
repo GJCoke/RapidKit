@@ -5,7 +5,7 @@ import asyncio
 from fastapi_sio_di import SID
 from rapidkit_common.deps import RedisDep
 from rapidkit_core.database import RedisManager
-from rapidkit_core.log import logger
+from rapidkit_core.log import component_failed, component_recovered, logger
 from rapidkit_core.realtime import PERMISSION_BROADCAST_ROOM, permission_user_room
 from rapidkit_framework.identity import current_identity
 from socketio.exceptions import ConnectionRefusedError
@@ -58,8 +58,9 @@ async def renew_session_keys_loop() -> None:
                 if identity and identity.user_id and not identity.impersonation_session_id:
                     entries.setdefault(identity.user_id, []).append(sid)
             await renew_presence(RedisManager.client(), entries)
+            component_recovered("socket_renewal")
         except asyncio.CancelledError:
             raise
-        except Exception:
-            logger.debug("Failed to renew socket presence")
+        except Exception as error:
+            component_failed("socket_renewal", error)
         await asyncio.sleep(SESSION_TTL // 3)

@@ -149,6 +149,8 @@ class LogConfigMixin(BaseSettings):
     )
 
     SLOW_REQUEST_THRESHOLD_MS: int = Field(3000, description="慢请求告警阈值（毫秒）")
+    DEPENDENCY_SLOW_THRESHOLD_MS: int = Field(500, ge=0)
+    SLOW_SOCKET_EVENT_THRESHOLD_MS: int = Field(1000, ge=0)
 
 
 class SentryConfigMixin(BaseSettings):

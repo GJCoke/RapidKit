@@ -38,3 +38,23 @@ test("unknown failures use the generic localized fallback", () => {
     message: "Request failed",
   })
 })
+
+test("unexpected backend failures are generic and expose only a validated request ID", () => {
+  const error = normalizeRequestError(
+    {
+      code: "BACKEND_ERROR",
+      response: {
+        status: 200,
+        headers: { "x-request-id": "abcdefghijklmnopqrstu" },
+        data: { code: 7001, message: "private-stack-and-token" },
+      },
+    },
+    messages,
+  )
+  assert.deepEqual(error, {
+    kind: "server",
+    code: "7001",
+    message: messages.server,
+    requestId: "abcdefghijklmnopqrstu",
+  })
+})

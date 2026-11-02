@@ -370,10 +370,14 @@ class Task(_Task):
                 deps[name] = AsyncRedisClient.from_url(str(settings.REDIS_URL), decode_responses=True)
             elif hint is TaskSession:
                 from rapidkit_core.config import settings
+                from rapidkit_core.database_observation import ObservedAsyncPool, instrument_sql
                 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
                 from sqlmodel.ext.asyncio.session import AsyncSession
 
-                engine = create_async_engine(str(settings.ASYNC_DATABASE_POSTGRESQL_URL), hide_parameters=True)
+                engine = create_async_engine(
+                    str(settings.ASYNC_DATABASE_POSTGRESQL_URL), hide_parameters=True, poolclass=ObservedAsyncPool
+                )
+                instrument_sql(engine.sync_engine)
                 deps[name] = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
         return deps

@@ -1,0 +1,53 @@
+name: Private browser source maps
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Immutable release matching SENTRY_RELEASE on API/Worker/Beat
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        application: [frontend, admin]
+    env:
+      VITE_SENTRY_DSN: ${{ secrets.SENTRY_BROWSER_DSN }}
+      VITE_SENTRY_RELEASE: ${{ inputs.release }}
+      SENTRY_RELEASE: ${{ inputs.release }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_BROWSER_PROJECT }}
+      SENTRY_URL: ${{ vars.SENTRY_URL }}
+      REQUIRE_SENTRY_UPLOAD: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo build --filter='@rapidkit/${{ matrix.application }}^...'
+      - name: Require browser DSN
+        run: test -n "$VITE_SENTRY_DSN"
+      - name: Build and upload privately to Sentry
+        working-directory: apps/${{ matrix.application }}
+        run: pnpm exec vite build --mode prod
+      - name: Verify public artifacts contain no source maps
+        working-directory: apps/${{ matrix.application }}
+        run: |
+          if find dist -name '*.map' -print -quit | grep -q .; then
+            echo 'Public source maps detected'
+            exit 1
+          fi
+      # No upload-artifact step: maps and sources must not become public CI artifacts.
+      - name: Remove private runner copies
+        if: always()
+        run: rm -rf apps/${{ matrix.application }}/.sentry-artifacts

@@ -4,6 +4,7 @@ import html
 import smtplib
 from email.message import EmailMessage
 
+from rapidkit_core.dependency_observation import observe_dependency
 from rapidkit_core.log import get_plugin_logger
 
 logger = get_plugin_logger("Auth")
@@ -63,7 +64,7 @@ class EmailSender:
         self._sender = sender
         self._use_tls = use_tls
 
-    def send(self, to: str, subject: str, html_body: str, timeout: int = 15) -> None:
+    def send(self, to: str, subject: str, html_body: str, timeout: float = 15) -> None:
         if not self._host:
             logger.warning("SMTP host not configured; skipping invite email")
             return
@@ -73,9 +74,10 @@ class EmailSender:
         message["To"] = to
         message.set_content("Please view this email in an HTML-capable client.")
         message.add_alternative(html_body, subtype="html")
-        with smtplib.SMTP(self._host, self._port, timeout=timeout) as server:
-            if self._use_tls:
-                server.starttls()
-            if self._user:
-                server.login(self._user, self._password)
-            server.send_message(message)
+        with observe_dependency("smtp", "send"):
+            with smtplib.SMTP(self._host, self._port, timeout=timeout) as server:
+                if self._use_tls:
+                    server.starttls()
+                if self._user:
+                    server.login(self._user, self._password)
+                server.send_message(message)

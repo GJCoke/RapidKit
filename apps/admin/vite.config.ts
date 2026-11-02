@@ -4,13 +4,15 @@ import { resolve } from "node:path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig, loadEnv } from "vite"
+import { browserSentryBuild } from "../../scripts/sentry-build"
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd())
   const serviceBaseUrl = env.VITE_SERVICE_BASE_URL || "http://localhost:8000"
+  const monitoring = browserSentryBuild({ ...env, ...process.env }, "react", __dirname)
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), ...(command === "build" ? monitoring.plugins : [])],
     resolve: {
       alias: {
         "@": resolve(__dirname, "src"),
@@ -37,6 +39,7 @@ export default defineConfig(({ mode }) => {
       testTimeout: 10_000,
     },
     build: {
+      sourcemap: monitoring.sourcemap,
       target: "esnext",
       rollupOptions: {
         output: {

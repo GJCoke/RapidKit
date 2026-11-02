@@ -7,13 +7,16 @@ import time
 from typing import cast
 
 from fastapi_sio_di import AsyncServer
+from nanoid import generate
 from rapidkit_common.protocols.auth import CurrentUserProvider
 from rapidkit_core.database import RedisManager
 from rapidkit_core.log import logger
+from rapidkit_core.nanoid import request_id_scope
 from rapidkit_framework.identity import IdentityMetadata, identity_scope
 from rapidkit_framework.services import get_service
 from socketio.exceptions import ConnectionRefusedError
 
+from src.sio.observability import connection_event, connection_fields, expected_error, socket_event_scope
 from src.sio.sessions import IDENTITY_SESSION_KEY, register_socket, session_expiry, unregister_socket
 
 PROTECTED_NAMESPACES = frozenset({"/", "/worker", "/notifications", "/dashboard", "/chat"})
@@ -60,6 +63,10 @@ class IdentityAwareAsyncServer(AsyncServer):
     async def _trigger_event(self, event, namespace, *args):
         if namespace not in PROTECTED_NAMESPACES or event not in {"connect", "disconnect"}:
             return await super()._trigger_event(event, namespace, *args)
+        with request_id_scope(generate()), logger.contextualize(**connection_fields(args[0], namespace)):
+            return await self._trigger_lifecycle(event, namespace, *args)
+
+    async def _trigger_lifecycle(self, event, namespace, *args):
         sid = args[0]
         identity = IdentityMetadata()
         if event == "disconnect":
@@ -73,6 +80,14 @@ class IdentityAwareAsyncServer(AsyncServer):
                     return await super()._trigger_event(event, namespace, *args)
             finally:
                 await unregister_socket(self, RedisManager.client(), sid, namespace)
+                reason = args[1] if len(args) > 1 else None
+                reason = (
+                    reason.replace(" ", "_")
+                    if reason
+                    in {"client disconnect", "server disconnect", "transport close", "transport error", "ping timeout"}
+                    else "other"
+                )
+                connection_event("socket.disconnected", sid, namespace, identity, reason)
         redis = None
         self._pending_admissions.add((namespace, sid))
         try:
@@ -87,12 +102,17 @@ class IdentityAwareAsyncServer(AsyncServer):
                 result = await super()._trigger_event(event, namespace, *args)
             if result is False:
                 raise ConnectionRefusedError("forbidden")
+            connection_event("socket.connected", sid, namespace, identity)
             return result
         except Exception as exc:
             await unregister_socket(self, redis, sid, namespace)
             reason = exc.error_args.get("message") if isinstance(exc, ConnectionRefusedError) else None
-            logger.warning(
-                "Socket authentication refused namespace={} reason={} user_id={}", namespace, reason, identity.user_id
+            connection_event(
+                "socket.auth.rejected",
+                sid,
+                namespace,
+                identity,
+                reason if reason in {"unauthorized", "forbidden", "token_expired"} else "authentication_failed",
             )
             if isinstance(exc, ConnectionRefusedError):
                 raise
@@ -110,5 +130,21 @@ class IdentityAwareAsyncServer(AsyncServer):
         metadata = session.get(IDENTITY_SESSION_KEY)
         if namespace in PROTECTED_NAMESPACES and metadata is None:
             return None
-        with identity_scope(metadata or IdentityMetadata()):
-            return await super()._handle_event_internal(server, sid, eio_sid, data, namespace, id)
+        metadata = metadata or IdentityMetadata()
+        name = data[0] if data and isinstance(data[0], str) and data[0] in self.handlers.get(namespace, {}) else "other"
+        with identity_scope(metadata), socket_event_scope(sid, namespace, name, metadata) as event_id:
+            try:
+                return await super()._handle_event_internal(server, sid, eio_sid, data, namespace, id)
+            except Exception as error:
+                if not expected_error(error):
+                    try:
+                        await self.emit(
+                            "diagnostic:error",
+                            {"requestId": event_id, "code": "unexpected_error"},
+                            to=sid,
+                            namespace=namespace,
+                            ignore_queue=True,
+                        )
+                    except Exception:
+                        pass
+                raise

@@ -10,6 +10,8 @@ declare namespace Env {
   /** Interface for import.meta */
   // oxlint-disable-next-line @typescript-eslint/no-shadow
   interface ImportMeta extends ImportMetaEnv {
+    readonly VITE_SENTRY_DSN?: string
+    readonly VITE_SENTRY_RELEASE?: string
     /** The base url of the application */
     readonly VITE_BASE_URL: string
     /** The title of the application */

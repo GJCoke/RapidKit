@@ -3,6 +3,7 @@ import { URL, fileURLToPath } from "node:url"
 import { defineConfig, loadEnv } from "vite"
 import { setupVitePlugins } from "./builder/plugins"
 import { createViteProxy, getBuildTime } from "./builder/config"
+import { browserSentryBuild } from "../../scripts/sentry-build"
 
 export default defineConfig((configEnv) => {
   const viteEnv = loadEnv(configEnv.mode, process.cwd()) as unknown as Env.ImportMeta
@@ -10,6 +11,11 @@ export default defineConfig((configEnv) => {
   const buildTime = getBuildTime()
 
   const enableProxy = configEnv.command === "serve" && !configEnv.isPreview
+  const monitoring = browserSentryBuild(
+    { ...viteEnv, ...process.env },
+    "vue",
+    fileURLToPath(new URL("./", import.meta.url)),
+  )
 
   return {
     base: viteEnv.VITE_BASE_URL,
@@ -27,7 +33,7 @@ export default defineConfig((configEnv) => {
         },
       },
     },
-    plugins: setupVitePlugins(viteEnv, buildTime),
+    plugins: [setupVitePlugins(viteEnv, buildTime), ...(configEnv.command === "build" ? monitoring.plugins : [])],
     define: {
       BUILD_TIME: JSON.stringify(buildTime),
     },
@@ -42,7 +48,7 @@ export default defineConfig((configEnv) => {
     },
     build: {
       reportCompressedSize: false,
-      sourcemap: viteEnv.VITE_SOURCE_MAP === "Y",
+      sourcemap: monitoring.sourcemap,
       commonjsOptions: {
         ignoreTryCatch: false,
       },

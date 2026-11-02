@@ -73,7 +73,11 @@ async def test_real_uvicorn_nginx_privacy_ids_and_outcomes(init, tmp_path):
     config = config.replace("listen 80;", f"listen 127.0.0.1:{gateway_port};")
     config = config.replace("backend-api:8006", f"127.0.0.1:{api_port}")
     config = config.replace("http://minio:9000/", "http://127.0.0.1:9/")
-    config = config.replace("${MAX_REQUEST_BODY_BYTES}", "256").replace("${SECURITY_HSTS_ENABLED}", "false")
+    config = (
+        config.replace("${MAX_REQUEST_BODY_BYTES}", "256")
+        .replace("${SECURITY_HSTS_ENABLED}", "false")
+        .replace("${SENTRY_CONNECT_SRC}", "")
+    )
     nginx_config = tmp_path / "nginx.conf"
     nginx_config.write_text(config)
     name = "rapidkit-observability-a-" + uuid4().hex[:8]

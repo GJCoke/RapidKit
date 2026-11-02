@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises"
 import { test } from "vitest"
 
 const indexHtml = await readFile(new URL("../../index.html", import.meta.url), "utf8")
-const mainSource = await readFile(new URL("../../src/main.tsx", import.meta.url), "utf8")
+const mainSource = await readFile(new URL("../../src/bootstrap.tsx", import.meta.url), "utf8")
 const appSource = await readFile(new URL("../../src/app/App.tsx", import.meta.url), "utf8")
 const authGuardSource = await readFile(
   new URL("../../src/features/auth/guards/auth-guard.tsx", import.meta.url),

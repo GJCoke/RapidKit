@@ -55,3 +55,39 @@ def test_runtime_collector_reports_corruption_and_stale_state(tmp_path):
     body = generate_latest(registry).decode()
     assert "rapidkit_runtime_snapshot_errors 1.0" in body
     assert 'rapidkit_runtime_state_fresh{service="worker"} 0.0' in body
+
+
+def test_dependency_histograms_aggregate_dead_children_and_bound_labels(tmp_path):
+    from rapidkit_core.runtime_state import DEPENDENCY_BUCKETS
+    from src.runtime_metrics import RuntimeCollector
+
+    for pid, count in [(os.getpid(), 2), (999999999, 3)]:
+        (tmp_path / f"{pid}.json").write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "role": "worker",
+                    "pid": pid,
+                    "hostname": socket.gethostname(),
+                    "updated_at": time.time(),
+                    "counters": {},
+                    "gauges": {},
+                    "dependencies": [
+                        {
+                            "component": "redis",
+                            "operation": "get",
+                            "outcome": "success",
+                            "values": [count] * len(DEPENDENCY_BUCKETS) + [count * 0.001],
+                        }
+                    ],
+                }
+            )
+        )
+    registry = CollectorRegistry()
+    registry.register(RuntimeCollector(tmp_path))
+    metrics = generate_latest(registry).decode()
+    assert (
+        'rapidkit_dependency_duration_seconds_count{component="redis",operation="get",'
+        'outcome="success",service="worker"} 5.0' in metrics
+    )
+    assert "pid=" not in metrics and "hostname=" not in metrics

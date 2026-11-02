@@ -8,9 +8,9 @@ import time
 from pathlib import Path
 
 from prometheus_client import CollectorRegistry, generate_latest, start_http_server
-from prometheus_client.core import CounterMetricFamily, GaugeMetricFamily
+from prometheus_client.core import CounterMetricFamily, GaugeMetricFamily, HistogramMetricFamily
 from rapidkit_core.config import settings
-from rapidkit_core.runtime_state import COUNTERS, GAUGES, ROLES
+from rapidkit_core.runtime_state import COUNTERS, DEPENDENCY_BUCKETS, DEPENDENCY_OPERATIONS, GAUGES, ROLES
 
 _server = None
 
@@ -21,6 +21,7 @@ class RuntimeCollector:
 
     def collect(self):
         totals, gauges, live, ages, expected = {}, {}, {}, {}, {}
+        dependencies = {}
         errors = 0
         for path in self.directory.glob("*.json"):
             try:
@@ -43,6 +44,28 @@ class RuntimeCollector:
                 for key, value in data["counters"].items():
                     if key in COUNTERS and isinstance(value, (int, float)) and math.isfinite(value) and value >= 0:
                         totals[role, key] = totals.get((role, key), 0) + value
+                for observation in data.get("dependencies", []):
+                    component, operation, outcome, values = (
+                        observation["component"],
+                        observation["operation"],
+                        observation["outcome"],
+                        observation["values"],
+                    )
+                    if (
+                        operation not in DEPENDENCY_OPERATIONS.get(component, ())
+                        or outcome not in ("success", "error", "cancelled")
+                        or len(values) != len(DEPENDENCY_BUCKETS) + 1
+                        or any(
+                            not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0
+                            for value in values
+                        )
+                        or values[:-1] != sorted(values[:-1])
+                    ):
+                        raise ValueError("invalid dependency histogram")
+                    key = (role, component, operation, outcome)
+                    previous = dependencies.setdefault(key, [0.0] * len(values))
+                    for index, value in enumerate(values):
+                        previous[index] += value
                 if alive:
                     live[role] = live.get(role, 0) + 1
                     ages[role] = max(ages.get(role, 0), max(0, time.time() - data["updated_at"]))
@@ -64,6 +87,21 @@ class RuntimeCollector:
                 if item.split(":")[0] == name:
                     family.add_metric([role, *item.split(":")[1:]], value)
             yield family
+        family = HistogramMetricFamily(
+            "rapidkit_dependency_duration_seconds",
+            "Dependency wall time, including SDK retries",
+            labels=["service", "component", "operation", "outcome"],
+        )
+        for labels, values in dependencies.items():
+            family.add_metric(
+                list(labels),
+                buckets=[
+                    ("+Inf" if math.isinf(bound) else str(bound), value)
+                    for bound, value in zip(DEPENDENCY_BUCKETS, values[:-1], strict=True)
+                ],
+                sum_value=values[-1],
+            )
+        yield family
         for name in ("audit_fallback", "log_blocked", "component_degraded", "background_running"):
             component_metric = name in ("component_degraded", "background_running")
             family = GaugeMetricFamily(

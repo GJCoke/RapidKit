@@ -30,13 +30,16 @@
     "gen:permission-codes": "uv run --directory apps/backend python scripts/export_permission_catalog.py",
     "check:permission-codes": "uv run --directory apps/backend python scripts/export_permission_catalog.py --check",
     "report:permission-codes": "uv run --directory apps/backend python scripts/export_permission_catalog.py --report-unused",
-    "report:unscoped": "uv run --directory apps/backend python scripts/report_unscoped.py"
+    "report:unscoped": "uv run --directory apps/backend python scripts/report_unscoped.py",
+    "test:observability:browser": "node scripts/test-browser-observability.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
     "@commitlint/types": "^20.5.0",
+    "@jridgewell/trace-mapping": "^0.3.31",
+    "@sentry/vite-plugin": "^11.10.0",
     "@types/node": "^25.5.2",
     "@vitejs/plugin-vue": "^6.0.5",
     "depcheck": "^1.4.7",
@@ -44,9 +47,11 @@
     "openapi-typescript": "^7.13.0",
     "oxfmt": "^0.45.0",
     "oxlint": "^1.0.0",
+    "playwright-core": "^1.64.1",
     "tsx": "^4.21.0",
     "turbo": "^2.9.4",
     "typescript": "^6.0.2",
+    "vite": "^8.0.7",
     "vue": "^3.5.32"
   },
   "engines": {

@@ -1,5 +1,9 @@
 import { ref, onUnmounted, Ref } from "vue"
 import { io, type Socket, type ManagerOptions, type SocketOptions } from "socket.io-client"
+import { safeRequestId } from "@rapidkit/utils"
+import { captureBrowserError } from "@/observability"
+import { diagnosticMessage } from "@/utils/diagnostic-message"
+import { $t } from "@/locales"
 
 export interface Options {
   url: string
@@ -69,6 +73,16 @@ export function useSocket(): Result {
     instance.on("connect_error", (err) => {
       isConnecting.value = false
       onError?.(err)
+    })
+
+    instance.on("diagnostic:error", (payload: unknown) => {
+      const requestId =
+        payload && typeof payload === "object"
+          ? safeRequestId((payload as { requestId?: unknown }).requestId)
+          : undefined
+      if (!requestId) return
+      captureBrowserError(new Error("Socket operation failed"), "socket", requestId)
+      window.$message?.error(diagnosticMessage($t("request.serverError"), requestId))
     })
 
     socket.value = instance

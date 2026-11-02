@@ -282,3 +282,4 @@ backup.dump.gz
 .superpowers/
 /docs/superpowers/
 .worktrees/
+**/.sentry-artifacts/

@@ -33,5 +33,6 @@ test("renders a recoverable route error instead of a blank screen", async () => 
   expect(await screen.findByRole("alert")).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "重试" })).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "返回首页" })).toBeInTheDocument()
-  expect(screen.getByText("Error")).toBeInTheDocument()
+  expect(screen.queryByText("Error")).not.toBeInTheDocument()
+  expect(screen.queryByText("render failed")).not.toBeInTheDocument()
 })

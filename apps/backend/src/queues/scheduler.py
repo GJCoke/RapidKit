@@ -18,8 +18,10 @@ from kombu import Producer
 from plugin_schedule.models import CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
 from plugin_schedule.schedule_types import TaskType
 from rapidkit_core.config import settings
+from rapidkit_core.database_observation import ObservedAsyncPool, instrument_sql
 from rapidkit_core.leader_election import LeaderElection
 from rapidkit_core.log import logger
+from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_core.timezone import timezone
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
@@ -221,9 +223,10 @@ class AsyncDatabaseScheduler(Scheduler):
 
     async def _initialize(self) -> None:
         # All loop-bound resources are created and closed on this continuously running loop.
-        self._engine = create_async_engine(self._database_url)
+        self._engine = create_async_engine(self._database_url, hide_parameters=True, poolclass=ObservedAsyncPool)
+        instrument_sql(self._engine.sync_engine)
         self.AsyncSessionLocal = async_sessionmaker(self._engine, class_=AsyncSession, expire_on_commit=False)
-        self._redis = Redis.from_url(str(settings.REDIS_URL))
+        self._redis = AsyncRedisClient.from_url(str(settings.REDIS_URL))
         self._leader = LeaderElection(self._redis, "leader:celery-beat", ttl=15, renew_interval=5.0)
         await self._leader.start()
 

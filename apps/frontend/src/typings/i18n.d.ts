@@ -1885,15 +1885,19 @@ declare namespace I18nKeys {
     | "socketio.instrument.usernamePlaceholder"
 
   type request =
+    | "copyRequestId"
     | "impersonationStopFirst"
     | "logout"
     | "logoutMsg"
     | "logoutUnconfirmed"
     | "logoutWithModal"
     | "logoutWithModalMsg"
+    | "networkError"
     | "permissionChanged"
     | "permissionChangedMsg"
     | "refreshToken"
+    | "requestId"
+    | "serverError"
     | "tokenExpired"
 
   type route =

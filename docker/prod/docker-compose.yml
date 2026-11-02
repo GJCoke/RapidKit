@@ -218,12 +218,18 @@ services:
     environment:
       MAX_REQUEST_BODY_BYTES: ${MAX_REQUEST_BODY_BYTES:-10485760}
       SECURITY_HSTS_ENABLED: ${SECURITY_HSTS_ENABLED:-false}
+      SENTRY_CONNECT_SRC: ${SENTRY_CONNECT_SRC:-}
     build:
       context: ../..
       dockerfile: docker/frontend/Dockerfile
       args:
         REGISTRY_PREFIX: ${REGISTRY_PREFIX:-}
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+        SENTRY_ORG: ${SENTRY_ORG:-}
+        SENTRY_PROJECT: ${SENTRY_PROJECT:-}
+        SENTRY_URL: ${SENTRY_URL:-}
     container_name: rapidkit-prod-nginx
     ports:
       - "18080:80"

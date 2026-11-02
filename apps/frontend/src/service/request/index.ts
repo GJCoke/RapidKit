@@ -1,6 +1,8 @@
 /* oxlint-disable @typescript-eslint/no-explicit-any */
 import type { AxiosResponse } from "@rapidkit/axios"
 import { BACKEND_ERROR_CODE, CanceledError, createFlatRequest } from "@rapidkit/axios"
+import { requestIdFromHeaders, shouldReportRequestFailure } from "@rapidkit/utils"
+import { captureBrowserError } from "@/observability"
 import { useAuthStore } from "@/store/modules/auth"
 import { localStg } from "@/utils/storage"
 import { getServiceBaseURL } from "@/utils/service"
@@ -142,18 +144,23 @@ export const request = createFlatRequest(
       const config = error.config as (typeof error.config & { authSession?: number }) | undefined
       if (error.code === "ERR_CANCELED") return
       if (config?.authSession !== undefined && config.authSession !== getAuthSession()) return
+      const requestId = requestIdFromHeaders(error.response?.headers)
+      if (shouldReportRequestFailure(error)) captureBrowserError(error, "request", requestId)
       if (error.response?.status === 401 && localStg.get("impersonation")) {
         if (!isImpersonationStop(config)) await useAuthStore().stopImpersonation()
         return
       }
       // when the request is fail, you can show error message
 
-      let message = error.message
+      let message = error.response ? $t("request.serverError") : $t("request.networkError")
       let backendErrorCode = ""
 
       // get backend error message and code
       if (error.code === BACKEND_ERROR_CODE) {
-        message = error.response?.data?.message || message
+        message =
+          (error.response?.status ?? 0) >= 500 || Number(error.response?.data?.code) === 7001
+            ? $t("request.serverError")
+            : error.response?.data?.message || message
         backendErrorCode = String(error.response?.data?.code || "")
       }
 
@@ -173,7 +180,7 @@ export const request = createFlatRequest(
         return
       }
 
-      showErrorMsg(request.state, message)
+      showErrorMsg(request.state, message, requestId)
     },
   },
 )
