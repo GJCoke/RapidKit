@@ -119,6 +119,11 @@ Subagent (general-purpose):
     - The same check repeated inside the entry boundary, or handling for a
       rare case nobody approved?
 
+    **Logging and audit (RapidKit backend):**
+    - Each new write route has an `AUDIT_ROUTES` entry (`AuditActionDef` or `None`)?
+    - No log-and-re-raise, no INFO log duplicating an audited change, no
+      `bind()` key outside the `_FIELDS` allow-list, nothing sensitive logged?
+
     **Production readiness:**
     - Migration strategy if schema changed?
     - Backward compatibility considered?

@@ -147,6 +147,9 @@ Subagent (general-purpose):
     - noise: comments that restate the code
     - over-defense: handling for a rare case nobody approved, or the same
       check repeated inside the entry boundary
+    - logging (RapidKit backend): a new write route without an
+      `AUDIT_ROUTES` entry, log-and-re-raise, an INFO log duplicating an
+      audited change, or a `bind()` key outside the `_FIELDS` allow-list
 
     Your report should point at evidence: file:line references for every
     finding and for any check you would otherwise answer with a bare

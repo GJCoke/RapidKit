@@ -282,6 +282,10 @@ async def create_item(
     return Response(data=await service.create(body))
 ```
 
+### Business Audit
+
+Every new POST/PUT/PATCH/DELETE route needs an entry in the plugin's `AUDIT_ROUTES` (`audit.py`), keyed by the endpoint function name: an `AuditActionDef` to audit it, or `None` to exclude it explicitly. `bind_audit_routes` skips undeclared routes silently, so a missing entry means a missing audit. Return the definitions through `audit_actions` in the manifest. Follow `apps/backend/plugins/user/src/plugin_user/audit.py`; add the `audit.*` i18n keys it references to `apps/backend/src/locales/langs/{zh-CN,en-US}/audit.json`.
+
 ## Celery Tasks
 
 Follow `rapidkit-celery-task`.
@@ -296,7 +300,7 @@ Follow the Timezone Rules in `rapidkit-conventions`. Store naive UTC with `timez
 
 Follow the Logging Rules in `rapidkit-conventions`, plus:
 
-- ALWAYS log state changes (create/update/delete) at INFO or WARNING level
+- Do not log API create/update/delete as INFO: the business audit records them. Log state changes that no audited route covers (background jobs, external calls, scheduled cleanup) at INFO, and degradation or recovery at WARNING
 - NEVER log query/read operations (too noisy, handled by LoggerMiddleware at API level)
 - Security-sensitive logs (login, permission changes, user deletion) include `user_id`
 

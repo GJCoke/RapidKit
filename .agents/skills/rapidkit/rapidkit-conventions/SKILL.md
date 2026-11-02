@@ -87,6 +87,13 @@ from rapidkit_core.log import logger
 - NEVER log passwords, tokens, or PII
 - Log levels: INFO for business events, WARNING for security events, DEBUG for diagnostics
 
+The full logging design is in `apps/website/src/backend/logging.md`. The rules an agent most often misses:
+
+- **Three channels.** Who changed what through an API is the business audit (`AUDIT_ROUTES` in the plugin's `audit.py`; see `rapidkit-backend-design`). Runtime logs are for diagnosis. Counts and rates are metrics. Do not duplicate an audited API change as an INFO log.
+- **Only allow-listed fields reach the JSON log.** `_FIELDS` in `packages/core/src/rapidkit_core/log.py` lists them; any other `bind()` key or keyword argument is dropped. Put values in the message through `{}` placeholders. For a structured event, use `logger.bind(event="<domain>.<action>")` (e.g. `component.degraded`, `task.event.gap`) and only allow-listed keys.
+- **Exceptions.** Use `logger.opt(exception=True)` or `logger.exception()` only where you handle the error and do not re-raise it. Unhandled errors are already recorded at the entry (`http.request.completed`, Sentry); never log and re-raise.
+- **Never log** request bodies, URL query strings, task arguments or return values, or third-party error text that may carry credentials.
+
 ## Timezone Rules
 
 ```python
