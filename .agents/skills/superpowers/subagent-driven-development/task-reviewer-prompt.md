@@ -170,7 +170,8 @@ Subagent (general-purpose):
     defect (a test that asserts nothing, verbatim duplication of a logic
     block), that IS a finding — report it as Important, labeled
     plan-mandated. The plan's authorship does not grade its own work; the
-    human decides.
+    controller rules on it, and the ruling reaches the human in the final
+    report.
     Lean findings this change introduced — an abstraction with one
     implementation, a pass-through wrapper, an option or config nobody sets,
     re-implementing an existing helper, over-defense — are Important, not Minor.

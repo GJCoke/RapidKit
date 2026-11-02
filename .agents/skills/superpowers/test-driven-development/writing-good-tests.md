@@ -156,14 +156,15 @@ process costs maintenance forever.
 
 ## The Mutation Check
 
-Before finishing, mentally mutate the production code; at least one test
-should fail for each realistic mutation:
+Before finishing, mentally mutate the risky logic (branches, parsers,
+permission checks, data writes, bug fixes); at least one test should fail
+for each realistic mutation:
 
 - Wrong constant or argument
 - Wrong branch handler
 - Missing state change or side effect
 - Empty or default return
-- Missing validation for zero, empty, nil, unauthorized, or malformed input
+- Missing validation of external input at the entry boundary (zero, empty, nil, unauthorized, malformed)
 
 A mutation nothing catches marks the behavior as unprotected — or the
 test as tautological.

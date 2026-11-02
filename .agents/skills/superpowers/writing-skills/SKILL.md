@@ -664,7 +664,7 @@ Deploying untested skills = deploying untested code. It's a violation of quality
 - [ ] Supporting files only for tools or heavy reference
 
 **Deployment:**
-- [ ] Commit skill to git and push to your fork (if configured)
+- [ ] Commit the skill's explicit paths after validation; push only when your human partner asks
 - [ ] Consider contributing back via PR (if broadly useful)
 
 ## Discovery Workflow

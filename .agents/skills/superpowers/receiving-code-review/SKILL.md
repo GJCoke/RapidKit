@@ -97,6 +97,17 @@ IF reviewer suggests "implementing properly":
 
 **your human partner's rule:** "You and reviewer both report to me. If we don't need this feature, don't add it."
 
+## Lean Check for Defensive Suggestions
+
+```
+IF reviewer suggests handling a rare boundary/race/concurrency case,
+   re-validating data inside the entry boundary, adding try/catch,
+   or extracting a helper with one caller:
+  Do not implement it yet.
+  State the case and how likely it is, and ask your human partner.
+  Implement only after they approve (Lean Code Rules in rapidkit-conventions).
+```
+
 ## Implementation Order
 
 ```

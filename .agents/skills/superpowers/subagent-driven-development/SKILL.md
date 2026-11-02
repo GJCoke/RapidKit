@@ -46,6 +46,11 @@ that norms say you ask about first (a merge, a push to a shared branch, a
 publish); and a plan so broken that every path forward is a guess. For those,
 stop and ask.
 
+**Rare cases wait for approval.** Handling for a rare boundary, race or
+concurrency case that the plan does not name is not built on a ruling
+(Lean Code Rules in `rapidkit-conventions`). Do not stop for it either:
+ledger it as `Needs approval: <case> — <how likely>` and keep going.
+
 ## When to Use
 
 ```dot
@@ -495,8 +500,10 @@ finishing-a-development-branch presents the options.
 Before you delete anything, collect every ledger line containing `Ruling:` —
 preflight rulings, parked findings, breaker adjudications, all of them — into
 your final message under "Rulings I made", in the order you made them, each
-with what it costs if wrong. The list is exhaustive: if the ledger holds a
-ruling, the list holds it. That list is the only place the decisions you
+with what it costs if wrong, and every `Needs approval:` line under "Needs
+your approval". Open the message with the conclusion, then what your human
+partner must approve (Document Writing Rules). The lists are exhaustive: if
+the ledger holds a ruling, the list holds it. That list is the only place the decisions you
 took on your human partner's behalf reach them — they read it and rework
 whatever you got wrong. A ruling that dies with the workspace was a decision
 made in secret.

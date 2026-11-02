@@ -183,7 +183,7 @@ The canonical repository-wide policy is `AGENTS.md` at the repository root. Read
 
 - Work in the current checkout; create a worktree only when the user asks for one. On a non-`main`/`master` branch, keep working on it. On `main`/`master`, a simple task (no design/plan, 1–2 files, no migration, no API or permission change) may be done in place; any other task first creates a `<type>/<slug>` branch in place with `git switch -c` (`feature`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`; e.g. `feature/login`), preserving existing work.
 - After validation, implementation changes may be committed automatically using explicit task-owned paths or hunks; exclude unrelated pre-existing changes.
-- Never stage or commit design documents, specifications or implementation plans, including `docs/superpowers/specs/` and `docs/superpowers/plans/`.
+- Never stage or commit design documents, specifications or implementation plans, nor anything else under `docs/superpowers/`.
 - Do not push, merge or rewrite history without explicit user authorization. If branch setup is blocked, do not fall back to `main`/`master` or a detached HEAD.
 
 These rules override incompatible Git steps in generic workflow skills.

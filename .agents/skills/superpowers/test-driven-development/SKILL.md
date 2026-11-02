@@ -288,20 +288,20 @@ PASS
 ```
 
 **REFACTOR**
-Extract validation for multiple fields if needed.
+Keep the validation inline until a second real caller exists.
 
 ## Verification Checklist
 
 Before marking work complete:
 
-- [ ] Every new function/method has a test
+- [ ] Each piece of risky logic (branch, parser, permission check, data write, bug fix) has a test that fails when it breaks
 - [ ] Watched each test fail before implementing
 - [ ] Each test failed for expected reason (feature missing, not typo)
 - [ ] Wrote minimal code to pass each test
 - [ ] All tests pass
 - [ ] Output pristine (no errors, warnings)
 - [ ] Tests use real code (mocks only if unavoidable)
-- [ ] Edge cases and errors covered
+- [ ] Edge cases the task names are covered; rare ones were raised with the user, not tested speculatively
 
 Can't check all boxes? You skipped TDD. Start over.
 

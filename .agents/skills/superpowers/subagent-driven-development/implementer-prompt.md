@@ -35,7 +35,9 @@ Subagent (general-purpose):
     1. Implement exactly what the task specifies
     2. Write tests (following TDD if task says to)
     3. Verify implementation works
-    4. Commit your work
+    4. Commit your work: stage explicit task-owned paths only (never
+       `git add .`, `git add -A` or `git commit -a`), nothing under
+       `docs/superpowers/`, and never push
     5. Self-review (see below)
     6. Report back
 
@@ -87,7 +89,8 @@ Subagent (general-purpose):
       or permission checks.
     - No over-defense: do not add handling for a rare boundary, race or concurrency
       case the task does not name. Report it with its likelihood as
-      DONE_WITH_CONCERNS instead.
+      DONE_WITH_CONCERNS instead; the controller ledgers it as
+      `Needs approval:`.
     - Validate external data once at the entry. Inside, trust the types; do not
       repeat checks in each layer.
     - No `try/catch` unless it recovers, translates the error at a boundary or

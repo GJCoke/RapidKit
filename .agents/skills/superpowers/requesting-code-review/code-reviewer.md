@@ -104,7 +104,7 @@ Subagent (general-purpose):
 
     **Testing:**
     - Tests verify real behavior, not mocks?
-    - Edge cases covered?
+    - Risky logic has a test that fails when it breaks?
     - Integration tests where they matter?
     - All tests passing?
 
@@ -143,6 +143,12 @@ Subagent (general-purpose):
 
     ## Output Format
 
+    ### Assessment
+
+    **Ready to merge?** [Yes | No | With fixes]
+
+    **Reasoning:** [1-2 sentence technical assessment]
+
     ### Strengths
     [What's well done? Be specific.]
 
@@ -164,13 +170,8 @@ Subagent (general-purpose):
     - How to fix (if not obvious)
 
     ### Recommendations
-    [Improvements for code quality, architecture, or process]
-
-    ### Assessment
-
-    **Ready to merge?** [Yes | No | With fixes]
-
-    **Reasoning:** [1-2 sentence technical assessment]
+    [Code or tests to delete or simplify. No new features or options
+    nobody asked for.]
 
     ## Critical Rules
 
@@ -198,42 +199,39 @@ Subagent (general-purpose):
 - `[REVIEW_FOCUS]` — the plan's Review Focus section verbatim, or "none"
 - `[LEDGER_RULINGS]` — the ledger's `Ruling:`, parked and `minor (deferred)` lines, or "none"
 
-**Reviewer returns:** Strengths, Issues (Critical / Important / Minor), Recommendations, Assessment
+**Reviewer returns:** Assessment, Strengths, Issues (Critical / Important / Minor), Recommendations
 
 ## Example Output
 
 ```
-### Strengths
-- Clean database schema with proper migrations (db.ts:15-42)
-- Comprehensive test coverage (18 tests, all edge cases)
-- Good error handling with fallbacks (summarizer.ts:85-92)
-
-### Issues
-
-#### Important
-1. **Missing help text in CLI wrapper**
-   - File: index-conversations:1-31
-   - Issue: No --help flag, users won't discover --concurrency
-   - Fix: Add --help case with usage examples
-
-2. **Date validation missing**
-   - File: search.ts:25-27
-   - Issue: Invalid dates silently return no results
-   - Fix: Validate ISO format, throw error with example
-
-#### Minor
-1. **Progress indicators**
-   - File: indexer.ts:130
-   - Issue: No "X of Y" counter for long operations
-   - Impact: Users don't know how long to wait
-
-### Recommendations
-- Add progress reporting for user experience
-- Consider config file for excluded projects (portability)
-
 ### Assessment
 
 **Ready to merge: With fixes**
 
-**Reasoning:** Core implementation is solid with good architecture and tests. Important issues (help text, date validation) are easily fixed and don't affect core functionality.
+**Reasoning:** The indexer and search work and the tests exercise real behavior. One Important bug (invalid dates) and one Lean finding must be fixed first.
+
+### Strengths
+- Clean database schema with proper migrations (db.ts:15-42)
+- Date filter and parser tests fail when the logic breaks (search.test.ts:10-48)
+
+### Issues
+
+#### Important
+1. **Invalid dates silently return no results**
+   - File: search.ts:25-27
+   - Issue: `--since 2024-13-01` returns an empty list instead of an error. The CLI argument is the entry boundary.
+   - Fix: Validate the ISO date once where the argument is parsed; throw with an example.
+
+2. **Wrapper with one caller**
+   - File: summarizer.ts:85-92
+   - Issue: `safeSummarize()` only wraps `summarize()` in try/catch and logs. It hides the error from the caller.
+   - Fix: Delete the wrapper and call `summarize()` directly.
+
+#### Minor
+1. **Comment restates the code**
+   - File: indexer.ts:130
+   - Fix: Delete it.
+
+### Recommendations
+- Delete `formatLegacy()` (indexer.ts:200-215); nothing calls it.
 ```

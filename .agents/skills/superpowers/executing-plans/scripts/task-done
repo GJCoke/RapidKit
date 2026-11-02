@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Close one task of an inline plan execution in a single call: run the task's
-# test command, keep its full output in the workspace, print the tail, and —
+# test command, keep its full output under logs/verification/, print the tail, and —
 # only if the command succeeded — append the completion line to the ledger.
 # A failing command records nothing: the task is not complete.
 #
@@ -23,7 +23,9 @@ sdd="$(cd "$(dirname "$0")/../../subagent-driven-development/scripts" && pwd)"
 git rev-parse --verify --quiet "$base" >/dev/null || { echo "bad BASE: $base" >&2; exit 2; }
 
 dir=$("$sdd/sdd-workspace" "$plan")
-log="$dir/task-${n}-tests.log"
+logs="$(git rev-parse --show-toplevel)/logs/verification"
+mkdir -p "$logs"
+log="$logs/$(basename "$dir")-task-${n}-tests.log"
 ledger="$dir/progress.md"
 
 # Render the command the way a person would type it, for the ledger line.

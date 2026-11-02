@@ -109,7 +109,7 @@ Step 1 for how each skill uses these signals.
 ## Codex App Finishing
 
 When the sandbox blocks branch/push operations (detached HEAD in an
-externally managed worktree), the agent commits all work and informs
+externally managed worktree), the agent commits its explicit task-owned paths and informs
 the user to use the App's native controls:
 
 - **"Create branch"** — names the branch, then commit/push/PR via App UI

@@ -19,9 +19,9 @@ precedence over this skill:
   partner's explicit choice.
 - Keep the task branch (and its worktree, if one was requested) by default.
 - `docs/superpowers/` is git-ignored, so `git worktree remove` deletes it
-  silently. Before removing a worktree, list its `docs/superpowers/` files
-  and ask your human partner whether to copy them back to the main
-  checkout or discard them.
+  silently. A request to remove or clean up a worktree already authorizes
+  discarding those files (`AGENTS.md`): list them in your report, then
+  remove the worktree without a separate copy-or-discard question.
 - Before any commit, merge or PR, confirm nothing under
   `docs/superpowers/` is staged or included; specs, plans and every other
   file there stay local. Stage only explicit task-owned paths, never
@@ -98,8 +98,9 @@ Implementation complete. You're on a detached HEAD (externally managed workspace
 Which option?
 ```
 
-Present the menu exactly as written — concise, with every option coming
-from the list above. Discarding the work happens only in response to your
+Present these options and no others. Word the message in Chinese by the
+Document Writing Rules: the conclusion first, then the choice your human
+partner must make. Discarding the work happens only in response to your
 human partner explicitly asking for it (see "If your human partner asks to
 discard the work" below). Wait for their answer; the integration decision
 is theirs.
@@ -126,8 +127,9 @@ If tests fail on the merged result: stop, leave the worktree and branch in
 place, and investigate — nothing has been pushed, so the merge is local
 and recoverable.
 
-Once the merged result is green: clean up the worktree (Step 6), then
-delete the branch:
+Once the merged result is green, report it. Keep the feature branch and
+worktree. Only if your human partner also asked to delete them, clean up
+the worktree (Step 6) and delete the branch:
 
 ```bash
 git branch -d <feature-branch>
@@ -181,7 +183,7 @@ git branch -D <feature-branch>
 
 ## Step 6: Cleanup Workspace
 
-**Runs for Option 1 and confirmed discards.** Options 2 and 3 always
+**Runs only when your human partner asked to delete the worktree (after Option 1) and for confirmed discards.** Options 2 and 3 always
 preserve the worktree. Both callers have already changed directory to the
 main repo root — worktree removal must run from outside the worktree —
 and use the `GIT_DIR`/`GIT_COMMON`/`WORKTREE_PATH` values captured in
@@ -190,10 +192,10 @@ Step 2, from before that directory change.
 **If `GIT_DIR == GIT_COMMON`:** Normal repo, no worktree to clean up. Done.
 
 **If `WORKTREE_PATH` is under `.worktrees/` or `worktrees/`:** Superpowers
-created this worktree — we own cleanup. In RapidKit, first check
-`ls -R "$WORKTREE_PATH/docs/superpowers" 2>/dev/null`; if anything is
-there, ask whether to copy it to the main checkout or discard it, and
-carry out the choice before removing:
+created this worktree — we own cleanup. In RapidKit, first run
+`ls -R "$WORKTREE_PATH/docs/superpowers" 2>/dev/null` and list any files
+in your report; the removal request already authorizes discarding them.
+Then remove:
 
 ```bash
 git worktree remove "$WORKTREE_PATH"
@@ -230,7 +232,7 @@ place. If your platform provides a workspace-exit tool, use it.
 
 | Option | Merge | Push | Keep Worktree | Cleanup Branch |
 |--------|-------|------|---------------|----------------|
-| 1. Merge locally | yes | - | - | yes |
+| 1. Merge locally | yes | - | yes (unless asked) | only on request |
 | 2. Create PR | - | yes | yes | - |
 | 3. Keep as-is | - | - | yes | - |
 | Discard (explicit request only) | - | - | - | yes (force) |

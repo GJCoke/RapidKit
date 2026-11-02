@@ -42,6 +42,11 @@ that norms say you ask about first (a merge, a push to a shared branch, a
 publish); and a plan so broken that every path forward is a guess. For
 those, stop and ask.
 
+**Rare cases wait for approval.** Handling for a rare boundary, race or
+concurrency case that the plan does not name is not built on a ruling
+(Lean Code Rules in `rapidkit-conventions`). Do not stop for it either:
+ledger it as `Needs approval: <case> — <how likely>` and keep going.
+
 ## RapidKit Repository Rules
 
 These rules override the generic workflow below wherever they conflict.
@@ -204,7 +209,7 @@ its brief, not here.
 
 Everything you print, and every tool result, stays resident in your
 context for the rest of the session. Redirect long test output to a file
-in the workspace and read its tail; read a brief, not the whole plan.
+under `logs/verification/` and read its tail; read a brief, not the whole plan.
 
 ### 1. Take the task
 
@@ -263,7 +268,7 @@ the claim. If any item is missing, the task is not complete: finish it.
 
 Run this skill's `scripts/task-done PLAN_FILE N BASE -- <test command>`
 with the test command the brief names for the whole task. It runs the
-tests, keeps the full output in the workspace, prints the tail, and — only
+tests, keeps the full output under `logs/verification/`, prints the tail, and — only
 if they pass — appends the completion line to the ledger:
 
 `Task <N>: complete (commits <base7>..<head7>, tests: <command> → <result>)`
@@ -308,7 +313,9 @@ person using this software gets if it ships, not whether the spec names
 the input that triggers it — a reviewer who set a finding at Minor
 because the spec was silent has graded the spec, not the effect. Then:
 
-- **Critical and Important** enter the fix pass.
+- **Critical and Important** enter the fix pass, except handling for a
+  rare boundary, race or concurrency case: ledger that as
+  `Final: Needs approval: <case> — <how likely>` instead.
 - **Minor** goes to the ledger as `Final: minor (deferred): <one-liner>`
   and to your final message under "Deferred minors". Minors never enter
   the fix pass, and never become rulings — a ruling is a decision about a
@@ -332,8 +339,11 @@ in the rulings list. There is no second fix pass.
 
 Before you delete anything, collect every ledger line containing
 `Ruling:` into your final message under "Rulings I made", in the order you
-made them, each with what it costs if wrong, and every `minor (deferred)`
-line under "Deferred minors". Both lists are exhaustive. Your final
+made them, each with what it costs if wrong, every `minor (deferred)`
+line under "Deferred minors", and every `Needs approval:` line under
+"Needs your approval". All three lists are exhaustive. Open the message
+with the conclusion, then what your human partner must approve
+(Document Writing Rules). Your final
 message is the only place the decisions you took on your human partner's
 behalf — and the findings you chose not to act on — reach them.
 
