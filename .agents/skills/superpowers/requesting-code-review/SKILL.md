@@ -42,7 +42,7 @@ verdict, the second names the fixes or decisions they must approve.
 
 **1. Get git SHAs:**
 ```bash
-BASE_SHA=$(git rev-parse HEAD~1)  # or: git merge-base origin/main HEAD
+BASE_SHA=<commit recorded before the work started>  # or: git merge-base main HEAD; never HEAD~1
 HEAD_SHA=$(git rev-parse HEAD)
 ```
 
@@ -69,7 +69,7 @@ Dispatch a `general-purpose` subagent, filling the template at [code-reviewer.md
 
 You: Let me request code review before proceeding.
 
-BASE_SHA=$(git log --oneline | grep "Task 1" | head -1 | cut -d' ' -f1)
+BASE_SHA=a7981ec  # recorded before Task 2 started
 HEAD_SHA=$(git rev-parse HEAD)
 
 [Dispatch code reviewer subagent]

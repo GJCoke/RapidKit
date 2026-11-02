@@ -241,7 +241,7 @@ read its output, and compare. Three outcomes:
 - **The plan is wrong** — a step contradicts the spec, an interface from an
   earlier task doesn't match what this task consumes, a command that
   cannot work. Rule on the smallest change that satisfies the spec, ledger
-  it as `Task <N>: Ruling: <finding> — <what you decided and why>`, and
+  it as `Task <N>: Ruling: <finding> — <what you decided and why> — <cost if wrong>`, and
   continue. The ruling is carried, not remembered: later tasks that touch
   the same interface read it from the ledger.
 
@@ -382,7 +382,7 @@ You: I'm using the executing-plans skill to implement this plan inline.
 [Setup: AGENTS.md + rapidkit-conventions + domain skills read; was on main, created branch feature/login in place]
 [Read plan once: docs/superpowers/plans/feature-plan.md; spec read]
 [Resolve workspace: sdd-workspace docs/superpowers/plans/feature-plan.md — no ledger inside, fresh start]
-[Pre-flight scan: 2 shared-interface rows, 4 self-consistency rows, clean; written to ledger]
+[Pre-flight scan: 2 shared-interface rows, clean; written to ledger]
 [Create todos for all tasks]
 
 Task 1: Hook installation script
