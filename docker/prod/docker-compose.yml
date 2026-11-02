@@ -1,9 +1,25 @@
 name: rapidkit-prod
 
+x-runtime-logging: &runtime-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+    mode: non-blocking
+    max-buffer-size: "1m"
+
+x-backend-environment: &backend-environment
+  RAPIDKIT_BASE_PATH: /app
+  RUNTIME_STATE_DIR: /tmp/rapidkit-runtime
+  LOG_JSON: ${LOG_JSON:-true}
+  LOG_FILE_BUDGET_BYTES: ${LOG_FILE_BUDGET_BYTES:-5368709120}
+  LOG_FILE_MIN_FREE_BYTES: ${LOG_FILE_MIN_FREE_BYTES:-67108864}
+
 services:
   # ==================== Infrastructure ====================
 
   postgresql:
+    logging: *runtime-logging
     image: ${REGISTRY_PREFIX:-}bitnami/postgresql
     container_name: rapidkit-prod-postgresql
     env_file: ${RAPIDKIT_ENV_FILE:-.env.prod}
@@ -17,6 +33,7 @@ services:
     restart: unless-stopped
 
   redis:
+    logging: *runtime-logging
     image: ${REGISTRY_PREFIX:-}redis:7-alpine
     container_name: rapidkit-prod-redis
     env_file: ${RAPIDKIT_ENV_FILE:-.env.prod}
@@ -31,6 +48,7 @@ services:
     restart: unless-stopped
 
   minio:
+    logging: *runtime-logging
     image: rapidkit-minio:RELEASE.2025-10-15T17-29-55Z
     build:
       context: ../..
@@ -52,7 +70,16 @@ services:
   # ==================== Backend ====================
 
   backend-api:
+    logging: *runtime-logging
+    volumes:
+      - type: bind
+        source: ${RAPIDKIT_LOG_ROOT:-/var/lib/rapidkit/logs}/api
+        target: /app/logs
+        bind:
+          create_host_path: false
     environment:
+      <<: *backend-environment
+      RAPIDKIT_SERVICE_ROLE: api
       PROMETHEUS_MULTIPROC_DIR: /tmp/rapidkit-prometheus
     image: rapidkit-backend:prod
     build: &backend-build
@@ -82,6 +109,16 @@ services:
     restart: unless-stopped
 
   backend-migrate:
+    logging: *runtime-logging
+    environment:
+      <<: *backend-environment
+      RAPIDKIT_SERVICE_ROLE: migrate
+    volumes:
+      - type: bind
+        source: ${RAPIDKIT_LOG_ROOT:-/var/lib/rapidkit/logs}/migrate
+        target: /app/logs
+        bind:
+          create_host_path: false
     image: rapidkit-backend:prod
     build: *backend-build
     command: ["sh", "scripts/alembic/migrate.sh"]
@@ -94,10 +131,19 @@ services:
     restart: "no"
 
   celery-worker:
+    logging: *runtime-logging
+    volumes:
+      - type: bind
+        source: ${RAPIDKIT_LOG_ROOT:-/var/lib/rapidkit/logs}/worker
+        target: /app/logs
+        bind:
+          create_host_path: false
     image: rapidkit-backend:prod
     build: *backend-build
     command: ["python", "-m", "plugin_worker.launcher"]
     environment:
+      <<: *backend-environment
+      RAPIDKIT_SERVICE_ROLE: worker
       CELERY_WORKER_GROUP: ${CELERY_WORKER_GROUP:-prod/default}
       CELERY_WORKER_DEPLOYMENT: ${CELERY_WORKER_DEPLOYMENT:-}
     deploy:
@@ -114,6 +160,16 @@ services:
     restart: unless-stopped
 
   celery-beat:
+    logging: *runtime-logging
+    environment:
+      <<: *backend-environment
+      RAPIDKIT_SERVICE_ROLE: beat
+    volumes:
+      - type: bind
+        source: ${RAPIDKIT_LOG_ROOT:-/var/lib/rapidkit/logs}/beat
+        target: /app/logs
+        bind:
+          create_host_path: false
     image: rapidkit-backend:prod
     build: *backend-build
     container_name: rapidkit-prod-celery-beat
@@ -128,9 +184,37 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  observability:
+    image: rapidkit-backend:prod
+    build: *backend-build
+    container_name: rapidkit-prod-observability
+    command: ["python", "-m", "src.ops.exporter"]
+    logging: *runtime-logging
+    env_file: ${RAPIDKIT_ENV_FILE:-.env.prod}
+    environment:
+      RAPIDKIT_BASE_PATH: /app
+      OBSERVABILITY_LOG_ROOT: /logs
+      OBSERVABILITY_INVENTORY: /inventory/inventory.json
+      LOG_FILE_BUDGET_BYTES: ${LOG_FILE_BUDGET_BYTES:-5368709120}
+    volumes:
+      - ${RAPIDKIT_LOG_ROOT:-/var/lib/rapidkit/logs}:/logs:ro
+      - ${RAPIDKIT_OBSERVABILITY_ROOT:-/var/lib/rapidkit/observability}:/inventory:ro
+    depends_on:
+      postgresql:
+        condition: service_started
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9009/metrics',timeout=3).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
   # ==================== Frontend + Nginx ====================
 
   nginx:
+    logging: *runtime-logging
     environment:
       MAX_REQUEST_BODY_BYTES: ${MAX_REQUEST_BODY_BYTES:-10485760}
       SECURITY_HSTS_ENABLED: ${SECURITY_HSTS_ENABLED:-false}

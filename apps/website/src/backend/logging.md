@@ -71,18 +71,21 @@ Sentry 上报同样去除认证头、请求体、URL query/fragment、局部变�
 | LOG_ERROR_FILENAME | error.log | 活动文件基础名 |
 | LOG_FILE_MAX_BYTES | 104857600 | 单个文件轮转阈值，默认 100 MiB |
 | LOG_FILE_RETENTION_DAYS | 7 | 归档和可确认退出的本机进程文件保存期 |
+| LOG_FILE_BUDGET_BYTES | 普通环境不设，生产 Compose 5 GiB/角色 | 同角色共享目录的普通文件日志总预算 |
+| LOG_FILE_MIN_FREE_BYTES | 67108864 | 写入后要求保留的文件系统空闲空间 |
+| RUNTIME_STATE_DIR | 普通环境不设，生产 `/tmp/rapidkit-runtime` | 与 Redis、运行日志目录独立的数值快照 |
 | SLOW_REQUEST_THRESHOLD_MS | 3000 | 慢请求 WARNING 阈值 |
 
-实际活动文件带 hostname.pid 后缀，例如 `access.host.123.log`；归档保留实例标识，例如 `access.host.123.2026-10-30.log`，同日冲突追加序号，不覆盖旧文件。轮转按进程本地日期和 UTF-8 大小判断，单条超大记录保留完整，不为满足轮转阈值静默截断。
+实际活动文件带 hostname.pid 后缀，例如 `access.host.123.log`；归档保留实例标识，例如 `access.host.123.2026-10-30.log`，同日冲突追加序号，不覆盖旧文件。轮转按进程本地日期和 UTF-8 大小判断，不截断单条记录；启用目录预算后，超过剩余预算的整条普通文件记录会被丢弃，并独立计数和报告。
 
 支持自定义相对路径与扩展名，按各基础文件所在目录清理。清理每小时最多扫描一次，启动强制执行；只处理匹配规则的普通文件，跳过符号链接、存活或无法确认存活的进程，以及远程 hostname 的未归档文件。`logs/verification/` 存放开发验证结果，排除在运行日志保留策略之外，不能提交。
 
-文件轮转不约束 Docker stdout 大小，容器内文件也不能抵抗容器删除。宿主机挂载、总容量预算、退出实例回收、集中采集和真实告警部署属于后续运维批次；单机目录也不能替代跨机备份。
+生产 Compose 按 api/worker/beat/migrate 角色挂载宿主机目录，Docker stdout 使用 20m×5 轮转。共享预算与宿主机维护覆盖退出实例日志；文件落盘失败不阻断业务，独立指标与 stderr 标记提示丢失。目录准备、首次迁移、集中采集去重与真实平台验收见[生产可观测性](./observability)。单机目录不能替代异机采集与备份。
 
 ## 指标与退化状态
 
 HTTP 完成日志、`rapidkit_http_requests_total` 和 Redis 端点统计从同一结果状态生成；HTTP 200 的业务失败计入错误。HTTP 5xx 与非零业务码保留各自统计，不重复写业务错误计数。`rapidkit_http_failures_total` 按固定 error_kind 区分预期拒绝与服务故障，ID 和任意异常文本不作为标签。
 
-Redis 指标写入失败记录首次退化、每 60 秒摘要和一次恢复，摘要包含失败次数，避免刷屏。监控路径失败不能中断普通业务响应。Prometheus 抓取、Sentry 错误聚合和告警渠道仍需单独部署与演练。
+Redis 指标写入失败记录首次退化、每 60 秒摘要和一次恢复，摘要包含失败次数，避免刷屏。监控路径失败不能中断普通业务响应。仓库提供独立进程/全局采样、Prometheus/Alertmanager 可选部署及告警 runbook；真实 Sentry、集中日志与通知渠道仍需按部署环境接入验收。
 
 任务关联索引、事务幂等、隔离与安全裁剪的操作步骤见[任务队列](./celery#观测事件恢复与运维)。它们恢复执行记录，不重新触发业务任务；生产端断连仍有丢失窗口。

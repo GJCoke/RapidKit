@@ -42,7 +42,7 @@ async def test_retry_replay_and_out_of_order_events_keep_one_audit_per_attempt(m
     from plugin_system.audit.writer import AuditWriterImpl
     from plugin_worker import event_service
     from plugin_worker.event_service import EventService
-    from plugin_worker.models import CeleryTaskResult
+    from plugin_worker.models import CeleryTaskResult, TaskReceipt
     from rapidkit_common.enums import TaskStatus
     from sqlalchemy.ext.asyncio import create_async_engine
     from sqlmodel import select
@@ -53,7 +53,12 @@ async def test_retry_replay_and_out_of_order_events_keep_one_audit_per_attempt(m
     engine = create_async_engine("sqlite+aiosqlite://", connect_args={"autocommit": False})
     try:
         async with engine.begin() as connection:
-            for table in (CeleryTaskResult.__table__, AuditLog.__table__, AuditLogTarget.__table__):
+            for table in (
+                CeleryTaskResult.__table__,
+                TaskReceipt.__table__,
+                AuditLog.__table__,
+                AuditLogTarget.__table__,
+            ):
                 await connection.run_sync(table.create)
         async with AsyncSession(engine, expire_on_commit=False) as session:
             service = EventService(session, SimpleNamespace(emit=AsyncMock()))

@@ -104,7 +104,9 @@ async def test_signal_stream_consumer_domain_event_roundtrip_and_no_leak(monkeyp
     async def session_factory():
         from sqlmodel.ext.asyncio.session import AsyncSession
 
-        yield MagicMock(spec=AsyncSession)
+        session = MagicMock(spec=AsyncSession)
+        session.exec.return_value = SimpleNamespace(first=lambda: None)
+        yield session
 
     monkeypatch.setattr(consumer, "AsyncSessionLocal", session_factory)
     previous = EventBus._instance

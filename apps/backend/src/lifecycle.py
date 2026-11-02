@@ -12,6 +12,7 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI
 from rapidkit_common.audit import AuditRecord
+from rapidkit_core import runtime_state
 from rapidkit_core.config import settings
 from rapidkit_core.database import RedisManager, async_engine, sync_engine
 from rapidkit_core.leader_election import LeaderElection
@@ -85,6 +86,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         socket = app.state.socket
         consumer_task = asyncio.create_task(consume_events(socket))
         offline_checker_task = asyncio.create_task(check_worker_offline(socket, worker_leader))
+        runtime_state.watch(consumer_task, "task_event_consumer")
+        runtime_state.watch(offline_checker_task, "worker_offline_checker")
         logger.info("Celery monitor enabled.")
 
     # 执行插件 on_startup 回调（追踪耗时）
@@ -99,6 +102,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # Socket.IO session key renewal (per-instance, renews TTL for active connections)
     renew_task = asyncio.create_task(renew_session_keys_loop())
+    runtime_state.watch(renew_task, "socket_renewal")
 
     logger.info("Application startup complete.")
 

@@ -132,6 +132,10 @@ class LogConfigMixin(BaseSettings):
     LOG_FILE_ERROR_LEVEL: LOG_LEVELS = "WARNING"
     LOG_FILE_MAX_BYTES: int = Field(100 * 1024 * 1024, ge=1)
     LOG_FILE_RETENTION_DAYS: int = Field(7, ge=1)
+    LOG_FILE_BUDGET_BYTES: int | None = Field(None, ge=1)
+    LOG_FILE_MIN_FREE_BYTES: int = Field(64 * 1024 * 1024, ge=0)
+    RUNTIME_STATE_DIR: Path | None = None
+    TASK_RESULT_RETENTION_DAYS: int | None = Field(None, ge=1)
 
     LOG_ACCESS_FILENAME: str = "access.log"
     LOG_ERROR_FILENAME: str = "error.log"

@@ -15,6 +15,7 @@ from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from plugin_worker.event_service import EventService
+from rapidkit_core import runtime_state
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
 from rapidkit_core.log import component_failed, component_recovered, logger
 from rapidkit_core.transaction import run_after_commit_hooks
@@ -67,6 +68,7 @@ async def consume_events(sio: "AsyncServer") -> None:
                 count=10,
             )
             if deleted and deleted[0]:
+                runtime_state.increment("task_event_gaps", len(deleted[0]))
                 logger.bind(
                     event="task.event.gap", reason_code="pending_source_missing", consecutive_failures=len(deleted[0])
                 ).error("Pending observation payloads missing")
@@ -122,10 +124,11 @@ async def check_worker_offline(sio: "AsyncServer", leader: "LeaderElection | Non
                 await service.check_offline_workers(HEARTBEAT_TIMEOUT)
                 await session.commit()
                 await run_after_commit_hooks(session)
+            component_recovered("worker_offline_checker")
 
         except asyncio.CancelledError:
             logger.info("Worker offline checker stopped.")
             break
-        except Exception:
-            logger.exception("Error in worker offline checker, retrying...")
+        except Exception as exc:
+            component_failed("worker_offline_checker", exc)
             await asyncio.sleep(5)

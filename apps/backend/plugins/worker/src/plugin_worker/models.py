@@ -76,3 +76,11 @@ class QueueDepthSnapshot(SQLModel, table=True):
 
     sampled_at: datetime = Field(default_factory=timezone.now, index=True, nullable=False)
     depth: int = Field(default=0, ge=0, nullable=False)
+
+
+class TaskReceipt(SQLModel, table=True):
+    """Minimal durable duplicate guard after opt-in result expiration."""
+
+    __tablename__ = "worker_task_receipts"
+    task_id: str = Field(unique=True, index=True, max_length=255)
+    attempt: int = Field(default=0, ge=0)

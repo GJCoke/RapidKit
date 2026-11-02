@@ -10,6 +10,7 @@ from collections.abc import Awaitable, Callable
 from typing import cast
 
 from rapidkit_common.audit import AuditRecord
+from rapidkit_core import runtime_state
 from rapidkit_core.leader_election import LeaderElection
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
@@ -46,6 +47,12 @@ class RedisAuditQueue:
         self._consumer: asyncio.Task | None = None
 
     def _notify(self, event: str, count: int) -> None:
+        runtime_state.set_gauge("audit_fallback", self._fallback_size)
+        if event == "failed":
+            runtime_state.increment("component_failures:audit_delivery", count)
+            runtime_state.set_gauge("component_degraded:audit_delivery", 1)
+        elif event == "flushed":
+            runtime_state.set_gauge("component_degraded:audit_delivery", 0)
         if self._on_state is not None:
             try:
                 self._on_state(event, count)
@@ -70,12 +77,14 @@ class RedisAuditQueue:
             pending = await self._push(payload)
         except asyncio.CancelledError:
             self._fallback.put_nowait(payload)
+            runtime_state.increment("audit_fallback_enqueued")
             self._notify("queued", 1)
             self._notify("buffer_size", self._fallback_size)
             logger.warning("Audit enqueue cancelled; snapshot retained in memory for recovery")
             raise
         except RedisError, TimeoutError:
             self._fallback.put_nowait(payload)
+            runtime_state.increment("audit_fallback_enqueued")
             pending = 0
             self._notify("failed", 1)
             logger.warning("Redis unavailable; audit retained in memory (buffer_size={})", self._fallback_size)
@@ -89,6 +98,7 @@ class RedisAuditQueue:
             return
         await self._leader.start()
         self._consumer = asyncio.create_task(self._consume())
+        runtime_state.watch(self._consumer, "audit_delivery")
 
     async def _restore_fallback(self) -> None:
         while self._retry is not None or not self._fallback.empty():

@@ -50,6 +50,10 @@ def test_sentry_is_initialized_once_per_process_and_after_fork(monkeypatch):
         pid[0] = 101
         observability.init_sentry()
         assert initialize.call_count == 2
+        monkeypatch.setattr(settings, "SENTRY_RELEASE", None)
+        pid[0] = 102
+        observability.init_sentry()
+        assert initialize.call_args.kwargs["release"] == settings.APP_VERSION
 
 
 def test_sentry_privacy_scrub_uses_only_trusted_context():

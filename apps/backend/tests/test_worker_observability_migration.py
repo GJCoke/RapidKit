@@ -19,6 +19,8 @@ def migration(prefix):
 
 async def test_worker_baseline_and_additive_migration_preserve_legacy_rows(pg_engine):
     baseline, increment = migration("20d0b7afff25"), migration("09643ec2170c")
+    receipt = migration("508976be24b7")
+    assert receipt.down_revision == increment.revision
     assert increment.down_revision == baseline.revision
     schema = "obs_b_" + uuid4().hex
 
@@ -55,6 +57,16 @@ async def test_worker_baseline_and_additive_migration_preserve_legacy_rows(pg_en
             increment.upgrade()
             row = connection.execute(updated.select()).mappings().one()
             assert row["task_id"] == "legacy" and row["request_id"] is None
+            receipt.upgrade()
+            assert "worker_task_receipts" in inspect(connection).get_table_names()
+            receipt_columns = {
+                column["name"]: column for column in inspect(connection).get_columns("worker_task_receipts")
+            }
+            assert receipt_columns["task_id"]["type"].length == 255
+            receipt.downgrade()
+            assert "worker_task_receipts" not in inspect(connection).get_table_names()
+            receipt.upgrade()
+            assert connection.execute(updated.select()).mappings().one()["task_id"] == "legacy"
             connection.execute(DropSchema(schema, cascade=True))
 
     async with pg_engine.begin() as connection:

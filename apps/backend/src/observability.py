@@ -106,7 +106,7 @@ def init_sentry() -> None:
     sentry_sdk.init(
         dsn=settings.SENTRY_DSN,
         environment=settings.ENVIRONMENT.value,
-        release=settings.SENTRY_RELEASE,
+        release=settings.SENTRY_RELEASE or settings.APP_VERSION,
         sample_rate=settings.SENTRY_ERROR_SAMPLE_RATE,
         traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
         send_default_pii=False,

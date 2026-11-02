@@ -1,0 +1,210 @@
+groups:
+  - name: rapidkit-operations
+    rules:
+      - alert: RapidKitHostInodesLow
+        expr: 'node_filesystem_files_free{fstype!~"tmpfs|devtmpfs|overlay|squashfs"} / node_filesystem_files < 0.10 and node_filesystem_files > 0'
+        for: 2m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: Host inode space low; inspect stopped-instance cleanup and storage policy
+          runbook: apps/website/src/backend/observability.md#log-capacity
+      - alert: RapidKitAllAPIDown
+        expr: "(sum(up{job=\"rapidkit-process\",service=\"api\"}) or vector(0)) == 0"
+        for: 1m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitAllAPIDown; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#api-unavailable
+      - alert: RapidKitDependencyDown
+        expr: "rapidkit_dependency_up == 0"
+        for: 1m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitDependencyDown; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#dependency-down
+      - alert: RapidKitServerErrorRate
+        expr: "sum(rate(rapidkit_http_failures_total{error_kind=~\"server|transport\"}[5m])) / sum(rate(rapidkit_http_requests_total[5m])) > 0.01 and sum(increase(rapidkit_http_requests_total[5m])) >= 100"
+        for: 5m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitServerErrorRate; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#api-errors
+      - alert: RapidKitSlowRoute
+        expr: "histogram_quantile(0.95, sum by (le,route) (rate(rapidkit_http_request_duration_seconds_bucket[5m]))) > 3 and sum by (route) (increase(rapidkit_http_request_duration_seconds_count[5m])) >= 100"
+        for: 10m
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitSlowRoute; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#slow-route
+      - alert: RapidKitPendingGrowing
+        expr: "rapidkit_events_oldest_pending_seconds > 120 and on() (delta(rapidkit_events_pending[2m]) > 0 or on() rapidkit_ops_sample_success{component=\"events\"} == 0)"
+        for: 1m
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitPendingGrowing; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#event-backlog
+      - alert: RapidKitIsolatedEvents
+        expr: "rapidkit_events_dead > 0"
+        for: 0s
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitIsolatedEvents; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#event-isolation
+      - alert: RapidKitPublicationGap
+        expr: "increase(rapidkit_task_event_publish_failed_total[5m]) > 0 or (rapidkit_task_event_publish_failed_total > 0 unless rapidkit_task_event_publish_failed_total offset 5m) or increase(rapidkit_task_event_gaps_total[5m]) > 0 or (rapidkit_task_event_gaps_total > 0 unless rapidkit_task_event_gaps_total offset 5m)"
+        for: 0s
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitPublicationGap; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#publication-gap
+      - alert: RapidKitAuditFallback
+        expr: "rapidkit_audit_fallback > 0 or increase(rapidkit_audit_fallback_enqueued_total[5m]) > 0"
+        for: 0s
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitAuditFallback; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#audit-fallback
+      - alert: RapidKitAuditBacklog
+        expr: "rapidkit_audit_pending + rapidkit_audit_processing > 1000"
+        for: 2m
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitAuditBacklog; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#audit-backlog
+      - alert: RapidKitWorkerCapacity
+        expr: "rapidkit_worker_capacity_missing > 0 and rapidkit_worker_capacity_known == 1"
+        for: 2m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitWorkerCapacity; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#worker-capacity
+      - alert: RapidKitWorkerCapacityUnknown
+        expr: "rapidkit_worker_capacity_known == 0"
+        for: 5m
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitWorkerCapacityUnknown; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#worker-capacity
+      - alert: RapidKitBackgroundStopped
+        expr: "rapidkit_background_running < rapidkit_background_expected or rapidkit_component_degraded > 0"
+        for: 1m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitBackgroundStopped; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#background-component
+      - alert: RapidKitRuntimeStateStale
+        expr: "rapidkit_runtime_state_fresh == 0 or rapidkit_runtime_snapshot_errors > 0"
+        for: 30s
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitRuntimeStateStale; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#sampler-stale
+      - alert: RapidKitLogBudget
+        expr: "rapidkit_log_directory_bytes / rapidkit_log_budget_bytes > 0.90"
+        for: 1m
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitLogBudget; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#log-capacity
+      - alert: RapidKitFileLoggingDropped
+        expr: "increase(rapidkit_file_log_dropped_total[5m]) > 0 or rapidkit_log_blocked > 0"
+        for: 0s
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitFileLoggingDropped; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#log-capacity
+      - alert: RapidKitLogSpaceLow
+        expr: "rapidkit_log_filesystem_free_bytes / rapidkit_log_filesystem_size_bytes < 0.20 and rapidkit_log_filesystem_free_bytes / rapidkit_log_filesystem_size_bytes >= 0.10"
+        for: 2m
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitLogSpaceLow; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#log-capacity
+      - alert: RapidKitLogSpaceLow
+        expr: "rapidkit_log_filesystem_free_bytes / rapidkit_log_filesystem_size_bytes < 0.10"
+        for: 1m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitLogSpaceLow; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#log-capacity
+      - alert: RapidKitSamplerStale
+        expr: "time() - rapidkit_ops_heartbeat_timestamp_seconds > 30 or absent(rapidkit_ops_heartbeat_timestamp_seconds) or up{job=\"rapidkit-ops\"} == 0"
+        for: 1m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitSamplerStale; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#sampler-stale
+      - alert: RapidKitSamplingFailed
+        expr: "rapidkit_ops_sample_success == 0 or time() - rapidkit_ops_sample_timestamp_seconds > 60"
+        for: 1m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitSamplingFailed; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#sampler-stale
+      - alert: RapidKitDiscoveryStale
+        expr: "time() - rapidkit_inventory_updated_timestamp_seconds > 60 or absent(rapidkit_inventory_updated_timestamp_seconds)"
+        for: 1m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitDiscoveryStale; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#discovery-stale
+      - alert: RapidKitTargetDown
+        expr: "up{job=~\"rapidkit-process|rapidkit-host\"} == 0"
+        for: 1m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitTargetDown; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#target-down
+      - alert: RapidKitNotificationUnavailable
+        expr: "up{job=\"alertmanager\"} == 0 or absent(up{job=\"alertmanager\"}) or increase(alertmanager_notifications_failed_total[5m]) > 0"
+        for: 1m
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: "RapidKitNotificationUnavailable; inspect validity and recent release before acting"
+          runbook: apps/website/src/backend/observability.md#notification-failure

@@ -25,6 +25,7 @@ from celery.signals import (
     worker_ready,
     worker_shutdown,
 )
+from rapidkit_core import runtime_state
 from rapidkit_core.config import settings
 from rapidkit_core.log import logger
 from rapidkit_core.nanoid import publication_request_id, request_id_scope
@@ -92,6 +93,7 @@ def _publish_event(event_type: str, data: dict) -> bool:
             _get_redis().xadd(STREAM_KEY, message)  # ty: ignore[invalid-argument-type]
         except Exception as exc:
             published = False
+            runtime_state.increment("task_event_publish_failed")
             with _publication_lock:
                 _publication_counts["failures"] += 1
                 _missed_since_success += 1
@@ -103,6 +105,7 @@ def _publish_event(event_type: str, data: dict) -> bool:
                 reason_code="invalid_event" if isinstance(exc, InvalidEvent) else "publish_failed",
             ).opt(exception=exc).error("Observation publication failed; execution result unchanged")
         else:
+            runtime_state.increment("task_event_published")
             with _publication_lock:
                 _publication_counts["successes"] += 1
                 missed, _missed_since_success = _missed_since_success, 0
@@ -126,6 +129,9 @@ def _publish_event(event_type: str, data: dict) -> bool:
 def on_worker_ready(sender, **kwargs) -> None:
     """Worker 上线事件。sender 是 Consumer 实例。"""
     worker = sender.controller  # Consumer.controller -> Worker
+    from src.runtime_metrics import start_process_exporter
+
+    start_process_exporter()
     hostname = worker.hostname
     _heartbeat_stop.clear()
     _publish_event(

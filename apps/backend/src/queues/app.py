@@ -85,3 +85,6 @@ def init_worker_logging(**kwargs):
 @beat_init.connect
 def init_beat_observability(**kwargs):
     configure_process_logging(service="beat")
+    from src.runtime_metrics import start_process_exporter
+
+    start_process_exporter()

@@ -1,0 +1,33 @@
+# Use alongside docker/prod/docker-compose.yml; platform ports remain private.
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command: [--config.file=/etc/prometheus/prometheus.yml, --storage.tsdb.retention.time=15d]
+    volumes:
+      - ../observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ${RAPIDKIT_OBSERVABILITY_ROOT:-/var/lib/rapidkit/observability}:/etc/prometheus/discovery:ro
+      - observability-prometheus:/prometheus
+    logging: &monitor-logging
+      driver: json-file
+      options: {max-size: "20m", max-file: "5", mode: non-blocking, max-buffer-size: "1m"}
+    restart: unless-stopped
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    command: [--config.file=/etc/alertmanager/alertmanager.yml]
+    volumes:
+      - ../observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ${ALERT_WEBHOOK_URL_FILE:?Provide a private webhook URL file}:/run/secrets/alert_webhook_url:ro
+      - observability-alertmanager:/alertmanager
+    logging: *monitor-logging
+    restart: unless-stopped
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    command: [--path.rootfs=/host]
+    volumes:
+      - /:/host:ro,rslave
+    logging: *monitor-logging
+    restart: unless-stopped
+volumes:
+  observability-prometheus:
+  observability-alertmanager:

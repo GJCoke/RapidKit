@@ -33,9 +33,9 @@ CMD ["uv", "run", "--project", "apps/backend", "uvicorn", "src.main:asgi_app", "
 
 FROM base AS prod
 # Only the app-owned paths are chowned; the venv stays root-owned so it is not duplicated in a chown layer.
-RUN groupadd -r app && useradd -r -g app -d /app app \
-    && mkdir -p /app/apps/backend/logs \
-    && chown app:app /app /app/apps/backend /app/apps/backend/logs
+RUN groupadd -g 999 app && useradd -u 999 -g app -d /app app \
+    && mkdir -p /app/apps/backend/logs /app/logs \
+    && chown app:app /app /app/apps/backend /app/apps/backend/logs /app/logs
 RUN --mount=type=cache,target=/root/.cache/uv \
     UV_COMPILE_BYTECODE=1 uv sync --no-dev --frozen --no-install-workspace --project apps/backend
 COPY --from=manifests --chown=app:app /pkgs/ ./

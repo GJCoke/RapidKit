@@ -382,4 +382,6 @@ API 在容器根路径 `/metrics` 提供 Prometheus 文本指标，包含按路�
 
 Compose 只在 API 服务中导出 `PROMETHEUS_MULTIPROC_DIR=/tmp/rapidkit-prometheus`，并在 Uvicorn import 前生效。API entrypoint 每次容器主进程启动前清理旧指标文件，worker 进程启动和 lifespan 不会清空计数；优雅退出与抓取时会清理死进程的 live gauge。worker、beat、迁移进程移除此变量。自定义启动命令应保留同样的环境注入和主进程清理顺序。
 
-四个 Uvicorn worker 在一个副本内汇总。多个 API 副本之间不共享目录，scraper 应通过内部网络逐副本访问 `:8006/metrics`（例如基于服务发现逐个枚举容器），不能通过 nginx 随机抓到其中一个副本。项目不附带 Prometheus/Grafana 服务；本地不设置该变量时使用独立的进程内 registry。
+四个 Uvicorn worker 在一个副本内汇总。多个 API 副本之间不共享指标目录，scraper 应通过内部网络逐副本访问 `:8006/metrics`，不能通过 nginx 随机抓到其中一个副本。本地不设置该变量时使用独立的进程内 registry。
+
+仓库提供 `docker/observability/compose.yml` 可选 Prometheus/Alertmanager/node-exporter 栈、宿主机 file_sd 发现与告警处置手册。生产 Compose 还包括单例全局采样器及按角色挂载的日志目录；**首次启动前必须准备目录、保存旧容器日志并核对 999:999 权限**，详见[生产可观测性](../backend/observability)。真实平台、接收渠道及宿主机配额需要另行接入验收。

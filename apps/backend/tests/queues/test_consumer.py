@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
-from plugin_worker.models import CeleryTaskResult
+from plugin_worker.models import CeleryTaskResult, TaskReceipt
 from rapidkit_common.enums import TaskStatus
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -22,6 +22,7 @@ async def event_consumer(monkeypatch, redis, tmp_path):
     )
     async with engine.begin() as connection:
         await connection.run_sync(CeleryTaskResult.__table__.create)
+        await connection.run_sync(TaskReceipt.__table__.create)
     sessions = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     monkeypatch.setattr(consumer, "AsyncSessionLocal", sessions)
     monkeypatch.setattr(consumer.RedisManager, "client", lambda: redis)

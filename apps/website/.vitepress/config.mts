@@ -89,6 +89,7 @@ export default defineConfig({
                 { text: "跨插件协作", link: "/backend/cross-plugin" },
                 { text: "国际化", link: "/backend/i18n" },
                 { text: "日志系统", link: "/backend/logging" },
+                { text: "生产可观测性", link: "/backend/observability" },
                 { text: "Pydantic 模型规范", link: "/backend/pydantic" },
                 { text: "定时任务调度", link: "/backend/schedule" },
                 { text: "Celery 任务队列", link: "/backend/celery" },

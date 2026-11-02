@@ -28,7 +28,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_worker.crud import TaskResultCRUD, WorkerCRUD
 from plugin_worker.inventory import CAPACITY_GRACE_SECONDS, ensure_group, group_summaries, is_current_worker
-from plugin_worker.models import CeleryTaskResult, CeleryWorker, WorkerGroup
+from plugin_worker.models import CeleryTaskResult, CeleryWorker, TaskReceipt, WorkerGroup
 
 logger = get_plugin_logger("Worker")
 
@@ -197,9 +197,21 @@ class EventService:
             task.correlation_id or data.get("audit_correlation_id") or data.get("correlation_id") or task.request_id
         )
 
+    async def _load_execution(self, data: dict):
+        task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
+        if task is None:
+            receipt = (
+                await self.session.exec(select(TaskReceipt).where(TaskReceipt.task_id == data["task_id"]))
+            ).first()
+            if receipt is not None and data.get("attempt", 0) <= receipt.attempt:
+                return None, True
+        return task, False
+
     async def handle_task_started(self, data: dict) -> None:
         data = task_diagnostics(data)
-        existing = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
+        existing, expired_duplicate = await self._load_execution(data)
+        if expired_duplicate:
+            return
         attempt = data.get("attempt", existing.retries if existing else 0)
         if existing is not None and (
             attempt < existing.retries
@@ -250,7 +262,9 @@ class EventService:
 
     async def _handle_terminal(self, data: dict, status: TaskStatus) -> None:
         data = task_diagnostics(data)
-        task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
+        task, expired_duplicate = await self._load_execution(data)
+        if expired_duplicate:
+            return
         attempt = data.get("attempt", task.retries if task else 0)
         if task is not None and (attempt < task.retries or attempt == task.retries and task.status in _TERMINAL_STATES):
             return
@@ -300,7 +314,9 @@ class EventService:
 
     async def handle_task_retry(self, data: dict) -> None:
         data = task_diagnostics(data)
-        task = await self.task_crud.get_by_task_id(data["task_id"], for_update=True)
+        task, expired_duplicate = await self._load_execution(data)
+        if expired_duplicate:
+            return
         attempt = data.get("attempt", task.retries if task else 0)
         if task is not None and (attempt < task.retries or attempt == task.retries and task.status in _TERMINAL_STATES):
             return

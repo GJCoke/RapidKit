@@ -1,0 +1,64 @@
+rule_files: [/etc/prometheus/alerts.yml]
+evaluation_interval: 1m
+tests:
+  - name: dependency outage and recovery
+    interval: 1m
+    input_series:
+      - series: 'rapidkit_dependency_up{component="redis"}'
+        values: '0 0 0 1 1 1'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: RapidKitDependencyDown
+        exp_alerts:
+          - exp_labels: {component: redis, severity: critical, owner: rapidkit-operations}
+            exp_annotations:
+              summary: RapidKitDependencyDown; inspect validity and recent release before acting
+              runbook: apps/website/src/backend/observability.md#dependency-down
+      - eval_time: 4m
+        alertname: RapidKitDependencyDown
+        exp_alerts: []
+  - name: business rejection does not page as server error
+    interval: 1m
+    input_series:
+      - series: 'rapidkit_http_requests_total{method="GET",route="/example",outcome="error"}'
+        values: '0+1000x12'
+      - series: 'rapidkit_http_failures_total{method="GET",route="/example",error_kind="business"}'
+        values: '0+1000x12'
+      - series: 'rapidkit_http_failures_total{method="GET",route="/example",error_kind="server"}'
+        values: '0+0x12'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: RapidKitServerErrorRate
+        exp_alerts: []
+  - name: sustained server errors page
+    interval: 1m
+    input_series:
+      - series: 'rapidkit_http_requests_total{method="GET",route="/example",outcome="success"}'
+        values: '0+1000x15'
+      - series: 'rapidkit_http_failures_total{method="GET",route="/example",error_kind="server"}'
+        values: '0+30x15'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: RapidKitServerErrorRate
+        exp_alerts:
+          - exp_labels: {severity: critical, owner: rapidkit-operations}
+            exp_annotations:
+              summary: RapidKitServerErrorRate; inspect validity and recent release before acting
+              runbook: apps/website/src/backend/observability.md#api-errors
+  - name: pending incident does not resolve just because sampling fails
+    interval: 1m
+    input_series:
+      - series: rapidkit_events_oldest_pending_seconds
+        values: '130+10x10'
+      - series: rapidkit_events_pending
+        values: '1 2 3 4 4 4 4 4 4 4 4'
+      - series: 'rapidkit_ops_sample_success{component="events"}'
+        values: '1 1 1 1 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: RapidKitPendingGrowing
+        exp_alerts:
+          - exp_labels: {severity: warning, owner: rapidkit-operations}
+            exp_annotations:
+              summary: RapidKitPendingGrowing; inspect validity and recent release before acting
+              runbook: apps/website/src/backend/observability.md#event-backlog

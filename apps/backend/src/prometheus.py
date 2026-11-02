@@ -18,6 +18,7 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from src.middlewares.logger import LoggerMiddleware
+from src.runtime_metrics import render_runtime
 
 _METHODS = frozenset({"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE", "CONNECT"})
 
@@ -72,11 +73,11 @@ class HTTPMetrics:
 
     def render(self) -> bytes:
         if self.multiproc_dir is None:
-            return generate_latest(self.registry)
+            return generate_latest(self.registry) + render_runtime()
         _clean_dead_gauges(self.multiproc_dir)
         registry = CollectorRegistry()
         multiprocess.MultiProcessCollector(registry, path=str(self.multiproc_dir))
-        return generate_latest(registry)
+        return generate_latest(registry) + render_runtime()
 
     def shutdown(self) -> None:
         if self.multiproc_dir is not None:

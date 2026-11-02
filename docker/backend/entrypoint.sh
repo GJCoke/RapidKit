@@ -12,4 +12,10 @@ case "${1##*/}" in
     ;;
   *) unset PROMETHEUS_MULTIPROC_DIR ;;
 esac
+if [ -n "${RUNTIME_STATE_DIR:-}" ]; then
+  case "$RUNTIME_STATE_DIR" in
+    /tmp/rapidkit-runtime) mkdir -p "$RUNTIME_STATE_DIR"; rm -f "$RUNTIME_STATE_DIR"/*.json "$RUNTIME_STATE_DIR"/*.tmp ;;
+    *) echo 'RUNTIME_STATE_DIR must be /tmp/rapidkit-runtime inside this image' >&2; exit 1 ;;
+  esac
+fi
 exec "$@"

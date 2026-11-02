@@ -20,6 +20,7 @@ from loguru import logger as ruLogger
 if TYPE_CHECKING:
     from loguru import Logger, Message, Record
 
+from rapidkit_core import runtime_state
 from rapidkit_core.config import settings
 from rapidkit_core.diagnostics import exception_summary
 from rapidkit_core.nanoid import get_request_nanoid
@@ -167,6 +168,7 @@ def json_sink(message: "Message", *, stream: TextIO | None = None) -> None:
 def setup_logging(service: str = "api") -> None:
     """设置日志处理器。"""
     ruLogger.configure(patcher=_prepare_record, extra={"service": service})
+    runtime_state.start(service, settings.RUNTIME_STATE_DIR)
     logging.root.handlers = [InterceptHandler()]
     logging.root.setLevel(settings.LOG_LEVEL)
 
@@ -309,34 +311,47 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
         "encoding": "utf-8",
     }
 
-    access_handler = ruLogger.add(
-        str(log_access_file),
-        level=settings.LOG_FILE_ACCESS_LEVEL,
-        filter=lambda record: record["level"].no <= 25,
-        backtrace=False,
-        diagnose=False,
-        rotation=_FileRotation(),
-        compression=partial(rename_rotated_logfile, active_file=log_access_file, suffix=configured_access.suffix),
-        **log_config,
-    )
+    for path, suffix, level, low in (
+        (log_access_file, configured_access.suffix, settings.LOG_FILE_ACCESS_LEVEL, True),
+        (log_error_file, configured_error.suffix, settings.LOG_FILE_ERROR_LEVEL, False),
+    ):
+        rotation = _FileRotation()
+        compression = partial(rename_rotated_logfile, active_file=path, suffix=suffix)
+        sink: Any = str(path)
+        file_options: dict[str, Any] = {"rotation": rotation, "compression": compression}
+        if settings.LOG_FILE_BUDGET_BYTES is not None:
+            # POSIX quota support must not prevent default logging on other platforms.
+            from rapidkit_core.log_budget import BudgetedFile
 
-    error_handler = ruLogger.add(
-        str(log_error_file),
-        level=settings.LOG_FILE_ERROR_LEVEL,
-        filter=lambda record: record["level"].no >= 30,
-        backtrace=True,
-        diagnose=not settings.ENVIRONMENT.is_deployed,
-        rotation=_FileRotation(),
-        compression=partial(rename_rotated_logfile, active_file=log_error_file, suffix=configured_error.suffix),
-        **log_config,
-    )
-    _owned_handlers.update((access_handler, error_handler))
+            sink = BudgetedFile(
+                path,
+                root=LOG_PATH,
+                limit=settings.LOG_FILE_BUDGET_BYTES,
+                min_free=settings.LOG_FILE_MIN_FREE_BYTES,
+                rotation=rotation,
+                compression=compression,
+            )
+            file_options = {}
+        handler = ruLogger.add(
+            sink,
+            level=level,
+            filter=(lambda record: record["level"].no <= 25) if low else (lambda record: record["level"].no >= 30),
+            backtrace=not low,
+            diagnose=not low and not settings.ENVIRONMENT.is_deployed,
+            **{
+                **{key: value for key, value in log_config.items() if key != "encoding" or isinstance(sink, str)},
+                **file_options,
+            },
+        )
+        _owned_handlers.add(handler)
 
 
 logger = ruLogger
 
 
 def component_failed(component: str, error: BaseException) -> None:
+    runtime_state.increment("component_failures:" + component)
+    runtime_state.set_gauge("component_degraded:" + component, 1)
     count, last = _component_failures.get(component, (0, float("-inf")))
     now = time.monotonic()
     _component_failures[component] = (count + 1, now if now - last >= 60 else last)
@@ -347,6 +362,7 @@ def component_failed(component: str, error: BaseException) -> None:
 
 
 def component_recovered(component: str) -> None:
+    runtime_state.set_gauge("component_degraded:" + component, 0)
     previous = _component_failures.pop(component, None)
     if previous is not None:
         logger.bind(event="component.recovered", component=component, consecutive_failures=previous[0]).info(

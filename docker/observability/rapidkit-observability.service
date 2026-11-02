@@ -1,0 +1,15 @@
+[Unit]
+Description=RapidKit host inventory, direct metrics discovery and expired removed-instance logs
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/rapidkit
+ExecStart=/usr/bin/python3 /opt/rapidkit/deploy/observability.py watch --apply
+Restart=on-failure
+RestartSec=10
+User=root
+
+[Install]
+WantedBy=multi-user.target

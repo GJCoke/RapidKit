@@ -5,6 +5,7 @@ from pathlib import Path
 from alembic import context  # type: ignore
 from alembic.autogenerate import comparators
 from rapidkit_core.config import settings
+from rapidkit_core.log import set_custom_logfile, setup_logging
 from scripts.alembic.enum_changes import autogenerate_enum_value_ops
 from scripts.alembic.plugin_discovery import (
     PluginDiscoveryError,
@@ -33,6 +34,9 @@ config = context.config
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+setup_logging(service="migrate")
+set_custom_logfile(enqueue=False)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
@@ -153,7 +157,7 @@ async def run_migrations_online() -> None:
 
     """
 
-    connectable = create_async_engine(DATABASE_URL, echo=True, future=True)
+    connectable = create_async_engine(DATABASE_URL, echo=settings.ENVIRONMENT.is_debug, hide_parameters=True)
 
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
