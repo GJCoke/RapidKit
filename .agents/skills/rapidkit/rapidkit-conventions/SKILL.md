@@ -85,7 +85,7 @@ from rapidkit_core.log import logger
 - Do NOT manually add `[PluginName]` prefixes to log messages — the `plugin` field in the log format handles this
 - ALWAYS include `user_id` in security-related logs
 - NEVER log passwords, tokens, or PII
-- Log levels: INFO for business events, WARNING for security events, DEBUG for diagnostics
+- Log levels: INFO for business events no audited API route records, WARNING for security events and degradation, DEBUG for diagnostics
 
 The full logging design is in `apps/website/src/backend/logging.md`. The rules an agent most often misses:
 
@@ -235,7 +235,7 @@ These four rules bind every plan, implementation and review:
 
 ## Document Writing Rules
 
-These rules apply to every document a workflow produces for the user: design documents, plans, reviews, completion reports and questions that ask for a decision. Write in Chinese unless the user asks for another language. Follow about 80% of ASD-STE100 principles; break a rule only when it makes the text clearer.
+These rules apply to every document a workflow produces for the user: design documents, plans, reviews, completion reports and questions that ask for a decision. Write in Chinese unless the user asks for another language. Implementation plans are exempt from the language rule and may be written in English. Follow about 80% of ASD-STE100 principles; break a rule only when it makes the text clearer.
 
 - **Sentence 1 is the conclusion.** Say the result, the recommendation or the verdict first.
 - **Sentence 2 is what the user must approve.** Name each decision, e.g. "需要你批准：A、B". If nothing needs approval, write "无需批准".

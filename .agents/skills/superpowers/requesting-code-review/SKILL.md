@@ -55,6 +55,9 @@ Dispatch a `general-purpose` subagent, filling the template at [code-reviewer.md
 - `[PLAN_OR_REQUIREMENTS]` - What it should do
 - `[BASE_SHA]` - Starting commit
 - `[HEAD_SHA]` - Ending commit
+- `[DIFF_FILE]` - Review package path from `review-package`, or "none"
+- `[REVIEW_FOCUS]` - The plan's Review Focus section verbatim, or "none"
+- `[LEDGER_RULINGS]` - The ledger's `Ruling:`, parked, `minor (deferred)` and `Needs approval:` lines, or "none"
 
 **3. Act on feedback:**
 - Fix Critical issues immediately

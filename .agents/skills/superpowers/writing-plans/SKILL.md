@@ -77,12 +77,12 @@ independently testable deliverable.
 
 ## Plan Document Header
 
-**Every plan MUST start with this header.** Write the plan in Chinese and follow the Document Writing Rules in `rapidkit-conventions`: the first sentence is the conclusion, the second names what your human partner must approve. Keep the `### Task N:` headings and the `Run:` / `Expected:` step keywords in English: `task-brief` and the executors parse them.
+**Every plan MUST start with this header.** Follow the Document Writing Rules in `rapidkit-conventions` (any language): the first sentence is the conclusion, the second names what your human partner must approve.
 
 ```markdown
 # [Feature Name] Implementation Plan
 
-[Conclusion: one sentence — what this plan builds and how.] [Approval: one sentence — the decisions your human partner must approve, or "无需批准".]
+[Conclusion: one sentence — what this plan builds and how.] [Approval: one sentence — the decisions your human partner must approve, or "No approval needed".]
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task (under Codex: superpowers:executing-plans only, in the current session, no subagents). Follow root `AGENTS.md` and the `rapidkit-*` conventions; stay on the current task branch (no new branch or worktree unless `AGENTS.md` calls for it); never stage or commit anything under `docs/superpowers/`, this plan included. Steps use checkbox (`- [ ]`) syntax for tracking.
 

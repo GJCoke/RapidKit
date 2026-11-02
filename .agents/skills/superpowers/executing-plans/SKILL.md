@@ -184,7 +184,7 @@ mark the todo complete and take the next task.
 
 ## Final Review
 
-Run `scripts/review-package PLAN_FILE MERGE_BASE HEAD` (the shared script; full path in `execution-ledger.md`)
+Run `bash .agents/skills/superpowers/subagent-driven-development/scripts/review-package PLAN_FILE MERGE_BASE HEAD`
 (MERGE_BASE = the commit the branch started from, e.g.
 `git merge-base main HEAD`) and review from the file it prints.
 
@@ -194,9 +194,9 @@ superpowers:requesting-code-review's
 [code-reviewer.md](../requesting-code-review/code-reviewer.md), with the
 package path, the plan and spec paths, the plan's Review Focus section
 verbatim if it has one (the input classes and failure modes the plan's
-tests do not exercise — the reviewer checks each deliberately), and a
-pointer to the ledger's `Ruling:` lines so it can weigh the calls you
-made. Specify the model
+tests do not exercise — the reviewer checks each deliberately), and
+`[LEDGER_RULINGS]` filled with the ledger's `Ruling:`, `minor (deferred)`
+and `Needs approval:` lines so it can weigh the calls you made. Specify the model
 explicitly; an omitted model inherits the session's, which may not be the
 most capable. This is the one fresh context the whole run buys. Do not
 skip it, and do not replace it with your own read of the diff.
@@ -210,8 +210,8 @@ is enough before merge.
 
 Sort the findings before you act on any of them. The reviewer's severity
 labels are advice; the gate is yours. Its "Declined to judge" list is
-yours too: every line there is a ruling you make and ledger, exactly like
-a plan conflict — `Final: Ruling: <behavior the reviewer set aside> —
+yours too: every line there except a `Rare case:` line is a ruling you
+make and ledger, exactly like a plan conflict — `Final: Ruling: <behavior the reviewer set aside> —
 <what a reasonable person using this software gets, and why that stands
 or why it is now a finding> — <cost if wrong>`. Re-grade first, by effect: the
 spec is a vision document, and a finding's grade is what a reasonable
@@ -219,9 +219,12 @@ person using this software gets if it ships, not whether the spec names
 the input that triggers it — a reviewer who set a finding at Minor
 because the spec was silent has graded the spec, not the effect. Then:
 
-- **Critical and Important** enter the fix pass, except handling for a
-  rare boundary, race or concurrency case: ledger that as
-  `Final: Needs approval: <case> — <how likely>` instead.
+- **Rare cases wait for approval.** A `Rare case:` line, or a finding that
+  asks to *add* handling for a rare boundary, race or concurrency case,
+  goes to the ledger as `Final: Needs approval: <case> — <how likely>`,
+  not into the fix pass. A Lean finding that asks to *remove* unapproved
+  rare-case handling is a normal finding.
+- **Critical and Important** enter the fix pass.
 - **Minor** goes to the ledger as `Final: minor (deferred): <one-liner>`
   and to your final message under "Deferred minors". Minors never enter
   the fix pass, and never become rulings — a ruling is a decision about a

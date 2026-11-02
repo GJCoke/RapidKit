@@ -57,15 +57,17 @@ Subagent (general-purpose):
     requirement, and a spec's silence is not permission. Grade such
     findings by their effect on that person, not by whether the spec
     mentions the trigger. A rare boundary, race or concurrency case is
-    not such a finding: list it under "Declined to judge" with how likely
-    it is, and the user decides whether to handle it.
+    not such a finding: list it under "Declined to judge", prefixed
+    `Rare case:`, with how likely it is. The user, not the executor,
+    decides whether to handle it.
 
     ## Declined to judge
 
     Before your verdict, list every behavior you considered and set aside
     as outside the plan or spec, one line each, with the reason. The
-    executor rules on each line; nothing you set aside is dropped
-    silently. An empty list means you set nothing aside.
+    executor rules on each line, except `Rare case:` lines, which go to
+    the user for approval; nothing you set aside is dropped silently. An
+    empty list means you set nothing aside.
 
     ## Read-Only Review
 
@@ -202,7 +204,7 @@ Subagent (general-purpose):
 - `[HEAD_SHA]` — ending commit
 - `[DIFF_FILE]` — the review package path `review-package` printed, or "none"
 - `[REVIEW_FOCUS]` — the plan's Review Focus section verbatim, or "none"
-- `[LEDGER_RULINGS]` — the ledger's `Ruling:`, parked and `minor (deferred)` lines, or "none"
+- `[LEDGER_RULINGS]` — the ledger's `Ruling:`, parked, `minor (deferred)` and `Needs approval:` lines, or "none"
 
 **Reviewer returns:** Assessment, Strengths, Issues (Critical / Important / Minor), Recommendations
 

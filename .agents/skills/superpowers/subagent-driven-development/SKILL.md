@@ -408,12 +408,18 @@ printed path in the final review dispatch, so the final reviewer reads
 one file instead of re-deriving the branch diff with git commands. Dispatch
 on the most capable available model (see Model Selection), using
 superpowers:requesting-code-review's
-[code-reviewer.md](../requesting-code-review/code-reviewer.md). Point it at
-the ledger's deferred-minor and parked lines so it can triage which must be
-fixed before merge.
+[code-reviewer.md](../requesting-code-review/code-reviewer.md). Fill
+`[LEDGER_RULINGS]` with the ledger's `Ruling:`, parked, deferred-minor and
+`Needs approval:` lines so it can triage which must be fixed before merge.
+
+Before any fix, sort the findings: a `Rare case:` line, or a finding that
+asks to *add* handling for a rare boundary, race or concurrency case, goes
+to the ledger as `Final: Needs approval: <case> — <how likely>` and stays
+out of the fix wave. A Lean finding that asks to *remove* unapproved
+rare-case handling is a normal finding.
 
 If the final whole-branch review returns findings, dispatch ONE fix subagent
-with the complete findings list and the report path
+with the complete list of the remaining findings and the report path
 `<workspace>/final-fix-report.md` — not one fixer per finding.
 Per-finding fixers each rebuild context and re-run suites; a real
 session's final-review fix wave cost more than all its tasks combined.
