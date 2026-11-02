@@ -77,14 +77,10 @@ These rules override the generic workflow below wherever they conflict.
 - **No subagents under Codex.** When running in Codex, do all work in the
   current session: do not spawn subagents for recon, the builder check, or
   anything else.
-- **Product Design plugin.** OpenAI's Product Design plugin exists only in
-  Codex and is installed per user, never vendored into this repo. Its
-  skills run as they are designed; you spawn no extra subagents. Use it
-  only to generate image directions, started with `@Product Design`.
-  Everything else (research, audits, building, visual checks) uses this
-  repo's skills. Keep only the picked image, saved under
-  `docs/superpowers/specs/`, and delete every other image or screenshot
-  the plugin left inside the repo. Nothing it produces is committed.
+- **Image directions.** Only Codex has a built-in Image Gen tool. Call
+  it directly; do not use a design plugin for it. Image Gen writes to
+  `~/.codex/generated_images/`, outside the repo. Copy only the picked
+  image into `docs/superpowers/specs/`; nothing generated is committed.
 
 ## First: What Do You Actually Know?
 
@@ -164,24 +160,33 @@ decide.
 **Show, don't tell.** When seeing would help more than reading:
 
 - **A screen, page or layout they will look at.** First let them describe
-  it in their own words. Then, under Codex with the Product Design plugin
-  installed, ask once whether to generate image directions; if yes, send
-  `@Product Design` the brief and ask for image directions. The plugin
-  confirms the brief (it may ask one question), generates three
-  directions and waits for their pick. Without Codex or the
-  plugin, or if they decline, describe two or three directions in words.
-  They may also ask `@Product Design` in Codex themselves, or bring any
-  image, and hand you the picked one.
+  it in their own words. Then, under Codex, ask once whether to generate
+  image directions; if yes, follow "Generating Image Directions" below.
+  Without Codex, or if they decline, describe two or three directions in
+  words. They may also bring any image and hand it to you.
 - **A flow, structure or sequence** (steps, states, a timeline, a map):
   in chat, a short ASCII sketch; in the design document, a Mermaid
   diagram.
 
-Ask the plugin for image directions only. Do not let it build the
-screen, audit it or check it (`image-to-code`, `url-to-code`, `audit`,
-`design-qa`): build with this repo's skills and check with the Visual
-Check in `rapidkit-conventions`.
-Copy the picked image into `docs/superpowers/specs/` (see The Written
-Design) and delete any other output the plugin left inside the repo.
+**Generating Image Directions** (Codex Image Gen only):
+
+1. If the page or a similar existing page already opens locally, take a
+   screenshot of it and attach it as a reference. Do not start services
+   for this; without a screenshot, generate from the brief.
+2. Write the brief into each prompt: the screen's purpose, its primary
+   action, the target frontend's style (for `apps/frontend`, the theme
+   colours, layout and data-dense admin tone in
+   `rapidkit-frontend-design`; for `apps/admin`, its shadcn components),
+   and the size: `1440 x 1024` for an admin page, or the reference
+   image's size and aspect ratio. Ask for real product UI, not a
+   presentation board, and no features the brief does not name.
+3. Make three separate Image Gen calls, one direction each. The three
+   differ in information hierarchy, layout or interaction model, not
+   only in colour.
+4. Wait until all three images are back. Number them in the order they
+   appear in the conversation, then ask your human partner to pick one or
+   combine parts (a combination is one more call, shown before you go on).
+5. Copy the picked image to the path in The Written Design.
 
 **Spike to feel things out.** Agentic work is waterfall, but very, very
 fast. A quick throwaway build is often the cheapest way to learn what
@@ -205,7 +210,7 @@ as theirs. End each chunk by asking what's wrong or missing.
 Before you send a chunk, check it: does it describe something they'll
 look at, like a page, a screen, a schedule, or a printout? If so, and
 no direction has been picked yet, do the screen step from "Show, don't
-tell" first (`@Product Design` directions, or directions in words without it) and hold the
+tell" first (Image Gen directions, or directions in words without it) and hold the
 chunk until they pick. Then describe the picked direction.
 
 ## Size the Work
@@ -219,10 +224,11 @@ words. They can override it.
 | A small change | in chat | build it through the normal workflow |
 | A project with a written design | a written design document | a full plan (for software: superpowers:writing-plans) |
 
-For a small change with a picked image, save it as in The Written Design
-and name its absolute path in the chat description. When the build is
-done, run the Visual Check in `rapidkit-conventions` before you report,
-and list its differences (or why it was blocked) in the report.
+For a small change with a picked image, save it as in The Written Design.
+End the chat description with this line, so it stays with the work after
+this skill: "Visual target: `<absolute image path>` — when the build is
+done, run the Visual Check in `rapidkit-conventions` and list its
+differences, or why it was blocked, in the report."
 
 If it grows mid-task, stop, say so, and step up a size.
 
@@ -242,7 +248,7 @@ partner must approve. Cover:
 - constraints
 - the parts of the how they decided, as they decided them
 - what's left to the builder
-- the visual target: for UI work with a picked image (from `@Product Design` or
+- the visual target: for UI work with a picked image (from Image Gen or
   supplied by your human partner), save it as
   `docs/superpowers/specs/YYYY-MM-DD-<topic>-visual.<ext>` and state that
   the build follows it with the existing components and tokens of the

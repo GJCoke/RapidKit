@@ -40,7 +40,7 @@ These rules override the generic workflow below wherever they conflict.
   When a task applies a domain skill, name that skill in the task so the executor reads it before editing.
 - **Never commit anything under `docs/superpowers/`.** This covers the whole directory, not just specs and plans. Commit steps stage explicit task-owned implementation paths only; never `git add .`, `git add -A`, `git commit -a`, or a force-add of an ignored path.
 - **No subagents under Codex.** When running in Codex, write and self-review the plan in this session, and execute it with superpowers:executing-plans in this session. Never offer or choose Subagent-driven execution there.
-- **Visual target.** When the spec names a visual target image, every UI task names that image by its absolute path in the checkout where the spec was written: `docs/superpowers/` is git-ignored, so a worktree does not contain it. The last task that touches the UI ends with the Visual Check in `rapidkit-conventions` against the image, and its report lists the differences or why the check was blocked. Specs without a visual target get no such step.
+- **Visual target.** When the spec names a visual target image, every UI task names that image by its absolute path in the checkout where the spec was written: `docs/superpowers/` is git-ignored, so a worktree does not contain it. The last task that touches the UI ends with the Visual Check in `rapidkit-conventions` against the image. The executor runs it itself after that task passes, never an implementer subagent, and ledgers the result as described in `execution-ledger.md`. Specs without a visual target get no such step.
 
 ## Scope Check
 

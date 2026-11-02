@@ -114,6 +114,12 @@ concurrency case that the plan does not name is not built on a ruling
 (Lean Code Rules in `rapidkit-conventions`). Do not stop for it either:
 ledger it as `Needs approval: <case> — <how likely>` and keep going.
 
+**Visual Check.** When the plan has a visual target, run its Visual Check
+(`rapidkit-conventions`) yourself after the task that ends with it passes;
+an implementer subagent may lack a browser. Do not fix the differences
+during execution. Ledger each one as `Visual: <location> — <difference>`,
+or the check as `Visual: blocked — <reason>`, and keep going.
+
 ## Finish
 
 Before you delete anything, collect from the ledger, in the order you made
@@ -124,8 +130,10 @@ them:
   with what it costs if wrong
 - every `minor (deferred)` line under "Deferred minors"
 - every `Needs approval:` line under "Needs your approval"
+- every `Visual:` line under "Visual differences" (your human partner
+  decides which to fix)
 
-All three lists are exhaustive: if the ledger holds a line, the list holds
+All four lists are exhaustive: if the ledger holds a line, the list holds
 it. Open the final message with the conclusion, then what your human
 partner must approve (Document Writing Rules in `rapidkit-conventions`).
 That message is the only place the decisions you took on your human
