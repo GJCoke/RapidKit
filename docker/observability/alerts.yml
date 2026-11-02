@@ -82,6 +82,42 @@ groups:
         annotations:
           summary: "RapidKitIsolatedEvents; inspect validity and recent release before acting"
           runbook: apps/website/src/backend/observability.md#event-isolation
+      - alert: RapidKitRedisMemoryPressure
+        expr: "rapidkit_redis_used_memory_bytes / rapidkit_redis_maxmemory_bytes > 0.85 and rapidkit_redis_maxmemory_bytes > 0"
+        for: 5m
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: Redis memory exceeds 85% of maxmemory; inspect retention and host capacity
+          runbook: apps/website/src/backend/observability.md#redis-capacity
+      - alert: RapidKitRedisMemoryUnbounded
+        expr: "rapidkit_redis_maxmemory_bytes == 0"
+        for: 10m
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: Redis maxmemory is unset; verify an explicit host memory budget
+          runbook: apps/website/src/backend/observability.md#redis-capacity
+      - alert: RapidKitRedisEvictions
+        expr: "increase(rapidkit_redis_evicted_keys_total[5m]) > 0 or (rapidkit_redis_evicted_keys_total > 0 unless rapidkit_redis_evicted_keys_total offset 5m)"
+        for: 0s
+        labels:
+          severity: critical
+          owner: rapidkit-operations
+        annotations:
+          summary: Redis evicted keys; investigate observation and business data loss
+          runbook: apps/website/src/backend/observability.md#redis-capacity
+      - alert: RapidKitStreamRetentionBehind
+        expr: "rapidkit_events_oldest_age_seconds > 605100 and rapidkit_events_length > 1 and rapidkit_events_pending == 0 and rapidkit_events_lag == 0"
+        for: 5m
+        labels:
+          severity: warning
+          owner: rapidkit-operations
+        annotations:
+          summary: Acknowledged stream history exceeds retention; inspect bounded trim progress
+          runbook: apps/website/src/backend/observability.md#stream-retention
       - alert: RapidKitPublicationGap
         expr: "increase(rapidkit_task_event_publish_failed_total[5m]) > 0 or (rapidkit_task_event_publish_failed_total > 0 unless rapidkit_task_event_publish_failed_total offset 5m) or increase(rapidkit_task_event_gaps_total[5m]) > 0 or (rapidkit_task_event_gaps_total > 0 unless rapidkit_task_event_gaps_total offset 5m)"
         for: 0s

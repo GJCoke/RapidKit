@@ -207,6 +207,8 @@ async def safe_trim(redis: Redis, *, cutoff_ms: int | None = None, groups: tuple
 
 async def stream_status(redis: Redis) -> dict:
     groups = await redis.xinfo_groups(STREAM_KEY)
+    length = await redis.xlen(STREAM_KEY)
+    first = await redis.xrange(STREAM_KEY, count=1)
     pending, oldest, lag = 0, None, 0
     for group in groups:
         summary = await redis.xpending(STREAM_KEY, group["name"])
@@ -220,6 +222,9 @@ async def stream_status(redis: Redis) -> dict:
         "oldest_pending_age_seconds": oldest,
         "lag": lag,
         "dead": await redis.xlen(DEAD_STREAM_KEY),
+        "length": length,
+        "memory_bytes": await redis.memory_usage(STREAM_KEY) or 0,
+        "oldest_age_seconds": max(0, time.time() - int(first[0][0].split("-")[0]) / 1000) if first else 0,
         "groups_valid": {g["name"] for g in groups} == set(REGISTERED_GROUPS),
     }
 

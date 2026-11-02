@@ -23,6 +23,7 @@ from celery.canvas import Signature
 from celery.result import AsyncResult
 from kombu import Connection, Producer
 from nanoid import generate
+from rapidkit_core.log import logger
 from rapidkit_core.nanoid import publication_request_id, request_id_scope
 from rapidkit_core.timezone import timezone as tz
 from rapidkit_framework.identity import IDENTITY_HEADER_KEYS, identity_from_headers, identity_headers, identity_scope
@@ -411,7 +412,19 @@ class Task(_Task):
         if not isinstance(request_id, str) or not request_id:
             request_id = generate()
         headers["request_id"] = request_id
-        with identity_scope(identity_from_headers(headers)), request_id_scope(request_id), sentry_scope():
+        identity = identity_from_headers(headers)
+        with (
+            identity_scope(identity),
+            request_id_scope(request_id),
+            sentry_scope(),
+            logger.contextualize(
+                task_id=self.request.id,
+                task_name=self.name,
+                attempt=self.request.retries or 0,
+                correlation_id=headers.get("audit_correlation_id") or headers.get("correlation_id") or request_id,
+                **{key: getattr(identity, key) for key in IDENTITY_HEADER_KEYS},
+            ),
+        ):
             return self._call_in_identity(args, kwargs, headers)
 
     def _call_in_identity(self, args, kwargs, saved_headers) -> Any:

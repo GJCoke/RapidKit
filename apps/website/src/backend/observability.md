@@ -70,6 +70,9 @@ docker compose --env-file docker/prod/.env.prod \
 | pending 最老 >120 秒，不要求数量增长                    | 持续 1 分钟；失去采样时保留已知失败                    |
 | 未读事件 lag >1000                                      | 持续 1 分钟 warning；阈值需按真实吞吐调优              |
 | Redis 请求指标丢弃                                      | warning；计数增加或首次快照已非零时可见                |
+| Redis used_memory/maxmemory >85%                        | 持续5分钟 warning；maxmemory为0另持续10分钟 warning    |
+| Redis evicted_keys 增加                                 | 立即 critical；包括发现目标时首次快照非零              |
+| 已ACK历史超过7天+300秒、流长度>1且pending/lag均为0      | 持续5分钟 warning，检查裁剪能力                        |
 | 隔离记录、发布失败、事件缺口、审计 fallback             | warning 或 critical；调查确认后处置证据                |
 | Worker 期望容量不足、后台任务停止                       | 容量持续 2 分钟，组件持续 1 分钟                       |
 | 日志预算 >90%、文件丢弃、磁盘余量 <20%/<10%、inode <10% | 预算 warning；丢弃与低空间 critical                    |
@@ -102,6 +105,26 @@ Alertmanager 按 alertname/service/component/instance 分组，10 秒等待、1 
 ### 事件隔离 {#event-isolation}
 
 按固定 reason_code 检查隔离事件的安全元数据。按照[观测事件恢复流程](./celery#观测事件恢复与运维)修复格式或时间后单独决定是否回放。恢复命令只追加观测事件，不执行业务任务；未归档隔离证据会阻止相关任务详情清理。
+
+### Stream保留与维护 {#stream-retention}
+
+全局采样新增 `rapidkit_events_length`、`rapidkit_events_memory_bytes`、`rapidkit_events_oldest_age_seconds`。前两者是主流的长度和Redis估算内存，不包含dead/审计/业务key；年龄取Redis源ID时间，不取可延迟或被修正的生产者timestamp。7天是最短保护窗口，不是长度或内存上限。
+
+唯一 observability 采样器每轮最多执行10次现有安全裁剪，每次最多1000条，共用 `stream_trim` 组件5秒总时限；本轮完成后整个采样器等待10秒再运行。理想上限约1000条/秒，实际还受网络、采样耗时和保护水位限制，不能按API副本数放大。原子脚本继续保护7天、所有已登记组的pending和未读水位，不加MAXLEN。未知/缺失组或新组未初始化时拒绝维护，`rapidkit_ops_sample_success{component="stream_trim"}`为0并触发现有采样失败告警；采样器退出由独立失效告警覆盖。
+
+`rapidkit_events_trim_removed_total`是采样器生命周期内的删除计数；`rapidkit_events_trim_last_run_timestamp_seconds`为上次完成维护轮的时间，`rapidkit_events_trim_last_removed_timestamp_seconds`为上次实际删除时间，尚未删除时为0。空闲流不删除属于正常情况；按年龄、长度、pending/lag和成功时间一起判断。采样器重启会重置累计值，使用rate/increase而非直接相减。失败保留上次值并标为未知，不能把旧时间视作当前进展。
+
+`RapidKitStreamRetentionBehind`只覆盖pending/lag均为0但已ACK历史仍超期的场景。固定水位保留最后一条时不告警；有pending或未读时使用既有积压规则。修复采样权限或恢复维护后，应看到删除计数推进及超期历史消退。不要删除group、pending或dead来制造恢复。
+
+### Redis内存与AOF容量 {#redis-capacity}
+
+采样器需要现有Stream命令、`MEMORY USAGE`和`INFO memory/stats/persistence`权限。INFO失败使 `redis_capacity` 组件未知并告警；独立 `redis` 组件仍按PING判定连通性，避免把容量ACL缺失误报为Redis宕机。MEMORY权限失败使 `events` 采样未知。不能把采样器HTTP200当作已采集。新增 `rapidkit_redis_used_memory_bytes`、`rapidkit_redis_used_memory_rss_bytes`、`rapidkit_redis_maxmemory_bytes`、`rapidkit_redis_evicted_keys_total`、`rapidkit_redis_aof_enabled`、`rapidkit_redis_aof_current_size_bytes`。INFO统计是整个Redis实例的数据；Stream memory_bytes只估算单个key，不应直接相减得出业务内存。
+
+used_memory/maxmemory超过85%持续5分钟告警。maxmemory为0表示未配置Redis上限，另持续10分钟告警；它不是0字节容量。evicted_keys新增立即critical，首个采样值已非零时也会提醒，需区分历史驱逐与新驱逐；停止新增不表示丢失数据已恢复。`noeviction`下内存耗尽表现为写入拒绝，不会增加驱逐计数，应同时查看发布失败、依赖错误和采样有效性。Redis上限不覆盖全部RSS、复制缓冲、fork写时复制及AOF磁盘，宿主机内存/磁盘告警不可省略。
+
+上线前按实际峰值事件速率估算：`7天主流内存 ≈ 事件/秒 × 604800 × 实测每条字节`。每任务通常产生多个生命周期事件，不能拿任务/秒代替事件/秒。在相近payload与group/PEL规模下测量MEMORY USAGE增量；另计dead、业务/审计key、碎片、复制、维护中断及峰值余量。AOF不能按当前内存简单换算，需测真实append/rewrite增长及重写临时磁盘。记录maxmemory、驱逐策略、宿主机额度、AOF/备份磁盘和允许中断窗口，再据此确定负载范围与告警阈值。
+
+dead没有自动到期。由运维/后端负责人对每次积压建处置记录，明确原因、安全归档位置、回放/保留结论和截止日期；核对归档可读及源编号后，单独批准处理具体记录。本轮不提供自动删除，也不把人工归档要求视作已有归档系统。真实环境必须指定具体负责人、保存期和容量预算；未完成时上线清单保持待验。
 
 ### 发布缺口 {#publication-gap}
 

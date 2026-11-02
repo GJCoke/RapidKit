@@ -11,7 +11,7 @@ from pathlib import Path
 
 from plugin_worker.inventory import group_summaries
 from prometheus_client import CollectorRegistry, start_http_server
-from prometheus_client.core import GaugeMetricFamily
+from prometheus_client.core import CounterMetricFamily, GaugeMetricFamily
 from rapidkit_core.config import settings
 from rapidkit_core.database import AsyncSessionLocal
 from rapidkit_core.log import component_failed, component_recovered, setup_logging
@@ -21,9 +21,20 @@ from redis.backoff import NoBackoff
 from redis.retry import Retry
 from sqlalchemy import text
 
-from src.queues.event_stream import stream_status
+from src.queues.event_stream import safe_trim, stream_status
 
-SECTIONS = ("redis", "postgresql", "events", "audit", "capacity", "inventory", "logs", "retention")
+SECTIONS = (
+    "redis",
+    "redis_capacity",
+    "postgresql",
+    "events",
+    "stream_trim",
+    "audit",
+    "capacity",
+    "inventory",
+    "logs",
+    "retention",
+)
 
 
 class OperationalSampler:
@@ -38,6 +49,8 @@ class OperationalSampler:
         self.values, self.status, self.timestamps = {}, {}, {}
         self.heartbeat = 0
         self.last_retention = float("-inf")
+        self.trim_removed = 0
+        self.trim_last_removed = 0
         self.lock = threading.Lock()
 
     async def _sample(self, component, function):
@@ -57,6 +70,19 @@ class OperationalSampler:
     async def _redis(self):
         return {"dependency_up": int(bool(await self.redis.ping()))}
 
+    async def _redis_capacity(self):
+        memory = await self.redis.info("memory")
+        stats = await self.redis.info("stats")
+        persistence = await self.redis.info("persistence")
+        return {
+            "redis_used_memory_bytes": memory["used_memory"],
+            "redis_used_memory_rss_bytes": memory["used_memory_rss"],
+            "redis_maxmemory_bytes": memory["maxmemory"],
+            "redis_evicted_keys_total": stats["evicted_keys"],
+            "redis_aof_enabled": persistence["aof_enabled"],
+            "redis_aof_current_size_bytes": persistence.get("aof_current_size", 0),
+        }
+
     async def _postgresql(self):
         async with self.sessions() as session:
             connection = await session.connection()
@@ -72,6 +98,25 @@ class OperationalSampler:
             "events_oldest_pending_seconds": state["oldest_pending_age_seconds"] or 0,
             "events_lag": state["lag"],
             "events_dead": state["dead"],
+            "events_length": state["length"],
+            "events_memory_bytes": state["memory_bytes"],
+            "events_oldest_age_seconds": state["oldest_age_seconds"],
+        }
+
+    async def _stream_trim(self):
+        for _ in range(10):
+            result = await safe_trim(self.redis)
+            if result["reason"] != "safe":
+                raise ValueError("Observation trim refused: " + result["reason"])
+            self.trim_removed += result["removed"]
+            if result["removed"]:
+                self.trim_last_removed = time.time()
+            if result["removed"] < 1000:
+                break
+        return {
+            "events_trim_removed_total": self.trim_removed,
+            "events_trim_last_run_timestamp_seconds": time.time(),
+            "events_trim_last_removed_timestamp_seconds": self.trim_last_removed,
         }
 
     async def _audit(self):
@@ -160,7 +205,8 @@ class OperationalSampler:
                     yield family
             else:
                 for metric, value in data.items():
-                    yield GaugeMetricFamily(
+                    family = CounterMetricFamily if metric.endswith("_total") else GaugeMetricFamily
+                    yield family(
                         "rapidkit_" + metric, "Global operational state; gate on sampling validity", value=value
                     )
 

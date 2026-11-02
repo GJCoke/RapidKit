@@ -1,0 +1,274 @@
+{
+  "rule_files": ["alerts.yml"],
+  "evaluation_interval": "1m",
+  "tests":
+    [
+      {
+        "name": "sustained memory pressure",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_redis_used_memory_bytes", "values": "90+0x20" },
+            { "series": "rapidkit_redis_maxmemory_bytes", "values": "100+0x20" },
+          ],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "6m",
+              "alertname": "RapidKitRedisMemoryPressure",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Redis memory exceeds 85% of maxmemory; inspect retention and host capacity",
+                        "runbook": "apps/website/src/backend/observability.md#redis-capacity",
+                      },
+                  },
+                ],
+            },
+          ],
+      },
+      {
+        "name": "healthy memory",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_redis_used_memory_bytes", "values": "50+0x20" },
+            { "series": "rapidkit_redis_maxmemory_bytes", "values": "100+0x20" },
+          ],
+        "alert_rule_test": [{ "eval_time": "10m", "alertname": "RapidKitRedisMemoryPressure", "exp_alerts": [] }],
+      },
+      {
+        "name": "brief pressure and real recovery",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_redis_used_memory_bytes", "values": "90x1 50x18" },
+            { "series": "rapidkit_redis_maxmemory_bytes", "values": "100+0x20" },
+          ],
+        "alert_rule_test": [{ "eval_time": "4m", "alertname": "RapidKitRedisMemoryPressure", "exp_alerts": [] }],
+      },
+      {
+        "name": "unbounded memory explicit warning",
+        "interval": "1m",
+        "input_series": [{ "series": "rapidkit_redis_maxmemory_bytes", "values": "0+0x20" }],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "11m",
+              "alertname": "RapidKitRedisMemoryUnbounded",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Redis maxmemory is unset; verify an explicit host memory budget",
+                        "runbook": "apps/website/src/backend/observability.md#redis-capacity",
+                      },
+                  },
+                ],
+            },
+            { "eval_time": "11m", "alertname": "RapidKitRedisMemoryPressure", "exp_alerts": [] },
+          ],
+      },
+      {
+        "name": "positive first eviction snapshot",
+        "interval": "1m",
+        "input_series": [{ "series": "rapidkit_redis_evicted_keys_total", "values": "3+0x20" }],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "2m",
+              "alertname": "RapidKitRedisEvictions",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "critical", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Redis evicted keys; investigate observation and business data loss",
+                        "runbook": "apps/website/src/backend/observability.md#redis-capacity",
+                      },
+                  },
+                ],
+            },
+            { "eval_time": "10m", "alertname": "RapidKitRedisEvictions", "exp_alerts": [] },
+          ],
+      },
+      {
+        "name": "ongoing evictions",
+        "interval": "1m",
+        "input_series": [{ "series": "rapidkit_redis_evicted_keys_total", "values": "0+1x20" }],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "10m",
+              "alertname": "RapidKitRedisEvictions",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "critical", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Redis evicted keys; investigate observation and business data loss",
+                        "runbook": "apps/website/src/backend/observability.md#redis-capacity",
+                      },
+                  },
+                ],
+            },
+          ],
+      },
+      {
+        "name": "no evictions",
+        "interval": "1m",
+        "input_series": [{ "series": "rapidkit_redis_evicted_keys_total", "values": "0+0x20" }],
+        "alert_rule_test": [{ "eval_time": "10m", "alertname": "RapidKitRedisEvictions", "exp_alerts": [] }],
+      },
+      {
+        "name": "old acknowledged history with no consumer backlog",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_oldest_age_seconds", "values": "700000+60x20" },
+            { "series": "rapidkit_events_length", "values": "20000+0x20" },
+            { "series": "rapidkit_events_pending", "values": "0+0x20" },
+            { "series": "rapidkit_events_lag", "values": "0+0x20" },
+          ],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "6m",
+              "alertname": "RapidKitStreamRetentionBehind",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Acknowledged stream history exceeds retention; inspect bounded trim progress",
+                        "runbook": "apps/website/src/backend/observability.md#stream-retention",
+                      },
+                  },
+                ],
+            },
+          ],
+      },
+      {
+        "name": "last watermark guard alone",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_oldest_age_seconds", "values": "700000+60x20" },
+            { "series": "rapidkit_events_length", "values": "1+0x20" },
+            { "series": "rapidkit_events_pending", "values": "0+0x20" },
+            { "series": "rapidkit_events_lag", "values": "0+0x20" },
+          ],
+        "alert_rule_test": [{ "eval_time": "10m", "alertname": "RapidKitStreamRetentionBehind", "exp_alerts": [] }],
+      },
+      {
+        "name": "pending source remains protected",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_oldest_age_seconds", "values": "700000+60x20" },
+            { "series": "rapidkit_events_length", "values": "20000+0x20" },
+            { "series": "rapidkit_events_pending", "values": "1+0x20" },
+            { "series": "rapidkit_events_lag", "values": "0+0x20" },
+          ],
+        "alert_rule_test": [{ "eval_time": "10m", "alertname": "RapidKitStreamRetentionBehind", "exp_alerts": [] }],
+      },
+      {
+        "name": "unread source remains protected",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_oldest_age_seconds", "values": "700000+60x20" },
+            { "series": "rapidkit_events_length", "values": "20000+0x20" },
+            { "series": "rapidkit_events_pending", "values": "0+0x20" },
+            { "series": "rapidkit_events_lag", "values": "10+0x20" },
+          ],
+        "alert_rule_test": [{ "eval_time": "10m", "alertname": "RapidKitStreamRetentionBehind", "exp_alerts": [] }],
+      },
+      {
+        "name": "failed sampling retains known faults",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_oldest_age_seconds", "values": "700000+60x20" },
+            { "series": "rapidkit_events_length", "values": "20000+0x20" },
+            { "series": "rapidkit_events_pending", "values": "0+0x20" },
+            { "series": "rapidkit_events_lag", "values": "0+0x20" },
+            { "series": "rapidkit_redis_used_memory_bytes", "values": "90+0x20" },
+            { "series": "rapidkit_redis_maxmemory_bytes", "values": "100+0x20" },
+            { "series": 'rapidkit_ops_sample_success{component="events"}', "values": "1x1 0x18" },
+            { "series": 'rapidkit_ops_sample_success{component="redis"}', "values": "1x1 0x18" },
+          ],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "8m",
+              "alertname": "RapidKitStreamRetentionBehind",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Acknowledged stream history exceeds retention; inspect bounded trim progress",
+                        "runbook": "apps/website/src/backend/observability.md#stream-retention",
+                      },
+                  },
+                ],
+            },
+            {
+              "eval_time": "8m",
+              "alertname": "RapidKitRedisMemoryPressure",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Redis memory exceeds 85% of maxmemory; inspect retention and host capacity",
+                        "runbook": "apps/website/src/backend/observability.md#redis-capacity",
+                      },
+                  },
+                ],
+            },
+          ],
+      },
+      {
+        "name": "observed progress resolves retention debt",
+        "interval": "1m",
+        "input_series":
+          [
+            { "series": "rapidkit_events_oldest_age_seconds", "values": "700000x7 30x12" },
+            { "series": "rapidkit_events_length", "values": "20000+0x20" },
+            { "series": "rapidkit_events_pending", "values": "0+0x20" },
+            { "series": "rapidkit_events_lag", "values": "0+0x20" },
+          ],
+        "alert_rule_test":
+          [
+            {
+              "eval_time": "6m",
+              "alertname": "RapidKitStreamRetentionBehind",
+              "exp_alerts":
+                [
+                  {
+                    "exp_labels": { "severity": "warning", "owner": "rapidkit-operations" },
+                    "exp_annotations":
+                      {
+                        "summary": "Acknowledged stream history exceeds retention; inspect bounded trim progress",
+                        "runbook": "apps/website/src/backend/observability.md#stream-retention",
+                      },
+                  },
+                ],
+            },
+            { "eval_time": "10m", "alertname": "RapidKitStreamRetentionBehind", "exp_alerts": [] },
+          ],
+      },
+    ],
+}

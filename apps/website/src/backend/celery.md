@@ -9,7 +9,7 @@
 | 组件             | 路径                     | 说明                                                    |
 | ---------------- | ------------------------ | ------------------------------------------------------- |
 | 自定义 Celery 类 | `src/queues/celery.py`   | 增强类型提示，默认使用自定义 Task 基类                  |
-| 自定义 Task 类   | `src/queues/task.py`     | 支持 async def，隔离身份并丢弃任意 stdout                    |
+| 自定义 Task 类   | `src/queues/task.py`     | 支持 async def，隔离身份并丢弃任意 stdout               |
 | Celery 应用      | `src/queues/app.py`      | 应用实例、配置、任务自动发现                            |
 | Signal 处理      | `src/queues/signals.py`  | Worker 进程中注册信号，发布事件到 Redis Stream          |
 | 事件消费者       | `src/queues/consumer.py` | FastAPI 进程中消费 Redis Stream，持久化并推送 WebSocket |
@@ -54,15 +54,15 @@ if settings.ENABLE_CELERY_MONITOR:
 
 在 `src/queues/signals.py` 中注册 Celery Signal，捕获事件并发布到 Redis Stream（`celery:events`）：
 
-| Signal            | 事件类型                        | 说明                     |
-| ----------------- | ------------------------------- | ------------------------ |
-| `task_prerun`     | `task.started`                  | 任务开始执行             |
-| `task_postrun`    | `task.success` | 任务成功完成             |
-| `task_failure`    | `task.failure`                  | 任务失败（含异常和堆栈） |
-| `task_retry`      | `task.retry`                    | 任务重试                 |
-| `task_revoked`    | `task.revoked`                  | 任务被撤销               |
-| `worker_ready`    | `worker.online`                 | Worker 上线              |
-| `worker_shutdown` | `worker.offline`                | Worker 下线              |
+| Signal            | 事件类型         | 说明                     |
+| ----------------- | ---------------- | ------------------------ |
+| `task_prerun`     | `task.started`   | 任务开始执行             |
+| `task_postrun`    | `task.success`   | 任务成功完成             |
+| `task_failure`    | `task.failure`   | 任务失败（含异常和堆栈） |
+| `task_retry`      | `task.retry`     | 任务重试                 |
+| `task_revoked`    | `task.revoked`   | 任务被撤销               |
+| `worker_ready`    | `worker.online`  | Worker 上线              |
+| `worker_shutdown` | `worker.offline` | Worker 下线              |
 
 Worker 上线后还会启动独立线程，每 30 秒发送心跳事件（`worker.heartbeat`）。
 
@@ -115,6 +115,8 @@ def __call__(self, *args, **kwargs):
 
 任务发布与执行传递 request_id、correlation_id、可信身份和 attempt。手动触发的审计流程优先使用 audit_correlation_id；没有 HTTP 来源时生成独立请求关联。Worker 结果表新增 nullable 索引列 request_id/correlation_id，列表和详情返回这些字段，GET /tasks 支持 requestId/correlationId 精确筛选，仍需 task:read 权限并保留原时间范围筛选。旧行关联为空，不做推测性回填。
 
+任务内普通日志也绑定真实投递的 task_id、task_name、attempt、correlation_id 和 user_id/actor_id/impersonation_session_id。绑定覆盖依赖创建、执行及关闭；同步和异步任务都适用，`asyncio.to_thread` 继承上下文，结束或异常后恢复外层字段。同一 request_id 下的多个任务应按 task_id 和 attempt 区分，流程编号优先 audit_correlation_id，其次 correlation_id，最后 request_id。只绑定安全编号，不记录参数、返回值或任意 header。没有投递元数据的直接调用不编造 task_id。
+
 结果关联与执行审计在同一个 PostgreSQL 事务保存，审计 request_id 复用任务关联；流程关联依次回退到 audit_correlation_id、correlation_id、request_id、task_id。消费者使用事务级任务锁处理首次并发创建，并锁住 Worker 计数行。重复开始、重试、终态不会重复累计计数/审计；没有开始事件的终态不扣减其他任务的活跃计数。业务通知在提交后执行，数据库回滚时不提前宣布任务完成。Socket/内存事件总线通知仍非持久 outbox，不能承诺提交后崩溃也一定推送。
 
 ## 观测事件恢复与运维
@@ -124,8 +126,9 @@ def __call__(self, *args, **kwargs):
 - DB 事务与审计成功提交后才 XACK。数据库/Redis 短暂失败不按固定次数丢弃，保留 pending。
 - 每次数据库处理预算 20 秒，接管空闲阈值 60 秒，避免正常处理中的记录被频繁抢占。每轮新消息和回收消息各有批次预算，新消息优先，不让旧积压永久饿死心跳。
 - JSON、事件类型、身份、attempt、字段长度和时间戳先验证。已知不可解析的事件原子写入安全隔离流后 ACK；隔离写入失败仍留 pending。不会打印或归档原始坏 payload。任务 ID 沿用执行审计的 100 字符限制，原生 Celery UUID 不受影响。
-- 生产端不再使用无条件 MAXLEN。消费者每分钟尝试一次安全维护，默认保留至少 7 天；这是观测流窗口，不是容量上限或 SLA。
-- Lua 在一次原子操作里核对实际/登记组集合，以时间窗口、所有组 last-delivered-id 和最老 pending 的最低水位裁剪；每轮最多删除 1000 条。未知/缺失组或新组水位为 0 时不裁剪。新增组必须同步 REGISTERED_GROUPS。隔离流不自动裁剪、不设 TTL；需独立归档/容量管理。
+- 生产端不再使用无条件 MAXLEN。默认保留至少 7 天；这是观测流窗口，不是容量上限或 SLA。
+- Lua 在一次原子操作里核对实际/登记组集合，以时间窗口、所有组 last-delivered-id 和最老 pending 的最低水位裁剪；每次最多删除 1000 条。未知/缺失组或新组水位为 0 时不裁剪。新增组必须同步 REGISTERED_GROUPS。隔离流不自动裁剪、不设 TTL；需独立归档/容量管理。
+- 自动裁剪由单例 observability 采样器执行，消费者不再承担每分钟维护。每轮最多10次原子裁剪，共用该组件5秒总时限；不足1000条即结束。采样轮完成后等待10秒。维护不占用业务事务，也不等待消费批次；采样器停止则维护暂停。部署必须保留采样器、失效告警及[容量验收](./observability#stream-retention)。手工 trim 命令仍只执行一次最多1000条的原子裁剪。
 - Redis 7 XAUTOCLAIM 返回源内容已丢失的 pending ID 时输出 task.event.gap ERROR。这表示历史硬裁剪或人工删除造成缺口，不能称为恢复成功。
 - 发布失败输出本地安全 task.event.publish_failed ERROR，并累计进程内失败计数；它不依赖 Redis 回传，也不改变业务任务结果；发布连接/读写各设 2 秒超时，禁用客户端自动重试，防止观测通道无限阻塞任务收尾。恢复写入时会说明缺失事件未补回；没有生产端 durable outbox，Redis 断开期间仍可能丢观测记录。
 
@@ -168,15 +171,15 @@ Worker 状态追踪基于心跳检测机制：
 
 `CeleryWorker` 模型记录的信息：
 
-| 字段                | 说明                               |
-| ------------------- | ---------------------------------- |
-| `hostname`          | Worker 主机名                      |
-| `status`            | 在线状态（ONLINE / OFFLINE）       |
-| `concurrency`       | 并发数                             |
-| `software_info`     | Celery 版本、Python 版本、平台信息 |
-| `active_task_count` | 当前活跃任务数                     |
+| 字段                | 说明                                       |
+| ------------------- | ------------------------------------------ |
+| `hostname`          | Worker 主机名                              |
+| `status`            | 在线状态（ONLINE / OFFLINE）               |
+| `concurrency`       | 并发数                                     |
+| `software_info`     | Celery 版本、Python 版本、平台信息         |
+| `active_task_count` | 当前活跃任务数                             |
 | `processed_count`   | 已记录终态任务数（含撤销，重放不重复累计） |
-| `last_heartbeat`    | 最后心跳时间                       |
+| `last_heartbeat`    | 最后心跳时间                               |
 
 ## 添加新任务
 

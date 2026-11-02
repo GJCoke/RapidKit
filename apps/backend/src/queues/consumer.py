@@ -10,7 +10,6 @@ Date    : 2026-04-02
 import asyncio
 import os
 import socket
-import time
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
@@ -26,7 +25,7 @@ if TYPE_CHECKING:
     from fastapi_sio_di import AsyncServer
     from rapidkit_core.leader_election import LeaderElection
 
-from src.queues.event_stream import CONSUMER_GROUP, STREAM_KEY, process_message, safe_trim
+from src.queues.event_stream import CONSUMER_GROUP, STREAM_KEY, process_message
 
 CONSUMER_NAME = f"consumer-{socket.gethostname()}-{os.getpid()}"
 BLOCK_MS = 5000
@@ -52,7 +51,7 @@ async def consume_events(sio: "AsyncServer") -> None:
     接管空闲的待确认事件，再读取新事件；仅在事务提交成功后确认。
     """
     redis = RedisManager.client()
-    initialized, claim_cursor, last_maintenance = False, "0-0", float("-inf")
+    initialized, claim_cursor = False, "0-0"
     logger.info("Event stream consumer started.")
     while True:
         try:
@@ -86,13 +85,6 @@ async def consume_events(sio: "AsyncServer") -> None:
                         raise
                     except Exception as exc:
                         component_failed("task_event_persistence", exc)
-            if time.monotonic() - last_maintenance >= 60:
-                last_maintenance = time.monotonic()
-                result = await safe_trim(redis)
-                if result["reason"] == "group_mismatch":
-                    logger.bind(event="task.event.trim_skipped", reason_code="group_mismatch").warning(
-                        "Observation trim refused; reconcile registered consumer groups"
-                    )
             component_recovered("task_event_consumer")
         except asyncio.CancelledError:
             logger.info("Event stream consumer stopped.")

@@ -506,6 +506,12 @@ runtime_state.write_snapshot()
         wait(lambda: fetch(url("backend-api", 8006) + "/health/ready")[0] == 200)
         summary["postgresql_outage_real_rule_and_recovery"] = True
         assert query("rapidkit_task_retention_enabled == 0")
+        wait(lambda: query('rapidkit_ops_sample_success{component="stream_trim"} == 1'))
+        assert query("rapidkit_events_trim_last_run_timestamp_seconds > 0")
+        assert query("rapidkit_events_length >= 0")
+        assert query("rapidkit_events_memory_bytes >= 0")
+        assert query("rapidkit_redis_used_memory_bytes > 0")
+        summary["redis_capacity_and_stream_maintenance_exported"] = True
         pending_script = """
 redis.call('DEL', KEYS[1])
 redis.call('XGROUP', 'CREATE', KEYS[1], 'fastapi-consumers', '0', 'MKSTREAM')
@@ -514,6 +520,8 @@ redis.call('XREADGROUP', 'GROUP', 'fastapi-consumers', 'paused-fixture', 'COUNT'
 return id
 """
         unread_script = """
+redis.call('DEL', KEYS[1])
+redis.call('XGROUP', 'CREATE', KEYS[1], 'fastapi-consumers', '0', 'MKSTREAM')
 for i = 1, 1100 do
     redis.call('XADD', KEYS[1], '*', 'event_type', 'worker.heartbeat', 'data', ARGV[2], 'timestamp', ARGV[3])
 end
@@ -530,8 +538,7 @@ return 1100
             before = len(notifications(alert_name))
             # Stop consumers to close server-side blocking reads before seeding unread events.
             run(*compose, "stop", "backend-api", timeout=60)
-            # Only this disposable project's stream is reset to create an old source ID.
-            run(
+            redis_cli = (
                 "docker",
                 "exec",
                 container("redis"),
@@ -541,6 +548,11 @@ return 1100
                 environment["REDIS_ROOT_PASSWORD"],
                 "-n",
                 environment["REDIS_DATABASE"],
+            )
+            snapshot = {"before_seed": json.loads(run(*redis_cli, "--json", "XINFO", "GROUPS", "celery:events"))}
+            # Each scenario resets this disposable stream; shutdown can leave in-flight messages pending.
+            run(
+                *redis_cli,
                 "EVAL",
                 seed,
                 "1",
@@ -549,6 +561,8 @@ return 1100
                 json.dumps({"hostname": worker_hostname}),
                 datetime.now(UTC).isoformat(),
             )
+            snapshot["seeded"] = json.loads(run(*redis_cli, "--json", "XINFO", "GROUPS", "celery:events"))
+            (output / (alert_name + "-fixture.json")).write_text(json.dumps(snapshot, indent=2))
             if alert_name == "RapidKitPendingGrowing":
                 wait(
                     lambda: (
