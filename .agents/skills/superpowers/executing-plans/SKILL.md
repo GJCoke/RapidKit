@@ -156,6 +156,11 @@ The workspace and ledger are shared with superpowers:subagent-driven-development
 — same directory, same format — so a plan can change executors mid-flight
 and the new one resumes from the same ledger.
 
+- Run every script from the repo root by its full path:
+  `bash .agents/skills/superpowers/executing-plans/scripts/<name>` for
+  this skill's scripts and
+  `bash .agents/skills/superpowers/subagent-driven-development/scripts/<name>`
+  for the shared ones. Pass PLAN_FILE as the repo-relative plan path.
 - Each plan owns a workspace: at skill start, run
   `../subagent-driven-development/scripts/sdd-workspace PLAN_FILE` — it
   prints the plan's git-ignored directory

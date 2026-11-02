@@ -77,7 +77,7 @@ independently testable deliverable.
 
 ## Plan Document Header
 
-**Every plan MUST start with this header.** Write the plan in Chinese and follow the Document Writing Rules in `rapidkit-conventions`: the first sentence is the conclusion, the second names what your human partner must approve.
+**Every plan MUST start with this header.** Write the plan in Chinese and follow the Document Writing Rules in `rapidkit-conventions`: the first sentence is the conclusion, the second names what your human partner must approve. Keep the `### Task N:` headings and the `Run:` / `Expected:` step keywords in English: `task-brief` and the executors parse them.
 
 ```markdown
 # [Feature Name] Implementation Plan

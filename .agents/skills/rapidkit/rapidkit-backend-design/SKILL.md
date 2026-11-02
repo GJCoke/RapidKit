@@ -221,7 +221,6 @@ from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.status_codes import StatusCode
 from rapidkit_core.uuid7 import uuid7
-from rapidkit_core.nanoid import nanoid
 from rapidkit_security import AccessJWT, decode_token, hash_password
 from rapidkit_framework.events import Event, event_bus
 from rapidkit_framework.context import ctx

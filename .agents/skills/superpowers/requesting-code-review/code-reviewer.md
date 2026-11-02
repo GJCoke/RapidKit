@@ -24,11 +24,29 @@ Subagent (general-purpose):
 
     **Base:** [BASE_SHA]
     **Head:** [HEAD_SHA]
+    **Diff file:** [DIFF_FILE]
+
+    Read the diff file once; it is your view of the change. If no diff
+    file is given, fetch the diff yourself:
 
     ```bash
     git diff --stat [BASE_SHA]..[HEAD_SHA]
     git diff [BASE_SHA]..[HEAD_SHA]
     ```
+
+    ## Review Focus
+
+    [REVIEW_FOCUS]
+
+    Check each line above deliberately. "None" means the plan has no
+    Review Focus section.
+
+    ## Calls Already Made
+
+    [LEDGER_RULINGS]
+
+    These are the executor's rulings and deferred items. Weigh them; do
+    not re-report a ruled item unless the ruling is wrong.
 
     ## The spec is a vision document
 
@@ -38,7 +56,9 @@ Subagent (general-purpose):
     software would expect: a reasonable person's expectation is a
     requirement, and a spec's silence is not permission. Grade such
     findings by their effect on that person, not by whether the spec
-    mentions the trigger.
+    mentions the trigger. A rare boundary, race or concurrency case is
+    not such a finding: list it under "Declined to judge" with how likely
+    it is, and the user decides whether to handle it.
 
     ## Declined to judge
 
@@ -49,7 +69,7 @@ Subagent (general-purpose):
 
     ## Read-Only Review
 
-    Your review is read-only on this checkout. Do not mutate the working tree, the index, HEAD, or branch state in any way. Use tools like `git show`, `git diff`, and `git log` to inspect history. If you need a working copy of a different revision, check it out into a separate temporary directory (e.g. `git worktree add /tmp/review-[SHA] [SHA]`) — never move HEAD on this checkout.
+    Your review is read-only on this checkout. Do not mutate the working tree, the index, HEAD, or branch state in any way. Use tools like `git show`, `git diff`, and `git log` to inspect history. To read a file at another revision, use `git show <sha>:<path>`. Never create a worktree and never move HEAD on this checkout.
 
     ## You Do Not Dispatch Subagents
 
@@ -174,6 +194,9 @@ Subagent (general-purpose):
 - `[PLAN_OR_REQUIREMENTS]` — what it should do (plan file path, task text, or requirements)
 - `[BASE_SHA]` — starting commit
 - `[HEAD_SHA]` — ending commit
+- `[DIFF_FILE]` — the review package path `review-package` printed, or "none"
+- `[REVIEW_FOCUS]` — the plan's Review Focus section verbatim, or "none"
+- `[LEDGER_RULINGS]` — the ledger's `Ruling:`, parked and `minor (deferred)` lines, or "none"
 
 **Reviewer returns:** Strengths, Issues (Critical / Important / Minor), Recommendations, Assessment
 

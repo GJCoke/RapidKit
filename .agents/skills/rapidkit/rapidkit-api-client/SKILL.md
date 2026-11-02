@@ -74,8 +74,8 @@ declare global {
   namespace Api {
     namespace Worker {
       // OpenAPI-derived types (preferred for all REST endpoints)
-      type WorkerSearchParams = Service.ApiRequest<"/api/v1/workers", "get", "query">
-      type WorkerList = Service.ApiResponse<"/api/v1/workers">
+      type TaskSearchParams = Service.ApiRequest<"/api/v1/tasks", "get", "query">
+      type TaskList = Service.ApiResponse<"/api/v1/tasks">
       type WorkerDetail = Service.ApiResponse<"/api/v1/workers/{worker_id}">
       type WorkerControlResponse = Service.ApiResponse<"/api/v1/workers/{worker_id}/ping", "post">
 
@@ -99,9 +99,9 @@ Each module's API functions live in `service/api/<module>.ts`:
 ```typescript
 import { request } from "../request"
 
-/** Fetch worker list */
-export function fetchGetWorkerList(params?: Api.Worker.WorkerSearchParams) {
-  return request<Api.Worker.WorkerList>({ url: "/workers", method: "get", params })
+/** Fetch task list (paginated) */
+export function fetchGetTaskList(params?: Api.Worker.TaskSearchParams) {
+  return request<Api.Worker.TaskList>({ url: "/tasks", method: "get", params })
 }
 
 /** Fetch worker detail */
@@ -117,7 +117,7 @@ export function fetchPingWorker(workerId: string) {
 
 Workers expose reads and control actions, not generic create/delete endpoints. Copy the exact OpenAPI path parameter name (`worker_id`, `user_id`, etc.) when deriving types. UUID resource IDs are strings in TypeScript.
 
-Naming convention: `fetch` + HTTP verb + noun (e.g., `fetchGetWorkerList`, `fetchCreateSchedule`, `fetchDeleteSchedule`).
+Naming convention: `fetch` + HTTP verb + noun (e.g., `fetchGetTaskList`, `fetchCreateSchedule`, `fetchDeleteSchedule`).
 
 URL paths omit the `/api/v1` prefix -- it is part of `baseURL`.
 
@@ -128,10 +128,10 @@ All API functions MUST be re-exported through the barrel file `service/api/index
 The request instance uses the **flat response pattern** (never throws):
 
 ```typescript
-const { data, error } = await fetchGetWorkerList(params)
+const { data, error } = await fetchGetTaskList(params)
 if (!error) {
-  // data is typed as Api.Worker.WorkerList
-  workerList.value = data
+  // data is typed as Api.Worker.TaskList
+  taskList.value = data
 }
 ```
 
