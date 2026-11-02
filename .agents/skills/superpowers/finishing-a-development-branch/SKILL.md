@@ -11,7 +11,9 @@ In the RapidKit repository, the root `AGENTS.md` Git workflow takes
 precedence over this skill:
 
 - Report the task branch, its commits, the validation run and any
-  remaining limitations, then present the options. Never pick one
+  remaining limitations, then present the options. Follow the Document
+  Writing Rules in `rapidkit-conventions`: open with the conclusion, then
+  what your human partner must choose or approve. Never pick one
   yourself: merging, pushing, opening a PR, rebasing, amending history,
   discarding work and deleting branches or worktrees each need your human
   partner's explicit choice.

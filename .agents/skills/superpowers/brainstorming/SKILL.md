@@ -209,7 +209,10 @@ order, and brainstorm them one at a time.
 ## The Written Design
 
 For a project, write a plain document a talented builder in the domain
-could plan from without going back to your human partner. Cover:
+could plan from without going back to your human partner. Write it in
+Chinese and follow the Document Writing Rules in `rapidkit-conventions`:
+the first sentence is the conclusion, the second names what your human
+partner must approve. Cover:
 
 - intent and the why
 - goals, non-goals, anti-goals
@@ -239,7 +242,8 @@ until the check is back. Sort what the builder asks into three piles:
 
 Bring the "theirs" pile in one message, most important first. Update the
 document with their answers, then hand it over with a short list of the
-calls you made so they can check those while reading. That's the only
+calls you made so they can check those while reading. The handover
+message also opens with the conclusion, then what they must approve. That's the only
 round of questions the check produces. Without a subagent tool, read the
 document as that builder yourself.
 

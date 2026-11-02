@@ -19,6 +19,8 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 
 If you haven't run the verification command in this message, you cannot claim it passes.
 
+Write the completion report by the Document Writing Rules in `rapidkit-conventions`: the first sentence is the verified result, the second is what your human partner must approve or "无需批准". Put the evidence after them.
+
 ## The Gate Function
 
 ```

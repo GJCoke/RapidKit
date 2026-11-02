@@ -116,9 +116,11 @@ Subagent (general-purpose):
 
     **Code quality:**
     - Clean separation of concerns?
-    - Proper error handling?
+    - Proper error handling? No `try/catch` that only re-raises, logs or hides
+      the error?
     - DRY without premature abstraction?
-    - Edge cases handled?
+    - Edge cases the task names handled? Rare boundary or concurrency cases
+      the task does not name must not be handled without approval.
 
     **Tests:**
     - Do the new and changed tests verify real behavior, not mocks?
@@ -143,6 +145,8 @@ Subagent (general-purpose):
     - split: one function doing several unrelated jobs. Split by job, never
       by line count.
     - noise: comments that restate the code
+    - over-defense: handling for a rare case nobody approved, or the same
+      check repeated inside the entry boundary
 
     Your report should point at evidence: file:line references for every
     finding and for any check you would otherwise answer with a bare
@@ -169,7 +173,7 @@ Subagent (general-purpose):
     human decides.
     Lean findings this change introduced — an abstraction with one
     implementation, a pass-through wrapper, an option or config nobody sets,
-    re-implementing an existing helper — are Important, not Minor.
+    re-implementing an existing helper, over-defense — are Important, not Minor.
     Every finding needs a concrete case: the input or situation that goes
     wrong, or the exact lines that can be deleted. No case, no finding.
     Propose the smallest fix; prefer fixes that delete code, and never ask

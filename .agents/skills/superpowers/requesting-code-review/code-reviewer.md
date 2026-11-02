@@ -69,10 +69,12 @@ Subagent (general-purpose):
 
     **Code quality:**
     - Clean separation of concerns?
-    - Proper error handling?
+    - Proper error handling? No `try/catch` that only re-raises, logs or hides
+      the error?
     - Type safety where applicable?
     - DRY without premature abstraction?
-    - Edge cases handled?
+    - Likely edge cases handled? Rare boundary or concurrency cases handled
+      without the user's approval are a Lean finding.
 
     **Architecture:**
     - Sound design decisions?
@@ -94,6 +96,8 @@ Subagent (general-purpose):
       nobody sets?
     - Near-copies that must change together?
     - Comments that restate the code?
+    - The same check repeated inside the entry boundary, or handling for a
+      rare case nobody approved?
 
     **Production readiness:**
     - Migration strategy if schema changed?
@@ -105,7 +109,8 @@ Subagent (general-purpose):
 
     Categorize issues by actual severity. Not everything is Critical.
     Lean findings the change introduced (abstraction with one implementation,
-    pass-through wrapper, unused option or config, duplicated helper) are
+    pass-through wrapper, unused option or config, duplicated helper,
+    over-defense) are
     Important. Every finding needs a concrete case; propose the smallest fix
     and prefer fixes that delete code.
     Acknowledge what was done well before listing issues — accurate praise

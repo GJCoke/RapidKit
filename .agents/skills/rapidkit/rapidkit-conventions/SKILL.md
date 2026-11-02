@@ -208,6 +208,26 @@ Solve the whole task with the least new code. Take the first option that fully w
 - Never cut: validation at trust boundaries, error handling that prevents data loss, security and permission checks, accessibility, anything the user asked for. Code you move or merge keeps its validation and error handling.
 - Finish the report with one or two lines: what you skipped or did not check, and any risk the user must know.
 
+These four rules bind every plan, implementation and review:
+
+1. **No over-defense.** Do not add handling for a boundary, race or concurrency case that almost never happens. State the case and how likely it is, then ask the user. Add the code only after the user confirms. "Theoretically safer" is never a reason to grow the code.
+2. **Validate once at the entry.** Validate external data (request, file, environment, third-party response) once, at the boundary where it enters. Inside, trust the types. Do not repeat the same null, type or range check in each layer.
+3. **No early abstraction.** Logic used once stays inline where it is used. Do not split out a helper, wrapper or module before a second real caller exists.
+4. **Keep it simple.** Use `try/catch` (`try/except`) only to recover, translate the error at a boundary, or clean up a resource. Otherwise let the error propagate. If one function states the logic clearly, keep one function.
+
+## Document Writing Rules
+
+These rules apply to every document a workflow produces for the user: design documents, plans, reviews, completion reports and questions that ask for a decision. Write in Chinese unless the user asks for another language. Follow about 80% of ASD-STE100 principles; break a rule only when it makes the text clearer.
+
+- **Sentence 1 is the conclusion.** Say the result, the recommendation or the verdict first.
+- **Sentence 2 is what the user must approve.** Name each decision, e.g. "需要你批准：A、B". If nothing needs approval, write "无需批准".
+- One sentence states one fact or one instruction. Keep sentences short: about 30 Chinese characters for a step, about 40 for a description.
+- Use active voice. Write steps as commands ("运行 X", "删除 Y").
+- Use one term for one concept, and keep it through the whole document. Do not use synonyms for variety.
+- No vague words ("可能会更好", "适当处理", "尽量"), no idioms and no filler. Give the exact value, file, command or condition.
+- Put steps and parallel items in lists. Keep a paragraph to at most six sentences.
+- Keep code names, paths, commands and fixed technical terms in their original form.
+
 ## Rules
 
 ### ALWAYS

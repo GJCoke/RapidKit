@@ -22,6 +22,10 @@ In other harnesses, include the applicable `rapidkit-*` conventions in
 the reviewer's context. In every harness, nothing under
 `docs/superpowers/` belongs in a reviewed commit; flag it if it appears.
 
+When you pass review results to your human partner, follow the Document
+Writing Rules in `rapidkit-conventions`: the first sentence is the
+verdict, the second names the fixes or decisions they must approve.
+
 ## When to Request Review
 
 **Mandatory:**

@@ -163,7 +163,7 @@ async function retryOperation<T>(
 Over-engineered
 </Bad>
 
-Don't add features, refactor other code, or "improve" beyond the test. The Lean Code Rules in `rapidkit-conventions` apply: reuse what exists, no single-use abstractions, comment only the why.
+Don't add features, refactor other code, or "improve" beyond the test. The Lean Code Rules in `rapidkit-conventions` apply: reuse what exists, no single-use abstractions, no handling for rare cases nobody approved, validate once at the entry, comment only the why.
 
 ### Verify GREEN - Watch It Pass
 
@@ -197,7 +197,7 @@ by omission.
 After green only:
 - Remove duplication
 - Improve names
-- Extract helpers
+- Extract a helper only when a second real caller exists
 
 Keep tests green. Don't add behavior.
 
@@ -312,7 +312,7 @@ Can't check all boxes? You skipped TDD. Start over.
 | Don't know how to test | Write wished-for API. Write assertion first. Ask your human partner. |
 | Test too complicated | Design too complicated. Simplify interface. |
 | Must mock everything | Code too coupled. Use dependency injection. |
-| Test setup huge | Extract helpers. Still complex? Simplify design. |
+| Test setup huge | Reuse existing fixtures. Still complex? Simplify design. |
 
 ## Debugging Integration
 

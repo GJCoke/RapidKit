@@ -85,6 +85,13 @@ Subagent (general-purpose):
     - Comment only the why the code cannot show, in one line.
     - Never cut validation at trust boundaries, data-loss error handling, security
       or permission checks.
+    - No over-defense: do not add handling for a rare boundary, race or concurrency
+      case the task does not name. Report it with its likelihood as
+      DONE_WITH_CONCERNS instead.
+    - Validate external data once at the entry. Inside, trust the types; do not
+      repeat checks in each layer.
+    - No `try/catch` unless it recovers, translates the error at a boundary or
+      cleans up a resource. Logic used once stays inline.
     - If the plan asks for something that looks unnecessary, build it anyway and
       report it as DONE_WITH_CONCERNS. Do not drop plan items on your own.
 
@@ -112,7 +119,7 @@ Subagent (general-purpose):
     **Completeness:**
     - Did I fully implement everything in the spec?
     - Did I miss any requirements?
-    - Are there edge cases I didn't handle?
+    - Are there edge cases the task names that I didn't handle?
 
     **Quality:**
     - Is this my best work?
@@ -122,6 +129,8 @@ Subagent (general-purpose):
     **Discipline:**
     - Did I only build what was requested?
     - Is there an abstraction, wrapper or helper with a single caller I can inline?
+    - Did I repeat a check that the entry boundary already makes?
+    - Did I add handling for a rare case, or a `try/catch`, nobody asked for?
     - Is there a parameter, option or config nobody sets? Dead code I can delete?
     - Did I write something the codebase, standard library or an installed
       dependency already provides?

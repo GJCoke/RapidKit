@@ -279,5 +279,5 @@ If systematic investigation reveals issue is truly environmental, timing-depende
 These techniques are part of systematic debugging and available in this directory:
 
 - **`root-cause-tracing.md`** - Trace bugs backward through call stack to find original trigger
-- **`defense-in-depth.md`** - Add validation at multiple layers after finding root cause
+- **`boundary-validation.md`** - Fix the source, then validate once at the entry boundary
 - **`condition-based-waiting.md`** - Replace arbitrary timeouts with condition polling

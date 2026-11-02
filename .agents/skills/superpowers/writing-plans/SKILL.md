@@ -77,10 +77,12 @@ independently testable deliverable.
 
 ## Plan Document Header
 
-**Every plan MUST start with this header:**
+**Every plan MUST start with this header.** Write the plan in Chinese and follow the Document Writing Rules in `rapidkit-conventions`: the first sentence is the conclusion, the second names what your human partner must approve.
 
 ```markdown
 # [Feature Name] Implementation Plan
+
+[Conclusion: one sentence — what this plan builds and how.] [Approval: one sentence — the decisions your human partner must approve, or "无需批准".]
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task (under Codex: superpowers:executing-plans only, in the current session, no subagents). Follow root `AGENTS.md` and the `rapidkit-*` conventions; stay on the current task branch (no new branch or worktree unless `AGENTS.md` calls for it); never stage or commit anything under `docs/superpowers/`, this plan included. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -110,7 +112,9 @@ document: it says what the software must do, not everything it will
 meet, and its silence on an input is not permission for that input to
 break the program. Write the list here, once, with the spec in front of
 you. Then, for each line, add the test that pins it to the task that
-owns the code, in that task's own step style.]
+owns the code, in that task's own step style. List only cases a real
+user will meet. A rare boundary or concurrency case goes here only with
+its likelihood stated and your human partner's approval.]
 
 ---
 ```
@@ -201,7 +205,7 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 
 **5. Proportion:** Compare the plan's length to the spec's. A plan several times longer than the spec it implements is a transcript of the program, not a plan. If code blocks are most of the document, replace bodies with signatures, test names and assertions, and check that each step is still unambiguous.
 
-**6. Lean:** Every new file, function, parameter, option and config value must trace to a spec requirement. Anything that doesn't — or that the codebase, standard library or an installed dependency already provides — gets deleted from the plan.
+**6. Lean:** Every new file, function, parameter, option and config value must trace to a spec requirement. Anything that doesn't — or that the codebase, standard library or an installed dependency already provides — gets deleted from the plan. Check the four rules in `rapidkit-conventions` Lean Code Rules: no unapproved handling for rare cases, validation once at the entry, no helper with a single caller, no `try/catch` that only re-raises or logs.
 
 **7. RapidKit conventions:** Does every task follow `rapidkit-conventions` and the domain skills it touches, and name the skill to read? Does any commit step stage something under `docs/superpowers/` or use blanket staging? Fix both.
 
