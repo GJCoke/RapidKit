@@ -21,64 +21,12 @@ the final reviewer is the second pair of eyes.
 prove each step with a test you watched fail and then pass, and leave a
 record that survives your own forgetting.
 
-**Narration:** between tool calls, narrate at most one short line — the
-ledger and the tool results carry the record.
-
-**Continuous execution:** Do not pause to check in with your human partner
-between tasks. They chose inline execution to spend less, not to answer
-"should I continue?" after every task. Execute all tasks from the plan
-without stopping.
-
-**Rulings, not stalls.** Conflicts, ambiguities, plan defects — decide them.
-The spec is the binding authority, the plan is its argument, and your
-judgment settles what neither answers. Record every decision in the ledger
-as `Ruling: <what you decided> — <why> — <what it costs if wrong>`, and keep
-going. Deviating from the plan without a ledgered ruling is a decision made
-in secret.
-
-Four things stop you, and only these: an irreversible or destructive
-operation; a security-sensitive action; a side effect outside this checkout
-that norms say you ask about first (a merge, a push to a shared branch, a
-publish); and a plan so broken that every path forward is a guess. For
-those, stop and ask.
-
-**Rare cases wait for approval.** Handling for a rare boundary, race or
-concurrency case that the plan does not name is not built on a ruling
-(Lean Code Rules in `rapidkit-conventions`). Do not stop for it either:
-ledger it as `Needs approval: <case> — <how likely>` and keep going.
-
-## RapidKit Repository Rules
-
-These rules override the generic workflow below wherever they conflict.
-
-- **Conventions first.** Before Task 1, read the root `AGENTS.md`,
-  `rapidkit-conventions` (`.agents/skills/rapidkit/rapidkit-conventions/SKILL.md`)
-  and every `rapidkit-*` domain skill the plan names or the tasks touch.
-  Before editing in a task, re-check the domain skill for that task. A
-  plan step that contradicts the conventions is a plan defect: rule in
-  favour of the conventions and ledger it.
-- **Branch, not worktree.** Follow the `AGENTS.md` Git workflow: work in
-  the current checkout on the current branch. Only on `main`/`master`,
-  create a `<type>/<slug>` branch in place with `git switch -c` first.
-  Never create a worktree unless your human partner asks for one, and
-  never implement on a detached HEAD. Preserve all pre-existing staged,
-  unstaged and untracked changes.
-- **Never commit anything under `docs/superpowers/`.** That covers the
-  spec, the plan and every other file in the directory. Commit only
-  validated task-owned implementation files: stage explicit paths or
-  hunks (never `git add .`, `git add -A`, `git commit -a`, never
-  force-add an ignored path), then check `git diff --cached --name-only`
-  before each commit. If task changes cannot be separated safely from
-  pre-existing work, leave them uncommitted and report why.
-- **No subagents under Codex.** When running in Codex, every task and the
-  final review run in this session. Never spawn an implementer, reviewer
-  or any other subagent, and never switch to
-  superpowers:subagent-driven-development; take the "Without a subagent
-  tool" path in Final Review.
-- **No integration without an explicit request.** Pushing, merging,
-  rebasing, amending history and deleting branches need your human
-  partner's explicit request; committing on the task branch does not
-  authorize them.
+**Shared rules:** before Task 1, read
+[execution-ledger.md](../subagent-driven-development/execution-ledger.md).
+It holds the RapidKit Git and conventions rules, how to run the scripts,
+the workspace and ledger, how to read the plan, rulings and the four
+stops, and Finish. Your human partner chose inline execution to spend
+less, not to answer "should I continue?" after every task.
 
 ## When to Use
 
@@ -145,50 +93,8 @@ digraph process {
 
 ## Setup
 
-Ensure the work happens on a task branch as `AGENTS.md` requires (see
-RapidKit Repository Rules above): if you are on main/master, create a
-`<type>/<slug>` branch in place; otherwise keep the current branch. Use
-superpowers:using-git-worktrees only when your human partner asked for a
-worktree. Never start implementation on main/master or a detached HEAD.
-
-Conversation memory does not survive compaction. An inline executor that
-loses its place re-implements tasks whose commits already exist — the same
-failure as a controller re-dispatching them, paid for in your own context.
-Track progress in a ledger file, not only in todos. Harness todos are a
-live view; the ledger is the record.
-
-The workspace and ledger are shared with superpowers:subagent-driven-development
-— same directory, same format — so a plan can change executors mid-flight
-and the new one resumes from the same ledger.
-
-- Run every script from the repo root by its full path:
-  `bash .agents/skills/superpowers/executing-plans/scripts/<name>` for
-  this skill's scripts and
-  `bash .agents/skills/superpowers/subagent-driven-development/scripts/<name>`
-  for the shared ones. Pass PLAN_FILE as the repo-relative plan path.
-- Each plan owns a workspace: at skill start, run
-  `../subagent-driven-development/scripts/sdd-workspace PLAN_FILE` — it
-  prints the plan's git-ignored directory
-  (`<repo-root>/.superpowers/sdd/<plan-basename>/`), home to every
-  artifact for THIS plan: ledger, briefs, review packages. Another plan's
-  directory is never yours to read or write.
-- Check for this plan's ledger at `<workspace>/progress.md`. If its first
-  line names your plan file, tasks with a `Task <N>: complete` line are
-  DONE — do not redo them; resume at the first task without one. Their
-  commits exist in git even when your context no longer remembers making
-  them: after compaction, trust the ledger and `git log` over your own
-  recollection. A ledger whose first line names a different plan file is
-  another plan's progress: leave it and start your own, fresh.
-- Create the ledger with its identity as the first line:
-  `# SDD ledger — plan: <plan file path>`.
-- `git clean -fdx` will destroy the workspace (it's git-ignored scratch);
-  if that happens, recover from `git log`.
-
-Read the plan once, note its context and Global Constraints, and create a
-todo per task. If the plan names a Spec, read that too: the spec is the
-authority the plan argues from, and conflicts inside the plan resolve
-against it. A plan with no reachable spec gets a ledger note saying so —
-rulings made without one are provisional.
+Do the setup in `execution-ledger.md`: branch, conventions, workspace and
+ledger, plan and spec. Then:
 
 **REQUIRED SUB-SKILL:** load superpowers:test-driven-development now,
 before Task 1. It governs every step of every task below; a plan whose
@@ -337,25 +243,7 @@ in the rulings list. There is no second fix pass.
 
 ## Finish
 
-Before you delete anything, collect every ledger line containing
-`Ruling:` into your final message under "Rulings I made", in the order you
-made them, each with what it costs if wrong, every `minor (deferred)`
-line under "Deferred minors", and every `Needs approval:` line under
-"Needs your approval". All three lists are exhaustive. Open the message
-with the conclusion, then what your human partner must approve
-(Document Writing Rules). Your final
-message is the only place the decisions you took on your human partner's
-behalf — and the findings you chose not to act on — reach them.
-
-When the final review is clean and its fixes are committed, delete this
-plan's workspace directory — the git history is the record now. Sibling
-directories belong to other plans; leave them alone. Leave
-`docs/superpowers/` (spec and plan) local and uncommitted.
-
-Use superpowers:finishing-a-development-branch. In this repository it only
-presents the options: report the task branch, its commits and validation,
-and keep the branch; merge, push or delete only on your human partner's
-explicit choice.
+Follow Finish in `execution-ledger.md`.
 
 ## Common Rationalizations
 
@@ -379,7 +267,7 @@ explicit choice.
 ```
 You: I'm using the executing-plans skill to implement this plan inline.
 
-[Setup: AGENTS.md + rapidkit-conventions + domain skills read; was on main, created branch feature/login in place]
+[Setup per execution-ledger.md: AGENTS.md + rapidkit-conventions + domain skills read; was on main, created branch feature/login in place]
 [Read plan once: docs/superpowers/plans/feature-plan.md; spec read]
 [Resolve workspace: sdd-workspace docs/superpowers/plans/feature-plan.md — no ledger inside, fresh start]
 [Pre-flight scan: 2 shared-interface rows, clean; written to ledger]
@@ -409,10 +297,10 @@ Task 2: Recovery modes
 ...
 
 [After all tasks: review-package plan MERGE_BASE HEAD; dispatch code-reviewer, most capable model (under Codex: self-review in this session)]
-Reviewer: One Important finding — progress reporting interval hardcoded. Two Minor.
+Reviewer: One Important finding — recovery skips the last hook when the list has one entry. Two Minor.
 [Re-grade: Important stands; minors → ledger as deferred]
-[Fix pass: test_progress_interval_configurable RED → extract PROGRESS_INTERVAL → GREEN; suite 12/12; commit]
-[Ledger: Final: fixed hardcoded interval — test_progress_interval_configurable RED→GREEN, suite 12/12]
+[Fix pass: test_recovery_single_hook RED → fix loop bound → GREEN; suite 12/12; commit]
+[Ledger: Final: fixed single-hook recovery — test_recovery_single_hook RED→GREEN, suite 12/12]
 
 Rulings I made:
 - Task 2: install_hook → installHook (brief typo; cost if wrong: one rename)

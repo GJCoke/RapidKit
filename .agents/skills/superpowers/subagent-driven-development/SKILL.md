@@ -5,21 +5,8 @@ description: Use when executing implementation plans with independent tasks in t
 
 # Subagent-Driven Development
 
-## RapidKit Override: Disabled Under Codex
-
-When running in Codex in the RapidKit repository, never use this skill and
-never dispatch implementer or reviewer subagents. Execute the plan with
-superpowers:executing-plans in the current session instead; its final
-review is a self-review in this session.
-
-In other harnesses, the RapidKit rules still apply: read the root
-`AGENTS.md`, `rapidkit-conventions` and the relevant `rapidkit-*` domain
-skills before Task 1 and pass the applicable conventions into each
-implementer brief; work on the task branch per the `AGENTS.md` Git
-workflow (current checkout, no worktree unless asked); commit only
-explicit task-owned implementation paths; never stage or commit anything
-under `docs/superpowers/`.
-
+Under Codex, never use this skill: use superpowers:executing-plans in the
+current session instead.
 
 Execute plan by dispatching a fresh implementer subagent per task, a task review (spec compliance + code quality) after each, and a broad whole-branch review at the end.
 
@@ -27,29 +14,11 @@ Execute plan by dispatching a fresh implementer subagent per task, a task review
 
 **Core principle:** Fresh subagent per task + task review (spec + quality) + broad final review = high quality, fast iteration
 
-**Narration:** between tool calls, narrate at most one short line — the
-ledger and the tool results carry the record.
-
-**Continuous execution:** Do not pause to check in with your human partner between tasks. Execute all tasks from the plan without stopping. The only reasons to stop are the four named below, or all tasks complete. "Should I continue?" prompts and progress summaries waste their time — they asked you to execute the plan, so execute it.
-
-**Rulings, not stalls.** A running plan does not wait on a human. Conflicts,
-ambiguities, plan defects, a cap you would have asked to exceed — decide
-them. The spec is the binding authority, the plan is its argument, and your
-judgment settles what neither answers. Record every decision in the ledger as
-`Ruling: <what you decided> — <why> — <what it costs if wrong>`, and keep
-going. A wrong ruling costs rework your human partner can see and undo; a
-session parked on a question costs their whole day and buys nothing.
-
-Four things stop you, and only these: an irreversible or destructive
-operation; a security-sensitive action; a side effect outside this checkout
-that norms say you ask about first (a merge, a push to a shared branch, a
-publish); and a plan so broken that every path forward is a guess. For those,
-stop and ask.
-
-**Rare cases wait for approval.** Handling for a rare boundary, race or
-concurrency case that the plan does not name is not built on a ruling
-(Lean Code Rules in `rapidkit-conventions`). Do not stop for it either:
-ledger it as `Needs approval: <case> — <how likely>` and keep going.
+**Shared rules:** before Task 1, read
+[execution-ledger.md](execution-ledger.md). It holds the RapidKit Git and
+conventions rules, how to run the scripts, the workspace and ledger, how to
+read the plan, rulings and the four stops, and Finish. Pass the applicable
+RapidKit conventions and the commit rules into each implementer brief.
 
 ## When to Use
 
@@ -144,45 +113,8 @@ digraph process {
 
 ## Setup
 
-Ensure the work happens on a task branch per the `AGENTS.md` Git
-workflow: on main/master, create a `<type>/<slug>` branch in place;
-otherwise keep the current branch. Use superpowers:using-git-worktrees only
-when your human partner asked for a worktree (e.g. for parallel agents).
-
-Conversation memory does not survive compaction. In real sessions,
-controllers that lost their place have re-dispatched entire completed task
-sequences — the single most expensive failure observed. Track progress in
-a ledger file, not only in todos.
-
-- Run every script from the repo root by its full path, e.g.
-  `bash .agents/skills/superpowers/subagent-driven-development/scripts/sdd-workspace PLAN_FILE`.
-  Below, `scripts/<name>` is short for that path. Pass PLAN_FILE as the
-  repo-relative plan path.
-- Each plan owns a workspace: at skill start, run
-  `bash scripts/sdd-workspace PLAN_FILE` — it prints the plan's git-ignored
-  directory (under `<repo-root>/.superpowers/sdd/`), home to
-  every artifact for THIS plan: ledger, briefs, reports, review packages.
-  Another plan's directory is never yours to read or write.
-- Check for this plan's ledger at `<workspace>/progress.md`. If its first
-  line names your plan file, tasks with a `Task <N>: complete` line are DONE
-  — do not re-dispatch them; resume at the first task without one. A task
-  whose last line is a fix round is mid-loop: resume the loop at the next
-  round. A ledger whose first line names a different plan file — or a stray
-  ledger at the old flat path `.superpowers/sdd/progress.md` — is another
-  plan's progress: leave it in place and start your own, fresh.
-- Create the ledger with its identity as the first line:
-  `# SDD ledger — plan: <plan file path>`.
-- The ledger is your recovery map: the commits it names exist in git even
-  when your context no longer remembers creating them. After compaction,
-  trust the ledger and `git log` over your own recollection.
-- `git clean -fdx` will destroy the workspace (it's git-ignored scratch); if
-  that happens, recover from `git log`.
-
-Read the plan once, note its context and Global Constraints, and create a
-todo per task. If the plan names a Spec, read that too: the spec is the
-authority the plan argues from, and conflicts inside the plan resolve
-against it. A plan with no reachable spec gets a ledger note saying so —
-rulings made without one are provisional.
+Do the setup in `execution-ledger.md`: branch, conventions, workspace and
+ledger, plan and spec. Then:
 
 Before dispatching Task 1, scan the plan once for conflicts, writing down
 what you checked as you check it:
@@ -497,23 +429,7 @@ finishing-a-development-branch presents the options.
 
 ## Finish
 
-Before you delete anything, collect every ledger line containing `Ruling:` —
-preflight rulings, parked findings, breaker adjudications, all of them — into
-your final message under "Rulings I made", in the order you made them, each
-with what it costs if wrong, and every `Needs approval:` line under "Needs
-your approval". Open the message with the conclusion, then what your human
-partner must approve (Document Writing Rules). The lists are exhaustive: if
-the ledger holds a ruling, the list holds it. That list is the only place the decisions you
-took on your human partner's behalf reach them — they read it and rework
-whatever you got wrong. A ruling that dies with the workspace was a decision
-made in secret.
-
-When the final whole-branch review is clean and its fixes are merged,
-delete this plan's workspace (`rm -rf <workspace>`) — the git history is
-the record now. Sibling directories belong to other plans; leave them
-alone.
-
-Use superpowers:finishing-a-development-branch.
+Follow Finish in `execution-ledger.md`.
 
 ## Common Rationalizations
 
