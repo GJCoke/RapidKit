@@ -38,8 +38,12 @@ async def disconnect(sid: SID, redis: RedisDep) -> None:
         await mark_offline(redis, identity.user_id, sid)
         count = await redis.scard(online_users_structure) or 0
         await socket.emit("dashboard:online_users", {"count": count}, namespace="/dashboard")
-    except Exception:
-        logger.warning("Socket Redis disconnect cleanup failed user_id={}", identity.user_id)
+    except Exception as error:
+        logger.bind(exception_type=type(error).__name__).warning(
+            "Socket Redis disconnect cleanup failed user_id={} exception_type={}",
+            identity.user_id,
+            type(error).__name__,
+        )
 
 
 async def renew_session_keys_loop() -> None:

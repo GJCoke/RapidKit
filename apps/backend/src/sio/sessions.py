@@ -95,8 +95,12 @@ async def register_socket(
             try:
                 async with asyncio.timeout(REMOTE_CLEANUP_TIMEOUT_SECONDS):
                     await redis.srem(key, member)
-            except Exception:
-                logger.warning("Rejected socket cleanup failed user_id={}", identity.user_id)
+            except Exception as error:
+                logger.bind(exception_type=type(error).__name__).warning(
+                    "Rejected socket cleanup failed user_id={} exception_type={}",
+                    identity.user_id,
+                    type(error).__name__,
+                )
         raise
     cancel_socket_timer(sid, namespace)
     timer_key = (namespace, sid)
@@ -116,8 +120,12 @@ async def register_socket(
                             await RedisSocketCloser().close_session(
                                 identity.impersonation_session_id, redis, reason="token_expired"
                             )
-                    except Exception:
-                        logger.warning("Socket session remote expiry cleanup failed user_id={}", identity.user_id)
+                    except Exception as error:
+                        logger.bind(exception_type=type(error).__name__).warning(
+                            "Socket session remote expiry cleanup failed user_id={} exception_type={}",
+                            identity.user_id,
+                            type(error).__name__,
+                        )
         finally:
             if _timers.get(timer_key) is asyncio.current_task():
                 _timers.pop(timer_key, None)
@@ -147,13 +155,19 @@ async def unregister_socket(server, redis, sid, namespace):
     cancel_socket_timer(sid, namespace)
     identity = None
     try:
-        session = await server.get_session(sid, namespace=namespace)
+        try:
+            session = await server.get_session(sid, namespace=namespace)
+        except KeyError:
+            return
         identity = session.pop(IDENTITY_SESSION_KEY, None)
         if identity:
             await redis.srem(user_sockets_structure.format(user_id=identity.user_id), socket_member(namespace, sid))
             if identity.impersonation_session_id:
                 await redis.srem(sockets_key(identity.impersonation_session_id), socket_member(namespace, sid))
-    except Exception:
-        logger.warning(
-            "Socket identity cleanup failed namespace={} user_id={}", namespace, identity.user_id if identity else None
+    except Exception as error:
+        logger.bind(exception_type=type(error).__name__).warning(
+            "Socket identity cleanup failed namespace={} user_id={} exception_type={}",
+            namespace,
+            identity.user_id if identity else None,
+            type(error).__name__,
         )

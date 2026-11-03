@@ -84,11 +84,12 @@ def record_dependency(component: str, operation: str, seconds: float, error: Bas
         bound.bind(
             event="dependency.failed" if error is not None else "dependency.slow", observation_count=notice_count
         ).warning(
-            "Dependency operation {}: {}.{} observations={}",
+            "Dependency operation {}: {}.{} observations={}{}",
             "failed" if error is not None else "slow",
             component,
             operation,
             notice_count,
+            " exception_type=" + type(error).__name__ if error is not None else "",
         )
 
 

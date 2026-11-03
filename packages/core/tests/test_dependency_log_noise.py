@@ -77,6 +77,21 @@ def test_slow_and_failed_operations_have_independent_bounded_windows(diagnostics
     assert len(observation._notices) <= 3
 
 
+@pytest.mark.parametrize("structured", [False, True], ids=["local-text", "production-json"])
+def test_failure_output_exposes_exception_type_without_exception_text(diagnostics, monkeypatch, structured):
+    _, rows, output = diagnostics
+    monkeypatch.setattr(settings, "ENVIRONMENT", Environment.PRODUCTION if structured else Environment.LOCAL)
+    monkeypatch.setattr(settings, "LOG_JSON", structured)
+    monkeypatch.setattr(settings, "LOG_FORMAT", "{message}")
+    monkeypatch.setattr(log.sys, "stdout", output)
+    log.setup_logging()
+    observation.record_dependency("redis", "sorted_set", 0.001, ConnectionError("private-redis-credential"))
+    assert rows[-1]["exception_type"] == "ConnectionError"
+    assert "exception_type=ConnectionError" in rows[-1]["message"]
+    assert "ConnectionError" in output.getvalue()
+    assert "private-redis-credential" not in output.getvalue()
+
+
 def test_concurrent_threads_do_not_each_emit_the_first_failure(diagnostics):
     _, rows, _ = diagnostics
     with ThreadPoolExecutor(max_workers=8) as executor:
