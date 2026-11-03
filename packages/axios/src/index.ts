@@ -177,4 +177,4 @@ export { BACKEND_ERROR_CODE, REQUEST_ID_KEY }
 export type * from "./type"
 export type { CreateAxiosDefaults, AxiosError, AxiosResponse }
 
-export { CanceledError } from "axios"
+export { CanceledError, isAxiosError } from "axios"

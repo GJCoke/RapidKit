@@ -1,5 +1,8 @@
 import * as Sentry from "@sentry/browser"
 import { browserSentryOptions, safeRequestId } from "@rapidkit/utils"
+import { createLogger } from "@/utils/logger"
+
+const logger = createLogger("observability")
 
 let enabled = false
 
@@ -29,6 +32,7 @@ export function captureBrowserError(
   category: "runtime" | "bootstrap" | "render" | "route" | "request" | "socket",
   id?: string,
 ) {
+  logger.error("Browser operation failed", category, error)
   if (!enabled) return undefined
   try {
     const requestId = safeRequestId(id)

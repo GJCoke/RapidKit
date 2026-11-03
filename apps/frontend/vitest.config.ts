@@ -10,6 +10,7 @@ export default defineConfig((env) =>
       alias: {
         "@rapidkit/hooks": fileURLToPath(new URL("../../packages/hooks/src/index.ts", import.meta.url)),
         "@rapidkit/utils": fileURLToPath(new URL("../../packages/utils/src/index.ts", import.meta.url)),
+        "@rapidkit/axios": fileURLToPath(new URL("../../packages/axios/src/index.ts", import.meta.url)),
       },
     },
   }),
