@@ -1,4 +1,5 @@
 import { createLogger } from "@/utils/logger"
+import { diagnosticGeneration, recordDiagnosticEvent, type DiagnosticEventInput } from "@/utils/diagnostics"
 
 const logger = createLogger("permission-refresh")
 
@@ -30,24 +31,75 @@ export function createPermissionRefresher<S>(options: PermissionRefresherOptions
   let dialogOpen = false
   let generation = 0
 
-  async function fetchWithRetry(owner: number) {
-    const first = await fetchLatest()
-    if (first || owner !== generation) return first
+  function record(owner: number, diagnosticOwner: number, fields: Omit<DiagnosticEventInput, "category">) {
+    if (owner === generation) recordDiagnosticEvent({ category: "permission", ...fields }, diagnosticOwner)
+  }
 
-    logger.debug("Permission refresh retry scheduled")
-    await new Promise((resolve) => setTimeout(resolve, retryDelay))
-    if (owner !== generation) return null
-    return fetchLatest()
+  async function fetchWithRetry(owner: number, diagnosticOwner: number) {
+    record(owner, diagnosticOwner, { operation: "permission.fetch", phase: "start", attempt: 1 })
+    let attempt = 1
+    try {
+      const first = await fetchLatest()
+      if (owner !== generation) return null
+      if (first) {
+        record(owner, diagnosticOwner, { operation: "permission.fetch", phase: "success", attempt })
+        return first
+      }
+      attempt = 2
+      record(owner, diagnosticOwner, { operation: "permission.fetch", phase: "retrying", attempt })
+      logger.debug("Permission refresh retry scheduled")
+      await new Promise((resolve) => setTimeout(resolve, retryDelay))
+      if (owner !== generation) return null
+      const second = await fetchLatest()
+      record(owner, diagnosticOwner, {
+        operation: "permission.fetch",
+        phase: second ? "success" : "failure",
+        reason_code: second ? undefined : "no_snapshot",
+        attempt,
+      })
+      return second
+    } catch (error) {
+      record(owner, diagnosticOwner, {
+        operation: "permission.fetch",
+        phase: "failure",
+        reason_code: "fetch_failed",
+        attempt,
+      })
+      throw error
+    }
+  }
+
+  async function applySnapshot(snapshot: S, leave: boolean, owner: number, diagnosticOwner: number) {
+    const started = performance.now()
+    const reason_code = leave ? "route_leave" : "access_retained"
+    record(owner, diagnosticOwner, { operation: "permission.apply", phase: "start", reason_code })
+    try {
+      await apply(snapshot, leave)
+      record(owner, diagnosticOwner, {
+        operation: "permission.apply",
+        phase: "success",
+        reason_code,
+        duration_ms: Math.round(performance.now() - started),
+      })
+      if (owner === generation && diagnosticOwner === diagnosticGeneration())
+        logger.info("Permissions applied", { reason_code })
+    } catch (error) {
+      record(owner, diagnosticOwner, {
+        operation: "permission.apply",
+        phase: "failure",
+        reason_code: "apply_failed",
+        duration_ms: Math.round(performance.now() - started),
+      })
+      throw error
+    }
   }
 
   async function refresh() {
     logger.debug("Permission snapshot requested")
     const owner = generation
-    const snapshot = await fetchWithRetry(owner)
-    if (!snapshot || owner !== generation) {
-      logger.debug("Permission snapshot unavailable or superseded")
-      return
-    }
+    const diagnosticOwner = diagnosticGeneration()
+    const snapshot = await fetchWithRetry(owner, diagnosticOwner)
+    if (!snapshot || owner !== generation) return
 
     if (dialogOpen) {
       pending = snapshot
@@ -55,20 +107,25 @@ export function createPermissionRefresher<S>(options: PermissionRefresherOptions
     }
 
     if (canAccessCurrent(snapshot)) {
-      await apply(snapshot, false)
-      logger.info("Permissions applied")
+      await applySnapshot(snapshot, false, owner, diagnosticOwner)
       return
     }
 
     pending = snapshot
     dialogOpen = true
+    record(owner, diagnosticOwner, {
+      operation: "permission.apply",
+      phase: "pending",
+      reason_code: "confirmation_required",
+    })
     confirm(() => {
       if (owner !== generation || !pending) return
       const latest = pending
       pending = null
       dialogOpen = false
-      apply(latest, !canAccessCurrent(latest)).catch((error) => {
-        logger.error("Permission apply failed", error)
+      applySnapshot(latest, !canAccessCurrent(latest), owner, diagnosticOwner).catch(() => {
+        if (owner === generation && diagnosticOwner === diagnosticGeneration())
+          logger.error("Permission apply failed", { reason_code: "apply_failed" })
       })
     })
   }

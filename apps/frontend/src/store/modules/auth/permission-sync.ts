@@ -1,4 +1,5 @@
 import { createLogger } from "@/utils/logger"
+import { diagnosticGeneration, recordDiagnosticEvent, type DiagnosticEventInput } from "@/utils/diagnostics"
 
 const logger = createLogger("permission-sync")
 
@@ -27,7 +28,7 @@ export interface PermissionSyncOptions {
 
 export interface PermissionSync {
   signal: (payload: PermissionChangedPayload) => void
-  trigger: () => void
+  trigger: (source?: "socket_reconnect" | "permission_denied" | "manual") => void
   reset: () => void
 }
 
@@ -51,19 +52,57 @@ export function createPermissionSync(options: PermissionSyncOptions): Permission
   let running = false
   let dirty = false
   let generation = 0
+  let source: DiagnosticEventInput["source"] = "manual"
+  let owner = diagnosticGeneration()
+  const suppressed = new Map<string, number>()
+  function skip(reason_code: string, from: DiagnosticEventInput["source"]) {
+    const count = Math.min((suppressed.get(reason_code) || 0) + 1, 1000)
+    suppressed.set(reason_code, count)
+    recordDiagnosticEvent({
+      category: "permission",
+      operation: "permission.sync",
+      phase: "skipped",
+      source: from,
+      reason_code,
+      observation_count: count,
+    })
+  }
 
   async function run() {
     timer = null
+    if (owner !== diagnosticGeneration()) return
     running = true
     dirty = false
     const current = generation
+    const diagnosticOwner = owner
+    const from = source
+    const started = performance.now()
+    const record = (phase: "start" | "success" | "failure", reason_code?: string) => {
+      if (current === generation)
+        recordDiagnosticEvent(
+          {
+            category: "permission",
+            operation: "permission.sync",
+            phase,
+            source: from,
+            reason_code,
+            duration_ms: Math.round(performance.now() - started),
+          },
+          diagnosticOwner,
+        )
+    }
 
     try {
+      record("start")
       logger.debug("Permission refresh started")
       await refresh()
-      logger.info("Permission refresh completed")
-    } catch (error) {
-      logger.error("Permission refresh failed", error)
+      record("success")
+      if (current === generation && diagnosticOwner === diagnosticGeneration())
+        logger.info("Permission refresh completed")
+    } catch {
+      record("failure", "refresh_failed")
+      if (current === generation && diagnosticOwner === diagnosticGeneration())
+        logger.error("Permission refresh failed", { reason_code: "refresh_failed" })
     }
 
     if (current !== generation) return
@@ -73,28 +112,46 @@ export function createPermissionSync(options: PermissionSyncOptions): Permission
 
   function signal(payload: PermissionChangedPayload) {
     // Relevance first: revisions are server ms timestamps, so an unrelated change in the same ms must not mask ours
-    if (!isRelevantPermissionChange(payload, getUser())) return
-    if (payload.revision <= lastRevision) return
+    if (!isRelevantPermissionChange(payload, getUser())) {
+      skip("irrelevant", "server_signal")
+      return
+    }
+    if (payload.revision <= lastRevision) {
+      skip("stale_revision", "server_signal")
+      return
+    }
     lastRevision = payload.revision
-    logger.debug("Permission sync requested", { source: "server-signal", scope: payload.scope })
+    logger.debug("Permission sync requested", { source: "server_signal" })
+    source = "server_signal"
+    owner = diagnosticGeneration()
 
     if (running) {
       dirty = true
+      skip("coalesced", source)
       return
     }
-    if (timer) return
+    if (timer) {
+      skip("coalesced", source)
+      return
+    }
 
     timer = setTimeout(() => void run(), Math.floor(random() * maxDelay))
   }
 
-  function trigger() {
+  function trigger(from: "socket_reconnect" | "permission_denied" | "manual" = "manual") {
     const at = now()
-    if (at - lastFallbackAt < fallbackInterval) return
+    if (at - lastFallbackAt < fallbackInterval) {
+      skip("throttled", from)
+      return
+    }
     lastFallbackAt = at
-    logger.debug("Permission sync requested", { source: "fallback" })
+    source = from
+    owner = diagnosticGeneration()
+    logger.debug("Permission sync requested", { source })
 
     if (running) {
       dirty = true
+      skip("coalesced", source)
       return
     }
     if (timer) clearTimeout(timer)
@@ -102,6 +159,11 @@ export function createPermissionSync(options: PermissionSyncOptions): Permission
   }
 
   function reset() {
+    if (running || timer)
+      recordDiagnosticEvent(
+        { category: "permission", operation: "permission.sync", phase: "cancelled", source, reason_code: "reset" },
+        owner,
+      )
     generation += 1
     if (timer) clearTimeout(timer)
     timer = null
@@ -109,6 +171,7 @@ export function createPermissionSync(options: PermissionSyncOptions): Permission
     dirty = false
     lastRevision = 0
     lastFallbackAt = Number.NEGATIVE_INFINITY
+    suppressed.clear()
   }
 
   return { signal, trigger, reset }

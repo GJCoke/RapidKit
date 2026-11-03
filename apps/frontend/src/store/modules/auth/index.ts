@@ -157,7 +157,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   function syncPermissions() {
     if (!token.value) return
 
-    permissionSync.trigger()
+    permissionSync.trigger("permission_denied")
   }
 
   /** Synchronize refreshed credentials with reactive auth state. */

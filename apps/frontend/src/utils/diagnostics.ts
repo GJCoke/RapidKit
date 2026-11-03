@@ -35,6 +35,9 @@ export type DiagnosticOperation =
   | "role.permissions.save"
   | "task.run"
   | "auth.refresh"
+  | "permission.sync"
+  | "permission.fetch"
+  | "permission.apply"
   | DiagnosticMutation
 export type DiagnosticActionCode =
   | "user.create.submit"
@@ -47,8 +50,19 @@ export interface DiagnosticAction {
   readonly code: DiagnosticActionCode
 }
 export interface DiagnosticEventInput {
-  category: "navigation" | "action" | "request" | "socket" | "identity"
-  phase: "start" | "success" | "failure" | "cancelled" | "connected" | "disconnected" | "reconnecting" | "changed"
+  category: "navigation" | "action" | "request" | "socket" | "identity" | "permission"
+  phase:
+    | "start"
+    | "success"
+    | "failure"
+    | "cancelled"
+    | "connected"
+    | "disconnected"
+    | "reconnecting"
+    | "changed"
+    | "retrying"
+    | "skipped"
+    | "pending"
   route?: unknown
   operation?: DiagnosticOperation
   action_code?: DiagnosticActionCode
@@ -64,6 +78,8 @@ export interface DiagnosticEventInput {
   reason_code?: string
   namespace?: string
   socket_connection_id?: string
+  source?: "server_signal" | "socket_reconnect" | "permission_denied" | "manual"
+  observation_count?: number
 }
 type SafeFields = Record<string, string | number>
 type TimelineEvent = SafeFields & { seq: number; time: string; category: string; phase: string }
@@ -83,10 +99,13 @@ const operations = new Set([
   "role.permissions.save",
   "task.run",
   "auth.refresh",
+  "permission.sync",
+  "permission.fetch",
+  "permission.apply",
   ...mutationOperations,
 ])
 const actions = new Set(["user.create.submit", "role.permissions.save", "task.run.submit", ...mutationOperations])
-const categories = new Set(["navigation", "action", "request", "socket", "identity"])
+const categories = new Set(["navigation", "action", "request", "socket", "identity", "permission"])
 const errorCategories = new Set(["runtime", "promise", "bootstrap", "render", "route", "request", "socket", "resource"])
 const phases = new Set([
   "start",
@@ -97,6 +116,9 @@ const phases = new Set([
   "disconnected",
   "reconnecting",
   "changed",
+  "retrying",
+  "skipped",
+  "pending",
 ])
 const reasons = new Set([
   "connect_error",
@@ -111,6 +133,17 @@ const reasons = new Set([
   "forbidden",
   "token_expired",
   "refresh_failed",
+  "stale_revision",
+  "irrelevant",
+  "coalesced",
+  "throttled",
+  "no_snapshot",
+  "reset",
+  "confirmation_required",
+  "access_retained",
+  "route_leave",
+  "apply_failed",
+  "fetch_failed",
   "other",
 ])
 const errorTypes = new Set([
@@ -170,6 +203,7 @@ function safeFields(input: unknown): SafeFields {
     ["action_code", actions],
     ["route", routeNames],
     ["reason_code", reasons],
+    ["source", new Set(["server_signal", "socket_reconnect", "permission_denied", "manual"])],
   ] as const) {
     const item = value[key]
     if (typeof item === "string" && allowed.has(item)) output[key] = item
@@ -186,6 +220,7 @@ function safeFields(input: unknown): SafeFields {
     ["business_code", 999999],
     ["duration_ms", 86400000],
     ["attempt", 1000],
+    ["observation_count", 1000],
   ] as const) {
     const item = value[key]
     if (typeof item === "number" && Number.isFinite(item) && item >= (key === "http_status" ? 100 : 0) && item <= max)

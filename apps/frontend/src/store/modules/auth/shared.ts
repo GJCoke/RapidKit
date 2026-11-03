@@ -48,7 +48,7 @@ export function connectGlobalSocket() {
   const onConnect = () => {
     if (connectedBefore && !wasSocketAuthRenewal(socket)) {
       logger.debug("Permission sync requested", { source: "socket-reconnect" })
-      permissionSignalHandler?.trigger()
+      permissionSignalHandler?.trigger("socket_reconnect")
     }
     connectedBefore = true
   }
