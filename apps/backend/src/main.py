@@ -85,7 +85,7 @@ def setup_middlewares(app: FastAPI) -> None:
         allow_credentials=True,
         allow_methods=("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
         allow_headers=settings.CORS_HEADERS,
-        expose_headers=("X-Request-ID",),
+        expose_headers=("X-Request-ID", "X-Edge-Request-ID"),
     )
 
     app.add_middleware(SecurityMiddleware)

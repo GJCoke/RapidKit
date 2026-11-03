@@ -1,4 +1,5 @@
 import { localStg } from "@/utils/storage"
+import { resetDiagnostics } from "@/utils/diagnostics"
 
 let observedIdentity = ""
 let session = 0
@@ -23,6 +24,7 @@ export function getAuthSession() {
   if (identity !== observedIdentity) {
     observedIdentity = identity
     session++
+    resetDiagnostics()
   }
   return session
 }

@@ -26,7 +26,10 @@ vi.mock("vue-router", () => ({ useRoute: () => ({ meta: { constant: true } }) })
 vi.mock("@rapidkit/hooks", () => ({
   useLoading: () => ({ loading: false, startLoading: vi.fn(), endLoading: vi.fn() }),
 }))
-vi.mock("@rapidkit/utils", () => ({ rsaEncrypt: vi.fn(async () => "encrypted") }))
+vi.mock("@rapidkit/utils", async (original) => ({
+  ...(await original<typeof import("@rapidkit/utils")>()),
+  rsaEncrypt: vi.fn(async () => "encrypted"),
+}))
 vi.mock("@/service/api", () => ({
   fetchCreateImpersonation: mocks.fetchCreateImpersonation,
   fetchGetCurrentImpersonation: mocks.fetchGetCurrentImpersonation,

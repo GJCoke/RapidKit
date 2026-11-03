@@ -1,5 +1,5 @@
 import { isAxiosError } from "@rapidkit/axios"
-import { requestIdFromHeaders } from "@rapidkit/utils"
+import { requestIdsFromHeaders } from "@rapidkit/utils"
 
 const levels = ["debug", "info", "warn", "error", "silent"] as const
 type LogLevel = (typeof levels)[number]
@@ -32,6 +32,7 @@ export function logPath(url?: string) {
 function summarizeAxiosError(value: unknown) {
   if (!isAxiosError<{ code?: unknown }>(value)) return value
   const businessCode = value.response?.data?.code
+  const ids = requestIdsFromHeaders(value.response?.headers)
   const message =
     /^(?:Network Error|canceled|the backend request error|Request failed with status code \d{3}|timeout of \d+ms exceeded)$/.test(
       value.message,
@@ -44,7 +45,9 @@ function summarizeAxiosError(value: unknown) {
     status: value.response?.status,
     business_code: typeof businessCode === "number" ? businessCode : undefined,
     code: typeof value.code === "string" && /^[A-Z_]{1,64}$/.test(value.code) ? value.code : undefined,
-    request_id: requestIdFromHeaders(value.response?.headers) || requestIdFromHeaders(value.config?.headers),
+    client_request_id: requestIdsFromHeaders(value.config?.headers).requestId,
+    request_id: ids.requestId,
+    edge_request_id: ids.edgeRequestId,
     message,
   }
 }
