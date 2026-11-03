@@ -29,9 +29,9 @@ sudo python3 deploy/observability.py prepare \
   --state-root /var/lib/rapidkit/observability --uid 999 --gid 999
 ```
 
-3. 在 `docker/prod/.env.prod` 设置匹配的 `RAPIDKIT_LOG_ROOT`、`RAPIDKIT_OBSERVABILITY_ROOT`。Compose 明确使用 `/app/logs`，缺少挂载源即失败。先审查并升级 Worker 增量迁移 `508976be24b7`，再启动本批次镜像；生产迁移由项目部署流程执行。不要为回滚删除 receipt 表。
+3. 在 `docker/prod/.env.prod` 设置匹配的 `RAPIDKIT_LOG_ROOT`、`RAPIDKIT_OBSERVABILITY_ROOT`。Compose 明确使用 `/app/logs`，缺少挂载源即失败。先核对并补齐 Worker 关联字段和 `worker_task_receipts` 表，再启动本批次镜像；生产迁移由项目部署流程执行。不要为回滚删除 receipt 表。
 
-   仓库当前只有 Worker 的公开基线及增量，缺少其它插件历史迁移；全新空库不能仅靠 `alembic upgrade heads` 得到完整应用表。已有部署必须先核对真实 revision/schema 与私有迁移链，衔接正确 predecessor；禁止盲目 stamp 或对已有表直接执行建表基线。此项是既有部署门槛，本批次不重建未知历史迁移。
+   仓库不保留具体迁移版本脚本，迁移链由实际部署环境维护；全新空库不能仅靠 `alembic upgrade heads` 得到完整应用表。已有部署必须先核对真实 revision/schema 与部署迁移链，衔接正确 predecessor；禁止盲目 stamp 或对已有表直接执行建表基线。此项是既有部署门槛，不重建未知历史迁移。
 
 4. 安装 `docker/observability/rapidkit-observability.service` 的宿主机服务示例；将 `/opt/rapidkit`、日志路径、项目名与网络名改成实际值。服务运行 `deploy/observability.py watch --apply`，每 10 秒更新 inventory 与 Prometheus file_sd，并维护已移除实例日志。该服务需要宿主机 Docker 权限，应用、Prometheus、Alertmanager 均不挂载 Docker socket。
 
