@@ -127,7 +127,7 @@ Vue 前端独立维护安全内存时间线，不需要 DSN。用户可在头像
 | `task.revoke` / `schedule.toggle`                                                             | 任务撤销与定时任务启停                         |
 | `notification.publish` / `notification.cancel` / `notification.recall` / `notification.retry` | 通知发布、取消、撤回、失败投递重试             |
 
-Socket 事件只保留 `/`、`/notifications`、`/dashboard`、`/worker`、`/chat` 这五个固定 namespace；`socket_connection_id` 只接受 1–128 位安全字符。Socket.IO 在断开回调前可能清空 ID，因此时间线保留上次连接成功时的编号。`io server disconnect` 和 `io client disconnect` 分别归一为 `server_disconnect`、`client_disconnect`。鉴权撤销、刷新开始/结果和重连结果使用固定原因码、次数及单调耗时，不记录握手和错误原文。
+Socket 事件只保留 `/`、`/notifications`、`/dashboard`、`/worker`、`/chat` 这五个固定 namespace；`socket_connection_id` 只接受 1–128 位安全字符。Socket.IO 在断开回调前可能清空 ID，因此时间线保留上次连接成功时的编号。`io server disconnect` 和 `io client disconnect` 分别归一为 `server_disconnect`、`client_disconnect`。鉴权撤销、刷新开始/结果和重连结果使用固定原因码、次数及单调耗时，不记录握手和错误原文。重连的 attempt 来自 SDK；鉴权恢复显式重连记为 1。observation_count 是本段连接失败回调次数，与重连次数分别统计。
 
 首次普通连接失败输出 ERROR；连续失败达到 3 次后，每个 Socket 最多每 60 秒输出一条 WARNING 摘要，恢复时输出一次 INFO。正常连接、断开和重连过程仍是 DEBUG。控制台最低级别不影响内存时间线；只勾选 DevTools 全部级别不能覆盖应用日志级别。连接日志只在状态变化时产生，排查时勾选 Preserve log、清空筛选后刷新页面。
 

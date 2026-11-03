@@ -38,6 +38,7 @@ export function createSocketDiagnostics(
 ) {
   let lastId: string | undefined
   let failures = 0
+  let reconnectAttempt: number | undefined
   let recovering = false
   let started = 0
   let warnedAt = -Infinity
@@ -48,9 +49,12 @@ export function createSocketDiagnostics(
   const context = () => safeSocketContext(namespace, lastId)
   const record = (fields: Omit<DiagnosticEventInput, "category">) => {
     if (!current()) return
-    if (fields.phase === "reconnecting" && !recovering) {
-      recovering = true
-      started = performance.now()
+    if (fields.phase === "reconnecting") {
+      reconnectAttempt = fields.attempt ?? 1
+      if (!recovering) {
+        recovering = true
+        started = performance.now()
+      }
     }
     recordDiagnosticEvent({ category: "socket", ...context(), ...fields }, owner)
     if (fields.operation === "auth.refresh" && fields.phase === "failure")
@@ -68,11 +72,17 @@ export function createSocketDiagnostics(
       record({ phase: "connected" })
       logger.debug("Socket connected", context())
       if (recovering) {
-        const fields = { ...context(), attempt: failures, duration_ms: Math.round(performance.now() - started) }
+        const fields = {
+          ...context(),
+          attempt: reconnectAttempt,
+          observation_count: failures,
+          duration_ms: Math.round(performance.now() - started),
+        }
         record({ phase: "success", ...fields })
         logger.info("Socket connection recovered", fields)
       }
       failures = 0
+      reconnectAttempt = undefined
       recovering = false
       warnedAt = -Infinity
     },
@@ -84,7 +94,8 @@ export function createSocketDiagnostics(
       record({
         phase: "failure",
         reason_code: reason,
-        attempt: failures,
+        attempt: reconnectAttempt,
+        observation_count: failures,
         duration_ms: Math.round(performance.now() - started),
       })
       if (failures === 1 && reason === "connect_error") logger.error("Socket connection failed", { reason })
@@ -93,7 +104,8 @@ export function createSocketDiagnostics(
         logger.warn("Socket connection remains unavailable", {
           ...context(),
           reason_code: reason,
-          attempt: failures,
+          attempt: reconnectAttempt,
+          observation_count: failures,
           duration_ms: Math.round(performance.now() - started),
         })
       }

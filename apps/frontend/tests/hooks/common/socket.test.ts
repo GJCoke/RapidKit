@@ -131,10 +131,16 @@ it("times a successful first reconnect without requiring a connect_error", () =>
     io: { on: (e: string, fn: any) => manager.set(e, fn) },
   })
   useSocket().connect({ url: "https://app.test", namespace: "/dashboard" })
-  manager.get("reconnect_attempt")?.(1)
+  manager.get("reconnect_attempt")?.(2)
   vi.advanceTimersByTime(125)
   handlers.get("connect")?.()
   expect(getDiagnosticPackage().events).toContainEqual(
-    expect.objectContaining({ phase: "success", namespace: "/dashboard", duration_ms: 125 }),
+    expect.objectContaining({
+      phase: "success",
+      namespace: "/dashboard",
+      duration_ms: 125,
+      attempt: 2,
+      observation_count: 0,
+    }),
   )
 })
