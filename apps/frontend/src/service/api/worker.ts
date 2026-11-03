@@ -1,4 +1,6 @@
 import { request } from "../request"
+import { diagnosticRequest } from "../request/diagnostics"
+import type { DiagnosticAction } from "@/utils/diagnostics"
 
 /** get all workers (no pagination) */
 export function fetchGetAllWorkers() {
@@ -42,11 +44,12 @@ export function fetchGetRegisteredTasks() {
 }
 
 /** trigger a task */
-export function fetchTriggerTask(data: Api.Worker.TriggerTaskRequest) {
+export function fetchTriggerTask(data: Api.Worker.TriggerTaskRequest, action?: DiagnosticAction) {
   return request<Api.Worker.TriggerTaskResponse>({
     url: "/tasks/trigger",
     method: "post",
     data,
+    ...diagnosticRequest("task.run", action),
   })
 }
 

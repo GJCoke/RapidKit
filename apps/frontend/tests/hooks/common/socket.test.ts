@@ -1,10 +1,11 @@
+// @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest"
 
 const mock = vi.hoisted(() => ({ io: vi.fn() }))
 vi.mock("socket.io-client", () => ({ io: mock.io }))
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
 vi.mock("@/utils/diagnostic-message", () => ({
-  diagnosticMessage: (message: string, id: string) => `${message}:${id}`,
+  diagnosticMessage: (message: string, id: { request_id: string }) => `${message}:${id.request_id}`,
 }))
 import { useSocket } from "@/hooks/common/socket"
 

@@ -120,6 +120,8 @@ export function resetDiagnostics() {
 function safeFields(input: unknown): SafeFields {
   const value = input !== null && typeof input === "object" ? (input as Record<string, unknown>) : {}
   const output: SafeFields = {}
+  if (typeof value.asset_file === "string" && /^[A-Za-z0-9_.-]{1,128}\.(?:js|mjs|css)$/.test(value.asset_file))
+    output.asset_file = value.asset_file
   for (const [key, allowed] of [
     ["operation", operations],
     ["action_code", actions],

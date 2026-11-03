@@ -4,6 +4,9 @@ import { refreshAccessToken } from "@/service/request"
 import { useAuthStore } from "@/store/modules/auth"
 import { getToken } from "@/store/modules/auth/shared"
 import { createLogger } from "@/utils/logger"
+import { diagnosticGeneration, recordDiagnosticEvent } from "@/utils/diagnostics"
+import { reportSocketDiagnostic } from "@/utils/socket-diagnostics"
+import { getAuthSession } from "@/service/request/auth-session"
 
 const logger = createLogger("app-socket")
 
@@ -36,6 +39,8 @@ function hasFreshToken() {
 
 export function bindAuthRecovery(socket: Socket): void {
   if (recoveryBindings.has(socket)) return
+  getAuthSession()
+  const owner = diagnosticGeneration()
   const interruptRenewal = (reason: string) => {
     logger.debug("Socket transport closed", { reason })
     // Socket.IO deliberately closes an idle Manager when all namespaces renew.
@@ -44,7 +49,10 @@ export function bindAuthRecovery(socket: Socket): void {
       binding.interrupted = true
     }
   }
-  const logReconnect = (attempt: number) => logger.debug("Socket reconnecting", { attempt })
+  const logReconnect = (attempt: number) => {
+    recordDiagnosticEvent({ category: "socket", phase: "reconnecting", attempt }, owner)
+    logger.debug("Socket reconnecting", { attempt })
+  }
   const binding: RecoveryBinding = {
     interrupted: false,
     renewing: false,
@@ -92,6 +100,7 @@ export function bindAuthRecovery(socket: Socket): void {
   }
 
   socket.on("connect", () => {
+    recordDiagnosticEvent({ category: "socket", phase: "connected" }, owner)
     logger.debug("Socket connected")
     binding.lastConnectWasRenewal = binding.renewing
     binding.renewing = false
@@ -100,6 +109,7 @@ export function bindAuthRecovery(socket: Socket): void {
     revoked = undefined
   })
   socket.on("connect_error", (error: Error) => {
+    recordDiagnosticEvent({ category: "socket", phase: "failure", reason_code: "connect_error" }, owner)
     const reason = ["unauthorized", "forbidden", "token_expired"].includes(error.message)
       ? error.message
       : "connect_error"
@@ -112,7 +122,12 @@ export function bindAuthRecovery(socket: Socket): void {
   socket.on("auth:revoked", (payload: { code: string }) => {
     revoked = payload.code
   })
+  socket.on("diagnostic:error", (payload: unknown) => reportSocketDiagnostic(payload, owner))
   socket.on("disconnect", (reason) => {
+    recordDiagnosticEvent(
+      { category: "socket", phase: "disconnected", reason_code: reason.replaceAll(" ", "_") },
+      owner,
+    )
     logger.debug("Socket disconnected", { reason })
     const code = revoked
     revoked = undefined

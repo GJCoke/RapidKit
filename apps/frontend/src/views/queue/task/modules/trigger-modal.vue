@@ -4,6 +4,7 @@
   import type { PythonArguments } from "@/components/common/python-arguments-editor/arguments"
   import { fetchGetRegisteredTasks, fetchTriggerTask } from "@/service/api"
   import { $t } from "@/locales"
+  import { startDiagnosticAction, finishDiagnosticAction } from "@/utils/diagnostics"
 
   defineOptions({
     name: "TriggerModal",
@@ -47,11 +48,16 @@
     const { args, kwargs } = argumentsModel.value
 
     loading.value = true
-    const { error } = await fetchTriggerTask({
-      taskName: taskName.value,
-      args,
-      kwargs,
-    })
+    const action = startDiagnosticAction("task.run.submit")
+    const { error } = await fetchTriggerTask(
+      {
+        taskName: taskName.value,
+        args,
+        kwargs,
+      },
+      action,
+    )
+    finishDiagnosticAction(action, error ? "failure" : "success")
     loading.value = false
 
     if (!error) {

@@ -12,5 +12,10 @@
   "networkError": "Network connection failed. Try again.",
   "serverError": "The service is temporarily unavailable. Try again later.",
   "requestId": "Request ID",
-  "copyRequestId": "Copy request ID"
+  "copyRequestId": "Copy request ID",
+  "edgeRequestId": "Gateway ID",
+  "clientRequestId": "Client attempt ID",
+  "diagnosticId": "Diagnostic ID",
+  "exportDiagnostics": "Export diagnostics",
+  "exportFailed": "Could not export diagnostics. Try again."
 }

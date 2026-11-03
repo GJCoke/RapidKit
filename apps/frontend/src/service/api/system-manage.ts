@@ -1,4 +1,6 @@
 import { request } from "../request"
+import { diagnosticRequest } from "../request/diagnostics"
+import type { DiagnosticAction } from "@/utils/diagnostics"
 
 // ==================== Role ====================
 
@@ -65,11 +67,16 @@ export function fetchGetRolePermissions(id: string) {
 }
 
 /** update role permission codes; data scopes / field modes unchanged when omitted */
-export function fetchUpdateRolePermissions(id: string, data: Api.SystemManage.RolePermissionsUpdate) {
+export function fetchUpdateRolePermissions(
+  id: string,
+  data: Api.SystemManage.RolePermissionsUpdate,
+  action?: DiagnosticAction,
+) {
   return request<boolean>({
     url: `/roles/${id}/permissions`,
     method: "put",
     data,
+    ...diagnosticRequest("role.permissions.save", action),
   })
 }
 
@@ -106,11 +113,12 @@ export function fetchGetUserList(params?: Api.SystemManage.UserSearchParams) {
 }
 
 /** create user */
-export function fetchCreateUser(data: Api.SystemManage.CreateUserBody) {
+export function fetchCreateUser(data: Api.SystemManage.CreateUserBody, action?: DiagnosticAction) {
   return request<Api.SystemManage.User>({
     url: "/users",
     method: "post",
     data,
+    ...diagnosticRequest("user.create", action),
   })
 }
 

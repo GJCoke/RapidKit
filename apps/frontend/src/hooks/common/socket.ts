@@ -1,10 +1,9 @@
 import { ref, onUnmounted, Ref } from "vue"
 import { io, type Socket, type ManagerOptions, type SocketOptions } from "socket.io-client"
-import { safeRequestId } from "@rapidkit/utils"
-import { captureBrowserError } from "@/observability"
-import { diagnosticMessage } from "@/utils/diagnostic-message"
-import { $t } from "@/locales"
 import { createLogger } from "@/utils/logger"
+import { diagnosticGeneration, recordDiagnosticEvent } from "@/utils/diagnostics"
+import { reportSocketDiagnostic } from "@/utils/socket-diagnostics"
+import { getAuthSession } from "@/service/request/auth-session"
 
 const logger = createLogger("socket")
 
@@ -37,10 +36,12 @@ export function useSocket(): Result {
   const socket = ref<Socket | null>(null)
   const isConnected = ref(false)
   const isConnecting = ref(false)
-  const logReconnect = (attempt: number) => logger.debug("Socket reconnecting", { attempt })
+  let removeReconnect: (() => void) | undefined
 
   const connect = (options: Options): Socket | undefined => {
     if (socket.value?.connected) return
+    getAuthSession()
+    const owner = diagnosticGeneration()
 
     isConnecting.value = true
     const {
@@ -63,6 +64,7 @@ export function useSocket(): Result {
     })
 
     instance.on("connect", () => {
+      recordDiagnosticEvent({ category: "socket", phase: "connected" }, owner)
       logger.debug("Socket connected")
       isConnected.value = true
       isConnecting.value = false
@@ -70,6 +72,10 @@ export function useSocket(): Result {
     })
 
     instance.on("disconnect", (reason) => {
+      recordDiagnosticEvent(
+        { category: "socket", phase: "disconnected", reason_code: reason.replaceAll(" ", "_") },
+        owner,
+      )
       logger.debug("Socket disconnected", { reason })
       isConnected.value = false
       isConnecting.value = false
@@ -77,20 +83,21 @@ export function useSocket(): Result {
     })
 
     instance.on("connect_error", (err) => {
+      recordDiagnosticEvent({ category: "socket", phase: "failure", reason_code: "connect_error" }, owner)
       logger.error("Socket connection failed", { reason: "connect_error" })
       isConnecting.value = false
       onError?.(err)
     })
+    removeReconnect?.()
+    const logReconnect = (attempt: number) => {
+      recordDiagnosticEvent({ category: "socket", phase: "reconnecting", attempt }, owner)
+      logger.debug("Socket reconnecting", { attempt })
+    }
     instance.io.on("reconnect_attempt", logReconnect)
+    removeReconnect = () => instance.io.off("reconnect_attempt", logReconnect)
 
     instance.on("diagnostic:error", (payload: unknown) => {
-      const requestId =
-        payload && typeof payload === "object"
-          ? safeRequestId((payload as { requestId?: unknown }).requestId)
-          : undefined
-      if (!requestId) return
-      captureBrowserError(new Error("Socket operation failed"), "socket", requestId)
-      window.$message?.error(diagnosticMessage($t("request.serverError"), requestId))
+      reportSocketDiagnostic(payload, owner)
     })
 
     socket.value = instance
@@ -99,7 +106,8 @@ export function useSocket(): Result {
 
   const disconnect = () => {
     if (socket.value) {
-      socket.value.io.off("reconnect_attempt", logReconnect)
+      removeReconnect?.()
+      removeReconnect = undefined
       socket.value.disconnect()
       socket.value = null
     }

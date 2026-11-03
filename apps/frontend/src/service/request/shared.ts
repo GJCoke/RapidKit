@@ -1,5 +1,6 @@
 import { useAuthStore } from "@/store/modules/auth"
 import { diagnosticMessage } from "@/utils/diagnostic-message"
+import type { DiagnosticReference } from "@/utils/diagnostic-message"
 import { localStg } from "@/utils/storage"
 import { createLogger } from "@/utils/logger"
 import { fetchRefreshToken } from "../api"
@@ -89,7 +90,7 @@ export function handleExpiredRequest(state: RequestInstanceState, forLogout = fa
   return state.refreshTokenPromise
 }
 
-export function showErrorMsg(state: RequestInstanceState, message: string, requestId?: string) {
+export function showErrorMsg(state: RequestInstanceState, message: string, requestId?: string | DiagnosticReference) {
   if (!window.$message) return
   if (!state.errMsgStack?.length) {
     state.errMsgStack = []

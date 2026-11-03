@@ -8,6 +8,7 @@
   import { $t } from "@/locales"
   import AppAvatar from "@/components/common/app-avatar.vue"
   import ImpersonationInfo from "./impersonation-info.vue"
+  import { downloadDiagnosticPackage } from "@/utils/download-diagnostics"
 
   defineOptions({
     name: "UserMenu",
@@ -29,7 +30,7 @@
     toLogin()
   }
 
-  type DropdownKey = "logout"
+  type DropdownKey = "logout" | "diagnostics"
   type UserDropdownOption = DropdownOption | DropdownDividerOption | DropdownRenderOption
 
   const options = computed(() => {
@@ -60,6 +61,11 @@
       },
     ]
     const snapshot = authStore.impersonation
+    opts.push({
+      label: $t("request.exportDiagnostics"),
+      key: "diagnostics",
+      icon: SvgIconVNode({ icon: "ph:download-simple", fontSize: 18 }),
+    })
     if (snapshot) {
       opts.push({
         type: "render",
@@ -109,7 +115,10 @@
   }
 
   function handleDropdown(key: DropdownKey) {
-    if (key === "logout") {
+    if (key === "diagnostics") {
+      menuVisible.value = false
+      if (!downloadDiagnosticPackage()) window.$message?.error($t("request.exportFailed"))
+    } else if (key === "logout") {
       logout()
     } else {
       routerPushByKey(key)

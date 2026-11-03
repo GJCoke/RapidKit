@@ -12,5 +12,10 @@
   "networkError": "网络连接失败，请检查网络后重试",
   "serverError": "服务暂时不可用，请稍后重试",
   "requestId": "请求编号",
-  "copyRequestId": "复制请求编号"
+  "copyRequestId": "复制请求编号",
+  "edgeRequestId": "网关编号",
+  "clientRequestId": "客户端尝试编号",
+  "diagnosticId": "故障编号",
+  "exportDiagnostics": "导出诊断包",
+  "exportFailed": "诊断包导出失败，请重试"
 }

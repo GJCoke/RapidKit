@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { startDiagnosticAction, finishDiagnosticAction } from "@/utils/diagnostics"
   import { computed, nextTick, ref, shallowRef, watch } from "vue"
   import type { InputInst, TreeSelectOption } from "naive-ui"
   import { jsonClone } from "@rapidkit/utils"
@@ -192,7 +193,9 @@
 
     if (props.operateType === "add") {
       if (!operationAccess.value) return
-      const { error } = await fetchCreateUser({ ...commonFields, status: model.value.status! })
+      const action = startDiagnosticAction("user.create.submit")
+      const { error } = await fetchCreateUser({ ...commonFields, status: model.value.status! }, action)
+      finishDiagnosticAction(action, error ? "failure" : "success")
       if (error) return
     } else {
       if (!operationAccess.value) return

@@ -21,7 +21,7 @@ async function setupApp() {
   const app = createApp(App)
   app.config.errorHandler = (error) => {
     const eventId = captureBrowserError(error, "render")
-    window.$message?.error(diagnosticMessage($t("request.serverError"), eventId))
+    window.$message?.error(diagnosticMessage($t("request.serverError"), { diagnostic_id: eventId }))
   }
 
   setupStore(app)

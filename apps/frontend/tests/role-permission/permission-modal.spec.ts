@@ -257,11 +257,15 @@ it("fills the shared draft, permits manual edits and saves all restrictions once
   button(key("save")).click()
   button(key("save")).click()
   await vi.waitFor(() =>
-    expect(api.save).toHaveBeenCalledExactlyOnceWith("role", {
-      permissionCodes: ["user:update"],
-      dataScopes: { user: "self" },
-      fieldModes: { user: { contact: "masked" } },
-    }),
+    expect(api.save).toHaveBeenCalledExactlyOnceWith(
+      "role",
+      {
+        permissionCodes: ["user:update"],
+        dataScopes: { user: "self" },
+        fieldModes: { user: { contact: "masked" } },
+      },
+      expectedDiagnosticAction,
+    ),
   )
 })
 
@@ -292,11 +296,15 @@ it("requires explicit removal and normalization of invalid stored grants", async
   await vi.waitFor(() => expect(document.body.textContent).toContain("old:read"))
   button(key("save")).click()
   await vi.waitFor(() =>
-    expect(api.save).toHaveBeenCalledWith("role", {
-      permissionCodes: ["user:read"],
-      dataScopes: { user: "self" },
-      fieldModes: { user: { contact: "masked" } },
-    }),
+    expect(api.save).toHaveBeenCalledWith(
+      "role",
+      {
+        permissionCodes: ["user:read"],
+        dataScopes: { user: "self" },
+        fieldModes: { user: { contact: "masked" } },
+      },
+      expectedDiagnosticAction,
+    ),
   )
 })
 
@@ -326,6 +334,7 @@ it("ignores an older load response after switching roles", async () => {
     expect(api.save).toHaveBeenCalledWith(
       "newer",
       expect.objectContaining({ permissionCodes: ["user:update", "user:read"] }),
+      expectedDiagnosticAction,
     ),
   )
 })
@@ -383,11 +392,15 @@ it("saves manual scope and field changes through the same reviewed payload", asy
   await nextTick()
   button(key("save")).click()
   await vi.waitFor(() =>
-    expect(api.save).toHaveBeenCalledWith("role", {
-      permissionCodes: ["user:read"],
-      dataScopes: {},
-      fieldModes: { user: { contact: "hidden" } },
-    }),
+    expect(api.save).toHaveBeenCalledWith(
+      "role",
+      {
+        permissionCodes: ["user:read"],
+        dataScopes: {},
+        fieldModes: { user: { contact: "hidden" } },
+      },
+      expectedDiagnosticAction,
+    ),
   )
 })
 
@@ -431,11 +444,15 @@ it("bulk-checks and unchecks package codes immediately while retaining other man
   await nextTick()
   button(key("save")).click()
   await vi.waitFor(() =>
-    expect(api.save).toHaveBeenCalledExactlyOnceWith("role", {
-      permissionCodes: ["user:stats", "role:options", "user:read"],
-      dataScopes: { user: "self" },
-      fieldModes: { user: { contact: "masked" } },
-    }),
+    expect(api.save).toHaveBeenCalledExactlyOnceWith(
+      "role",
+      {
+        permissionCodes: ["user:stats", "role:options", "user:read"],
+        dataScopes: { user: "self" },
+        fieldModes: { user: { contact: "masked" } },
+      },
+      expectedDiagnosticAction,
+    ),
   )
 })
 
@@ -473,11 +490,15 @@ it("edits all notification resources in one module and keeps search from narrowi
   await nextTick()
   button(key("save")).click()
   await vi.waitFor(() =>
-    expect(api.save).toHaveBeenCalledExactlyOnceWith("role", {
-      permissionCodes: notificationCodes.map((c) => c.code),
-      dataScopes: { user: "self" },
-      fieldModes: { user: { contact: "masked" } },
-    }),
+    expect(api.save).toHaveBeenCalledExactlyOnceWith(
+      "role",
+      {
+        permissionCodes: notificationCodes.map((c) => c.code),
+        dataScopes: { user: "self" },
+        fieldModes: { user: { contact: "masked" } },
+      },
+      expectedDiagnosticAction,
+    ),
   )
 })
 
@@ -503,6 +524,7 @@ it("offers four read-only notification operations without granting write depende
           "notification-delivery:read",
         ],
       }),
+      expectedDiagnosticAction,
     ),
   )
 })
@@ -547,6 +569,7 @@ it("falls back on an incomplete menu snapshot and retries without resetting a dr
           "notification-delivery:read",
         ],
       }),
+      expectedDiagnosticAction,
     ),
   )
 })
@@ -610,7 +633,11 @@ it("does not report a cleared module as empty when another module still requires
   await nextTick()
   button(key("save")).click()
   await vi.waitFor(() =>
-    expect(api.save).toHaveBeenCalledWith("role", expect.objectContaining({ permissionCodes: ["user:publish"] })),
+    expect(api.save).toHaveBeenCalledWith(
+      "role",
+      expect.objectContaining({ permissionCodes: ["user:publish"] }),
+      expectedDiagnosticAction,
+    ),
   )
 })
 
@@ -663,11 +690,15 @@ it("reviews direct grants and cross-module dependencies under their owning modul
   button(key("save")).click()
   button(key("save")).click()
   await vi.waitFor(() =>
-    expect(api.save).toHaveBeenCalledExactlyOnceWith("role", {
-      permissionCodes: ["user:options", "notification:create"],
-      dataScopes: {},
-      fieldModes: { user: { contact: "masked" } },
-    }),
+    expect(api.save).toHaveBeenCalledExactlyOnceWith(
+      "role",
+      {
+        permissionCodes: ["user:options", "notification:create"],
+        dataScopes: {},
+        fieldModes: { user: { contact: "masked" } },
+      },
+      expectedDiagnosticAction,
+    ),
   )
 })
 
@@ -700,4 +731,10 @@ it("exposes resource expansion as a keyboard-focusable button without changing g
   expect(header!.getAttribute("aria-expanded")).toBe("true")
   expect(button(key("review")).disabled).toBe(true)
   expect(api.save).not.toHaveBeenCalled()
+})
+
+const expectedDiagnosticAction = expect.objectContaining({
+  code: "role.permissions.save",
+  actionId: expect.stringMatching(/^[A-Za-z0-9_-]{21}$/),
+  generation: expect.any(Number),
 })

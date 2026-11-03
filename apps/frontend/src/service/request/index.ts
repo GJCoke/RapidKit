@@ -153,7 +153,9 @@ export const request = createFlatRequest(
       const diagnosticFields = config ? completeRequestDiagnostics(config, error.response, error) : undefined
       if (error.code === "ERR_CANCELED") return
       const requestId = requestIdFromHeaders(error.response?.headers)
-      if (shouldReportRequestFailure(error)) captureBrowserError(error, "request", requestId)
+      const diagnosticId = shouldReportRequestFailure(error)
+        ? captureBrowserError(error, "request", requestId, diagnosticFields)
+        : undefined
       if (error.response?.status === 401 && localStg.get("impersonation")) {
         if (!isImpersonationStop(config)) await useAuthStore().stopImpersonation()
         return
@@ -188,7 +190,7 @@ export const request = createFlatRequest(
         return
       }
 
-      showErrorMsg(request.state, message, requestId)
+      showErrorMsg(request.state, message, { ...diagnosticFields, diagnostic_id: diagnosticId })
     },
   },
 )

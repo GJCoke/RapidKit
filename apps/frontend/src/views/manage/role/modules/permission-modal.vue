@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { startDiagnosticAction, finishDiagnosticAction } from "@/utils/diagnostics"
   import { computed, inject, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue"
   import { routerKey } from "vue-router"
   import { useThemeVars } from "naive-ui"
@@ -277,7 +278,9 @@
     saving.value = true
     try {
       if (!operationAccess.value) return
-      const { error } = await fetchUpdateRolePermissions(roleId, payload)
+      const action = startDiagnosticAction("role.permissions.save")
+      const { error } = await fetchUpdateRolePermissions(roleId, payload, action)
+      finishDiagnosticAction(action, error ? "failure" : "success")
       if (error || currentVersion !== version || roleId !== props.roleId) return
       window.$message?.success?.($t("common.modifySuccess"))
       baseline.value = payload

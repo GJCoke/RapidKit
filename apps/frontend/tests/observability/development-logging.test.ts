@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest"
 
 const sentry = vi.hoisted(() => ({ captureException: vi.fn(), init: vi.fn() }))
@@ -15,12 +16,13 @@ it("prints explicitly captured render errors without a DSN", async () => {
   const output = vi.spyOn(console, "error").mockImplementation(() => {})
   const { captureBrowserError } = await import("@/observability")
   const error = new Error("Render failed")
-  expect(captureBrowserError(error, "render")).toBeUndefined()
+  expect(captureBrowserError(error, "render")).toMatch(/^[A-Za-z0-9_-]{21}$/)
   expect(output).toHaveBeenCalledWith(
     expect.stringContaining("[ERROR] [observability]"),
     "Browser operation failed",
     "render",
     error,
+    { diagnostic_id: expect.stringMatching(/^[A-Za-z0-9_-]{21}$/) },
   )
   expect(sentry.captureException).not.toHaveBeenCalled()
 })

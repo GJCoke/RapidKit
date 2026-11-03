@@ -6,6 +6,7 @@ import { openAppSocket, resetAppSockets, useAppSocket } from "@/hooks/common/app
 
 const storage = vi.hoisted(() => ({ token: "current-token" }))
 vi.mock("@/store/modules/auth/shared", () => ({ getToken: () => storage.token }))
+vi.mock("@/utils/storage", () => ({ localStg: { get: (key: string) => (key === "token" ? storage.token : null) } }))
 vi.mock("@/service/request", () => ({ refreshAccessToken: vi.fn() }))
 vi.mock("@/store/modules/auth", () => ({ useAuthStore: () => ({ resetStore: vi.fn() }) }))
 const cleanup: (() => void)[] = []

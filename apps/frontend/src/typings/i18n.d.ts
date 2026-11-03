@@ -1885,7 +1885,12 @@ declare namespace I18nKeys {
     | "socketio.instrument.usernamePlaceholder"
 
   type request =
+    | "clientRequestId"
     | "copyRequestId"
+    | "diagnosticId"
+    | "edgeRequestId"
+    | "exportDiagnostics"
+    | "exportFailed"
     | "impersonationStopFirst"
     | "logout"
     | "logoutMsg"
