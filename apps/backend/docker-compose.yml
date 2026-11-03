@@ -33,7 +33,7 @@ services:
       - "35432:5432"
 
   app_redis: # redis config.
-    image: redis:6.2-alpine
+    image: redis:7-alpine
     restart: always
     hostname: app_redis
     container_name: app_redis
