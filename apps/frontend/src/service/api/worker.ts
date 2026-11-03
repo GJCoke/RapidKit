@@ -1,5 +1,5 @@
 import { request } from "../request"
-import { diagnosticRequest } from "../request/diagnostics"
+import { diagnosticRequest, diagnosticMutation } from "../request/diagnostics"
 import type { DiagnosticAction } from "@/utils/diagnostics"
 
 /** get all workers (no pagination) */
@@ -55,10 +55,13 @@ export function fetchTriggerTask(data: Api.Worker.TriggerTaskRequest, action?: D
 
 /** revoke a task */
 export function fetchRevokeTask(taskId: string) {
-  return request<boolean>({
-    url: `/tasks/${taskId}/revoke`,
-    method: "post",
-  })
+  return diagnosticMutation("task.revoke", (diagnostics) =>
+    request<boolean>({
+      url: `/tasks/${taskId}/revoke`,
+      method: "post",
+      ...diagnostics,
+    }),
+  )
 }
 
 /** get task stats summary */
@@ -136,10 +139,13 @@ export function fetchUpdateSchedule(id: string, data: Api.Worker.PeriodicTaskUpd
 
 /** toggle schedule */
 export function fetchToggleSchedule(id: string) {
-  return request<Api.Worker.PeriodicTaskInfo>({
-    url: `/schedules/${id}/toggle`,
-    method: "patch",
-  })
+  return diagnosticMutation("schedule.toggle", (diagnostics) =>
+    request<Api.Worker.PeriodicTaskInfo>({
+      url: `/schedules/${id}/toggle`,
+      method: "patch",
+      ...diagnostics,
+    }),
+  )
 }
 
 /** delete schedule */

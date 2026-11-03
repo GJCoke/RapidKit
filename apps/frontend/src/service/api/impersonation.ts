@@ -1,7 +1,10 @@
 import { request } from "../request"
+import { diagnosticMutation } from "../request/diagnostics"
 
 export function fetchCreateImpersonation(data: Api.Impersonation.CreateBody) {
-  return request<Api.Impersonation.Created>({ url: "/auth/impersonations", method: "post", data })
+  return diagnosticMutation("impersonation.start", (diagnostics) =>
+    request<Api.Impersonation.Created>({ url: "/auth/impersonations", method: "post", data, ...diagnostics }),
+  )
 }
 
 export function fetchGetCurrentImpersonation() {
@@ -9,5 +12,7 @@ export function fetchGetCurrentImpersonation() {
 }
 
 export function fetchDeleteCurrentImpersonation() {
-  return request<boolean>({ url: "/auth/impersonations/current", method: "delete", timeout: 5000 })
+  return diagnosticMutation("impersonation.stop", (diagnostics) =>
+    request<boolean>({ url: "/auth/impersonations/current", method: "delete", timeout: 5000, ...diagnostics }),
+  )
 }

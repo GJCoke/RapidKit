@@ -1,5 +1,5 @@
 import { request } from "../request"
-import { diagnosticRequest } from "../request/diagnostics"
+import { diagnosticRequest, diagnosticMutation } from "../request/diagnostics"
 import type { DiagnosticAction } from "@/utils/diagnostics"
 
 // ==================== Role ====================
@@ -25,37 +25,49 @@ export function fetchGetAllRoles() {
 export function fetchCreateRole(
   data: Pick<Api.SystemManage.Role, "name" | "code" | "description"> & { status?: Api.Common.EnableStatus | null },
 ) {
-  return request<Api.SystemManage.Role>({
-    url: "/roles",
-    method: "post",
-    data,
-  })
+  return diagnosticMutation("role.create", (diagnostics) =>
+    request<Api.SystemManage.Role>({
+      url: "/roles",
+      method: "post",
+      data,
+      ...diagnostics,
+    }),
+  )
 }
 
 /** update role */
 export function fetchUpdateRole(id: string, data: Api.SystemManage.UpdateRoleBody) {
-  return request<Api.SystemManage.Role>({
-    url: `/roles/${id}`,
-    method: "put",
-    data,
-  })
+  return diagnosticMutation("role.update", (diagnostics) =>
+    request<Api.SystemManage.Role>({
+      url: `/roles/${id}`,
+      method: "put",
+      data,
+      ...diagnostics,
+    }),
+  )
 }
 
 /** delete role */
 export function fetchDeleteRole(id: string) {
-  return request<boolean>({
-    url: `/roles/${id}`,
-    method: "delete",
-  })
+  return diagnosticMutation("role.delete", (diagnostics) =>
+    request<boolean>({
+      url: `/roles/${id}`,
+      method: "delete",
+      ...diagnostics,
+    }),
+  )
 }
 
 /** batch delete roles */
 export function fetchBatchDeleteRoles(ids: string[]) {
-  return request<boolean>({
-    url: "/roles",
-    method: "delete",
-    data: { ids },
-  })
+  return diagnosticMutation("role.batch_delete", (diagnostics) =>
+    request<boolean>({
+      url: "/roles",
+      method: "delete",
+      data: { ids },
+      ...diagnostics,
+    }),
+  )
 }
 
 /** get role permissions */
@@ -152,37 +164,49 @@ export function fetchUpdateUser(
     departmentId?: string | null
   },
 ) {
-  return request<Api.SystemManage.User>({
-    url: `/users/${id}`,
-    method: "put",
-    data,
-  })
+  return diagnosticMutation("user.update", (diagnostics) =>
+    request<Api.SystemManage.User>({
+      url: `/users/${id}`,
+      method: "put",
+      data,
+      ...diagnostics,
+    }),
+  )
 }
 
 /** delete user */
 export function fetchDeleteUser(id: string) {
-  return request<boolean>({
-    url: `/users/${id}`,
-    method: "delete",
-  })
+  return diagnosticMutation("user.delete", (diagnostics) =>
+    request<boolean>({
+      url: `/users/${id}`,
+      method: "delete",
+      ...diagnostics,
+    }),
+  )
 }
 
 /** batch delete users */
 export function fetchBatchDeleteUsers(ids: string[]) {
-  return request<boolean>({
-    url: "/users",
-    method: "delete",
-    data: { ids },
-  })
+  return diagnosticMutation("user.batch_delete", (diagnostics) =>
+    request<boolean>({
+      url: "/users",
+      method: "delete",
+      data: { ids },
+      ...diagnostics,
+    }),
+  )
 }
 
 /** change user password */
 export function fetchChangePassword(userId: string, data: Api.SystemManage.ChangePassword) {
-  return request<boolean>({
-    url: `/users/${userId}/password`,
-    method: "put",
-    data,
-  })
+  return diagnosticMutation("user.password.change", (diagnostics) =>
+    request<boolean>({
+      url: `/users/${userId}/password`,
+      method: "put",
+      data,
+      ...diagnostics,
+    }),
+  )
 }
 
 /** get all users (for select options) */

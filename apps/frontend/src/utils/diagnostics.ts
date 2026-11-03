@@ -10,8 +10,37 @@ export type DiagnosticCategory =
   | "request"
   | "socket"
   | "resource"
-export type DiagnosticOperation = "other" | "user.create" | "role.permissions.save" | "task.run" | "auth.refresh"
-export type DiagnosticActionCode = "user.create.submit" | "role.permissions.save" | "task.run.submit"
+const mutationOperations = [
+  "user.update",
+  "user.delete",
+  "user.batch_delete",
+  "user.password.change",
+  "role.create",
+  "role.update",
+  "role.delete",
+  "role.batch_delete",
+  "impersonation.start",
+  "impersonation.stop",
+  "task.revoke",
+  "schedule.toggle",
+  "notification.publish",
+  "notification.cancel",
+  "notification.recall",
+  "notification.retry",
+] as const
+export type DiagnosticMutation = (typeof mutationOperations)[number]
+export type DiagnosticOperation =
+  | "other"
+  | "user.create"
+  | "role.permissions.save"
+  | "task.run"
+  | "auth.refresh"
+  | DiagnosticMutation
+export type DiagnosticActionCode =
+  | "user.create.submit"
+  | "role.permissions.save"
+  | "task.run.submit"
+  | DiagnosticMutation
 export interface DiagnosticAction {
   readonly actionId: string
   readonly generation: number
@@ -48,8 +77,15 @@ interface Incident {
   events: TimelineEvent[]
 }
 
-const operations = new Set(["other", "user.create", "role.permissions.save", "task.run", "auth.refresh"])
-const actions = new Set(["user.create.submit", "role.permissions.save", "task.run.submit"])
+const operations = new Set([
+  "other",
+  "user.create",
+  "role.permissions.save",
+  "task.run",
+  "auth.refresh",
+  ...mutationOperations,
+])
+const actions = new Set(["user.create.submit", "role.permissions.save", "task.run.submit", ...mutationOperations])
 const categories = new Set(["navigation", "action", "request", "socket", "identity"])
 const errorCategories = new Set(["runtime", "promise", "bootstrap", "render", "route", "request", "socket", "resource"])
 const phases = new Set([

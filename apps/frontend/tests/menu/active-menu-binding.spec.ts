@@ -144,3 +144,4 @@ function deferred<T>() {
 
   return { promise, resolve }
 }
+vi.mock("@/service/request/auth-session", () => ({ getAuthSession: () => 0 }))

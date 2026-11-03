@@ -1,8 +1,14 @@
 import type { AxiosError, AxiosResponse } from "@rapidkit/axios"
 import { requestIdsFromHeaders } from "@rapidkit/utils"
 import { createLogger, logPath } from "@/utils/logger"
-import { diagnosticGeneration, recordDiagnosticEvent } from "@/utils/diagnostics"
-import type { DiagnosticAction, DiagnosticOperation } from "@/utils/diagnostics"
+import {
+  diagnosticGeneration,
+  recordDiagnosticEvent,
+  startDiagnosticAction,
+  finishDiagnosticAction,
+} from "@/utils/diagnostics"
+import type { DiagnosticAction, DiagnosticOperation, DiagnosticMutation } from "@/utils/diagnostics"
+import { getAuthSession } from "./auth-session"
 
 const logger = createLogger("request")
 interface RequestContext {
@@ -22,6 +28,26 @@ const attempts = new WeakMap<object, Attempt>()
 
 export function diagnosticRequest(operation: DiagnosticOperation, action?: DiagnosticAction) {
   return { diagnostics: { operation, action, generation: action?.generation ?? diagnosticGeneration() } }
+}
+
+/** A single API mutation owns its action; its callback explicitly passes the request context. */
+export async function diagnosticMutation<T extends { error: { code?: string } | null }>(
+  operation: DiagnosticMutation,
+  send: (metadata: ReturnType<typeof diagnosticRequest>) => Promise<T>,
+): Promise<T> {
+  getAuthSession()
+  const action = startDiagnosticAction(operation)
+  try {
+    const result = await send(diagnosticRequest(operation, action))
+    finishDiagnosticAction(
+      action,
+      result.error?.code === "ERR_CANCELED" ? "cancelled" : result.error ? "failure" : "success",
+    )
+    return result
+  } catch (error) {
+    finishDiagnosticAction(action, "failure")
+    throw error
+  }
 }
 
 export function startRequestDiagnostics(config: Config) {

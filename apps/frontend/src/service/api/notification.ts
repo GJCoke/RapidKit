@@ -1,4 +1,5 @@
 import { request } from "../request"
+import { diagnosticMutation } from "../request/diagnostics"
 
 export function fetchGetNotifications(params?: Api.Notification.InboxQuery) {
   return request<Api.Notification.InboxPage>({ url: "/notifications", method: "get", params })
@@ -86,7 +87,14 @@ export function fetchPreviewUnsavedAudience(data: Api.Notification.AudiencePrevi
 }
 
 export function fetchPublishAnnouncement(messageId: string, data?: Api.Notification.BannerConfirmation) {
-  return request<{ recipientCount: number }>({ url: `/admin/notifications/${messageId}/publish`, method: "post", data })
+  return diagnosticMutation("notification.publish", (diagnostics) =>
+    request<{ recipientCount: number }>({
+      url: `/admin/notifications/${messageId}/publish`,
+      method: "post",
+      data,
+      ...diagnostics,
+    }),
+  )
 }
 
 /** Render for one recipient without saving or sending the announcement. */
@@ -105,11 +113,15 @@ export function fetchPreviewAnnouncementAction(data: Api.Notification.ActionInpu
 }
 
 export function fetchCancelAnnouncement(messageId: string) {
-  return request<null>({ url: `/admin/notifications/${messageId}/cancel`, method: "post" })
+  return diagnosticMutation("notification.cancel", (diagnostics) =>
+    request<null>({ url: `/admin/notifications/${messageId}/cancel`, method: "post", ...diagnostics }),
+  )
 }
 
 export function fetchRecallAnnouncement(messageId: string) {
-  return request<null>({ url: `/admin/notifications/${messageId}/recall`, method: "post" })
+  return diagnosticMutation("notification.recall", (diagnostics) =>
+    request<null>({ url: `/admin/notifications/${messageId}/recall`, method: "post", ...diagnostics }),
+  )
 }
 
 export function fetchGetNotificationDeliveries(params: Api.Notification.DeliveryQuery) {
@@ -124,10 +136,13 @@ export function fetchDeliverySummary(messageId: string) {
 }
 
 export function fetchRetryFailedDeliveries(messageId: string) {
-  return request<Api.Notification.DeliveryRetry>({
-    url: `/admin/notification-deliveries/${messageId}/retry-failed`,
-    method: "post",
-  })
+  return diagnosticMutation("notification.retry", (diagnostics) =>
+    request<Api.Notification.DeliveryRetry>({
+      url: `/admin/notification-deliveries/${messageId}/retry-failed`,
+      method: "post",
+      ...diagnostics,
+    }),
+  )
 }
 
 /** Global banner has no inbox or unread side effects. */
