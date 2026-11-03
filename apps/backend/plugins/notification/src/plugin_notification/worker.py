@@ -115,6 +115,7 @@ class DeliveryWorker:
         """Claim and process at most ``batch_size`` eligible rows."""
         rows = await self._claim()
         processed = 0
+        counts = {"sent_count": 0, "retrying_count": 0, "dead_count": 0, "cancelled_count": 0}
         for row in rows:
             message = await self.session.get(NotificationMessage, row.message_id)
             now = timezone.now()
@@ -127,6 +128,7 @@ class DeliveryWorker:
                 self._clear_lock(row)
                 self.session.add(row)
                 processed += 1
+                counts["cancelled_count"] += 1
                 continue
             adapter = self.registry.get(row.channel)
             if adapter is None:
@@ -135,6 +137,15 @@ class DeliveryWorker:
                 self._clear_lock(row)
                 self.session.add(row)
                 processed += 1
+                counts["dead_count"] += 1
+                logger.bind(
+                    event="notification.delivery.dead",
+                    outcome="dead",
+                    reason_code="unknown_channel",
+                    message_id=row.message_id,
+                    outbox_id=row.id,
+                    attempt=row.attempt_count,
+                ).warning("Notification delivery unavailable")
                 continue
 
             payload = await self._build_payload(row.message_id, row.user_id)
@@ -144,6 +155,7 @@ class DeliveryWorker:
                 self._clear_lock(row)
                 self.session.add(row)
                 processed += 1
+                counts["cancelled_count"] += 1
                 continue
             result = await adapter.deliver(
                 redis=self.redis,
@@ -158,18 +170,53 @@ class DeliveryWorker:
                 row.last_error_code = None
                 self._clear_lock(row)
                 await self._mark_delivered_inbox(row.message_id, row.user_id)
+                counts["sent_count"] += 1
+                if row.attempt_count > 1:
+                    logger.bind(
+                        event="notification.delivery.recovered",
+                        outcome="sent",
+                        message_id=row.message_id,
+                        outbox_id=row.id,
+                        attempt=row.attempt_count,
+                    ).info("Notification delivery recovered")
             else:
                 row.last_error_code = result.error_code
                 self._clear_lock(row)
                 if row.attempt_count >= MAX_ATTEMPTS:
                     row.status = OutboxStatus.DEAD.value
+                    counts["dead_count"] += 1
                 else:
                     row.status = OutboxStatus.RETRYING.value
                     backoff = BASE_BACKOFF_SECONDS * (2 ** (row.attempt_count - 1))
                     jitter = self.jitter(0, backoff * BACKOFF_JITTER_RATIO)
                     row.next_attempt_at = timezone.now() + timedelta(seconds=backoff + jitter)
+                    counts["retrying_count"] += 1
+                exhausted = row.status == OutboxStatus.DEAD.value
+                logger.bind(
+                    event="notification.delivery.dead" if exhausted else "notification.delivery.retrying",
+                    outcome=row.status,
+                    message_id=row.message_id,
+                    outbox_id=row.id,
+                    attempt=row.attempt_count,
+                    reason_code="retry_exhausted"
+                    if exhausted
+                    else "inapp_emit_failed"
+                    if result.error_code == "inapp_emit_failed"
+                    else "delivery_failed",
+                    retryable=not exhausted,
+                ).log("WARNING" if exhausted else "DEBUG", "Notification delivery attempt failed")
             self.session.add(row)
             processed += 1
 
         await self.session.flush()
+        if processed:
+            logger.bind(
+                event="notification.delivery.batch.attempted",
+                processed_count=processed,
+                **counts,
+                outcome="degraded" if counts["retrying_count"] or counts["dead_count"] else "success",
+            ).log(
+                "WARNING" if counts["retrying_count"] or counts["dead_count"] else "DEBUG",
+                "Notification delivery batch attempted",
+            )
         return processed

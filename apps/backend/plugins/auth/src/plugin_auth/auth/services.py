@@ -39,8 +39,13 @@ _DUMMY_HASH = hash_password("dummy")
 def decrypt_password(rsa_password: str) -> str:
     try:
         password = decrypt_message(auth_settings.RSA_PRIVATE_KEY, rsa_password)
-    except Exception:
-        logger.exception("Failed to decrypt password.")
+    except Exception as exc:
+        logger.bind(
+            event="auth.login.rejected",
+            outcome="rejected",
+            reason_code="password_decrypt_failed",
+            exception_type=type(exc).__name__,
+        ).warning("Password decryption rejected")
         raise AppException(AuthStatusCode.AUTHENTICATION_FAILED)
     return password
 
@@ -56,15 +61,19 @@ async def refresh_user_token(
         token = await token_store.rotate(user.id, user.username, jti, user_agent)
         cache_mgr = get_service(PermissionCacheManager)
         await cache_mgr.build(user.id, user.roles, redis)
-        logger.info("Token refreshed for user {user_id}", user_id=user.id)
+        logger.bind(event="auth.token.refresh", outcome="success", user_id=user.id).info("Access token refreshed")
         return token
 
     if await token_store.is_replay(user.id, jti):
-        logger.warning("Refresh token replay detected for user {user_id}, forcing re-login", user_id=user.id)
+        logger.bind(
+            event="auth.token.refresh", outcome="rejected", reason_code="token_replay", user_id=user.id
+        ).warning("Refresh token replay rejected")
         await token_store.force_relogin(user.id)
         raise AppException(AuthStatusCode.TOKEN_INVALID)
 
-    logger.debug("No refresh token found in redis.")
+    logger.bind(event="auth.token.refresh", outcome="rejected", reason_code="token_missing", user_id=user.id).debug(
+        "Refresh token unavailable"
+    )
     raise AppException(AuthStatusCode.TOKEN_EXPIRED)
 
 
@@ -85,7 +94,9 @@ async def user_login(
     attempts = await redis.get(attempts_key)
     if attempts and int(attempts) >= auth_settings.LOGIN_MAX_ATTEMPTS:
         retry_after_seconds = await _get_login_retry_after(redis, attempts_key)
-        logger.warning("Login temporarily limited after too many failed attempts")
+        logger.bind(event="auth.login.rejected", outcome="rejected", reason_code="account_locked").warning(
+            "Login temporarily limited"
+        )
         raise AppException(AuthStatusCode.ACCOUNT_LOCKED, data={"retryAfterSeconds": retry_after_seconds})
 
     # Fix 5: Prevent user enumeration — catch user-not-found and use dummy hash
@@ -104,7 +115,9 @@ async def user_login(
 
     if not check_password(decrypted_password, user_info.password):
         await _increment_login_attempts(redis, attempts_key)
-        logger.warning("Login failed: invalid password, user_id={user_id}", user_id=user_info.id)
+        logger.bind(
+            event="auth.login.rejected", outcome="rejected", reason_code="invalid_credentials", user_id=user_info.id
+        ).warning("Login credentials rejected")
         raise AppException(AuthStatusCode.AUTHENTICATION_FAILED)
 
     # Fix 3: Clear login attempts on success
@@ -112,9 +125,13 @@ async def user_login(
 
     if user_info.status != Status.ON:
         if user_info.status == Status.PENDING:
-            logger.warning("Login blocked for pending user {user_id}", user_id=user_info.id)
+            logger.bind(
+                event="auth.login.rejected", outcome="rejected", reason_code="account_pending", user_id=user_info.id
+            ).warning("Login status rejected")
             raise AppException(AuthStatusCode.ACCOUNT_NOT_ACTIVATED)
-        logger.warning("Login blocked for disabled user {user_id}", user_id=user_info.id)
+        logger.bind(
+            event="auth.login.rejected", outcome="rejected", reason_code="account_disabled", user_id=user_info.id
+        ).warning("Login status rejected")
         raise AppException(AuthStatusCode.USER_DISABLED)
 
     token = await token_store.issue(user_info.id, user_info.name, user_agent)
@@ -127,7 +144,7 @@ async def user_login(
         audit_context.record.actor_username = user_info.username
         audit_context.record.actor_type = AuditActorType.USER
         audit_context.confirm()
-    logger.info("Login success for user {user_id}", user_id=user_info.id)
+    logger.bind(event="auth.login.completed", outcome="success", user_id=user_info.id).debug("Login completed")
     event_bus.fire_and_forget(
         UserLoginEvent(
             user_id=str(user_info.id),
@@ -151,6 +168,8 @@ async def _get_login_retry_after(redis: AsyncRedisClient, key: str) -> int:
     try:
         ttl = int(await redis.ttl(key))
     except Exception:
-        logger.debug("Unable to read login attempt TTL; using minimum retry delay")
+        logger.bind(event="auth.login.retry_delay", reason_code="ttl_unavailable").debug(
+            "Using minimum login retry delay"
+        )
         return 1
     return max(ttl, 1)

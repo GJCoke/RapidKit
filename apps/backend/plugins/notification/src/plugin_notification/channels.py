@@ -67,7 +67,14 @@ class InAppChannel:
             )
             return ChannelResult(success=True)
         except Exception as exc:  # noqa: BLE001
-            logger.opt(exception=exc).warning("InApp emit failed for user_id={}", user_id)
+            logger.bind(
+                event="notification.channel.failed",
+                reason_code="inapp_emit_failed",
+                outcome="failure",
+                exception_type=type(exc).__name__,
+                user_id=user_id,
+                namespace=_NOTIFICATION_NAMESPACE,
+            ).warning("Notification channel emit failed")
             return ChannelResult(success=False, error_code="inapp_emit_failed")
 
 

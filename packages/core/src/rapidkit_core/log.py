@@ -71,6 +71,13 @@ _FIELDS = frozenset(
         "consecutive_failures",
         "observation_count",
         "diagnostic_truncated",
+        "message_id",
+        "outbox_id",
+        "processed_count",
+        "sent_count",
+        "retrying_count",
+        "dead_count",
+        "cancelled_count",
     }
 )
 

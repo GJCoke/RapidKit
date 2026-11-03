@@ -131,6 +131,8 @@ async def test_notification_failure_paths_keep_types_without_raw_values(case, pr
     warnings = [json.loads(line) for line in stdout.splitlines() if json.loads(line)["level"] == "WARNING"]
     assert warnings
     assert any(
-        "ValueError" in (row["exception"] or "") if case == "renderer" else "RuntimeError" in (row["exception"] or "")
+        "ValueError" in (row["exception"] or "")
+        if case == "renderer"
+        else row.get("exception_type") == "RuntimeError" or "RuntimeError" in (row["exception"] or "")
         for row in warnings
     )

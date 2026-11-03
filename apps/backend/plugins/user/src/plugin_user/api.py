@@ -86,9 +86,11 @@ def _warn_username_pinyin_mismatch(
     if check_username_pinyin(name, username).consistent:
         return
     logger.bind(
+        event="user.validation.warning",
+        reason_code="username_pinyin_mismatch",
+        outcome="accepted",
         operation=operation,
-        target_user_id=str(target_user_id) if target_user_id else None,
-        pinyin_mismatch=True,
+        user_id=target_user_id,
     ).warning("Username does not match the canonical name pinyin")
 
 
@@ -219,11 +221,13 @@ async def change_password(
 
     after_commit(session, invalidate_user_cache, redis, user_id)
     after_commit(session, invalidate_user_session, redis, user_id)
-    logger.warning(
-        "Password changed for user {user_id} by {operator}",
+    logger.bind(
+        event="user.mutation.staged",
+        operation="user.password.change",
+        outcome="staged",
         user_id=user_id,
-        operator=current_user.id,
-    )
+        actor_id=current_user.id,
+    ).debug("User mutation staged")
     event_bus.fire_and_forget(UserPasswordChangedEvent(user_id=str(user_id)))
     return Response(data=True)
 
@@ -246,7 +250,13 @@ async def create_user(
     create_data["password"] = hash_password(secrets.token_urlsafe(32))
     user = await user_crud.create(create_data)
     event_bus.fire_and_forget(UserCreatedEvent(user_id=str(user.id)))
-    logger.info("Pending user created: {user_id} by {operator}", user_id=user.id, operator=current_user.id)
+    logger.bind(
+        event="user.mutation.staged",
+        operation="user.create",
+        outcome="staged",
+        user_id=user.id,
+        actor_id=current_user.id,
+    ).debug("User mutation staged")
     return Response(data=UserManageResponse.model_validate(user))
 
 
@@ -261,7 +271,13 @@ async def resend_invite(
     if target.status != Status.PENDING:
         raise AppException(UserStatusCode.USER_NOT_PENDING)
     event_bus.fire_and_forget(UserInviteRequestedEvent(user_id=str(user_id)))
-    logger.info("Invite resend requested for {user_id} by {operator}", user_id=user_id, operator=scope.user.id)
+    logger.bind(
+        event="user.mutation.staged",
+        operation="user.invite.resend",
+        outcome="staged",
+        user_id=user_id,
+        actor_id=scope.user.id,
+    ).debug("User mutation staged")
     return Response(data=True)
 
 
@@ -316,7 +332,9 @@ async def update_user(
         after_commit(session, close_user_sockets, user_id, redis, {"/dashboard"}, "forbidden")
     if permission_changed:
         after_commit(session, emit_permission_changed, "user", user_id=user_id)
-    logger.info("User updated: {user_id}", user_id=user_id)
+    logger.bind(event="user.mutation.staged", operation="user.update", outcome="staged", user_id=user_id).debug(
+        "User mutation staged"
+    )
     return Response(data=UserManageResponse.model_validate(user))
 
 
@@ -338,7 +356,13 @@ async def delete_user(
         raise AppException(UserStatusCode.CANNOT_DELETE_ADMIN)
 
     await user_crud.delete(user_id)
-    logger.warning("User deleted: {user_id} by {operator}", user_id=user_id, operator=current_user.id)
+    logger.bind(
+        event="user.mutation.staged",
+        operation="user.delete",
+        outcome="staged",
+        user_id=user_id,
+        actor_id=current_user.id,
+    ).debug("User mutation staged")
     after_commit(session, invalidate_user_cache, redis, user_id)
     after_commit(session, invalidate_user_session, redis, user_id)
     event_bus.fire_and_forget(UserDeletedEvent(user_id=str(user_id)))
@@ -365,11 +389,9 @@ async def batch_delete_users(
             raise AppException(UserStatusCode.BATCH_CONTAINS_ADMIN)
 
     await user_crud.delete_all(body.ids)
-    logger.warning(
-        "Users batch deleted: {count} users by {operator}",
-        count=len(body.ids),
-        operator=current_user.id,
-    )
+    logger.bind(
+        event="user.mutation.staged", operation="user.batch_delete", outcome="staged", actor_id=current_user.id
+    ).debug("User mutation staged")
 
     for uid in body.ids:
         after_commit(session, invalidate_user_cache, redis, uid)

@@ -27,7 +27,9 @@ async def create_periodic_task(crud: PeriodicTaskCRUD, body: PeriodicTaskCreate)
             "schedule_id": schedule.id,
         }
     )
-    logger.info("Task created: {task_name}", task_name=body.task)
+    logger.bind(event="schedule.mutation.staged", operation="schedule.create", outcome="staged").debug(
+        "Schedule mutation staged"
+    )
     return cast(PeriodicTaskResponse, await crud.get_with_schedule(task.id))
 
 
@@ -53,7 +55,9 @@ async def update_periodic_task(
         await crud.update_by_id(task.id, task_data)
     if switched:
         await crud.schedule_crud(old_type).delete(old_id)
-    logger.info("Task updated: {schedule_id}", schedule_id=schedule_id)
+    logger.bind(event="schedule.mutation.staged", operation="schedule.update", outcome="staged").debug(
+        "Schedule mutation staged"
+    )
     return cast(PeriodicTaskResponse, await crud.get_with_schedule(schedule_id))
 
 
@@ -63,4 +67,6 @@ async def delete_periodic_task(crud: PeriodicTaskCRUD, schedule_id: UUID) -> Non
     task_type, config_id = task.task_type, task.schedule_id
     await crud.delete(schedule_id)
     await crud.schedule_crud(task_type).delete(config_id)
-    logger.info("Task deleted: {task_name}", task_name=task.name)
+    logger.bind(event="schedule.mutation.staged", operation="schedule.delete", outcome="staged").debug(
+        "Schedule mutation staged"
+    )

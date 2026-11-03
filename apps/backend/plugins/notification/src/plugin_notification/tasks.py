@@ -69,9 +69,19 @@ async def _publish_due(
             async with session.begin_nested():
                 await orchestrator.publish_message(message_id, scheduled_run=True)
         except Exception as exc:  # noqa: BLE001 - one failed message must not stop the batch
-            logger.opt(exception=exc).warning("Scheduled publish failed for message_id={}", message_id)
+            logger.bind(
+                event="notification.publication.failed",
+                message_id=message_id,
+                outcome="failure",
+                reason_code="publish_failed",
+                retryable=True,
+                exception_type=type(exc).__name__,
+            ).warning("Scheduled notification publication failed")
         else:
             published += 1
+            logger.bind(event="notification.publication.completed", message_id=message_id, outcome="success").debug(
+                "Scheduled notification publication completed"
+            )
     return published
 
 
@@ -105,7 +115,9 @@ async def deliver_pending_notifications(redis: TaskRedis, session: TaskSession) 
     """批量投递到期的 Outbox 任务。"""
     total = await _drain(session, redis)
     if total:
-        logger.info("Delivered {} notification outbox rows", total)
+        logger.bind(event="notification.delivery.drain.completed", processed_count=total, outcome="completed").info(
+            "Notification outbox processing committed"
+        )
 
 
 @app.task(name="cleanup_notification_outbox")
@@ -117,7 +129,12 @@ async def cleanup_notification_outbox(redis: TaskRedis, session: TaskSession) ->
     try:
         total = await _drain(session, redis)
         if total:
-            logger.info("Cleanup delivered {} notification outbox rows", total)
+            logger.bind(
+                event="notification.delivery.drain.completed",
+                operation="cleanup",
+                processed_count=total,
+                outcome="completed",
+            ).info("Notification outbox processing committed")
     finally:
         await lock.release()
 
@@ -142,13 +159,21 @@ async def publish_scheduled_notifications(
             if changed:
                 await banner.broadcast(revision)
         except Exception as exc:  # noqa: BLE001 - banner failures cannot starve inbox publishing
-            logger.opt(exception=exc).warning("Banner transition failed; next beat will retry")
+            logger.bind(
+                event="notification.banner.transition.failed",
+                outcome="failure",
+                reason_code="transition_failed",
+                retryable=True,
+                exception_type=type(exc).__name__,
+            ).warning("Banner transition failed; next beat will retry")
         async with session() as database_session:
             orchestrator = _build_orchestrator(database_session)
             count = await _publish_due(database_session, orchestrator)
             await database_session.commit()
         if count:
-            logger.info("Published {} scheduled notifications", count)
+            logger.bind(
+                event="notification.publication.batch.completed", processed_count=count, outcome="success"
+            ).info("Scheduled notification publication committed")
             deliver_pending_notifications.apply_async()
     finally:
         await lock.release()
@@ -165,6 +190,8 @@ async def expire_notifications(redis: TaskRedis, session: TaskSession) -> None:
             count = await _expire_due(database_session)
             await database_session.commit()
         if count:
-            logger.info("Expired {} notifications", count)
+            logger.bind(event="notification.expiration.batch.completed", processed_count=count, outcome="success").info(
+                "Notification expiration committed"
+            )
     finally:
         await lock.release()

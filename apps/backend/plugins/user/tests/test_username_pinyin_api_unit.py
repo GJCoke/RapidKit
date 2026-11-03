@@ -7,7 +7,9 @@ from plugin_user.schemas import UsernamePinyinValidationRequest
 
 
 async def test_validate_username_pinyin_returns_camel_case_response():
-    response = await validate_username_pinyin(UsernamePinyinValidationRequest(name="张三", username="zhangsan1"), _scope=MagicMock())
+    response = await validate_username_pinyin(
+        UsernamePinyinValidationRequest(name="张三", username="zhangsan1"), _scope=MagicMock()
+    )
 
     assert response.data.suggested_username == "zhangsan"
     assert response.data.consistent is False
@@ -28,7 +30,13 @@ def test_mismatch_warning_is_non_blocking_and_privacy_safe():
     with patch("plugin_user.api.logger") as logger:
         _warn_username_pinyin_mismatch(operation="update", name="张三", username="custom")
 
-    logger.bind.assert_called_once_with(operation="update", target_user_id=None, pinyin_mismatch=True)
+    logger.bind.assert_called_once_with(
+        event="user.validation.warning",
+        reason_code="username_pinyin_mismatch",
+        outcome="accepted",
+        operation="update",
+        user_id=None,
+    )
     logger.bind.return_value.warning.assert_called_once_with("Username does not match the canonical name pinyin")
 
 
