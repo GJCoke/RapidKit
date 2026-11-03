@@ -8,6 +8,7 @@ import subprocess
 import sys
 import threading
 from unittest.mock import AsyncMock
+from urllib.parse import urlsplit
 
 import pytest
 from redis import Redis as SyncRedis
@@ -164,8 +165,22 @@ async def test_real_producer_preserves_pending_beyond_ten_thousand_and_ops_statu
         publisher.close()
     assert await redis.xlen(consumer.STREAM_KEY) == 12001
     assert await redis.xrange(consumer.STREAM_KEY, pending_id, pending_id)
+    # The CLI must inspect the fixture's Redis, not the application's .env endpoint.
+    connection = redis.connection_pool.connection_kwargs
     status = subprocess.run(
-        [sys.executable, "-m", "src.queues.event_stream", "status"], check=True, capture_output=True, text=True
+        [sys.executable, "-m", "src.queues.event_stream", "status"],
+        env={
+            **os.environ,
+            "REDIS_SCHEME": urlsplit(pytest_settings.REDIS_DATABASE_URL).scheme,
+            "REDIS_HOST": connection.get("host", "localhost"),
+            "REDIS_PORT": str(connection.get("port", 6379)),
+            "REDIS_DATABASE": str(connection.get("db", 0)),
+            "REDIS_ROOT_USERNAME": connection.get("username", ""),
+            "REDIS_ROOT_PASSWORD": connection.get("password", ""),
+        },
+        check=True,
+        capture_output=True,
+        text=True,
     )
     result = json.loads(status.stdout.splitlines()[-1])
     assert result["pending"] == 1 and result["lag"] == 12000 and result["groups_valid"] is True

@@ -6,19 +6,21 @@ from uuid import uuid4
 
 import pytest
 from prometheus_client import CollectorRegistry, generate_latest
-from rapidkit_core.config import settings
-from redis.asyncio import Redis
+from redis.asyncio import ConnectionPool, Redis
 from src.ops.exporter import OperationalSampler
 from src.queues.consumer import _ensure_consumer_group
 from src.queues.event_stream import CONSUMER_GROUP, DEAD_STREAM_KEY, STREAM_KEY, stream_status
 
 
-async def test_capacity_acl_failure_does_not_report_reachable_redis_as_down(tmp_path):
-    admin = Redis.from_url(str(settings.REDIS_URL), decode_responses=True)
+async def test_capacity_acl_failure_does_not_report_reachable_redis_as_down(redis, tmp_path):
     username = "p2-capacity-" + uuid4().hex[:8]
-    await admin.execute_command("ACL", "SETUSER", username, "reset", "on", ">synthetic-only", "+ping", "+select")
-    limited = Redis.from_url(
-        str(settings.REDIS_URL), username=username, password="synthetic-only", decode_responses=True
+    await redis.execute_command("ACL", "SETUSER", username, "reset", "on", ">synthetic-only", "+ping", "+select")
+    limited = Redis.from_pool(
+        ConnectionPool(
+            connection_class=redis.connection_pool.connection_class,
+            max_connections=redis.connection_pool.max_connections,
+            **{**redis.connection_pool.connection_kwargs, "username": username, "password": "synthetic-only"},
+        )
     )
     try:
         assert await limited.execute_command("PING")
@@ -29,8 +31,7 @@ async def test_capacity_acl_failure_does_not_report_reachable_redis_as_down(tmp_
         assert sampler.status["redis_capacity"] == 0
     finally:
         await limited.aclose()
-        await admin.execute_command("ACL", "DELUSER", username)
-        await admin.aclose()
+        await redis.execute_command("ACL", "DELUSER", username)
 
 
 async def test_stream_and_redis_capacity_are_exported_and_failed_samples_keep_last_values(redis, tmp_path):
