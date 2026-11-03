@@ -21,15 +21,25 @@ export async function copyRequestId(value: unknown): Promise<boolean> {
 }
 
 export function requestIdFromHeaders(headers: unknown): string | undefined {
+  const ids = requestIdsFromHeaders(headers)
+  return ids.requestId || ids.edgeRequestId
+}
+
+export function requestIdsFromHeaders(headers: unknown): { requestId?: string; edgeRequestId?: string } {
   try {
     const values = object(headers)
     const read = (name: string) =>
       typeof values.get === "function"
         ? values.get(name)
         : values[Object.keys(values).find((key) => key.toLowerCase() === name) || ""]
-    return safeRequestId(read("x-request-id")) || safeRequestId(read("x-edge-request-id"))
+    const requestId = read("x-request-id")
+    const edgeRequestId = read("x-edge-request-id")
+    return {
+      ...(typeof requestId === "string" && /^[A-Za-z0-9_-]{21}$/.test(requestId) ? { requestId } : {}),
+      ...(typeof edgeRequestId === "string" && /^[a-f0-9]{32}$/i.test(edgeRequestId) ? { edgeRequestId } : {}),
+    }
   } catch {
-    return undefined
+    return {}
   }
 }
 
