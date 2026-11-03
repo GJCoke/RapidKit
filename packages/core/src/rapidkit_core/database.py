@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator, Iterator
 
 from pydantic_core import to_json
-from redis.asyncio import ConnectionPool
+from redis.asyncio import BlockingConnectionPool, ConnectionPool
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -200,7 +200,12 @@ class RedisManager(BaseManager):
         redis_url = redis_url or get_redis_url()
         max_connections = max_connections or get_settings().REDIS_MAX_CONNECTIONS
         if pool_name not in cls._pools:
-            pool = ConnectionPool.from_url(redis_url, max_connections=max_connections, decode_responses=True)
+            pool = BlockingConnectionPool.from_url(
+                redis_url,
+                max_connections=max_connections,
+                timeout=get_settings().REDIS_POOL_TIMEOUT_SECONDS,
+                decode_responses=True,
+            )
             cls._pools[pool_name] = pool
             cls._clients[pool_name] = AsyncRedisClient(connection_pool=pool)
             logger.info('Redis connection pool for "{pool_name}" initialization completed.', pool_name=pool_name)

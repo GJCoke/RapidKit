@@ -69,7 +69,8 @@ class RedisConfigMixin(BaseSettings):
     """Redis 配置。"""
 
     REDIS_SCHEME: str = "redis"
-    REDIS_MAX_CONNECTIONS: int = 10
+    REDIS_MAX_CONNECTIONS: int = Field(10, gt=0)
+    REDIS_POOL_TIMEOUT_SECONDS: float = Field(5.0, gt=0, allow_inf_nan=False)
     REDIS_ROOT_USERNAME: str = ""
     REDIS_ROOT_PASSWORD: Secret[str]
     REDIS_HOST: str
