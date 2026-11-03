@@ -7,6 +7,7 @@ import shutil
 import stat
 import sys
 import time
+from contextlib import ExitStack
 from pathlib import Path
 
 from rapidkit_core import runtime_state
@@ -45,12 +46,10 @@ class BudgetedFile:
                 self._failure("unsafe_path")
                 return
             self.root.mkdir(parents=True, exist_ok=True)
-            with (self.root / ".budget.lock").open("a") as lock:
-                try:
-                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                except BlockingIOError:
-                    self._failure("lock_busy")
-                    return
+            with (self.root / ".budget.lock").open("a") as lock, ExitStack() as cleanup:
+                fcntl.flock(lock, fcntl.LOCK_EX)
+                # Closing alone leaves the lock held by descriptors inherited across fork.
+                cleanup.callback(fcntl.flock, lock, fcntl.LOCK_UN)
                 used = 0
                 for directory, subdirs, files in os.walk(self.root, followlinks=False):
                     subdirs[:] = [

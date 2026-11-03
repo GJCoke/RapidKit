@@ -2,10 +2,81 @@ import json
 import logging
 from uuid import uuid4
 
+import pytest
 from rapidkit_core import log
 from rapidkit_core.config import settings
 from rapidkit_core.environment import Environment
 from rapidkit_core.nanoid import request_id_scope
+
+
+@pytest.mark.parametrize("pool_kind", ["QueuePool", "AsyncAdaptedQueuePool", "ObservedSyncPool", "ObservedAsyncPool"])
+@pytest.mark.parametrize("threshold", ["INFO", "DEBUG"])
+def test_actual_pool_recycling_is_debug_and_other_pool_records_keep_their_levels(
+    tmp_path, monkeypatch, capsys, pool_kind, threshold
+):
+    from rapidkit_core.database_observation import ObservedAsyncPool, ObservedSyncPool
+    from sqlalchemy.pool import AsyncAdaptedQueuePool, QueuePool
+
+    class Connection:
+        def rollback(self):
+            pass
+
+        def close(self):
+            pass
+
+    classes = {pool.__name__: pool for pool in (QueuePool, AsyncAdaptedQueuePool, ObservedSyncPool, ObservedAsyncPool)}
+    pool = classes[pool_kind](Connection, recycle=300)
+    previous = pool.logger.level
+    pool.logger.setLevel(logging.INFO)
+    monkeypatch.setattr(log, "LOG_PATH", tmp_path)
+    monkeypatch.setattr(settings, "LOG_JSON", True)
+    monkeypatch.setattr(settings, "LOG_LEVEL", threshold)
+    monkeypatch.setattr(settings, "LOG_FILE_ACCESS_LEVEL", threshold)
+    log.setup_logging()
+    log.set_custom_logfile(enqueue=False)
+    try:
+        pool.connect().close()
+        pool._recycle = 0
+        pool.connect().close()
+        pool.logger.info("pool-maintenance-control")
+        pool.logger.warning("pool-warning-control")
+        pool.logger.error("pool-error-control")
+        outputs = [capsys.readouterr().out, "\n".join(path.read_text() for path in tmp_path.glob("*.log"))]
+        for output in outputs:
+            records = [json.loads(line) for line in output.splitlines() if line]
+            recycling = [r for r in records if "exceeded timeout; recycling" in r["message"]]
+            assert [r["level"] for r in recycling] == (["DEBUG"] if threshold == "DEBUG" else [])
+            control = {r["message"]: r["level"] for r in records if r["message"].endswith("-control")}
+            assert control == {
+                "pool-maintenance-control": "INFO",
+                "pool-warning-control": "WARNING",
+                "pool-error-control": "ERROR",
+            }
+    finally:
+        pool.dispose()
+        pool.logger.setLevel(previous)
+        log.logger.remove()
+
+
+def test_recycle_level_mapping_does_not_hide_warnings_exceptions_or_unrelated_loggers(monkeypatch, capsys):
+    monkeypatch.setattr(settings, "LOG_JSON", True)
+    monkeypatch.setattr(settings, "LOG_LEVEL", "DEBUG")
+    log.setup_logging()
+    template = "Connection %r exceeded timeout; recycling"
+    cases = [
+        ("sqlalchemy.pool.impl.QueuePool", logging.WARNING, template, None, "WARNING"),
+        ("sqlalchemy.pool.impl.QueuePool", logging.ERROR, template, None, "ERROR"),
+        ("business.component", logging.INFO, template, None, "INFO"),
+        ("sqlalchemy.pool.impl.QueuePool", logging.INFO, "Connection %r invalidated; recycling", None, "INFO"),
+        ("sqlalchemy.pool.impl.QueuePool", logging.INFO, template, (ValueError, ValueError("synthetic"), None), "INFO"),
+    ]
+    try:
+        for name, level, message, exception, expected in cases:
+            record = logging.LogRecord(name, level, __file__, 1, message, ("test-connection",), exception)
+            log.InterceptHandler().emit(record)
+            assert json.loads(capsys.readouterr().out)["level"] == expected
+    finally:
+        log.logger.remove()
 
 
 def test_structured_context_is_allowlisted_and_independent_of_stdout_level(tmp_path, monkeypatch, capsys):

@@ -53,6 +53,7 @@ async def test_real_uvicorn_nginx_privacy_ids_and_outcomes(init, tmp_path):
         **os.environ,
         "ENVIRONMENT": "PRODUCTION",
         "LOG_JSON": "true",
+        "LOG_LEVEL": "INFO",
         "EXPOSE_API_DOCS": "false",
         "SENTRY_DSN": "",
         "LOG_FILE_BUDGET_BYTES": str(10 * 1024**2),
@@ -67,7 +68,7 @@ async def test_real_uvicorn_nginx_privacy_ids_and_outcomes(init, tmp_path):
         "REDIS_ROOT_PASSWORD": redis.password or "",
         "REDIS_DATABASE": redis.path.strip("/") or "0",
         "MAX_REQUEST_BODY_BYTES": "256",
-        "RAPIDKIT_BASE_PATH": str(output / "observability-a-live-runtime"),
+        "RAPIDKIT_BASE_PATH": str(output / ("observability-a-live-runtime-" + uuid4().hex[:8])),
         "ACCESS_TOKEN_KEY": "gateway-test-access-secret",
         "REFRESH_TOKEN_KEY": "gateway-test-refresh-secret",
         "IMPERSONATION_TOKEN_KEY": "gateway-test-impersonation-secret",
@@ -171,12 +172,14 @@ async def test_real_uvicorn_nginx_privacy_ids_and_outcomes(init, tmp_path):
 
             holder = threading.Thread(target=hold_budget)
             holder.start()
-            latencies = []
+            latencies, pressure_request_ids = [], set()
             try:
                 assert acquired.wait(1)
                 for _ in range(100):
                     began = time.monotonic()
-                    assert fetch(gateway_port, "/api/v1/auth/keys/public")[0] == 200
+                    status, headers, _ = fetch(gateway_port, "/api/v1/auth/keys/public")
+                    assert status == 200
+                    pressure_request_ids.add(headers["x-request-id"])
                     latencies.append(time.monotonic() - began)
                 assert max(latencies) < 0.5
             finally:
@@ -185,8 +188,25 @@ async def test_real_uvicorn_nginx_privacy_ids_and_outcomes(init, tmp_path):
             fetch(gateway_port, "/api/v1/auth/keys/public")
             await asyncio.sleep(0.2)
             assert sentinel not in api_log.read_text()
-            assert '"reason_code":"lock_busy"' in api_log.read_text()
-            assert '"event":"log.file.recovered"' in api_log.read_text()
+            deadline = time.monotonic() + 5
+            recorded_ids = set()
+            while time.monotonic() < deadline:
+                for path in (Path(env["RAPIDKIT_BASE_PATH"]) / "logs").glob("*.log"):
+                    for line in path.read_text().splitlines():
+                        try:
+                            row = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        if row.get("event") == "http.request.completed":
+                            recorded_ids.add(row.get("request_id"))
+                if pressure_request_ids <= recorded_ids:
+                    break
+                await asyncio.sleep(0.05)
+            assert len(pressure_request_ids) == 100
+            assert pressure_request_ids <= recorded_ids
+            assert '"reason_code":"lock_busy"' not in api_log.read_text()
+            assert '"event":"log.file.degraded"' not in api_log.read_text()
+            assert '"event":"log.file.recovered"' not in api_log.read_text()
             # Legacy query URIs remain a migration risk in Nginx error_log, separate from access_log.
             fetch(gateway_port, "/minio/nope?token=" + sentinel)
             logs = subprocess.check_output(["docker", "logs", name], stderr=subprocess.STDOUT, text=True)
@@ -206,6 +226,7 @@ async def test_real_uvicorn_nginx_privacy_ids_and_outcomes(init, tmp_path):
                         "legacy_query_error_log_exposure": sentinel in logs,
                         "file_lock_pressure_requests": len(latencies),
                         "file_lock_pressure_max_http_seconds": max(latencies),
+                        "file_lock_pressure_records_persisted": len(pressure_request_ids & recorded_ids),
                     },
                     indent=2,
                 )

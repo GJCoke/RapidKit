@@ -90,6 +90,21 @@ class InterceptHandler(logging.Handler):
         except ValueError:
             level = record.levelno
 
+        if (
+            record.levelno == logging.INFO
+            and (
+                record.name.startswith("sqlalchemy.pool.")
+                or record.name
+                in (
+                    "rapidkit_core.database_observation.ObservedAsyncPool",
+                    "rapidkit_core.database_observation.ObservedSyncPool",
+                )
+            )
+            and record.msg == "Connection %r exceeded timeout; recycling"
+            and not record.exc_info
+        ):
+            level = "DEBUG"
+
         frame, depth = inspect.currentframe(), 0
         while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
             frame = frame.f_back
