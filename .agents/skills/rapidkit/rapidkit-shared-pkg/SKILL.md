@@ -99,7 +99,7 @@ packages/<name>/
   "buildOptions": {
     "type": "ts",
     "formats": ["esm", "cjs", "iife"],
-    "name": "MonorepoExample<Name>"
+    "name": "RapidKit<Name>"
   },
   "dependencies": {},
   "devDependencies": {}

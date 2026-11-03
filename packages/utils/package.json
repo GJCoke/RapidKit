@@ -31,7 +31,7 @@
   "packageManager": "pnpm@10.20.0",
   "buildOptions": {
     "type": "ts",
-    "name": "MonorepoExampleUtils",
+    "name": "RapidKitUtils",
     "formats": [
       "esm",
       "cjs",

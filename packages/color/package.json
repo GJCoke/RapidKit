@@ -25,7 +25,7 @@
   "packageManager": "pnpm@10.20.0",
   "buildOptions": {
     "type": "ts",
-    "name": "MonorepoExampleColor",
+    "name": "RapidKitColor",
     "formats": [
       "esm",
       "cjs",

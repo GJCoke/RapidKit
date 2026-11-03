@@ -24,7 +24,7 @@
   "packageManager": "pnpm@10.20.0",
   "buildOptions": {
     "type": "vue",
-    "name": "MonorepoExampleHooks",
+    "name": "RapidKitHooks",
     "formats": [
       "esm"
     ]

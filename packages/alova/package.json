@@ -26,7 +26,7 @@
   "packageManager": "pnpm@10.20.0",
   "buildOptions": {
     "type": "ts",
-    "name": "MonorepoExampleAlova",
+    "name": "RapidKitAlova",
     "formats": [
       "esm",
       "cjs",

@@ -30,7 +30,7 @@
   "packageManager": "pnpm@10.20.0",
   "buildOptions": {
     "type": "ts",
-    "name": "MonorepoExampleAxios",
+    "name": "RapidKitAxios",
     "formats": [
       "esm",
       "cjs",
