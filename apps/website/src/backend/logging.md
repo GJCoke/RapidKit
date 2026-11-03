@@ -90,15 +90,31 @@ Sentry 上报同样去除认证头、请求体、URL query/fragment、局部变�
 
 ```text
 logs/dev/
-  api/current/       # 本次 API 启动，包括后续热重载
-  worker/current/    # 本次 Worker 启动，包括父进程和 prefork 子进程
-  beat/current/      # 本次 Beat 启动
+  api/current/
+    access.log       # 当前 API 进程的普通运行日志
+    error.log        # 当前 API 进程的 WARNING 及以上日志
+    processes/<pid>/ # 本次启动中各进程的独立文件，含热重载历史
+  worker/current/processes/<pid>/ # Worker 父进程和各子进程
+  beat/current/
+    access.log
+    error.log
+    processes/<pid>/
   archive/<service>/ # 已退出的历史会话
 ```
 
-`current` 是指向会话目录的相对符号链接。内部仍用 `access.<hostname>.<pid>.log` 和 `error.<hostname>.<pid>.log` 隔离写入进程，不让多个进程竞争同一个轮转文件。查本次启动的全部错误可在仓库根目录执行 `rg '关键词' logs/dev/api/current/ --glob 'error.*.log'`。查看后续输出时使用 `tail -F logs/dev/api/current/*.log`；热重载新增文件后需要重新执行该命令，目录入口保持不变。
+`current` 指向本次启动的会话目录。API、Beat 的 `access.log` 和 `error.log` 是相对符号链接，指向当前初始化进程的文件；没有告警时 `error.log` 为空。热重载会自动切换入口，使用 `tail -F logs/dev/api/current/access.log logs/dev/api/current/error.log` 可以继续跟随。固定入口使用 `LOG_ACCESS_FILENAME`、`LOG_ERROR_FILENAME` 的配置基础名，支持自定义相对路径和扩展名。
+
+真实文件集中放在 `processes/<pid>/` 中，仍用 `access.<hostname>.<pid>.log`、`error.<hostname>.<pid>.log` 隔离轮转。根目录不再铺开各 PID 的文件。旧版会话根目录中可确认退出的本机进程文件会整理到 `processes/<pid>/`；活跃、远程、未知文件及符号链接保留，不覆盖已有整理目标。
+
+进程目录同时记录进程参与状态，新会话不再创建根目录 `.pid-*` 文件。旧版空 PID 标记只在确认进程退出后清理；仍存活、无法检查或含未知内容的标记保留。
+
+Worker 同时有多个写入进程，查看整组输出应搜索 `logs/dev/worker/current/processes/`；例如 `rg '任务编号' logs/dev/worker/current/processes/ --glob '*.log'`。这里不提供只指向父进程的 `access.log` 或 `error.log`，避免漏掉子进程信息。API、Worker、Beat 按上级服务目录区分。
+
+固定 API/Beat 入口用于 LOCAL 单进程开发。若在同一会话运行多个 API 进程，入口显示最近初始化的进程，完整输出仍在 `processes/`。检索本次启动的全部错误使用 `rg '关键词' logs/dev/api/current/processes/ --glob 'error.*.log'`。
 
 `pnpm --filter @rapidkit/backend dev` 在重载父进程生成会话标识。直接启动 Uvicorn 的 spawn 子进程也会复用父进程已有的会话。Worker 父进程通过环境变量把会话传给子进程。新的独立启动更新 `current`；旧启动的子进程不会覆盖它。`migrate`、`exporter` 等角色使用同一目录规则。
+
+日志模块统一创建项目根目录下的 `logs`，启动脚本不按当前工作目录额外创建 `apps/backend/logs`。`RAPIDKIT_BASE_PATH` 可覆盖根路径；正式 Compose 使用 `/app/logs`，并挂载到宿主机各服务目录。
 
 启动和写线程每小时检查历史会话：整个会话的父进程和参与进程均确认退出后，才移入 `archive`。每个服务最多保留最近 3 个历史会话，默认最长 3 天。活跃、远程主机、权限不足、元数据不明的会话不自动删除。清理可能在下次启动或写入时才发生。
 

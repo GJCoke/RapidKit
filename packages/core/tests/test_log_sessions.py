@@ -78,9 +78,13 @@ def test_current_groups_roles_and_preserves_custom_names(local_logs, monkeypatch
         assert log.complete_logging()
         current = local_logs / "dev" / role / "current"
         assert current.is_symlink()
-        files = list((current / "http").glob("requests.*.txt"))
+        files = list((current / "processes" / str(os.getpid()) / "http").glob("requests.*.txt"))
         assert len(files) == 1
         assert files[0].read_text() == f"{role} launch\n"
+        if role != "worker":
+            assert (current / "http/requests.txt").read_text() == f"{role} launch\n"
+        else:
+            assert not (current / "http/requests.txt").exists()
     assert not list(local_logs.glob("*.log"))
 
 
@@ -105,7 +109,7 @@ def test_parent_and_prefork_children_share_session_and_keep_current(local_logs):
     _, status = os.waitpid(child, 0)
     assert os.waitstatus_to_exitcode(status) == 0
     assert current.resolve() == other
-    assert list(session.path.glob(f"access.*.{child}.log"))
+    assert list((session.path / "processes" / str(child)).glob(f"access.*.{child}.log"))
 
 
 def test_reload_supervisor_identity_survives_spawned_child_restarts(local_logs):
@@ -168,7 +172,7 @@ def test_budget_reclaims_closed_logs_and_preserves_active_and_verification(local
     log.set_custom_logfile(enqueue=False)
     session = (local_logs / "dev" / "api" / "current").resolve()
     host = socket.gethostname()
-    active = session / f"access.{host}.{os.getpid()}.log"
+    active = session / "processes" / str(os.getpid()) / f"access.{host}.{os.getpid()}.log"
     active.write_text("active\n")
     rotated = session / f"access.{host}.{os.getpid()}.2026-11-01.log"
     rotated.write_text("x" * 600)
@@ -189,7 +193,7 @@ def test_budget_protects_live_files_and_reports_loss(local_logs, monkeypatch, ca
     log.setup_logging()
     log.set_custom_logfile(enqueue=False)
     session = (local_logs / "dev" / "api" / "current").resolve()
-    active = session / f"access.{socket.gethostname()}.{os.getpid()}.log"
+    active = session / "processes" / str(os.getpid()) / f"access.{socket.gethostname()}.{os.getpid()}.log"
     active.write_text("active" * 100)
     log.logger.info("file copy cannot fit")
     assert active.read_text() == "active" * 100
@@ -231,6 +235,7 @@ def test_run_dev_script_exports_one_launch_identity(tmp_path):
         assert "--reload" in lines
         assert "src.main:asgi_app" in lines
     assert values[0] != values[1]
+    assert not (tmp_path / "logs").exists()
 
 
 def test_cleanup_never_follows_archive_or_custom_directory_symlinks(local_logs):
@@ -266,3 +271,154 @@ def test_orphaned_live_child_protects_ended_parent_session(local_logs):
         child.wait(timeout=5)
     session.cleanup(force=True)
     assert not path.exists()
+
+
+@pytest.mark.parametrize("role", ["api", "beat"])
+def test_fixed_files_exist_without_any_warning_and_follow_rotation(local_logs, monkeypatch, role):
+    monkeypatch.setattr(settings, "LOG_FILE_MAX_BYTES", 12)
+    log.setup_logging(service=role)
+    log.set_custom_logfile(enqueue=False)
+    current = local_logs / "dev" / role / "current"
+    access, error = current / "access.log", current / "error.log"
+    assert access.is_symlink() and error.is_symlink()
+    assert access.read_text() == error.read_text() == ""
+    assert not os.path.isabs(os.readlink(access))
+    log.logger.info("first record")
+    log.logger.info("second")
+    assert access.read_text() == "second\n"
+    log.logger.warning("warning")
+    assert error.read_text() == "warning\n"
+    assert sorted(p.name for p in current.iterdir() if not p.name.startswith(".")) == [
+        "access.log",
+        "error.log",
+        "processes",
+    ]
+    assert not list(current.glob(".pid-*"))
+
+
+def test_fixed_entry_switches_across_spawned_reload_children(local_logs):
+    script = local_logs / "fixed_reload.py"
+    script.write_text("""
+import multiprocessing, os, sys
+from pathlib import Path
+from rapidkit_core import log
+from rapidkit_core.config import settings
+from rapidkit_core.environment import Environment
+def child(root):
+    log.LOG_PATH = Path(root)
+    settings.ENVIRONMENT = Environment.LOCAL
+    settings.LOG_FORMAT = "{message}"
+    log.setup_logging()
+    log.set_custom_logfile(enqueue=False)
+    log.logger.info(str(os.getpid()))
+    log.logger.remove()
+if __name__ == "__main__":
+    current = Path(sys.argv[1]) / "dev/api/current"
+    ctx = multiprocessing.get_context("spawn")
+    sessions = set()
+    for _ in range(3):
+        process = ctx.Process(target=child, args=(sys.argv[1],))
+        process.start(); process.join(10)
+        assert process.exitcode == 0
+        sessions.add(current.resolve())
+        assert (current / "access.log").read_text().strip() == str(process.pid)
+        assert (current / "error.log").read_text() == ""
+    assert len(sessions) == 1
+    assert len(list((current / "processes").iterdir())) == 3
+""")
+    result = subprocess.run([sys.executable, str(script), str(local_logs)], capture_output=True, text=True, timeout=40)
+    assert result.returncode == 0, result.stderr
+
+
+def test_legacy_reorganization_preserves_live_remote_and_unknown_files(local_logs):
+    session = DevLogSession(local_logs, "api")
+    host = socket.gethostname()
+    closed = session.path / f"access.{host}.999999999.log"
+    closed.write_text("closed process history")
+    protected = [
+        session.path / f"error.{host}.{os.getpid()}.log",
+        session.path / "access.remote.123.log",
+        session.path / "notes.log",
+    ]
+    for p in protected:
+        p.write_text("preserved")
+    session.cleanup(force=True)
+    target = session.path / "processes/999999999" / closed.name
+    assert target.read_text() == "closed process history"
+    assert not closed.exists()
+    assert all(p.read_text() == "preserved" for p in protected)
+
+
+def test_retention_and_budget_reclaim_nested_process_files(local_logs):
+    session = DevLogSession(local_logs, "api")
+    directory = session.path / "processes/999999999"
+    directory.mkdir(parents=True)
+    old = directory / f"access.{socket.gethostname()}.999999999.log"
+    old.write_text("expired")
+    timestamp = time.time() - 4 * 86400
+    os.utime(old, (timestamp, timestamp))
+    session.cleanup(force=True)
+    assert not old.exists()
+    old.write_text("budget reclaim")
+    assert session.reclaim(1) >= len("budget reclaim")
+    assert not old.exists()
+
+
+@pytest.mark.parametrize("filename", ["../verification/access.log", "/tmp/access.log", "verification/access.log"])
+def test_local_files_reject_paths_outside_the_session(local_logs, monkeypatch, filename):
+    monkeypatch.setattr(settings, "LOG_ACCESS_FILENAME", filename)
+    log.setup_logging()
+    with pytest.raises(ValueError):
+        log.set_custom_logfile(enqueue=False)
+
+
+def test_process_directory_symlink_cannot_write_into_verification(local_logs):
+    session = DevLogSession(local_logs, "api")
+    verification = local_logs / "verification"
+    verification.mkdir()
+    processes = session.path / "processes"
+    if processes.exists():
+        (processes / str(os.getpid())).rmdir()
+        processes.rmdir()
+    (session.path / "processes").symlink_to(verification, target_is_directory=True)
+    log.setup_logging()
+    with pytest.raises(ValueError):
+        log.set_custom_logfile(enqueue=False)
+    assert list(verification.iterdir()) == []
+
+
+def test_fixed_entry_never_overwrites_an_unknown_regular_file(local_logs):
+    session = DevLogSession(local_logs, "api")
+    unknown = session.path / "access.log"
+    unknown.write_text("preserve unknown file")
+    log.setup_logging()
+    with pytest.raises(ValueError):
+        log.set_custom_logfile(enqueue=False)
+    assert unknown.read_text() == "preserve unknown file"
+
+
+def test_process_directory_registration_protects_live_orphan(local_logs):
+    path = ended_session(local_logs, "registered-child", days=10)
+    maintenance = DevLogSession(local_logs, "worker")
+    with subprocess.Popen([sys.executable, "-c", "import sys; sys.stdin.read()"], stdin=subprocess.PIPE) as child:
+        (path / "processes" / str(child.pid)).mkdir(parents=True)
+        maintenance.cleanup(force=True)
+        assert path.exists()
+        child.terminate()
+        child.wait(timeout=5)
+    maintenance.cleanup(force=True)
+    assert not path.exists()
+
+
+def test_cleanup_removes_only_exited_empty_legacy_pid_markers(local_logs):
+    session = DevLogSession(local_logs, "api")
+    dead = session.path / ".pid-999999999"
+    dead.touch()
+    live = session.path / f".pid-{os.getpid()}"
+    live.touch()
+    unknown = session.path / ".pid-888888888"
+    unknown.write_text("preserve unknown content")
+    session.cleanup(force=True)
+    assert not dead.exists()
+    assert live.exists()
+    assert unknown.read_text() == "preserve unknown content"

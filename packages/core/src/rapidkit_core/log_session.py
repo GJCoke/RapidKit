@@ -46,6 +46,13 @@ def _active(path: Path, info: dict) -> bool:
         pid = marker.name.removeprefix(".pid-")
         if not pid.isdecimal() or int(pid) <= 0 or _alive(int(pid)):
             return True
+    processes = path / "processes"
+    if processes.is_symlink():
+        return True
+    for process in processes.glob("*"):
+        pid = process.name
+        if process.is_symlink() or not process.is_dir() or not pid.isdecimal() or int(pid) <= 0 or _alive(int(pid)):
+            return True
     return False
 
 
@@ -62,6 +69,12 @@ class DevLogSession:
     def __init__(self, root: Path, service: str):
         if re.fullmatch(r"[a-z][a-z0-9_-]*", service) is None:
             raise ValueError("Invalid log service")
+        for filename in (settings.LOG_ACCESS_FILENAME, settings.LOG_ERROR_FILENAME):
+            relative = Path(filename)
+            if relative.is_absolute() or ".." in relative.parts or "verification" in relative.parts:
+                raise ValueError("Development log filenames must stay inside the session")
+            if not relative.parts or relative.parts[0] == "processes":
+                raise ValueError("Development log filenames conflict with the process directory")
         self.root = root / "dev"
         directory = self.root / service
         if self.root.is_symlink() or directory.is_symlink():
@@ -90,7 +103,10 @@ class DevLogSession:
             (self.path / ".session.json").write_text(json.dumps({"hostname": socket.gethostname(), "owner_pid": owner}))
         elif _info(self.path) != {"hostname": socket.gethostname(), "owner_pid": owner}:
             raise ValueError("Development log session metadata does not match")
-        (self.path / f".pid-{os.getpid()}").touch()
+        process = self.path / "processes" / str(os.getpid())
+        if process.parent.is_symlink() or process.is_symlink():
+            raise ValueError("Development log process directories must not be symlinks")
+        process.mkdir(parents=True, exist_ok=True)
         os.environ[key] = identity
         if created:
             temporary = directory / f".current-{os.getpid()}"
@@ -118,7 +134,21 @@ class DevLogSession:
                     continue
                 for path in directory.iterdir():
                     info = _info(path)
-                    if info is None or _active(path, info):
+                    if info is None:
+                        continue
+                    if info["hostname"] == socket.gethostname():
+                        for marker in path.glob(".pid-*"):
+                            pid = marker.name.removeprefix(".pid-")
+                            if (
+                                not marker.is_symlink()
+                                and marker.is_file()
+                                and marker.stat().st_size == 0
+                                and pid.isdecimal()
+                                and int(pid) > 0
+                                and not _alive(int(pid))
+                            ):
+                                marker.unlink(missing_ok=True)
+                    if _active(path, info):
                         continue
                     archive = self.root / "archive" / directory.name
                     if archive.parent.is_symlink() or archive.is_symlink():
@@ -151,6 +181,20 @@ class DevLogSession:
             for path in self._reclaimable_files():
                 if path.stat().st_mtime < cutoff:
                     path.unlink(missing_ok=True)
+                    continue
+                relative = path.relative_to(self.root)
+                if relative.parts[2] == "processes":
+                    continue
+                pid = path.name.rpartition(f".{socket.gethostname()}.")[2].partition(".")[0]
+                if _alive(int(pid)):
+                    continue
+                session = self.root / relative.parts[0] / relative.parts[1]
+                target = session / "processes" / pid / Path(*relative.parts[2:])
+                if any(p.is_symlink() for p in (target, *target.parents) if p.is_relative_to(session)):
+                    continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if not target.exists():
+                    path.rename(target)
         except FileNotFoundError:
             pass
         except OSError as exc:
@@ -173,7 +217,15 @@ class DevLogSession:
                         rf"{re.escape(configured.suffix)}"
                     )
                     for path in _files(session):
-                        if path.parent != configured.parent:
+                        parent = path.parent.relative_to(session)
+                        configured_parent = Path(filename).parent
+                        nested = (
+                            len(parent.parts) >= 2
+                            and parent.parts[0] == "processes"
+                            and parent.parts[1].isdecimal()
+                            and parent == Path("processes") / parent.parts[1] / configured_parent
+                        )
+                        if parent != configured_parent and not nested:
                             continue
                         match = pattern.fullmatch(path.name)
                         if match and not path.is_symlink() and path.is_file():

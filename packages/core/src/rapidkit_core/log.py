@@ -335,13 +335,34 @@ def set_custom_logfile(*, enqueue: bool = True) -> None:
         _dev_session = DevLogSession(LOG_PATH, _service)
     cleanup_logfiles(force=True)
 
-    directory = _dev_session.path if _dev_session is not None else LOG_PATH
+    directory = _dev_session.path / "processes" / str(os.getpid()) if _dev_session is not None else LOG_PATH
     instance_suffix = f".{socket.gethostname()}.{os.getpid()}"
     configured_access = directory / settings.LOG_ACCESS_FILENAME
     configured_error = directory / settings.LOG_ERROR_FILENAME
     log_access_file, log_error_file = (
         path.with_name(f"{path.stem}{instance_suffix}{path.suffix}") for path in (configured_access, configured_error)
     )
+
+    if _dev_session is not None:
+        for configured, path in ((configured_access, log_access_file), (configured_error, log_error_file)):
+            alias = _dev_session.path / configured.relative_to(directory)
+            parents = (path, *path.parents, *alias.parents)
+            if any(p.is_symlink() for p in parents if p.is_relative_to(_dev_session.path)):
+                raise ValueError("Development log file directories must not be symlinks")
+            if _service in {"api", "beat"} and alias.exists() and not alias.is_symlink():
+                raise ValueError("Fixed development log entry would overwrite an existing file")
+        for configured, path in ((configured_access, log_access_file), (configured_error, log_error_file)):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if _service in {"api", "beat"}:
+                path.touch(exist_ok=True)
+                alias = _dev_session.path / configured.relative_to(directory)
+                alias.parent.mkdir(parents=True, exist_ok=True)
+                temporary = alias.with_name(f".{alias.name}.{os.getpid()}.link")
+                try:
+                    temporary.symlink_to(os.path.relpath(path, alias.parent))
+                    temporary.replace(alias)
+                finally:
+                    temporary.unlink(missing_ok=True)
 
     log_config: dict[str, Any] = {
         "format": (lambda record: "{extra[_json]}\n") if settings.LOG_JSON else default_formatter,

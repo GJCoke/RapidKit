@@ -6,12 +6,6 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
-# Create a folder to store logs.
-LOG_DIR="logs"
-if [[ ! -d "$LOG_DIR" ]]; then
-  mkdir -p "$LOG_DIR"
-fi
-
 # FastAPI application entry point.
 DEFAULT_MODULE_NAME=src.main
 MODULE_NAME=${MODULE_NAME:-$DEFAULT_MODULE_NAME}
