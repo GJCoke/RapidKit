@@ -109,12 +109,29 @@ Vue 前端独立维护安全内存时间线，不需要 DSN。用户可在头像
 
 | 内容       | 当前覆盖                                                                                       |
 | ---------- | ---------------------------------------------------------------------------------------------- |
-| 操作上下文 | 创建用户、保存角色权限、手动运行任务的固定操作码、操作编号和开始/结束结果                      |
+| 操作上下文 | 用户与角色写操作、角色权限、代登录、任务运行/撤销、定时任务启停、通知发布/取消/撤回/重试       |
 | 请求       | 固定 operation、方法、状态码、耗时、重试次数、操作编号及三种请求编号                           |
-| 页面与连接 | 编译期路由名称、导航结果、Socket 连接/断开/重连和安全原因码                                    |
+| 页面与连接 | 编译期路由名称、导航结果、Socket namespace/连接编号、连接/断开/恢复和安全原因码                |
+| 权限同步   | 固定触发来源、合并/节流次数、快照重试、等待确认和应用结果                                      |
 | 故障快照   | 原生 error、未处理 Promise、bootstrap、Vue 渲染/路由、应用静态资源、意外请求失败及 Socket 故障 |
 
 操作编号通过参数显式传给对应请求，保存在浏览器中，不增加 HTTP 头。其他接口使用固定 operation `other`；后台轮询和并发请求不会继承最近一次操作。重试保留操作编号，单独记录每次尝试。请求故障只捕获网络错误、HTTP 5xx 和框架错误码 7001；预期业务拒绝和取消仍可在时间线看到结果。
+
+原有创建用户、保存角色权限、运行任务由界面显式传入操作快照。新增的单请求写操作在 API service 函数调用时创建自己的快照，包含 `action/start → request/start → request/result → action/result`；它表示一次业务 API 调用，自动触发的调用也会记录，不能当作用户点击或业务审计。
+
+| 固定操作码                                                                                    | 覆盖                                           |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `user.update` / `user.delete` / `user.batch_delete` / `user.password.change`                  | 用户修改、删除、批量删除、密码修改             |
+| `role.create` / `role.update` / `role.delete` / `role.batch_delete`                           | 角色增改删及批量删除                           |
+| `impersonation.start` / `impersonation.stop`                                                  | 代登录开始和结束；身份切换后按原规则清空时间线 |
+| `task.revoke` / `schedule.toggle`                                                             | 任务撤销与定时任务启停                         |
+| `notification.publish` / `notification.cancel` / `notification.recall` / `notification.retry` | 通知发布、取消、撤回、失败投递重试             |
+
+Socket 事件只保留 `/`、`/notifications`、`/dashboard`、`/worker`、`/chat` 这五个固定 namespace；`socket_connection_id` 只接受 1–128 位安全字符。Socket.IO 在断开回调前可能清空 ID，因此时间线保留上次连接成功时的编号。`io server disconnect` 和 `io client disconnect` 分别归一为 `server_disconnect`、`client_disconnect`。鉴权撤销、刷新开始/结果和重连结果使用固定原因码、次数及单调耗时，不记录握手和错误原文。
+
+首次普通连接失败输出 ERROR；连续失败达到 3 次后，每个 Socket 最多每 60 秒输出一条 WARNING 摘要，恢复时输出一次 INFO。正常连接、断开和重连过程仍是 DEBUG。控制台最低级别不影响内存时间线；只勾选 DevTools 全部级别不能覆盖应用日志级别。连接日志只在状态变化时产生，排查时勾选 Preserve log、清空筛选后刷新页面。
+
+权限事件的 operation 为 `permission.sync`、`permission.fetch`、`permission.apply`。触发来源为 `server_signal`、`socket_reconnect`、`permission_denied` 或 `manual`；只记录固定原因、最多两次快照尝试、应用结果和有界计数，不包含角色或权限清单。sync 成功表示刷新回调结束；是否拿到并应用快照需继续看 fetch/apply，等待确认也单独记录。旧身份或已重置流程的异步结果不写入新时间线。
 
 时间线最多保留最近 5 分钟的 50 条事件，单条最多 512 字节，总计最多 16 KiB。故障冻结当时的时间线，最多保留 3 个快照；同类故障每分钟最多采集 3 次，所有故障合计每分钟最多 20 次，相同 Error 对象去重。JSON 包最多 64 KiB，超量时先移除较早的快照，再裁剪实时事件。冻结快照可保留到身份变化、刷新页面或被后续故障淘汰。
 
@@ -130,11 +147,13 @@ Vue 前端独立维护安全内存时间线，不需要 DSN。用户可在头像
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `request_id`        | API 响应 `X-Request-ID` 中确认的 21 位编号；在现有 API/Worker 日志中搜索 request_id                                      |
 | `edge_request_id`   | 响应 `X-Edge-Request-ID` 中的 32 位十六进制编号；在 Nginx access 日志中搜索 edge_request_id，再结合上下文检查 error 日志 |
-| `client_request_id` | 浏览器为单次尝试生成的 21 位编号；可尝试搜索服务端 request_id，查不到不代表服务端没有执行                                |
+| `client_request_id` | 浏览器为单次尝试生成的 21 位编号；先查 Nginx 同名字段，再核对 API request_id；查不到不代表服务端没有执行                 |
 | `action_id`         | 本地一次业务操作编号，用于串起时间线中的操作与请求，不作为服务端索引                                                     |
 | `diagnostic_id`     | 本地故障快照编号，用于对应用户错误提示与诊断包，不是 Sentry 事件编号                                                     |
 
 先在包内找到对应 diagnostic_id 和 action_id，再使用故障上下文或 `lookup.request_ids` 查询现有日志；只有网关编号时查 Nginx，再按网关转发/上游响应编号继续找 API 日志。跨域 API 已暴露上述两个响应头；实际网关仍需沿用现有生成与透传配置。客户端编号与响应编号可能不同，必须分别核对。服务端审计、Celery 任务和 Socket 事件继续使用现有 request_id 关联规则。
+
+浏览器超时未收到响应头时，包内可能只有 client_request_id。生产 Nginx 已记录校验后的该字段，即使最终为 499/502 也能查询，再取该行 edge_request_id 与上游 request_id 继续定位。该字段是客户端声明，不能证明 API 执行或作为可信身份。Socket 则按 namespace + socket_connection_id 查询后端 `socket.connected` / `socket.disconnected`，与 HTTP 编号分开使用。
 
 网络失败只能说明浏览器未获得有效响应，不能证明请求未执行。重试写操作前先核查服务端日志、任务状态或业务结果，沿用业务幂等规则。
 

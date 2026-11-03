@@ -24,6 +24,14 @@
 
 Nginx 使用独立的 32 位 `X-Edge-Request-ID`，不能将该格式冒充为 NanoID。网关访问日志同时保存 edge ID 与应用响应的 request ID；入口直接拒绝的响应也返回 edge ID。
 
+`gateway.request.completed` 还记录 `client_request_id`：仅接受单个 21 位 `[A-Za-z0-9_-]` 请求头值；缺失、非法或重复头输出空字符串。它只是客户端声明，与 API 响应确认的 `request_id` 分开。浏览器超时未收到响应头时，先用它查网关的 499，再按同一行 edge ID、上游响应 ID 继续查询 API；502 等网关错误也保留该客户端编号。
+
+```bash
+docker logs <frontend-container> 2>&1 | rg --fixed-strings '"client_request_id":"abcdefghijklmnopqrstu"'
+```
+
+499 表示客户端提前关闭连接，不证明后端没有执行。没有上游 response request_id 时结合 edge ID、时间和业务状态核实，不把客户端编号当作服务端执行确认。
+
 用户、实际操作人和模拟会话取自已认证请求状态的标量快照，不信任客户端自报用户 ID，也不为打日志触发 ORM 延迟加载。请求与任务作用域退出后恢复原上下文，避免并发请求串线。
 
 ## JSON 字段
@@ -42,6 +50,28 @@ logger.opt(exception=True).warning("Operation failed")
 ```
 
 标准库日志经 `InterceptHandler` 桥接。Celery trace 消息使用安全生命周期元数据重建，不转发任意任务参数、返回值或错误字符串。已报告的同一 Uvicorn 异常避免重复展开，未报告错误仍保留。
+
+## 关键业务与通知投递
+
+鉴权使用 `auth.login.rejected`、`auth.login.completed`、`auth.token.refresh`，携带固定 outcome/reason_code 与已知用户编号；解密失败只保留 exception_type。用户与定时任务写操作已有业务审计，运行日志使用 DEBUG 的 `user.mutation.staged` / `schedule.mutation.staged`，不重复写 INFO，也不将事务内的完成误称为提交成功。用户名拼音不一致使用 `user.validation.warning` 与固定原因码，不记录姓名或用户名。
+
+| event                                                                                  | 级别及用途                                                                       |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `notification.channel.failed`                                                          | WARNING，渠道失败类型与固定原因，不含外部异常值或通知正文                        |
+| `notification.delivery.retrying`                                                       | DEBUG，某次失败后进入重试                                                        |
+| `notification.delivery.dead`                                                           | WARNING，重试耗尽或渠道不存在                                                    |
+| `notification.delivery.recovered`                                                      | INFO，曾重试的 outbox 投递成功                                                   |
+| `notification.delivery.batch.attempted`                                                | 正常 DEBUG；含重试/终止时 WARNING，汇总本批次尝试结果                            |
+| `notification.delivery.drain.completed`                                                | INFO，处理批次已提交，processed_count 包含发送、重试、取消和终止，不表示全部送达 |
+| `notification.publication.failed` / `notification.publication.completed`               | 定时发布失败 WARNING、单条成功 DEBUG；按 message_id 核对后续尝试                 |
+| `notification.publication.batch.completed` / `notification.expiration.batch.completed` | INFO，提交后的发布或过期批次数量                                                 |
+| `notification.banner.transition.failed`                                                | WARNING，横幅切换失败类型与可重试标记                                            |
+
+投递事件沿用任务/请求上下文，并使用 `message_id`、`outbox_id`、`attempt`、`outcome`、`reason_code`、`retryable`。批次 JSON 字段为 `processed_count`、`sent_count`、`retrying_count`、`dead_count`、`cancelled_count`，已加入公共字段允许列表。普通首次投递成功不逐收件人写 INFO；恢复事件使用已有 attempt_count 判定，不增加重试策略。
+
+delivery 的逐条结果和 batch.attempted 描述实际渠道尝试及准备写入的状态，发生在外层事务提交前；最终状态以数据库和提交摘要为准。站内通知推送给稳定用户 room，没有在线成员也算渠道调用成功，不能据此断言用户已收到或阅读。
+
+前端 Socket 时间线的 namespace + socket_connection_id 对应服务端 Socket.IO namespace 连接编号，可查询现有 `socket.connected` / `socket.disconnected`，不是 Engine.IO 传输编号。生产 JSON 日志保留这两个字段，本地文本格式未必展开 bind 字段；需要验证关联时使用 LOG_JSON=true。Socket 业务异常仍使用自身 socket_event_id/request_id。
 
 Celery Consumer 的未知任务、未知消息、非法任务和解码错误只输出 `task.message.rejected`，`reason_code` 分别为 unknown_task、unknown_message、invalid_task、decode_error。不插值原 SDK 模板中的 body、headers、delivery_info 或异常值；仅提取长度受限的 task_id/task_name。没有合法编号时记录 null。应用注册的 `SafeConsumer` 保留 Celery 原有拒绝、ACK、失败状态和信号行为。
 
