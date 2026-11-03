@@ -1,3 +1,7 @@
+import { createLogger } from "@/utils/logger"
+
+const logger = createLogger("permission-refresh")
+
 export interface PermissionRefresherOptions<S> {
   /** Fetch the latest permission snapshot without applying it; resolve `null` on failure */
   fetchLatest: () => Promise<S | null>
@@ -30,15 +34,20 @@ export function createPermissionRefresher<S>(options: PermissionRefresherOptions
     const first = await fetchLatest()
     if (first || owner !== generation) return first
 
+    logger.debug("Permission refresh retry scheduled")
     await new Promise((resolve) => setTimeout(resolve, retryDelay))
     if (owner !== generation) return null
     return fetchLatest()
   }
 
   async function refresh() {
+    logger.debug("Permission snapshot requested")
     const owner = generation
     const snapshot = await fetchWithRetry(owner)
-    if (!snapshot || owner !== generation) return
+    if (!snapshot || owner !== generation) {
+      logger.debug("Permission snapshot unavailable or superseded")
+      return
+    }
 
     if (dialogOpen) {
       pending = snapshot
@@ -47,6 +56,7 @@ export function createPermissionRefresher<S>(options: PermissionRefresherOptions
 
     if (canAccessCurrent(snapshot)) {
       await apply(snapshot, false)
+      logger.info("Permissions applied")
       return
     }
 
@@ -58,7 +68,7 @@ export function createPermissionRefresher<S>(options: PermissionRefresherOptions
       pending = null
       dialogOpen = false
       apply(latest, !canAccessCurrent(latest)).catch((error) => {
-        console.error("[permission-refresh] apply failed", error)
+        logger.error("Permission apply failed", error)
       })
     })
   }

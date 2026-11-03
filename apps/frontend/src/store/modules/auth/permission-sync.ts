@@ -1,3 +1,7 @@
+import { createLogger } from "@/utils/logger"
+
+const logger = createLogger("permission-sync")
+
 /** Payload of the backend `permission:changed` socket event */
 export interface PermissionChangedPayload {
   scope: "roles" | "user" | "menu"
@@ -55,9 +59,11 @@ export function createPermissionSync(options: PermissionSyncOptions): Permission
     const current = generation
 
     try {
+      logger.debug("Permission refresh started")
       await refresh()
+      logger.info("Permission refresh completed")
     } catch (error) {
-      console.error("[permission-sync] refresh failed", error)
+      logger.error("Permission refresh failed", error)
     }
 
     if (current !== generation) return
@@ -70,6 +76,7 @@ export function createPermissionSync(options: PermissionSyncOptions): Permission
     if (!isRelevantPermissionChange(payload, getUser())) return
     if (payload.revision <= lastRevision) return
     lastRevision = payload.revision
+    logger.debug("Permission sync requested", { source: "server-signal", scope: payload.scope })
 
     if (running) {
       dirty = true
@@ -84,6 +91,7 @@ export function createPermissionSync(options: PermissionSyncOptions): Permission
     const at = now()
     if (at - lastFallbackAt < fallbackInterval) return
     lastFallbackAt = at
+    logger.debug("Permission sync requested", { source: "fallback" })
 
     if (running) {
       dirty = true

@@ -4,7 +4,7 @@ import { expect, it, vi } from "vitest"
 
 const state = vi.hoisted(() => ({
   close: vi.fn(),
-  socket: { on: vi.fn(), emit: vi.fn(), disconnect: vi.fn() },
+  socket: { on: vi.fn(), io: { on: vi.fn() }, emit: vi.fn(), disconnect: vi.fn() },
 }))
 vi.mock("socket.io-client", () => ({ io: () => state.socket }))
 vi.mock("@/hooks/common/app-socket", () => ({ bindAuthRecovery: vi.fn(), closeAppSocket: state.close }))

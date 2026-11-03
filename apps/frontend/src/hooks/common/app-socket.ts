@@ -3,6 +3,9 @@ import { Manager, type Socket } from "socket.io-client"
 import { refreshAccessToken } from "@/service/request"
 import { useAuthStore } from "@/store/modules/auth"
 import { getToken } from "@/store/modules/auth/shared"
+import { createLogger } from "@/utils/logger"
+
+const logger = createLogger("app-socket")
 
 let manager: Manager | null = null
 let generation = 0
@@ -34,19 +37,25 @@ function hasFreshToken() {
 export function bindAuthRecovery(socket: Socket): void {
   if (recoveryBindings.has(socket)) return
   const interruptRenewal = (reason: string) => {
+    logger.debug("Socket transport closed", { reason })
     // Socket.IO deliberately closes an idle Manager when all namespaces renew.
     if (reason !== "forced close") {
       binding.renewing = false
       binding.interrupted = true
     }
   }
+  const logReconnect = (attempt: number) => logger.debug("Socket reconnecting", { attempt })
   const binding: RecoveryBinding = {
     interrupted: false,
     renewing: false,
     lastConnectWasRenewal: false,
-    dispose: () => socket.io.off("close", interruptRenewal),
+    dispose: () => {
+      socket.io.off("close", interruptRenewal)
+      socket.io.off("reconnect_attempt", logReconnect)
+    },
   }
   socket.io.on("close", interruptRenewal)
+  socket.io.on("reconnect_attempt", logReconnect)
   recoveryBindings.set(socket, binding)
   const openedGeneration = generation
   let attempted = false
@@ -83,6 +92,7 @@ export function bindAuthRecovery(socket: Socket): void {
   }
 
   socket.on("connect", () => {
+    logger.debug("Socket connected")
     binding.lastConnectWasRenewal = binding.renewing
     binding.renewing = false
     binding.interrupted = false
@@ -90,6 +100,11 @@ export function bindAuthRecovery(socket: Socket): void {
     revoked = undefined
   })
   socket.on("connect_error", (error: Error) => {
+    const reason = ["unauthorized", "forbidden", "token_expired"].includes(error.message)
+      ? error.message
+      : "connect_error"
+    logger.debug("Socket connection rejected", { reason })
+    if (reason === "connect_error") logger.error("Socket connection failed", { reason })
     binding.renewing = false
     binding.interrupted = true
     void recover(error.message)
@@ -98,6 +113,7 @@ export function bindAuthRecovery(socket: Socket): void {
     revoked = payload.code
   })
   socket.on("disconnect", (reason) => {
+    logger.debug("Socket disconnected", { reason })
     const code = revoked
     revoked = undefined
     if (reason === "io server disconnect") void recover(code, code === "token_expired")

@@ -3,8 +3,11 @@ import type { RouteKey, RoutePath } from "@elegant-router/types"
 import { useAuthStore } from "@/store/modules/auth"
 import { useRouteStore } from "@/store/modules/route"
 import { localStg } from "@/utils/storage"
+import { createLogger } from "@/utils/logger"
 import { getRouteName } from "@/router/elegant/transform"
 import { shouldRedirectLoggedInUserFromLogin } from "./login-redirect"
+
+const logger = createLogger("router")
 
 /**
  * create route guard
@@ -16,6 +19,7 @@ export function createRouteGuard(router: Router) {
     const location = await initRoute(to)
 
     if (location) {
+      logger.debug("Navigation redirected", { reason: "route-initialization" })
       return location
     }
 
@@ -34,6 +38,7 @@ export function createRouteGuard(router: Router) {
 
     // if it is login route when logged in, then switch to the root page
     if (to.name === loginRoute && shouldRedirectLoggedInUserFromLogin(to.params.module, isLogin)) {
+      logger.debug("Navigation redirected", { reason: "already-authenticated" })
       return { name: rootRoute }
     }
 
@@ -45,11 +50,13 @@ export function createRouteGuard(router: Router) {
 
     // the route need login but the user is not logged in, then switch to the login page
     if (!isLogin) {
+      logger.debug("Navigation redirected", { reason: "authentication-required" })
       return { name: loginRoute, query: { redirect: to.fullPath } }
     }
 
     // if the user is logged in but does not have authorization, then switch to the 403 page
     if (!hasAuth) {
+      logger.debug("Navigation redirected", { reason: "role-required" })
       return { name: noAuthorizationRoute }
     }
 

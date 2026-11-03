@@ -1,7 +1,7 @@
 import type { ProxyOptions } from "vite"
 import { bgRed, bgYellow, green, lightBlue } from "kolorist"
 import { consola } from "consola"
-import { createServiceConfig } from "../../src/utils/service"
+import { createServiceConfig } from "../../src/utils/service-config"
 import { Service } from "@/typings/service"
 
 /**
@@ -17,7 +17,9 @@ export function createViteProxy(env: Env.ImportMeta, enable: boolean) {
 
   const isEnableProxyLog = env.VITE_PROXY_LOG === "Y"
 
-  const { baseURL, proxyPattern, other } = createServiceConfig(env)
+  const { baseURL, proxyPattern, other } = createServiceConfig(env, () => {
+    consola.error("VITE_OTHER_SERVICE_BASE_URL is not a valid json5 string")
+  })
 
   const proxy: Record<string, ProxyOptions> = createProxyItem({ baseURL, proxyPattern }, isEnableProxyLog)
 

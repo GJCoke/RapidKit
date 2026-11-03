@@ -6,7 +6,10 @@ const mocks = vi.hoisted(() => ({
   resetStore: vi.fn(),
   syncAccessToken: vi.fn(),
 }))
-vi.mock("@rapidkit/utils", () => ({ nanoid: () => String(Math.random()) }))
+vi.mock("@rapidkit/utils", async (original) => ({
+  ...(await original<typeof import("@rapidkit/utils")>()),
+  nanoid: () => String(Math.random()),
+}))
 vi.mock("@rapidkit/axios", async () => {
   const actual = await import("../../../../packages/axios/src/index")
   return {

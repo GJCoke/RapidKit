@@ -86,7 +86,20 @@ beforeEach(() => {
   vi.clearAllMocks()
   state.managers.length = 0
 })
-afterEach(() => resetAppSockets())
+afterEach(() => {
+  resetAppSockets()
+  vi.restoreAllMocks()
+})
+
+it("logs unrecovered app socket failures without server error text or credentials", () => {
+  const output = vi.spyOn(console, "error").mockImplementation(() => {})
+  const socket = open("/notifications")
+  socket.fire("connect_error", new Error("private-server-message"))
+  expect(output).toHaveBeenCalledWith(expect.stringContaining("[app-socket]"), "Socket connection failed", {
+    reason: "connect_error",
+  })
+  expect(JSON.stringify(output.mock.calls)).not.toContain("private-")
+})
 
 it("shares one manager and reads the latest token on every handshake", () => {
   const root = open("/")

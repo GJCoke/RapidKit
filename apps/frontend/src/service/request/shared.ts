@@ -1,9 +1,12 @@
 import { useAuthStore } from "@/store/modules/auth"
 import { diagnosticMessage } from "@/utils/diagnostic-message"
 import { localStg } from "@/utils/storage"
+import { createLogger } from "@/utils/logger"
 import { fetchRefreshToken } from "../api"
 import { getAuthSession, isLoggingOut, recordTokenRotation } from "./auth-session"
 import type { RequestInstanceState } from "./type"
+
+const logger = createLogger("auth-refresh")
 
 export function getAuthorization() {
   const token = localStg.get("token")
@@ -52,6 +55,8 @@ export function handleExpiredRequest(state: RequestInstanceState, forLogout = fa
       .then(() => false)
   const session = getAuthSession()
   if (!state.refreshTokenPromise || state.refreshTokenSession !== session) {
+    state.refreshTokenWaiters = 0
+    logger.debug("Token refresh started")
     const token = localStg.get("token")
     const refresh = () => {
       // Another tab's credential change is handled by the existing identity reload.
@@ -61,12 +66,26 @@ export function handleExpiredRequest(state: RequestInstanceState, forLogout = fa
     const pending = globalThis.navigator?.locks
       ? refreshWithBrowserLock(localStg.get("refreshToken") || "", refresh)
       : refresh()
-    const promise = pending.finally(() => {
-      if (state.refreshTokenPromise === promise) state.refreshTokenPromise = null
-    })
+    const promise = pending
+      .then((success) => {
+        if (state.refreshTokenPromise === promise && getAuthSession() === session) {
+          logger.debug(success ? "Token refresh succeeded" : "Token refresh failed", {
+            waiting_requests: state.refreshTokenWaiters,
+          })
+        }
+        return success
+      })
+      .finally(() => {
+        if (state.refreshTokenPromise === promise) {
+          state.refreshTokenPromise = null
+          state.refreshTokenWaiters = 0
+        }
+      })
     state.refreshTokenSession = session
     state.refreshTokenPromise = promise
   }
+  state.refreshTokenWaiters = (state.refreshTokenWaiters || 0) + 1
+  logger.debug("Token refresh waiting", { waiting_requests: state.refreshTokenWaiters })
   return state.refreshTokenPromise
 }
 

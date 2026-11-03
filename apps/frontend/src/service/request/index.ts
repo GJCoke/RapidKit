@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/modules/auth"
 import { localStg } from "@/utils/storage"
 import { getServiceBaseURL } from "@/utils/service"
 import { $t } from "@/locales"
+import { createLogger, logPath } from "@/utils/logger"
 import { getAuthorization, handleExpiredRequest, showErrorMsg } from "./shared"
 import { getAuthSession } from "./auth-session"
 import type { RequestInstanceState } from "./type"
@@ -17,6 +18,22 @@ const LOGIN_COOLDOWN_CODE = "14010"
 /** Backend code for a route permission denial; triggers a permission refresh */
 const PERMISSION_DENIED_CODE = "34001"
 const IMPERSONATION_INVALID_CODES = new Set(["14017", "14002", "14003", "14008"])
+const logger = createLogger("request")
+const requestStarts = new WeakMap<object, number>()
+
+function logRequestResult(config: AxiosResponse["config"], response?: AxiosResponse) {
+  const started = requestStarts.get(config)
+  if (started === undefined) return
+  requestStarts.delete(config)
+  logger.debug("Request completed", {
+    method: config.method?.toUpperCase(),
+    path: logPath(config.url),
+    status: response?.status,
+    business_code: typeof response?.data?.code === "number" ? response.data.code : undefined,
+    duration_ms: Math.round((performance.now() - started) * 1000) / 1000,
+    request_id: requestIdFromHeaders(response?.headers) || requestIdFromHeaders(config.headers),
+  })
+}
 
 function isImpersonationStop(config: { url?: string; method?: string } | undefined) {
   return config?.url === "/auth/impersonations/current" && config.method?.toLowerCase() === "delete"
@@ -43,6 +60,12 @@ export const request = createFlatRequest(
         config.signal = AbortSignal.abort()
         return config
       }
+      requestStarts.set(config, performance.now())
+      logger.debug("Request started", {
+        method: config.method?.toUpperCase(),
+        path: logPath(config.url),
+        request_id: requestIdFromHeaders(config.headers),
+      })
       const Authorization = getAuthorization()
       const language = localStg.get("lang") || "zh-CN"
       Object.assign(config.headers, { Authorization, "Accept-Language": language })
@@ -57,6 +80,7 @@ export const request = createFlatRequest(
     onResponse(response) {
       const config = response.config as typeof response.config & { authSession?: number }
       if (config.authSession !== getAuthSession()) throw new CanceledError("Identity changed")
+      logRequestResult(config, response)
     },
     isBackendSuccess(response) {
       // when the backend response code is "0000"(default), it means the request is success
@@ -74,6 +98,7 @@ export const request = createFlatRequest(
       }
 
       if (responseCode === PERMISSION_DENIED_CODE) {
+        logger.debug("Permission sync requested", { source: "permission-denied" })
         authStore.syncPermissions()
       }
 
@@ -127,6 +152,7 @@ export const request = createFlatRequest(
           await authStore.resetStore()
           return null
         }
+        logger.debug("Request awaiting token refresh")
         config.authRetried = true
         const currentAuthorization = getAuthorization()
         // Late responses sent with the old token can reuse a completed refresh.
@@ -144,6 +170,7 @@ export const request = createFlatRequest(
       const config = error.config as (typeof error.config & { authSession?: number }) | undefined
       if (error.code === "ERR_CANCELED") return
       if (config?.authSession !== undefined && config.authSession !== getAuthSession()) return
+      if (config) logRequestResult(config, error.response)
       const requestId = requestIdFromHeaders(error.response?.headers)
       if (shouldReportRequestFailure(error)) captureBrowserError(error, "request", requestId)
       if (error.response?.status === 401 && localStg.get("impersonation")) {

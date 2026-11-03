@@ -1,7 +1,10 @@
 import { localStg } from "@/utils/storage"
+import { createLogger } from "@/utils/logger"
 import type { Socket } from "socket.io-client"
 import { closeAppSocket, openAppSocket, wasSocketAuthRenewal } from "@/hooks/common/app-socket"
 import type { PermissionChangedPayload, PermissionSync } from "./permission-sync"
+
+const logger = createLogger("permission-sync")
 
 /** Get token */
 export function getToken() {
@@ -43,7 +46,10 @@ export function connectGlobalSocket() {
   let connectedBefore = socket.connected
   // Namespace connect covers transport reconnects, after authentication succeeds.
   const onConnect = () => {
-    if (connectedBefore && !wasSocketAuthRenewal(socket)) permissionSignalHandler?.trigger()
+    if (connectedBefore && !wasSocketAuthRenewal(socket)) {
+      logger.debug("Permission sync requested", { source: "socket-reconnect" })
+      permissionSignalHandler?.trigger()
+    }
     connectedBefore = true
   }
   const onPermissionChanged = (payload: PermissionChangedPayload) => permissionSignalHandler?.signal(payload)

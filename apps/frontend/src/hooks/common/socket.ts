@@ -4,6 +4,9 @@ import { safeRequestId } from "@rapidkit/utils"
 import { captureBrowserError } from "@/observability"
 import { diagnosticMessage } from "@/utils/diagnostic-message"
 import { $t } from "@/locales"
+import { createLogger } from "@/utils/logger"
+
+const logger = createLogger("socket")
 
 export interface Options {
   url: string
@@ -59,20 +62,26 @@ export function useSocket(): Result {
     })
 
     instance.on("connect", () => {
+      logger.debug("Socket connected")
       isConnected.value = true
       isConnecting.value = false
       onConnect?.()
     })
 
     instance.on("disconnect", (reason) => {
+      logger.debug("Socket disconnected", { reason })
       isConnected.value = false
       isConnecting.value = false
       onDisconnect?.(reason)
     })
 
     instance.on("connect_error", (err) => {
+      logger.error("Socket connection failed", { reason: "connect_error" })
       isConnecting.value = false
       onError?.(err)
+    })
+    instance.io.on("reconnect_attempt", (attempt) => {
+      logger.debug("Socket reconnecting", { attempt })
     })
 
     instance.on("diagnostic:error", (payload: unknown) => {

@@ -1,13 +1,9 @@
 import { h } from "vue"
-import type { App } from "vue"
 import { NButton } from "naive-ui"
 import { $t } from "@/locales"
+import { createLogger } from "@/utils/logger"
 
-export function setupAppErrorHandle(app: App) {
-  app.config.errorHandler = (err, vm, info) => {
-    console.error(err, vm, info)
-  }
-}
+const logger = createLogger("app-version")
 
 export function setupAppVersionNotification() {
   // Update check interval in milliseconds
@@ -101,7 +97,7 @@ async function getHtmlBuildTime(): Promise<string | null> {
     const match = html.match(/<meta name="buildTime" content="(.*)">/)
     return match?.[1] || null
   } catch (error) {
-    window.console.error("getHtmlBuildTime error:", error)
+    logger.error("Build time check failed", error)
     return null
   }
 }

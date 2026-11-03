@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   fetchRefreshToken: vi.fn(),
@@ -17,6 +17,7 @@ vi.mock("@/utils/storage", () => ({ localStg: { get: mocks.get, set: mocks.set }
 import { handleExpiredRequest } from "@/service/request/shared"
 
 describe("request token refresh", () => {
+  afterEach(() => vi.restoreAllMocks())
   beforeEach(() => {
     vi.clearAllMocks()
     mocks.get.mockImplementation((key: string) => (key === "refreshToken" ? "old-refresh" : null))
@@ -35,6 +36,30 @@ describe("request token refresh", () => {
 
     expect(await handleExpiredRequest(state)).toBe(true)
     expect(mocks.syncAccessToken).toHaveBeenCalledWith("new-access")
+  })
+  it("logs shared refresh waiters and resets their count without exposing tokens", async () => {
+    const output = vi.spyOn(console, "debug").mockImplementation(() => {})
+    let finish!: (value: unknown) => void
+    mocks.fetchRefreshToken.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    const state = { refreshTokenPromise: null, refreshTokenWaiters: 0 } as any
+    const first = handleExpiredRequest(state)
+    const second = handleExpiredRequest(state)
+    expect(output.mock.calls).toContainEqual([
+      expect.stringContaining("[auth-refresh]"),
+      "Token refresh waiting",
+      { waiting_requests: 2 },
+    ])
+    await vi.waitFor(() => expect(finish).toBeTypeOf("function"))
+    finish({ data: { accessToken: "new-access", refreshToken: "new-refresh" }, error: null })
+    expect(await Promise.all([first, second])).toEqual([true, true])
+    expect(state.refreshTokenWaiters).toBe(0)
+    expect(JSON.stringify(output.mock.calls)).not.toMatch(/old-refresh|new-access|new-refresh/)
+    expect(mocks.fetchRefreshToken).toHaveBeenCalledOnce()
   })
   it("clears the shared promise immediately so subsequent expiry rotates again", async () => {
     const state = { refreshTokenPromise: null } as any
