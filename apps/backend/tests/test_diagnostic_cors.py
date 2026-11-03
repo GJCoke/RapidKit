@@ -1,3 +1,6 @@
+from collections.abc import Sequence
+from typing import cast
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from httpx import ASGITransport, AsyncClient
@@ -9,7 +12,11 @@ async def test_browser_can_read_application_and_gateway_request_ids():
 
     configured = next(item for item in rapidkit_app.user_middleware if item.cls is CORSMiddleware)
     app = FastAPI()
-    app.add_middleware(CORSMiddleware, **{**configured.kwargs, "allow_origins": ["https://frontend.example"]})
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["https://frontend.example"],
+        expose_headers=cast(Sequence[str], configured.kwargs["expose_headers"]),
+    )
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://api.example") as client:
         response = await client.get("/probe", headers={"Origin": "https://frontend.example"})

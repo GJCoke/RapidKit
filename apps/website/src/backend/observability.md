@@ -244,6 +244,8 @@ histogram_quantile(0.95,
 
 ### 浏览器接入与隐私
 
+当前 Vue 前端也提供不依赖 Sentry 的[安全内存时间线和诊断包导出](/frontend/logging#无-sentry-的线上诊断)。错误提示与包内分别保留客户端尝试编号、API 确认的 `X-Request-ID` 和网关 `X-Edge-Request-ID`；API CORS 暴露这两个响应头。按确认编号查询现有 Loguru/Nginx 日志即可，不增加接收 API 或存储。Vue 渲染提示使用本地 diagnostic_id；该编号只用于匹配包内快照。
+
 Vue 和 React 均在应用 bootstrap 前初始化 SDK，只有生产构建同时提供 `VITE_SENTRY_DSN` 与不可变 `VITE_SENTRY_RELEASE` 才启用；Docker 将同一 `SENTRY_RELEASE` 注入浏览器构建。`--mode prod` 上报环境为 PRODUCTION，与 API/Worker/Beat 一致。DSN 是公开配置，上传 token 必须使用服务端密钥入口。修改这些值需要重新构建静态资源。
 
 覆盖全局错误、未处理 Promise、应用 bootstrap、Vue 渲染/路由/chunk、React 根及路由错误边界、意外请求失败。请求只报告网络故障、HTTP 5xx 与框架错误码 7001，预期业务拒绝/取消不按服务错误上报；保持现有刷新登录态、去重与 React chunk 单次恢复行为。页面仅显示通用错误文案和安全编号，不显示堆栈或服务端意外错误原文。请求编号优先取响应 `X-Request-ID`，其次 `X-Edge-Request-ID`，仅接受 21 位 NanoID 或 32 位十六进制值，无有效响应 ID 不伪造一个。渲染错误可使用安全 Sentry event ID。
