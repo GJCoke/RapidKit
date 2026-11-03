@@ -67,6 +67,7 @@ export default defineConfig({
                 { text: "路由与菜单", link: "/frontend/routing" },
                 { text: "状态管理", link: "/frontend/state" },
                 { text: "请求服务", link: "/frontend/api-service" },
+                { text: "开发日志", link: "/frontend/logging" },
                 { text: "国际化", link: "/frontend/i18n" },
                 { text: "UI 组件与主题", link: "/frontend/ui" },
                 { text: "构建与 Vite 插件", link: "/frontend/build" },

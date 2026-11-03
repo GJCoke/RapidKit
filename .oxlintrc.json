@@ -23,5 +23,15 @@
     "no-empty": "off",
     "no-undef": "off",
     "no-unused-vars": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["apps/frontend/src/**"],
+      "rules": { "no-console": "error" }
+    },
+    {
+      "files": ["apps/frontend/src/utils/logger.ts", "apps/frontend/src/router/elegant/**"],
+      "rules": { "no-console": "off" }
+    }
+  ]
 }
