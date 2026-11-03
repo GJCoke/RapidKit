@@ -127,3 +127,24 @@ it("separates application and edge IDs and rejects a swapped namespace", () => {
     requestIdsFromHeaders({ "X-Request-ID": "a".repeat(32), "X-Edge-Request-ID": "abcdefghijklmnopqrstu" }),
   ).toEqual({})
 })
+
+it("retains only known socket namespaces and bounded connection IDs", () => {
+  for (const [namespace, socket_connection_id] of [
+    ["/notifications", "safe_-123"],
+    ["/private-room", "private/token"],
+    ["/", "x".repeat(129)],
+  ]) {
+    diagnostics.recordDiagnosticEvent({
+      category: "socket",
+      phase: "connected",
+      namespace,
+      socket_connection_id,
+    } as any)
+  }
+  const events = diagnostics.getDiagnosticPackage().events
+  expect(events[0]).toMatchObject({ namespace: "/notifications", socket_connection_id: "safe_-123" })
+  expect(events[1]).not.toHaveProperty("namespace")
+  expect(events[1]).not.toHaveProperty("socket_connection_id")
+  expect(events[2]).not.toHaveProperty("socket_connection_id")
+  expect(JSON.stringify(events)).not.toContain("private")
+})

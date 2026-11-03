@@ -42,7 +42,7 @@
     })
 
     if (instance) {
-      bindAuthRecovery(instance)
+      bindAuthRecovery(instance, "/chat")
       instance.on("message", (msg: Message) => {
         messages.value.push({ ...msg, isSelf: msg.sender === props.username })
         scrollToBottom()

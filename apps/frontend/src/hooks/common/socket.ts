@@ -1,8 +1,8 @@
 import { ref, onUnmounted, Ref } from "vue"
 import { io, type Socket, type ManagerOptions, type SocketOptions } from "socket.io-client"
 import { createLogger } from "@/utils/logger"
-import { diagnosticGeneration, recordDiagnosticEvent } from "@/utils/diagnostics"
-import { reportSocketDiagnostic } from "@/utils/socket-diagnostics"
+import { diagnosticGeneration } from "@/utils/diagnostics"
+import { createSocketDiagnostics, reportSocketDiagnostic, socketReason } from "@/utils/socket-diagnostics"
 import { getAuthSession } from "@/service/request/auth-session"
 
 const logger = createLogger("socket")
@@ -62,35 +62,31 @@ export function useSocket(): Result {
       ...ioOptions,
       transports: ["websocket"],
     })
+    const diagnostics = createSocketDiagnostics(namespace, () => instance.id, owner, logger)
 
     instance.on("connect", () => {
-      recordDiagnosticEvent({ category: "socket", phase: "connected" }, owner)
-      logger.debug("Socket connected")
+      diagnostics.connected()
       isConnected.value = true
       isConnecting.value = false
       onConnect?.()
     })
 
     instance.on("disconnect", (reason) => {
-      recordDiagnosticEvent(
-        { category: "socket", phase: "disconnected", reason_code: reason.replaceAll(" ", "_") },
-        owner,
-      )
-      logger.debug("Socket disconnected", { reason })
+      diagnostics.record({ phase: "disconnected", reason_code: socketReason(reason) })
+      logger.debug("Socket disconnected", { reason: socketReason(reason) })
       isConnected.value = false
       isConnecting.value = false
       onDisconnect?.(reason)
     })
 
     instance.on("connect_error", (err) => {
-      recordDiagnosticEvent({ category: "socket", phase: "failure", reason_code: "connect_error" }, owner)
-      logger.error("Socket connection failed", { reason: "connect_error" })
+      diagnostics.failed("connect_error")
       isConnecting.value = false
       onError?.(err)
     })
     removeReconnect?.()
     const logReconnect = (attempt: number) => {
-      recordDiagnosticEvent({ category: "socket", phase: "reconnecting", attempt }, owner)
+      diagnostics.record({ phase: "reconnecting", attempt })
       logger.debug("Socket reconnecting", { attempt })
     }
     instance.io.on("reconnect_attempt", logReconnect)

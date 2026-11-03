@@ -70,6 +70,7 @@ vi.mock("socket.io-client", () => {
 import { openAppSocket, resetAppSockets, useAppSocket } from "@/hooks/common/app-socket"
 import { createImpersonationSession } from "@/store/modules/auth/impersonation-session"
 import { beginImpersonationStorage } from "@/store/modules/auth/impersonation-storage"
+import { getDiagnosticPackage, resetDiagnostics } from "@/utils/diagnostics"
 
 type FakeSocket = ReturnType<typeof openAppSocket> & { fire(event: string, ...args: unknown[]): void }
 const open = (ns: string) => openAppSocket(ns) as FakeSocket
@@ -85,6 +86,7 @@ beforeEach(() => {
   state.reset.mockReset()
   vi.clearAllMocks()
   state.managers.length = 0
+  resetDiagnostics()
 })
 afterEach(() => {
   resetAppSockets()
@@ -323,4 +325,55 @@ it.each([false, "rejected"])("does not reconnect when renewal fails: %s", async 
   socket.fire("disconnect", "io server disconnect")
   await new Promise((resolve) => setTimeout(resolve, 0))
   expect(socket.connect).toHaveBeenCalledOnce()
+})
+
+it("links namespace and cached connection ID and maps both SDK disconnect reasons", () => {
+  const socket = open("/notifications")
+  Object.assign(socket, { id: "connection_-123" })
+  socket.fire("connect")
+  Object.assign(socket, { id: undefined })
+  socket.fire("disconnect", "io server disconnect")
+  socket.fire("disconnect", "io client disconnect")
+  expect(getDiagnosticPackage().events.filter((e) => e.phase === "disconnected")).toMatchObject([
+    { namespace: "/notifications", socket_connection_id: "connection_-123", reason_code: "server_disconnect" },
+    { namespace: "/notifications", socket_connection_id: "connection_-123", reason_code: "client_disconnect" },
+  ])
+})
+
+it.each([true, false, "rejected"])("records bounded auth recovery outcome: %s", async (result) => {
+  if (result === "rejected") state.refresh.mockRejectedValue(new Error("private-refresh-error"))
+  else state.refresh.mockResolvedValue(result)
+  const socket = open("/notifications")
+  socket.fire("auth:revoked", { code: "token_expired", token: "private-token" })
+  socket.fire("disconnect", "io server disconnect")
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const events = getDiagnosticPackage().events
+  expect(events).toContainEqual(
+    expect.objectContaining({
+      category: "socket",
+      phase: "changed",
+      reason_code: "token_expired",
+      namespace: "/notifications",
+    }),
+  )
+  expect(events.filter((e) => e.operation === "auth.refresh")).toMatchObject([
+    { phase: "start", namespace: "/notifications" },
+    { phase: result === true ? "success" : "failure", duration_ms: expect.any(Number) },
+  ])
+  expect(JSON.stringify(events)).not.toContain("private-")
+})
+
+it("suppresses stale recovery results after diagnostic identity reset", async () => {
+  let finish!: (value: boolean) => void
+  state.refresh.mockImplementation(
+    () =>
+      new Promise<boolean>((resolve) => {
+        finish = resolve
+      }),
+  )
+  expired(open("/notifications"))
+  resetDiagnostics()
+  finish(false)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  expect(getDiagnosticPackage().events).toEqual([])
 })

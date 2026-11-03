@@ -8,8 +8,12 @@ vi.mock("@/utils/diagnostic-message", () => ({
   diagnosticMessage: (message: string, id: { request_id: string }) => `${message}:${id.request_id}`,
 }))
 import { useSocket } from "@/hooks/common/socket"
+import { getDiagnosticPackage, resetDiagnostics } from "@/utils/diagnostics"
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.useRealTimers()
+})
 
 it("uses websocket even when caller options request polling", () => {
   const instance = { on: vi.fn(), io: { on: vi.fn() }, disconnect: vi.fn() }
@@ -75,4 +79,62 @@ it("stops observing manager reconnects after the socket is disposed", () => {
   socket.disconnect()
   handlers.get("reconnect_attempt")?.(2)
   expect(output).toHaveBeenCalledOnce()
+})
+
+it("bounds failure warnings and emits one recovery result with safe connection context", () => {
+  vi.useFakeTimers({ toFake: ["Date", "performance"] })
+  resetDiagnostics()
+  const handlers = new Map<string, (...args: any[]) => void>()
+  const instance = {
+    id: "socket_-123",
+    on: (event: string, handler: (...args: any[]) => void) => handlers.set(event, handler),
+    io: { on: vi.fn() },
+  }
+  mock.io.mockReturnValue(instance)
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+  const warnings = () => warn.mock.calls.filter((call) => String(call[0]).includes("[socket]"))
+  const info = vi.spyOn(console, "info").mockImplementation(() => {})
+  useSocket().connect({ url: "https://app.test", namespace: "/dashboard" })
+  handlers.get("connect")?.()
+  instance.id = undefined as any
+  handlers.get("disconnect")?.("io server disconnect")
+  for (let i = 0; i < 10; i++) handlers.get("connect_error")?.(new Error("private-error"))
+  expect(warnings()).toHaveLength(1)
+  vi.advanceTimersByTime(60000)
+  handlers.get("connect_error")?.(new Error("private-error"))
+  expect(warnings()).toHaveLength(2)
+  instance.id = "new_socket_id"
+  handlers.get("connect")?.()
+  handlers.get("connect")?.()
+  expect(info).toHaveBeenCalledOnce()
+  const events = getDiagnosticPackage().events
+  expect(events.find((e) => e.phase === "disconnected")).toMatchObject({
+    reason_code: "server_disconnect",
+    namespace: "/dashboard",
+    socket_connection_id: "socket_-123",
+  })
+  expect(events.filter((e) => e.phase === "success")).toMatchObject([
+    { namespace: "/dashboard", socket_connection_id: "new_socket_id", duration_ms: 60000 },
+  ])
+  expect(JSON.stringify([...warn.mock.calls, ...info.mock.calls, events])).not.toContain("private-")
+  vi.useRealTimers()
+})
+
+it("times a successful first reconnect without requiring a connect_error", () => {
+  vi.useFakeTimers({ toFake: ["Date", "performance"] })
+  resetDiagnostics()
+  const handlers = new Map<string, (...args: any[]) => void>()
+  const manager = new Map<string, (...args: any[]) => void>()
+  mock.io.mockReturnValue({
+    id: "reconnected",
+    on: (e: string, fn: any) => handlers.set(e, fn),
+    io: { on: (e: string, fn: any) => manager.set(e, fn) },
+  })
+  useSocket().connect({ url: "https://app.test", namespace: "/dashboard" })
+  manager.get("reconnect_attempt")?.(1)
+  vi.advanceTimersByTime(125)
+  handlers.get("connect")?.()
+  expect(getDiagnosticPackage().events).toContainEqual(
+    expect.objectContaining({ phase: "success", namespace: "/dashboard", duration_ms: 125 }),
+  )
 })

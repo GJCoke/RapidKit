@@ -33,6 +33,8 @@ export interface DiagnosticEventInput {
   duration_ms?: number
   attempt?: number
   reason_code?: string
+  namespace?: string
+  socket_connection_id?: string
 }
 type SafeFields = Record<string, string | number>
 type TimelineEvent = SafeFields & { seq: number; time: string; category: string; phase: string }
@@ -69,6 +71,10 @@ const reasons = new Set([
   "forced_close",
   "transport_error",
   "parse_error",
+  "unauthorized",
+  "forbidden",
+  "token_expired",
+  "refresh_failed",
   "other",
 ])
 const errorTypes = new Set([
@@ -120,6 +126,7 @@ export function resetDiagnostics() {
 function safeFields(input: unknown): SafeFields {
   const value = input !== null && typeof input === "object" ? (input as Record<string, unknown>) : {}
   const output: SafeFields = {}
+  Object.assign(output, safeSocketContext(value.namespace, value.socket_connection_id))
   if (typeof value.asset_file === "string" && /^[A-Za-z0-9_.-]{1,128}\.(?:js|mjs|css)$/.test(value.asset_file))
     output.asset_file = value.asset_file
   for (const [key, allowed] of [
@@ -149,6 +156,21 @@ function safeFields(input: unknown): SafeFields {
       output[key] = item
   }
   return output
+}
+
+export function safeSocketContext(namespace: unknown, connectionId: unknown): SafeFields {
+  const fields: SafeFields = {}
+  if (
+    namespace === "/" ||
+    namespace === "/notifications" ||
+    namespace === "/dashboard" ||
+    namespace === "/worker" ||
+    namespace === "/chat"
+  )
+    fields.namespace = namespace
+  if (typeof connectionId === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(connectionId))
+    fields.socket_connection_id = connectionId
+  return fields
 }
 
 function trimEvents() {

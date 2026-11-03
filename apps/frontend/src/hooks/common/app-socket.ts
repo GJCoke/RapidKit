@@ -4,8 +4,8 @@ import { refreshAccessToken } from "@/service/request"
 import { useAuthStore } from "@/store/modules/auth"
 import { getToken } from "@/store/modules/auth/shared"
 import { createLogger } from "@/utils/logger"
-import { diagnosticGeneration, recordDiagnosticEvent } from "@/utils/diagnostics"
-import { reportSocketDiagnostic } from "@/utils/socket-diagnostics"
+import { diagnosticGeneration } from "@/utils/diagnostics"
+import { createSocketDiagnostics, reportSocketDiagnostic, socketReason } from "@/utils/socket-diagnostics"
 import { getAuthSession } from "@/service/request/auth-session"
 
 const logger = createLogger("app-socket")
@@ -37,12 +37,13 @@ function hasFreshToken() {
   }
 }
 
-export function bindAuthRecovery(socket: Socket): void {
+export function bindAuthRecovery(socket: Socket, namespace: string): void {
   if (recoveryBindings.has(socket)) return
   getAuthSession()
   const owner = diagnosticGeneration()
+  const diagnostics = createSocketDiagnostics(namespace, () => socket.id, owner, logger)
   const interruptRenewal = (reason: string) => {
-    logger.debug("Socket transport closed", { reason })
+    logger.debug("Socket transport closed", { reason: socketReason(reason) })
     // Socket.IO deliberately closes an idle Manager when all namespaces renew.
     if (reason !== "forced close") {
       binding.renewing = false
@@ -50,7 +51,7 @@ export function bindAuthRecovery(socket: Socket): void {
     }
   }
   const logReconnect = (attempt: number) => {
-    recordDiagnosticEvent({ category: "socket", phase: "reconnecting", attempt }, owner)
+    diagnostics.record({ phase: "reconnecting", attempt })
     logger.debug("Socket reconnecting", { attempt })
   }
   const binding: RecoveryBinding = {
@@ -79,6 +80,8 @@ export function bindAuthRecovery(socket: Socket): void {
     }
     if (code !== "token_expired" || attempted) return
     attempted = true
+    const started = performance.now()
+    diagnostics.record({ phase: "start", operation: "auth.refresh", reason_code: "token_expired" })
     binding.renewing = normalRenewal && !binding.interrupted
     try {
       let success = hasFreshToken()
@@ -91,17 +94,31 @@ export function bindAuthRecovery(socket: Socket): void {
         }
         success = await refreshPromise
       }
-      if (success && openedGeneration === generation && recoveryBindings.get(socket) === binding) socket.connect()
-      else binding.renewing = false
+      if (openedGeneration !== generation || recoveryBindings.get(socket) !== binding) return
+      diagnostics.record({
+        phase: success ? "success" : "failure",
+        operation: "auth.refresh",
+        reason_code: success ? "token_expired" : "refresh_failed",
+        duration_ms: Math.round(performance.now() - started),
+      })
+      if (success) {
+        diagnostics.record({ phase: "reconnecting", reason_code: "token_expired" })
+        socket.connect()
+      } else binding.renewing = false
     } catch {
       binding.renewing = false
+      diagnostics.record({
+        phase: "failure",
+        operation: "auth.refresh",
+        reason_code: "refresh_failed",
+        duration_ms: Math.round(performance.now() - started),
+      })
       // Failed refresh leaves the refused socket disconnected.
     }
   }
 
   socket.on("connect", () => {
-    recordDiagnosticEvent({ category: "socket", phase: "connected" }, owner)
-    logger.debug("Socket connected")
+    diagnostics.connected()
     binding.lastConnectWasRenewal = binding.renewing
     binding.renewing = false
     binding.interrupted = false
@@ -109,26 +126,23 @@ export function bindAuthRecovery(socket: Socket): void {
     revoked = undefined
   })
   socket.on("connect_error", (error: Error) => {
-    recordDiagnosticEvent({ category: "socket", phase: "failure", reason_code: "connect_error" }, owner)
     const reason = ["unauthorized", "forbidden", "token_expired"].includes(error.message)
       ? error.message
       : "connect_error"
     logger.debug("Socket connection rejected", { reason })
-    if (reason === "connect_error") logger.error("Socket connection failed", { reason })
+    diagnostics.failed(reason)
     binding.renewing = false
     binding.interrupted = true
     void recover(error.message)
   })
   socket.on("auth:revoked", (payload: { code: string }) => {
     revoked = payload.code
+    diagnostics.record({ phase: "changed", reason_code: socketReason(payload.code) })
   })
   socket.on("diagnostic:error", (payload: unknown) => reportSocketDiagnostic(payload, owner))
   socket.on("disconnect", (reason) => {
-    recordDiagnosticEvent(
-      { category: "socket", phase: "disconnected", reason_code: reason.replaceAll(" ", "_") },
-      owner,
-    )
-    logger.debug("Socket disconnected", { reason })
+    diagnostics.record({ phase: "disconnected", reason_code: socketReason(reason) })
+    logger.debug("Socket disconnected", { reason: socketReason(reason) })
     const code = revoked
     revoked = undefined
     if (reason === "io server disconnect") void recover(code, code === "token_expired")
@@ -143,7 +157,7 @@ export function openAppSocket(namespace: string): Socket {
     autoConnect: false,
   })
   const socket = manager.socket(namespace, { auth: (callback) => callback({ access_token: getToken() }) })
-  bindAuthRecovery(socket)
+  bindAuthRecovery(socket, namespace)
   sockets.set(socket, (sockets.get(socket) || 0) + 1)
   if (!socket.active) socket.connect()
   return socket
