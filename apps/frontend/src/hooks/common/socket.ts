@@ -37,6 +37,7 @@ export function useSocket(): Result {
   const socket = ref<Socket | null>(null)
   const isConnected = ref(false)
   const isConnecting = ref(false)
+  const logReconnect = (attempt: number) => logger.debug("Socket reconnecting", { attempt })
 
   const connect = (options: Options): Socket | undefined => {
     if (socket.value?.connected) return
@@ -80,9 +81,7 @@ export function useSocket(): Result {
       isConnecting.value = false
       onError?.(err)
     })
-    instance.io.on("reconnect_attempt", (attempt) => {
-      logger.debug("Socket reconnecting", { attempt })
-    })
+    instance.io.on("reconnect_attempt", logReconnect)
 
     instance.on("diagnostic:error", (payload: unknown) => {
       const requestId =
@@ -100,6 +99,7 @@ export function useSocket(): Result {
 
   const disconnect = () => {
     if (socket.value) {
+      socket.value.io.off("reconnect_attempt", logReconnect)
       socket.value.disconnect()
       socket.value = null
     }

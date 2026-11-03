@@ -53,3 +53,25 @@ it("logs connection, reconnection and failures without handshake or server error
   })
   expect(JSON.stringify([...debug.mock.calls, ...error.mock.calls])).not.toContain("private-")
 })
+
+it("stops observing manager reconnects after the socket is disposed", () => {
+  const handlers = new Map<string, (attempt: number) => void>()
+  mock.io.mockReturnValue({
+    on: vi.fn(),
+    disconnect: vi.fn(),
+    io: {
+      on: (event: string, handler: (attempt: number) => void) => handlers.set(event, handler),
+      off: (event: string, handler: (attempt: number) => void) => {
+        if (handlers.get(event) === handler) handlers.delete(event)
+      },
+    },
+  })
+  const output = vi.spyOn(console, "debug").mockImplementation(() => {})
+  const socket = useSocket()
+  socket.connect({ url: "https://app.test" })
+  handlers.get("reconnect_attempt")?.(1)
+  expect(output).toHaveBeenCalledOnce()
+  socket.disconnect()
+  handlers.get("reconnect_attempt")?.(2)
+  expect(output).toHaveBeenCalledOnce()
+})
