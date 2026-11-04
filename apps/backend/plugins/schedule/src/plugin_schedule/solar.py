@@ -7,6 +7,9 @@ Date   : 2026-10-08
 from datetime import UTC, datetime, timedelta
 
 from celery.schedules import solar
+from rapidkit_core.log import get_plugin_logger
+
+logger = get_plugin_logger("Schedule")
 
 
 class Solar(solar):
@@ -35,6 +38,9 @@ class Solar(solar):
                 cursor = min(cursor + timedelta(hours=6), now)
         # Anchor retries to NOW: a retry relative to an old last_run_at can be
         # overdue and make Celery dispatch a task for a nonexistent solar event.
+        logger.bind(
+            event="schedule.solar.skipped", outcome="skipped", reason_code="solar_event_absent", event_name=self.event
+        ).info("Solar event absent; scheduling next check")
         self.cal.date = now
         retry = self.cal.next_antitransit(self.ephem.Sun()).datetime().replace(tzinfo=UTC)
         return retry + timedelta(minutes=1) - now

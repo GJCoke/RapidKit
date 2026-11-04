@@ -12,7 +12,6 @@ from fastapi import APIRouter, Query
 from rapidkit_common.access import Require
 from rapidkit_common.events import ScheduleCreatedEvent, ScheduleDeletedEvent, ScheduleToggledEvent
 from rapidkit_common.schemas.response import PaginatedResponse, Response
-from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.events import event_bus
 from rapidkit_framework.exceptions import AppException
 
@@ -29,8 +28,6 @@ from plugin_schedule.schemas import (
 )
 from plugin_schedule.services import create_periodic_task, delete_periodic_task, update_periodic_task
 from plugin_schedule.status_codes import ScheduleStatusCode
-
-logger = get_plugin_logger("Schedule")
 
 router = APIRouter(
     prefix="/schedules",
@@ -96,11 +93,6 @@ async def toggle_schedule(
     """启用/禁用定时任务。"""
     task = await crud.get(schedule_id, nullable=False)
     await crud.update_by_id(task.id, {"enabled": not task.enabled})
-    logger.info(
-        "Task toggled: {task_name} enabled={enabled}",
-        task_name=task.name,
-        enabled=not task.enabled,
-    )
     result = await crud.get_with_schedule(schedule_id)
     event_bus.fire_and_forget(ScheduleToggledEvent(schedule_id=str(schedule_id), enabled=not task.enabled))
     return Response(data=result)

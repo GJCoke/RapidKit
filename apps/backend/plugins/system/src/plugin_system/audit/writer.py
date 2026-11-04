@@ -2,11 +2,14 @@
 
 from rapidkit_common.audit import AuditRecord
 from rapidkit_core.database import AsyncSessionLocal
+from rapidkit_core.log import get_plugin_logger
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from plugin_system.audit.models import AuditLog, AuditLogTarget
+
+logger = get_plugin_logger("System")
 
 
 class AuditWriterImpl:
@@ -30,3 +33,9 @@ class AuditWriterImpl:
                 raise
             if any(getattr(existing, key) != value for key, value in values.items()):
                 raise ValueError("Audit event has conflicting content") from None
+            logger.bind(
+                event="system.audit.deduplicated",
+                outcome="deduplicated",
+                reason_code="duplicate_audit_record",
+                resource_id=record.id,
+            ).info("Duplicate audit record accepted")

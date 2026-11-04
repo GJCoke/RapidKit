@@ -11,12 +11,16 @@ import time
 from minio import Minio
 from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_core.config import settings
+from rapidkit_core.log import get_plugin_logger
 from sqlalchemy.pool import QueuePool
 from sqlmodel import func, select
 from starlette.concurrency import run_in_threadpool
 from urllib3 import PoolManager, Timeout
 
 from plugin_system.dashboard.schemas import ServiceHealth
+
+logger = get_plugin_logger("System")
+
 
 MINIO_CONNECT_TIMEOUT = 1.0
 MINIO_READ_TIMEOUT = 1.0
@@ -41,6 +45,13 @@ async def check_pg(session: SessionDep) -> ServiceHealth:
         }
         return ServiceHealth(status="healthy", latency_ms=latency, details=pool_info)
     except Exception as e:
+        logger.bind(
+            event="system.health.degraded",
+            outcome="degraded",
+            reason_code="dependency_down",
+            component="postgresql",
+            exception_type=type(e).__name__,
+        ).debug("Dependency health check failed")
         return ServiceHealth(status="down", latency_ms=0, details={"error": str(e)})
 
 
@@ -65,6 +76,13 @@ async def check_redis(redis: RedisDep) -> ServiceHealth:
 
         return ServiceHealth(status="healthy", latency_ms=latency, details=details)
     except Exception as e:
+        logger.bind(
+            event="system.health.degraded",
+            outcome="degraded",
+            reason_code="dependency_down",
+            component="redis",
+            exception_type=type(e).__name__,
+        ).debug("Dependency health check failed")
         return ServiceHealth(status="down", latency_ms=0, details={"error": str(e)})
 
 
@@ -92,6 +110,13 @@ def _check_minio_sync() -> ServiceHealth:
             details={"bucket_count": len(buckets)},
         )
     except Exception as e:
+        logger.bind(
+            event="system.health.degraded",
+            outcome="degraded",
+            reason_code="dependency_down",
+            component="minio",
+            exception_type=type(e).__name__,
+        ).debug("Dependency health check failed")
         return ServiceHealth(status="down", latency_ms=0, details={"error": str(e)})
     finally:
         http_client.clear()
@@ -102,4 +127,11 @@ async def check_minio(timeout: float = MINIO_HEALTH_TIMEOUT) -> ServiceHealth:
     try:
         return await asyncio.wait_for(run_in_threadpool(_check_minio_sync), timeout=timeout)
     except TimeoutError as e:
+        logger.bind(
+            event="system.health.degraded",
+            outcome="degraded",
+            reason_code="dependency_timeout",
+            component="minio",
+            exception_type=type(e).__name__,
+        ).debug("Dependency health check timed out")
         return ServiceHealth(status="down", latency_ms=0, details={"error": str(e)})

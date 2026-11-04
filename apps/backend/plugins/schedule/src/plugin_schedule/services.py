@@ -55,9 +55,18 @@ async def update_periodic_task(
         await crud.update_by_id(task.id, task_data)
     if switched:
         await crud.schedule_crud(old_type).delete(old_id)
-    logger.bind(event="schedule.mutation.staged", operation="schedule.update", outcome="staged").debug(
-        "Schedule mutation staged"
-    )
+    if not task_data and body.schedule is None:
+        logger.bind(
+            event="schedule.task.noop",
+            outcome="noop",
+            reason_code="no_change",
+            resource_type="periodic_task",
+            resource_id=schedule_id,
+        ).info("Periodic task update has no changes")
+    else:
+        logger.bind(event="schedule.mutation.staged", operation="schedule.update", outcome="staged").debug(
+            "Schedule mutation staged"
+        )
     return cast(PeriodicTaskResponse, await crud.get_with_schedule(schedule_id))
 
 

@@ -8,12 +8,15 @@ Date   : 2026-04-10
 from datetime import timedelta
 from typing import Any
 
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_core.timezone import timezone
 from sqlmodel import text
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_system.dashboard.schemas import InstanceResourceStats
+
+logger = get_plugin_logger("System")
 
 
 async def get_qps(redis: AsyncRedisClient, minutes: int = 60) -> float:
@@ -142,8 +145,13 @@ async def build_business_summary(session: AsyncSession, *, enable_celery: bool, 
     try:
         if enable_celery:
             schedules = await _count("schedule_periodic_tasks")
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.bind(
+            event="system.dashboard.degraded",
+            outcome="degraded",
+            reason_code="schedule_count_unavailable",
+            exception_type=type(exc).__name__,
+        ).warning("Schedule count unavailable")
 
     return {
         "roles": roles,

@@ -83,6 +83,18 @@ async def build_operations_overview(query: OperationsOverviewQuery, started_at: 
     user_provider = get_service_optional(UserOperationsProvider)
     worker_provider = get_service_optional(WorkerOperationsProvider)
     monitoring_provider = get_service_optional(MonitoringOperationsProvider)
+    for component, provider in (
+        ("user", user_provider),
+        ("worker", worker_provider),
+        ("monitoring", monitoring_provider),
+    ):
+        if provider is None:
+            logger.bind(
+                event="system.operations.skipped",
+                outcome="skipped",
+                reason_code="provider_unavailable",
+                component=component,
+            ).debug("Operations provider not installed")
     today = timezone.to_local(today_start).date()
     current_week_start = timezone.start_of_day(today - timedelta(days=6))
     previous_week_start = timezone.start_of_day(today - timedelta(days=13))

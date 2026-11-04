@@ -50,6 +50,9 @@ def _uuid_or_none(value: str | None) -> UUID | None:
     try:
         return UUID(value)
     except ValueError:
+        logger.bind(event="system.activity.fallback", outcome="fallback", reason_code="invalid_actor_id").warning(
+            "Invalid activity actor id omitted"
+        )
         return None
 
 
@@ -109,11 +112,15 @@ def project_activity(event: Event) -> ActivityProjection:
             category=ActivityCategory.ALERT,
             event_code=event.event_name,
             level=ActivityLevel.WARNING if event.missing else ActivityLevel.INFO,
-            subject_type="worker_group", subject_id=event.group_name, subject_name=event.group_name,
-            title_key="page.home.dashboard.activity.workerCapacityMissing" if event.missing
-                else "page.home.dashboard.activity.workerCapacityRecovered",
+            subject_type="worker_group",
+            subject_id=event.group_name,
+            subject_name=event.group_name,
+            title_key="page.home.dashboard.activity.workerCapacityMissing"
+            if event.missing
+            else "page.home.dashboard.activity.workerCapacityRecovered",
             title_params={"group": event.group_name, "online": event.online, "expected": event.expected},
-            source_event_id=event.event_id, occurred_at=event.occurred_at,
+            source_event_id=event.event_id,
+            occurred_at=event.occurred_at,
         )
     if isinstance(event, WorkerOfflineEvent):
         return ActivityProjection(
@@ -160,6 +167,9 @@ async def handle_activity_event(event: Event) -> None:
             select(ActivityEvent).where(col(ActivityEvent.source_event_id) == projection.source_event_id)
         )
         if existing.first() is not None:
+            logger.bind(
+                event="system.activity.deduplicated", outcome="deduplicated", reason_code="duplicate_event"
+            ).debug("Activity event already projected")
             return
         record = ActivityEvent(**projection.__dict__)
         session.add(record)
@@ -167,9 +177,16 @@ async def handle_activity_event(event: Event) -> None:
             await session.commit()
         except IntegrityError:
             await session.rollback()
+            logger.bind(
+                event="system.activity.deduplicated", outcome="deduplicated", reason_code="duplicate_event_race"
+            ).debug("Concurrent activity event deduplicated")
             return
         await session.refresh(record)
 
     if _sio is not None:
         payload = ActivityResponse.from_record(record).model_dump(by_alias=True, mode="json")
         await _sio.emit("dashboard:activity.created", payload, namespace="/dashboard")
+    else:
+        logger.bind(event="system.activity.degraded", outcome="degraded", reason_code="publisher_unavailable").warning(
+            "Activity publisher unavailable"
+        )
