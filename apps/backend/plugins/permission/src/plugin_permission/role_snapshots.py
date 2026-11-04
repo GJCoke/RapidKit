@@ -9,11 +9,14 @@ from functools import partial
 
 from rapidkit_common.enums import Status
 from rapidkit_core.cache import get_or_rebuild
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 
 from plugin_permission.cache import RoleSnapshot
 from plugin_permission.rbac_config import rbac_config
 from plugin_permission.role.crud import RoleCRUD
+
+logger = get_plugin_logger("Permission")
 
 
 def role_snapshot_key(role_code: str, version: int, catalog_version: int) -> str:
@@ -25,6 +28,13 @@ async def _load_snapshot(role_crud: RoleCRUD, role_code: str) -> str:
     """从数据库加载单个角色快照；角色不存在时返回 ``active=False`` 的负缓存快照。"""
     roles = await role_crud.get_role_by_codes([role_code])
     if not roles:
+        logger.bind(
+            event="permission.role.degraded",
+            outcome="degraded",
+            reason_code="role_not_found",
+            resource_type="role",
+            resource_id=role_code,
+        ).warning("Role snapshot source missing")
         return RoleSnapshot(code=role_code).model_dump_json()
     role = roles[0]
     return RoleSnapshot(

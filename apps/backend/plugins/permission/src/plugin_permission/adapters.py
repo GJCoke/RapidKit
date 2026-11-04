@@ -11,6 +11,7 @@ Date   : 2026-05-07
 from datetime import timedelta
 from uuid import UUID
 
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 
 from plugin_permission.cache import CachedPermissions, PermissionCache
@@ -19,6 +20,8 @@ from plugin_permission.catalog.version import get_permission_versions
 from plugin_permission.role.crud import RoleCRUD
 from plugin_permission.role_snapshots import load_role_snapshots
 from plugin_permission.scope_rules import merge_role_scopes, resolve_role_scopes
+
+logger = get_plugin_logger("Permission")
 
 
 class RedisPermissionCache(PermissionCache):
@@ -53,11 +56,20 @@ class AuthRoleResolver:
         role_versions, catalog_version = await get_permission_versions(self._redis, role_codes)
         snapshots = await load_role_snapshots(self._redis, self._crud, role_versions, catalog_version)
         active = [s for s in snapshots if s.active]
+        if len(active) < len(snapshots):
+            logger.bind(
+                event="permission.role.filtered",
+                outcome="filtered",
+                reason_code="role_inactive",
+                filtered_count=len(snapshots) - len(active),
+            ).debug("Inactive roles excluded")
         catalog = get_catalog()
         direct = {code for s in active for code in s.permission_codes}
-        data_scopes, field_modes = merge_role_scopes(
-            [resolve_role_scopes(s.data_scopes, s.field_modes, catalog) for s in active], catalog
-        )
+        resolved = []
+        for snapshot in active:
+            with logger.contextualize(resource_type="role", resource_id=snapshot.code):
+                resolved.append(resolve_role_scopes(snapshot.data_scopes, snapshot.field_modes, catalog))
+        data_scopes, field_modes = merge_role_scopes(resolved, catalog)
         return CachedPermissions(
             codes=sorted(catalog.expand(direct)),
             data_scopes=data_scopes,

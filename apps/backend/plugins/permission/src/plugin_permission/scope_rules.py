@@ -14,6 +14,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import cast
 
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.plugin import ResourceDef
 from rapidkit_framework.scopes import ALL_SCOPE, FieldMode, RestrictedMode, ScopeContext
@@ -21,6 +22,9 @@ from rapidkit_framework.status_codes import BaseStatusCode
 from sqlalchemy import ColumnElement, false, or_
 
 from plugin_permission.catalog.registry import PermissionCatalog
+
+logger = get_plugin_logger("Permission")
+
 
 VISIBLE = "visible"
 _PERMISSIVENESS = {"hidden": 0, "masked": 1, VISIBLE: 2}
@@ -95,6 +99,22 @@ def resolve_role_scopes(
             resolved.field_modes.setdefault(resource_key, {})[group_key] = effective
             if effective != mode:
                 resolved.invalid.append(InvalidScope(resource_key, group_key, mode, effective))
+    data_count = sum(item.group is None for item in resolved.invalid)
+    if data_count:
+        logger.bind(
+            event="permission.role.degraded",
+            outcome="degraded",
+            reason_code="stale_data_scope",
+            filtered_count=data_count,
+        ).warning("Stale role data scopes replaced")
+    field_count = len(resolved.invalid) - data_count
+    if field_count:
+        logger.bind(
+            event="permission.role.degraded",
+            outcome="degraded",
+            reason_code="stale_field_group",
+            filtered_count=field_count,
+        ).warning("Stale role field rules replaced")
     return resolved
 
 
@@ -177,6 +197,9 @@ def build_condition(resource: ResourceDef, keys: Iterable[str], ctx: ScopeContex
     selected = set(keys)
     parts = [scope.build(ctx) for scope in resource.data_scopes if scope.key in selected]
     if not parts:
+        logger.bind(
+            event="permission.scope.filtered", outcome="filtered", reason_code="no_matching_scope", user_id=ctx.user_id
+        ).debug("No matching data scope; denying all")
         return false()
     return parts[0] if len(parts) == 1 else or_(*parts)
 

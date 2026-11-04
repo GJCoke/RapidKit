@@ -12,7 +12,11 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Literal
 
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.plugin import AbacAction, PermissionPackageDef, PluginManifest, ResourceDef
+
+logger = get_plugin_logger("Permission")
+
 
 CODE_PATTERN = re.compile(r"^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$")
 RESOURCE_PATTERN = re.compile(r"^[a-z][a-z0-9-]*$")
@@ -54,7 +58,20 @@ class PermissionCatalog:
     def expand(self, codes: Iterable[str]) -> set[str]:
         """传递展开 ``depends``，忽略目录中不存在的码。"""
         result: set[str] = set()
-        stack = [code for code in codes if code in self.codes]
+        stack = []
+        filtered_count = 0
+        for code in codes:
+            if code in self.codes:
+                stack.append(code)
+            else:
+                filtered_count += 1
+        if filtered_count:
+            logger.bind(
+                event="permission.catalog.degraded",
+                outcome="degraded",
+                reason_code="unknown_permission_code_ignored",
+                filtered_count=filtered_count,
+            ).warning("Unknown permission codes ignored")
         while stack:
             code = stack.pop()
             if code in result:

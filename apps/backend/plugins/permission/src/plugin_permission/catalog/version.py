@@ -49,6 +49,9 @@ async def sync_catalog_version(redis: AsyncRedisClient, digest: str) -> int:
     """
     if await redis.get(CATALOG_DIGEST_KEY) == digest:
         [version] = await get_versions(redis, [CATALOG_VERSION_KEY])
+        logger.bind(event="permission.catalog.noop", outcome="noop", reason_code="catalog_unchanged").info(
+            "Permission catalog unchanged"
+        )
         return version
     await redis.set(CATALOG_DIGEST_KEY, digest)
     version = await bump_version(redis, CATALOG_VERSION_KEY)

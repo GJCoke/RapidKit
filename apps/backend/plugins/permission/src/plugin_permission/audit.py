@@ -23,21 +23,18 @@ def log_data_scope_result(
     *,
     user_id: UUID,
     resource: str,
-    endpoint: str,
     method: str,
     scope_keys: list[str],
     result: str,
 ) -> None:
     """Log the data scope bound to a request."""
-    audit_logger.info(
-        "Data scope {result}: user_id={user_id} resource={resource} scopes={scopes} endpoint={method} {endpoint}",
-        result=result,
-        user_id=str(user_id),
-        resource=resource,
-        scopes=scope_keys,
+    audit_logger.bind(
+        event="permission.scope.unrestricted" if result == "unrestricted" else "permission.scope.filtered",
+        outcome=None if result == "unrestricted" else "filtered",
+        reason_code="scope_unrestricted" if result == "unrestricted" else "scope_restricted",
+        user_id=user_id,
         method=method,
-        endpoint=endpoint,
-    )
+    ).debug("Data scope {}: resource={} scopes={}", result, resource, scope_keys)
 
 
 def log_permission_denied(
@@ -45,19 +42,11 @@ def log_permission_denied(
     user_id: UUID,
     code: str,
     route_key: str,
-    role_versions: dict[str, int],
-    catalog_version: int,
 ) -> None:
     """Log a structured RBAC denial (missing permission code)."""
-    audit_logger.warning(
-        "RBAC denied: user_id={user_id} code={code} route={route_key} "
-        "role_versions={role_versions} catalog_version={catalog_version}",
-        user_id=str(user_id),
-        code=code,
-        route_key=route_key,
-        role_versions=role_versions,
-        catalog_version=catalog_version,
-    )
+    audit_logger.bind(
+        event="permission.access.rejected", outcome="rejected", reason_code="permission_denied", user_id=user_id
+    ).warning("RBAC denied: code={} route={}", code, route_key)
 
 
 AUDIT_ROUTES = {

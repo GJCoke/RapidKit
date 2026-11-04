@@ -9,7 +9,6 @@ from fastapi import Request
 from fastapi.routing import APIRoute
 from rapidkit_common.access import Scope
 from rapidkit_common.auth import UserProtocol
-from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_framework.exceptions import AppException
 from rapidkit_framework.status_codes import StatusCode
@@ -25,8 +24,6 @@ from plugin_permission.scope_binding import bind_request_scope, clear_request_sc
 from plugin_permission.status_codes import RbacStatusCode
 from plugin_permission.user_permissions import get_fresh_permissions
 from plugin_permission.utils import build_route_key
-
-logger = get_plugin_logger("Permission")
 
 
 def _denied_detail(catalog: PermissionCatalog, code: str) -> dict:
@@ -81,18 +78,10 @@ async def resolve_access(
     cached, current_versions = await get_fresh_permissions(user.id, user.roles, redis, RoleCRUD(session))
     catalog = get_catalog()
     if not catalog.allows(code, route_key, cached.codes):
-        logger.warning(
-            "Permission denied: user_id={user_id} code={code} route={route_key}",
-            user_id=user.id,
-            code=code,
-            route_key=route_key,
-        )
         log_permission_denied(
             user_id=user.id,
             code=code,
             route_key=route_key,
-            role_versions=cached.role_versions,
-            catalog_version=cached.catalog_version,
         )
         raise AppException(RbacStatusCode.ROLE_PERMISSION_DENIED, data=_denied_detail(catalog, code))
 

@@ -29,10 +29,21 @@ async def load_dept_subtree(user: UserProtocol) -> tuple[UUID, ...]:
     """读取用户部门子树；未安装部门插件或用户无部门时为空（范围条件将不匹配任何行）。"""
     department_id = getattr(user, "department_id", None)
     if department_id is None:
+        logger.bind(
+            event="permission.scope.filtered",
+            outcome="filtered",
+            reason_code="user_without_department",
+            user_id=user.id,
+        ).debug("User has no department for scope")
         return ()
     resolver = get_service_optional(DepartmentResolver)
     if resolver is None:
-        logger.warning("DepartmentResolver unavailable: user_id={user_id}", user_id=str(user.id))
+        logger.bind(
+            event="permission.scope.degraded",
+            outcome="degraded",
+            reason_code="dept_resolver_unavailable",
+            user_id=user.id,
+        ).warning("Department resolver unavailable")
         return ()
     return tuple(await resolver.get_subtree_ids(department_id))
 
@@ -73,7 +84,6 @@ async def bind_request_scope(
         log_data_scope_result(
             user_id=user.id,
             resource=resource.key,
-            endpoint=request.url.path,
             method=request.method,
             scope_keys=[],
             result="unrestricted",
@@ -86,7 +96,6 @@ async def bind_request_scope(
     log_data_scope_result(
         user_id=user.id,
         resource=resource.key,
-        endpoint=request.url.path,
         method=request.method,
         scope_keys=keys,
         result="filtered",

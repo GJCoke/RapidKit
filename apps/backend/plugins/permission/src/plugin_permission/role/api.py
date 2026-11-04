@@ -72,7 +72,8 @@ async def get_role_permissions(
     role = await role_crud.get(role_id, nullable=False)
     catalog = get_catalog()
     valid, invalid = split_permission_codes(role.permission_codes or [], catalog)
-    resolved = resolve_role_scopes(role.data_scopes or {}, role.field_modes or {}, catalog)
+    with logger.contextualize(resource_type="role", resource_id=role.id):
+        resolved = resolve_role_scopes(role.data_scopes or {}, role.field_modes or {}, catalog)
     return Response(
         data=RolePermissionsResponse(
             permission_codes=valid,
