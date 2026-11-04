@@ -8,7 +8,6 @@ import pytest
 from plugin_notification.models import (
     NotificationMessage,
     NotificationOutbox,
-    UserNotification,
     NotificationBannerState,
     BANNER_STATE_ID,
 )

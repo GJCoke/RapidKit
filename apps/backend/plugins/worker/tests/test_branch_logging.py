@@ -6,7 +6,7 @@ import pytest
 from plugin_worker import event_service
 from plugin_worker.event_service import EventService
 from plugin_worker.models import CeleryTaskResult, CeleryWorker, TaskReceipt
-from rapidkit_common.enums import TaskStatus, WorkerStatus
+from rapidkit_common.enums import WorkerStatus
 from tests.testing.utils import one_event
 
 
