@@ -6,6 +6,7 @@ Date    : 2026-03-30
 """
 
 import builtins
+import re
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Literal, Self
 
@@ -85,13 +86,23 @@ class TaskResultSchema(BaseModel):
     runtime: float | None = None
     retries: int = 0
 
-    @field_serializer("args", "kwargs", "result", "logs", "traceback")
+    @field_serializer("args", "kwargs", "result", "logs")
     def _hide_execution_values(self, value: Any, info: FieldSerializationInfo):
         if info.field_name == "args":
             return []
         if info.field_name == "kwargs":
             return {}
         return None
+
+    @field_serializer("traceback")
+    def _safe_traceback(self, value: str | None) -> str | None:
+        # 历史堆栈可能含源码和异常值，仅保留帧位置。
+        frames = [
+            line.strip()
+            for line in (value or "").splitlines()
+            if re.fullmatch(r'File "[^"\r\n]+", line [0-9]+, in [^\r\n]+', line.strip())
+        ]
+        return "\n".join(frames) or None
 
     @field_serializer("exception")
     def _safe_exception_type(self, value: str | None):
