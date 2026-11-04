@@ -241,6 +241,13 @@ async def create_user(
     """创建待激活用户，密码由邀请流程设置；新用户必须落在数据范围内（由会话范围校验）。"""
     current_user = scope.user
     if not current_user.is_admin:
+        if body.is_admin:
+            logger.bind(
+                event="user.admin_flag.fallback",
+                outcome="fallback",
+                reason_code="admin_flag_ignored",
+                user_id=current_user.id,
+            ).warning("Administrator flag ignored for non-admin actor")
         body.is_admin = False
 
     _warn_username_pinyin_mismatch(operation="create", name=body.name, username=body.username)
@@ -295,6 +302,13 @@ async def update_user(
     update_data = body.model_dump(exclude_unset=True)
 
     if not current_user.is_admin:
+        if "is_admin" in update_data:
+            logger.bind(
+                event="user.admin_flag.fallback",
+                outcome="fallback",
+                reason_code="admin_flag_ignored",
+                user_id=current_user.id,
+            ).warning("Administrator flag ignored for non-admin actor")
         update_data.pop("is_admin", None)
 
     target_user = await user_crud.get(user_id, nullable=False)
@@ -313,6 +327,14 @@ async def update_user(
             permission_changed = True
             after_commit(session, invalidate_user_permission_cache, redis, user_id)
             event_bus.fire_and_forget(UserRolesChangedEvent(user_id=str(user_id), role_codes=update_data["roles"]))
+        else:
+            logger.bind(
+                event="user.roles.noop",
+                outcome="noop",
+                reason_code="roles_unchanged",
+                resource_type="user",
+                resource_id=user_id,
+            ).debug("User roles unchanged")
 
     if "is_admin" in update_data:
         permission_changed = permission_changed or update_data["is_admin"] != target_user.is_admin

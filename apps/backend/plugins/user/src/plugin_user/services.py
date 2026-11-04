@@ -76,6 +76,13 @@ async def revoke_impersonations_for_user(user_id: UUID, redis: AsyncRedisClient)
     revoker = get_service_optional(ImpersonationRevoker)
     if revoker is not None:
         await revoker.revoke_user(user_id, redis)
+    else:
+        logger.bind(
+            event="user.dependency.degraded",
+            outcome="degraded",
+            reason_code="impersonation_revoker_unavailable",
+            user_id=user_id,
+        ).warning("User session dependency unavailable")
 
 
 async def close_user_sockets(
@@ -87,3 +94,10 @@ async def close_user_sockets(
     closer = get_service_optional(UserSocketCloser)
     if closer is not None:
         await closer.close_user(user_id, redis, namespaces=namespaces, reason=reason)
+    else:
+        logger.bind(
+            event="user.dependency.degraded",
+            outcome="degraded",
+            reason_code="socket_closer_unavailable",
+            user_id=user_id,
+        ).warning("User session dependency unavailable")

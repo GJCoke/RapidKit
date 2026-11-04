@@ -12,10 +12,13 @@ from uuid import UUID
 
 from rapidkit_core.cache import bump_version, get_or_rebuild, get_versions
 from rapidkit_core.database import AsyncSessionLocal, RedisManager
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from sqlmodel import select
 
 from plugin_department.models import Department
+
+logger = get_plugin_logger("Department")
 
 DEPT_TREE_VERSION_KEY = "dept:tree_version"
 DEPT_TREE_TTL = timedelta(hours=4)
@@ -44,6 +47,13 @@ def collect_subtree_ids(pairs: Iterable[tuple[UUID, UUID | None]], root: UUID) -
     """
     pair_list = list(pairs)
     if root not in {dept_id for dept_id, _ in pair_list}:
+        logger.bind(
+            event="department.tree.degraded",
+            outcome="degraded",
+            reason_code="dept_root_not_found",
+            resource_type="department",
+            resource_id=root,
+        ).warning("Department tree root missing")
         return []
     children: dict[UUID, list[UUID]] = {}
     for dept_id, parent_id in pair_list:
@@ -56,6 +66,13 @@ def collect_subtree_ids(pairs: Iterable[tuple[UUID, UUID | None]], root: UUID) -
     while queue:
         current = queue.pop(0)
         if current in visited:
+            logger.bind(
+                event="department.tree.degraded",
+                outcome="degraded",
+                reason_code="dept_cycle_detected",
+                resource_type="department",
+                resource_id=current,
+            ).warning("Department tree cycle detected")
             continue
         visited.add(current)
         result.append(current)
@@ -98,6 +115,14 @@ class DepartmentResolverImpl:
         while current is not None and current not in result:
             result.append(current)
             current = parents.get(current)
+        if current is not None:
+            logger.bind(
+                event="department.tree.degraded",
+                outcome="degraded",
+                reason_code="dept_cycle_detected",
+                resource_type="department",
+                resource_id=current,
+            ).warning("Department ancestor cycle detected")
         return result
 
     async def get_subtree_ids(self, dept_id: UUID) -> list[UUID]:

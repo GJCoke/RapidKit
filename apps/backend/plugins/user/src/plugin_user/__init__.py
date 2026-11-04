@@ -12,10 +12,13 @@ from rapidkit_common.events import (
 )
 from rapidkit_common.protocols.operations import UserOperationsProvider
 from rapidkit_common.protocols.user import UserQueryService, UserResolver
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.plugin import DashboardModuleDef, PluginManifest
 from rapidkit_framework.services import ServiceRegistry
 
 from plugin_user.permissions import PERMISSION_CODES, PERMISSION_PACKAGES, RESOURCES
+
+logger = get_plugin_logger("User")
 
 
 async def _on_department_deleted(event: DepartmentDeletedEvent) -> None:
@@ -26,10 +29,16 @@ async def _on_department_deleted(event: DepartmentDeletedEvent) -> None:
     from plugin_user.models import User
 
     async with AsyncSessionLocal() as session:
-        await session.exec(
+        result = await session.exec(
             update(User).where(User.department_id == event.department_id).values(department_id=None)  # ty: ignore[invalid-argument-type]
         )
         await session.commit()
+        logger.bind(
+            event="user.department.cleared",
+            resource_type="department",
+            resource_id=event.department_id,
+            affected_count=result.rowcount,
+        ).info("Deleted department references cleared")
 
 
 async def _on_role_deleted(event: RoleDeletedEvent) -> None:
@@ -49,6 +58,9 @@ async def _on_role_deleted(event: RoleDeletedEvent) -> None:
         user_ids = [user.id for user in users]
 
         await session.commit()
+        logger.bind(
+            event="user.role.unassigned", resource_type="role", resource_id=event.role_code, affected_count=len(users)
+        ).info("Deleted role unassigned from users")
 
     redis = RedisManager.client()
     for user_id in user_ids:

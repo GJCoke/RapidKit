@@ -5,6 +5,7 @@ Author : Coke
 Date   : 2026-10-17
 """
 
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.plugin import PermissionCodeDef, PermissionPackageDef, ResourceDef
 from rapidkit_framework.scopes import DataScopeDef, ScopeContext, dept
 from sqlalchemy import ColumnElement, false, or_
@@ -12,10 +13,15 @@ from sqlmodel import col
 
 from plugin_department.models import Department
 
+logger = get_plugin_logger("Department")
+
 
 def _dept_subtree(ctx: ScopeContext) -> ColumnElement[bool]:
     """本部门及以下：部门自身或其父部门在子树内，允许在子树内新建子部门。"""
     if not ctx.dept_subtree_ids:
+        logger.bind(
+            event="department.scope.filtered", outcome="filtered", reason_code="dept_subtree_empty", user_id=ctx.user_id
+        ).debug("Department subtree empty; denying scope")
         return false()
     return or_(col(Department.id).in_(ctx.dept_subtree_ids), col(Department.parent_id).in_(ctx.dept_subtree_ids))
 
