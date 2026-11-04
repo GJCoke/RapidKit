@@ -13,8 +13,11 @@ Usage in any conftest.py:
     from tests.testing.fixtures import *  # noqa: F401, F403
 """
 
+import io
+import json
 import os
 import socket
+from functools import partial
 from typing import AsyncIterator, cast
 
 import pytest
@@ -22,10 +25,22 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from rapidkit_core import log
 from redis.asyncio import ConnectionPool, Redis
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
+
+
+@pytest.fixture
+def json_log():
+    stream = io.StringIO()
+    handler = log.logger.add(partial(log.json_sink, stream=stream), level="DEBUG")
+    try:
+        yield lambda: [json.loads(line) for line in stream.getvalue().splitlines()]
+    finally:
+        log.logger.remove(handler)
+
 
 # ---------------------------------------------------------------------------
 # Settings

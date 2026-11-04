@@ -78,6 +78,10 @@ _FIELDS = frozenset(
         "retrying_count",
         "dead_count",
         "cancelled_count",
+        "resource_type",
+        "resource_id",
+        "filtered_count",
+        "affected_count",
     }
 )
 

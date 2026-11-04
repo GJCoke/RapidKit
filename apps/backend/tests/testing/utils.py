@@ -5,6 +5,12 @@ import string
 import uuid
 
 
+def one_event(records: list[dict], event: str) -> dict:
+    matches = [record for record in records if record.get("event") == event]
+    assert len(matches) == 1, (event, matches)
+    return matches[0]
+
+
 def random_string(
     length: int = 10,
     *,
