@@ -18,6 +18,7 @@ from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
+from sqlmodel import col
 
 from plugin_worker.dashboard import get_queue_dashboard, resolve_worker_subscriptions
 from plugin_worker.deps import TaskResultCrudDep, WorkerCrudDep
@@ -100,13 +101,13 @@ async def get_worker_history(
 ) -> Response[PaginatedResponse[WorkerResponse]]:
     filters = scoped_worker_filters(history=True)
     if query.group_name:
-        filters.append(CeleryWorker.group_name == query.group_name)
+        filters.append(col(CeleryWorker.group_name) == query.group_name)
     return Response(
         data=await crud.get_paginate(
             *filters,
             page=query.page,
             size=query.page_size,
-            order_by=CeleryWorker.retired_at.desc(),
+            order_by=col(CeleryWorker.retired_at).desc(),
             schema=WorkerResponse,
         )
     )
