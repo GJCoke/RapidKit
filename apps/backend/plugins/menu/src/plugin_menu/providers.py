@@ -7,12 +7,16 @@ from rapidkit_common.auth import UserProtocol
 from rapidkit_common.enums import MenuType, Status
 from rapidkit_common.protocols.menu import ActionParameter, ActionTarget
 from rapidkit_common.protocols.permission import PermissionCacheManager
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.services import get_service
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_menu.models import Menu
 from plugin_menu.route.services import permitted_route_names
+
+logger = get_plugin_logger("Menu")
+
 
 _PATH_PARAMETER = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?([?*+]?)")
 
@@ -89,6 +93,15 @@ class MenuNavigationProvider:
                     parameters=parameters,
                 )
             )
+        filtered_count = len(menus) - len(targets)
+        if filtered_count:
+            logger.bind(
+                event="menu.navigation.filtered",
+                outcome="filtered",
+                reason_code="menu_not_navigable",
+                user_id=user.id if user else None,
+                filtered_count=filtered_count,
+            ).debug("Non-navigable menus filtered")
         return targets
 
     async def list_targets(self, session: AsyncSession, user: UserProtocol) -> list[ActionTarget]:

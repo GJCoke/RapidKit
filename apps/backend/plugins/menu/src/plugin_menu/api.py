@@ -14,7 +14,6 @@ from rapidkit_common.deps import RedisDep, SessionDep
 from rapidkit_common.events import MenuChangedEvent
 from rapidkit_common.schemas.response import PaginatedResponse, Response
 from rapidkit_common.transaction import after_commit
-from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.events import event_bus
 
 from plugin_menu.deps import MenuCrudDep
@@ -46,8 +45,6 @@ router = APIRouter(
     prefix="/manage",
     tags=["Menu"],
 )
-
-logger = get_plugin_logger("Menu")
 
 
 @router.get("/menus", dependencies=[Require("menu:read")])
@@ -87,7 +84,6 @@ async def add_menu(
 ) -> Response[MenuResponse]:
     """新增菜单。"""
     menu = await create_menu_service(menu_crud, data)
-    logger.info("Menu created: {menu_name}", menu_name=data.menu_name)
     event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(menu.id), action="created"))
     after_commit(session, publish_menu_change, redis)
     return Response(data=menu)
@@ -103,7 +99,6 @@ async def update_menu(
 ) -> Response[MenuResponse]:
     """更新菜单。"""
     menu = await update_menu_service(menu_crud, menu_id, data)
-    logger.info("Menu updated: {menu_id}", menu_id=menu_id)
     event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(menu_id), action="updated"))
     after_commit(session, publish_menu_change, redis)
     return Response(data=menu)
@@ -113,7 +108,6 @@ async def update_menu(
 async def delete_menu(menu_id: UUID, menu_crud: MenuCrudDep, redis: RedisDep, session: SessionDep) -> Response[bool]:
     """删除单个菜单。"""
     await delete_menu_service(menu_crud, menu_id)
-    logger.info("Menu deleted: {menu_id}", menu_id=menu_id)
     event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(menu_id), action="deleted"))
     after_commit(session, publish_menu_change, redis)
     return Response(data=True)
@@ -125,7 +119,6 @@ async def batch_delete_menus(
 ) -> Response[bool]:
     """批量删除菜单。"""
     await delete_menus_service(menu_crud, data.ids)
-    logger.info("Menus batch deleted: {count} items", count=len(data.ids))
     for mid in data.ids:
         event_bus.fire_and_forget(MenuChangedEvent(menu_id=str(mid), action="deleted"))
     after_commit(session, publish_menu_change, redis)

@@ -239,6 +239,13 @@ async def create_menu(crud: MenuCRUD, data: MenuCreate) -> MenuResponse:
     await crud.lock_menu_tree()
     values = data.model_dump(exclude={"active_menu"})
     if data.menu_type != MenuType.MENU or not data.hide_in_menu:
+        if data.active_menu:
+            logger.bind(
+                event="menu.active_menu.fallback",
+                outcome="fallback",
+                reason_code="active_menu_ignored",
+                resource_type="menu",
+            ).info("Active menu ignored for non-hidden page")
         values["active_menu_id"] = None
     else:
         values["active_menu_id"] = await resolve_active_menu_id(
@@ -250,6 +257,13 @@ async def create_menu(crud: MenuCRUD, data: MenuCreate) -> MenuResponse:
             data.hide_in_menu,
             data.constant,
         )
+    if data.menu_type != MenuType.MENU and data.permission:
+        logger.bind(
+            event="menu.permission.fallback",
+            outcome="fallback",
+            reason_code="permission_not_applicable",
+            resource_type="menu",
+        ).info("Permission ignored for non-page menu")
     values["permission"] = normalize_menu_permission(data.menu_type, data.constant, data.permission)
     menu = await crud.create(values)
     return to_menu_response(menu, await crud.get_route_name_map())
@@ -267,6 +281,14 @@ async def update_menu(crud: MenuCRUD, menu_id: UUID, data: MenuUpdate) -> MenuRe
     constant = values.get("constant", current.constant)
 
     if menu_type != MenuType.MENU or not hide_in_menu:
+        if data.active_menu:
+            logger.bind(
+                event="menu.active_menu.fallback",
+                outcome="fallback",
+                reason_code="active_menu_ignored",
+                resource_type="menu",
+                resource_id=menu_id,
+            ).info("Active menu ignored for non-hidden page")
         values["active_menu_id"] = None
     elif "active_menu" in data.model_fields_set:
         values["active_menu_id"] = await resolve_active_menu_id(
@@ -293,6 +315,14 @@ async def update_menu(crud: MenuCRUD, menu_id: UUID, data: MenuUpdate) -> MenuRe
         constant=constant,
     )
 
+    if menu_type != MenuType.MENU and data.permission:
+        logger.bind(
+            event="menu.permission.fallback",
+            outcome="fallback",
+            reason_code="permission_not_applicable",
+            resource_type="menu",
+            resource_id=menu_id,
+        ).info("Permission ignored for non-page menu")
     values["permission"] = normalize_menu_permission(menu_type, constant, values.get("permission", current.permission))
     menu = await crud.update_by_id(menu_id, values)
     return to_menu_response(menu, await crud.get_route_name_map())

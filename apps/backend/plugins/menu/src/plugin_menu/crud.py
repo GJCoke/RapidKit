@@ -9,12 +9,15 @@ from uuid import UUID
 
 from rapidkit_common.crud import BaseCRUD
 from rapidkit_common.schemas.response import PaginatedResponse
+from rapidkit_core.log import get_plugin_logger
 from sqlalchemy import ColumnExpressionArgument
 from sqlmodel import col, select
 
 from plugin_menu.menu_responses import to_menu_list_response
 from plugin_menu.models import Menu
 from plugin_menu.schemas import MenuListResponse
+
+logger = get_plugin_logger("Menu")
 
 
 class MenuCRUD(BaseCRUD[Menu]):
@@ -91,6 +94,7 @@ class MenuCRUD(BaseCRUD[Menu]):
         menu_list = [to_menu_list_response(menu, route_names) for menu in all_menus]
 
         menu_map: dict[UUID, MenuListResponse] = {menu.id: menu for menu in menu_list}
+        filtered_count = 0
         for menu in menu_list:
             if menu.parent_id:
                 parent = menu_map.get(menu.parent_id)
@@ -99,7 +103,16 @@ class MenuCRUD(BaseCRUD[Menu]):
                         parent.children = []
                     if menu not in parent.children:
                         parent.children.append(menu)
+                else:
+                    filtered_count += 1
 
+        if filtered_count:
+            logger.bind(
+                event="menu.tree.degraded",
+                outcome="degraded",
+                reason_code="orphan_menu_dropped",
+                filtered_count=filtered_count,
+            ).warning("Orphan menus dropped from tree")
         root_ids = [root.id for root in root_pagination.records]
         return PaginatedResponse[MenuListResponse](
             records=[menu_map[rid] for rid in root_ids if rid in menu_map],

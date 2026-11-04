@@ -16,12 +16,15 @@ if TYPE_CHECKING:
 
 from rapidkit_common.enums import MenuIconType, MenuType, Status
 from rapidkit_common.protocols.permission import PermissionCacheManager
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.services import get_service
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from plugin_menu.models import Menu
 from plugin_menu.route.schemas import MenuRouteResponse, RouteMeta, UserRouteResponse
+
+logger = get_plugin_logger("Menu")
 
 
 def menu_to_route(menu: Menu, route_names: dict[UUID, str]) -> MenuRouteResponse:
@@ -73,6 +76,7 @@ def build_route_tree(menus: list[Menu]) -> list[MenuRouteResponse]:
         route = menu_to_route(menu, route_names)
         route_map[menu.id] = route
 
+    filtered_count = 0
     for menu in menus:
         route = route_map[menu.id]
         if menu.parent_id is None:
@@ -83,7 +87,16 @@ def build_route_tree(menus: list[Menu]) -> list[MenuRouteResponse]:
                 if parent.children is None:
                     parent.children = []
                 parent.children.append(route)
+            else:
+                filtered_count += 1
 
+    if filtered_count:
+        logger.bind(
+            event="menu.route.filtered",
+            outcome="filtered",
+            reason_code="orphan_route_dropped",
+            filtered_count=filtered_count,
+        ).debug("Orphan routes filtered")
     return tree
 
 
@@ -131,6 +144,7 @@ async def get_user_routes(
         cache_mgr = get_service(PermissionCacheManager)
         permitted_routes = permitted_route_names(all_menus, await cache_mgr.get_role_codes(user.roles or []))
 
+        active_menu_filtered_count = 0
         permitted_menu_ids: set[UUID] = set()
         menu_map = {m.id: m for m in all_menus}
 
@@ -154,6 +168,7 @@ async def get_user_routes(
                             active_target_found = True
                         ancestor_id = ancestor.parent_id
                     if not active_target_found or not page_ancestors_permitted:
+                        active_menu_filtered_count += 1
                         continue
                 permitted_menu_ids.add(menu.id)
                 parent_id = menu.parent_id
@@ -161,6 +176,14 @@ async def get_user_routes(
                     permitted_menu_ids.add(parent_id)
                     parent_id = menu_map[parent_id].parent_id
 
+        if active_menu_filtered_count:
+            logger.bind(
+                event="menu.route.filtered",
+                outcome="filtered",
+                reason_code="active_menu_target_unreachable",
+                user_id=user.id,
+                filtered_count=active_menu_filtered_count,
+            ).debug("Hidden page active-menu targets unreachable")
         filtered_menus = [m for m in all_menus if m.id in permitted_menu_ids]
 
     routes = build_route_tree(filtered_menus)
@@ -182,4 +205,8 @@ async def get_user_routes(
         if first_leaf:
             home = first_leaf
 
+    if not routes:
+        logger.bind(
+            event="menu.route.fallback", outcome="fallback", reason_code="no_accessible_route", user_id=user.id
+        ).info("No accessible routes; using default home")
     return UserRouteResponse(routes=routes, home=home)
