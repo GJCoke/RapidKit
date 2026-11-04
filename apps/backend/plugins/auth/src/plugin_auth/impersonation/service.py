@@ -105,6 +105,12 @@ class ImpersonationService:
 
     async def _end_in_transaction(self, session, record, reason):
         if record.ended_at is not None:
+            logger.bind(
+                event="auth.impersonation.noop",
+                outcome="noop",
+                reason_code="impersonation_already_ended",
+                impersonation_session_id=record.id,
+            ).info("Impersonation already ended")
             return False
         record.ended_at = timezone.now()
         record.end_reason = reason.value
@@ -134,6 +140,12 @@ class ImpersonationService:
                 if record is None:
                     raise AppException(AuthStatusCode.IMPERSONATION_SESSION_INVALID)
                 if record.ended_at is None and reason == EndReason.STOPPED and record.expires_at <= timezone.now():
+                    logger.bind(
+                        event="auth.impersonation.fallback",
+                        outcome="fallback",
+                        reason_code="impersonation_stop_after_expiry",
+                        impersonation_session_id=record.id,
+                    ).info("Impersonation stop treated as expiry")
                     reason = EndReason.EXPIRED
                 await self._end_in_transaction(session, record, reason)
             await self._cleanup(record)
@@ -152,6 +164,13 @@ class ImpersonationService:
             )
             if closer is not None:
                 await closer.close_session(record.id, self.redis)
+            else:
+                logger.bind(
+                    event="auth.dependency.degraded",
+                    outcome="degraded",
+                    reason_code="socket_closer_unavailable",
+                    user_id=record.actor_id,
+                ).warning("Impersonation socket closer unavailable")
         except Exception:
             logger.warning("Impersonation socket cleanup failed user_id={}", record.actor_id)
 

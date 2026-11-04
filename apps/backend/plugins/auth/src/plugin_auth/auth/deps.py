@@ -112,13 +112,9 @@ def parse_refresh_jwt_user(
         raise AppException(AuthStatusCode.TOKEN_INVALID)
 
     if user.agent != user_agent:
-        logger.warning(
-            "User-Agent mismatch detected: original request User-Agent '{request_agent}'"
-            " does not match refresh token User-Agent '{token_agent}', user_id={user_id}.",
-            request_agent=user_agent,
-            token_agent=user.agent,
-            user_id=user.sub,
-        )
+        logger.bind(
+            event="auth.refresh.user_agent_mismatch", reason_code="user_agent_mismatch", user_id=user.sub
+        ).warning("Refresh User-Agent does not match token")
     return user
 
 

@@ -29,6 +29,9 @@ class TokenDecoderImpl:
         try:
             return (await self.resolver.resolve(token)).subject.id
         except AppException:
+            logger.bind(event="auth.token.rejected", outcome="rejected", reason_code="token_rejected").debug(
+                "Token rejected by resolver"
+            )
             return None
 
 
@@ -51,6 +54,9 @@ class CurrentUserProviderImpl:
         try:
             return await self.resolver.resolve(token, fresh=fresh)
         except AppException:
+            logger.bind(event="auth.token.rejected", outcome="rejected", reason_code="token_rejected").debug(
+                "Token rejected by resolver"
+            )
             return None
 
     async def get_current_user(self, token: str) -> AuthUser | None:

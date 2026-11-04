@@ -97,14 +97,15 @@ class TokenStore:
         await self.force_relogin(user_id)
         cutoff = await self._redis.get(REVOKED_BEFORE_KEY.format(user_id=user_id))
         pattern = f"auth:refresh:<{user_id}>:*"
-        batch = []
-        async for key in self._redis.scan_iter(match=pattern, count=100):
-            batch.append(key)
-            if len(batch) == 100:
+        with logger.contextualize(user_id=user_id):
+            batch = []
+            async for key in self._redis.scan_iter(match=pattern, count=100):
+                batch.append(key)
+                if len(batch) == 100:
+                    await self._revoke_refresh_batch(batch, cutoff)
+                    batch = []
+            if batch:
                 await self._revoke_refresh_batch(batch, cutoff)
-                batch = []
-        if batch:
-            await self._revoke_refresh_batch(batch, cutoff)
 
     async def _revoke_refresh_batch(self, keys: list, cutoff: str | None) -> None:
         """Keep sessions issued after the cutoff while a scan is in progress."""
@@ -120,8 +121,12 @@ class TokenStore:
             else:
                 if issued_before_revocation(claims.iat, cutoff):
                     stale.append(key)
+        affected_count = 0
         if stale:
-            await self._redis.delete(*stale)
+            affected_count = await self._redis.delete(*stale)
+        logger.bind(event="auth.refresh_token.revoked", affected_count=affected_count).info(
+            "Refresh token batch revoked"
+        )
 
     async def is_revoked(self, user_id: UUID, jti: UUID, iat: float | None) -> bool:
         cutoff, blacklisted, legacy = await self._redis.mget(
@@ -137,6 +142,10 @@ class TokenStore:
         ttl = math.ceil(exp - time.time())
         if ttl > 0:
             await self._redis.set(ACCESS_REVOKED_KEY.format(jti=jti), "1", ex=ttl)
+        else:
+            logger.bind(
+                event="auth.access_token.noop", outcome="noop", reason_code="access_token_already_expired"
+            ).debug("Access token already expired")
 
     async def is_valid(self, user_id: UUID, jti: UUID) -> bool:
         """Check if a refresh token is still valid in Redis."""
@@ -161,10 +170,24 @@ class TokenStore:
         try:
             if revoker is not None:
                 await revoker.revoke_user(user_id, self._redis)
+            else:
+                logger.bind(
+                    event="auth.dependency.degraded",
+                    outcome="degraded",
+                    reason_code="impersonation_revoker_unavailable",
+                    user_id=user_id,
+                ).warning("Impersonation revoker unavailable")
         finally:
             closer = get_service_optional(UserSocketCloser)
             if closer is not None:
                 await closer.close_user(user_id, self._redis)
+            else:
+                logger.bind(
+                    event="auth.dependency.degraded",
+                    outcome="degraded",
+                    reason_code="socket_closer_unavailable",
+                    user_id=user_id,
+                ).warning("User socket closer unavailable")
 
     async def clear_user_cache(self, user_id: UUID) -> None:
         """Clear the user info cache."""

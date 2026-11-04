@@ -38,6 +38,12 @@ async def request_password_reset(
     normalized = email.strip().casefold()
     user = await user_crud.get_user_by_email(normalized)
     if not user or user.status != Status.ON:
+        logger.bind(
+            event="auth.password_reset.skipped",
+            outcome="skipped",
+            reason_code="password_reset_account_ineligible",
+            user_id=user.id if user else None,
+        ).info("Password reset account ineligible")
         return
     token = await store.issue(user.id)
     reset_link = credential_link("reset-password", token)

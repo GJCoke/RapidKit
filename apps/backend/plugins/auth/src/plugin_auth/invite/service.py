@@ -64,10 +64,14 @@ async def issue_and_send_invite(user_id: UUID) -> None:
     async with AsyncSessionLocal() as session:
         user = await UserCRUD(session).get(user_id, nullable=True)
         if not user:
-            logger.warning("Invite requested for missing user {user_id}", user_id=user_id)
+            logger.bind(
+                event="auth.invite.skipped", outcome="skipped", reason_code="invite_user_missing", user_id=user_id
+            ).info("Invite user missing")
             return
         if user.status != Status.PENDING:
-            logger.info("Skipping invite for non-pending user {user_id}", user_id=user_id)
+            logger.bind(
+                event="auth.invite.skipped", outcome="skipped", reason_code="invite_user_not_pending", user_id=user_id
+            ).info("Invite user no longer pending")
             return
         token = await InviteTokenStore(redis).issue(user_id)
         link = credential_link("set-password", token)

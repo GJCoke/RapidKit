@@ -109,6 +109,9 @@ async def user_login(
             pass
         check_password("dummy", _DUMMY_HASH)
         await _increment_login_attempts(redis, attempts_key)
+        logger.bind(event="auth.login.rejected", outcome="rejected", reason_code="user_not_found").warning(
+            "Login account not found"
+        )
         raise AppException(AuthStatusCode.AUTHENTICATION_FAILED)
 
     decrypted_password = decrypt_password(password)

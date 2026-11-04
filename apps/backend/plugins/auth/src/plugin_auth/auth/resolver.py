@@ -160,7 +160,14 @@ class AuthContextResolverImpl:
             await self._reject(claims.sid, EndReason.EXPIRED, claims.act)
         try:
             marker = await self.redis.get(active_key(claims.sid))
-        except Exception:
+        except Exception as exc:
+            logger.bind(
+                event="auth.impersonation.degraded",
+                outcome="degraded",
+                reason_code="impersonation_marker_read_failed",
+                user_id=claims.act,
+                exception_type=type(exc).__name__,
+            ).warning("Impersonation marker read failed")
             marker = None
         if marker:
             binding = json.loads(marker)
@@ -171,6 +178,12 @@ class AuthContextResolverImpl:
             ):
                 raise AppException(AuthStatusCode.IMPERSONATION_SESSION_INVALID)
         else:
+            logger.bind(
+                event="auth.impersonation.fallback",
+                outcome="fallback",
+                reason_code="impersonation_marker_miss",
+                user_id=claims.act,
+            ).debug("Impersonation marker unavailable; checking database")
             async with self.session_factory() as session:
                 record = await session.get(ImpersonationSession, claims.sid)
                 if (

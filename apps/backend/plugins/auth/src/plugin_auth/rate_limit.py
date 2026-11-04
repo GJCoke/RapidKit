@@ -8,11 +8,14 @@ from authlib.jose.errors import JoseError
 from fastapi import FastAPI
 from pydantic import ValidationError
 from rapidkit_core.config import settings
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_framework.limiter import RateLimitRule
 from rapidkit_security import decode_impersonation_token, decode_token
 from starlette.requests import Request
 
 from plugin_auth.auth_config import auth_settings
+
+logger = get_plugin_logger("Auth")
 
 
 async def configure_rate_limits(app: FastAPI) -> None:
@@ -32,6 +35,9 @@ def _identity(token: str, *, refresh: bool = False) -> str | None:
                 )
             except JoseError, ValidationError, ValueError, TypeError:
                 pass
+        logger.bind(
+            event="auth.rate_limit.fallback", outcome="fallback", reason_code="token_undecodable_ip_fallback"
+        ).debug("Token unavailable; applying IP rate limit")
         return None
 
 
@@ -45,13 +51,23 @@ async def _account(request: Request, field: str) -> str | None:
         try:
             value = parse_qs(raw.decode()).get(field, [None])[0]
         except UnicodeDecodeError, ValueError:
+            logger.bind(
+                event="auth.rate_limit.fallback", outcome="fallback", reason_code="account_field_unparsable"
+            ).debug("Account field unavailable for rate limiting")
             return None
     else:
         try:
             body = json.loads(raw)
         except json.JSONDecodeError, UnicodeDecodeError:
+            logger.bind(
+                event="auth.rate_limit.fallback", outcome="fallback", reason_code="account_field_unparsable"
+            ).debug("Account field unavailable for rate limiting")
             return None
         value = body.get(field) if isinstance(body, dict) else None
+    if not isinstance(value, str):
+        logger.bind(event="auth.rate_limit.fallback", outcome="fallback", reason_code="account_field_unparsable").debug(
+            "Account field unavailable for rate limiting"
+        )
     return value if isinstance(value, str) else None
 
 
