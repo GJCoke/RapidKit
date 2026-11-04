@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from rapidkit_common.crud import BaseCRUD
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
 from sqlmodel import col, func, select, update
@@ -18,6 +19,8 @@ from plugin_notification.models import (
     UserNotification,
 )
 from plugin_notification.status_codes import NotificationStatusCode
+
+logger = get_plugin_logger("Notification")
 
 
 class MessageCRUD(BaseCRUD[NotificationMessage]):
@@ -174,6 +177,12 @@ class OutboxCRUD(BaseCRUD[NotificationOutbox]):
             or message.status != MessageStatus.PUBLISHED.value
             or (message.expire_at is not None and message.expire_at <= now)
         ):
+            logger.bind(
+                event="notification.retry.skipped",
+                outcome="skipped",
+                reason_code="message_not_retryable",
+                message_id=message_id,
+            ).info("Notification message not retryable")
             return 0
         rows = await self.get_all(
             col(NotificationOutbox.message_id) == message_id,
@@ -224,6 +233,13 @@ class UserNotificationCRUD(BaseCRUD[UserNotification]):
     async def mark_read_for_user(self, user_id: UUID, notification_id: UUID) -> bool:
         row = await self._get_owned(user_id, notification_id)
         if row.read_at is not None:
+            logger.bind(
+                event="notification.inbox.noop",
+                outcome="noop",
+                reason_code="already_read",
+                message_id=row.message_id,
+                user_id=user_id,
+            ).debug("Notification already read")
             return False
         statement = (
             update(UserNotification)
@@ -240,11 +256,26 @@ class UserNotificationCRUD(BaseCRUD[UserNotification]):
         )
         result = await self.session.exec(statement)
         await self.session.flush()
+        if not result.rowcount:
+            logger.bind(
+                event="notification.inbox.noop",
+                outcome="noop",
+                reason_code="message_recalled",
+                message_id=row.message_id,
+                user_id=user_id,
+            ).debug("Notification read blocked after recall")
         return bool(result.rowcount)
 
     async def archive_for_user(self, user_id: UUID, notification_id: UUID) -> bool:
         row = await self._get_owned(user_id, notification_id)
         if row.archived_at is not None:
+            logger.bind(
+                event="notification.inbox.noop",
+                outcome="noop",
+                reason_code="already_archived",
+                message_id=row.message_id,
+                user_id=user_id,
+            ).debug("Notification already archived")
             return False
         row.archived_at = timezone.now()
         self.session.add(row)

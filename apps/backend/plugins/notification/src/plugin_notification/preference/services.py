@@ -40,12 +40,24 @@ class PreferenceResolver:
     ) -> list[UUID]:
         """Filter only explicit opt-outs while preserving input order."""
         if mandatory or not user_ids:
+            if mandatory:
+                logger.bind(
+                    event="notification.preference.skipped",
+                    outcome="skipped",
+                    reason_code="preference_bypass_mandatory",
+                ).debug("Mandatory notification bypasses preferences")
             return list(user_ids)
 
         definition = self._registry.get(category)
         if definition.reserved or not definition.closable:
+            logger.bind(
+                event="notification.preference.skipped", outcome="skipped", reason_code="preference_bypass_category"
+            ).debug("Notification category bypasses preferences")
             return list(user_ids)
         if self._session is None:
+            logger.bind(
+                event="notification.preference.degraded", outcome="degraded", reason_code="preference_no_session"
+            ).warning("Notification preferences unavailable without session")
             return list(user_ids)
 
         disabled = await PreferenceCRUD(self._session).get_disabled_user_ids(
@@ -53,9 +65,10 @@ class PreferenceResolver:
             list(user_ids),
         )
         if disabled:
-            logger.debug(
-                "Preference filtered {} users for category={}",
-                len(disabled),
-                category,
-            )
+            logger.bind(
+                event="notification.preference.filtered",
+                outcome="filtered",
+                reason_code="users_opted_out",
+                filtered_count=len(disabled),
+            ).debug("Notification preferences filtered recipients")
         return [user_id for user_id in user_ids if user_id not in disabled]

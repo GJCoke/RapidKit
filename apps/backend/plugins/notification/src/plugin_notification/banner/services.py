@@ -166,7 +166,9 @@ class BannerAnnouncementService:
                 for key, value in changes[message.id].items():
                     setattr(message, key, value)
                 if message.published_at is not None and message is old_scheduled:
-                    message.action = await self._publication_action(message.action, session=session)
+                    message.action = await self._publication_action(
+                        message.action, session=session, message_id=message.id
+                    )
                 session.add(message)
         self.transitioned = state.revision != revision
         state.active_message_id = active.id if active else None
@@ -192,6 +194,7 @@ class BannerAnnouncementService:
         action: dict[str, Any] | None,
         *,
         session: AsyncSession,
+        message_id: UUID,
         user: UserProtocol | None = None,
     ) -> dict[str, Any] | None:
         try:
@@ -200,6 +203,12 @@ class BannerAnnouncementService:
             if exc.code != NotificationStatusCode.INVALID_ACTION_ROUTE.code:
                 raise
             # A menu removed after reservation must not block content or slot cleanup.
+            logger.bind(
+                event="notification.banner.degraded",
+                outcome="degraded",
+                reason_code="action_route_unavailable",
+                message_id=message_id,
+            ).warning("Banner action route unavailable")
             return None
 
     async def _summary(
@@ -221,7 +230,9 @@ class BannerAnnouncementService:
                 values["action"] = None
         # A due reservation may be read before the worker has captured its action.
         if values["action"] and values["status"] == MessageStatus.PUBLISHED.value and not values["action"].get("path"):
-            values["action"] = await self._publication_action(values["action"], session=session, user=user)
+            values["action"] = await self._publication_action(
+                values["action"], session=session, user=user, message_id=message.id
+            )
         return BannerSummary.model_validate(values)
 
     @overload
@@ -265,6 +276,9 @@ class BannerAnnouncementService:
                 )
             ).one_or_none()
             if state is None:
+                logger.bind(
+                    event="notification.banner.degraded", outcome="degraded", reason_code="banner_state_missing"
+                ).warning("Banner state row unavailable")
                 return {}
         state, active, scheduled = await self._load(session)
         _, _, _, changes = self._project(state, active, scheduled, timezone.now())
@@ -379,6 +393,12 @@ class BannerAnnouncementService:
                     nonce_key = f"banner:{operator_id}:{body.client_request_id}"
                     existing = await MessageCRUD(session).get_by_source_dedup("admin", nonce_key)
                     if existing is not None:
+                        logger.bind(
+                            event="notification.banner.deduplicated",
+                            outcome="deduplicated",
+                            reason_code="duplicate_client_request",
+                            message_id=existing.id,
+                        ).info("Banner client request deduplicated")
                         # A lost committed response must never republish history or advance the slot.
                         return NotificationResult(message_id=existing.id, recipient_count=0, deduplicated=True)
                 state, active, scheduled = await self._advance_locked(session, loaded, now=now)
@@ -509,6 +529,13 @@ class BannerAnnouncementService:
             if message.display_mode != "top_banner":
                 raise AppException(NotificationStatusCode.INVALID_STATE_TRANSITION)
             deduplicated = message.published_at is not None or state.scheduled_message_id == message.id
+            if deduplicated:
+                logger.bind(
+                    event="notification.banner.deduplicated",
+                    outcome="deduplicated",
+                    reason_code="already_published",
+                    message_id=message.id,
+                ).info("Banner already published or scheduled")
             if not deduplicated:
                 if message.status != MessageStatus.DRAFT.value:
                     raise AppException(NotificationStatusCode.MESSAGE_NOT_PUBLISHABLE)
@@ -569,6 +596,13 @@ class BannerAnnouncementService:
                 session.add(message)
             if changed:
                 state.revision += 1
+            else:
+                logger.bind(
+                    event="notification.banner.noop",
+                    outcome="noop",
+                    reason_code="banner_slot_unchanged",
+                    message_id=message.id,
+                ).info("Banner slot unchanged")
             revision = state.revision
             session.add(state)
             defer_notification_effect(

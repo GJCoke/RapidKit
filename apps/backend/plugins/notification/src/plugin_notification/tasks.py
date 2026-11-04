@@ -100,6 +100,12 @@ async def _expire_due(session: AsyncSession) -> int:
                 or message.expire_at is None
                 or message.expire_at > now
             ):
+                logger.bind(
+                    event="notification.expiration.skipped",
+                    outcome="skipped",
+                    reason_code="already_transitioned",
+                    message_id=candidate.id,
+                ).debug("Expiration candidate already transitioned")
                 continue
             await crud.update_by_id(
                 message.id,
@@ -125,6 +131,12 @@ async def cleanup_notification_outbox(redis: TaskRedis, session: TaskSession) ->
     """定期兜底推进到期的 Outbox 任务。"""
     lock = DistributedLock(redis, "lock:cleanup_notification_outbox", ttl=60, auto_renew=True)
     if not await lock.acquire():
+        logger.bind(
+            event="notification.task.skipped",
+            outcome="skipped",
+            reason_code="lock_held",
+            task_name="cleanup_notification_outbox",
+        ).debug("Notification task lock held")
         return
     try:
         total = await _drain(session, redis)
@@ -147,6 +159,12 @@ async def publish_scheduled_notifications(
     """Publish due scheduled notifications under a cluster-wide lock."""
     lock = DistributedLock(redis, "lock:publish_scheduled_notifications", ttl=60, auto_renew=True)
     if not await lock.acquire():
+        logger.bind(
+            event="notification.task.skipped",
+            outcome="skipped",
+            reason_code="lock_held",
+            task_name="publish_scheduled_notifications",
+        ).debug("Notification task lock held")
         return
     try:
         try:
@@ -184,6 +202,12 @@ async def expire_notifications(redis: TaskRedis, session: TaskSession) -> None:
     """Expire published notifications under a cluster-wide lock."""
     lock = DistributedLock(redis, "lock:expire_notifications", ttl=60, auto_renew=True)
     if not await lock.acquire():
+        logger.bind(
+            event="notification.task.skipped",
+            outcome="skipped",
+            reason_code="lock_held",
+            task_name="expire_notifications",
+        ).debug("Notification task lock held")
         return
     try:
         async with session() as database_session:

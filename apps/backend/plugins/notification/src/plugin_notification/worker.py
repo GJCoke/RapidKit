@@ -102,6 +102,13 @@ class DeliveryWorker:
             col(UserNotification.user_id) == user_id,
         )
         row = (await self.session.exec(statement)).first()
+        if row is not None and row.delivered_at is not None:
+            logger.bind(
+                event="notification.delivery.noop",
+                outcome="noop",
+                reason_code="already_delivered",
+                message_id=message_id,
+            ).debug("Notification inbox already delivered")
         if row is not None and row.delivered_at is None:
             row.delivered_at = timezone.now()
             self.session.add(row)
@@ -129,6 +136,17 @@ class DeliveryWorker:
                 self.session.add(row)
                 processed += 1
                 counts["cancelled_count"] += 1
+                logger.bind(
+                    event="notification.delivery.skipped",
+                    outcome="skipped",
+                    reason_code="message_missing"
+                    if message is None
+                    else "message_not_published"
+                    if message.status != "published"
+                    else "message_expired",
+                    message_id=row.message_id,
+                    outbox_id=row.id,
+                ).info("Notification delivery cancelled")
                 continue
             adapter = self.registry.get(row.channel)
             if adapter is None:
@@ -156,6 +174,13 @@ class DeliveryWorker:
                 self.session.add(row)
                 processed += 1
                 counts["cancelled_count"] += 1
+                logger.bind(
+                    event="notification.delivery.skipped",
+                    outcome="skipped",
+                    reason_code="recipient_inbox_missing" if not payload else "message_recalled",
+                    message_id=row.message_id,
+                    outbox_id=row.id,
+                ).info("Notification recipient delivery cancelled")
                 continue
             result = await adapter.deliver(
                 redis=self.redis,

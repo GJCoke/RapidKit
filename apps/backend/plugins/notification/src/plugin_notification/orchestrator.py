@@ -64,7 +64,12 @@ class MessageOrchestrator:
             mandatory=message.mandatory,
         )
         if not user_ids:
-            logger.warning("Empty audience for message_id={}", message.id)
+            logger.bind(
+                event="notification.message.skipped",
+                outcome="skipped",
+                reason_code="empty_audience",
+                message_id=message.id,
+            ).info("Notification audience empty")
             if not allow_empty:
                 raise AppException(NotificationStatusCode.EMPTY_AUDIENCE)
             await MessageCRUD(self.session).update_by_id(
@@ -361,6 +366,12 @@ class MessageOrchestrator:
         if command.deduplication_key is not None:
             existing = await message_crud.get_by_source_dedup(command.source, command.deduplication_key)
             if existing is not None:
+                logger.bind(
+                    event="notification.message.deduplicated",
+                    outcome="deduplicated",
+                    reason_code="duplicate_deduplication_key",
+                    message_id=existing.id,
+                ).info("Notification command deduplicated")
                 recipients = await UserNotificationCRUD(self.session).get_all(
                     col(UserNotification.message_id) == existing.id
                 )
@@ -402,6 +413,12 @@ class MessageOrchestrator:
             existing = await message_crud.get_by_source_dedup(command.source, command.deduplication_key)
             if existing is None:
                 raise
+            logger.bind(
+                event="notification.message.deduplicated",
+                outcome="deduplicated",
+                reason_code="dedup_race",
+                message_id=existing.id,
+            ).info("Concurrent notification command deduplicated")
             recipients = await UserNotificationCRUD(self.session).get_all(
                 col(UserNotification.message_id) == existing.id
             )

@@ -302,6 +302,13 @@ class AdminNotificationService:
                 await self._recall_broadcaster(message_id)
             except Exception as exc:  # noqa: BLE001 - database remains the source of truth
                 logger.opt(exception=exc).warning("Recall broadcast failed for message_id={}", message_id)
+        else:
+            logger.bind(
+                event="notification.recall.degraded",
+                outcome="degraded",
+                reason_code="recall_broadcaster_unavailable",
+                message_id=message_id,
+            ).warning("Recall broadcaster unavailable")
 
     async def preview_content(
         self,

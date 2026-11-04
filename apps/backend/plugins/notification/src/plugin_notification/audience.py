@@ -59,4 +59,20 @@ class AudienceResolver:
                 logger.warning("Unknown audience type: {}", rule.type)
                 raise AppException(NotificationStatusCode.INVALID_AUDIENCE_TYPE)
 
+        empty_count = sum(1 for rule in rules if rule.type in {"user", "role", "department"} and not rule.value)
+        if empty_count:
+            logger.bind(
+                event="notification.audience.filtered",
+                outcome="filtered",
+                reason_code="audience_rule_empty_value",
+                filtered_count=empty_count,
+            ).info("Empty audience rules filtered")
+        inactive_count = len(set(explicit_ids) - active_explicit_ids)
+        if inactive_count:
+            logger.bind(
+                event="notification.audience.filtered",
+                outcome="filtered",
+                reason_code="recipient_inactive",
+                filtered_count=inactive_count,
+            ).info("Inactive notification recipients filtered")
         return user_ids
