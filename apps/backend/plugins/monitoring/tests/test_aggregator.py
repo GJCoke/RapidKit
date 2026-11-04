@@ -32,7 +32,7 @@ async def archive_db(pg_engine):
 def clock(monkeypatch, redis):
     current = [HOUR.replace(minute=59, second=30)]
     monkeypatch.setattr(metrics.timezone, "now", lambda: current[0])
-    monkeypatch.setattr(metrics.RedisManager, "client", lambda: redis)
+    monkeypatch.setattr(metrics.RedisManager, "client", lambda **_kwargs: redis)
     return current
 
 
