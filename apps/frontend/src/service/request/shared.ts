@@ -1,6 +1,4 @@
 import { useAuthStore } from "@/store/modules/auth"
-import { diagnosticMessage } from "@/utils/diagnostic-message"
-import type { DiagnosticReference } from "@/utils/diagnostic-message"
 import { localStg } from "@/utils/storage"
 import { createLogger } from "@/utils/logger"
 import { fetchRefreshToken } from "../api"
@@ -88,27 +86,4 @@ export function handleExpiredRequest(state: RequestInstanceState, forLogout = fa
   state.refreshTokenWaiters = (state.refreshTokenWaiters || 0) + 1
   logger.debug("Token refresh waiting", { waiting_requests: state.refreshTokenWaiters })
   return state.refreshTokenPromise
-}
-
-export function showErrorMsg(state: RequestInstanceState, message: string, requestId?: string | DiagnosticReference) {
-  if (!window.$message) return
-  if (!state.errMsgStack?.length) {
-    state.errMsgStack = []
-  }
-
-  const isExist = state.errMsgStack.includes(message)
-
-  if (!isExist) {
-    state.errMsgStack.push(message)
-
-    window.$message?.error(diagnosticMessage(message, requestId), {
-      onLeave: () => {
-        state.errMsgStack = state.errMsgStack.filter((msg) => msg !== message)
-
-        setTimeout(() => {
-          state.errMsgStack = []
-        }, 5000)
-      },
-    })
-  }
 }

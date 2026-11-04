@@ -32,28 +32,34 @@ export function setupAppVersionNotification() {
       title: $t("system.updateTitle"),
       content: $t("system.updateContent"),
       action() {
-        return h("div", { style: { display: "flex", justifyContent: "end", gap: "12px", width: "325px" } }, [
-          h(
-            NButton,
-            {
-              onClick() {
-                n?.destroy()
-                isShow = false
+        return h(
+          "div",
+          { style: { display: "flex", justifyContent: "flex-end", flexWrap: "wrap", gap: "12px", width: "100%" } },
+          [
+            h(
+              NButton,
+              {
+                style: { flexShrink: 0 },
+                onClick() {
+                  n?.destroy()
+                  isShow = false
+                },
               },
-            },
-            () => $t("system.updateCancel"),
-          ),
-          h(
-            NButton,
-            {
-              type: "primary",
-              onClick() {
-                location.reload()
+              () => $t("system.updateCancel"),
+            ),
+            h(
+              NButton,
+              {
+                type: "primary",
+                style: { flexShrink: 0 },
+                onClick() {
+                  location.reload()
+                },
               },
-            },
-            () => $t("system.updateConfirm"),
-          ),
-        ])
+              () => $t("system.updateConfirm"),
+            ),
+          ],
+        )
       },
       onClose() {
         isShow = false

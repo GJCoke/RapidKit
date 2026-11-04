@@ -26,7 +26,7 @@
 <template>
   <NLoadingBarProvider>
     <NDialogProvider>
-      <NNotificationProvider>
+      <NNotificationProvider :theme-overrides="{ width: '416px' }">
         <NMessageProvider>
           <ContextHolder />
           <slot></slot>

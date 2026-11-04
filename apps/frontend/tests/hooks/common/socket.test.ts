@@ -1,17 +1,16 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest"
 
-const mock = vi.hoisted(() => ({ io: vi.fn() }))
+const mock = vi.hoisted(() => ({ io: vi.fn(), show: vi.fn() }))
 vi.mock("socket.io-client", () => ({ io: mock.io }))
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
-vi.mock("@/utils/diagnostic-message", () => ({
-  diagnosticMessage: (message: string, id: { request_id: string }) => `${message}:${id.request_id}`,
-}))
+vi.mock("@/utils/diagnostic-message", () => ({ showDiagnosticNotification: mock.show }))
 import { useSocket } from "@/hooks/common/socket"
 import { getDiagnosticPackage, resetDiagnostics } from "@/utils/diagnostics"
 
 afterEach(() => {
   vi.restoreAllMocks()
+  mock.show.mockClear()
   vi.useRealTimers()
 })
 
@@ -32,9 +31,14 @@ it("accepts only a safe diagnostic ID without displaying server payloads", () =>
   vi.stubGlobal("window", { $message: { error } })
   useSocket().connect({ url: "https://app.test" })
   handlers.get("diagnostic:error")?.({ requestId: "private-unsafe-value", message: "private-payload" })
-  expect(error).not.toHaveBeenCalled()
+  expect(mock.show).not.toHaveBeenCalled()
   handlers.get("diagnostic:error")?.({ requestId: "abcdefghijklmnopqrstu", message: "private-payload" })
-  expect(error).toHaveBeenCalledWith("request.serverError:abcdefghijklmnopqrstu")
+  expect(mock.show).toHaveBeenCalledWith(
+    "request.serverError",
+    expect.objectContaining({ request_id: "abcdefghijklmnopqrstu" }),
+    { source: "socket", group: "abcdefghijklmnopqrstu" },
+  )
+  expect(error).not.toHaveBeenCalled()
   vi.unstubAllGlobals()
 })
 

@@ -6,7 +6,7 @@ import { setupRouter } from "./router"
 import { setupI18n } from "./locales"
 import App from "./App.vue"
 import { captureBrowserError } from "./observability"
-import { diagnosticMessage } from "./utils/diagnostic-message"
+import { showDiagnosticNotification } from "./utils/diagnostic-message"
 import { $t } from "./locales"
 
 async function setupApp() {
@@ -21,7 +21,11 @@ async function setupApp() {
   const app = createApp(App)
   app.config.errorHandler = (error) => {
     const eventId = captureBrowserError(error, "render")
-    window.$message?.error(diagnosticMessage($t("request.serverError"), { diagnostic_id: eventId }))
+    showDiagnosticNotification(
+      $t("request.serverError"),
+      { diagnostic_id: eventId },
+      { source: "bootstrap", group: "render" },
+    )
   }
 
   setupStore(app)

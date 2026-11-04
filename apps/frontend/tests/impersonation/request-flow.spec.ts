@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   syncAccessToken: vi.fn(),
   stopImpersonation: vi.fn(),
   message: vi.fn(),
+  notification: vi.fn(),
 }))
 vi.mock("@rapidkit/utils", async (original) => ({
   ...(await original<typeof import("@rapidkit/utils")>()),
@@ -38,7 +39,10 @@ beforeEach(() => {
   vi.stubEnv("VITE_SERVICE_SUCCESS_CODE", "0")
   vi.stubEnv("VITE_SERVICE_EXPIRED_TOKEN_CODES", "14002")
   vi.stubEnv("VITE_SERVICE_LOGOUT_CODES", "14003,14008")
-  vi.stubGlobal("window", { $message: { error: mocks.message } })
+  vi.stubGlobal("window", {
+    $message: { error: mocks.message },
+    $notification: { error: mocks.notification.mockReturnValue({ destroy: vi.fn() }) },
+  })
   mocks.storage.clear()
   mocks.storage.set("token", "simulated")
   mocks.storage.set("impersonation", { sessionId: "session" })
@@ -107,7 +111,7 @@ it("keeps a valid simulation after a denied credential operation", async () => {
   await request({ url: "/auth/logout", method: "post" })
   expect(mocks.stopImpersonation).not.toHaveBeenCalled()
   expect(mocks.storage.has("impersonation")).toBe(true)
-  expect(mocks.message).toHaveBeenCalledOnce()
+  expect(mocks.notification).toHaveBeenCalledOnce()
 })
 
 it.each(["json", "blob"] as const)("discards stale successful %s data", async (responseType) => {
@@ -177,9 +181,12 @@ it("a failure before the message provider mounts does not suppress later feedbac
   }))
   vi.stubGlobal("window", {})
   await request({ url: "/startup" })
-  vi.stubGlobal("window", { $message: { error: mocks.message } })
+  vi.stubGlobal("window", {
+    $message: { error: mocks.message },
+    $notification: { error: mocks.notification.mockReturnValue({ destroy: vi.fn() }) },
+  })
   await request({ url: "/later" })
-  expect(mocks.message).toHaveBeenCalledOnce()
+  expect(mocks.notification).toHaveBeenCalledOnce()
 })
 
 it("does not display an HTTP 5xx body even when it resembles a business error", async () => {
@@ -191,5 +198,6 @@ it("does not display an HTTP 5xx body even when it resembles a business error", 
     data: { code: 15001, message: "private-server-body" },
   }))
   await request({ url: "/unavailable" })
-  expect(request.state.errMsgStack).toEqual(["request.serverError"])
+  expect(mocks.notification).toHaveBeenCalledWith(expect.objectContaining({ title: "request.serverErrorTitle" }))
+  expect(request.state.errMsgStack).toEqual([])
 })

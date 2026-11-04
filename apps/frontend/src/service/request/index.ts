@@ -2,14 +2,15 @@
 import type { AxiosResponse } from "@rapidkit/axios"
 import { BACKEND_ERROR_CODE, CanceledError, createFlatRequest } from "@rapidkit/axios"
 import { requestIdFromHeaders, shouldReportRequestFailure } from "@rapidkit/utils"
+import { showDiagnosticNotification } from "@/utils/diagnostic-message"
 import { captureBrowserError } from "@/observability"
 import { useAuthStore } from "@/store/modules/auth"
 import { localStg } from "@/utils/storage"
 import { getServiceBaseURL } from "@/utils/service"
 import { $t } from "@/locales"
-import { createLogger } from "@/utils/logger"
+import { createLogger, logPath } from "@/utils/logger"
 import { startRequestDiagnostics, completeRequestDiagnostics } from "./diagnostics"
-import { getAuthorization, handleExpiredRequest, showErrorMsg } from "./shared"
+import { getAuthorization, handleExpiredRequest } from "./shared"
 import { getAuthSession } from "./auth-session"
 import type { RequestInstanceState } from "./type"
 import { Service } from "@/typings/service"
@@ -190,7 +191,19 @@ export const request = createFlatRequest(
         return
       }
 
-      showErrorMsg(request.state, message, { ...diagnosticFields, diagnostic_id: diagnosticId })
+      showDiagnosticNotification(
+        message,
+        { ...diagnosticFields, diagnostic_id: diagnosticId },
+        {
+          source: "request",
+          group: JSON.stringify([
+            diagnosticFields?.operation || "other",
+            diagnosticFields?.action_id,
+            config?.method?.toUpperCase(),
+            logPath(config?.url),
+          ]),
+        },
+      )
     },
   },
 )

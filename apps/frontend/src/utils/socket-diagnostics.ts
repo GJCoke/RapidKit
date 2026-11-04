@@ -9,7 +9,7 @@ import {
   type DiagnosticEventInput,
 } from "./diagnostics"
 import type { createLogger } from "./logger"
-import { diagnosticMessage } from "./diagnostic-message"
+import { showDiagnosticNotification } from "./diagnostic-message"
 
 export function socketReason(reason: string) {
   const reasons = new Map(
@@ -119,7 +119,9 @@ export function reportSocketDiagnostic(payload: unknown, owner: number) {
   const requestId = requestIdsFromHeaders({ "x-request-id": (payload as { requestId?: unknown }).requestId }).requestId
   if (!requestId) return
   const diagnosticId = captureBrowserError(new Error("Socket operation failed"), "socket", requestId)
-  window.$message?.error(
-    diagnosticMessage($t("request.serverError"), { request_id: requestId, diagnostic_id: diagnosticId }),
+  showDiagnosticNotification(
+    $t("request.serverError"),
+    { request_id: requestId, diagnostic_id: diagnosticId },
+    { source: "socket", group: requestId },
   )
 }

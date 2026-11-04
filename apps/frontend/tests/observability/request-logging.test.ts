@@ -187,3 +187,23 @@ it("logs failed HTTP attempts once and safely summarizes the captured Axios erro
   expect(calls[1][2]).toMatchObject({ status: 503, business_code: 7001, request_id: "abcdefghijklmnopqrstu" })
   expect(JSON.stringify([...calls, ...vi.mocked(console.error).mock.calls])).not.toContain("private-")
 })
+
+it("keeps separately submitted actions independent even when their endpoint and error match", async () => {
+  const notice = vi.fn((_options: unknown) => ({ destroy: vi.fn() }))
+  window.$notification = { error: notice } as any
+  mock.adapter.mockImplementation(async (config) => ({
+    config,
+    status: 503,
+    statusText: "Unavailable",
+    headers: { "x-request-id": "a".repeat(21) },
+    data: { code: 7001, message: "private-body" },
+  }))
+  const first = startDiagnosticAction("user.create.submit")
+  const second = startDiagnosticAction("user.create.submit")
+  await request({ url: "/users", method: "post", ...diagnosticRequest("user.create", first) })
+  await request({ url: "/users", method: "post", ...diagnosticRequest("user.create", second) })
+  expect(notice).toHaveBeenCalledTimes(2)
+  await request({ url: "/users", method: "post", ...diagnosticRequest("user.create", first) })
+  expect(notice).toHaveBeenCalledTimes(2)
+  expect((notice.mock.calls[0][0] as any).content().props.count).toBe(2)
+})

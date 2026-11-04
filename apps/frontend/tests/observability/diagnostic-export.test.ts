@@ -10,7 +10,7 @@ import {
   resetDiagnostics,
 } from "@/utils/diagnostics"
 import { downloadDiagnosticPackage } from "@/utils/download-diagnostics"
-import { diagnosticMessage } from "@/utils/diagnostic-message"
+import { showDiagnosticNotification, clearDiagnosticNotifications } from "@/utils/diagnostic-message"
 
 vi.mock("@/locales", () => ({ $t: (key: string) => key }))
 let saved: NodeBlob[]
@@ -32,6 +32,7 @@ beforeEach(() => {
   vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {})
 })
 afterEach(() => {
+  clearDiagnosticNotifications()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
@@ -60,28 +61,33 @@ it("downloads a sanitized JSON file without a network request", async () => {
   expect(document.querySelector("a[download]")).toBeNull()
 })
 
-it("shows separately named IDs and an export button in error feedback", async () => {
-  const root = document.createElement("div")
-  const render = diagnosticMessage("Unavailable", {
+it("exports the real sanitized package from the diagnostic notification", async () => {
+  const error = vi.fn((_options: unknown) => ({ destroy: vi.fn() }))
+  window.$notification = { error } as any
+  showDiagnosticNotification("Unavailable", {
     request_id: "abcdefghijklmnopqrstu",
     edge_request_id: "a".repeat(32),
     diagnostic_id: "ABCDEFGHIJKLMNOPQRSTU",
   })
-  const app = createApp({ render: typeof render === "function" ? render : () => h("div", render) })
+  const options = error.mock.calls[0][0] as any
+  const root = document.createElement("div")
+  const app = createApp({ render: options.content })
   app.mount(root)
   try {
-    expect(root.textContent).toContain("request.requestId")
+    const details = [...root.querySelectorAll("button")].find((b) => b.textContent === "request.showDetails")!
+    details.click()
+    await nextTick()
     expect(root.textContent).toContain("request.edgeRequestId")
-    expect(root.textContent).toContain("request.diagnosticId")
     const button = [...root.querySelectorAll("button")].find(
-      (item) => item.textContent === "request.exportDiagnostics",
+      (b) => b.textContent?.trim() === "request.exportDiagnostics",
     )!
-    expect(button).toBeDefined()
     button.click()
     await nextTick()
     expect(saved).toHaveLength(1)
+    expect(JSON.parse(await saved[0].text()).application).toBe("vue")
   } finally {
     app.unmount()
+    delete window.$notification
   }
 })
 
