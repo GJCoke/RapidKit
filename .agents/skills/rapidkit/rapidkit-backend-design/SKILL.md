@@ -301,6 +301,8 @@ Follow the Timezone Rules in `rapidkit-conventions`. Store naive UTC with `timez
 
 Follow the Logging Rules in `rapidkit-conventions`, plus:
 
+- Follow its business branch rules for structured outcomes, levels and batch summaries; see `apps/website/src/backend/logging.md` for the field list and examples.
+
 - Do not log API create/update/delete as INFO: the business audit records them. Log state changes that no audited route covers (background jobs, external calls, scheduled cleanup) at INFO, and degradation or recovery at WARNING
 - NEVER log query/read operations (too noisy, handled by LoggerMiddleware at API level)
 - Security-sensitive logs (login, permission changes, user deletion) include `user_id`

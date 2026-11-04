@@ -55,6 +55,8 @@ logger.opt(exception=True).warning("Operation failed")
 
 鉴权使用 `auth.login.rejected`、`auth.login.completed`、`auth.token.refresh`，携带固定 outcome/reason_code 与已知用户编号；解密失败只保留 exception_type。用户与定时任务写操作已有业务审计，运行日志使用 DEBUG 的 `user.mutation.staged` / `schedule.mutation.staged`，不重复写 INFO，也不将事务内的完成误称为提交成功。用户名拼音不一致使用 `user.validation.warning` 与固定原因码，不记录姓名或用户名。
 
+`auth.login.rejected` 的原因包括 `account_locked`、`user_not_found`、`invalid_credentials`、`account_pending` 和 `account_disabled`。账号不存在时不记录提交的用户名。
+
 | event                                                                                  | 级别及用途                                                                       |
 | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `notification.channel.failed`                                                          | WARNING，渠道失败类型与固定原因，不含外部异常值或通知正文                        |
@@ -74,6 +76,57 @@ delivery 的逐条结果和 batch.attempted 描述实际渠道尝试及准备写
 前端 Socket 时间线的 namespace + socket_connection_id 对应服务端 Socket.IO namespace 连接编号，可查询现有 `socket.connected` / `socket.disconnected`，不是 Engine.IO 传输编号。生产 JSON 日志保留这两个字段，本地文本格式未必展开 bind 字段；需要验证关联时使用 LOG_JSON=true。Socket 业务异常仍使用自身 socket_event_id/request_id。
 
 Celery Consumer 的未知任务、未知消息、非法任务和解码错误只输出 `task.message.rejected`，`reason_code` 分别为 unknown_task、unknown_message、invalid_task、decode_error。不插值原 SDK 模板中的 body、headers、delivery_info 或异常值；仅提取长度受限的 task_id/task_name。没有合法编号时记录 null。应用注册的 `SafeConsumer` 保留 Celery 原有拒绝、ACK、失败状态和信号行为。
+
+## 业务分岔日志
+
+关键业务提前结束、忽略输入、过滤对象或降级继续时，沿用插件的 `get_plugin_logger(...)`，使用 `logger.bind(event=..., outcome=..., reason_code=...)` 说明发生了什么。保留既有请求、用户与任务上下文，不增加日志封装或跨进程去重状态。
+
+| 级别    | 使用场景                                                                       |
+| ------- | ------------------------------------------------------------------------------ |
+| INFO    | 低频关键分岔，例如邀请跳过、受众为空、重复消息和保留期后的任务事件             |
+| WARNING | 功能依赖缺失、被吞掉的依赖异常或安全拒绝，例如 SMTP 未配置、权限拒绝           |
+| DEBUG   | 每请求、心跳或 Beat 周期的诊断，例如权限过滤、锁被占用和正常无操作             |
+| 不记    | 已抛业务异常且入口已有记录、纯格式化和空输入守卫；领域清单明确的安全拒绝等除外 |
+
+通常按“已抛错 → 依赖降级 → 高频路径 → 其余低频分岔”判断。按需健康检查已有页面状态，依照领域清单使用 DEBUG，不引入状态变化去重。已有审计覆盖的 API 写操作不重复记录创建/更新 INFO。
+
+事件名使用 `<plugin>.<object>.<outcome-verb>`，全小写、点分隔。原因码使用固定 snake_case，不插入用户输入。以下词表约束新增的业务分岔 outcome，不改变既有投递或事务事件的 outcome。
+
+| outcome        | 含义                       |
+| -------------- | -------------------------- |
+| `rejected`     | 拒绝请求                   |
+| `skipped`      | 条件不满足，动作未执行     |
+| `noop`         | 已处理，但无需修改         |
+| `deduplicated` | 命中重复，复用已有结果     |
+| `filtered`     | 部分对象被过滤             |
+| `fallback`     | 改用默认值或已有替代路径   |
+| `degraded`     | 依赖缺失或失败，少做了一步 |
+
+公共 JSON 允许列表新增以下字段。资源 ID 自动按现有序列化规则转成字符串。批量过滤按原因汇总，数量为 0 时不输出过滤日志。
+
+| 字段             | 内容                                                           |
+| ---------------- | -------------------------------------------------------------- |
+| `resource_type`  | 资源类型，例如 `menu`、`role`、`department`、`worker`          |
+| `resource_id`    | 已知资源 ID 或角色编码                                         |
+| `filtered_count` | 被过滤的对象数量                                               |
+| `affected_count` | 实际受影响的行数；使用已有写入结果或已加载对象集合，不额外查询 |
+
+```python
+logger.bind(
+    event="auth.invite.skipped",
+    outcome="skipped",
+    reason_code="invite_user_not_pending",
+    user_id=user_id,
+).info("Invite user no longer pending")
+```
+
+安全相关日志带当前作用域已知的 `user_id`。不记录邮箱、姓名、用户名、通知标题/正文、请求体、实际 URL 路径或查询参数。被处理的第三方异常只记录 `exception_type=type(exc).__name__`，不插值异常文本。权限拒绝允许记录代码中声明的路由模板 `route_key`，不记录实际请求路径。
+
+例如查询空受众事件：
+
+```bash
+docker logs <backend-container> 2>&1 | rg '"reason_code":"empty_audience"'
+```
 
 ## 任务诊断与凭证保护
 

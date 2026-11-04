@@ -86,6 +86,9 @@ from rapidkit_core.log import logger
 - ALWAYS include `user_id` in security-related logs
 - NEVER log passwords, tokens, or PII
 - Log levels: INFO for business events no audited API route records, WARNING for security events and degradation, DEBUG for diagnostics
+- Key business branches that end early, filter or fall back without raising write one `logger.bind(event=..., outcome=..., reason_code=...)` line; batch filters summarize counts by reason instead of logging each item.
+- Branch levels: degradation → WARNING; per-request/heartbeat/Beat diagnostics → DEBUG; other low-frequency outcomes → INFO. Follow explicit domain levels and never duplicate an audited API mutation as INFO.
+- New business branch outcomes use only `rejected`, `skipped`, `noop`, `deduplicated`, `filtered`, `fallback`, `degraded`; use fixed reason codes and existing in-scope IDs, without extra queries or ORM loads.
 
 The full logging design is in `apps/website/src/backend/logging.md`. The rules an agent most often misses:
 
