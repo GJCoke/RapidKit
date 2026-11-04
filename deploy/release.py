@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 VERSION = 1
@@ -339,7 +340,7 @@ def operation(root, bundle, adopt=False, repair_from=None):
         if not adopt and not current:
             raise ReleaseError("Existing production must be imported with adopt first")
         directory = snapshot(root, bundle, manifest)
-        state = {
+        state: dict[str, Any] = {
             "version": VERSION,
             "release_id": manifest["release_id"],
             "status": "running",

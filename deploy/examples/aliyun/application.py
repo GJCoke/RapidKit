@@ -5,7 +5,9 @@ import json
 import pathlib
 import socket
 import sys
+from collections.abc import Awaitable
 from importlib.util import find_spec
+from typing import cast
 
 
 def main():
@@ -17,7 +19,7 @@ def main():
         if not settings.ENVIRONMENT.is_deployed or app.state.plugin_load_result.errors:
             raise ValueError("Production environment/plugins invalid")
         from rapidkit_core.database import async_engine
-        from redis.asyncio import Redis
+        from redis.asyncio import Redis as AsyncRedis
         from sqlalchemy import text
 
         async def probe():
@@ -26,8 +28,8 @@ def main():
                 inventory = bool(
                     await connection.scalar(text("SELECT to_regclass('public.worker_groups') IS NOT NULL"))
                 )
-            async with Redis.from_url(str(settings.REDIS_URL)) as redis:
-                await redis.ping()
+            async with AsyncRedis.from_url(str(settings.REDIS_URL)) as redis:
+                await cast(Awaitable[bool], redis.ping())
             return inventory and find_spec("plugin_worker.deployment") is not None
 
         supported = asyncio.run(probe())
@@ -64,7 +66,7 @@ def main():
                 rows = await connection.execute(
                     text("SELECT name, deployment_id FROM worker_groups WHERE deployment_started_at IS NOT NULL")
                 )
-                return dict(rows.fetchall())
+                return {name: deployment_id for name, deployment_id in rows.fetchall()}
 
         print("RELEASE_JSON=" + json.dumps({"pending": asyncio.run(pending())}))
     elif action == "beat":
