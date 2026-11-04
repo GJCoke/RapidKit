@@ -17,5 +17,16 @@
   "clientRequestId": "Client attempt ID",
   "diagnosticId": "Diagnostic ID",
   "exportDiagnostics": "Export diagnostics",
-  "exportFailed": "Could not export diagnostics. Try again."
+  "exportFailed": "Could not export diagnostics. Try again.",
+  "serverErrorTitle": "Service temporarily unavailable",
+  "serverErrorHint": "Please try again later.",
+  "networkErrorTitle": "Network connection failed",
+  "networkErrorHint": "Check your connection and try again.",
+  "failureTitle": "Operation could not be completed",
+  "showDetails": "Show details",
+  "hideDetails": "Hide details",
+  "copyReference": "Copy {label}",
+  "copySucceeded": "ID copied",
+  "copyFailed": "Could not copy. Select the ID and copy it manually.",
+  "repeatedError": "This error has occurred {count} times"
 }

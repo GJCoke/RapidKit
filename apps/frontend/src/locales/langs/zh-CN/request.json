@@ -17,5 +17,16 @@
   "clientRequestId": "客户端尝试编号",
   "diagnosticId": "故障编号",
   "exportDiagnostics": "导出诊断包",
-  "exportFailed": "诊断包导出失败，请重试"
+  "exportFailed": "诊断包导出失败，请重试",
+  "serverErrorTitle": "服务暂时不可用",
+  "serverErrorHint": "请稍后重试。",
+  "networkErrorTitle": "网络连接失败",
+  "networkErrorHint": "请检查网络后重试。",
+  "failureTitle": "操作未完成",
+  "showDetails": "查看详情",
+  "hideDetails": "收起详情",
+  "copyReference": "复制{label}",
+  "copySucceeded": "编号已复制",
+  "copyFailed": "复制失败，请选中编号后手动复制",
+  "repeatedError": "同类错误已发生 {count} 次"
 }

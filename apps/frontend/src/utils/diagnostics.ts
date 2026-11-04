@@ -1,3 +1,4 @@
+import { shallowRef } from "vue"
 import { nanoid } from "@rapidkit/utils"
 import { generatedRoutes } from "@/router/elegant/routes"
 
@@ -166,7 +167,7 @@ registerRoutes(generatedRoutes)
 
 const encoder = new TextEncoder()
 const bytes = (value: unknown) => encoder.encode(JSON.stringify(value)).length
-let generation = 0
+const generation = shallowRef(0)
 let pageId = nanoid()
 let sequence = 0
 let dropped = 0
@@ -177,11 +178,11 @@ const rates = new Map<string, { at: number; count: number }>()
 let totalRate = { at: performance.now(), count: 0 }
 
 export function diagnosticGeneration() {
-  return generation
+  return generation.value
 }
 
 export function resetDiagnostics() {
-  generation++
+  generation.value++
   pageId = nanoid()
   sequence = 0
   dropped = 0
@@ -253,8 +254,8 @@ function trimEvents() {
     events.shift()
 }
 
-export function recordDiagnosticEvent(input: DiagnosticEventInput, owner = generation) {
-  if (owner !== generation) return
+export function recordDiagnosticEvent(input: DiagnosticEventInput, owner = generation.value) {
+  if (owner !== generation.value) return
   if (!categories.has(input.category) || !phases.has(input.phase)) return
   const event: TimelineEvent = {
     seq: ++sequence,
@@ -272,7 +273,7 @@ export function recordDiagnosticEvent(input: DiagnosticEventInput, owner = gener
 }
 
 export function startDiagnosticAction(code: DiagnosticActionCode): DiagnosticAction {
-  const action = Object.freeze({ actionId: nanoid(), generation, code })
+  const action = Object.freeze({ actionId: nanoid(), generation: generation.value, code })
   recordDiagnosticEvent({ category: "action", phase: "start", action_code: code, action_id: action.actionId })
   return action
 }
@@ -288,9 +289,9 @@ export function captureDiagnosticError(
   error: unknown,
   category: DiagnosticCategory,
   fields: unknown = {},
-  owner = generation,
+  owner = generation.value,
 ) {
-  if (owner !== generation || !errorCategories.has(category)) return undefined
+  if (owner !== generation.value || !errorCategories.has(category)) return undefined
   if (error instanceof Error && seen.has(error)) return seen.get(error)
   const type = error instanceof Error && errorTypes.has(error.name) ? error.name : "Error"
   const frames: Incident["frames"] = []
