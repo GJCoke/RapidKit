@@ -57,7 +57,7 @@ async def test_targets_include_hidden_system_pages_but_filter_disabled_and_exter
             system_pages.append(name)
     visible = await seed(isolated_session, hide_in_menu=True)
     provider = MenuNavigationProvider()
-    targets = await provider.list_targets(isolated_session, SimpleNamespace(is_admin=True))
+    targets = await provider.list_targets(isolated_session, SimpleNamespace(id=uuid4(), is_admin=True))
     assert {target.route for target in targets} == {*system_pages, visible.route_name}
     assert await provider.get_target(isolated_session, parent.id) is None
 
@@ -81,7 +81,7 @@ async def test_public_system_targets_follow_constant_route_access_for_non_admins
             return set()
 
     provider = MenuNavigationProvider(permission_provider=Permissions())
-    user = SimpleNamespace(is_admin=False, roles=[])
+    user = SimpleNamespace(id=uuid4(), is_admin=False, roles=[])
     targets = await provider.list_targets(isolated_session, user)
     assert [target.menu_id for target in targets] == [login.id]
     assert not targets[0].parameters[0].required
@@ -113,7 +113,7 @@ async def test_targets_follow_authorized_routes_and_hidden_detail_ancestor_permi
             return {"user:read"} if roles == ["detail_only"] else {"page:read", "user:read"}
 
     provider = MenuNavigationProvider(permission_provider=Permissions())
-    user = SimpleNamespace(is_admin=False, roles=["detail_only"])
+    user = SimpleNamespace(id=uuid4(), is_admin=False, roles=["detail_only"])
     assert await provider.list_targets(isolated_session, user) == []
     user.roles = ["viewer"]
     targets = await provider.list_targets(isolated_session, user)
@@ -123,7 +123,7 @@ async def test_targets_follow_authorized_routes_and_hidden_detail_ancestor_permi
     assert target.parameters[0].required
     assert target.parameters[1].default_value == "profile"
     assert (
-        await provider.get_target(isolated_session, detail.id, SimpleNamespace(is_admin=False, roles=["detail_only"]))
+        await provider.get_target(isolated_session, detail.id, SimpleNamespace(id=uuid4(), is_admin=False, roles=["detail_only"]))
         is None
     )
     page.status = Status.OFF

@@ -617,7 +617,7 @@ async def test_admin_route_mapping_uses_one_menu_query_for_active_menu_names():
     query_result.all.return_value = [target, child]
     session = AsyncMock()
     session.exec.return_value = query_result
-    admin = SimpleNamespace(is_admin=True, roles=[])
+    admin = SimpleNamespace(id=uuid4(), is_admin=True, roles=[])
 
     routes = await get_user_routes(admin, session)
 
@@ -647,7 +647,7 @@ async def test_active_menu_binding_does_not_grant_hidden_route_permission(monkey
     permission_cache.get_role_codes.return_value = {"target:read"}
     monkeypatch.setattr(route_services, "get_service", lambda _: permission_cache)
 
-    routes = await get_user_routes(SimpleNamespace(is_admin=False, roles=["viewer"]), session)
+    routes = await get_user_routes(SimpleNamespace(id=uuid4(), is_admin=False, roles=["viewer"]), session)
 
     assert [route.name for route in routes.routes] == [target.route_name]
     assert routes.routes[0].children is None
@@ -669,7 +669,7 @@ async def test_permitted_hidden_child_is_excluded_when_active_target_is_not_perm
     permission_cache.get_role_codes.return_value = {"child:read"}
     monkeypatch.setattr(route_services, "get_service", lambda _: permission_cache)
 
-    routes = await get_user_routes(SimpleNamespace(is_admin=False, roles=["viewer"]), session)
+    routes = await get_user_routes(SimpleNamespace(id=uuid4(), is_admin=False, roles=["viewer"]), session)
 
     assert routes.routes == []
 
@@ -690,7 +690,7 @@ async def test_permitted_hidden_child_is_included_when_active_target_is_also_per
     permission_cache.get_role_codes.return_value = {"target:read", "child:read"}
     monkeypatch.setattr(route_services, "get_service", lambda _: permission_cache)
 
-    routes = await get_user_routes(SimpleNamespace(is_admin=False, roles=["viewer"]), session)
+    routes = await get_user_routes(SimpleNamespace(id=uuid4(), is_admin=False, roles=["viewer"]), session)
 
     assert routes.routes[0].name == target.route_name
     assert routes.routes[0].children[0].name == hidden_child.route_name
@@ -719,7 +719,7 @@ async def test_hidden_child_requires_every_page_ancestor_permission(
     permission_cache.get_role_codes.return_value = codes
     monkeypatch.setattr(route_services, "get_service", lambda _: permission_cache)
 
-    routes = await get_user_routes(SimpleNamespace(is_admin=False, roles=["viewer"]), session)
+    routes = await get_user_routes(SimpleNamespace(id=uuid4(), is_admin=False, roles=["viewer"]), session)
 
     if permit_intermediate:
         assert routes.routes[0].children[0].children[0].name == child.route_name
@@ -741,7 +741,7 @@ async def test_directory_is_visible_only_with_a_visible_child(monkeypatch: pytes
     permission_cache.get_role_codes.return_value = {"page:read"}
     monkeypatch.setattr(route_services, "get_service", lambda _: permission_cache)
 
-    routes = await get_user_routes(SimpleNamespace(is_admin=False, roles=["viewer"]), session)
+    routes = await get_user_routes(SimpleNamespace(id=uuid4(), is_admin=False, roles=["viewer"]), session)
 
     assert [route.name for route in routes.routes] == ["dir"]
     assert routes.routes[0].children[0].name == "page"
@@ -763,8 +763,8 @@ async def test_user_route_cache_separates_admin_and_non_admin_with_same_roles(mo
     session = AsyncMock()
     roles = ["shared-role"]
 
-    await get_cached_user_routes(SimpleNamespace(is_admin=True, roles=roles), redis, session)
-    await get_cached_user_routes(SimpleNamespace(is_admin=False, roles=roles), redis, session)
+    await get_cached_user_routes(SimpleNamespace(id=uuid4(), is_admin=True, roles=roles), redis, session)
+    await get_cached_user_routes(SimpleNamespace(id=uuid4(), is_admin=False, roles=roles), redis, session)
 
     keys = list(dict.fromkeys(call.args[0] for call in redis.get.await_args_list))
     assert len(keys) == 2
@@ -788,8 +788,8 @@ async def test_user_route_cache_role_hash_has_no_delimiter_collision(monkeypatch
     monkeypatch.setattr("plugin_menu.services.get_service", lambda _: permission_cache)
     session = AsyncMock()
 
-    await get_cached_user_routes(SimpleNamespace(is_admin=False, roles=["a:b", "c"]), redis, session)
-    await get_cached_user_routes(SimpleNamespace(is_admin=False, roles=["a", "b:c"]), redis, session)
+    await get_cached_user_routes(SimpleNamespace(id=uuid4(), is_admin=False, roles=["a:b", "c"]), redis, session)
+    await get_cached_user_routes(SimpleNamespace(id=uuid4(), is_admin=False, roles=["a", "b:c"]), redis, session)
 
     keys = list(dict.fromkeys(call.args[0] for call in redis.get.await_args_list))
     assert len(keys) == 2
@@ -1073,7 +1073,7 @@ async def test_user_route_cache_key_changes_with_catalog_version(monkeypatch: py
     )
     permission_cache = AsyncMock()
     monkeypatch.setattr("plugin_menu.services.get_service", lambda _: permission_cache)
-    user = SimpleNamespace(is_admin=False, roles=["viewer"])
+    user = SimpleNamespace(id=uuid4(), is_admin=False, roles=["viewer"])
 
     permission_cache.get_catalog_version.return_value = 1
     await get_cached_user_routes(user, redis, AsyncMock())
