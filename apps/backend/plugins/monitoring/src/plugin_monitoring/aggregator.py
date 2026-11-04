@@ -67,6 +67,7 @@ async def aggregate_once(redis: AsyncRedis, session_factory: async_sessionmaker)
         session_factory: 异步数据库 session 工厂（由 Task 基类注入）。
     """
     now = timezone.now()
+    filtered_count = 0
     committed: list[tuple[str, int]] = []
     seen: set[str] = set()
     async with session_factory() as session:
@@ -74,14 +75,17 @@ async def aggregate_once(redis: AsyncRedis, session_factory: async_sessionmaker)
         async for key in redis.scan_iter(match="metrics:api_hour:*", count=200):
             match = _HOUR_PATTERN.match(key)
             if not match or key in seen:
+                filtered_count += 1
                 continue
             seen.add(key)
             bucket, method, path = match.groups()
             data = await redis.hgetall(key)
             if not data or "count" not in data:
+                filtered_count += 1
                 continue
             count = int(data["count"])
             if count == int(data.get("archived_count", -1)):
+                filtered_count += 1
                 continue
             time_bucket = datetime.strptime(bucket, "%Y%m%d_%H")
             if "baseline" not in data:
@@ -95,6 +99,7 @@ async def aggregate_once(redis: AsyncRedis, session_factory: async_sessionmaker)
                 raw = await cast(Awaitable[list[str]], redis.eval(_BASELINE_SCRIPT, 1, key, json.dumps(baseline)))
                 data = dict(zip(raw[::2], raw[1::2]))
                 if "count" not in data:
+                    filtered_count += 1
                     continue
                 count = int(data["count"])
             baseline = json.loads(data["baseline"])
@@ -125,6 +130,9 @@ async def aggregate_once(redis: AsyncRedis, session_factory: async_sessionmaker)
         await cast(Awaitable[int], redis.eval(_ACK_SCRIPT, 1, key, count))
     await redis.set(LAST_SYNC_KEY, timezone.now().isoformat())
     await redis.delete(LAST_SYNC_ERROR_KEY)
+    logger.bind(
+        event="monitoring.aggregation.completed", processed_count=len(committed), filtered_count=filtered_count
+    ).debug("API aggregation completed")
 
 
 async def cleanup_old_metrics(session_factory: async_sessionmaker, days: int = 7) -> None:

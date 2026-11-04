@@ -9,6 +9,7 @@ import re
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.redis_client import AsyncRedisClient
 from rapidkit_core.timezone import timezone
 from sqlmodel import col, func, select
@@ -24,6 +25,8 @@ from plugin_monitoring.schemas import (
     ApiTrendPoint,
 )
 
+logger = get_plugin_logger("Monitoring")
+
 
 def _parse_range(range_str: str, start_str: str | None, end_str: str | None) -> tuple[datetime, datetime]:
     """将 range 参数转为 (start, end) datetime。"""
@@ -32,6 +35,10 @@ def _parse_range(range_str: str, start_str: str | None, end_str: str | None) -> 
         return datetime.fromisoformat(start_str), datetime.fromisoformat(end_str)
 
     mapping = {"1h": 1, "6h": 6, "24h": 24, "7d": 168}
+    if range_str not in mapping:
+        logger.bind(event="monitoring.query.fallback", outcome="fallback", reason_code="invalid_range_fallback").debug(
+            "Invalid metrics range; using default"
+        )
     hours = mapping.get(range_str, 24)
     return now - timedelta(hours=hours), now
 
@@ -229,6 +236,9 @@ async def get_list(
 
     valid_fields = {"request_count", "error_count", "error_rate", "avg_ms", "p95_ms"}
     if sort_by not in valid_fields:
+        logger.bind(event="monitoring.query.fallback", outcome="fallback", reason_code="invalid_sort_field").debug(
+            "Invalid metrics sort; using default"
+        )
         sort_by = "request_count"
     items.sort(key=lambda x: getattr(x, sort_by), reverse=(sort_order == "desc"))
 

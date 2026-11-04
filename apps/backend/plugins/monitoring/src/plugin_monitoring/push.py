@@ -37,6 +37,9 @@ async def push_api_stats_loop(sio: AsyncServer, leader: LeaderElection) -> None:
             curr_errors = stats.get("totalErrors", 0)
 
             if not was_leader:
+                logger.bind(
+                    event="monitoring.push.fallback", outcome="fallback", reason_code="leader_baseline_reset"
+                ).info("Metrics push leader baseline reset")
                 # Just became leader — reset baseline, don't push
                 prev_total = curr_total
                 prev_errors = curr_errors
