@@ -8,12 +8,16 @@ from datetime import timedelta
 from rapidkit_common.enums import TaskStatus
 from rapidkit_core.config import settings
 from rapidkit_core.database import AsyncSessionLocal
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from redis.asyncio import Redis
 from sqlmodel import col, select
 
 from plugin_worker.crud import TaskResultCRUD
 from plugin_worker.models import CeleryTaskResult, TaskReceipt
+
+logger = get_plugin_logger("Worker")
+
 
 TERMINAL = (TaskStatus.SUCCESS, TaskStatus.FAILURE, TaskStatus.REVOKED)
 
@@ -77,6 +81,12 @@ async def prune_results(session, redis, *, days: int, apply: bool = False, limit
     for candidate in candidates:
         task = await TaskResultCRUD(session).get_by_task_id(candidate.task_id, for_update=True)
         if task is None or task.status not in TERMINAL or task.finished_at is None or task.finished_at >= cutoff:
+            logger.bind(
+                event="worker.retention.skipped",
+                outcome="skipped",
+                reason_code="no_longer_eligible",
+                task_id=candidate.task_id,
+            ).debug("Task retention candidate no longer eligible")
             continue
         receipt = (await session.exec(select(TaskReceipt).where(TaskReceipt.task_id == task.task_id))).first()
         if receipt is None:

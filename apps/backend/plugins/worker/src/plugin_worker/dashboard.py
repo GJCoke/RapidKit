@@ -17,7 +17,7 @@ from plugin_worker.models import CeleryTaskResult, CeleryWorker, QueueDepthSnaps
 from plugin_worker.operations import HEARTBEAT_TIMEOUT_SECONDS, is_worker_healthy, summarize_worker_capacity
 from plugin_worker.schemas import DashboardDepthPoint, DashboardTimelinePoint, QueueDashboardResponse, QueueMetric
 
-logger = get_plugin_logger("worker")
+logger = get_plugin_logger("Worker")
 
 
 def fill_history_buckets(rows, start, end, *, days, missing):

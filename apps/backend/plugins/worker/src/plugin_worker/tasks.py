@@ -1,6 +1,7 @@
 """Periodic worker metrics tasks."""
 
 from kombu import Connection
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from redis.asyncio import Redis
 from sqlmodel import select
@@ -8,6 +9,8 @@ from sqlmodel import select
 from plugin_worker.dashboard import collect_queue_metrics, configured_queue_names
 from plugin_worker.inventory import scoped_worker_filters
 from plugin_worker.models import CeleryWorker, QueueDepthSnapshot
+
+logger = get_plugin_logger("Worker")
 
 
 async def capture_queue_depth(
@@ -35,6 +38,9 @@ async def capture_queue_depth(
                 prefix=options.get("global_keyprefix", ""),
             )
             if any(row.depth is None for row in metrics):
+                logger.bind(
+                    event="worker.queue_depth.skipped", outcome="skipped", reason_code="queue_depth_unavailable"
+                ).debug("Queue depth snapshot unavailable")
                 return
             depth = sum(row.depth for row in metrics)
         else:
@@ -52,6 +58,9 @@ try:
     @app.task(name="capture_queue_depth")
     async def capture_queue_depth_task(session: TaskSession) -> None:
         if Connection(app.conf.broker_url).transport.driver_type != "redis":
+            logger.bind(event="worker.queue_depth.skipped", outcome="skipped", reason_code="broker_not_redis").debug(
+                "Queue depth requires Redis broker"
+            )
             return
         broker = Redis.from_url(str(app.conf.broker_url), socket_connect_timeout=2, socket_timeout=2)
         try:

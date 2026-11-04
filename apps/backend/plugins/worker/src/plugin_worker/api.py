@@ -15,6 +15,7 @@ from rapidkit_common.audit import current_audit
 from rapidkit_common.deps import SessionDep
 from rapidkit_common.enums import WorkerStatus
 from rapidkit_common.schemas.response import PaginatedResponse, Response
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
 from rapidkit_framework.exceptions import AppException
 
@@ -59,6 +60,9 @@ from plugin_worker.services import (
     trigger_task,
 )
 from plugin_worker.status_codes import WorkerStatusCode
+
+logger = get_plugin_logger("Worker")
+
 
 router = APIRouter(
     prefix="/workers",
@@ -114,6 +118,13 @@ async def retire_worker_endpoint(worker_id: UUID, crud: WorkerCrudDep) -> Respon
     if is_worker_healthy(worker.status, worker.last_heartbeat, timezone.now(), HEARTBEAT_TIMEOUT_SECONDS):
         raise AppException(WorkerStatusCode.WORKER_STILL_ONLINE)
     if worker.lifecycle == "retired":
+        logger.bind(
+            event="worker.worker.noop",
+            outcome="noop",
+            reason_code="already_retired",
+            resource_type="worker",
+            resource_id=worker_id,
+        ).info("Worker already retired")
         return Response(data=WorkerResponse.model_validate(worker))
     worker.lifecycle = "retired"
     worker.status = WorkerStatus.OFFLINE

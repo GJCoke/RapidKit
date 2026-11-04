@@ -126,6 +126,9 @@ class EventService:
         now = timezone.now()
         existing = await self.worker_crud.get_by_hostname(data["hostname"])
         if existing and existing.lifecycle == "retired":
+            logger.bind(event="worker.event.skipped", outcome="skipped", reason_code="worker_retired").debug(
+                "Retired worker online event ignored: {}", data["hostname"]
+            )
             return
         group_name = data.get("group_name", "legacy")
         group = await ensure_group(self.session, group_name)
@@ -153,6 +156,11 @@ class EventService:
     async def handle_worker_offline(self, data: dict) -> None:
         worker = await self.worker_crud.get_by_hostname(data["hostname"], lock=True)
         if not worker or worker.lifecycle == "retired":
+            logger.bind(
+                event="worker.event.skipped",
+                outcome="skipped",
+                reason_code="worker_unknown" if worker is None else "worker_retired",
+            ).log("INFO" if worker is None else "DEBUG", "Worker offline event ignored: {}", data["hostname"])
             return
         was_online = worker.status == WorkerStatus.ONLINE
         worker.status = WorkerStatus.OFFLINE
@@ -164,6 +172,9 @@ class EventService:
         await self.session.flush()
         await self._emit_worker_status(worker)
         if not is_current_worker(worker.hostname, worker.group_name) or worker.lifecycle != "active" or not was_online:
+            logger.bind(event="worker.event.skipped", outcome="skipped", reason_code="offline_event_suppressed").info(
+                "Worker offline activity suppressed: {}", worker.hostname
+            )
             return
         event_bus.fire_and_forget(
             WorkerOfflineEvent(
@@ -176,9 +187,15 @@ class EventService:
     async def handle_worker_heartbeat(self, data: dict) -> None:
         worker = await self.worker_crud.get_by_hostname(data["hostname"])
         if not worker:
+            logger.bind(event="worker.event.fallback", outcome="fallback", reason_code="worker_auto_registered").info(
+                "Heartbeat registers worker: {}", data["hostname"]
+            )
             await self.handle_worker_online(data)
             return
         if worker.lifecycle == "retired":
+            logger.bind(event="worker.event.skipped", outcome="skipped", reason_code="worker_retired").debug(
+                "Retired worker heartbeat ignored: {}", data["hostname"]
+            )
             return
         now = timezone.now()
         worker.last_heartbeat = now
@@ -204,6 +221,13 @@ class EventService:
                 await self.session.exec(select(TaskReceipt).where(TaskReceipt.task_id == data["task_id"]))
             ).first()
             if receipt is not None and data.get("attempt", 0) <= receipt.attempt:
+                logger.bind(
+                    event="worker.task_event.skipped",
+                    outcome="skipped",
+                    reason_code="event_after_retention",
+                    task_id=data["task_id"],
+                    attempt=data.get("attempt", 0),
+                ).info("Task event ignored after retention")
                 return None, True
         return task, False
 
@@ -218,6 +242,13 @@ class EventService:
             or attempt == existing.retries
             and existing.status in _TERMINAL_STATES | {TaskStatus.STARTED}
         ):
+            logger.bind(
+                event="worker.task_event.deduplicated",
+                outcome="deduplicated",
+                reason_code="stale_attempt",
+                task_id=data["task_id"],
+                attempt=attempt,
+            ).debug("Stale task attempt ignored")
             return
         now = _event_time(data)
         was_active = existing is not None and existing.status == TaskStatus.STARTED
@@ -242,10 +273,11 @@ class EventService:
             },
         )
         self._lineage(task, data)
-        if previous_host:
-            await self._increment_active_tasks(previous_host, delta=-1)
-        hostname = task.worker_hostname
-        worker = await self._increment_active_tasks(hostname, delta=1) if hostname else None
+        with logger.contextualize(task_id=task.task_id):
+            if previous_host:
+                await self._increment_active_tasks(previous_host, delta=-1)
+            hostname = task.worker_hostname
+            worker = await self._increment_active_tasks(hostname, delta=1) if hostname else None
         await self.session.flush()
         after_commit(self.session, self._emit_task_update, task)
         if worker:
@@ -267,6 +299,13 @@ class EventService:
             return
         attempt = data.get("attempt", task.retries if task else 0)
         if task is not None and (attempt < task.retries or attempt == task.retries and task.status in _TERMINAL_STATES):
+            logger.bind(
+                event="worker.task_event.deduplicated",
+                outcome="deduplicated",
+                reason_code="stale_attempt",
+                task_id=data["task_id"],
+                attempt=attempt,
+            ).debug("Stale task attempt ignored")
             return
         now = _event_time(data)
         was_active = task is not None and task.status == TaskStatus.STARTED
@@ -284,9 +323,10 @@ class EventService:
         task.exception = data.get("exception") if status == TaskStatus.FAILURE else None
         task.traceback = data.get("traceback") if status == TaskStatus.FAILURE else None
         hostname = task.worker_hostname
-        if active_host:
-            await self._increment_active_tasks(active_host, delta=-1)
-        worker = await self._finish_task_on_worker(hostname) if hostname else None
+        with logger.contextualize(task_id=task.task_id):
+            if active_host:
+                await self._increment_active_tasks(active_host, delta=-1)
+            worker = await self._finish_task_on_worker(hostname) if hostname else None
         await self.session.flush()
         await self._audit_execution(task, data, "success" if status == TaskStatus.SUCCESS else "failure")
         after_commit(self.session, self._emit_task_update, task)
@@ -309,6 +349,12 @@ class EventService:
                 error_summary=task.exception or "",
             )
         else:
+            logger.bind(
+                event="worker.task_event.skipped",
+                outcome="skipped",
+                reason_code="revoked_no_activity",
+                task_id=task.task_id,
+            ).debug("Revoked task produces no activity")
             return
         after_commit(self.session, event_bus.async_emit, event)
 
@@ -319,13 +365,21 @@ class EventService:
             return
         attempt = data.get("attempt", task.retries if task else 0)
         if task is not None and (attempt < task.retries or attempt == task.retries and task.status in _TERMINAL_STATES):
+            logger.bind(
+                event="worker.task_event.deduplicated",
+                outcome="deduplicated",
+                reason_code="stale_attempt",
+                task_id=data["task_id"],
+                attempt=attempt,
+            ).debug("Stale task attempt ignored")
             return
         now = _event_time(data)
         if task is None:
             task = CeleryTaskResult(task_id=data["task_id"], task_name=data.get("task_name", ""))
             self.session.add(task)
         elif task.status == TaskStatus.STARTED and task.worker_hostname:
-            await self._increment_active_tasks(task.worker_hostname, delta=-1)
+            with logger.contextualize(task_id=task.task_id):
+                await self._increment_active_tasks(task.worker_hostname, delta=-1)
         task.worker_hostname = data.get("hostname") or task.worker_hostname
         self._lineage(task, data)
         if attempt > task.retries:
@@ -354,15 +408,24 @@ class EventService:
         summaries = await group_summaries(self.session, now)
         for summary in summaries:
             if summary.expected_replicas is None:
+                logger.bind(event="worker.capacity.skipped", outcome="skipped", reason_code="capacity_unmanaged").debug(
+                    "Worker group capacity unmanaged: {}", summary.name
+                )
                 continue
             group = (
                 await self.session.exec(select(WorkerGroup).where(WorkerGroup.name == summary.name).with_for_update())
             ).first()
             if group is None:
+                logger.bind(event="worker.capacity.skipped", outcome="skipped", reason_code="group_missing").debug(
+                    "Worker capacity group missing: {}", summary.name
+                )
                 continue
             if summary.missing:
                 group.missing_since = group.missing_since or now
                 if (now - group.missing_since).total_seconds() < CAPACITY_GRACE_SECONDS:
+                    logger.bind(
+                        event="worker.capacity.skipped", outcome="skipped", reason_code="capacity_grace_period"
+                    ).debug("Worker group within capacity grace period: {}", summary.name)
                     continue
             else:
                 group.missing_since = None
@@ -389,10 +452,18 @@ class EventService:
         worker = await self.worker_crud.get_by_hostname(hostname, lock=True)
         if worker:
             worker.active_task_count = max(0, (worker.active_task_count or 0) + delta)
+        else:
+            logger.bind(event="worker.counter.degraded", outcome="degraded", reason_code="worker_row_missing").warning(
+                "Active task counter worker missing: {}", hostname
+            )
         return worker
 
     async def _finish_task_on_worker(self, hostname: str) -> CeleryWorker | None:
         worker = await self.worker_crud.get_by_hostname(hostname, lock=True)
         if worker:
             worker.processed_count = (worker.processed_count or 0) + 1
+        else:
+            logger.bind(event="worker.counter.degraded", outcome="degraded", reason_code="worker_row_missing").warning(
+                "Processed task counter worker missing: {}", hostname
+            )
         return worker

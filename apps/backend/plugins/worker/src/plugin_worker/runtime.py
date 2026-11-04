@@ -2,7 +2,10 @@
 
 import asyncio
 
+from rapidkit_core.log import get_plugin_logger
 from rapidkit_core.timezone import timezone
+
+logger = get_plugin_logger("Worker")
 
 
 async def inspect_worker_runtime(celery_app, hostname: str) -> dict:
@@ -10,7 +13,14 @@ async def inspect_worker_runtime(celery_app, hostname: str) -> dict:
         try:
             reply = getattr(celery_app.control.inspect(destination=[hostname], timeout=1), kind)()
             return reply.get(hostname) if isinstance(reply, dict) else None
-        except Exception:
+        except Exception as exc:
+            logger.bind(
+                event="worker.inspect.degraded",
+                outcome="degraded",
+                reason_code="inspect_failed",
+                exception_type=type(exc).__name__,
+                operation=kind,
+            ).warning("Worker runtime inspection failed")
             return None
 
     stats, active = await asyncio.gather(asyncio.to_thread(query, "stats"), asyncio.to_thread(query, "active"))
