@@ -22,7 +22,13 @@ const { publicKey } = generateKeyPairSync("rsa", {
 const apiRequests = []
 const server = createServer(async (request, response) => {
   try {
-    const path = new URL(request.url, "http://localhost").pathname
+    const url = new URL(request.url, "http://localhost")
+    const path = url.pathname
+    if (path === "/index.html" && url.searchParams.has("time")) {
+      response.setHeader("Content-Type", "text/html")
+      response.end('<meta name="buildTime" content="browser-test-new-deployment">')
+      return
+    }
     if (path.startsWith("/api/v1/")) {
       apiRequests.push({ path, clientId: request.headers["x-request-id"] })
       request.resume()
@@ -110,6 +116,7 @@ try {
   await page.getByRole("button", { name: /确认|confirm/i }).click()
   const exportButton = page.getByRole("button", { name: /导出诊断包|export diagnostics/i }).first()
   await exportButton.waitFor()
+  await page.getByRole("button", { name: /查看详情|show details/i }).click()
   const feedback = await page.locator("body").innerText()
   assert(feedback.includes(requestId) && feedback.includes(edgeId))
   assert(!feedback.includes("private-server-message"))
@@ -147,6 +154,38 @@ try {
   await page.waitForTimeout(200)
   assert.equal(apiRequests.length, beforeDownload, "download must not make API requests")
   assert(!requests.some((url) => /sentry|envelope|ingest/i.test(new URL(url).pathname)))
+  const versionPage = await context.newPage()
+  await versionPage.clock.install()
+  await versionPage.setViewportSize({ width: 320, height: 844 })
+  await versionPage.goto(origin + "/login", { waitUntil: "domcontentloaded" })
+  await versionPage.locator('input[type="password"]').waitFor()
+  await versionPage.clock.runFor(1000)
+  await versionPage.clock.fastForward(180000)
+  const version = versionPage.locator(".n-notification").filter({ hasText: /系统版本更新通知|System update/i })
+  await version.waitFor()
+  await versionPage.clock.runFor(500)
+  await versionPage.clock.resume()
+  await versionPage.waitForTimeout(500)
+  const layout = await version.evaluate((element) => {
+    const card = element.getBoundingClientRect()
+    return {
+      width: innerWidth,
+      left: card.left,
+      right: card.right,
+      buttons: [...element.querySelectorAll("button")].map((button) => {
+        const box = button.getBoundingClientRect()
+        return { left: box.left, right: box.right, width: box.width }
+      }),
+    }
+  })
+  assert(layout.left >= 0 && layout.right <= layout.width)
+  assert(layout.buttons.every((button) => button.left >= layout.left && button.right <= layout.right))
+  await version.screenshot({ path: join(output, "version-320.png") })
+  await version.getByRole("button", { name: /稍后再说|later/i }).click()
+  await versionPage.clock.runFor(500)
+  await version.waitFor({ state: "hidden" })
+  await writeFile(join(output, "version-layout.json"), JSON.stringify(layout, null, 2))
+  assert(!requests.some((url) => /sentry|envelope|ingest/i.test(new URL(url).pathname)))
   const result = {
     passed: true,
     bytes: Buffer.byteLength(raw),
@@ -154,6 +193,7 @@ try {
     incidents: report.incidents.length,
     apiRequests: apiRequests.length,
     sentryRequests: 0,
+    versionNotification320: true,
   }
   await writeFile(join(output, "result.json"), JSON.stringify(result, null, 2))
   console.log(JSON.stringify(result))
