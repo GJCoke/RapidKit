@@ -78,10 +78,10 @@ Refresh Token 存储在 Redis 中，key 格式为 `auth:refresh:<user_id>:<jti>`
 
 角色统一通过 `permission_codes` 授予权限码，菜单、接口和按钮使用同一套权限码校验；数据范围与字段状态分别由 `data_scopes`、`field_modes` 配置。
 
-| 字段               | 说明                               |
-| ------------------ | ---------------------------------- |
+| 字段               | 说明                                 |
+| ------------------ | ------------------------------------ |
 | `permission_codes` | 直接授予的权限码，依赖由目录展开     |
-| `data_scopes`      | 资源对应的数据范围                 |
+| `data_scopes`      | 资源对应的数据范围                   |
 | `field_modes`      | 资源下各字段组的显示、脱敏或隐藏状态 |
 
 角色模型定义位于 `apps/backend/plugins/permission/src/plugin_permission/models.py`，对应数据库表 `permission_roles`。

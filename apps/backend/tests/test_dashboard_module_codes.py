@@ -21,9 +21,7 @@ REQUIRED_ROUTES = {
 
 def test_dashboard_modules_require_codes_of_declared_routes(loaded_app):
     _, bindings = catalog_from_app(loaded_app)
-    expected = {
-        key: tuple(sorted({bindings[route] for route in routes})) for key, routes in REQUIRED_ROUTES.items()
-    }
+    expected = {key: tuple(sorted({bindings[route] for route in routes})) for key, routes in REQUIRED_ROUTES.items()}
     actual = {
         definition.key: tuple(sorted(definition.required_permissions))
         for definition in collect_dashboard_modules(loaded_app.state.plugins)

@@ -12,10 +12,10 @@ from contextlib import asynccontextmanager
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import httpx
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-import httpx
 
 
 async def test_live_never_touches_dependencies(loaded_app, monkeypatch):
