@@ -24,9 +24,9 @@ async function handleRefreshToken(session: number) {
       // A logout or another login may have happened while the refresh was pending.
       if (getAuthSession() !== session || localStg.get("impersonation")) return false
       if (!error && data?.accessToken && data?.refreshToken) {
+        recordTokenRotation(data.refreshToken, data.accessToken)
         localStg.set("token", data.accessToken)
         localStg.set("refreshToken", data.refreshToken)
-        recordTokenRotation(data.refreshToken)
         syncAccessToken(data.accessToken)
         return true
       }
@@ -58,8 +58,11 @@ export function handleExpiredRequest(state: RequestInstanceState, forLogout = fa
     logger.debug("Token refresh started")
     const token = localStg.get("token")
     const refresh = () => {
-      // Another tab's credential change is handled by the existing identity reload.
-      if (getAuthSession() !== session || localStg.get("token") !== token) return Promise.resolve(false)
+      if (getAuthSession() !== session) return Promise.resolve(false)
+      if (localStg.get("token") !== token) {
+        useAuthStore().syncAccessToken(localStg.get("token") || "")
+        return Promise.resolve(true)
+      }
       return handleRefreshToken(session)
     }
     const pending = globalThis.navigator?.locks

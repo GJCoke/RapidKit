@@ -15,6 +15,7 @@ export function getToken() {
 export function clearAuthStorage() {
   localStg.remove("token")
   localStg.remove("refreshToken")
+  localStg.remove("tokenRotation")
   localStg.remove("impersonation")
   localStg.remove("impersonatorToken")
   localStg.remove("impersonatorRefreshToken")

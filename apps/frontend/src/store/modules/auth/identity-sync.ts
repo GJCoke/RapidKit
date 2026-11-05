@@ -2,6 +2,7 @@ export function installIdentitySync(
   target: Pick<EventTarget, "addEventListener" | "removeEventListener">,
   prefix: string,
   reload: () => void,
+  renewal?: { isCurrentSession: () => boolean; sync: () => void },
 ) {
   const keys = new Set([`${prefix}token`, `${prefix}impersonation`])
   let timer: ReturnType<typeof setTimeout> | null = null
@@ -10,6 +11,10 @@ export function installIdentitySync(
     const storage = typeof window === "undefined" ? undefined : window.localStorage
     if (event.storageArea && event.storageArea !== storage) return
     if (event.key !== null && !keys.has(event.key)) return
+    if (event.key === `${prefix}token` && renewal?.isCurrentSession()) {
+      renewal.sync()
+      return
+    }
     if (timer !== null) return
     timer = setTimeout(() => {
       timer = null

@@ -22,6 +22,8 @@ declare namespace StorageType {
     mixSiderFixed: CommonType.YesOrNo
     /** The refresh token */
     refreshToken: string
+    /** Non-secret login lineage for cross-tab token renewal. */
+    tokenRotation: { userId: string; sessionId: string; previousTokenId: string; tokenId: string }
     /** The theme color */
     themeColor: string
     /** The dark mode */

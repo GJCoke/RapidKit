@@ -95,7 +95,7 @@ describe("request token refresh", () => {
   })
 })
 
-it("serializes refresh across browser contexts and discards the stale waiting context", async () => {
+it("serializes refresh across browser contexts and reuses the rotated token in the waiting context", async () => {
   vi.clearAllMocks()
   mocks.fetchRefreshToken.mockResolvedValue({
     data: { accessToken: "new-access", refreshToken: "new-refresh" },
@@ -117,11 +117,44 @@ it("serializes refresh across browser contexts and discards the stale waiting co
   try {
     const first = { refreshTokenPromise: null } as any
     const second = { refreshTokenPromise: null } as any
-    expect(await Promise.all([handleExpiredRequest(first), handleExpiredRequest(second)])).toEqual([true, false])
+    expect(await Promise.all([handleExpiredRequest(first), handleExpiredRequest(second)])).toEqual([true, true])
     expect(mocks.fetchRefreshToken).toHaveBeenCalledOnce()
     expect(mocks.resetStore).not.toHaveBeenCalled()
   } finally {
     vi.unstubAllGlobals()
     mocks.set.mockReset()
+  }
+})
+
+it("does not reuse credentials from a new login while waiting for the browser lock", async () => {
+  vi.clearAllMocks()
+  const access = (jti: string) => `header.${btoa(JSON.stringify({ sub: "same-user", jti }))}.signature`
+  const values = new Map<string, string>([
+    ["token", access("old-login")],
+    ["refreshToken", "old-refresh"],
+  ])
+  mocks.get.mockImplementation((key: string) => values.get(key))
+  let release!: () => void
+  const waiting = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const requestLock = vi.fn(async (_name: string, callback: () => Promise<boolean>) => {
+    await waiting
+    return callback()
+  })
+  vi.stubGlobal("navigator", { locks: { request: requestLock } })
+  try {
+    const result = handleExpiredRequest({ refreshTokenPromise: null } as any)
+    await vi.waitFor(() => expect(requestLock).toHaveBeenCalledOnce())
+    values.set("token", access("new-login"))
+    values.set("refreshToken", "different-refresh")
+    release()
+    expect(await result).toBe(false)
+    expect(mocks.fetchRefreshToken).not.toHaveBeenCalled()
+    expect(mocks.syncAccessToken).not.toHaveBeenCalled()
+    expect(mocks.resetStore).not.toHaveBeenCalled()
+  } finally {
+    release()
+    vi.unstubAllGlobals()
   }
 })

@@ -456,9 +456,20 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     { immediate: true },
   )
 
+  let appliedSession = getAuthSession()
+  const stopTokenWatch = watch(
+    token,
+    () => {
+      appliedSession = getAuthSession()
+    },
+    { flush: "sync" },
+  )
   const disposeIdentitySync =
     typeof window !== "undefined"
-      ? installIdentitySync(window, import.meta.env.VITE_STORAGE_PREFIX || "", () => window.location.reload())
+      ? installIdentitySync(window, import.meta.env.VITE_STORAGE_PREFIX || "", () => window.location.reload(), {
+          isCurrentSession: () => appliedSession === getAuthSession(),
+          sync: () => syncAccessToken(getToken()),
+        })
       : () => {}
   function onVisibility() {
     if (document.visibilityState === "visible") checkExpiry()
@@ -468,6 +479,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   function disposeIdentityObservers() {
     clearInterval(expiryTimer)
     stopExpiryWatch()
+    stopTokenWatch()
     disposeIdentitySync()
     if (typeof window !== "undefined") window.removeEventListener("focus", checkExpiry)
     if (typeof document !== "undefined") document.removeEventListener("visibilitychange", onVisibility)

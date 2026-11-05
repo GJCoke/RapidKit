@@ -75,6 +75,7 @@ vi.mock("@/service/api", () => ({
 }))
 import { useAuthStore } from "@/store/modules/auth/index"
 import { getPlatformTimezone } from "@/utils/datetime"
+import { getAuthSession, recordTokenRotation } from "@/service/request/auth-session"
 
 const created = {
   accessToken: "simulated",
@@ -136,7 +137,13 @@ it("clears all identity runtime including fixed tabs without deleting credential
 
 it("ordinary logout removes every simulated credential backup", async () => {
   const store = useAuthStore()
-  for (const key of ["impersonatorToken", "impersonatorRefreshToken", "impersonatorReturnPath", "impersonation"])
+  for (const key of [
+    "impersonatorToken",
+    "impersonatorRefreshToken",
+    "impersonatorReturnPath",
+    "impersonation",
+    "tokenRotation",
+  ])
     state.storage.set(key, "backup")
   await store.resetStore()
   expect(state.storage.size).toBe(0)
@@ -275,6 +282,47 @@ it("syncAccessToken updates state without rebuilding sockets", () => {
   expect(store.token).toBe("new-token")
   expect(state.connect).not.toHaveBeenCalled()
   expect(state.globalConnect).not.toHaveBeenCalled()
+})
+
+function accessToken(jti: string, sub = "admin") {
+  return `header.${btoa(JSON.stringify({ jti, sub }))}.signature`
+}
+
+it("applies another tab's renewal without reloading or rebuilding identity runtime", async () => {
+  const original = accessToken("login")
+  state.storage.set("token", original)
+  const store = useAuthStore()
+  await store.initUserInfo()
+  vi.clearAllMocks()
+  const renewed = accessToken("renewed")
+  recordTokenRotation("renewed-refresh", renewed)
+  state.storage.set("token", renewed)
+  state.storage.set("refreshToken", "renewed-refresh")
+  window.dispatchEvent(Object.assign(new Event("storage"), { key: `${import.meta.env.VITE_STORAGE_PREFIX}token` }))
+  expect(store.token).toBe(renewed)
+  expect(store.userInfo.id).toBe("admin")
+  expect(window.location.reload).not.toHaveBeenCalled()
+  expect(state.resetSockets).not.toHaveBeenCalled()
+  expect(state.routeReset).not.toHaveBeenCalled()
+  store.$dispose()
+})
+
+it("reloads for another login even if a request observed its generation before the storage event", async () => {
+  vi.useFakeTimers()
+  try {
+    state.storage.set("token", accessToken("login"))
+    const store = useAuthStore()
+    await store.initUserInfo()
+    state.storage.set("token", accessToken("same-user-new-login"))
+    state.storage.set("refreshToken", "new-login-refresh")
+    getAuthSession()
+    window.dispatchEvent(Object.assign(new Event("storage"), { key: `${import.meta.env.VITE_STORAGE_PREFIX}token` }))
+    await vi.runOnlyPendingTimersAsync()
+    expect(window.location.reload).toHaveBeenCalledOnce()
+    store.$dispose()
+  } finally {
+    vi.useRealTimers()
+  }
 })
 
 it("loads the platform timezone with identity and clears it on logout", async () => {
